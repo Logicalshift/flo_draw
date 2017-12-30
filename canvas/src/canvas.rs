@@ -140,7 +140,7 @@ impl Canvas {
     ///
     /// Sends some new drawing commands to this canvas
     ///
-    pub fn write(&mut self, to_draw: Vec<Draw>) {
+    pub fn write(&self, to_draw: Vec<Draw>) {
         // Only draw if there are any drawing commands
         if to_draw.len() != 0 {
             self.core.async(move |core| core.write(to_draw));
