@@ -402,14 +402,14 @@ mod test {
 
     #[test]
     fn can_draw_to_canvas() {
-        let mut canvas = Canvas::new();
+        let canvas = Canvas::new();
 
         canvas.write(vec![Draw::NewPath]);
     }
 
     #[test]
     fn can_follow_canvas_stream() {
-        let mut canvas  = Canvas::new();
+        let canvas  = Canvas::new();
         let mut stream  = executor::spawn(canvas.stream());
         
         // Thread to draw some stuff to the canvas
@@ -531,7 +531,7 @@ mod test {
 
     #[test]
     fn can_follow_many_streams() {
-        let mut canvas  = Canvas::new();
+        let canvas  = Canvas::new();
         let mut stream  = executor::spawn(canvas.stream());
         let mut stream2  = executor::spawn(canvas.stream());
         
@@ -574,7 +574,7 @@ mod test {
 
     #[test]
     fn commands_after_clear_are_suppressed() {
-        let mut canvas  = Canvas::new();
+        let canvas  = Canvas::new();
         let mut stream  = executor::spawn(canvas.stream());
         
         // Thread to draw some stuff to the canvas
