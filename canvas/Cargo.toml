@@ -5,5 +5,7 @@ authors     = ["Andrew Hunter"]
 
 [dependencies]
 curves      = { path = "../curves" }
+
 futures     = "^0.1.17"
 desync      = { git = "https://github.com/logicalshift/desync", branch = "develop" }
+rust-hsluv  = "0.1.3"

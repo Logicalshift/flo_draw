@@ -5,6 +5,7 @@
 extern crate futures;
 extern crate curves;
 extern crate desync;
+extern crate hsluv;
 
 mod gc;
 mod draw;
