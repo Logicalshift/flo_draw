@@ -3,6 +3,7 @@ use super::color::*;
 use super::transform2d::*;
 
 use curves::*;
+use curves::arc;
 use curves::bezier::BezierCurve;
 
 ///
@@ -91,6 +92,26 @@ pub trait GraphicsPrimitives : GraphicsContext {
         self.line_to(x2, y2);
         self.line_to(x2, y1);
         self.line_to(x1, y1);
+        self.close_path();
+    }
+
+    ///
+    /// Draws a circle at a particular point
+    /// 
+    fn circle(&mut self, center_x: f32, center_y: f32, radius: f32) {
+        // Generate the circle and turn it into bezier curves
+        let circle                      = arc::Circle::new(Coord2(center_x as f64, center_y as f64), radius as f64);
+        let curves: Vec<bezier::Curve>  = circle.to_curves();
+
+        // Move to the start point
+        let start_point = curves[0].start_point();
+        self.move_to(start_point.x() as f32, start_point.y() as f32);
+
+        // Draw the curves
+        for c in curves {
+            gc_draw_bezier(self, &c);
+        }
+
         self.close_path();
     }
 }
