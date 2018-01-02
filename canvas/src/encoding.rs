@@ -165,6 +165,7 @@ impl CanvasEncoding<String> for Draw {
             &Move(x, y)                             => ('m', x, y).encode_canvas(append_to),
             &Line(x, y)                             => ('l', x, y).encode_canvas(append_to),
             &BezierCurve(p1, p2, p3)                => ('c', p1, p2, p3).encode_canvas(append_to),
+            &ClosePath                              => ('.').encode_canvas(append_to),
             &Fill                                   => 'F'.encode_canvas(append_to),
             &Stroke                                 => 'S'.encode_canvas(append_to),
             &LineWidth(width)                       => ('L', 'w', width).encode_canvas(append_to),
@@ -238,6 +239,8 @@ mod test {
     fn can_encode_line() { assert!(&encode_draw(Draw::Line(20.0, 20.0)) == "lAAAoBBAAAoBB") }
     #[test]
     fn can_encode_bezier() { assert!(&encode_draw(Draw::BezierCurve((20.0, 20.0), (20.0, 20.0), (20.0, 20.0))) == "cAAAoBBAAAoBBAAAoBBAAAoBBAAAoBBAAAoBB") }
+    #[test]
+    fn can_encode_close_path() { assert!(&encode_draw(Draw::ClosePath) == ".") }
     #[test]
     fn can_encode_fill() { assert!(&encode_draw(Draw::Fill) == "F") }
     #[test]

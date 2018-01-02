@@ -62,6 +62,9 @@ pub enum Draw {
     /// Bezier curve to point
     BezierCurve((f32, f32), (f32, f32), (f32, f32)),
 
+    /// Closes the current path
+    ClosePath,
+
     /// Fill the current path
     Fill,
 

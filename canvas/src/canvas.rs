@@ -217,6 +217,7 @@ impl<'a> GraphicsContext for CoreContext<'a> {
         self.pending.push(Draw::BezierCurve((x1, y1), (x2, y2), (x3, y3)));
     }
 
+    fn close_path(&mut self)                        { self.pending.push(Draw::ClosePath); }
     fn fill(&mut self)                              { self.pending.push(Draw::Fill); }
     fn stroke(&mut self)                            { self.pending.push(Draw::Stroke); }
     fn line_width(&mut self, width: f32)            { self.pending.push(Draw::LineWidth(width)); }

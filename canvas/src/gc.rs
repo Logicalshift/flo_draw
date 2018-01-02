@@ -13,6 +13,7 @@ pub trait GraphicsContext {
     fn move_to(&mut self, x: f32, y: f32);
     fn line_to(&mut self, x: f32, y: f32);
     fn bezier_curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32);
+    fn close_path(&mut self);
     fn fill(&mut self);
     fn stroke(&mut self);
     fn line_width(&mut self, width: f32);
@@ -47,6 +48,7 @@ pub trait GraphicsContext {
             Move(x, y)                                  => self.move_to(x, y),
             Line(x, y)                                  => self.line_to(x, y),
             BezierCurve((x1, y1), (x2, y2), (x3, y3))   => self.bezier_curve_to(x1, y1, x2, y2, x3, y3),
+            ClosePath                                   => self.close_path(),
             Fill                                        => self.fill(),
             Stroke                                      => self.stroke(),
             LineWidth(width)                            => self.line_width(width),
@@ -89,6 +91,7 @@ pub trait GraphicsPrimitives : GraphicsContext {
         self.line_to(x2, y2);
         self.line_to(x2, y1);
         self.line_to(x1, y1);
+        self.close_path();
     }
 }
 
