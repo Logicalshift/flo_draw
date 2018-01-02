@@ -99,7 +99,7 @@ impl CanvasEncoding<String> for Color {
             &Color::Rgba(r,g,b,a) => ('R', r, g, b, a),
             
             other => {
-                let (r, g, b, a) = other.to_rgba();
+                let (r, g, b, a) = other.to_rgba_components();
                 ('R', r, g, b, a)
             }
         }.encode_canvas(append_to)

@@ -13,7 +13,7 @@ impl Color {
     ///
     /// Returns this colour as RGBA components
     /// 
-    pub fn to_rgba(&self) -> (f32, f32, f32, f32) {
+    pub fn to_rgba_components(&self) -> (f32, f32, f32, f32) {
         match self {
             &Color::Rgba(r, g, b, a) => (r, g, b, a),
 
