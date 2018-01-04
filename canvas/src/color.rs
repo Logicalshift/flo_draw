@@ -33,6 +33,20 @@ impl Color {
     }
 
     ///
+    /// Returns this colour as HSLUV components
+    /// 
+    pub fn to_hsluv_components(&self) -> (f32, f32, f32, f32) {
+        match self {
+            &Color::Hsluv(h, s, l, a) => (h, s, l, a),
+            
+            &Color::Rgba(r, g, b, a) => {
+                let (h, s, l) = rgb_to_hsluv((r as f64, g as f64, b as f64));
+                (h as f32, s as f32, l as f32, a)
+            }
+        }
+    }
+
+    ///
     /// Converts this colour to another format
     /// 
     #[inline]
