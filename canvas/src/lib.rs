@@ -2,6 +2,9 @@
 //! An abstract representation of a vector canvas object 
 //!
 
+#[macro_use]
+extern crate serde_derive;
+
 extern crate futures;
 extern crate curves;
 extern crate desync;

@@ -8,7 +8,7 @@ use super::color::*;
 ///
 /// Possible way to join lines 
 ///
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum LineJoin {
     Miter,
     Round,
@@ -18,7 +18,7 @@ pub enum LineJoin {
 ///
 /// How to cap lines
 ///
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum LineCap {
     Butt,
     Round,
@@ -28,7 +28,7 @@ pub enum LineCap {
 ///
 /// Blend mode to use when drawing
 /// 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum BlendMode {
     SourceOver,
     SourceIn,
@@ -48,7 +48,7 @@ pub enum BlendMode {
 ///
 /// Instructions for drawing to a canvas
 ///
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum Draw {
     /// Begins a new path
     NewPath,

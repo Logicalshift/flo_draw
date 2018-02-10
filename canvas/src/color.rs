@@ -3,6 +3,7 @@ use hsluv::*;
 ///
 /// Possible formats of a colour value
 /// 
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum ColorFormat {
     Rgba,
     Hsluv
@@ -11,7 +12,7 @@ pub enum ColorFormat {
 ///
 /// Representation of a colour 
 ///
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum Color {
     Rgba(f32, f32, f32, f32),
     Hsluv(f32, f32, f32, f32)
