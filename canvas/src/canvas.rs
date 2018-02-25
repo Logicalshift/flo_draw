@@ -98,7 +98,11 @@ impl CanvasCore {
                 &Draw::FreeStoredBuffer => {
                     // If the last operation was a store, pop it
                     if let Some(&Draw::Store) = self.drawing_since_last_clear.last() {
+                        // Store and immediate free = just free
                         self.drawing_since_last_clear.pop();
+                    } else {
+                        // Something else: the free becomes part of the drawing log (this is often inefficient)
+                        self.drawing_since_last_clear.push(*draw);
                     }
                 },
 
