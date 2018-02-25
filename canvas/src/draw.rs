@@ -125,9 +125,18 @@ pub enum Draw {
     /// Stores the content of the clipping path from the current layer in a background buffer
     Store,
 
-    /// Restores what was stored in the background buffer
+    /// Restores what was stored in the background buffer. This should be done on the
+    /// same layer that the Store operation was called upon.
+    /// 
+    /// The buffer is left intact by this operation so it can be restored again in the future.
+    /// 
     /// (If the clipping path has changed since then, the restored image is clipped against the new path)
     Restore,
+
+    /// Releases the buffer created by the last 'Store' operation
+    /// 
+    /// Restore will no longer be valid for the current layer
+    FreeStoredBuffer,
 
     /// Push the current state of the canvas (line settings, stored image, current path - all state)
     PushState,

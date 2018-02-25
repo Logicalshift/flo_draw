@@ -51,7 +51,7 @@ impl CanvasCore {
 
                 // If we find no sequence breaks and a store, this is where we want to rewind to
                 Draw::Store     => {
-                    last_store = Some(draw_index);
+                    last_store = Some(draw_index+1);
                     break;
                 },
 
@@ -93,7 +93,14 @@ impl CanvasCore {
 
                     // On a 'restore' command we clear out everything since the 'store' if we can (so we don't build a backlog)
                     self.rewind_to_last_store();
-                }
+                },
+
+                &Draw::FreeStoredBuffer => {
+                    // If the last operation was a store, pop it
+                    if let Some(&Draw::Store) = self.drawing_since_last_clear.last() {
+                        self.drawing_since_last_clear.pop();
+                    }
+                },
 
                 // Default is to add to the current drawing
                 _ => self.drawing_since_last_clear.push(*draw)
@@ -238,6 +245,7 @@ impl<'a> GraphicsContext for CoreContext<'a> {
     fn clip(&mut self)                              { self.pending.push(Draw::Clip); }
     fn store(&mut self)                             { self.pending.push(Draw::Store); }
     fn restore(&mut self)                           { self.pending.push(Draw::Restore); }
+    fn free_stored_buffer(&mut self)                { self.pending.push(Draw::FreeStoredBuffer); }
     fn push_state(&mut self)                        { self.pending.push(Draw::PushState); }
     fn pop_state(&mut self)                         { self.pending.push(Draw::PopState); }
     fn clear_canvas(&mut self)                      { self.pending.push(Draw::ClearCanvas); }
@@ -479,6 +487,43 @@ mod test {
             gc.new_path();
             gc.rect(0.0,0.0, 100.0,100.0);
             gc.restore();
+
+            gc.stroke();
+        });
+
+        // Only the commands before the 'store' should be present
+        let mut stream  = executor::spawn(canvas.stream());
+
+        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
+        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
+        assert!(stream.wait_stream() == Some(Ok(Draw::Move(0.0, 0.0))));
+        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 0.0))));
+        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 10.0))));
+        assert!(stream.wait_stream() == Some(Ok(Draw::Line(0.0, 10.0))));
+
+        // 'Store' is still present as we can restore the same thing repeatedly
+        assert!(stream.wait_stream() == Some(Ok(Draw::Store)));
+
+        assert!(stream.wait_stream() == Some(Ok(Draw::Stroke)));
+    }
+
+    #[test]
+    fn free_store_rewinds_canvas_further() {
+        let canvas      = Canvas::new();
+        
+        // Draw using a graphics context
+        canvas.draw(|gc| {
+            gc.new_path();
+            gc.move_to(0.0, 0.0);
+            gc.line_to(10.0, 0.0);
+            gc.line_to(10.0, 10.0);
+            gc.line_to(0.0, 10.0);
+
+            gc.store();
+            gc.new_path();
+            gc.rect(0.0,0.0, 100.0,100.0);
+            gc.restore();
+            gc.free_stored_buffer();
 
             gc.stroke();
         });

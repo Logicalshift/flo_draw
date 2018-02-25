@@ -35,6 +35,7 @@ pub trait GraphicsContext {
     fn clip(&mut self);
     fn store(&mut self);
     fn restore(&mut self);
+    fn free_stored_buffer(&mut self);
     fn push_state(&mut self);
     fn pop_state(&mut self);
     fn clear_canvas(&mut self);
@@ -70,6 +71,7 @@ pub trait GraphicsContext {
             Clip                                        => self.clip(),
             Store                                       => self.store(),
             Restore                                     => self.restore(),
+            FreeStoredBuffer                            => self.free_stored_buffer(),
             PushState                                   => self.push_state(),
             PopState                                    => self.pop_state(),
             ClearCanvas                                 => self.clear_canvas(),

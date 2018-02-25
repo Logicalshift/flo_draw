@@ -191,6 +191,7 @@ impl CanvasEncoding<String> for Draw {
             &Clip                                   => ('Z', 'c').encode_canvas(append_to),
             &Store                                  => ('Z', 's').encode_canvas(append_to),
             &Restore                                => ('Z', 'r').encode_canvas(append_to),
+            &FreeStoredBuffer                       => ('Z', 'f').encode_canvas(append_to),
             &PushState                              => 'P'.encode_canvas(append_to),
             &PopState                               => 'p'.encode_canvas(append_to),
             &ClearCanvas                            => ('N', 'A').encode_canvas(append_to),
