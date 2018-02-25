@@ -122,7 +122,7 @@ pub enum Draw {
     /// Clip to the currently set path
     Clip,
 
-    /// Stores the content of the clipping path in a background buffer
+    /// Stores the content of the clipping path from the current layer in a background buffer
     Store,
 
     /// Restores what was stored in the background buffer
