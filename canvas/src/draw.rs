@@ -153,5 +153,8 @@ pub enum Draw {
     Layer(u32),
 
     /// Sets how a particular layer is blended with the underlying layer
-    LayerBlend(u32, BlendMode)
+    LayerBlend(u32, BlendMode),
+
+    /// Clears the current layer
+    ClearLayer
 }

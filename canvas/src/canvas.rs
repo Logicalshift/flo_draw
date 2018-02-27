@@ -69,6 +69,30 @@ impl CanvasCore {
     }
 
     ///
+    /// Removes all of the drawing for the specified layer
+    /// 
+    /// (Except for ClearCanvas)
+    /// 
+    fn clear_layer(&mut self, layer_id: u32) {
+        // Take the old drawing from this object
+        let mut old_drawing = vec![];
+        mem::swap(&mut self.drawing_since_last_clear, &mut old_drawing);
+
+        // Create a new drawing by filtering all of the actions for the current layer
+        let new_drawing = old_drawing.into_iter()
+            .filter(|drawing| {
+                match drawing {
+                    &(_, Draw::ClearCanvas) => true,
+                    &(layer, _)             => layer != layer_id
+                }
+            })
+            .collect();
+        
+        // This becomes the new drawing for this layer
+        self.drawing_since_last_clear = new_drawing;
+    }
+
+    ///
     /// Writes some drawing commands to this core
     /// 
     fn write(&mut self, to_draw: Vec<Draw>) {
@@ -113,7 +137,14 @@ impl CanvasCore {
                 &Draw::Layer(new_layer) => {
                     self.current_layer = new_layer;
                     self.drawing_since_last_clear.push((new_layer, *draw));
-                }
+                },
+
+                &Draw::ClearLayer => {
+                    // Remove all of the commands for the current layer, replacing them with just a switch to this layer
+                    let current_layer = self.current_layer;
+                    self.clear_layer(current_layer);
+                    self.drawing_since_last_clear.push((current_layer, Draw::Layer(current_layer)));
+                },
 
                 // Default is to add to the current drawing
                 _ => self.drawing_since_last_clear.push((self.current_layer, *draw))
@@ -265,6 +296,7 @@ impl<'a> GraphicsContext for CoreContext<'a> {
     fn clear_canvas(&mut self)                      { self.pending.push(Draw::ClearCanvas); }
     fn layer(&mut self, layer_id: u32)              { self.pending.push(Draw::Layer(layer_id)); }
     fn layer_blend(&mut self, layer_id: u32, blend_mode: BlendMode) { self.pending.push(Draw::LayerBlend(layer_id, blend_mode)); }
+    fn clear_layer(&mut self)                      { self.pending.push(Draw::ClearLayer); }
 
     fn draw(&mut self, d: Draw)                     { self.pending.push(d); }
 }
@@ -669,5 +701,74 @@ mod test {
 
         // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
         assert!(stream.wait_stream() == None);
+    }
+
+    #[test]
+    fn clear_layer_0_removes_commands() {
+        let canvas      = Canvas::new();
+        
+        // Draw using a graphics context
+        canvas.draw(|gc| {
+            gc.new_path();
+            gc.move_to(0.0, 0.0);
+            gc.line_to(10.0, 0.0);
+            gc.line_to(10.0, 10.0);
+            gc.line_to(0.0, 10.0);
+
+            gc.stroke();
+            gc.clear_layer();
+
+            gc.new_path();
+            gc.move_to(10.0, 10.0);
+            gc.fill();
+        });
+
+        // Only the commands after clear_layer should be present
+        let mut stream  = executor::spawn(canvas.stream());
+
+        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
+        assert!(stream.wait_stream() == Some(Ok(Draw::Layer(0))));
+        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
+        assert!(stream.wait_stream() == Some(Ok(Draw::Move(10.0, 10.0))));
+        assert!(stream.wait_stream() == Some(Ok(Draw::Fill)));
+    }
+
+    #[test]
+    fn clear_layer_only_removes_commands_for_the_current_layer() {
+        let canvas      = Canvas::new();
+        
+        // Draw using a graphics context
+        canvas.draw(|gc| {
+            gc.new_path();
+            gc.move_to(20.0, 20.0);
+
+            gc.stroke();
+
+            gc.layer(1);
+            gc.new_path();
+            gc.move_to(0.0, 0.0);
+            gc.line_to(10.0, 0.0);
+            gc.line_to(10.0, 10.0);
+            gc.line_to(0.0, 10.0);
+
+            gc.clear_layer();
+
+            gc.new_path();
+            gc.move_to(10.0, 10.0);
+            gc.fill();
+        });
+
+        // Only the commands after clear_layer should be present
+        let mut stream  = executor::spawn(canvas.stream());
+
+        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
+        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
+        assert!(stream.wait_stream() == Some(Ok(Draw::Move(20.0, 20.0))));
+        assert!(stream.wait_stream() == Some(Ok(Draw::Stroke)));
+
+        assert!(stream.wait_stream() == Some(Ok(Draw::Layer(1))));
+        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
+        assert!(stream.wait_stream() == Some(Ok(Draw::Move(10.0, 10.0))));
+        assert!(stream.wait_stream() == Some(Ok(Draw::Fill)));
     }
 }

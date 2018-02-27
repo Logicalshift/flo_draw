@@ -41,6 +41,7 @@ pub trait GraphicsContext {
     fn clear_canvas(&mut self);
     fn layer(&mut self, layer_id: u32);
     fn layer_blend(&mut self, layer_id: u32, blend_mode: BlendMode);
+    fn clear_layer(&mut self);
 
     fn draw(&mut self, d: Draw) {
         use self::Draw::*;
@@ -76,7 +77,8 @@ pub trait GraphicsContext {
             PopState                                    => self.pop_state(),
             ClearCanvas                                 => self.clear_canvas(),
             Layer(layer_id)                             => self.layer(layer_id),
-            LayerBlend(layer_id, blend_mode)            => self.layer_blend(layer_id, blend_mode)
+            LayerBlend(layer_id, blend_mode)            => self.layer_blend(layer_id, blend_mode),
+            ClearLayer                                  => self.clear_layer()
         }
     }
 }
