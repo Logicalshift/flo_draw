@@ -16,8 +16,11 @@ use futures::{Stream,Poll,Async};
 /// The core structure used to store details of a canvas 
 ///
 struct CanvasCore {
-    /// What was drawn since the last clear command was sent to this canvas
-    drawing_since_last_clear: Vec<Draw>,
+    /// What was drawn since the last clear command was sent to this canvas (and the layer that it's on)
+    drawing_since_last_clear: Vec<(u32, Draw)>,
+
+    /// The current layer that we're drawing on
+    current_layer: u32,
 
     // Tasks to notify next time we add to the canvas
     pending_streams: Vec<Arc<CanvasStream>>,
@@ -44,13 +47,13 @@ impl CanvasCore {
         for draw_index in (0..self.drawing_since_last_clear.len()).rev() {
             match self.drawing_since_last_clear[draw_index] {
                 // Commands that might cause the store/restore to not undo perfectly break the sequence
-                Draw::Clip      => break,
-                Draw::Unclip    => break,
-                Draw::PushState => break,
-                Draw::PopState  => break,
+                (_, Draw::Clip)         => break,
+                (_, Draw::Unclip)       => break,
+                (_, Draw::PushState)    => break,
+                (_, Draw::PopState)     => break,
 
                 // If we find no sequence breaks and a store, this is where we want to rewind to
-                Draw::Store     => {
+                (_, Draw::Store)        => {
                     last_store = Some(draw_index+1);
                     break;
                 },
@@ -79,17 +82,18 @@ impl CanvasCore {
                 &Draw::ClearCanvas => {
                     // Clearing the canvas empties the command list and updates the clear count
                     self.drawing_since_last_clear   = vec![];
+                    self.current_layer              = 0;
                     clear_pending                   = true;
 
                     new_drawing = vec![];
 
                     // Start the new drawing with the 'clear' command
-                    self.drawing_since_last_clear.push(*draw);
+                    self.drawing_since_last_clear.push((0, *draw));
                 },
 
                 &Draw::Restore => {
                     // Have to push the restore in case it can't be cleared
-                    self.drawing_since_last_clear.push(*draw);
+                    self.drawing_since_last_clear.push((self.current_layer, *draw));
 
                     // On a 'restore' command we clear out everything since the 'store' if we can (so we don't build a backlog)
                     self.rewind_to_last_store();
@@ -97,17 +101,22 @@ impl CanvasCore {
 
                 &Draw::FreeStoredBuffer => {
                     // If the last operation was a store, pop it
-                    if let Some(&Draw::Store) = self.drawing_since_last_clear.last() {
+                    if let Some(&(_, Draw::Store)) = self.drawing_since_last_clear.last() {
                         // Store and immediate free = just free
                         self.drawing_since_last_clear.pop();
                     } else {
                         // Something else: the free becomes part of the drawing log (this is often inefficient)
-                        self.drawing_since_last_clear.push(*draw);
+                        self.drawing_since_last_clear.push((self.current_layer, *draw));
                     }
                 },
 
+                &Draw::Layer(new_layer) => {
+                    self.current_layer = new_layer;
+                    self.drawing_since_last_clear.push((new_layer, *draw));
+                }
+
                 // Default is to add to the current drawing
-                _ => self.drawing_since_last_clear.push(*draw)
+                _ => self.drawing_since_last_clear.push((self.current_layer, *draw))
             }
 
             // Send everything to the streams
@@ -119,7 +128,7 @@ impl CanvasCore {
 
         for stream_index in 0..self.pending_streams.len() {
             // Send commands to this stream
-            if !self.pending_streams[stream_index].send_drawing(&new_drawing, clear_pending) {
+            if !self.pending_streams[stream_index].send_drawing(new_drawing.iter().map(|draw| *draw), clear_pending) {
                 // If it returns false then the stream has been dropped and we should remove it from this object
                 to_remove.push(stream_index);
             }
@@ -139,7 +148,8 @@ impl Canvas {
     pub fn new() -> Canvas {
         // A canvas is initially just a clear command
         let core = CanvasCore { 
-            drawing_since_last_clear:   vec![ Draw::ClearCanvas ],
+            drawing_since_last_clear:   vec![ (0, Draw::ClearCanvas) ],
+            current_layer:              0,
             pending_streams:            vec![ ]
         };
 
@@ -184,7 +194,7 @@ impl Canvas {
         let add_stream = Arc::clone(&new_stream);
         self.core.sync(move |core| {
             // Send the data we've received since the last clear
-            add_stream.send_drawing(&core.drawing_since_last_clear, true);
+            add_stream.send_drawing(core.drawing_since_last_clear.iter().map(|&(_, draw)| draw), true);
 
             // Store the stream in the core so future notifications get sent there
             core.pending_streams.push(add_stream);
@@ -198,7 +208,7 @@ impl Canvas {
     /// Retrieves the list of drawing actions in this canvas
     ///
     pub fn get_drawing(&self) -> Vec<Draw> {
-        self.core.sync(|core| core.drawing_since_last_clear.clone())
+        self.core.sync(|core| core.drawing_since_last_clear.iter().map(|&(_, draw)| draw.clone()).collect())
     }
 }
 
@@ -327,31 +337,27 @@ impl CanvasStream {
     ///
     /// Sends some drawing commands to this stream (returning true if this stream wants more commands)
     /// 
-    fn send_drawing(&self, drawing: &Vec<Draw>, clear_pending: bool) -> bool {
-        if drawing.len() > 0 {
-            let mut core = self.core.lock().unwrap();
+    fn send_drawing<DrawIter: Iterator<Item=Draw>> (&self, drawing: DrawIter, clear_pending: bool) -> bool {
+        let mut core = self.core.lock().unwrap();
 
-            // Clear out any pending commands if they're hidden by a clear
-            if clear_pending {
-                core.queue.clear();
-            }
-
-            // Push the drawing commands
-            for draw in drawing {
-                core.queue.push_back(*draw);
-            }
-
-            // If a task needs waking up, wake it
-            if let Some(ref task) = core.waiting_task {
-                task.notify();
-            }
-            core.waiting_task = None;
-
-            // We want more commands if the stream is not dropped
-            !core.stream_dropped
-        } else {
-            !self.core.lock().unwrap().stream_dropped
+        // Clear out any pending commands if they're hidden by a clear
+        if clear_pending {
+            core.queue.clear();
         }
+
+        // Push the drawing commands
+        for draw in drawing {
+            core.queue.push_back(draw);
+        }
+
+        // If a task needs waking up, wake it
+        if let Some(ref task) = core.waiting_task {
+            task.notify();
+        }
+        core.waiting_task = None;
+
+        // We want more commands if the stream is not dropped
+        !core.stream_dropped
     }
 }
 
