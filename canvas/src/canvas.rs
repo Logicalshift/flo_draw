@@ -82,8 +82,9 @@ impl CanvasCore {
         let new_drawing = old_drawing.into_iter()
             .filter(|drawing| {
                 match drawing {
-                    &(_, Draw::ClearCanvas) => true,
-                    &(layer, _)             => layer != layer_id
+                    &(_, Draw::ClearCanvas)         => true,
+                    &(_, Draw::LayerBlend(_, _))    => true,
+                    &(layer, _)                     => layer != layer_id
                 }
             })
             .collect();
