@@ -6,6 +6,8 @@ use curves::*;
 use curves::arc;
 use curves::bezier::BezierCurve;
 
+use std::iter;
+
 ///
 /// A graphics context provides the basic set of graphics actions that can be performed 
 ///
@@ -91,32 +93,68 @@ pub trait GraphicsPrimitives : GraphicsContext {
     /// Draws a rectangle between particular coordinates
     /// 
     fn rect(&mut self, x1: f32, y1: f32, x2: f32, y2: f32) {
-        self.move_to(x1, y1);
-        self.line_to(x1, y2);
-        self.line_to(x2, y2);
-        self.line_to(x2, y1);
-        self.line_to(x1, y1);
-        self.close_path();
+        for d in draw_rect(x1, y1, x2, y2) {
+            self.draw(d);
+        }
     }
 
     ///
     /// Draws a circle at a particular point
     /// 
     fn circle(&mut self, center_x: f32, center_y: f32, radius: f32) {
-        // Generate the circle and turn it into bezier curves
-        let circle                      = arc::Circle::new(Coord2(center_x as f64, center_y as f64), radius as f64);
-        let curves: Vec<bezier::Curve>  = circle.to_curves();
-
-        // Move to the start point
-        let start_point = curves[0].start_point();
-        self.move_to(start_point.x() as f32, start_point.y() as f32);
-
-        // Draw the curves
-        for c in curves {
-            gc_draw_bezier(self, &c);
+        for d in draw_circle(center_x, center_y, radius) {
+            self.draw(d);
         }
+    }
+}
 
-        self.close_path();
+///
+/// Returns the drawing commands for a rectangle
+/// 
+pub fn draw_rect(x1: f32, y1: f32, x2: f32, y2: f32) -> Vec<Draw> {
+    use self::Draw::*;
+
+    vec![
+        Move(x1, y1),
+        Line(x1, y2),
+        Line(x2, y2),
+        Line(x2, y1),
+        Line(x1, y1),
+        ClosePath
+    ]
+}
+
+///
+/// Returns the drawing commands for a circle
+/// 
+pub fn draw_circle(center_x: f32, center_y: f32, radius: f32) -> Vec<Draw> {
+    use self::Draw::*;
+
+    // Generate the circle and turn it into bezier curves
+    let circle                      = arc::Circle::new(Coord2(center_x as f64, center_y as f64), radius as f64);
+    let curves: Vec<bezier::Curve>  = circle.to_curves();
+    let start_point                 = curves[0].start_point();
+
+    // Draw the curves
+    let curves  = curves.into_iter().map(|curve| Draw::from(&curve));
+
+    // Complete the path
+    let path    = iter::once(Move(start_point.x() as f32, start_point.y() as f32))
+        .chain(curves)
+        .chain(iter::once(ClosePath));
+
+    path.collect()
+}
+
+impl<'a, Coord: Coordinate2D+Coordinate, Curve: BezierCurve<Point=Coord>> From<&'a Curve> for Draw {
+    fn from(curve: &'a Curve) -> Draw {
+        let end         = curve.end_point();
+        let (cp1, cp2)  = curve.control_points();
+
+        Draw::BezierCurve(
+            (end.x() as f32, end.y() as f32), 
+            (cp1.x() as f32, cp1.y() as f32),
+            (cp2.x() as f32, cp2.y() as f32))
     }
 }
 
@@ -124,9 +162,6 @@ pub trait GraphicsPrimitives : GraphicsContext {
 /// Draws the specified bezier curve in a graphics context (assuming we're already at the start position) 
 ///
 pub fn gc_draw_bezier<Gc: GraphicsContext+?Sized, Coord: Coordinate2D+Coordinate, Curve: BezierCurve<Point=Coord>>(gc: &mut Gc, curve: &Curve) {
-    let end         = curve.end_point();
-    let (cp1, cp2)  = curve.control_points();
-
-    gc.bezier_curve_to(end.x() as f32, end.y() as f32, cp1.x() as f32, cp1.y() as f32, cp2.x() as f32, cp2.y() as f32);
+    gc.draw(Draw::from(curve))
 }
 
