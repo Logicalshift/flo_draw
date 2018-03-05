@@ -83,6 +83,12 @@ pub trait GraphicsContext {
             ClearLayer                                  => self.clear_layer()
         }
     }
+
+    fn draw_list<'a>(&'a mut self, drawing: Box<'a+Iterator<Item=Draw>>) {
+        for d in drawing {
+            self.draw(d);
+        }
+    }
 }
 
 ///

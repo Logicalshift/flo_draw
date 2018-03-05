@@ -297,9 +297,12 @@ impl<'a> GraphicsContext for CoreContext<'a> {
     fn clear_canvas(&mut self)                      { self.pending.push(Draw::ClearCanvas); }
     fn layer(&mut self, layer_id: u32)              { self.pending.push(Draw::Layer(layer_id)); }
     fn layer_blend(&mut self, layer_id: u32, blend_mode: BlendMode) { self.pending.push(Draw::LayerBlend(layer_id, blend_mode)); }
-    fn clear_layer(&mut self)                      { self.pending.push(Draw::ClearLayer); }
+    fn clear_layer(&mut self)                       { self.pending.push(Draw::ClearLayer); }
 
     fn draw(&mut self, d: Draw)                     { self.pending.push(d); }
+    fn draw_list<'b>(&'b mut self, drawing: Box<'b+Iterator<Item=Draw>>) {
+        self.pending.extend(drawing);
+    }
 }
 
 impl<'a> GraphicsPrimitives for CoreContext<'a> { }
