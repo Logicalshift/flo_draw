@@ -1,11 +1,11 @@
 [package]
-name        = "canvas"
+name        = "flo_canvas"
 version     = "0.1.0"
 authors     = ["Andrew Hunter"]
 license     = "Apache-2.0"
 
 [dependencies]
-curves          = { path = "../curves" }
+flo_curves      = { path = "../curves" }
 
 futures         = "^0.1.17"
 desync          = { git = "https://github.com/logicalshift/desync", branch = "develop" }
