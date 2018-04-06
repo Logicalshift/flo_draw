@@ -52,6 +52,9 @@ impl CanvasCore {
                 (_, Draw::Clip)         => break,
                 (_, Draw::Unclip)       => break,
 
+                // If the state stack has a pop for every push then we can remove these requests too
+                // TODO: this has a bug in that if the final event is a 'push' instead of a 'pop'
+                // then it will mistakenly believe the states can be removed
                 (_, Draw::PushState)    => { state_stack_depth += 1; },
                 (_, Draw::PopState)     => { state_stack_depth -= 1; },
 
