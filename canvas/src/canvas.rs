@@ -44,17 +44,22 @@ impl CanvasCore {
         let mut last_store = None;
 
         // Search backwards in the drawing commands for the last store command
+        let mut state_stack_depth = 0;
+
         for draw_index in (0..self.drawing_since_last_clear.len()).rev() {
             match self.drawing_since_last_clear[draw_index] {
                 // Commands that might cause the store/restore to not undo perfectly break the sequence
                 (_, Draw::Clip)         => break,
                 (_, Draw::Unclip)       => break,
-                (_, Draw::PushState)    => break,
-                (_, Draw::PopState)     => break,
+
+                (_, Draw::PushState)    => { state_stack_depth += 1; },
+                (_, Draw::PopState)     => { state_stack_depth -= 1; },
 
                 // If we find no sequence breaks and a store, this is where we want to rewind to
                 (_, Draw::Store)        => {
-                    last_store = Some(draw_index+1);
+                    if state_stack_depth == 0 {
+                        last_store = Some(draw_index+1);
+                    }
                     break;
                 },
 
