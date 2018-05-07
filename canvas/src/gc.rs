@@ -212,6 +212,11 @@ impl GraphicsContext for Vec<Draw> {
     fn draw(&mut self, d: Draw) {
         self.push(d);
     }
+
+    #[inline]
+    fn draw_list<'b>(&'b mut self, drawing: Box<'b+Iterator<Item=Draw>>) {
+        self.extend(drawing)
+    }
 }
 
 ///
