@@ -152,7 +152,8 @@ pub fn draw_circle(center_x: f32, center_y: f32, radius: f32) -> Vec<Draw> {
     path.collect()
 }
 
-impl<'a, Coord: Coordinate2D+Coordinate, Curve: BezierCurve<Point=Coord>> From<&'a Curve> for Draw {
+impl<'a, Curve: BezierCurve> From<&'a Curve> for Draw
+where Curve::Point: Coordinate2D {
     fn from(curve: &'a Curve) -> Draw {
         let end         = curve.end_point();
         let (cp1, cp2)  = curve.control_points();
@@ -167,7 +168,8 @@ impl<'a, Coord: Coordinate2D+Coordinate, Curve: BezierCurve<Point=Coord>> From<&
 ///
 /// Draws the specified bezier curve in a graphics context (assuming we're already at the start position) 
 ///
-pub fn gc_draw_bezier<Gc: GraphicsContext+?Sized, Coord: Coordinate2D+Coordinate, Curve: BezierCurve<Point=Coord>>(gc: &mut Gc, curve: &Curve) {
+pub fn gc_draw_bezier<Gc: GraphicsContext+?Sized, Curve: BezierCurve>(gc: &mut Gc, curve: &Curve) 
+where Curve::Point: Coordinate2D {
     gc.draw(Draw::from(curve))
 }
 
