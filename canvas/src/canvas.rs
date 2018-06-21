@@ -212,7 +212,7 @@ impl Canvas {
     /// Provides a way to draw on this canvas via a GC
     /// 
     pub fn draw<FnAction>(&self, action: FnAction)
-    where FnAction: Send+FnOnce(&mut GraphicsPrimitives) -> () {
+    where FnAction: Send+FnOnce(&mut dyn GraphicsPrimitives) -> () {
         self.core.sync(move |core| {
             let mut graphics_context = CoreContext {
                 core:       core,
@@ -226,7 +226,7 @@ impl Canvas {
     ///
     /// Creates a stream for reading the instructions from this canvas
     ///
-    pub fn stream(&self) -> Box<Stream<Item=Draw,Error=()>+Send> {
+    pub fn stream(&self) -> Box<dyn Stream<Item=Draw,Error=()>+Send> {
         // Create a new canvas stream
         let new_stream = Arc::new(CanvasStream::new());
 
@@ -308,7 +308,7 @@ impl<'a> GraphicsContext for CoreContext<'a> {
     fn clear_layer(&mut self)                       { self.pending.push(Draw::ClearLayer); }
 
     fn draw(&mut self, d: Draw)                     { self.pending.push(d); }
-    fn draw_list<'b>(&'b mut self, drawing: Box<'b+Iterator<Item=Draw>>) {
+    fn draw_list<'b>(&'b mut self, drawing: Box<dyn 'b+Iterator<Item=Draw>>) {
         self.pending.extend(drawing);
     }
 }

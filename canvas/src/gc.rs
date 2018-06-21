@@ -84,7 +84,7 @@ pub trait GraphicsContext {
         }
     }
 
-    fn draw_list<'a>(&'a mut self, drawing: Box<'a+Iterator<Item=Draw>>) {
+    fn draw_list<'a>(&'a mut self, drawing: Box<dyn 'a+Iterator<Item=Draw>>) {
         for d in drawing {
             self.draw(d);
         }
@@ -216,7 +216,7 @@ impl GraphicsContext for Vec<Draw> {
     }
 
     #[inline]
-    fn draw_list<'b>(&'b mut self, drawing: Box<'b+Iterator<Item=Draw>>) {
+    fn draw_list<'b>(&'b mut self, drawing: Box<dyn 'b+Iterator<Item=Draw>>) {
         self.extend(drawing)
     }
 }
