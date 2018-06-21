@@ -1,6 +1,7 @@
 //!
 //! An abstract representation of a vector canvas object 
 //!
+#![warn(bare_trait_objects)]
 
 #[macro_use]
 extern crate serde_derive;
