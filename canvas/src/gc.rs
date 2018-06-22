@@ -137,9 +137,9 @@ pub fn draw_circle(center_x: f32, center_y: f32, radius: f32) -> Vec<Draw> {
     use self::Draw::*;
 
     // Generate the circle and turn it into bezier curves
-    let circle                      = arc::Circle::new(Coord2(center_x as f64, center_y as f64), radius as f64);
-    let curves: Vec<bezier::Curve>  = circle.to_curves();
-    let start_point                 = curves[0].start_point();
+    let circle                          = arc::Circle::new(Coord2(center_x as f64, center_y as f64), radius as f64);
+    let curves: Vec<bezier::Curve<_>>   = circle.to_curves();
+    let start_point                     = curves[0].start_point();
 
     // Draw the curves
     let curves  = curves.into_iter().map(|curve| Draw::from(&curve));
