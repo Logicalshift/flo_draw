@@ -10,7 +10,7 @@ description = "Library for describing graphics context drawing actions without r
 flo_curves      = { path = "../curves", version = "^0.2.0" }
 
 futures         = "^0.1.17"
-desync          = "0.2"
+desync          = { version = "0.2", git = "https://github.com/logicalshift/desync", branch = "develop" }
 rust-hsluv      = "0.1.3"
 serde           = "^1.0.0"
 serde_derive    = "^1.0.0"
