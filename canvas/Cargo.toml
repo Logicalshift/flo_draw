@@ -7,7 +7,7 @@ repository  = "https://github.com/Logicalshift/flowbetween"
 description = "Library for describing graphics context drawing actions without requiring a specific implementation"
 
 [dependencies]
-flo_curves      = { path = "../curves", version = "^0.2.0" }
+flo_curves      = { git = "https://github.com/Logicalshift/flo_curves", version = "^0.2.0" }
 
 futures         = "^0.1.17"
 desync          = "0.2"
