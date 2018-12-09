@@ -204,7 +204,7 @@ impl Canvas {
     pub fn write(&self, to_draw: Vec<Draw>) {
         // Only draw if there are any drawing commands
         if to_draw.len() != 0 {
-            self.core.async(move |core| core.write(to_draw));
+            self.core.desync(move |core| core.write(to_draw));
         }
     }
 
@@ -254,7 +254,7 @@ impl Canvas {
 
 impl Drop for Canvas {
     fn drop(&mut self) {
-        self.core.async(|core| {
+        self.core.desync(|core| {
             // Notify any streams that are using the canvas that it has gone away
             core.pending_streams.iter_mut().for_each(|stream| stream.notify_dropped());
         });
