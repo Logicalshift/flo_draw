@@ -226,7 +226,7 @@ impl Canvas {
     ///
     /// Creates a stream for reading the instructions from this canvas
     ///
-    pub fn stream(&self) -> Box<dyn Stream<Item=Draw,Error=()>+Send> {
+    pub fn stream(&self) -> impl Stream<Item=Draw,Error=()>+Send {
         // Create a new canvas stream
         let new_stream = Arc::new(CanvasStream::new());
 
