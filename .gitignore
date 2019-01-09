@@ -2,3 +2,4 @@
 */**/Cargo.lock
 */**/xcuserdata/**
 *.xcworkspace
+*.xcscheme
