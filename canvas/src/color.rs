@@ -42,6 +42,7 @@ impl Color {
             
             &Color::Rgba(r, g, b, a) => {
                 let (h, s, l) = rgb_to_hsluv((r as f64, g as f64, b as f64));
+                let s = if l <= 0.0 { 100.0 } else { s };
                 (h as f32, s as f32, l as f32, a)
             }
         }
@@ -58,6 +59,7 @@ impl Color {
             ColorFormat::Rgba   => Color::Rgba(r, g, b, a),
             ColorFormat::Hsluv  => {
                 let (h, s, l) = rgb_to_hsluv((r as f64, g as f64, b as f64));
+                let s = if l <= 0.0 { 100.0 } else { s };
                 Color::Hsluv(h as f32, s as f32, l as f32, a)
             }
         }
