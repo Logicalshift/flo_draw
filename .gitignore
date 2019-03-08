@@ -1,2 +1,6 @@
 **/target
 */**/Cargo.lock
+*/**/xcuserdata/**
+*.xcworkspace
+*.xcscheme
+SVGKit
