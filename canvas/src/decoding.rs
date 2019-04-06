@@ -1,4 +1,6 @@
 use super::draw::*;
+use super::color::*;
+use super::transform2d::*;
 
 use std::mem;
 use std::str::*;
@@ -85,6 +87,9 @@ pub enum DecoderError {
 
     /// A number could not be parsed for some reason
     BadNumber,
+
+    /// A color had an unknown type
+    UnknownColorType,
 
     /// The decoder previously encountered an error and cannot continue
     IsInErrorState
@@ -367,7 +372,7 @@ impl CanvasDecoder {
         } else {
             param.push(next_chr);
             let mut param = param.chars();
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::None, Some(Draw::DashLength(Self::decode_f32(&mut param)?))))
         }
     }
 
@@ -378,29 +383,51 @@ impl CanvasDecoder {
         } else {
             param.push(next_chr);
             let mut param = param.chars();
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::None, Some(Draw::DashOffset(Self::decode_f32(&mut param)?))))
         }
     }
 
     #[inline] fn decode_color_stroke(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        if param.len() < 5 {
+        if param.len() < 24 {
             param.push(next_chr);
             Ok((DecoderState::ColorStroke(param), None))
         } else {
             param.push(next_chr);
-            let mut param = param.chars();
-            Ok((DecoderState::Error, None))
+
+            let mut param   = param.chars();
+            let col_type    = param.next();
+            let r           = Self::decode_f32(&mut param)?;
+            let g           = Self::decode_f32(&mut param)?;
+            let b           = Self::decode_f32(&mut param)?;
+            let a           = Self::decode_f32(&mut param)?;
+
+            if col_type != Some('R') {
+                Err(DecoderError::UnknownColorType)?;
+            }
+
+            Ok((DecoderState::None, Some(Draw::StrokeColor(Color::Rgba(r, g, b, a)))))
         }
     }
 
     #[inline] fn decode_color_fill(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        if param.len() < 5 {
+        if param.len() < 24 {
             param.push(next_chr);
             Ok((DecoderState::ColorFill(param), None))
         } else {
             param.push(next_chr);
-            let mut param = param.chars();
-            Ok((DecoderState::Error, None))
+
+            let mut param   = param.chars();
+            let col_type    = param.next();
+            let r           = Self::decode_f32(&mut param)?;
+            let g           = Self::decode_f32(&mut param)?;
+            let b           = Self::decode_f32(&mut param)?;
+            let a           = Self::decode_f32(&mut param)?;
+
+            if col_type != Some('R') {
+                Err(DecoderError::UnknownColorType)?;
+            }
+
+            Ok((DecoderState::None, Some(Draw::FillColor(Color::Rgba(r, g, b, a)))))
         }
     }
 
@@ -422,29 +449,43 @@ impl CanvasDecoder {
         } else {
             param.push(next_chr);
             let mut param = param.chars();
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::None, Some(Draw::CanvasHeight(Self::decode_f32(&mut param)?))))
         }
     }
 
     #[inline] fn decode_transform_center(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        if param.len() < 5 {
+        if param.len() < 23 {
             param.push(next_chr);
             Ok((DecoderState::TransformCenter(param), None))
         } else {
             param.push(next_chr);
-            let mut param = param.chars();
-            Ok((DecoderState::Error, None))
+
+            let mut param   = param.chars();
+            let min_x       = Self::decode_f32(&mut param)?;
+            let min_y       = Self::decode_f32(&mut param)?;
+            let max_x       = Self::decode_f32(&mut param)?;
+            let max_y       = Self::decode_f32(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::CenterRegion((min_x, min_y), (max_x, max_y)))))
         }
     }
 
     #[inline] fn decode_transform_multiply(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        if param.len() < 5 {
+        if param.len() < 53 {
             param.push(next_chr);
             Ok((DecoderState::TransformMultiply(param), None))
         } else {
             param.push(next_chr);
             let mut param = param.chars();
-            Ok((DecoderState::Error, None))
+
+            let mut matrix = [0.0; 9];
+            for entry in 0..9 {
+                matrix[entry] = Self::decode_f32(&mut param)?;
+            }
+
+            let transform = Transform2D((matrix[0], matrix[1], matrix[2]), (matrix[3], matrix[4], matrix[5]), (matrix[6], matrix[7], matrix[8]));
+
+            Ok((DecoderState::None, Some(Draw::MultiplyTransform(transform))))
         }
     }
 
@@ -455,7 +496,7 @@ impl CanvasDecoder {
         } else {
             param.push(next_chr);
             let mut param = param.chars();
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::None, Some(Draw::Layer(Self::decode_u32(&mut param)?))))
         }
     }
 
@@ -520,9 +561,7 @@ impl CanvasDecoder {
 #[cfg(test)]
 mod test {
     use super::*;
-    use super::super::color::*;
     use super::super::encoding::*;
-    use super::super::transform2d::*;
 
     ///
     /// Checks if a particular drawing operation can be both encoded and decoded
