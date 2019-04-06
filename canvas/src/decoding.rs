@@ -68,8 +68,8 @@ enum DecoderState {
     TransformCenter(String),        // 'Tc' (min, max)
     TransformMultiply(String),      // 'Tm' (transform)
 
-    StateLayer(String),             // 'Nl' (id)
-    StateLayerBlend(String),        // 'Nb' (id, mode)
+    NewLayer(String),               // 'Nl' (id)
+    NewLayerBlend(String),          // 'Nb' (id, mode)
 }
 
 ///
@@ -108,6 +108,7 @@ impl CanvasDecoder {
             None                    => Self::decode_none(next_chr)?,
 
             New                     => Self::decode_new(next_chr)?,
+            LineStyle               => Self::decode_line_style(next_chr)?,
             Dash                    => Self::decode_dash(next_chr)?,
             Color                   => Self::decode_color(next_chr)?,
             Transform               => Self::decode_transform(next_chr)?,
@@ -152,23 +153,76 @@ impl CanvasDecoder {
     }
 
     #[inline] fn decode_new(next_chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        unimplemented!()
+        // Matched 'N' so far
+        match next_chr {
+            'p'     => Ok((DecoderState::None, Some(Draw::NewPath))),
+            'A'     => Ok((DecoderState::None, Some(Draw::ClearCanvas))),
+            'C'     => Ok((DecoderState::None, Some(Draw::ClearLayer))),
+
+            'l'     => Ok((DecoderState::NewLayer(String::new()), None)),
+            'b'     => Ok((DecoderState::NewLayerBlend(String::new()), None)),
+
+            _       => Err(DecoderError::InvalidCharacter(next_chr))
+        }
+    }
+
+    #[inline] fn decode_line_style(next_chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Matched 'L' so far
+        match next_chr {
+            'w'     => Ok((DecoderState::LineStyleWidth(String::new()), None)),
+            'p'     => Ok((DecoderState::LineStyleWidthPixels(String::new()), None)),
+            'j'     => Ok((DecoderState::LineStyleJoin(String::new()), None)),
+            'c'     => Ok((DecoderState::LineStyleCap(String::new()), None)),
+
+            _       => Err(DecoderError::InvalidCharacter(next_chr))
+        }
     }
 
     #[inline] fn decode_dash(next_chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        unimplemented!()
+        // Matched 'D' so far
+        match next_chr {
+            'n'     => Ok((DecoderState::None, Some(Draw::NewDashPattern))),
+
+            'l'     => Ok((DecoderState::DashLength(String::new()), None)),
+            'o'     => Ok((DecoderState::DashOffset(String::new()), None)),
+
+            _       => Err(DecoderError::InvalidCharacter(next_chr))
+        }
     }
 
     #[inline] fn decode_color(next_chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        unimplemented!()
+        // Matched 'C' so far
+        match next_chr {
+            's'     => Ok((DecoderState::ColorStroke(String::new()), None)),
+            'f'     => Ok((DecoderState::ColorFill(String::new()), None)),
+
+            _       => Err(DecoderError::InvalidCharacter(next_chr))
+        }
     }
 
     #[inline] fn decode_transform(next_chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        unimplemented!()
+        // Matched 'T' so far
+        match next_chr {
+            'i'     => Ok((DecoderState::None, Some(Draw::IdentityTransform))),
+            'h'     => Ok((DecoderState::TransformHeight(String::new()), None)),
+            'c'     => Ok((DecoderState::TransformCenter(String::new()), None)),
+            'm'     => Ok((DecoderState::TransformMultiply(String::new()), None)),
+
+            _       => Err(DecoderError::InvalidCharacter(next_chr))
+        }
     }
 
     #[inline] fn decode_state(next_chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        unimplemented!()
+        // Matched 'Z' so far
+        match next_chr {
+            'n'     => Ok((DecoderState::None, Some(Draw::Unclip))),
+            'c'     => Ok((DecoderState::None, Some(Draw::Clip))),
+            's'     => Ok((DecoderState::None, Some(Draw::Store))),
+            'r'     => Ok((DecoderState::None, Some(Draw::Restore))),
+            'f'     => Ok((DecoderState::None, Some(Draw::FreeStoredBuffer))),
+
+            _       => Err(DecoderError::InvalidCharacter(next_chr))
+        }
     }
 }
 
