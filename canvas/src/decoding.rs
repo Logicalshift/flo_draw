@@ -275,35 +275,51 @@ impl CanvasDecoder {
     }
 
     #[inline] fn decode_move(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        if param.len() < 5 {
+        if param.len() < 11 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::Move(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
-            Ok((DecoderState::Error, None))
+
+            let mut param   = param.chars();
+            let x           = Self::decode_f32(&mut param)?;
+            let y           = Self::decode_f32(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::Move(x, y))))
         }
     }
 
     #[inline] fn decode_line(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        if param.len() < 5 {
+        if param.len() < 11 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::Line(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
-            Ok((DecoderState::Error, None))
+
+            let mut param   = param.chars();
+            let x           = Self::decode_f32(&mut param)?;
+            let y           = Self::decode_f32(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::Line(x, y))))
         }
     }
 
     #[inline] fn decode_bezier_curve(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        if param.len() < 5 {
+        if param.len() < 35 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::BezierCurve(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
-            Ok((DecoderState::Error, None))
+
+            let mut param   = param.chars();
+            let x1          = Self::decode_f32(&mut param)?;
+            let y1          = Self::decode_f32(&mut param)?;
+            let x2          = Self::decode_f32(&mut param)?;
+            let y2          = Self::decode_f32(&mut param)?;
+            let x3          = Self::decode_f32(&mut param)?;
+            let y3          = Self::decode_f32(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::BezierCurve((x1, y1), (x2, y2), (x3, y3)))))
         }
     }
 
