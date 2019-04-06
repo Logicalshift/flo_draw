@@ -145,7 +145,7 @@ impl CanvasDecoder {
 
             BlendMode(param)                => Self::decode_blend_mode(next_chr, param)?,
 
-            TransformHeight(param)          => Self::decode_tranform_height(next_chr, param)?,
+            TransformHeight(param)          => Self::decode_transform_height(next_chr, param)?,
             TransformCenter(param)          => Self::decode_transform_center(next_chr, param)?,
             TransformMultiply(param)        => Self::decode_transform_multiply(next_chr, param)?,
 
@@ -267,8 +267,9 @@ impl CanvasDecoder {
             Ok((DecoderState::LineStyleWidthPixels(param), None))
         } else {
             param.push(next_chr);
-            let mut param = param.chars();
-            let width = Self::decode_f32(&mut param)?;
+
+            let mut param   = param.chars();
+            let width       = Self::decode_f32(&mut param)?;
 
             Ok((DecoderState::None, Some(Draw::LineWidthPixels(width))))
         }
@@ -326,21 +327,24 @@ impl CanvasDecoder {
     #[inline] fn decode_line_width(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::LineStyleWidth(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
-            Ok((DecoderState::Error, None))
+
+            let mut param   = param.chars();
+            let width       = Self::decode_f32(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::LineWidth(width))))
         }
     }
 
     #[inline] fn decode_line_style_join(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::LineStyleJoin(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
+            let mut param = param.chars();
             Ok((DecoderState::Error, None))
         }
     }
@@ -348,10 +352,10 @@ impl CanvasDecoder {
     #[inline] fn decode_line_style_cap(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::LineStyleCap(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
+            let mut param = param.chars();
             Ok((DecoderState::Error, None))
         }
     }
@@ -359,10 +363,10 @@ impl CanvasDecoder {
     #[inline] fn decode_dash_length(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::DashLength(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
+            let mut param = param.chars();
             Ok((DecoderState::Error, None))
         }
     }
@@ -370,10 +374,10 @@ impl CanvasDecoder {
     #[inline] fn decode_dash_offset(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::DashOffset(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
+            let mut param = param.chars();
             Ok((DecoderState::Error, None))
         }
     }
@@ -381,10 +385,10 @@ impl CanvasDecoder {
     #[inline] fn decode_color_stroke(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::ColorStroke(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
+            let mut param = param.chars();
             Ok((DecoderState::Error, None))
         }
     }
@@ -392,10 +396,10 @@ impl CanvasDecoder {
     #[inline] fn decode_color_fill(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::ColorFill(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
+            let mut param = param.chars();
             Ok((DecoderState::Error, None))
         }
     }
@@ -403,21 +407,21 @@ impl CanvasDecoder {
     #[inline] fn decode_blend_mode(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::BlendMode(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
+            let mut param = param.chars();
             Ok((DecoderState::Error, None))
         }
     }
 
-    #[inline] fn decode_tranform_height(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+    #[inline] fn decode_transform_height(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::TransformHeight(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
+            let mut param = param.chars();
             Ok((DecoderState::Error, None))
         }
     }
@@ -425,10 +429,10 @@ impl CanvasDecoder {
     #[inline] fn decode_transform_center(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::TransformCenter(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
+            let mut param = param.chars();
             Ok((DecoderState::Error, None))
         }
     }
@@ -436,10 +440,10 @@ impl CanvasDecoder {
     #[inline] fn decode_transform_multiply(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::TransformMultiply(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
+            let mut param = param.chars();
             Ok((DecoderState::Error, None))
         }
     }
@@ -447,10 +451,10 @@ impl CanvasDecoder {
     #[inline] fn decode_new_layer(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::NewLayer(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
+            let mut param = param.chars();
             Ok((DecoderState::Error, None))
         }
     }
@@ -458,10 +462,10 @@ impl CanvasDecoder {
     #[inline] fn decode_new_layer_blend(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::NewLayerBlend(param), None))
         } else {
             param.push(next_chr);
-            let param = param.chars();
+            let mut param = param.chars();
             Ok((DecoderState::Error, None))
         }
     }
