@@ -6,41 +6,9 @@ use std::mem;
 use std::str::*;
 use std::result::Result;
 
-/*
-            &NewPath                                => ('N', 'p').encode_canvas(append_to),
-            &Move(x, y)                             => ('m', x, y).encode_canvas(append_to),
-            &Line(x, y)                             => ('l', x, y).encode_canvas(append_to),
-            &BezierCurve(p1, p2, p3)                => ('c', p1, p2, p3).encode_canvas(append_to),
-            &ClosePath                              => ('.').encode_canvas(append_to),
-            &Fill                                   => 'F'.encode_canvas(append_to),
-            &Stroke                                 => 'S'.encode_canvas(append_to),
-            &LineWidth(width)                       => ('L', 'w', width).encode_canvas(append_to),
-            &LineWidthPixels(width)                 => ('L', 'p', width).encode_canvas(append_to),
-            &LineJoin(join)                         => ('L', 'j', join).encode_canvas(append_to),
-            &LineCap(cap)                           => ('L', 'c', cap).encode_canvas(append_to),
-            &NewDashPattern                         => ('D', 'n').encode_canvas(append_to),
-            &DashLength(length)                     => ('D', 'l', length).encode_canvas(append_to),
-            &DashOffset(offset)                     => ('D', 'o', offset).encode_canvas(append_to),
-            &StrokeColor(col)                       => ('C', 's', col).encode_canvas(append_to),
-            &FillColor(col)                         => ('C', 'f', col).encode_canvas(append_to),
-            &BlendMode(mode)                        => ('M', mode).encode_canvas(append_to),
-            &IdentityTransform                      => ('T', 'i').encode_canvas(append_to),
-            &CanvasHeight(height)                   => ('T', 'h', height).encode_canvas(append_to),
-            &CenterRegion(min, max)                 => ('T', 'c', min, max).encode_canvas(append_to),
-            &MultiplyTransform(transform)           => ('T', 'm', transform).encode_canvas(append_to),
-            &Unclip                                 => ('Z', 'n').encode_canvas(append_to),
-            &Clip                                   => ('Z', 'c').encode_canvas(append_to),
-            &Store                                  => ('Z', 's').encode_canvas(append_to),
-            &Restore                                => ('Z', 'r').encode_canvas(append_to),
-            &FreeStoredBuffer                       => ('Z', 'f').encode_canvas(append_to),
-            &PushState                              => 'P'.encode_canvas(append_to),
-            &PopState                               => 'p'.encode_canvas(append_to),
-            &ClearCanvas                            => ('N', 'A').encode_canvas(append_to),
-            &Layer(layer_id)                        => ('N', 'l', layer_id).encode_canvas(append_to),
-            &LayerBlend(layer_id, blend_mode)       => ('N', 'b', layer_id, blend_mode).encode_canvas(append_to),
-            &ClearLayer                             => ('N', 'C').encode_canvas(append_to)
- */
-
+///
+/// The possible states for a decoder to be in after accepting some characters from the source
+///
 enum DecoderState {
     None,
     Error,
@@ -534,7 +502,7 @@ impl CanvasDecoder {
             ('D', 'I') => Ok(BlendMode::DestinationIn),
             ('D', 'O') => Ok(BlendMode::DestinationOut),
             ('D', 'A') => Ok(BlendMode::DestinationAtop),
-            
+
             ('E', 'M') => Ok(BlendMode::Multiply),
             ('E', 'S') => Ok(BlendMode::Screen),
             ('E', 'D') => Ok(BlendMode::Darken),
