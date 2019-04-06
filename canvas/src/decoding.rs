@@ -128,9 +128,29 @@ impl CanvasDecoder {
             Transform                       => Self::decode_transform(next_chr)?,
             State                           => Self::decode_state(next_chr)?,
 
-            LineStyleWidthPixels(param)     => Self::decode_line_width_pixels(next_chr, param)?,
+            Move(param)                     => Self::decode_move(next_chr, param)?,
+            Line(param)                     => Self::decode_line(next_chr, param)?,
+            BezierCurve(param)              => Self::decode_bezier_curve(next_chr, param)?,
 
-            _                               => unimplemented!()
+            LineStyleWidth(param)           => Self::decode_line_width(next_chr, param)?,
+            LineStyleWidthPixels(param)     => Self::decode_line_width_pixels(next_chr, param)?,
+            LineStyleJoin(param)            => Self::decode_line_style_join(next_chr, param)?,
+            LineStyleCap(param)             => Self::decode_line_style_cap(next_chr, param)?,
+
+            DashLength(param)               => Self::decode_dash_length(next_chr, param)?,
+            DashOffset(param)               => Self::decode_dash_offset(next_chr, param)?,
+
+            ColorStroke(param)              => Self::decode_color_stroke(next_chr, param)?,
+            ColorFill(param)                => Self::decode_color_fill(next_chr, param)?,
+
+            BlendMode(param)                => Self::decode_blend_mode(next_chr, param)?,
+
+            TransformHeight(param)          => Self::decode_tranform_height(next_chr, param)?,
+            TransformCenter(param)          => Self::decode_transform_center(next_chr, param)?,
+            TransformMultiply(param)        => Self::decode_transform_multiply(next_chr, param)?,
+
+            NewLayer(param)                 => Self::decode_new_layer(next_chr, param)?,
+            NewLayerBlend(param)            => Self::decode_new_layer_blend(next_chr, param)?
         };
 
         self.state = next_state;
@@ -251,6 +271,182 @@ impl CanvasDecoder {
             let width = Self::decode_f32(&mut param)?;
 
             Ok((DecoderState::None, Some(Draw::LineWidthPixels(width))))
+        }
+    }
+
+    #[inline] fn decode_move(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_line(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_bezier_curve(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_line_width(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_line_style_join(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_line_style_cap(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_dash_length(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_dash_offset(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_color_stroke(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_color_fill(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_blend_mode(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_tranform_height(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_transform_center(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_transform_multiply(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_new_layer(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
+        }
+    }
+
+    #[inline] fn decode_new_layer_blend(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::Error, None))
+        } else {
+            param.push(next_chr);
+            let param = param.chars();
+            Ok((DecoderState::Error, None))
         }
     }
 
