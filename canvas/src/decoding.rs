@@ -85,6 +85,9 @@ pub enum DecoderError {
     /// The character was not valid for the current state of the decoder
     InvalidCharacter(char),
 
+    /// The decoder tried to decode something before it had accepted all characters (probably a bug)
+    MissingCharacter,
+
     /// A number could not be parsed for some reason
     BadNumber,
 
@@ -343,25 +346,23 @@ impl CanvasDecoder {
         }
     }
 
-    #[inline] fn decode_line_style_join(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        if param.len() < 5 {
-            param.push(next_chr);
-            Ok((DecoderState::LineStyleJoin(param), None))
-        } else {
-            param.push(next_chr);
-            let mut param = param.chars();
-            Ok((DecoderState::Error, None))
+    #[inline] fn decode_line_style_join(next_chr: char, _param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match next_chr {
+            'M' => Ok((DecoderState::None, Some(Draw::LineJoin(LineJoin::Miter)))),
+            'R' => Ok((DecoderState::None, Some(Draw::LineJoin(LineJoin::Round)))),
+            'B' => Ok((DecoderState::None, Some(Draw::LineJoin(LineJoin::Bevel)))),
+
+            _ => Err(DecoderError::InvalidCharacter(next_chr))
         }
     }
 
-    #[inline] fn decode_line_style_cap(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        if param.len() < 5 {
-            param.push(next_chr);
-            Ok((DecoderState::LineStyleCap(param), None))
-        } else {
-            param.push(next_chr);
-            let mut param = param.chars();
-            Ok((DecoderState::Error, None))
+    #[inline] fn decode_line_style_cap(next_chr: char, _param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match next_chr {
+            'B' => Ok((DecoderState::None, Some(Draw::LineCap(LineCap::Butt)))),
+            'R' => Ok((DecoderState::None, Some(Draw::LineCap(LineCap::Round)))),
+            'S' => Ok((DecoderState::None, Some(Draw::LineCap(LineCap::Square)))),
+
+            _ => Err(DecoderError::InvalidCharacter(next_chr))
         }
     }
 
@@ -432,13 +433,13 @@ impl CanvasDecoder {
     }
 
     #[inline] fn decode_blend_mode(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        if param.len() < 5 {
+        if param.len() < 1 {
             param.push(next_chr);
             Ok((DecoderState::BlendMode(param), None))
         } else {
             param.push(next_chr);
             let mut param = param.chars();
-            Ok((DecoderState::Error, None))
+            Ok((DecoderState::None, Some(Draw::BlendMode(Self::decode_blend_mode_only(&mut param)?))))
         }
     }
 
@@ -501,13 +502,45 @@ impl CanvasDecoder {
     }
 
     #[inline] fn decode_new_layer_blend(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        if param.len() < 5 {
+        if param.len() < 7 {
             param.push(next_chr);
             Ok((DecoderState::NewLayerBlend(param), None))
         } else {
             param.push(next_chr);
-            let mut param = param.chars();
-            Ok((DecoderState::Error, None))
+
+            let mut param   = param.chars();
+            let layer_id    = Self::decode_u32(&mut param)?;
+            let blend_mode  = Self::decode_blend_mode_only(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::LayerBlend(layer_id, blend_mode))))
+        }
+    }
+
+    ///
+    /// Consumes 2 characters to decode a blend mode
+    ///
+    fn decode_blend_mode_only(param: &mut Chars) -> Result<BlendMode, DecoderError> {
+        let (a, b)  = (param.next(), param.next());
+        let a       = a.ok_or(DecoderError::MissingCharacter)?;
+        let b       = b.ok_or(DecoderError::MissingCharacter)?;
+
+        match (a, b) {
+            ('S', 'V') => Ok(BlendMode::SourceOver),
+            ('S', 'I') => Ok(BlendMode::SourceIn),
+            ('S', 'O') => Ok(BlendMode::SourceOut),
+            ('S', 'A') => Ok(BlendMode::SourceAtop),
+
+            ('D', 'V') => Ok(BlendMode::DestinationOver),
+            ('D', 'I') => Ok(BlendMode::DestinationIn),
+            ('D', 'O') => Ok(BlendMode::DestinationOut),
+            ('D', 'A') => Ok(BlendMode::DestinationAtop),
+            
+            ('E', 'M') => Ok(BlendMode::Multiply),
+            ('E', 'S') => Ok(BlendMode::Screen),
+            ('E', 'D') => Ok(BlendMode::Darken),
+            ('E', 'L') => Ok(BlendMode::Lighten),
+
+            _          => Err(DecoderError::InvalidCharacter(a))
         }
     }
 
