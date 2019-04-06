@@ -1,5 +1,7 @@
 use super::draw::*;
 
+use std::mem;
+use std::str::*;
 use std::result::Result;
 
 /*
@@ -39,6 +41,7 @@ use std::result::Result;
 
 enum DecoderState {
     None,
+    Error,
     
     New,                            // 'N'
     LineStyle,                      // 'L'
@@ -77,7 +80,14 @@ enum DecoderState {
 ///
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DecoderError {
-    InvalidCharacter(char)
+    /// The character was not valid for the current state of the decoder
+    InvalidCharacter(char),
+
+    /// A number could not be parsed for some reason
+    BadNumber,
+
+    /// The decoder previously encountered an error and cannot continue
+    IsInErrorState
 }
 
 ///
@@ -104,17 +114,23 @@ impl CanvasDecoder {
         use self::DecoderState::*;
 
         // Next state depends on the character and the current state
-        let (next_state, result) = match self.state {
-            None                    => Self::decode_none(next_chr)?,
+        let mut state = DecoderState::Error;
+        mem::swap(&mut self.state, &mut state);
 
-            New                     => Self::decode_new(next_chr)?,
-            LineStyle               => Self::decode_line_style(next_chr)?,
-            Dash                    => Self::decode_dash(next_chr)?,
-            Color                   => Self::decode_color(next_chr)?,
-            Transform               => Self::decode_transform(next_chr)?,
-            State                   => Self::decode_state(next_chr)?,
+        let (next_state, result) = match state {
+            None                            => Self::decode_none(next_chr)?,
+            Error                           => Err(DecoderError::IsInErrorState)?,
 
-            _                       => unimplemented!()
+            New                             => Self::decode_new(next_chr)?,
+            LineStyle                       => Self::decode_line_style(next_chr)?,
+            Dash                            => Self::decode_dash(next_chr)?,
+            Color                           => Self::decode_color(next_chr)?,
+            Transform                       => Self::decode_transform(next_chr)?,
+            State                           => Self::decode_state(next_chr)?,
+
+            LineStyleWidthPixels(param)     => Self::decode_line_width_pixels(next_chr, param)?,
+
+            _                               => unimplemented!()
         };
 
         self.state = next_state;
@@ -224,6 +240,65 @@ impl CanvasDecoder {
             _       => Err(DecoderError::InvalidCharacter(next_chr))
         }
     }
+
+    #[inline] fn decode_line_width_pixels(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::LineStyleWidthPixels(param), None))
+        } else {
+            param.push(next_chr);
+            let mut param = param.chars();
+            let width = Self::decode_f32(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::LineWidthPixels(width))))
+        }
+    }
+
+    ///
+    /// Consumes 6 characters to decode a f32
+    ///
+    fn decode_f32(chrs: &mut Chars) -> Result<f32, DecoderError> {
+        let as_u32 = Self::decode_u32(chrs)?;
+        let as_f32 = f32::from_bits(as_u32);
+
+        Ok(as_f32)
+    }
+
+    ///
+    /// Consumes 6 characters to decode a u32
+    ///
+    fn decode_u32(chrs: &mut Chars) -> Result<u32, DecoderError> {
+        let mut result  = 0;
+        let mut shift   = 0;
+
+        for _ in 0..6 {
+            let next_chr    = chrs.next().ok_or(DecoderError::BadNumber)?;
+            result          |= (Self::decode_base64(next_chr)? as u32) << shift;
+            shift           += 6;
+        }
+
+
+        Ok(result)
+    }
+
+    ///
+    /// Decodes a base64 character to a number (in the range 0x00 -> 0x3f)
+    ///
+    #[inline] fn decode_base64(chr: char) -> Result<u8, DecoderError> {
+        if chr >= 'A' && chr <= 'Z' {
+            Ok((chr as u8) - ('A' as u8))
+        } else if chr >= 'a' && chr <= 'z' {
+            Ok((chr as u8) - ('a' as u8) + 26)
+        } else if chr >= '0' && chr <= '9' {
+            Ok((chr as u8) - ('0' as u8) + 52)
+        } else if chr == '+' {
+            Ok(62)
+        } else if chr == '/' {
+            Ok(63)
+        } else {
+            Err(DecoderError::BadNumber)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -241,6 +316,8 @@ mod test {
         let mut encoded = String::new();
         instruction.encode_canvas(&mut encoded);
 
+        println!("{:?} {:?}", instruction, encoded);
+
         // Try decoding it
         let mut decoder = CanvasDecoder::new();
         let mut decoded = None;
@@ -252,6 +329,8 @@ mod test {
             // Update with the next state
             decoded = decoder.decode(c).unwrap();
         }
+
+        println!("  -> {:?}", decoded);
 
         // Should decode OK
         assert!(decoded.is_some());
