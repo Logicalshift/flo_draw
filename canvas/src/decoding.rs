@@ -142,6 +142,9 @@ impl CanvasDecoder {
     ///
     #[inline] fn decode_none(next_chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         match next_chr {
+            // Whitespace ignored if we're not parsing a command
+            '\n' | '\r' | ' ' => Ok((DecoderState::None, None)),
+
             // Multi-character commands
             'N' => Ok((DecoderState::New, None)),
             'L' => Ok((DecoderState::LineStyle, None)),
