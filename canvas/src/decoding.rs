@@ -2,6 +2,9 @@ use super::draw::*;
 use super::color::*;
 use super::transform2d::*;
 
+use futures::*;
+use futures::stream;
+
 use std::mem;
 use std::str::*;
 use std::result::Result;
@@ -585,6 +588,42 @@ pub fn decode_drawing<In: IntoIterator<Item=char>>(source: In) -> impl Iterator<
                 }
             }
         })
+}
+
+///
+/// 
+///
+#[derive(Clone, Debug)]
+pub enum StreamDecoderError<E> {
+    /// Error from the decoder
+    Decoder(DecoderError),
+
+    /// Error from the stream
+    Stream(E)
+}
+
+///
+/// Decodes a canvas drawing represented as a stream of characters.
+///
+pub fn decode_drawing_stream<In: Stream<Item=char, Error=E>, E>(source: In) -> impl Stream<Item=Draw, Error=StreamDecoderError<E>> {
+    let mut source  = source;
+    let mut decoder = CanvasDecoder::new();
+
+    stream::poll_fn(move || {
+        match source.poll() {
+            Ok(Async::Ready(None))      => Ok(Async::Ready(None)),
+            Ok(Async::NotReady)         => Ok(Async::NotReady),
+            Ok(Async::Ready(Some(c)))   => {
+                match decoder.decode(c) {
+                    Ok(None)            => Ok(Async::NotReady),
+                    Ok(Some(draw))      => Ok(Async::Ready(Some(draw))),
+                    Err(err)            => Err(StreamDecoderError::Decoder(err))
+                }
+            },
+
+            Err(err)                    => Err(StreamDecoderError::Stream(err))
+        }
+    })
 }
 
 #[cfg(test)]
