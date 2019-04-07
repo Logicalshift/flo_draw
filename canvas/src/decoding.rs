@@ -831,6 +831,16 @@ mod test {
     }
 
     #[test]
+    fn will_accept_newlines() {
+        let mut decoder = CanvasDecoder::new();
+        assert!(decoder.decode('\n') == Ok(None));
+        assert!(decoder.decode('\n') == Ok(None));
+        assert!(decoder.decode('\n') == Ok(None));
+        assert!(decoder.decode('N') == Ok(None));
+        assert!(decoder.decode('p') == Ok(Some(Draw::NewPath)));
+    }
+
+    #[test]
     fn error_on_bad_char() {
         let mut decoder = CanvasDecoder::new();
         assert!(decoder.decode('N') == Ok(None));
