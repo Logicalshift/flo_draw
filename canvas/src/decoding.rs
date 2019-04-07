@@ -615,22 +615,23 @@ pub fn decode_drawing_stream<In: Stream<Item=char, Error=E>, E>(source: In) -> i
     let mut seen_error  = false;
 
     stream::poll_fn(move || {
-        match source.poll() {
-            Ok(Async::Ready(None))      => Ok(Async::Ready(None)),
-            Ok(Async::NotReady)         => Ok(Async::NotReady),
-            Ok(Async::Ready(Some(c)))   => {
-                if seen_error {
-                    Ok(Async::Ready(None))
-                } else {
+        if seen_error {
+            // Only allow one error from the decoder (it remains in an error state after this)
+            Ok(Async::Ready(None))
+        } else {
+            match source.poll() {
+                Ok(Async::Ready(None))      => Ok(Async::Ready(None)),
+                Ok(Async::NotReady)         => Ok(Async::NotReady),
+                Ok(Async::Ready(Some(c)))   => {
                     match decoder.decode(c) {
                         Ok(None)            => { task::current().notify(); Ok(Async::NotReady) },
                         Ok(Some(draw))      => Ok(Async::Ready(Some(draw))),
                         Err(err)            => { seen_error = true; Err(StreamDecoderError::Decoder(err)) }
                     }
-                }
-            },
+                },
 
-            Err(err)                    => Err(StreamDecoderError::Stream(err))
+                Err(err)                    => Err(StreamDecoderError::Stream(err))
+            }
         }
     })
 }
