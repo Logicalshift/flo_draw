@@ -2,8 +2,6 @@ use super::draw::*;
 use super::color::*;
 use super::transform2d::*;
 
-use std::mem;
-
 ///
 /// Trait implemented by objects that can be encoded into a canvas
 ///
@@ -46,7 +44,7 @@ impl CanvasEncoding<String> for u32 {
 impl CanvasEncoding<String> for f32 {
     #[inline]
     fn encode_canvas(&self, append_to: &mut String) {
-        let transmuted: u32 = unsafe { mem::transmute(*self) };
+        let transmuted: u32 = f32::to_bits(*self);
         transmuted.encode_canvas(append_to)
     }
 }
