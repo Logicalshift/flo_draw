@@ -595,12 +595,21 @@ mod test {
     ///
     /// Checks if a particular drawing operation can be both encoded and decoded
     ///
-    fn check_can_round_trip(instruction: Draw) {
+    fn check_round_trip_single(instruction: Draw) {
+        check_round_trip(vec![instruction])
+    }
+
+    ///
+    /// Checks if a particular string of drawing operations can be both encoded and decoded
+    ///
+    fn check_round_trip(instructions: Vec<Draw>) {
         // Encode the instruction
         let mut encoded = String::new();
-        instruction.encode_canvas(&mut encoded);
+        for instruction in instructions.iter() {
+            instruction.encode_canvas(&mut encoded);
+        }
 
-        println!("{:?} {:?}", instruction, encoded);
+        println!("{:?} {:?}", instructions, encoded);
 
         // Try decoding it
         let decoded = decode_drawing(encoded.chars()).collect::<Vec<_>>();
@@ -611,166 +620,166 @@ mod test {
         assert!(decoded.len() == 1);
 
         // Should be the same as the original instruction
-        assert!(decoded == vec![Ok(instruction)]);
+        assert!(decoded == instructions.into_iter().map(|draw| Ok(draw)).collect::<Vec<_>>());
     }
 
     #[test]
     fn decode_new_path() {
-        check_can_round_trip(Draw::NewPath);
+        check_round_trip_single(Draw::NewPath);
     }
 
     #[test]
     fn decode_move() {
-        check_can_round_trip(Draw::Move(10.0, 15.0));
+        check_round_trip_single(Draw::Move(10.0, 15.0));
     }
 
     #[test]
     fn decode_line() {
-        check_can_round_trip(Draw::Line(20.0, 42.0));
+        check_round_trip_single(Draw::Line(20.0, 42.0));
     }
 
     #[test]
     fn decode_bezier_curve() {
-        check_can_round_trip(Draw::BezierCurve((1.0, 2.0), (3.0, 4.0), (5.0, 6.0)));
+        check_round_trip_single(Draw::BezierCurve((1.0, 2.0), (3.0, 4.0), (5.0, 6.0)));
     }
 
     #[test]
     fn decode_close_path() {
-        check_can_round_trip(Draw::ClosePath);
+        check_round_trip_single(Draw::ClosePath);
     }
 
     #[test]
     fn decode_fill() {
-        check_can_round_trip(Draw::Fill);
+        check_round_trip_single(Draw::Fill);
     }
 
     #[test]
     fn decode_stroke() {
-        check_can_round_trip(Draw::Stroke);
+        check_round_trip_single(Draw::Stroke);
     }
 
     #[test]
     fn decode_line_width() {
-        check_can_round_trip(Draw::LineWidth(23.0));
+        check_round_trip_single(Draw::LineWidth(23.0));
     }
 
     #[test]
     fn decode_line_width_pixels() {
-        check_can_round_trip(Draw::LineWidthPixels(43.0));
+        check_round_trip_single(Draw::LineWidthPixels(43.0));
     }
 
     #[test]
     fn decode_line_join() {
-        check_can_round_trip(Draw::LineJoin(LineJoin::Bevel));
+        check_round_trip_single(Draw::LineJoin(LineJoin::Bevel));
     }
 
     #[test]
     fn decode_line_cap() {
-        check_can_round_trip(Draw::LineCap(LineCap::Round));
+        check_round_trip_single(Draw::LineCap(LineCap::Round));
     }
 
     #[test]
     fn decode_new_dash_pattern() {
-        check_can_round_trip(Draw::NewDashPattern);
+        check_round_trip_single(Draw::NewDashPattern);
     }
 
     #[test]
     fn decode_dash_length() {
-        check_can_round_trip(Draw::DashLength(56.0));
+        check_round_trip_single(Draw::DashLength(56.0));
     }
 
     #[test]
     fn decode_dash_offset() {
-        check_can_round_trip(Draw::DashOffset(13.0));
+        check_round_trip_single(Draw::DashOffset(13.0));
     }
 
     #[test]
     fn decode_stroke_color() {
-        check_can_round_trip(Draw::StrokeColor(Color::Rgba(0.1, 0.2, 0.3, 0.4)));
+        check_round_trip_single(Draw::StrokeColor(Color::Rgba(0.1, 0.2, 0.3, 0.4)));
     }
 
     #[test]
     fn decode_fill_color() {
-        check_can_round_trip(Draw::FillColor(Color::Rgba(0.2, 0.3, 0.4, 0.5)));
+        check_round_trip_single(Draw::FillColor(Color::Rgba(0.2, 0.3, 0.4, 0.5)));
     }
 
     #[test]
     fn decode_blend_mode() {
-        check_can_round_trip(Draw::BlendMode(BlendMode::Lighten));
+        check_round_trip_single(Draw::BlendMode(BlendMode::Lighten));
     }
 
     #[test]
     fn decode_identity_transform() {
-        check_can_round_trip(Draw::IdentityTransform);
+        check_round_trip_single(Draw::IdentityTransform);
     }
 
     #[test]
     fn decode_canvas_height() {
-        check_can_round_trip(Draw::CanvasHeight(81.0));
+        check_round_trip_single(Draw::CanvasHeight(81.0));
     }
 
     #[test]
     fn decode_center_region() {
-        check_can_round_trip(Draw::CenterRegion((6.0, 7.0), (8.0, 9.0)));
+        check_round_trip_single(Draw::CenterRegion((6.0, 7.0), (8.0, 9.0)));
     }
 
     #[test]
     fn decode_multiply_transform() {
-        check_can_round_trip(Draw::MultiplyTransform(Transform2D((1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0))));
+        check_round_trip_single(Draw::MultiplyTransform(Transform2D((1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0))));
     }
 
     #[test]
     fn decode_unclip() {
-        check_can_round_trip(Draw::Unclip);
+        check_round_trip_single(Draw::Unclip);
     }
 
     #[test]
     fn decode_clip() {
-        check_can_round_trip(Draw::Clip)
+        check_round_trip_single(Draw::Clip)
     }
 
     #[test]
     fn decode_store() {
-        check_can_round_trip(Draw::Store);
+        check_round_trip_single(Draw::Store);
     }
 
     #[test]
     fn decode_restore() {
-        check_can_round_trip(Draw::Restore);
+        check_round_trip_single(Draw::Restore);
     }
 
     #[test]
     fn decode_free_stored_buffer() {
-        check_can_round_trip(Draw::FreeStoredBuffer);
+        check_round_trip_single(Draw::FreeStoredBuffer);
     }
 
     #[test]
     fn decode_push_state() {
-        check_can_round_trip(Draw::PushState);
+        check_round_trip_single(Draw::PushState);
     }
 
     #[test]
     fn decode_pop_state() {
-        check_can_round_trip(Draw::PopState);
+        check_round_trip_single(Draw::PopState);
     }
 
     #[test]
     fn decode_clear_canvas() {
-        check_can_round_trip(Draw::ClearCanvas);
+        check_round_trip_single(Draw::ClearCanvas);
     }
 
     #[test]
     fn decode_layer() {
-        check_can_round_trip(Draw::Layer(21));
+        check_round_trip_single(Draw::Layer(21));
     }
 
     #[test]
     fn decode_layer_blend() {
-        check_can_round_trip(Draw::LayerBlend(76, BlendMode::Lighten))
+        check_round_trip_single(Draw::LayerBlend(76, BlendMode::Lighten))
     }
 
     #[test]
     fn decode_clear_layer() {
-        check_can_round_trip(Draw::ClearLayer);
+        check_round_trip_single(Draw::ClearLayer);
     }
 }
