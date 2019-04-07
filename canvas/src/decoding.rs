@@ -559,6 +559,34 @@ impl CanvasDecoder {
     }
 }
 
+///
+/// Decodes a canvas drawing represented as an iterator of characters. If there's an error in the stream, it will
+/// be the last item decoded.
+///
+pub fn decode_drawing<In: IntoIterator<Item=char>>(source: In) -> impl Iterator<Item=Result<Draw, DecoderError>> {
+    // The decoder represents the state machine used for decoding this item
+    let mut decoder     = CanvasDecoder::new();
+    let mut seen_error  = false;
+
+    // Map the source characters into draw actions via the decoder
+    source.into_iter()
+        .filter_map(move |chr| {
+            match decoder.decode(chr) {
+                Ok(Some(draw))  => Some(Ok(draw)),
+                Ok(None)        => None,
+                Err(err)        => {
+                    // The decoder will just return errors once it hits a failure: only return the initial error
+                    if !seen_error {
+                        seen_error = true;
+                        Some(Err(err))
+                    } else {
+                        None
+                    }
+                }
+            }
+        })
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -575,24 +603,15 @@ mod test {
         println!("{:?} {:?}", instruction, encoded);
 
         // Try decoding it
-        let mut decoder = CanvasDecoder::new();
-        let mut decoded = None;
-
-        for c in encoded.chars() {
-            // As we've encoded a single instruction we should never start with a valid value
-            assert!(decoded.is_none());
-
-            // Update with the next state
-            decoded = decoder.decode(c).unwrap();
-        }
+        let decoded = decode_drawing(encoded.chars()).collect::<Vec<_>>();
 
         println!("  -> {:?}", decoded);
 
         // Should decode OK
-        assert!(decoded.is_some());
+        assert!(decoded.len() == 1);
 
         // Should be the same as the original instruction
-        assert!(decoded == Some(instruction));
+        assert!(decoded == vec![Ok(instruction)]);
     }
 
     #[test]
