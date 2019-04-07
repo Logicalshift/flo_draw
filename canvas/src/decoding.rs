@@ -4,6 +4,7 @@ use super::transform2d::*;
 
 use futures::*;
 use futures::stream;
+use futures::task;
 
 use std::mem;
 use std::str::*;
@@ -591,9 +592,9 @@ pub fn decode_drawing<In: IntoIterator<Item=char>>(source: In) -> impl Iterator<
 }
 
 ///
-/// 
+/// Error from either a decoder or the stream that's feeding it
 ///
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum StreamDecoderError<E> {
     /// Error from the decoder
     Decoder(DecoderError),
@@ -606,18 +607,23 @@ pub enum StreamDecoderError<E> {
 /// Decodes a canvas drawing represented as a stream of characters.
 ///
 pub fn decode_drawing_stream<In: Stream<Item=char, Error=E>, E>(source: In) -> impl Stream<Item=Draw, Error=StreamDecoderError<E>> {
-    let mut source  = source;
-    let mut decoder = CanvasDecoder::new();
+    let mut source      = source;
+    let mut decoder     = CanvasDecoder::new();
+    let mut seen_error  = false;
 
     stream::poll_fn(move || {
         match source.poll() {
             Ok(Async::Ready(None))      => Ok(Async::Ready(None)),
             Ok(Async::NotReady)         => Ok(Async::NotReady),
             Ok(Async::Ready(Some(c)))   => {
-                match decoder.decode(c) {
-                    Ok(None)            => Ok(Async::NotReady),
-                    Ok(Some(draw))      => Ok(Async::Ready(Some(draw))),
-                    Err(err)            => Err(StreamDecoderError::Decoder(err))
+                if seen_error {
+                    Ok(Async::Ready(None))
+                } else {
+                    match decoder.decode(c) {
+                        Ok(None)            => { task::current().notify(); Ok(Async::NotReady) },
+                        Ok(Some(draw))      => Ok(Async::Ready(Some(draw))),
+                        Err(err)            => { seen_error = true; Err(StreamDecoderError::Decoder(err)) }
+                    }
                 }
             },
 
@@ -628,6 +634,8 @@ pub fn decode_drawing_stream<In: Stream<Item=char, Error=E>, E>(source: In) -> i
 
 #[cfg(test)]
 mod test {
+    use futures::executor;
+
     use super::*;
     use super::super::encoding::*;
 
@@ -656,7 +664,7 @@ mod test {
         println!("  -> {:?}", decoded);
 
         // Should decode OK
-        assert!(decoded.len() == 1);
+        assert!(decoded.len() == instructions.len());
 
         // Should be the same as the original instruction
         assert!(decoded == instructions.into_iter().map(|draw| Ok(draw)).collect::<Vec<_>>());
@@ -820,5 +828,104 @@ mod test {
     #[test]
     fn decode_clear_layer() {
         check_round_trip_single(Draw::ClearLayer);
+    }
+
+    #[test]
+    fn error_on_bad_char() {
+        let mut decoder = CanvasDecoder::new();
+        assert!(decoder.decode('N') == Ok(None));
+        assert!(decoder.decode('X') == Err(DecoderError::InvalidCharacter('X')));
+    }
+
+    #[test]
+    fn decode_all_iter() {
+        check_round_trip(vec![
+            Draw::NewPath,
+            Draw::Move(10.0, 15.0),
+            Draw::Line(20.0, 42.0),
+            Draw::BezierCurve((1.0, 2.0), (3.0, 4.0), (5.0, 6.0)),
+            Draw::ClosePath,
+            Draw::Fill,
+            Draw::Stroke,
+            Draw::LineWidth(23.0),
+            Draw::LineWidthPixels(43.0),
+            Draw::LineJoin(LineJoin::Bevel),
+            Draw::LineCap(LineCap::Round),
+            Draw::NewDashPattern,
+            Draw::DashLength(56.0),
+            Draw::DashOffset(13.0),
+            Draw::StrokeColor(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
+            Draw::FillColor(Color::Rgba(0.2, 0.3, 0.4, 0.5)),
+            Draw::BlendMode(BlendMode::Lighten),
+            Draw::IdentityTransform,
+            Draw::CanvasHeight(81.0),
+            Draw::CenterRegion((6.0, 7.0), (8.0, 9.0)),
+            Draw::MultiplyTransform(Transform2D((1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0))),
+            Draw::Unclip,
+            Draw::Store,
+            Draw::Restore,
+            Draw::FreeStoredBuffer,
+            Draw::PushState,
+            Draw::PopState,
+            Draw::ClearCanvas,
+            Draw::Layer(21),
+            Draw::ClearLayer,
+            Draw::NewPath
+        ]);
+    }
+
+    #[test]
+    fn decode_all_stream() {
+        let all = vec![
+            Draw::NewPath,
+            Draw::Move(10.0, 15.0),
+            Draw::Line(20.0, 42.0),
+            Draw::BezierCurve((1.0, 2.0), (3.0, 4.0), (5.0, 6.0)),
+            Draw::ClosePath,
+            Draw::Fill,
+            Draw::Stroke,
+            Draw::LineWidth(23.0),
+            Draw::LineWidthPixels(43.0),
+            Draw::LineJoin(LineJoin::Bevel),
+            Draw::LineCap(LineCap::Round),
+            Draw::NewDashPattern,
+            Draw::DashLength(56.0),
+            Draw::DashOffset(13.0),
+            Draw::StrokeColor(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
+            Draw::FillColor(Color::Rgba(0.2, 0.3, 0.4, 0.5)),
+            Draw::BlendMode(BlendMode::Lighten),
+            Draw::IdentityTransform,
+            Draw::CanvasHeight(81.0),
+            Draw::CenterRegion((6.0, 7.0), (8.0, 9.0)),
+            Draw::MultiplyTransform(Transform2D((1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0))),
+            Draw::Unclip,
+            Draw::Store,
+            Draw::Restore,
+            Draw::FreeStoredBuffer,
+            Draw::PushState,
+            Draw::PopState,
+            Draw::ClearCanvas,
+            Draw::Layer(21),
+            Draw::ClearLayer,
+            Draw::NewPath
+        ];
+        let mut encoded = String::new();
+        all.encode_canvas(&mut encoded);
+
+        println!("{:?}", encoded);
+
+        let all_stream  = stream::iter_ok::<_, ()>(encoded.chars().into_iter());
+        let decoder     = decode_drawing_stream(all_stream);
+        let mut decoder = executor::spawn(decoder);
+
+        let mut decoded = vec![];
+        while let Some(next) = decoder.wait_stream() {
+            decoded.push(next);
+        }
+
+        println!(" -> {:?}", decoded);
+
+        let all = all.into_iter().map(|item| Ok(item)).collect::<Vec<_>>();
+        assert!(all == decoded);
     }
 }
