@@ -9,7 +9,7 @@ use curves::bezier::BezierCurve;
 use std::iter;
 
 ///
-/// A graphics context provides the basic set of graphics actions that can be performed 
+/// A graphics context provides the basic set of graphics actions that can be performed
 ///
 pub trait GraphicsContext {
     fn new_path(&mut self);
@@ -97,7 +97,7 @@ pub trait GraphicsContext {
 pub trait GraphicsPrimitives : GraphicsContext {
     ///
     /// Draws a rectangle between particular coordinates
-    /// 
+    ///
     fn rect(&mut self, x1: f32, y1: f32, x2: f32, y2: f32) {
         for d in draw_rect(x1, y1, x2, y2) {
             self.draw(d);
@@ -106,7 +106,7 @@ pub trait GraphicsPrimitives : GraphicsContext {
 
     ///
     /// Draws a circle at a particular point
-    /// 
+    ///
     fn circle(&mut self, center_x: f32, center_y: f32, radius: f32) {
         for d in draw_circle(center_x, center_y, radius) {
             self.draw(d);
@@ -116,7 +116,7 @@ pub trait GraphicsPrimitives : GraphicsContext {
 
 ///
 /// Returns the drawing commands for a rectangle
-/// 
+///
 pub fn draw_rect(x1: f32, y1: f32, x2: f32, y2: f32) -> Vec<Draw> {
     use self::Draw::*;
 
@@ -132,7 +132,7 @@ pub fn draw_rect(x1: f32, y1: f32, x2: f32, y2: f32) -> Vec<Draw> {
 
 ///
 /// Returns the drawing commands for a circle
-/// 
+///
 pub fn draw_circle(center_x: f32, center_y: f32, radius: f32) -> Vec<Draw> {
     use self::Draw::*;
 
@@ -159,23 +159,23 @@ where Curve::Point: Coordinate2D {
         let (cp1, cp2)  = curve.control_points();
 
         Draw::BezierCurve(
-            (end.x() as f32, end.y() as f32), 
+            (end.x() as f32, end.y() as f32),
             (cp1.x() as f32, cp1.y() as f32),
             (cp2.x() as f32, cp2.y() as f32))
     }
 }
 
 ///
-/// Draws the specified bezier curve in a graphics context (assuming we're already at the start position) 
+/// Draws the specified bezier curve in a graphics context (assuming we're already at the start position)
 ///
-pub fn gc_draw_bezier<Gc: GraphicsContext+?Sized, Curve: BezierCurve>(gc: &mut Gc, curve: &Curve) 
+pub fn gc_draw_bezier<Gc: GraphicsContext+?Sized, Curve: BezierCurve>(gc: &mut Gc, curve: &Curve)
 where Curve::Point: Coordinate2D {
     gc.draw(Draw::from(curve))
 }
 
 ///
 /// A Vec<Draw> can be treated as a target for graphics primitives (just pushing the appropriate draw instructions)
-/// 
+///
 impl GraphicsContext for Vec<Draw> {
     #[inline] fn new_path(&mut self)                                                    { self.push(Draw::NewPath); }
     #[inline] fn move_to(&mut self, x: f32, y: f32)                                     { self.push(Draw::Move(x, y)); }
@@ -223,7 +223,7 @@ impl GraphicsContext for Vec<Draw> {
 
 ///
 /// A Vec<Draw> can be treated as a target for graphics primitives (just pushing the appropriate draw instructions)
-/// 
+///
 impl GraphicsPrimitives for Vec<Draw> {
 
 }

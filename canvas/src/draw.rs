@@ -6,7 +6,7 @@ use super::transform2d::*;
 use super::color::*;
 
 ///
-/// Possible way to join lines 
+/// Possible way to join lines
 ///
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum LineJoin {
@@ -27,7 +27,7 @@ pub enum LineCap {
 
 ///
 /// Blend mode to use when drawing
-/// 
+///
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum BlendMode {
     SourceOver,
@@ -127,14 +127,14 @@ pub enum Draw {
 
     /// Restores what was stored in the background buffer. This should be done on the
     /// same layer that the Store operation was called upon.
-    /// 
+    ///
     /// The buffer is left intact by this operation so it can be restored again in the future.
-    /// 
+    ///
     /// (If the clipping path has changed since then, the restored image is clipped against the new path)
     Restore,
 
     /// Releases the buffer created by the last 'Store' operation
-    /// 
+    ///
     /// Restore will no longer be valid for the current layer
     FreeStoredBuffer,
 

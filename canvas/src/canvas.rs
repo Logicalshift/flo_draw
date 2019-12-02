@@ -13,7 +13,7 @@ use futures::task;
 use futures::{Stream,Poll,Async};
 
 ///
-/// The core structure used to store details of a canvas 
+/// The core structure used to store details of a canvas
 ///
 struct CanvasCore {
     /// What was drawn since the last clear command was sent to this canvas (and the layer that it's on)
@@ -29,7 +29,7 @@ struct CanvasCore {
 ///
 /// A canvas is an abstract interface for drawing graphics. It doesn't actually provide a means to
 /// render anything, but rather a way to describe how things should be drawn and pass those on to
-/// a renderer elsewhere. 
+/// a renderer elsewhere.
 ///
 pub struct Canvas {
     /// The core is shared amongst the canvas streams as well as used by the canvas itself
@@ -39,7 +39,7 @@ pub struct Canvas {
 impl CanvasCore {
     ///
     /// On restore, rewinds the canvas to before the last store operation
-    /// 
+    ///
     fn rewind_to_last_store(&mut self) {
         let mut last_store = None;
 
@@ -78,9 +78,9 @@ impl CanvasCore {
 
     ///
     /// Removes all of the drawing for the specified layer
-    /// 
+    ///
     /// (Except for ClearCanvas)
-    /// 
+    ///
     fn clear_layer(&mut self, layer_id: u32) {
         // Take the old drawing from this object
         let mut old_drawing = vec![];
@@ -96,14 +96,14 @@ impl CanvasCore {
                 }
             })
             .collect();
-        
+
         // This becomes the new drawing for this layer
         self.drawing_since_last_clear = new_drawing;
     }
 
     ///
     /// Writes some drawing commands to this core
-    /// 
+    ///
     fn write(&mut self, to_draw: Vec<Draw>) {
         // Build up the list of new drawing commands
         let mut new_drawing     = vec![];
@@ -187,7 +187,7 @@ impl Canvas {
     ///
     pub fn new() -> Canvas {
         // A canvas is initially just a clear command
-        let core = CanvasCore { 
+        let core = CanvasCore {
             drawing_since_last_clear:   vec![ (0, Draw::ClearCanvas) ],
             current_layer:              0,
             pending_streams:            vec![ ]
@@ -210,7 +210,7 @@ impl Canvas {
 
     ///
     /// Provides a way to draw on this canvas via a GC
-    /// 
+    ///
     pub fn draw<FnAction>(&self, action: FnAction)
     where FnAction: Send+FnOnce(&mut dyn GraphicsPrimitives) -> () {
         self.core.sync(move |core| {
@@ -325,7 +325,7 @@ impl<'a> Drop for CoreContext<'a> {
 
 ///
 /// Internals of a canvas stream
-/// 
+///
 struct CanvasStreamCore {
     /// Items waiting to be drawn for this stream
     queue: VecDeque<Draw>,
@@ -352,7 +352,7 @@ struct CanvasStream {
 impl CanvasStream {
     ///
     /// Creates a new canvas stream
-    /// 
+    ///
     pub fn new() -> CanvasStream {
         CanvasStream {
             core: Mutex::new(CanvasStreamCore {
@@ -366,7 +366,7 @@ impl CanvasStream {
 
     ///
     /// Wakes the stream task
-    /// 
+    ///
     fn notify_dropped(&self) {
         let mut core = self.core.lock().unwrap();
 
@@ -380,7 +380,7 @@ impl CanvasStream {
 
     ///
     /// Sends some drawing commands to this stream (returning true if this stream wants more commands)
-    /// 
+    ///
     fn send_drawing<DrawIter: Iterator<Item=Draw>> (&self, drawing: DrawIter, clear_pending: bool) -> bool {
         let mut core = self.core.lock().unwrap();
 
@@ -426,7 +426,7 @@ impl CanvasStream {
 /// The 'fragile' canvas stream is a variant of the canvas stream that marks the
 /// stream as being dropped if this happens (so that we can remove it from the
 /// list in the canvas)
-/// 
+///
 struct FragileCanvasStream {
     stream: Arc<CanvasStream>
 }
@@ -474,7 +474,7 @@ mod test {
     fn can_follow_canvas_stream() {
         let canvas  = Canvas::new();
         let mut stream  = executor::spawn(canvas.stream());
-        
+
         // Thread to draw some stuff to the canvas
         spawn(move || {
             sleep(Duration::from_millis(50));
@@ -506,7 +506,7 @@ mod test {
     fn can_draw_using_gc() {
         let canvas      = Canvas::new();
         let mut stream  = executor::spawn(canvas.stream());
-        
+
         // Draw using a graphics context
         canvas.draw(|gc| {
             gc.new_path();
@@ -528,7 +528,7 @@ mod test {
     #[test]
     fn restore_rewinds_canvas() {
         let canvas      = Canvas::new();
-        
+
         // Draw using a graphics context
         canvas.draw(|gc| {
             gc.new_path();
@@ -564,7 +564,7 @@ mod test {
     #[test]
     fn free_store_rewinds_canvas_further() {
         let canvas      = Canvas::new();
-        
+
         // Draw using a graphics context
         canvas.draw(|gc| {
             gc.new_path();
@@ -598,7 +598,7 @@ mod test {
     #[test]
     fn clip_interrupts_rewind() {
         let canvas      = Canvas::new();
-        
+
         // Draw using a graphics context
         canvas.draw(|gc| {
             gc.new_path();
@@ -634,7 +634,7 @@ mod test {
         let canvas  = Canvas::new();
         let mut stream  = executor::spawn(canvas.stream());
         let mut stream2  = executor::spawn(canvas.stream());
-        
+
         // Thread to draw some stuff to the canvas
         spawn(move || {
             sleep(Duration::from_millis(50));
@@ -676,7 +676,7 @@ mod test {
     fn commands_after_clear_are_suppressed() {
         let canvas  = Canvas::new();
         let mut stream  = executor::spawn(canvas.stream());
-        
+
         // Thread to draw some stuff to the canvas
         spawn(move || {
             sleep(Duration::from_millis(50));
@@ -718,7 +718,7 @@ mod test {
     #[test]
     fn clear_layer_0_removes_commands() {
         let canvas      = Canvas::new();
-        
+
         // Draw using a graphics context
         canvas.draw(|gc| {
             gc.new_path();
@@ -748,7 +748,7 @@ mod test {
     #[test]
     fn clear_layer_only_removes_commands_for_the_current_layer() {
         let canvas      = Canvas::new();
-        
+
         // Draw using a graphics context
         canvas.draw(|gc| {
             gc.new_path();

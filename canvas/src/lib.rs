@@ -1,5 +1,5 @@
 //!
-//! An abstract representation of a vector canvas object 
+//! An abstract representation of a vector canvas object
 //!
 #![warn(bare_trait_objects)]
 
