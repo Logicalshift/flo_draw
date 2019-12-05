@@ -16,7 +16,7 @@ use std::result::Result;
 enum DecoderState {
     None,
     Error,
-    
+
     New,                            // 'N'
     LineStyle,                      // 'L'
     Dash,                           // 'D'

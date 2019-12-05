@@ -95,7 +95,7 @@ impl CanvasEncoding<String> for Color {
     fn encode_canvas(&self, append_to: &mut String) {
         match self {
             &Color::Rgba(r,g,b,a) => ('R', r, g, b, a),
-            
+
             other => {
                 let (r, g, b, a) = other.to_rgba_components();
                 ('R', r, g, b, a)
@@ -155,7 +155,7 @@ impl CanvasEncoding<String> for Transform2D {
         let Transform2D(a, b, c) = *self;
         a.encode_canvas(append_to);
         b.encode_canvas(append_to);
-        c.encode_canvas(append_to);   
+        c.encode_canvas(append_to);
     }
 }
 
