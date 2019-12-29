@@ -640,6 +640,7 @@ pub fn decode_drawing_stream<In: Unpin+Stream<Item=Result<char, E>>, E>(source: 
 
 #[cfg(test)]
 mod test {
+    use futures::prelude::*;
     use futures::executor;
 
     use super::*;
@@ -930,18 +931,20 @@ mod test {
 
         println!("{:?}", encoded);
 
-        let all_stream  = stream::iter_ok::<_, ()>(encoded.chars().into_iter());
+        let all_stream  = stream::iter(encoded.chars().into_iter().map(|c| -> Result<_, ()> { Ok(c) }));
         let decoder     = decode_drawing_stream(all_stream);
-        let mut decoder = executor::spawn(decoder);
+        let mut decoder = decoder;
 
-        let mut decoded = vec![];
-        while let Some(next) = decoder.wait_stream() {
-            decoded.push(next);
-        }
+        executor::block_on(async {
+            let mut decoded = vec![];
+            while let Some(next) = decoder.next().await {
+                decoded.push(next);
+            }
 
-        println!(" -> {:?}", decoded);
+            println!(" -> {:?}", decoded);
 
-        let all = all.into_iter().map(|item| Ok(item)).collect::<Vec<_>>();
-        assert!(all == decoded);
+            let all = all.into_iter().map(|item| Ok(item)).collect::<Vec<_>>();
+            assert!(all == decoded);
+        });
     }
 }
