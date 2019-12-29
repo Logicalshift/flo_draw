@@ -6,11 +6,12 @@ use super::transform2d::*;
 use std::collections::vec_deque::*;
 use std::sync::*;
 use std::mem;
+use std::pin::*;
 
-use desync::*;
-use futures::task::Task;
+use desync::{Desync};
 use futures::task;
-use futures::{Stream,Poll,Async};
+use futures::task::{Poll, Waker};
+use futures::{Stream};
 
 ///
 /// The core structure used to store details of a canvas 
@@ -331,7 +332,7 @@ struct CanvasStreamCore {
     queue: VecDeque<Draw>,
 
     /// The task to notify when extra data is available
-    waiting_task: Option<Task>,
+    waiting_task: Option<Waker>,
 
     /// Set to true when the canvas is dropped
     canvas_dropped: bool,
@@ -406,18 +407,16 @@ impl CanvasStream {
 }
 
 impl CanvasStream {
-    fn poll(&self) -> Poll<Option<Draw>, ()> {
-        use self::Async::*;
-
+    fn poll(&self, context: &task::Context) -> Poll<Option<Draw>> {
         let mut core = self.core.lock().unwrap();
 
         if let Some(value) = core.queue.pop_front() {
-            Ok(Ready(Some(value)))
+            Poll::Ready(Some(value))
         } else if core.canvas_dropped {
-            Ok(Ready(None))
+            Poll::Ready(None)
         } else {
-            core.waiting_task = Some(task::current());
-            Ok(NotReady)
+            core.waiting_task = Some(context.waker().clone());
+            Poll::Pending
         }
    }
 }
@@ -447,10 +446,9 @@ impl Drop for FragileCanvasStream {
 
 impl Stream for FragileCanvasStream {
     type Item = Draw;
-    type Error = ();
 
-    fn poll(&mut self) -> Poll<Option<Draw>, ()> {
-        self.stream.poll()
+    fn poll_next(self: Pin<&mut Self>, context: &mut task::Context) -> Poll<Option<Draw>> {
+        self.stream.poll(context)
     }
 }
 
