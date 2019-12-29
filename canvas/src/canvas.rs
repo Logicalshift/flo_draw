@@ -227,7 +227,7 @@ impl Canvas {
     ///
     /// Creates a stream for reading the instructions from this canvas
     ///
-    pub fn stream(&self) -> impl Stream<Item=Draw,Error=()>+Send {
+    pub fn stream(&self) -> impl Stream<Item=Draw>+Send {
         // Create a new canvas stream
         let new_stream = Arc::new(CanvasStream::new());
 
@@ -373,10 +373,9 @@ impl CanvasStream {
 
         core.canvas_dropped = true;
 
-        if let Some(ref task) = core.waiting_task {
-            task.notify();
+        if let Some(task) = core.waiting_task.take() {
+            task.wake();
         }
-        core.waiting_task = None;
     }
 
     ///
@@ -396,10 +395,9 @@ impl CanvasStream {
         }
 
         // If a task needs waking up, wake it
-        if let Some(ref task) = core.waiting_task {
-            task.notify();
+        if let Some(task) = core.waiting_task.take() {
+            task.wake();
         }
-        core.waiting_task = None;
 
         // We want more commands if the stream is not dropped
         !core.stream_dropped
