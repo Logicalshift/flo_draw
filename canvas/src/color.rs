@@ -2,7 +2,7 @@ use hsluv::*;
 
 ///
 /// Possible formats of a colour value
-/// 
+///
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum ColorFormat {
     Rgba,
@@ -10,7 +10,7 @@ pub enum ColorFormat {
 }
 
 ///
-/// Representation of a colour 
+/// Representation of a colour
 ///
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum Color {
@@ -21,7 +21,7 @@ pub enum Color {
 impl Color {
     ///
     /// Returns this colour as RGBA components
-    /// 
+    ///
     pub fn to_rgba_components(&self) -> (f32, f32, f32, f32) {
         match self {
             &Color::Rgba(r, g, b, a) => (r, g, b, a),
@@ -35,11 +35,11 @@ impl Color {
 
     ///
     /// Returns this colour as HSLUV components
-    /// 
+    ///
     pub fn to_hsluv_components(&self) -> (f32, f32, f32, f32) {
         match self {
             &Color::Hsluv(h, s, l, a) => (h, s, l, a),
-            
+
             &Color::Rgba(r, g, b, a) => {
                 let (h, s, l) = rgb_to_hsluv((r as f64, g as f64, b as f64));
                 let s = if l <= 0.0 { 100.0 } else { s };
@@ -50,7 +50,7 @@ impl Color {
 
     ///
     /// Converts this colour to another format
-    /// 
+    ///
     #[inline]
     pub fn to_format(&self, format: ColorFormat) -> Color {
         let (r, g, b, a) = self.to_rgba_components();
@@ -67,7 +67,7 @@ impl Color {
 
     ///
     /// Returns a new colour that's the same as this one except with a different alpha value
-    /// 
+    ///
     pub fn with_alpha(&self, new_alpha: f32) -> Color {
         match self {
             &Color::Rgba(r, g, b, _)    => Color::Rgba(r, g, b, new_alpha),
