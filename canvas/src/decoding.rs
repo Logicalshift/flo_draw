@@ -4,7 +4,7 @@ use super::transform2d::*;
 
 use futures::*;
 use futures::stream;
-use futures::task;
+use futures::task::{Poll};
 
 use std::mem;
 use std::str::*;
@@ -609,28 +609,30 @@ pub enum StreamDecoderError<E> {
 ///
 /// Decodes a canvas drawing represented as a stream of characters.
 ///
-pub fn decode_drawing_stream<In: Stream<Item=char, Error=E>, E>(source: In) -> impl Stream<Item=Draw, Error=StreamDecoderError<E>> {
+pub fn decode_drawing_stream<In: Unpin+Stream<Item=Result<char, E>>, E>(source: In) -> impl Unpin+Stream<Item=Result<Draw, StreamDecoderError<E>>> {
     let mut source      = source;
     let mut decoder     = CanvasDecoder::new();
     let mut seen_error  = false;
 
-    stream::poll_fn(move || {
+    stream::poll_fn(move |context| {
         if seen_error {
             // Only allow one error from the decoder (it remains in an error state after this)
-            Ok(Async::Ready(None))
+            Poll::Ready(None)
         } else {
-            match source.poll() {
-                Ok(Async::Ready(None))      => Ok(Async::Ready(None)),
-                Ok(Async::NotReady)         => Ok(Async::NotReady),
-                Ok(Async::Ready(Some(c)))   => {
-                    match decoder.decode(c) {
-                        Ok(None)            => { task::current().notify(); Ok(Async::NotReady) },
-                        Ok(Some(draw))      => Ok(Async::Ready(Some(draw))),
-                        Err(err)            => { seen_error = true; Err(StreamDecoderError::Decoder(err)) }
-                    }
-                },
+            loop {
+                match source.poll_next_unpin(context) {
+                    Poll::Ready(None)           => { return Poll::Ready(None); },
+                    Poll::Pending               => { return Poll::Pending; },
+                    Poll::Ready(Some(Ok(c)))    => {
+                        match decoder.decode(c) {
+                            Ok(None)            => { continue; },
+                            Ok(Some(draw))      => { return Poll::Ready(Some(Ok(draw))); },
+                            Err(err)            => { seen_error = true; return Poll::Ready(Some(Err(StreamDecoderError::Decoder(err)))); }
+                        }
+                    },
 
-                Err(err)                    => Err(StreamDecoderError::Stream(err))
+                    Poll::Ready(Some(Err(err))) => { return Poll::Ready(Some(Err(StreamDecoderError::Stream(err)))); }
+                }
             }
         }
     })
@@ -638,6 +640,7 @@ pub fn decode_drawing_stream<In: Stream<Item=char, Error=E>, E>(source: In) -> i
 
 #[cfg(test)]
 mod test {
+    use futures::prelude::*;
     use futures::executor;
 
     use super::*;
@@ -928,18 +931,20 @@ mod test {
 
         println!("{:?}", encoded);
 
-        let all_stream  = stream::iter_ok::<_, ()>(encoded.chars().into_iter());
+        let all_stream  = stream::iter(encoded.chars().into_iter().map(|c| -> Result<_, ()> { Ok(c) }));
         let decoder     = decode_drawing_stream(all_stream);
-        let mut decoder = executor::spawn(decoder);
+        let mut decoder = decoder;
 
-        let mut decoded = vec![];
-        while let Some(next) = decoder.wait_stream() {
-            decoded.push(next);
-        }
+        executor::block_on(async {
+            let mut decoded = vec![];
+            while let Some(next) = decoder.next().await {
+                decoded.push(next);
+            }
 
-        println!(" -> {:?}", decoded);
+            println!(" -> {:?}", decoded);
 
-        let all = all.into_iter().map(|item| Ok(item)).collect::<Vec<_>>();
-        assert!(all == decoded);
+            let all = all.into_iter().map(|item| Ok(item)).collect::<Vec<_>>();
+            assert!(all == decoded);
+        });
     }
 }

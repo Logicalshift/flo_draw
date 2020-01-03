@@ -6,11 +6,12 @@ use super::transform2d::*;
 use std::collections::vec_deque::*;
 use std::sync::*;
 use std::mem;
+use std::pin::*;
 
-use desync::*;
-use futures::task::Task;
+use desync::{Desync};
 use futures::task;
-use futures::{Stream,Poll,Async};
+use futures::task::{Poll, Waker};
+use futures::{Stream};
 
 ///
 /// The core structure used to store details of a canvas
@@ -226,7 +227,7 @@ impl Canvas {
     ///
     /// Creates a stream for reading the instructions from this canvas
     ///
-    pub fn stream(&self) -> impl Stream<Item=Draw,Error=()>+Send {
+    pub fn stream(&self) -> impl Stream<Item=Draw>+Send {
         // Create a new canvas stream
         let new_stream = Arc::new(CanvasStream::new());
 
@@ -331,7 +332,7 @@ struct CanvasStreamCore {
     queue: VecDeque<Draw>,
 
     /// The task to notify when extra data is available
-    waiting_task: Option<Task>,
+    waiting_task: Option<Waker>,
 
     /// Set to true when the canvas is dropped
     canvas_dropped: bool,
@@ -372,10 +373,9 @@ impl CanvasStream {
 
         core.canvas_dropped = true;
 
-        if let Some(ref task) = core.waiting_task {
-            task.notify();
+        if let Some(task) = core.waiting_task.take() {
+            task.wake();
         }
-        core.waiting_task = None;
     }
 
     ///
@@ -395,10 +395,9 @@ impl CanvasStream {
         }
 
         // If a task needs waking up, wake it
-        if let Some(ref task) = core.waiting_task {
-            task.notify();
+        if let Some(task) = core.waiting_task.take() {
+            task.wake();
         }
-        core.waiting_task = None;
 
         // We want more commands if the stream is not dropped
         !core.stream_dropped
@@ -406,18 +405,16 @@ impl CanvasStream {
 }
 
 impl CanvasStream {
-    fn poll(&self) -> Poll<Option<Draw>, ()> {
-        use self::Async::*;
-
+    fn poll(&self, context: &task::Context) -> Poll<Option<Draw>> {
         let mut core = self.core.lock().unwrap();
 
         if let Some(value) = core.queue.pop_front() {
-            Ok(Ready(Some(value)))
+            Poll::Ready(Some(value))
         } else if core.canvas_dropped {
-            Ok(Ready(None))
+            Poll::Ready(None)
         } else {
-            core.waiting_task = Some(task::current());
-            Ok(NotReady)
+            core.waiting_task = Some(context.waker().clone());
+            Poll::Pending
         }
    }
 }
@@ -447,10 +444,9 @@ impl Drop for FragileCanvasStream {
 
 impl Stream for FragileCanvasStream {
     type Item = Draw;
-    type Error = ();
 
-    fn poll(&mut self) -> Poll<Option<Draw>, ()> {
-        self.stream.poll()
+    fn poll_next(self: Pin<&mut Self>, context: &mut task::Context) -> Poll<Option<Draw>> {
+        self.stream.poll(context)
     }
 }
 
@@ -458,6 +454,7 @@ impl Stream for FragileCanvasStream {
 mod test {
     use super::*;
 
+    use futures::prelude::*;
     use futures::executor;
 
     use std::thread::*;
@@ -472,8 +469,8 @@ mod test {
 
     #[test]
     fn can_follow_canvas_stream() {
-        let canvas  = Canvas::new();
-        let mut stream  = executor::spawn(canvas.stream());
+        let canvas      = Canvas::new();
+        let mut stream  = canvas.stream();
 
         // Thread to draw some stuff to the canvas
         spawn(move || {
@@ -491,21 +488,23 @@ mod test {
         // TODO: if the canvas fails to notify, this will block forever :-/
 
         // Check we can get the results via the stream
-        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Move(0.0, 0.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 0.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 10.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(0.0, 10.0))));
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
 
-        // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
-        assert!(stream.wait_stream() == None);
+            // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
+            assert!(stream.next().await == None);
+        })
     }
 
     #[test]
     fn can_draw_using_gc() {
         let canvas      = Canvas::new();
-        let mut stream  = executor::spawn(canvas.stream());
+        let mut stream  = canvas.stream();
 
         // Draw using a graphics context
         canvas.draw(|gc| {
@@ -517,12 +516,14 @@ mod test {
         });
 
         // Check we can get the results via the stream
-        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Move(0.0, 0.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 0.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 10.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(0.0, 10.0))));
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
+        });
     }
 
     #[test]
@@ -546,19 +547,21 @@ mod test {
         });
 
         // Only the commands before the 'store' should be present
-        let mut stream  = executor::spawn(canvas.stream());
+        let mut stream  = canvas.stream();
 
-        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Move(0.0, 0.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 0.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 10.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(0.0, 10.0))));
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
 
-        // 'Store' is still present as we can restore the same thing repeatedly
-        assert!(stream.wait_stream() == Some(Ok(Draw::Store)));
+            // 'Store' is still present as we can restore the same thing repeatedly
+            assert!(stream.next().await == Some(Draw::Store));
 
-        assert!(stream.wait_stream() == Some(Ok(Draw::Stroke)));
+            assert!(stream.next().await == Some(Draw::Stroke));
+        })
     }
 
     #[test]
@@ -583,16 +586,19 @@ mod test {
         });
 
         // Only the commands before the 'store' should be present
-        let mut stream  = executor::spawn(canvas.stream());
+        let mut stream  = canvas.stream();
 
-        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Move(0.0, 0.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 0.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 10.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(0.0, 10.0))));
+        executor::block_on(async
+        {
+            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
 
-        assert!(stream.wait_stream() == Some(Ok(Draw::Stroke)));
+            assert!(stream.next().await == Some(Draw::Stroke));
+        })
     }
 
     #[test]
@@ -614,26 +620,28 @@ mod test {
         });
 
         // Only the commands before the 'store' should be present
-        let mut stream  = executor::spawn(canvas.stream());
+        let mut stream  = canvas.stream();
 
-        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Move(0.0, 0.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 0.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 10.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(0.0, 10.0))));
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
 
-        assert!(stream.wait_stream() == Some(Ok(Draw::Store)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Clip)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Restore)));
+            assert!(stream.next().await == Some(Draw::Store));
+            assert!(stream.next().await == Some(Draw::Clip));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Restore));
+        })
     }
 
     #[test]
     fn can_follow_many_streams() {
-        let canvas  = Canvas::new();
-        let mut stream  = executor::spawn(canvas.stream());
-        let mut stream2  = executor::spawn(canvas.stream());
+        let canvas      = Canvas::new();
+        let mut stream  = canvas.stream();
+        let mut stream2 = canvas.stream();
 
         // Thread to draw some stuff to the canvas
         spawn(move || {
@@ -650,32 +658,34 @@ mod test {
 
         // TODO: if the canvas fails to notify, this will block forever :-/
 
-        // Check we can get the results via the stream
-        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Move(0.0, 0.0))));
+        executor::block_on(async {
+            // Check we can get the results via the stream
+            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
 
-        assert!(stream2.wait_stream() == Some(Ok(Draw::ClearCanvas)));
-        assert!(stream2.wait_stream() == Some(Ok(Draw::NewPath)));
-        assert!(stream2.wait_stream() == Some(Ok(Draw::Move(0.0, 0.0))));
+            assert!(stream2.next().await == Some(Draw::ClearCanvas));
+            assert!(stream2.next().await == Some(Draw::NewPath));
+            assert!(stream2.next().await == Some(Draw::Move(0.0, 0.0)));
 
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 0.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(10.0, 10.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Line(0.0, 10.0))));
+            assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
 
-        assert!(stream2.wait_stream() == Some(Ok(Draw::Line(10.0, 0.0))));
-        assert!(stream2.wait_stream() == Some(Ok(Draw::Line(10.0, 10.0))));
-        assert!(stream2.wait_stream() == Some(Ok(Draw::Line(0.0, 10.0))));
+            assert!(stream2.next().await == Some(Draw::Line(10.0, 0.0)));
+            assert!(stream2.next().await == Some(Draw::Line(10.0, 10.0)));
+            assert!(stream2.next().await == Some(Draw::Line(0.0, 10.0)));
 
-        // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
-        assert!(stream.wait_stream() == None);
-        assert!(stream2.wait_stream() == None);
+            // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
+            assert!(stream.next().await == None);
+            assert!(stream2.next().await == None);
+        });
     }
 
     #[test]
     fn commands_after_clear_are_suppressed() {
-        let canvas  = Canvas::new();
-        let mut stream  = executor::spawn(canvas.stream());
+        let canvas      = Canvas::new();
+        let mut stream  = canvas.stream();
 
         // Thread to draw some stuff to the canvas
         spawn(move || {
@@ -699,20 +709,21 @@ mod test {
         });
 
         // TODO: if the canvas fails to notify, this will block forever :-/
+        executor::block_on(async {
+            // Check we can get the results via the stream
+            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::NewPath));
 
-        // Check we can get the results via the stream
-        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
+            // Give the thread some time to clear the canvas
+            sleep(Duration::from_millis(120));
 
-        // Give the thread some time to clear the canvas
-        sleep(Duration::from_millis(120));
+            // Commands we sent before the flush are gone
+            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::Move(200.0, 200.0)));
 
-        // Commands we sent before the flush are gone
-        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Move(200.0, 200.0))));
-
-        // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
-        assert!(stream.wait_stream() == None);
+            // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
+            assert!(stream.next().await == None);
+        })
     }
 
     #[test]
@@ -736,13 +747,15 @@ mod test {
         });
 
         // Only the commands after clear_layer should be present
-        let mut stream  = executor::spawn(canvas.stream());
+        let mut stream  = canvas.stream();
 
-        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Layer(0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Move(10.0, 10.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Fill)));
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::Layer(0)));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
     }
 
     #[test]
@@ -771,16 +784,18 @@ mod test {
         });
 
         // Only the commands after clear_layer should be present
-        let mut stream  = executor::spawn(canvas.stream());
+        let mut stream  = canvas.stream();
 
-        assert!(stream.wait_stream() == Some(Ok(Draw::ClearCanvas)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Move(20.0, 20.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Stroke)));
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(20.0, 20.0)));
+            assert!(stream.next().await == Some(Draw::Stroke));
 
-        assert!(stream.wait_stream() == Some(Ok(Draw::Layer(1))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::NewPath)));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Move(10.0, 10.0))));
-        assert!(stream.wait_stream() == Some(Ok(Draw::Fill)));
+            assert!(stream.next().await == Some(Draw::Layer(1)));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
     }
 }
