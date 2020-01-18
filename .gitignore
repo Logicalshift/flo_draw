@@ -3,4 +3,5 @@
 */**/xcuserdata/**
 *.xcworkspace
 *.xcscheme
+*.flo
 SVGKit
