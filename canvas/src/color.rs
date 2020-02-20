@@ -12,10 +12,25 @@ pub enum ColorFormat {
 ///
 /// Representation of a colour
 ///
-#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum Color {
     Rgba(f32, f32, f32, f32),
     Hsluv(f32, f32, f32, f32)
+}
+
+impl PartialEq for Color {
+    fn eq(&self, col: &Color) -> bool { 
+        use self::Color::*;
+
+        // Colors are equal if they're 'close enough'
+        let distance = match (self, col) {
+            (Rgba(r1, g1, b1, a1), Rgba(r2, g2, b2, a2))    => { (r1-r2)*(r1-r2) + (g1-g2)*(g1-g2) + (b1-b2)*(b1-b2) + (a1-a2)*(a1-a2) }
+            (Hsluv(h1, s1, l1, a1), Hsluv(h2, s2, l2, a2))  => { (h1-h2)*(h1-h2) + (s1-s2)*(s1-s2) + (l1-l2)*(l1-l2) + (a1-a2)*(a1-a2) }
+            _                                               => { return false; }
+        };
+
+        distance < (0.0001 * 0.0001)
+    }
 }
 
 impl Color {
