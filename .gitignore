@@ -5,3 +5,4 @@
 *.xcscheme
 *.flo
 SVGKit
+.DS_Store
