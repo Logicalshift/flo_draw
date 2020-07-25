@@ -5,7 +5,7 @@ use flo_render as render;
 /// The settings for a path
 ///
 #[derive(Clone, Debug)]
-pub struct PathSettings {
+pub struct StrokeSettings {
     pub fill_color:     render::Rgba8,
     pub stroke_color:   render::Rgba8,
     pub join:           canvas::LineJoin,
@@ -14,12 +14,12 @@ pub struct PathSettings {
     pub line_width:     f32
 }
 
-impl PathSettings {
+impl StrokeSettings {
     ///
     /// Creates a new path settings with the default values for the renderer
     ///
-    pub fn new() -> PathSettings {
-        PathSettings {
+    pub fn new() -> StrokeSettings {
+        StrokeSettings {
             fill_color:     render::Rgba8([0, 0, 0, 255]),
             stroke_color:   render::Rgba8([0, 0, 0, 255]),
             join:           canvas::LineJoin::Round,

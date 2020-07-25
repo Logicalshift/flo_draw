@@ -1,2 +1,2 @@
 mod tessellate;
-mod path_settings;
+mod stroke_settings;
