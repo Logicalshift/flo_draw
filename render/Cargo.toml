@@ -1,0 +1,13 @@
+[package]
+name        = "flo_render"
+version     = "0.1.0"
+authors     = ["Andrew Hunter"]
+license     = "Apache-2.0"
+edition     = "2018"
+repository  = "https://github.com/Logicalshift/flowbetween"
+description = "Streaming API for rendering graphics on hardware"
+
+include     = [ "Cargo.toml", "src/**/*", "shaders/**/*" ]
+
+[dependencies]
+gl          = "0.14"
