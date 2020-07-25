@@ -12,4 +12,6 @@ include     = [ "Cargo.toml", "src/**/*", "svg/**/*" ]
 [dependencies]
 flo_render  = { path = "../render", version = "0.1" }
 flo_canvas  = { path = "../canvas", version = "0.2" }
+flo_stream  = { git = "https://github.com/Logicalshift/flo_stream", version = "0.5" }
+desync      = { git = "https://github.com/Logicalshift/desync", branch = "v0.7.0", version = "0.7" }
 lyon        = "0.15"
