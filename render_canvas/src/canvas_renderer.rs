@@ -352,6 +352,45 @@ impl CanvasRenderer {
     }
 
     ///
+    /// Starts processing a drawing, returning a future that completes once all of the tessellation operations
+    /// have finished
+    ///
+    pub fn process_drawing<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter) -> impl 'a+Future<Output=()> {
+        // Create a copy of the core
+        let core                    = Arc::clone(&self.core);
+        let workers                 = self.workers.clone();
+
+        // Send the jobs from the tessellator to the workers
+        let mut publisher           = SinglePublisher::new(1);
+        let job_results             = workers.into_iter()
+            .map(|worker| {
+                let jobs = publisher.subscribe();
+                pipe(worker, jobs, |worker, item| {
+                    async move {
+                        worker.process_job(item)
+                    }.boxed()
+                })
+            });
+        let mut job_results         = futures::stream::select_all(job_results);
+
+        // Start processing the drawing, and sending jobs to be tessellated
+        let process_drawing         = self.tessellate(drawing, publisher);
+
+        // Take the results and put them into the core
+        let process_tessllations    = async move {
+            // Iterate through the job results
+            while let Some((entity, operation)) = job_results.next().await {
+                // Store each result in the core
+                core.sync(|core| core.store_job_result(entity, operation));
+            }
+        };
+
+        // Combine the two futures for the end result
+        futures::future::join(process_drawing, process_tessllations)
+            .map(|_| ())
+    }
+
+    ///
     /// Returns a stream of render actions after applying a set of canvas drawing operations to this renderer
     ///
     pub fn draw<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&mut self, drawing: DrawIter) -> impl 'a+Stream<Item=render::RenderAction> {
