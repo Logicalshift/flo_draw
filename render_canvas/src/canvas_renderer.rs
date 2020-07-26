@@ -222,7 +222,7 @@ impl CanvasRenderer {
 
                     // Set the line width in pixels
                     LineWidthPixels(pixel_width) => {
-                        unimplemented!()
+                        // unimplemented!()
                     }
 
                     // Line join
@@ -262,12 +262,12 @@ impl CanvasRenderer {
 
                     // Set how future renderings are blended with one another
                     BlendMode(blend_mode) => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Reset the transformation to the identity transformation
                     IdentityTransform => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Sets a transformation such that:
@@ -275,32 +275,32 @@ impl CanvasRenderer {
                     // (0,height/2) is the top of the canvas
                     // Pixels are square
                     CanvasHeight(height) => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Moves a particular region to the center of the canvas (coordinates are minx, miny, maxx, maxy)
                     CenterRegion((x1, y1), (x2, y2)) => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Multiply a 2D transform into the canvas
                     MultiplyTransform(transform) => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Unset the clipping path
                     Unclip => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Clip to the currently set path
                     Clip => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Stores the content of the clipping path from the current layer in a background buffer
                     Store => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Restores what was stored in the background buffer. This should be done on the
@@ -310,30 +310,30 @@ impl CanvasRenderer {
                     //
                     // (If the clipping path has changed since then, the restored image is clipped against the new path)
                     Restore => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Releases the buffer created by the last 'Store' operation
                     //
                     // Restore will no longer be valid for the current layer
                     FreeStoredBuffer => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Push the current state of the canvas (line settings, stored image, current path - all state)
                     PushState => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Restore a state previously pushed
                     PopState => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Clears the canvas entirely
                     ClearCanvas => {
-                        todo!("Stop any incoming tessellated data for this layer");
-                        todo!("Mark vertex buffers as freed");
+                        //todo!("Stop any incoming tessellated data for this layer");
+                        //todo!("Mark vertex buffers as freed");
 
                         core.sync(|core| {
                             core.layers         = vec![self.create_default_layer()];
@@ -359,13 +359,13 @@ impl CanvasRenderer {
 
                     // Sets how a particular layer is blended with the underlying layer
                     LayerBlend(layer_id, blend_mode) => {
-                        unimplemented!()
+                        //unimplemented!()
                     }
 
                     // Clears the current layer
                     ClearLayer => {
-                        todo!("Stop any incoming tessellated data for this layer");
-                        todo!("Mark vertex buffers as freed");
+                        //todo!("Stop any incoming tessellated data for this layer");
+                        //todo!("Mark vertex buffers as freed");
 
                         core.sync(|core| core.layers[self.current_layer] = self.create_default_layer());
                     }
