@@ -247,7 +247,7 @@ impl CanvasRenderer {
 
                     // Sets the offset for the dash pattern
                     DashOffset(offset) => {
-                        unimplemented!()
+                        core.sync(|core| core.layers[self.current_layer].stroke_settings.dash_offset = offset);
                     }
 
                     // Set the fill color

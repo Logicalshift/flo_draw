@@ -11,6 +11,7 @@ pub struct StrokeSettings {
     pub join:           canvas::LineJoin,
     pub cap:            canvas::LineCap,
     pub dash_pattern:   Vec<f32>,
+    pub dash_offset:    f32,
     pub line_width:     f32
 }
 
@@ -25,6 +26,7 @@ impl StrokeSettings {
             join:           canvas::LineJoin::Round,
             cap:            canvas::LineCap::Butt,
             dash_pattern:   vec![],
+            dash_offset:    0.0,
             line_width:     1.0
         }
     }
