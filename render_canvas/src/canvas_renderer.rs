@@ -10,11 +10,14 @@ use flo_stream::*;
 use ::desync::*;
 
 use futures::prelude::*;
+use futures::task::{Context, Poll};
 use num_cpus;
 use lyon::path;
 use lyon::math;
 
+use std::pin::*;
 use std::sync::*;
+use std::marker::{PhantomData};
 
 ///
 /// Changes commands for `flo_canvas` into commands for `flo_render`
@@ -377,7 +380,7 @@ impl CanvasRenderer {
         let process_drawing         = self.tessellate(drawing, publisher);
 
         // Take the results and put them into the core
-        let process_tessllations    = async move {
+        let process_tessellations    = async move {
             // Iterate through the job results
             while let Some((entity, operation)) = job_results.next().await {
                 // Store each result in the core
@@ -386,14 +389,41 @@ impl CanvasRenderer {
         };
 
         // Combine the two futures for the end result
-        futures::future::join(process_drawing, process_tessllations)
+        futures::future::join(process_drawing, process_tessellations)
             .map(|_| ())
     }
 
     ///
     /// Returns a stream of render actions after applying a set of canvas drawing operations to this renderer
     ///
-    pub fn draw<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&mut self, drawing: DrawIter) -> impl 'a+Stream<Item=render::RenderAction> {
-        futures::stream::empty()
+    pub fn draw<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter) -> impl 'a+Stream<Item=render::RenderAction> {
+        let core        = Arc::clone(&self.core);
+        let processing  = self.process_drawing(drawing);
+
+        RenderStream {
+            core:               core,
+            processing_future:  Some(processing)
+        }
+    }
+}
+
+///
+/// Stream of rendering actions resulting from a draw instruction
+///
+struct RenderStream<ProcessFuture>
+where ProcessFuture: Future<Output=()> {
+    /// The core where the render instructions are read from
+    core: Arc<Desync<RenderCore>>,
+
+    /// The future that is processing new drawing instructions
+    processing_future: Option<ProcessFuture>
+}
+
+impl<ProcessFuture> Stream for RenderStream<ProcessFuture>
+where ProcessFuture: Future<Output=()> {
+    type Item = render::RenderAction;
+
+    fn poll_next(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<render::RenderAction>> { 
+        todo!() 
     }
 }
