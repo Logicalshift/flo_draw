@@ -345,6 +345,9 @@ impl CanvasRenderer {
                     }
                 }
             }
+
+            // Wait for any pending jobs to make it to the processor
+            job_publisher.when_empty().await;
         }
     }
 
