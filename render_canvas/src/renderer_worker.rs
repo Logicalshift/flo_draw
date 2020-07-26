@@ -16,8 +16,8 @@ use std::sync::*;
 ///
 #[derive(Clone, Copy)]
 pub struct LayerEntityRef {
-    layer_id:       usize,
-    entity_index:   usize
+    pub layer_id:       usize,
+    pub entity_index:   usize
 }
 
 ///

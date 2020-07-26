@@ -94,9 +94,10 @@ impl CanvasRenderer {
     ///
     /// Tessellates a drawing to the layers in this renderer
     ///
-    fn tessellate<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter) -> impl 'a+Future<Output=()> {
+    fn tessellate<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter, job_publisher: SinglePublisher<CanvasJob>) -> impl 'a+Future<Output=()> {
         async move {
-            let core = Arc::clone(&self.core);
+            let core                = Arc::clone(&self.core);
+            let mut job_publisher   = job_publisher;
 
             // The current path that is being built up
             let mut path_builder = None;
@@ -155,7 +156,27 @@ impl CanvasRenderer {
                             current_path = Some(path_builder.build());
                         }
 
-                        unimplemented!()
+                        // Publish the fill job to the tessellators
+                        if let Some(path) = &current_path {
+                            let path        = path.clone();
+                            let layer_id    = self.current_layer;
+
+                            let job         = core.sync(move |core| {
+                                // Create the render entity in the tessellating state
+                                let color           = core.layers[layer_id].fill_color;
+                                let entity_index    = core.layers[layer_id].render_order.len();
+                                let operation       = LayerOperation::Draw;
+
+                                core.layers[layer_id].render_order.push(RenderEntity::Tessellating(operation));
+
+                                let entity          = LayerEntityRef { layer_id, entity_index };
+
+                                // Create the canvas job
+                                CanvasJob::Fill { path, color, entity, operation }
+                            });
+
+                            job_publisher.publish(job).await;
+                        }
                     }
 
                     // Draw a line around the current path
