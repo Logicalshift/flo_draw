@@ -56,6 +56,14 @@ struct Layer {
 }
 
 ///
+/// Parts of the renderer that are shared with the workers
+///
+struct RenderCore {
+    /// The definition for the layers
+    layers: Vec<Layer>
+}
+
+///
 /// Changes commands for `flo_canvas` into commands for `flo_render`
 ///
 pub struct CanvasRenderer {
@@ -63,7 +71,7 @@ pub struct CanvasRenderer {
     workers: Vec<Arc<Desync<Tessellator>>>,
 
     /// Layers defined by the canvas
-    layers: Vec<Layer>,
+    core: Arc<Desync<RenderCore>>,
 
     /// The layer that the next drawing instruction will apply to
     current_layer: usize
@@ -82,10 +90,16 @@ impl CanvasRenderer {
             workers.push(Arc::new(Desync::new(Tessellator::new())));
         }
 
+        // Create the shared core
+        let core = RenderCore {
+            layers: vec![]
+        };
+        let core = Arc::new(Desync::new(core));
+
         // Generate the final renderer
         CanvasRenderer {
             workers:        workers,
-            layers:         vec![],
+            core:           core,
             current_layer:  0
         }
     }
@@ -129,6 +143,8 @@ impl CanvasRenderer {
     ///
     fn tessellate<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter) -> impl 'a+Future<Output=()> {
         async move {
+            let core = Arc::clone(&self.core);
+
             // The current path that is being built up
             let mut path_builder = None;
 
@@ -136,10 +152,12 @@ impl CanvasRenderer {
             let mut current_path = None;
 
             // Create the default layer if one doesn't already exist
-            if self.layers.len() == 0 {
-                self.current_layer  = 0;
-                self.layers         = vec![self.create_default_layer()];
-            }
+            core.sync(|core| {
+                if core.layers.len() == 0 {
+                    core.layers         = vec![self.create_default_layer()];
+                    self.current_layer  = 0;
+                }
+            });
 
             // Iterate through the drawing instructions
             for draw in drawing {
@@ -199,7 +217,7 @@ impl CanvasRenderer {
 
                     // Set the line width
                     LineWidth(width) => {
-                        self.layers[self.current_layer].stroke_settings.line_width = width;
+                        core.sync(|core| core.layers[self.current_layer].stroke_settings.line_width = width);
                     }
 
                     // Set the line width in pixels
@@ -209,22 +227,22 @@ impl CanvasRenderer {
 
                     // Line join
                     LineJoin(join_type) => {
-                        self.layers[self.current_layer].stroke_settings.join = join_type;
+                        core.sync(|core| core.layers[self.current_layer].stroke_settings.join = join_type);
                     }
 
                     // The cap to use on lines
                     LineCap(cap_type) => {
-                        self.layers[self.current_layer].stroke_settings.cap = cap_type;
+                        core.sync(|core| core.layers[self.current_layer].stroke_settings.cap = cap_type);
                     }
 
                     // Resets the dash pattern to empty (which is a solid line)
                     NewDashPattern => {
-                        self.layers[self.current_layer].stroke_settings.dash_pattern = vec![];
+                        core.sync(|core| core.layers[self.current_layer].stroke_settings.dash_pattern = vec![]);
                     }
 
                     // Adds a dash to the current dash pattern
                     DashLength(dash_length) => {
-                        self.layers[self.current_layer].stroke_settings.dash_pattern.push(dash_length);
+                        core.sync(|core| core.layers[self.current_layer].stroke_settings.dash_pattern.push(dash_length));
                     }
 
                     // Sets the offset for the dash pattern
@@ -234,12 +252,12 @@ impl CanvasRenderer {
 
                     // Set the fill color
                     FillColor(color) => {
-                        self.layers[self.current_layer].fill_color = Self::render_color(color);
+                        core.sync(|core| core.layers[self.current_layer].fill_color = Self::render_color(color));
                     }
 
                     // Set the line color
                     StrokeColor(color) => {
-                        self.layers[self.current_layer].stroke_settings.stroke_color = Self::render_color(color);
+                        core.sync(|core| core.layers[self.current_layer].stroke_settings.stroke_color = Self::render_color(color));
                     }
 
                     // Set how future renderings are blended with one another
@@ -316,8 +334,11 @@ impl CanvasRenderer {
                     ClearCanvas => {
                         todo!("Stop any incoming tessellated data for this layer");
                         todo!("Mark vertex buffers as freed");
-                        self.layers         = vec![self.create_default_layer()];
-                        self.current_layer  = 0;
+
+                        core.sync(|core| {
+                            core.layers         = vec![self.create_default_layer()];
+                            self.current_layer  = 0;
+                        });
                     }
 
                     // Selects a particular layer for drawing
@@ -327,11 +348,13 @@ impl CanvasRenderer {
                         let layer_id = layer_id as usize;
 
                         // Generate layers 
-                        while layer_id <= self.layers.len() {
-                            self.layers.push(self.create_default_layer());
-                        }
+                        core.sync(|core| {
+                            while layer_id <= core.layers.len() {
+                                core.layers.push(self.create_default_layer());
+                            }
 
-                        self.current_layer = layer_id;
+                            self.current_layer = layer_id;
+                        });
                     }
 
                     // Sets how a particular layer is blended with the underlying layer
@@ -343,7 +366,8 @@ impl CanvasRenderer {
                     ClearLayer => {
                         todo!("Stop any incoming tessellated data for this layer");
                         todo!("Mark vertex buffers as freed");
-                        self.layers[self.current_layer] = self.create_default_layer();
+
+                        core.sync(|core| core.layers[self.current_layer] = self.create_default_layer());
                     }
                 }
             }
