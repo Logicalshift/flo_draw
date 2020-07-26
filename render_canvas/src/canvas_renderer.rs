@@ -11,13 +11,13 @@ use ::desync::*;
 
 use futures::prelude::*;
 use futures::task::{Context, Poll};
+use futures::future::{LocalBoxFuture};
 use num_cpus;
 use lyon::path;
 use lyon::math;
 
 use std::pin::*;
 use std::sync::*;
-use std::marker::{PhantomData};
 
 ///
 /// Changes commands for `flo_canvas` into commands for `flo_render`
@@ -402,7 +402,9 @@ impl CanvasRenderer {
 
         RenderStream {
             core:               core,
-            processing_future:  Some(processing)
+            processing_future:  Some(processing.boxed_local()),
+            layer_id:           0,
+            render_index:       0
         }
     }
 }
@@ -410,20 +412,44 @@ impl CanvasRenderer {
 ///
 /// Stream of rendering actions resulting from a draw instruction
 ///
-struct RenderStream<ProcessFuture>
-where ProcessFuture: Future<Output=()> {
+struct RenderStream<'a> {
     /// The core where the render instructions are read from
     core: Arc<Desync<RenderCore>>,
 
     /// The future that is processing new drawing instructions
-    processing_future: Option<ProcessFuture>
+    processing_future: Option<LocalBoxFuture<'a, ()>>,
+
+    /// The current layer ID that we're processing
+    layer_id: usize,
+
+    /// The render entity within the layer that we're processing
+    render_index: usize
 }
 
-impl<ProcessFuture> Stream for RenderStream<ProcessFuture>
-where ProcessFuture: Future<Output=()> {
+impl<'a> Stream for RenderStream<'a> {
     type Item = render::RenderAction;
 
-    fn poll_next(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<render::RenderAction>> { 
-        todo!() 
+    fn poll_next(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<render::RenderAction>> { 
+        if let Some(processing_future) = self.processing_future.as_mut() {
+            // Poll the future and send over any vertex buffers that might be waiting
+            if processing_future.poll_unpin(context) == Poll::Pending {
+                // Still generating render buffers: scan the core to see if we can send any across
+                // TODO: can also send actual rendering instrucitons here, though we currently don't because we can't tell if a layer is 'finished' or not: we could send things out of order or rendering instructions that are later cleared
+                // (TODO)
+
+                // Actions are still pending
+                return Poll::Pending;
+            } else {
+                // Finished processing the rendering: can send the actual rendering commands to the hardware layer
+                self.processing_future  = None;
+                self.layer_id           = 0;
+                self.render_index       = 0;
+            }
+
+        }
+
+        // We've generated all the vertex buffers: generate the instructions to render them
+        todo!("Return rendering operations")
+        
     }
 }
