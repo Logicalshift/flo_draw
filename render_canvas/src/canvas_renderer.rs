@@ -102,6 +102,29 @@ impl CanvasRenderer {
     }
 
     ///
+    /// Changes a colour component to a u8 format
+    ///
+    fn col_to_u8(component: f32) -> u8 {
+        if component > 1.0 {
+            255
+        } else if component < 0.0 {
+            0
+        } else {
+            (component * 255.0) as u8
+        }
+    }
+
+    ///
+    /// Converts a canvas colour to a render colour
+    ///
+    fn render_color(color: canvas::Color) -> render::Rgba8 {
+        let (r, g, b, a)    = color.to_rgba_components();
+        let (r, g, b, a)    = (Self::col_to_u8(r), Self::col_to_u8(g), Self::col_to_u8(b), Self::col_to_u8(a));
+
+        render::Rgba8([r, g, b, a])
+    }
+
+    ///
     /// Tessellates a drawing to the layers in this renderer
     ///
     fn tessellate<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter) -> impl 'a+Future<Output=()> {
@@ -175,48 +198,48 @@ impl CanvasRenderer {
                     }
 
                     // Set the line width
-                    LineWidth(f32) => {
-                        unimplemented!()
+                    LineWidth(width) => {
+                        self.layers[self.current_layer].stroke_settings.line_width = width;
                     }
 
                     // Set the line width in pixels
-                    LineWidthPixels(f32) => {
+                    LineWidthPixels(pixel_width) => {
                         unimplemented!()
                     }
 
                     // Line join
                     LineJoin(join_type) => {
-                        unimplemented!()
+                        self.layers[self.current_layer].stroke_settings.join = join_type;
                     }
 
                     // The cap to use on lines
                     LineCap(cap_type) => {
-                        unimplemented!()
+                        self.layers[self.current_layer].stroke_settings.cap = cap_type;
                     }
 
                     // Resets the dash pattern to empty (which is a solid line)
                     NewDashPattern => {
-                        unimplemented!()
+                        self.layers[self.current_layer].stroke_settings.dash_pattern = vec![];
                     }
 
                     // Adds a dash to the current dash pattern
-                    DashLength(f32) => {
-                        unimplemented!()
+                    DashLength(dash_length) => {
+                        self.layers[self.current_layer].stroke_settings.dash_pattern.push(dash_length);
                     }
 
                     // Sets the offset for the dash pattern
-                    DashOffset(f32) => {
+                    DashOffset(offset) => {
                         unimplemented!()
                     }
 
                     // Set the fill color
-                    FillColor(Color) => {
-                        unimplemented!()
+                    FillColor(color) => {
+                        self.layers[self.current_layer].fill_color = Self::render_color(color);
                     }
 
-                    /// Set the line color
-                    StrokeColor(Color) => {
-                        unimplemented!()
+                    // Set the line color
+                    StrokeColor(color) => {
+                        self.layers[self.current_layer].stroke_settings.stroke_color = Self::render_color(color);
                     }
 
                     // Set how future renderings are blended with one another
@@ -291,14 +314,24 @@ impl CanvasRenderer {
 
                     // Clears the canvas entirely
                     ClearCanvas => {
-                        unimplemented!()
+                        todo!("Stop any incoming tessellated data for this layer");
+                        todo!("Mark vertex buffers as freed");
+                        self.layers         = vec![self.create_default_layer()];
+                        self.current_layer  = 0;
                     }
 
                     // Selects a particular layer for drawing
                     // Layer 0 is selected initially. Layers are drawn in order starting from 0.
                     // Layer IDs don't have to be sequential.
                     Layer(layer_id) => {
-                        unimplemented!()
+                        let layer_id = layer_id as usize;
+
+                        // Generate layers 
+                        while layer_id <= self.layers.len() {
+                            self.layers.push(self.create_default_layer());
+                        }
+
+                        self.current_layer = layer_id;
                     }
 
                     // Sets how a particular layer is blended with the underlying layer
@@ -308,7 +341,9 @@ impl CanvasRenderer {
 
                     // Clears the current layer
                     ClearLayer => {
-                        unimplemented!()
+                        todo!("Stop any incoming tessellated data for this layer");
+                        todo!("Mark vertex buffers as freed");
+                        self.layers[self.current_layer] = self.create_default_layer();
                     }
                 }
             }
