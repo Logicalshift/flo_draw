@@ -1,4 +1,7 @@
 use super::stroke_settings::*;
+use super::renderer_core::*;
+use super::renderer_layer::*;
+use super::renderer_worker::*;
 
 use flo_render as render;
 use flo_canvas as canvas;
@@ -8,67 +11,10 @@ use ::desync::*;
 
 use futures::prelude::*;
 use num_cpus;
-use lyon::tessellation::{VertexBuffers};
 use lyon::path;
 use lyon::math;
 
 use std::sync::*;
-
-///
-/// Operation to use when drawing an item on a layer
-///
-#[derive(Clone, Copy)]
-enum LayerOperation {
-    /// Draw the vertex buffer
-    Draw,
-
-    /// Erase the vertex buffer
-    Erase
-}
-
-///
-/// Single rendering operation for a layer
-///
-enum RenderEntity {
-    /// Render operation is waiting to be tessellated
-    Tessellating(LayerOperation),
-
-    /// Tessellation waiting to be sent to the renderer
-    VertexBuffer(LayerOperation, VertexBuffers<render::Vertex2D, u16>),
-
-    /// Render a vertex buffer
-    DrawIndexed(LayerOperation, render::VertexBufferId, render::VertexBufferId)
-}
-
-///
-/// Definition of a layer in the canvas
-///
-struct Layer {
-    /// The render order for this layer
-    render_order: Vec<RenderEntity>,
-
-    /// The current fill colour
-    fill_color: render::Rgba8,
-
-    /// The settings for the next brush stroke
-    stroke_settings: StrokeSettings
-}
-
-///
-/// Parts of the renderer that are shared with the workers
-///
-struct RenderCore {
-    /// The definition for the layers
-    layers: Vec<Layer>
-}
-
-///
-/// State of a canvas worker
-///
-struct CanvasWorker {
-    /// The core, where this worker will write its results
-    core: Arc<Desync<RenderCore>>
-}
 
 ///
 /// Changes commands for `flo_canvas` into commands for `flo_render`
@@ -82,17 +28,6 @@ pub struct CanvasRenderer {
 
     /// The layer that the next drawing instruction will apply to
     current_layer: usize
-}
-
-impl CanvasWorker {
-    ///
-    /// Creates a new canvas worker
-    ///
-    pub fn new(core: &Arc<Desync<RenderCore>>) -> CanvasWorker {
-        CanvasWorker {
-            core: Arc::clone(core)
-        }
-    }
 }
 
 impl CanvasRenderer {
