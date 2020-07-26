@@ -1,4 +1,3 @@
-use super::tessellate::*;
 use super::stroke_settings::*;
 
 use flo_render as render;
@@ -64,11 +63,19 @@ struct RenderCore {
 }
 
 ///
+/// State of a canvas worker
+///
+struct CanvasWorker {
+    /// The core, where this worker will write its results
+    core: Arc<Desync<RenderCore>>
+}
+
+///
 /// Changes commands for `flo_canvas` into commands for `flo_render`
 ///
 pub struct CanvasRenderer {
     /// The worker threads
-    workers: Vec<Arc<Desync<Tessellator>>>,
+    workers: Vec<Arc<Desync<CanvasWorker>>>,
 
     /// Layers defined by the canvas
     core: Arc<Desync<RenderCore>>,
@@ -77,24 +84,35 @@ pub struct CanvasRenderer {
     current_layer: usize
 }
 
+impl CanvasWorker {
+    ///
+    /// Creates a new canvas worker
+    ///
+    pub fn new(core: &Arc<Desync<RenderCore>>) -> CanvasWorker {
+        CanvasWorker {
+            core: Arc::clone(core)
+        }
+    }
+}
+
 impl CanvasRenderer {
     ///
     /// Creates a new canvas renderer
     ///
     pub fn new() -> CanvasRenderer {
-        // Create one worker per cpu
-        let num_workers = num_cpus::get();
-        let mut workers = Vec::with_capacity(num_workers);
-
-        for _ in 0..num_workers {
-            workers.push(Arc::new(Desync::new(Tessellator::new())));
-        }
-
         // Create the shared core
         let core = RenderCore {
             layers: vec![]
         };
         let core = Arc::new(Desync::new(core));
+
+        // Create one worker per cpu
+        let num_workers = num_cpus::get();
+        let mut workers = Vec::with_capacity(num_workers);
+
+        for _ in 0..num_workers {
+            workers.push(Arc::new(Desync::new(CanvasWorker::new(&core))));
+        }
 
         // Generate the final renderer
         CanvasRenderer {
