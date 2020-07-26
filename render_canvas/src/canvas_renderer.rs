@@ -27,7 +27,7 @@ pub struct CanvasRenderer {
     core: Arc<Desync<RenderCore>>,
 
     /// The layer that the next drawing instruction will apply to
-    current_layer: usize
+    current_layer: usize,
 }
 
 impl CanvasRenderer {
