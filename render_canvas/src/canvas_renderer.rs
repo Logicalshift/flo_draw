@@ -186,7 +186,7 @@ impl CanvasRenderer {
                             current_path = Some(path_builder.build());
                         }
 
-                        unimplemented!()
+                        // unimplemented!() -- TODO
                     }
 
                     // Set the line width
