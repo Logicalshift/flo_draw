@@ -76,4 +76,11 @@ impl CanvasRenderer {
             layers:     vec![]
         }
     }
+
+    ///
+    /// Returns a stream of render actions after applying a set of canvas drawing operations to this renderer
+    ///
+    pub fn draw<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&mut self, drawing: DrawIter) -> impl 'a+Stream<Item=render::RenderAction> {
+        futures::stream::empty()
+    }
 }
