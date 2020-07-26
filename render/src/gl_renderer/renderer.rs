@@ -8,6 +8,7 @@ use super::shader_program::*;
 use crate::action::*;
 use crate::buffer::*;
 
+use std::ptr;
 use std::ops::{Range};
 use std::ffi::{CString};
 
@@ -17,6 +18,9 @@ use std::ffi::{CString};
 pub struct GlRenderer {
     /// The buffers allocated to this renderer and their corresponding vertex array object
     buffers: Vec<Option<(VertexArray, Buffer)>>,
+
+    /// The index buffers defined for this renderer
+    index_buffers: Vec<Option<Buffer>>,
 
     /// The textures allocated to this renderer
     textures: Vec<Option<Texture>>,
@@ -42,6 +46,7 @@ impl GlRenderer {
 
         GlRenderer {
             buffers:                vec![],
+            index_buffers:          vec![],
             textures:               vec![],
             default_render_target:  None,
             render_targets:         vec![],
@@ -74,6 +79,7 @@ impl GlRenderer {
 
             match action {
                 CreateVertex2DBuffer(id, vertices)                                      => { self.create_vertex_buffer_2d(id, vertices); }
+                CreateIndexBuffer(id, indices)                                          => { self.create_index_buffer(id, indices); }
                 FreeVertexBuffer(id)                                                    => { self.free_vertex_buffer(id); }
                 CreateRenderTarget(render_id, texture_id, width, height, render_type)   => { self.create_render_target(render_id, texture_id, width, height, render_type); }
                 FreeRenderTarget(render_id)                                             => { self.free_render_target(render_id); }
@@ -84,6 +90,7 @@ impl GlRenderer {
                 FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
                 Clear(color)                                                            => { self.clear(color); }
                 DrawTriangles(buffer_id, buffer_range)                                  => { self.draw_triangles(buffer_id, buffer_range); }
+                DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)         => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices); }
             }
         }
 
@@ -163,6 +170,28 @@ impl GlRenderer {
 
         // Store in the buffers collections
         self.buffers[buffer_id] = Some((vertex_array, buffer));
+    }
+
+    ///
+    /// Creates an index buffer
+    ///
+    fn create_index_buffer(&mut self, IndexBufferId(buffer_id): IndexBufferId, indices: Vec<u16>) {
+        // Extend the buffers array as needed
+        if buffer_id >= self.index_buffers.len() {
+            self.index_buffers.extend((self.index_buffers.len()..(buffer_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        // Release the previous buffer
+        self.index_buffers[buffer_id] = None;
+
+        // Create a buffer containing these indices
+        let mut buffer          = Buffer::new();
+        buffer.static_draw(&indices);
+
+        // Store in the buffers collections
+        self.index_buffers[buffer_id] = Some(buffer);
     }
 
     ///
@@ -270,6 +299,25 @@ impl GlRenderer {
                 gl::BindVertexArray(**vertex_array);
                 gl::DrawArrays(gl::TRIANGLES, buffer_range.start as gl::types::GLint, buffer_range.len() as gl::types::GLsizei);
 
+                gl::BindVertexArray(0);
+            }
+        }
+    }
+
+    ///
+    /// Draw triangles from a buffer
+    ///
+    fn draw_indexed_triangles(&mut self, VertexBufferId(vertex_buffer): VertexBufferId, IndexBufferId(index_buffer): IndexBufferId, num_vertices: usize) {
+        unsafe {
+            if let (Some((vertex_array, _buffer)), Some(index_buffer)) = (&self.buffers[vertex_buffer], &self.index_buffers[index_buffer]) {
+                let num_vertices = num_vertices as gl::types::GLsizei;
+
+                // Draw the triangles
+                gl::BindVertexArray(**vertex_array);
+                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, **index_buffer);
+                gl::DrawElements(gl::TRIANGLES, num_vertices, gl::UNSIGNED_SHORT, ptr::null());
+
+                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
                 gl::BindVertexArray(0);
             }
         }

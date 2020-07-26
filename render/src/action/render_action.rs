@@ -17,6 +17,11 @@ pub enum RenderAction {
     CreateVertex2DBuffer(VertexBufferId, Vec<Vertex2D>),
 
     ///
+    /// Creates an index buffer with the specified 2D vertices in it (replacing any existing buffer)
+    ///
+    CreateIndexBuffer(IndexBufferId, Vec<u16>),
+
+    ///
     /// Frees an existing vertex buffer
     ///
     FreeVertexBuffer(VertexBufferId),
@@ -66,5 +71,10 @@ pub enum RenderAction {
     ///
     /// Parameters are the range of vertices to use
     ///
-    DrawTriangles(VertexBufferId, Range<usize>)
+    DrawTriangles(VertexBufferId, Range<usize>),
+
+    ///
+    /// Renders triangles using an index buffer
+    ///
+    DrawIndexedTriangles(VertexBufferId, IndexBufferId, usize)
 }
