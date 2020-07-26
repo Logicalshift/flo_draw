@@ -40,7 +40,9 @@ impl CanvasRenderer {
     pub fn new() -> CanvasRenderer {
         // Create the shared core
         let core = RenderCore {
-            layers: vec![]
+            layers:                 vec![],
+            unused_vertex_buffer:   0,
+            free_vertex_buffers:    vec![]
         };
         let core = Arc::new(Desync::new(core));
 
@@ -404,7 +406,10 @@ impl CanvasRenderer {
             core:               core,
             processing_future:  Some(processing.boxed_local()),
             layer_id:           0,
-            render_index:       0
+            render_index:       0,
+            pending:            vec![
+                render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0]))
+            ]
         }
     }
 }
@@ -423,22 +428,66 @@ struct RenderStream<'a> {
     layer_id: usize,
 
     /// The render entity within the layer that we're processing
-    render_index: usize
+    render_index: usize,
+
+    /// Render actions waiting to be sent
+    pending: Vec<render::RenderAction>
 }
 
 impl<'a> Stream for RenderStream<'a> {
     type Item = render::RenderAction;
 
     fn poll_next(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<render::RenderAction>> { 
+        // Return the next pending action if there is one
+        if self.pending.len() > 0 {
+            // Note that pending is a stack, so the items are returned in reverse order
+            return Poll::Ready(self.pending.pop());
+        }
+
+        // Poll the tessellation process if it's still running
         if let Some(processing_future) = self.processing_future.as_mut() {
             // Poll the future and send over any vertex buffers that might be waiting
             if processing_future.poll_unpin(context) == Poll::Pending {
                 // Still generating render buffers: scan the core to see if we can send any across
-                // TODO: can also send actual rendering instrucitons here, though we currently don't because we can't tell if a layer is 'finished' or not: we could send things out of order or rendering instructions that are later cleared
-                // (TODO)
+                let mut layer_id        = self.layer_id;
+                let mut render_index    = self.render_index;
+
+                let action = self.core.sync(|core| {
+                    // Clip the layer ID, index
+                    if core.layers.len() == 0 { return None; }
+                    if layer_id >= core.layers.len() {
+                        layer_id        = 0;
+                        render_index    = 0;
+                    }
+                    if render_index > core.layers[layer_id].render_order.len() {
+                        render_index = core.layers[layer_id].render_order.len();
+                    }
+
+                    // Set the initial layer ID and render index
+                    let initial_layer_id        = layer_id;
+                    let initial_render_index    = render_index;
+
+                    // TODO: loop through the layer instructions
+
+                    // No action
+                    return None;
+                });
+
+                self.layer_id       = layer_id;
+                self.render_index   = render_index;
+
+                // TODO: can also send actual rendering instrucitons here, though we currently don't because we can't 
+                // tell if a layer is 'finished' or not: we could send things out of order or rendering instructions 
+                // that are later cleared
 
                 // Actions are still pending
-                return Poll::Pending;
+                if let Some(action) = action {
+                    // Return the action we generated earlier
+                    return Poll::Ready(Some(action));
+                } else {
+                    // Will generate the render actions once the draw commands have finished tessellating
+                    return Poll::Pending;
+                }
             } else {
                 // Finished processing the rendering: can send the actual rendering commands to the hardware layer
                 self.processing_future  = None;
@@ -449,7 +498,57 @@ impl<'a> Stream for RenderStream<'a> {
         }
 
         // We've generated all the vertex buffers: generate the instructions to render them
-        todo!("Return rendering operations")
-        
+        let mut layer_id        = self.layer_id;
+        let mut render_index    = self.render_index;
+
+        let result = self.core.sync(|core| {
+            loop {
+                if layer_id >= core.layers.len() {
+                    // Reached the end of the layers
+                    return vec![];
+                }
+
+                if render_index >= core.layers[layer_id].render_order.len() {
+                    // Reached the end of the current layer
+                    layer_id        += 1;
+                    render_index    = 0;
+                } else {
+                    // layer_id, render_index is valid
+                    break;
+                }
+            }
+
+            // Action depends on the contents of the current render item
+            use self::RenderEntity::*;
+            match &core.layers[layer_id].render_order[render_index] {
+                Tessellating(operation) => { 
+                    // Being processed? (shouldn't happen)
+                    panic!("Tessellation is not complete");
+                },
+
+                VertexBuffer(operation, buffers) => {
+                    // Ask the core to send this buffer for processing
+                    core.send_vertex_buffer(layer_id, render_index)
+                },
+
+
+                DrawIndexed(_op, vertex_buffer, index_buffer, num_items) => {
+                    vec![render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items)]
+                }
+            }
+        });
+
+        // Update the layer and render index to continue iterating
+        self.layer_id       = layer_id;
+        self.render_index   = render_index;
+
+        // Add the result to the pending queue
+        if result.len() > 0 {
+            self.pending = result;
+            return Poll::Ready(self.pending.pop());
+        } else {
+            // No further actions if the result was empty
+            return Poll::Ready(None);
+        }
     }
 }

@@ -27,7 +27,7 @@ pub enum RenderEntity {
     VertexBuffer(LayerOperation, VertexBuffers<render::Vertex2D, u16>),
 
     /// Render a vertex buffer
-    DrawIndexed(LayerOperation, render::VertexBufferId, render::VertexBufferId)
+    DrawIndexed(LayerOperation, render::VertexBufferId, render::IndexBufferId, usize)
 }
 
 ///
