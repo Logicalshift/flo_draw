@@ -10,7 +10,6 @@ use crate::buffer::*;
 
 use std::ptr;
 use std::ops::{Range};
-use std::ffi::{CString};
 
 ///
 /// OpenGL action renderer
