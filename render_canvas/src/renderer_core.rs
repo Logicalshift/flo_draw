@@ -20,6 +20,36 @@ pub struct RenderCore {
 
 impl RenderCore {
     ///
+    /// Frees all entities from an existing layer
+    ///
+    pub fn free_layer_entities(&mut self, mut layer: Layer) {
+        for entity in layer.render_order.drain(..) {
+            self.free_entity(entity);
+        }
+    }
+
+    ///
+    /// Adds the resources used by a render entity to the free pool
+    ///
+    pub fn free_entity(&mut self, render_entity: RenderEntity) {
+        use self::RenderEntity::*;
+
+        match render_entity {
+            Missing                         => { }
+            Tessellating(_op, _entity_id)   => { }
+            VertexBuffer(_op, _buffers)     => { }
+
+            DrawIndexed(_op, render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices) => {
+                // Each buffer is only used by one drawing operation, so we can always free them here
+                self.free_vertex_buffers.push(vertex_id);
+                if index_id != vertex_id {
+                    self.free_vertex_buffers.push(index_id);
+                }
+            }
+        }
+    }
+
+    ///
     /// Stores the result of a worker job in this core item
     ///
     pub fn store_job_result(&mut self, entity_ref: LayerEntityRef, render_entity: RenderEntity) {

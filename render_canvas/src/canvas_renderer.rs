@@ -17,6 +17,7 @@ use lyon::math;
 
 use std::ops::{Range};
 use std::sync::*;
+use std::mem;
 
 ///
 /// Changes commands for `flo_canvas` into commands for `flo_render`
@@ -347,8 +348,17 @@ impl CanvasRenderer {
                         //todo!("Stop any incoming tessellated data for this layer");
                         //todo!("Mark vertex buffers as freed");
                         core.sync(|core| {
-                            core.layers         = vec![self.create_default_layer()];
+                            // Create the new layers
+                            let mut layers      = vec![self.create_default_layer()];
+
+                            // Swap into the core
+                            mem::swap(&mut core.layers, &mut layers);
                             self.current_layer  = 0;
+
+                            // Free all the entities in all the layers
+                            for layer in layers {
+                                core.free_layer_entities(layer);
+                            }
                         });
                         self.active_transform   = canvas::Transform2D::identity();
                     }
@@ -376,11 +386,15 @@ impl CanvasRenderer {
 
                     // Clears the current layer
                     ClearLayer => {
-                        //todo!("Mark vertex buffers as freed");
-
                         core.sync(|core| {
-                            // Create a new layer to replace the old one
-                            core.layers[self.current_layer] = self.create_default_layer();
+                            // Create a new layer
+                            let mut layer = self.create_default_layer();
+
+                            // Swap into the layer list to replace the old one
+                            mem::swap(&mut core.layers[self.current_layer], &mut layer);
+
+                            // Free the data for the current layer
+                            core.free_layer_entities(layer);
                         });
                     }
                 }
