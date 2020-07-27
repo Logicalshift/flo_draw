@@ -521,18 +521,22 @@ impl<'a> Stream for RenderStream<'a> {
             // Action depends on the contents of the current render item
             use self::RenderEntity::*;
             match &core.layers[layer_id].render_order[render_index] {
-                Tessellating(operation) => { 
+                Tessellating(_op) => { 
                     // Being processed? (shouldn't happen)
                     panic!("Tessellation is not complete");
                 },
 
-                VertexBuffer(operation, buffers) => {
+                VertexBuffer(_op, _buffers) => {
                     // Ask the core to send this buffer for processing
                     core.send_vertex_buffer(layer_id, render_index)
                 },
 
 
                 DrawIndexed(_op, vertex_buffer, index_buffer, num_items) => {
+                    // Move on to the next item to render
+                    render_index += 1;
+
+                    // Draw the triangles
                     vec![render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items)]
                 }
             }
