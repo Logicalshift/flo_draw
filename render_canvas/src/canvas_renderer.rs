@@ -41,6 +41,7 @@ pub struct CanvasRenderer {
     /// The currently active transformation
     active_transform: canvas::Transform2D,
 
+    /// The next ID to assign to an entity for tessellation
     next_entity_id: usize,
 
     /// The width and size of the window overall
@@ -241,7 +242,11 @@ impl CanvasRenderer {
 
                     // Set the line width in pixels
                     LineWidthPixels(pixel_width) => {
-                        // unimplemented!()
+                        let canvas::Transform2D(transform)  = &self.active_transform;
+                        let scale                           = (transform[0][0]*transform[0][0] + transform[1][1]*transform[1][1]).sqrt();
+                        let width                           = pixel_width / scale;
+                        
+                        core.sync(|core| core.layers[self.current_layer].stroke_settings.line_width = width);
                     }
 
                     // Line join
