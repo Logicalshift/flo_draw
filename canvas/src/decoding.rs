@@ -459,7 +459,7 @@ impl CanvasDecoder {
                 matrix[entry] = Self::decode_f32(&mut param)?;
             }
 
-            let transform = Transform2D((matrix[0], matrix[1], matrix[2]), (matrix[3], matrix[4], matrix[5]), (matrix[6], matrix[7], matrix[8]));
+            let transform = Transform2D([[matrix[0], matrix[1], matrix[2]], [matrix[3], matrix[4], matrix[5]], [matrix[6], matrix[7], matrix[8]]]);
 
             Ok((DecoderState::None, Some(Draw::MultiplyTransform(transform))))
         }
@@ -779,7 +779,7 @@ mod test {
 
     #[test]
     fn decode_multiply_transform() {
-        check_round_trip_single(Draw::MultiplyTransform(Transform2D((1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0))));
+        check_round_trip_single(Draw::MultiplyTransform(Transform2D([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])));
     }
 
     #[test]
@@ -877,7 +877,7 @@ mod test {
             Draw::IdentityTransform,
             Draw::CanvasHeight(81.0),
             Draw::CenterRegion((6.0, 7.0), (8.0, 9.0)),
-            Draw::MultiplyTransform(Transform2D((1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0))),
+            Draw::MultiplyTransform(Transform2D([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])),
             Draw::Unclip,
             Draw::Store,
             Draw::Restore,
@@ -914,7 +914,7 @@ mod test {
             Draw::IdentityTransform,
             Draw::CanvasHeight(81.0),
             Draw::CenterRegion((6.0, 7.0), (8.0, 9.0)),
-            Draw::MultiplyTransform(Transform2D((1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0))),
+            Draw::MultiplyTransform(Transform2D([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])),
             Draw::Unclip,
             Draw::Store,
             Draw::Restore,

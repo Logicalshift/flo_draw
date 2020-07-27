@@ -53,6 +53,7 @@ impl CanvasEncoding<String> for f32 {
 // Some convenience encodings for implementing the main canvas encoding
 //
 
+
 impl<A: CanvasEncoding<String>, B: CanvasEncoding<String>> CanvasEncoding<String> for (A, B) {
     fn encode_canvas(&self, append_to: &mut String) {
         self.0.encode_canvas(append_to);
@@ -84,6 +85,15 @@ impl<A: CanvasEncoding<String>, B: CanvasEncoding<String>, C: CanvasEncoding<Str
         self.2.encode_canvas(append_to);
         self.3.encode_canvas(append_to);
         self.4.encode_canvas(append_to);
+    }
+}
+
+
+impl<A: CanvasEncoding<String>> CanvasEncoding<String> for [A] {
+    fn encode_canvas(&self, append_to: &mut String) {
+        for component in self.iter() {
+            component.encode_canvas(append_to);
+        }
     }
 }
 
@@ -152,7 +162,7 @@ impl CanvasEncoding<String> for BlendMode {
 
 impl CanvasEncoding<String> for Transform2D {
     fn encode_canvas(&self, append_to: &mut String) {
-        let Transform2D(a, b, c) = *self;
+        let Transform2D([a, b, c]) = *self;
         a.encode_canvas(append_to);
         b.encode_canvas(append_to);
         c.encode_canvas(append_to);
@@ -275,7 +285,7 @@ mod test {
     #[test]
     fn can_encode_canvas_height() { assert!(&encode_draw(Draw::CanvasHeight(20.0)) == "ThAAAoBB") }
     #[test]
-    fn can_encode_multiply_transform() { assert!(&encode_draw(Draw::MultiplyTransform(Transform2D((1.0, 0.0, 0.0), (1.0, 0.0, 0.0), (1.0, 0.0, 0.0)))) == "TmAAAg/AAAAAAAAAAAAAAAAg/AAAAAAAAAAAAAAAAg/AAAAAAAAAAAAA") }
+    fn can_encode_multiply_transform() { assert!(&encode_draw(Draw::MultiplyTransform(Transform2D([[1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]))) == "TmAAAg/AAAAAAAAAAAAAAAAg/AAAAAAAAAAAAAAAAg/AAAAAAAAAAAAA") }
     #[test]
     fn can_encode_unclip() { assert!(&encode_draw(Draw::Unclip) == "Zn") }
     #[test]
