@@ -80,7 +80,7 @@ impl CanvasRenderer {
         // By default the x and y coordinates go from -1.0 to 1.0
         let width               = x.end-x.start;
         let height              = y.end-y.start;
-        let scale_transform     = canvas::Transform2D::scale(2.0/width, -2.0/height);
+        let scale_transform     = canvas::Transform2D::scale(2.0/width, 2.0/height);
 
         // Bottom-right corner is currently -width/2.0, -height/2.0 (as we scale around the center)
         let viewport_transform  = scale_transform * canvas::Transform2D::translate(-(width/2.0) + x.start, -(height/2.0) + y.start);
