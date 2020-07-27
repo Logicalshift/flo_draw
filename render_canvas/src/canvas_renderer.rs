@@ -11,13 +11,11 @@ use flo_stream::*;
 use ::desync::*;
 
 use futures::prelude::*;
-use futures::task::{Context, Poll};
-use futures::future::{LocalBoxFuture};
 use num_cpus;
 use lyon::path;
 use lyon::math;
 
-use std::pin::*;
+use std::ops::{Range};
 use std::sync::*;
 
 ///
@@ -32,6 +30,9 @@ pub struct CanvasRenderer {
 
     /// The layer that the next drawing instruction will apply to
     current_layer: usize,
+
+    /// The viewport transformation
+    viewport_transform: canvas::Transform2D
 }
 
 impl CanvasRenderer {
@@ -57,10 +58,26 @@ impl CanvasRenderer {
 
         // Generate the final renderer
         CanvasRenderer {
-            workers:        workers,
-            core:           core,
-            current_layer:  0
+            workers:                workers,
+            core:                   core,
+            current_layer:          0,
+            viewport_transform:     canvas::Transform2D::identity()
         }
+    }
+
+    ///
+    /// Sets the viewport used by this renderer
+    ///
+    pub fn set_viewport(&mut self, x: Range<f32>, y: Range<f32>) {
+        // By default the x and y coordinates go from -1.0 to 1.0
+        let width               = x.end-x.start;
+        let height              = x.end-x.start;
+        let scale_transform     = canvas::Transform2D::scale(2.0/width, 2.0/height);
+
+        // Bottom-right corner is currently -width/2.0, -height/2.0 (as we scale around the center)
+        let viewport_transform  = scale_transform * canvas::Transform2D::translate((width/2.0) + x.start, (height/2.0) + y.start);
+
+        self.viewport_transform = viewport_transform;
     }
 
     ///
