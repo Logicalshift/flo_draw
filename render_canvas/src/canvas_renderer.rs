@@ -245,7 +245,7 @@ impl CanvasRenderer {
                         let canvas::Transform2D(transform)  = &self.active_transform;
                         let scale                           = (transform[0][0]*transform[0][0] + transform[1][1]*transform[1][1]).sqrt();
                         let width                           = pixel_width / scale;
-                        
+
                         core.sync(|core| core.layers[self.current_layer].stroke_settings.line_width = width);
                     }
 
@@ -299,7 +299,17 @@ impl CanvasRenderer {
                     // (0,height/2) is the top of the canvas
                     // Pixels are square
                     CanvasHeight(height) => {
-                        //unimplemented!()
+                        // Work out the scale to use for this widget
+                        let height              = f32::max(1.0, height);
+                        let scale               = self.window_size.1 / height;
+                        let scale               = canvas::Transform2D::scale(scale, scale);
+
+                        // The viewport transform makes (0,0) the lower-left of the canvas: move it to the middle
+                        let translate           = canvas::Transform2D::translate(-self.window_size.0/2.0, -self.window_size.1/2.0);
+                        let transform           = translate * scale;
+
+                        // Set as the active transform
+                        self.active_transform   = transform;
                     }
 
                     // Moves a particular region to the center of the canvas (coordinates are minx, miny, maxx, maxy)
