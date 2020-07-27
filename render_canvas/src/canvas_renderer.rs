@@ -407,7 +407,7 @@ impl CanvasRenderer {
             processing_future:  Some(processing.boxed_local()),
             layer_id:           0,
             render_index:       0,
-            pending:            vec![
+            pending_stack:      vec![
                 render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0]))
             ]
         }
@@ -431,7 +431,7 @@ struct RenderStream<'a> {
     render_index: usize,
 
     /// Render actions waiting to be sent
-    pending: Vec<render::RenderAction>
+    pending_stack: Vec<render::RenderAction>
 }
 
 impl<'a> Stream for RenderStream<'a> {
@@ -439,9 +439,9 @@ impl<'a> Stream for RenderStream<'a> {
 
     fn poll_next(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<render::RenderAction>> { 
         // Return the next pending action if there is one
-        if self.pending.len() > 0 {
-            // Note that pending is a stack, so the items are returned in reverse order
-            return Poll::Ready(self.pending.pop());
+        if self.pending_stack.len() > 0 {
+            // Note that pending is a stack, so the items are returned in reverse
+            return Poll::Ready(self.pending_stack.pop());
         }
 
         // Poll the tessellation process if it's still running
@@ -544,8 +544,8 @@ impl<'a> Stream for RenderStream<'a> {
 
         // Add the result to the pending queue
         if result.len() > 0 {
-            self.pending = result;
-            return Poll::Ready(self.pending.pop());
+            self.pending_stack = result;
+            return Poll::Ready(self.pending_stack.pop());
         } else {
             // No further actions if the result was empty
             return Poll::Ready(None);
