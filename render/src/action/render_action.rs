@@ -12,6 +12,11 @@ use std::ops::{Range};
 #[derive(Clone, PartialEq, Debug)]
 pub enum RenderAction {
     ///
+    /// Sets the transformation matrix to use for future renderings
+    ///
+    SetTransform(Matrix),
+
+    ///
     /// Creates a vertex buffer with the specified 2D vertices in it (replacing any existing buffer)
     ///
     CreateVertex2DBuffer(VertexBufferId, Vec<Vertex2D>),

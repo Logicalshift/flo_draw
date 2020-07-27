@@ -4,6 +4,7 @@ use super::texture::*;
 use super::vertex_array::*;
 use super::render_target::*;
 use super::shader_program::*;
+use super::shader_uniforms::*;
 
 use crate::action::*;
 use crate::buffer::*;
@@ -31,7 +32,7 @@ pub struct GlRenderer {
     render_targets: Vec<Option<RenderTarget>>,
 
     /// The simple shader program
-    simple_shader: ShaderProgram
+    simple_shader: ShaderProgram<ShaderUniform>
 }
 
 impl GlRenderer {
@@ -63,6 +64,8 @@ impl GlRenderer {
 
             // Set the viewport to the specified width and height
             gl::Viewport(0, 0, width as gl::types::GLsizei, height as gl::types::GLsizei);
+
+            self.set_transform(Matrix::identity());
         }
     }
 
@@ -77,6 +80,7 @@ impl GlRenderer {
             use self::RenderAction::*;
 
             match action {
+                SetTransform(matrix)                                                    => { self.set_transform(matrix); }
                 CreateVertex2DBuffer(id, vertices)                                      => { self.create_vertex_buffer_2d(id, vertices); }
                 CreateIndexBuffer(id, indices)                                          => { self.create_index_buffer(id, indices); }
                 FreeVertexBuffer(id)                                                    => { self.free_vertex_buffer(id); }
@@ -319,6 +323,25 @@ impl GlRenderer {
                 gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
                 gl::BindVertexArray(0);
             }
+        }
+    }
+
+    ///
+    /// Sets the transformation matrix for this renderer
+    ///
+    fn set_transform(&mut self, matrix: Matrix) {
+        // The transformation is stored in a uniform in the shader
+        // (TODO: 'shaders' later on)
+        let transform_uniform = self.simple_shader.uniform_location(ShaderUniform::Transform, "transform");
+
+        // Convert to an OpenGL matrix
+        let matrix: [gl::types::GLfloat; 16] = matrix.to_opengl_matrix();
+
+        // Store in the uniform
+        unsafe {
+            transform_uniform.map(|transform_uniform| {
+                gl::UniformMatrix4fv(transform_uniform, 1, gl::FALSE, matrix.as_ptr());
+            });
         }
     }
 

@@ -2,13 +2,16 @@ use super::shader::*;
 
 use gl;
 
+use std::hash::{Hash};
+use std::collections::{HashMap};
 use std::ops::{Deref};
 use std::ffi::{CString};
 
 ///
 /// A shader program represents a combination of shaders that can be used to perform an actual drawing
 ///
-pub struct ShaderProgram {
+pub struct ShaderProgram<UniformAttribute>
+where UniformAttribute: Hash {
     /// The shader progam object
     shader_program: gl::types::GLuint,
 
@@ -16,14 +19,17 @@ pub struct ShaderProgram {
     shaders: Vec<Shader>,
 
     /// The attributes for the shader program (indexed first by shader, then by attribute number)
-    attributes: Vec<Vec<gl::types::GLuint>>
+    attributes: Vec<Vec<gl::types::GLuint>>,
+
+    /// The location of the known uniforms for this shader program
+    uniform_attributes: HashMap<UniformAttribute, gl::types::GLint>
 }
 
-impl ShaderProgram {
+impl<UniformAttribute: Hash+Eq> ShaderProgram<UniformAttribute> {
     ///
     /// Creates a shader program from a list of shaders
     ///
-    pub fn from_shaders<ShaderIter: IntoIterator<Item=Shader>>(shaders: ShaderIter) -> ShaderProgram {
+    pub fn from_shaders<ShaderIter: IntoIterator<Item=Shader>>(shaders: ShaderIter) -> ShaderProgram<UniformAttribute> {
         unsafe {
             let shaders = shaders.into_iter().collect::<Vec<_>>();
 
@@ -66,9 +72,10 @@ impl ShaderProgram {
 
             // Generate the resulting shader program
             ShaderProgram {
-                shader_program: shader_program,
-                shaders:        shaders,
-                attributes:     attributes
+                shader_program:     shader_program,
+                shaders:            shaders,
+                attributes:         attributes,
+                uniform_attributes: HashMap::new()
             }
         }
     }
@@ -99,9 +106,26 @@ impl ShaderProgram {
 
         None
     }
+
+    ///
+    /// Retrieves the location of a uniform variable for this progrma
+    ///
+    pub fn uniform_location(&mut self, uniform: UniformAttribute, uniform_name: &str) -> Option<gl::types::GLint> {
+        let shader_program = self.shader_program;
+
+        Some(*self.uniform_attributes
+            .entry(uniform)
+            .or_insert_with(|| {
+                unsafe {
+                    let name = CString::new(uniform_name).unwrap();
+                    
+                    gl::GetUniformLocation(shader_program, name.as_ptr())
+                }
+            }))
+    }
 }
 
-impl Drop for ShaderProgram {
+impl<UniformAttribute: Hash> Drop for ShaderProgram<UniformAttribute> {
     fn drop(&mut self) {
         unsafe {
             gl::DeleteProgram(self.shader_program);
@@ -109,7 +133,7 @@ impl Drop for ShaderProgram {
     }
 }
 
-impl Deref for ShaderProgram {
+impl<UniformAttribute: Hash> Deref for ShaderProgram<UniformAttribute> {
     type Target = gl::types::GLuint;
 
     fn deref(&self) -> &gl::types::GLuint {
