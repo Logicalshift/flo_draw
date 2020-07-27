@@ -38,6 +38,7 @@ impl RenderCore {
             Missing                         => { }
             Tessellating(_op, _entity_id)   => { }
             VertexBuffer(_op, _buffers)     => { }
+            SetTransform(_)                 => { }
 
             DrawIndexed(_op, render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices) => {
                 // Each buffer is only used by one drawing operation, so we can always free them here

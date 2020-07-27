@@ -105,9 +105,10 @@ impl CanvasRenderer {
     ///
     fn create_default_layer(&self) -> Layer {
         Layer {
-            render_order:       vec![],
+            render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             fill_color:         render::Rgba8([0, 0, 0, 255]),
-            stroke_settings:    StrokeSettings::new()
+            stroke_settings:    StrokeSettings::new(),
+            current_matrix:     canvas::Transform2D::identity()
         }
     }
 
@@ -204,10 +205,14 @@ impl CanvasRenderer {
                             let path        = path.clone();
                             let layer_id    = self.current_layer;
                             let entity_id   = self.next_entity_id;
+                            let active_transform = &self.active_transform;
 
                             self.next_entity_id += 1;
 
                             let job         = core.sync(move |core| {
+                                // Update the transformation matrix
+                                core.layers[layer_id].update_transform(active_transform);
+
                                 // Create the render entity in the tessellating state
                                 let color               = core.layers[layer_id].fill_color;
                                 let entity_index        = core.layers[layer_id].render_order.len();
@@ -470,10 +475,11 @@ impl CanvasRenderer {
     ///
     pub fn draw<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter) -> impl 'a+Stream<Item=render::RenderAction> {
         let core                = Arc::clone(&self.core);
+        let viewport_transform  = self.viewport_transform;
         let viewport_matrix     = transform_to_matrix(&self.viewport_transform);
         let processing          = self.process_drawing(drawing);
 
-        RenderStream::new(core, processing, vec![
+        RenderStream::new(core, processing, viewport_transform, vec![
             render::RenderAction::SetTransform(viewport_matrix),
             render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0]))
         ])

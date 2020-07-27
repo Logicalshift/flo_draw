@@ -1,5 +1,6 @@
 use super::stroke_settings::*;
 
+use flo_canvas as canvas;
 use flo_render as render;
 
 use lyon::tessellation::{VertexBuffers};
@@ -30,7 +31,10 @@ pub enum RenderEntity {
     VertexBuffer(LayerOperation, VertexBuffers<render::Vertex2D, u16>),
 
     /// Render a vertex buffer
-    DrawIndexed(LayerOperation, render::VertexBufferId, render::IndexBufferId, usize)
+    DrawIndexed(LayerOperation, render::VertexBufferId, render::IndexBufferId, usize),
+
+    /// Updates the transformation matrix for the layer
+    SetTransform(canvas::Transform2D)
 }
 
 ///
@@ -44,5 +48,23 @@ pub struct Layer {
     pub fill_color: render::Rgba8,
 
     /// The settings for the next brush stroke
-    pub stroke_settings: StrokeSettings
+    pub stroke_settings: StrokeSettings,
+
+    /// The current transformation matrix for this layer
+    pub current_matrix: canvas::Transform2D
+}
+
+impl Layer {
+    ///
+    /// Updates the transformation set for this layer
+    ///
+    pub fn update_transform(&mut self, active_transform: &canvas::Transform2D) {
+        if &self.current_matrix != active_transform {
+            // Update the current matrix
+            self.current_matrix = *active_transform;
+
+            // Add a 'set transform' to the rendering for this layer
+            self.render_order.push(RenderEntity::SetTransform(*active_transform));
+        }
+    }
 }

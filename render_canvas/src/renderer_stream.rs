@@ -30,19 +30,23 @@ pub struct RenderStream<'a> {
     render_index: usize,
 
     /// Render actions waiting to be sent
-    pending_stack: Vec<render::RenderAction>
+    pending_stack: Vec<render::RenderAction>,
+
+    /// The transformation for the viewport
+    viewport_transform: canvas::Transform2D
 }
 
 impl<'a> RenderStream<'a> {
     ///
     /// Creates a new render stream
     ///
-    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, processing_future: ProcessFuture, initial_action_stack: Vec<render::RenderAction>) -> RenderStream<'a>
+    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, initial_action_stack: Vec<render::RenderAction>) -> RenderStream<'a>
     where   ProcessFuture: 'a+Future<Output=()> {
         RenderStream {
             core:               core,
             processing_future:  Some(processing_future.boxed_local()),
             pending_stack:      initial_action_stack,
+            viewport_transform: viewport_transform,
             layer_id:           0,
             render_index:       0
         }
@@ -115,6 +119,7 @@ impl<'a> Stream for RenderStream<'a> {
         // We've generated all the vertex buffers: generate the instructions to render them
         let mut layer_id        = self.layer_id;
         let mut render_index    = self.render_index;
+        let viewport_transform  = self.viewport_transform;
 
         let result = self.core.sync(|core| {
             loop {
@@ -144,6 +149,17 @@ impl<'a> Stream for RenderStream<'a> {
                 Tessellating(_op, _id) => { 
                     // Being processed? (shouldn't happen)
                     panic!("Tessellation is not complete (tried to render too early)");
+                },
+
+                SetTransform(new_transform) => {
+                    // Move on to the next item
+                    render_index            += 1;
+
+                    // Set a new transformation
+                    let combined_transform  = &viewport_transform * new_transform;
+                    let combined_matrix     = transform_to_matrix(&combined_transform);
+
+                    vec![render::RenderAction::SetTransform(combined_matrix)]
                 },
 
                 VertexBuffer(_op, _buffers) => {
