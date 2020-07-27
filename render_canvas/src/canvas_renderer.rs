@@ -35,6 +35,9 @@ pub struct CanvasRenderer {
     /// The viewport transformation
     viewport_transform: canvas::Transform2D,
 
+    /// The inverse of the viewport transformation
+    inverse_viewport_transform: canvas::Transform2D,
+
     /// The currently active transformation
     active_transform: canvas::Transform2D,
 
@@ -71,6 +74,7 @@ impl CanvasRenderer {
             core:                       core,
             current_layer:              0,
             viewport_transform:         canvas::Transform2D::identity(),
+            inverse_viewport_transform: canvas::Transform2D::identity(),
             active_transform:           canvas::Transform2D::identity(),
             next_entity_id:             0,
             window_size:                (1.0, 1.0),
@@ -82,15 +86,17 @@ impl CanvasRenderer {
     ///
     pub fn set_viewport(&mut self, x: Range<f32>, y: Range<f32>, window_width: f32, window_height: f32) {
         // By default the x and y coordinates go from -1.0 to 1.0
-        let width               = x.end-x.start;
-        let height              = y.end-y.start;
-        let scale_transform     = canvas::Transform2D::scale(2.0/width, 2.0/height);
+        let width                       = x.end-x.start;
+        let height                      = y.end-y.start;
+        let scale_transform             = canvas::Transform2D::scale(2.0/width, 2.0/height);
 
         // Bottom-right corner is currently -width/2.0, -height/2.0 (as we scale around the center)
-        let viewport_transform  = scale_transform * canvas::Transform2D::translate(-(width/2.0) + x.start, -(height/2.0) + y.start);
+        let viewport_transform          = scale_transform * canvas::Transform2D::translate(-(width/2.0) + x.start, -(height/2.0) + y.start);
+        let inverse_viewport_transform  = viewport_transform.invert().unwrap();
 
-        self.viewport_transform = viewport_transform;
-        self.window_size        = (window_width, window_height);
+        self.viewport_transform         = viewport_transform;
+        self.inverse_viewport_transform = inverse_viewport_transform;
+        self.window_size                = (window_width, window_height);
     }
 
     ///
