@@ -14,7 +14,7 @@ use lyon::tessellation::{VertexBuffers, BuffersBuilder, FillOptions, FillRule, F
 pub struct LayerEntityRef {
     pub layer_id:           usize,
     pub entity_index:       usize,
-    pub layer_generation:   usize
+    pub entity_id:          usize
 }
 
 ///

@@ -37,8 +37,7 @@ pub struct CanvasRenderer {
     /// The currently active transformation
     active_transform: canvas::Transform2D,
 
-    /// The initial generation to assign to new layers
-    initial_layer_generation: usize,
+    next_entity_id: usize,
 
     /// The width and size of the window overall
     window_size: (f32, f32)
@@ -72,8 +71,8 @@ impl CanvasRenderer {
             current_layer:              0,
             viewport_transform:         canvas::Transform2D::identity(),
             active_transform:           canvas::Transform2D::identity(),
+            next_entity_id:             0,
             window_size:                (1.0, 1.0),
-            initial_layer_generation:   0
         }
     }
 
@@ -100,8 +99,7 @@ impl CanvasRenderer {
         Layer {
             render_order:       vec![],
             fill_color:         render::Rgba8([0, 0, 0, 255]),
-            stroke_settings:    StrokeSettings::new(),
-            clear_generation:   self.initial_layer_generation
+            stroke_settings:    StrokeSettings::new()
         }
     }
 
@@ -197,17 +195,19 @@ impl CanvasRenderer {
                         if let Some(path) = &current_path {
                             let path        = path.clone();
                             let layer_id    = self.current_layer;
+                            let entity_id   = self.next_entity_id;
+
+                            self.next_entity_id += 1;
 
                             let job         = core.sync(move |core| {
                                 // Create the render entity in the tessellating state
                                 let color               = core.layers[layer_id].fill_color;
                                 let entity_index        = core.layers[layer_id].render_order.len();
-                                let layer_generation    = core.layers[layer_id].clear_generation;
                                 let operation           = LayerOperation::Draw;
 
-                                core.layers[layer_id].render_order.push(RenderEntity::Tessellating(operation));
+                                core.layers[layer_id].render_order.push(RenderEntity::Tessellating(operation, entity_id));
 
-                                let entity          = LayerEntityRef { layer_id, entity_index, layer_generation };
+                                let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
                                 // Create the canvas job
                                 CanvasJob::Fill { path, color, entity, operation }
@@ -346,8 +346,6 @@ impl CanvasRenderer {
                     ClearCanvas => {
                         //todo!("Stop any incoming tessellated data for this layer");
                         //todo!("Mark vertex buffers as freed");
-                        self.initial_layer_generation += 1;
-
                         core.sync(|core| {
                             core.layers         = vec![self.create_default_layer()];
                             self.current_layer  = 0;
@@ -381,23 +379,10 @@ impl CanvasRenderer {
                         //todo!("Stop any incoming tessellated data for this layer");
                         //todo!("Mark vertex buffers as freed");
 
-                        let mut initial_layer_generation = self.initial_layer_generation;
-
                         core.sync(|core| {
-                            // The layer's 'clear generation' will advance: this will cause us to discard any running tessellations for the layer
-                            let new_layer_generation = core.layers[self.current_layer].clear_generation + 1;
-
                             // Create a new layer to replace the old one
                             core.layers[self.current_layer] = self.create_default_layer();
-
-                            // Set the generation
-                            core.layers[self.current_layer].clear_generation = new_layer_generation;
-
-                            // New layers should get created on a new generation (so if the new layer gets an old layer's index, it doesn't accidentally get its tessellation results)
-                            initial_layer_generation = usize::max(initial_layer_generation, new_layer_generation);
                         });
-
-                        self.initial_layer_generation = initial_layer_generation;
                     }
                 }
             }

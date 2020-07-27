@@ -30,8 +30,18 @@ impl RenderCore {
             return;
         }
 
-        // Do nothing if the layer has been cleared since the rendering was generation
-        if self.layers[entity_ref.layer_id].clear_generation != entity_ref.layer_generation {
+        // Do nothing if the entity index no longer exists
+        if self.layers[entity_ref.layer_id].render_order.len() <= entity_ref.entity_index {
+            return;
+        }
+
+        // The existing entity should be a 'tessellating' entry that matches the entity_ref ID
+        let entity = &mut self.layers[entity_ref.layer_id].render_order[entity_ref.entity_index];
+        if let RenderEntity::Tessellating(_op, entity_id) = entity {
+            if *entity_id != entity_ref.entity_id {
+                return;
+            }
+        } else {
             return;
         }
 
@@ -57,7 +67,7 @@ impl RenderCore {
     ///
     pub fn send_vertex_buffer(&mut self, layer_id: usize, render_index: usize) -> Vec<render::RenderAction> {
         // Remove the action from the layer
-        let mut vertex_action = RenderEntity::Tessellating(LayerOperation::Draw);
+        let mut vertex_action = RenderEntity::Missing;
         mem::swap(&mut self.layers[layer_id].render_order[render_index], &mut vertex_action);
 
         // The action we just removed should be a vertex buffer action

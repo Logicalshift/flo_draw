@@ -136,9 +136,14 @@ impl<'a> Stream for RenderStream<'a> {
             // Action depends on the contents of the current render item
             use self::RenderEntity::*;
             match &core.layers[layer_id].render_order[render_index] {
-                Tessellating(_op) => { 
+                Missing => {
+                    // Temporary state while sending a vertex buffer?
+                    panic!("Tessellation is not complete (vertex buffer went missing)");
+                },
+
+                Tessellating(_op, _id) => { 
                     // Being processed? (shouldn't happen)
-                    panic!("Tessellation is not complete");
+                    panic!("Tessellation is not complete (tried to render too early)");
                 },
 
                 VertexBuffer(_op, _buffers) => {

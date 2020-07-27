@@ -20,8 +20,11 @@ pub enum LayerOperation {
 /// Single rendering operation for a layer
 ///
 pub enum RenderEntity {
-    /// Render operation is waiting to be tessellated
-    Tessellating(LayerOperation),
+    /// Render operation is missing
+    Missing,
+
+    /// Render operation is waiting to be tessellated (with a unique entity ID)
+    Tessellating(LayerOperation, usize),
 
     /// Tessellation waiting to be sent to the renderer
     VertexBuffer(LayerOperation, VertexBuffers<render::Vertex2D, u16>),
@@ -36,9 +39,6 @@ pub enum RenderEntity {
 pub struct Layer {
     /// The render order for this layer
     pub render_order: Vec<RenderEntity>,
-
-    /// The number of times this layer has been cleared
-    pub clear_generation: usize,
 
     /// The current fill colour
     pub fill_color: render::Rgba8,
