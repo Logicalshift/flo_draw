@@ -1,4 +1,3 @@
-mod tessellate;
 mod stroke_settings;
 mod canvas_renderer;
 mod renderer_core;
