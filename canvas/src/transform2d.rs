@@ -22,14 +22,14 @@ impl Transform2D {
     ///
     /// Computes the determinant of a 2x2 matrix
     ///
-    fn det2(matrix: &[[f64; 2]; 2]) -> f64 {
+    fn det2(matrix: &[[f32; 2]; 2]) -> f32 {
         matrix[0][0]*matrix[1][1] + matrix[0][1]*matrix[1][0]
     }
 
     ///
     /// Computes the minor of a 3x3 matrix
     ///
-    fn minor3(matrix: &[[f64; 3]; 3], row: usize, col: usize) -> f64 {
+    fn minor3(matrix: &[[f32; 3]; 3], row: usize, col: usize) -> f32 {
         let (x1, x2)    = match row { 0 => (1, 2), 1 => (0, 2), 2 => (0, 1), _ => (0, 1) };
         let (y1, y2)    = match col { 0 => (1, 2), 1 => (0, 2), 2 => (0, 1), _ => (0, 1) };
 
@@ -44,7 +44,7 @@ impl Transform2D {
     ///
     /// Computes the cofactor of an element in a 3x3 matrix
     ///
-    fn cofactor3(matrix: &[[f64; 3]; 3], row: usize, col: usize) -> f64 {
+    fn cofactor3(matrix: &[[f32; 3]; 3], row: usize, col: usize) -> f32 {
         let minor   = Self::minor3(matrix, row, col);
         let sign    = (col&1) ^ (row&1);
 
@@ -58,7 +58,7 @@ impl Transform2D {
     ///
     /// Inverts a matrix transform
     ///
-    fn invert_matrix(matrix: &[[f64; 3]; 3]) -> Option<[[f64; 3]; 3]> {
+    fn invert_matrix(matrix: &[[f32; 3]; 3]) -> Option<[[f32; 3]; 3]> {
         let cofactors   = [
             [Self::cofactor3(&matrix, 0, 0), Self::cofactor3(&matrix, 1, 0), Self::cofactor3(&matrix, 2, 0)],
             [Self::cofactor3(&matrix, 0, 1), Self::cofactor3(&matrix, 1, 1), Self::cofactor3(&matrix, 2, 1)],
@@ -84,6 +84,9 @@ impl Transform2D {
     /// Returns an inverted Transform2D
     ///
     pub fn invert(&self) -> Option<Transform2D> {
-        unimplemented!()
+        let Transform2D(matrix) = self;
+
+        Self::invert_matrix(matrix)
+            .map(|inverted| Transform2D(inverted))
     }
 }
