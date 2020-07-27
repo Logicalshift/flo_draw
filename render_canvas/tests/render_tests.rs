@@ -24,6 +24,10 @@ fn fill_simple_circle() {
         assert!(clear.is_some());
         assert!(match clear { Some(RenderAction::Clear(_)) => true, _ => false });
 
+        let set_transform   = draw_stream.next().await;
+        assert!(set_transform.is_some());
+        assert!(match set_transform { Some(RenderAction::SetTransform(_)) => true, _ => false });
+
         let upload_vertices = draw_stream.next().await;
         assert!(upload_vertices.is_some());
         assert!(match upload_vertices { Some(RenderAction::CreateVertex2DBuffer(_, _)) => true, _ => false });
@@ -60,6 +64,10 @@ fn fill_two_circles() {
         let clear           = draw_stream.next().await;
         assert!(clear.is_some());
         assert!(match clear { Some(RenderAction::Clear(_)) => true, _ => false });
+
+        let set_transform   = draw_stream.next().await;
+        assert!(set_transform.is_some());
+        assert!(match set_transform { Some(RenderAction::SetTransform(_)) => true, _ => false });
 
         let upload_vertices = draw_stream.next().await;
         assert!(upload_vertices.is_some());
@@ -107,6 +115,7 @@ fn draw_twice() {
 
             // Should be a 'clear', an 'upload vertex buffer', an 'upload index buffer' and a 'draw indexed'
             let _clear              = draw_stream.next().await;
+            let _set_transform      = draw_stream.next().await;
             let _upload_vertices    = draw_stream.next().await;
             let _upload_indices     = draw_stream.next().await;
             let _draw_vertices      = draw_stream.next().await;
@@ -121,6 +130,10 @@ fn draw_twice() {
         let clear           = draw_stream.next().await;
         assert!(clear.is_some());
         assert!(match clear { Some(RenderAction::Clear(_)) => true, _ => false });
+
+        let set_transform   = draw_stream.next().await;
+        assert!(set_transform.is_some());
+        assert!(match set_transform { Some(RenderAction::SetTransform(_)) => true, _ => false });
 
         let draw_vertices   = draw_stream.next().await;
         assert!(draw_vertices.is_some());

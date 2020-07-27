@@ -32,7 +32,13 @@ pub struct CanvasRenderer {
     current_layer: usize,
 
     /// The viewport transformation
-    viewport_transform: canvas::Transform2D
+    viewport_transform: canvas::Transform2D,
+
+    /// The currently active transformation
+    active_transform: canvas::Transform2D,
+
+    /// The width and size of the window overall
+    window_size: (f32, f32)
 }
 
 impl CanvasRenderer {
@@ -61,14 +67,16 @@ impl CanvasRenderer {
             workers:                workers,
             core:                   core,
             current_layer:          0,
-            viewport_transform:     canvas::Transform2D::identity()
+            viewport_transform:     canvas::Transform2D::identity(),
+            active_transform:       canvas::Transform2D::identity(),
+            window_size:            (1.0, 1.0)
         }
     }
 
     ///
     /// Sets the viewport used by this renderer
     ///
-    pub fn set_viewport(&mut self, x: Range<f32>, y: Range<f32>) {
+    pub fn set_viewport(&mut self, x: Range<f32>, y: Range<f32>, window_width: f32, window_height: f32) {
         // By default the x and y coordinates go from -1.0 to 1.0
         let width               = x.end-x.start;
         let height              = x.end-x.start;
@@ -264,7 +272,7 @@ impl CanvasRenderer {
 
                     // Reset the transformation to the identity transformation
                     IdentityTransform => {
-                        //unimplemented!()
+                        self.active_transform = canvas::Transform2D::identity();
                     }
 
                     // Sets a transformation such that:
@@ -282,7 +290,7 @@ impl CanvasRenderer {
 
                     // Multiply a 2D transform into the canvas
                     MultiplyTransform(transform) => {
-                        //unimplemented!()
+                        self.active_transform = self.active_transform * transform;
                     }
 
                     // Unset the clipping path
@@ -336,6 +344,7 @@ impl CanvasRenderer {
                             core.layers         = vec![self.create_default_layer()];
                             self.current_layer  = 0;
                         });
+                        self.active_transform   = canvas::Transform2D::identity();
                     }
 
                     // Selects a particular layer for drawing
@@ -417,10 +426,12 @@ impl CanvasRenderer {
     /// Returns a stream of render actions after applying a set of canvas drawing operations to this renderer
     ///
     pub fn draw<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter) -> impl 'a+Stream<Item=render::RenderAction> {
-        let core        = Arc::clone(&self.core);
-        let processing  = self.process_drawing(drawing);
+        let core                = Arc::clone(&self.core);
+        let viewport_matrix     = transform_to_matrix(&self.viewport_transform);
+        let processing          = self.process_drawing(drawing);
 
         RenderStream::new(core, processing, vec![
+            render::RenderAction::SetTransform(viewport_matrix),
             render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0]))
         ])
     }
