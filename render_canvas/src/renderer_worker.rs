@@ -1,15 +1,11 @@
-use super::renderer_core::*;
 use super::renderer_layer::*;
 
 use flo_render as render;
-use ::desync::*;
 
 use lyon::path;
 use lyon::math::{Point};
 use lyon::tessellation;
-use lyon::tessellation::{VertexBuffers, BuffersBuilder, FillOptions, FillAttributes};
-
-use std::sync::*;
+use lyon::tessellation::{VertexBuffers, BuffersBuilder, FillOptions, FillRule, FillAttributes};
 
 ///
 /// References an entity in a layer
@@ -66,11 +62,14 @@ impl CanvasWorker {
     ///
     fn fill(&mut self, operation: LayerOperation, path: path::Path, render::Rgba8(color): render::Rgba8, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
         // Create the tessellator
-        let mut tessellator = tessellation::FillTessellator::new();
-        let mut geometry    = VertexBuffers::new();
+        let mut tessellator     = tessellation::FillTessellator::new();
+        let mut geometry        = VertexBuffers::new();
+
+        let mut fill_options    = FillOptions::default();
+        fill_options.fill_rule  = FillRule::NonZero;
 
         // Tessellate the current path
-        tessellator.tessellate_path(&path, &FillOptions::default(),
+        tessellator.tessellate_path(&path, &fill_options,
             &mut BuffersBuilder::new(&mut geometry, move |point: Point, _attr: FillAttributes| {
                 render::Vertex2D {
                     pos:        point.to_array(),
