@@ -12,8 +12,9 @@ use lyon::tessellation::{VertexBuffers, BuffersBuilder, FillOptions, FillRule, F
 ///
 #[derive(Clone, Copy)]
 pub struct LayerEntityRef {
-    pub layer_id:       usize,
-    pub entity_index:   usize
+    pub layer_id:           usize,
+    pub entity_index:       usize,
+    pub layer_generation:   usize
 }
 
 ///
@@ -24,10 +25,10 @@ pub enum CanvasJob {
     /// Tessellates a path by filling it
     ///
     Fill { 
-        operation:      LayerOperation,
-        path:           path::Path, 
-        color:          render::Rgba8,
-        entity:         LayerEntityRef
+        operation:  LayerOperation,
+        path:       path::Path, 
+        color:      render::Rgba8,
+        entity:     LayerEntityRef
     }
 }
 

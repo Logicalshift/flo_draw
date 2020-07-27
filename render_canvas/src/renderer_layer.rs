@@ -37,6 +37,9 @@ pub struct Layer {
     /// The render order for this layer
     pub render_order: Vec<RenderEntity>,
 
+    /// The number of times this layer has been cleared
+    pub clear_generation: usize,
+
     /// The current fill colour
     pub fill_color: render::Rgba8,
 

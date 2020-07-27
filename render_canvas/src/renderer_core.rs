@@ -23,7 +23,19 @@ impl RenderCore {
     /// Stores the result of a worker job in this core item
     ///
     pub fn store_job_result(&mut self, entity_ref: LayerEntityRef, render_entity: RenderEntity) {
-        // TODO: check that the entity is still valid since the last time the layer or the canvas was cleared
+        // TODO: if we do nothing, we need to return the entity's vertex buffers to the free pool
+
+        // Do nothing if the layer no longer exists
+        if self.layers.len() <= entity_ref.layer_id {
+            return;
+        }
+
+        // Do nothing if the layer has been cleared since the rendering was generation
+        if self.layers[entity_ref.layer_id].clear_generation != entity_ref.layer_generation {
+            return;
+        }
+
+        // Store the render entity
         self.layers[entity_ref.layer_id]
             .render_order[entity_ref.entity_index] = render_entity;
     }
