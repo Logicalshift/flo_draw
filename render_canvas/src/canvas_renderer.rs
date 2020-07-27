@@ -59,7 +59,7 @@ impl CanvasRenderer {
         let mut workers = Vec::with_capacity(num_workers);
 
         for _ in 0..num_workers {
-            workers.push(Arc::new(Desync::new(CanvasWorker::new(&core))));
+            workers.push(Arc::new(Desync::new(CanvasWorker::new())));
         }
 
         // Generate the final renderer
