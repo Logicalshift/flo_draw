@@ -310,7 +310,7 @@ impl CanvasRenderer {
                         let scale               = canvas::Transform2D::scale(scale, scale);
 
                         // The viewport transform makes (0,0) the lower-left of the canvas: move it to the middle
-                        let translate           = canvas::Transform2D::translate(-self.window_size.0/2.0, -self.window_size.1/2.0);
+                        let translate           = canvas::Transform2D::translate(self.window_size.0/2.0, self.window_size.1/2.0);
                         let transform           = translate * scale;
 
                         // Set as the active transform
