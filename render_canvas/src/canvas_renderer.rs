@@ -376,7 +376,6 @@ impl CanvasRenderer {
 
                     // Clears the current layer
                     ClearLayer => {
-                        //todo!("Stop any incoming tessellated data for this layer");
                         //todo!("Mark vertex buffers as freed");
 
                         core.sync(|core| {
