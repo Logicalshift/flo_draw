@@ -356,7 +356,7 @@ impl CanvasRenderer {
 
                         // Generate layers 
                         core.sync(|core| {
-                            while layer_id <= core.layers.len() {
+                            while core.layers.len() <= layer_id  {
                                 core.layers.push(self.create_default_layer());
                             }
 
