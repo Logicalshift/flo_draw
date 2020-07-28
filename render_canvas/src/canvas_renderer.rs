@@ -101,6 +101,13 @@ impl CanvasRenderer {
     }
 
     ///
+    /// Retrieves the active transform for the canvas (which is fully up to date after rendering)
+    ///
+    pub fn get_active_transform(&self) -> canvas::Transform2D {
+        self.active_transform
+    }
+
+    ///
     /// Creates a new layer with the default properties
     ///
     fn create_default_layer(&self) -> Layer {
