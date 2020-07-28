@@ -319,7 +319,27 @@ impl CanvasRenderer {
 
                     // Moves a particular region to the center of the canvas (coordinates are minx, miny, maxx, maxy)
                     CenterRegion((x1, y1), (x2, y2)) => {
-                        //unimplemented!()
+                        // Work out the scale factor
+                        let region_width        = f32::max(0.0, x2-x1);
+                        let region_height       = f32::max(0.0, y2-y1);
+
+                        let scale_x             = self.window_size.0 / region_width;
+                        let scale_y             = self.window_size.1 / region_height;
+                        let scale               = f32::min(scale_x, scale_y);
+
+                        let scale               = canvas::Transform2D::scale(scale, scale);
+
+                        // Move the center point to the middle of the canvas
+                        let center_x            = (x1+x2)/2.0;
+                        let center_y            = (y1+y2)/2.0;
+                        let left_x              = center_x - self.window_size.0/2.0;
+                        let left_y              = center_y - self.window_size.1/2.0;
+
+                        let translate           = canvas::Transform2D::translate(left_x, left_y);
+
+                        // Combine to set the active transform
+                        let transform           = translate * scale;
+                        self.active_transform   = transform;
                     }
 
                     // Multiply a 2D transform into the canvas
