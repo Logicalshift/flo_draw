@@ -5,6 +5,7 @@ use super::renderer_worker::*;
 use super::renderer_stream::*;
 
 use flo_render as render;
+use flo_render::{RenderTargetId, TextureId, RenderTargetType};
 use flo_canvas as canvas;
 use flo_stream::*;
 
@@ -48,7 +49,10 @@ pub struct CanvasRenderer {
     next_entity_id: usize,
 
     /// The width and size of the window overall
-    window_size: (f32, f32)
+    window_size: (f32, f32),
+
+    /// True if the MSAA rendering surface has been created
+    created_render_surface: bool
 }
 
 impl CanvasRenderer {
@@ -83,6 +87,7 @@ impl CanvasRenderer {
             transform_stack:            vec![],
             next_entity_id:             0,
             window_size:                (1.0, 1.0),
+            created_render_surface:     false
         }
     }
 
@@ -101,7 +106,11 @@ impl CanvasRenderer {
 
         self.viewport_transform         = viewport_transform;
         self.inverse_viewport_transform = inverse_viewport_transform;
-        self.window_size                = (window_width, window_height);
+
+        if self.window_size != (window_width, window_height) {
+            self.window_size            = (window_width, window_height);
+            self.created_render_surface = false;
+        }
     }
 
     ///
@@ -561,14 +570,30 @@ impl CanvasRenderer {
     /// Returns a stream of render actions after applying a set of canvas drawing operations to this renderer
     ///
     pub fn draw<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter) -> impl 'a+Stream<Item=render::RenderAction> {
-        let core                = Arc::clone(&self.core);
+        // Set up the initial set of rendering actions
         let viewport_transform  = self.viewport_transform;
         let viewport_matrix     = transform_to_matrix(&self.viewport_transform);
+        let mut initialise      = vec![
+            render::RenderAction::SetTransform(viewport_matrix),
+            render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])),
+            render::RenderAction::SelectRenderTarget(RenderTargetId(0))
+        ];
+
+        if !self.created_render_surface {
+            // If the MSAA render surface is missing, create it (it's always render target 0, texture 0)
+            initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(0), TextureId(0), 
+                self.window_size.0 as usize,
+                self.window_size.1 as usize,
+                RenderTargetType::Multisampled));
+
+            self.created_render_surface = true;
+        }
+
+        // Start processing the drawing instructions
+        let core                = Arc::clone(&self.core);
         let processing          = self.process_drawing(drawing);
 
-        RenderStream::new(core, processing, viewport_transform, vec![
-            render::RenderAction::SetTransform(viewport_matrix),
-            render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0]))
-        ])
+        // Return a stream of results from processing the drawing
+        RenderStream::new(core, processing, viewport_transform, initialise)
     }
 }
