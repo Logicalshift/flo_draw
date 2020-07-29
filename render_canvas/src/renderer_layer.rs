@@ -38,12 +38,10 @@ pub enum RenderEntity {
 }
 
 ///
-/// Definition of a layer in the canvas
+/// The current state of a layer
 ///
-pub struct Layer {
-    /// The render order for this layer
-    pub render_order: Vec<RenderEntity>,
-
+#[derive(Clone)]
+pub struct LayerState {
     /// The current fill colour
     pub fill_color: render::Rgba8,
 
@@ -57,14 +55,25 @@ pub struct Layer {
     pub current_matrix: canvas::Transform2D
 }
 
+///
+/// Definition of a layer in the canvas
+///
+pub struct Layer {
+    /// The render order for this layer
+    pub render_order: Vec<RenderEntity>,
+
+    /// The state of this layer
+    pub state: LayerState
+}
+
 impl Layer {
     ///
     /// Updates the transformation set for this layer
     ///
     pub fn update_transform(&mut self, active_transform: &canvas::Transform2D) {
-        if &self.current_matrix != active_transform {
+        if &self.state.current_matrix != active_transform {
             // Update the current matrix
-            self.current_matrix = *active_transform;
+            self.state.current_matrix = *active_transform;
 
             // Add a 'set transform' to the rendering for this layer
             self.render_order.push(RenderEntity::SetTransform(*active_transform));

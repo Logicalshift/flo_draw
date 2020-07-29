@@ -113,10 +113,12 @@ impl CanvasRenderer {
     fn create_default_layer(&self) -> Layer {
         Layer {
             render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
-            fill_color:         render::Rgba8([0, 0, 0, 255]),
-            stroke_settings:    StrokeSettings::new(),
-            current_matrix:     canvas::Transform2D::identity(),
-            restore_point:      None
+            state:              LayerState {
+                fill_color:         render::Rgba8([0, 0, 0, 255]),
+                stroke_settings:    StrokeSettings::new(),
+                current_matrix:     canvas::Transform2D::identity(),
+                restore_point:      None
+            }
         }
     }
 
@@ -222,7 +224,7 @@ impl CanvasRenderer {
                                 core.layers[layer_id].update_transform(active_transform);
 
                                 // Create the render entity in the tessellating state
-                                let color               = core.layers[layer_id].fill_color;
+                                let color               = core.layers[layer_id].state.fill_color;
                                 let entity_index        = core.layers[layer_id].render_order.len();
                                 let operation           = LayerOperation::Draw;
 
@@ -259,7 +261,7 @@ impl CanvasRenderer {
                                 core.layers[layer_id].update_transform(active_transform);
 
                                 // Create the render entity in the tessellating state
-                                let stroke_options      = core.layers[layer_id].stroke_settings.clone();
+                                let stroke_options      = core.layers[layer_id].state.stroke_settings.clone();
                                 let entity_index        = core.layers[layer_id].render_order.len();
                                 let operation           = LayerOperation::Draw;
 
@@ -277,7 +279,7 @@ impl CanvasRenderer {
 
                     // Set the line width
                     LineWidth(width) => {
-                        core.sync(|core| core.layers[self.current_layer].stroke_settings.line_width = width);
+                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.line_width = width);
                     }
 
                     // Set the line width in pixels
@@ -286,42 +288,42 @@ impl CanvasRenderer {
                         let scale                           = (transform[0][0]*transform[0][0] + transform[1][1]*transform[1][1]).sqrt();
                         let width                           = pixel_width / scale;
 
-                        core.sync(|core| core.layers[self.current_layer].stroke_settings.line_width = width);
+                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.line_width = width);
                     }
 
                     // Line join
                     LineJoin(join_type) => {
-                        core.sync(|core| core.layers[self.current_layer].stroke_settings.join = join_type);
+                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.join = join_type);
                     }
 
                     // The cap to use on lines
                     LineCap(cap_type) => {
-                        core.sync(|core| core.layers[self.current_layer].stroke_settings.cap = cap_type);
+                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.cap = cap_type);
                     }
 
                     // Resets the dash pattern to empty (which is a solid line)
                     NewDashPattern => {
-                        core.sync(|core| core.layers[self.current_layer].stroke_settings.dash_pattern = vec![]);
+                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.dash_pattern = vec![]);
                     }
 
                     // Adds a dash to the current dash pattern
                     DashLength(dash_length) => {
-                        core.sync(|core| core.layers[self.current_layer].stroke_settings.dash_pattern.push(dash_length));
+                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.dash_pattern.push(dash_length));
                     }
 
                     // Sets the offset for the dash pattern
                     DashOffset(offset) => {
-                        core.sync(|core| core.layers[self.current_layer].stroke_settings.dash_offset = offset);
+                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.dash_offset = offset);
                     }
 
                     // Set the fill color
                     FillColor(color) => {
-                        core.sync(|core| core.layers[self.current_layer].fill_color = Self::render_color(color));
+                        core.sync(|core| core.layers[self.current_layer].state.fill_color = Self::render_color(color));
                     }
 
                     // Set the line color
                     StrokeColor(color) => {
-                        core.sync(|core| core.layers[self.current_layer].stroke_settings.stroke_color = Self::render_color(color));
+                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.stroke_color = Self::render_color(color));
                     }
 
                     // Set how future renderings are blended with one another
@@ -397,7 +399,7 @@ impl CanvasRenderer {
                         // TODO: this does not support the clipping behaviour (it stores/restores the whole layer)
                         // (We currently aren't using the clipping behaviour for anything so it might be easier to just
                         // remove that capability from the documentation?)
-                        core.sync(|core| core.layers[self.current_layer].restore_point = Some(core.layers[self.current_layer].render_order.len()));
+                        core.sync(|core| core.layers[self.current_layer].state.restore_point = Some(core.layers[self.current_layer].render_order.len()));
                     }
 
                     // Restores what was stored in the background buffer. This should be done on the
@@ -409,7 +411,7 @@ impl CanvasRenderer {
                     Restore => {
                         // Roll back the layer to the restore point
                         core.sync(|core| {
-                            if let Some(restore_point) = core.layers[self.current_layer].restore_point {
+                            if let Some(restore_point) = core.layers[self.current_layer].state.restore_point {
                                 // Remove entries from the layer until we reach the restore point
                                 while core.layers[self.current_layer].render_order.len() > restore_point {
                                     let removed_entity = core.layers[self.current_layer].render_order.pop();
@@ -423,7 +425,7 @@ impl CanvasRenderer {
                     //
                     // Restore will no longer be valid for the current layer
                     FreeStoredBuffer => {
-                        core.sync(|core| core.layers[self.current_layer].restore_point = None);
+                        core.sync(|core| core.layers[self.current_layer].state.restore_point = None);
                     }
 
                     // Push the current state of the canvas (line settings, stored image, current path - all state)
