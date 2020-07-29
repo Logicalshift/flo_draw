@@ -19,7 +19,10 @@ pub struct RenderTarget {
     texture: Option<Texture>,
 
     /// Set to true if this should drop its frame buffer when done
-    drop_frame_buffer: bool
+    drop_frame_buffer: bool,
+
+    /// The size in pixels
+    size: (u16, u16)
 }
 
 impl RenderTarget {
@@ -85,6 +88,7 @@ impl RenderTarget {
                 frame_buffer:       frame_buffer,
                 texture:            texture,
                 render_buffer:      render_buffer,
+                size:               (width, height),
                 drop_frame_buffer:  true
             }
         }
@@ -104,7 +108,8 @@ impl RenderTarget {
             frame_buffer:       current_frame_buffer as u32,
             texture:            None,
             render_buffer:      None,
-            drop_frame_buffer:  false
+            drop_frame_buffer:  false,
+            size:               (0, 0)
         }
     }
 
@@ -113,6 +118,13 @@ impl RenderTarget {
     ///
     pub fn texture(&self) -> Option<Texture> {
         self.texture.clone()
+    }
+
+    ///
+    /// Returns the size of this render target (might be 0,0 if we can't read it)
+    ///
+    pub fn get_size(&self) -> (u16, u16) {
+        self.size
     }
 }
 

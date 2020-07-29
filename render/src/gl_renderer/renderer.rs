@@ -88,6 +88,7 @@ impl GlRenderer {
                 FreeRenderTarget(render_id)                                             => { self.free_render_target(render_id); }
                 SelectRenderTarget(render_id)                                           => { self.select_render_target(render_id); }
                 RenderToFrameBuffer                                                     => { self.select_main_frame_buffer(); }
+                DrawFrameBuffer(render_id, x, y)                                        => { self.draw_frame_buffer(render_id, x, y); }
                 ShowFrameBuffer                                                         => { /* This doesn't double-buffer so nothing to do */ }
                 CreateTextureBgra(texture_id, width, height)                            => { self.create_bgra_texture(texture_id, width, height); }
                 FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
@@ -281,6 +282,22 @@ impl GlRenderer {
         self.default_render_target.as_ref().map(|render_target| {
             unsafe {
                 gl::BindFramebuffer(gl::FRAMEBUFFER, **render_target)
+            }
+        });
+    }
+
+    ///
+    /// Draws a frame buffer at a location
+    ///
+    fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, x: i32, y: i32) {
+        self.render_targets[source_buffer].as_ref().map(|source_buffer| {
+            unsafe {
+                let (width, height) = source_buffer.get_size();
+                let width           = width as i32;
+                let height          = height as i32;
+
+                gl::BindFramebuffer(gl::READ_FRAMEBUFFER, **source_buffer);
+                gl::BlitFramebuffer(0, 0, width, height, x, y, x+width, y+height, gl::COLOR_BUFFER_BIT, gl::NEAREST);
             }
         });
     }

@@ -57,6 +57,11 @@ pub enum RenderAction {
     ShowFrameBuffer,
 
     ///
+    /// Renders the specified framebuffer to the current framebuffer
+    ///
+    DrawFrameBuffer(RenderTargetId, i32, i32),
+
+    ///
     /// Creates an 8-bit BGRA texture of the specified size
     ///
     CreateTextureBgra(TextureId, usize, usize),
