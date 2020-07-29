@@ -6,7 +6,6 @@ use flo_render as render;
 ///
 #[derive(Clone, Debug)]
 pub struct StrokeSettings {
-    pub fill_color:     render::Rgba8,
     pub stroke_color:   render::Rgba8,
     pub join:           canvas::LineJoin,
     pub cap:            canvas::LineCap,
@@ -21,7 +20,6 @@ impl StrokeSettings {
     ///
     pub fn new() -> StrokeSettings {
         StrokeSettings {
-            fill_color:     render::Rgba8([0, 0, 0, 255]),
             stroke_color:   render::Rgba8([0, 0, 0, 255]),
             join:           canvas::LineJoin::Round,
             cap:            canvas::LineCap::Butt,

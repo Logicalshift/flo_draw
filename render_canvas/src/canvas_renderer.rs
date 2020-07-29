@@ -245,7 +245,34 @@ impl CanvasRenderer {
                             current_path = Some(path_builder.build());
                         }
 
-                        // unimplemented!() -- TODO
+                        // Publish the job to the tessellators
+                        if let Some(path) = &current_path {
+                            let path        = path.clone();
+                            let layer_id    = self.current_layer;
+                            let entity_id   = self.next_entity_id;
+                            let active_transform = &self.active_transform;
+
+                            self.next_entity_id += 1;
+
+                            let job         = core.sync(move |core| {
+                                // Update the transformation matrix
+                                core.layers[layer_id].update_transform(active_transform);
+
+                                // Create the render entity in the tessellating state
+                                let stroke_options      = core.layers[layer_id].stroke_settings.clone();
+                                let entity_index        = core.layers[layer_id].render_order.len();
+                                let operation           = LayerOperation::Draw;
+
+                                core.layers[layer_id].render_order.push(RenderEntity::Tessellating(operation, entity_id));
+
+                                let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
+
+                                // Create the canvas job
+                                CanvasJob::Stroke { path, stroke_options, entity, operation }
+                            });
+
+                            job_publisher.publish(job).await;
+                        }
                     }
 
                     // Set the line width

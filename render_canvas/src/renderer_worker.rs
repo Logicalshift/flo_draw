@@ -1,11 +1,13 @@
 use super::renderer_layer::*;
+use super::stroke_settings::*;
 
 use flo_render as render;
+use flo_canvas as canvas;
 
 use lyon::path;
 use lyon::math::{Point};
 use lyon::tessellation;
-use lyon::tessellation::{VertexBuffers, BuffersBuilder, FillOptions, FillRule, FillAttributes};
+use lyon::tessellation::{VertexBuffers, BuffersBuilder, StrokeOptions, FillOptions, FillRule, FillAttributes, StrokeAttributes};
 
 ///
 /// References an entity in a layer
@@ -25,10 +27,17 @@ pub enum CanvasJob {
     /// Tessellates a path by filling it
     ///
     Fill { 
-        operation:  LayerOperation,
-        path:       path::Path, 
-        color:      render::Rgba8,
-        entity:     LayerEntityRef
+        operation:      LayerOperation,
+        path:           path::Path, 
+        color:          render::Rgba8,
+        entity:         LayerEntityRef
+    },
+
+    Stroke {
+        operation:      LayerOperation,
+        path:           path::Path,
+        stroke_options: StrokeSettings,
+        entity:         LayerEntityRef
     }
 }
 
@@ -54,7 +63,8 @@ impl CanvasWorker {
         use self::CanvasJob::*;
 
         match job {
-            Fill { operation, path, color, entity } => self.fill(operation, path, color, entity)
+            Fill    { operation, path, color, entity }          => self.fill(operation, path, color, entity),
+            Stroke  { operation, path, stroke_options, entity } => self.stroke(operation, path, stroke_options, entity)
         }
     }
 
@@ -62,16 +72,66 @@ impl CanvasWorker {
     /// Fills the current path and returns the resulting render entity
     ///
     fn fill(&mut self, operation: LayerOperation, path: path::Path, render::Rgba8(color): render::Rgba8, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
-        // Create the tessellator
+        // Create the tessellator and geometry
         let mut tessellator     = tessellation::FillTessellator::new();
         let mut geometry        = VertexBuffers::new();
 
+        // Set up the fill options
         let mut fill_options    = FillOptions::default();
         fill_options.fill_rule  = FillRule::NonZero;
 
         // Tessellate the current path
         tessellator.tessellate_path(&path, &fill_options,
             &mut BuffersBuilder::new(&mut geometry, move |point: Point, _attr: FillAttributes| {
+                render::Vertex2D {
+                    pos:        point.to_array(),
+                    tex_coord:  [0.0, 0.0],
+                    color:      color
+                }
+            })).unwrap();
+
+        // Result is a vertex buffer render entity
+        (entity, RenderEntity::VertexBuffer(operation, geometry))
+    }
+
+    ///
+    /// Converts some stroke settings to Lyon stroke options
+    ///
+    fn convert_stroke_settings(stroke_settings: StrokeSettings) -> StrokeOptions {
+        let mut stroke_options = StrokeOptions::default();
+
+        stroke_options.line_width   = stroke_settings.line_width;
+        stroke_options.end_cap      = match stroke_settings.cap {
+            canvas::LineCap::Butt   => tessellation::LineCap::Butt,
+            canvas::LineCap::Square => tessellation::LineCap::Square,
+            canvas::LineCap::Round  => tessellation::LineCap::Round
+
+        };
+        stroke_options.start_cap    = stroke_options.end_cap;
+        stroke_options.line_join    = match stroke_settings.join {
+            canvas::LineJoin::Miter => tessellation::LineJoin::Miter,
+            canvas::LineJoin::Bevel => tessellation::LineJoin::Bevel,
+            canvas::LineJoin::Round => tessellation::LineJoin::Round
+        };
+
+        stroke_options
+    }
+
+    ///
+    /// Strokes a path and returns the resulting render entity
+    ///
+    fn stroke(&mut self, operation: LayerOperation, path: path::Path, stroke_options: StrokeSettings, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
+        // Create the tessellator and geometry
+        let mut tessellator         = tessellation::StrokeTessellator::new();
+        let mut geometry            = VertexBuffers::new();
+
+        // Set up the stroke options
+        let render::Rgba8(color)    = stroke_options.stroke_color;
+        let stroke_options          = Self::convert_stroke_settings(stroke_options);
+
+        // Stroke the path
+        tessellator.tessellate_path(&path, &stroke_options,
+            &mut BuffersBuilder::new(&mut geometry, move |point: Point, _attr: StrokeAttributes| {
                 render::Vertex2D {
                     pos:        point.to_array(),
                     tex_coord:  [0.0, 0.0],
