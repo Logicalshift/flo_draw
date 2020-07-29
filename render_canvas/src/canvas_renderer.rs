@@ -41,6 +41,9 @@ pub struct CanvasRenderer {
     /// The currently active transformation
     active_transform: canvas::Transform2D,
 
+    /// The transforms pushed to the stack when PushState was called
+    transform_stack: Vec<canvas::Transform2D>,
+
     /// The next ID to assign to an entity for tessellation
     next_entity_id: usize,
 
@@ -77,6 +80,7 @@ impl CanvasRenderer {
             viewport_transform:         canvas::Transform2D::identity(),
             inverse_viewport_transform: canvas::Transform2D::identity(),
             active_transform:           canvas::Transform2D::identity(),
+            transform_stack:            vec![],
             next_entity_id:             0,
             window_size:                (1.0, 1.0),
         }
@@ -431,6 +435,8 @@ impl CanvasRenderer {
 
                     // Push the current state of the canvas (line settings, stored image, current path - all state)
                     PushState => {
+                        self.transform_stack.push(self.active_transform);
+
                         core.sync(|core| {
                             for layer in core.layers.iter_mut() {
                                 layer.push_state();
@@ -440,6 +446,9 @@ impl CanvasRenderer {
 
                     // Restore a state previously pushed
                     PopState => {
+                        self.transform_stack.pop()
+                            .map(|transform| self.active_transform = transform);
+
                         core.sync(|core| {
                             for layer in core.layers.iter_mut() {
                                 layer.pop_state();
