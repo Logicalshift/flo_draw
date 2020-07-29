@@ -82,10 +82,6 @@ impl<'a> Stream for RenderStream<'a> {
                         render_index = core.layers[layer_id].render_order.len();
                     }
 
-                    // Set the initial layer ID and render index
-                    let initial_layer_id        = layer_id;
-                    let initial_render_index    = render_index;
-
                     // TODO: loop through the layer instructions
 
                     // No action
