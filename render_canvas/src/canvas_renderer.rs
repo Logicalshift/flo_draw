@@ -290,7 +290,7 @@ impl CanvasRenderer {
                     // Set the line width in pixels
                     LineWidthPixels(pixel_width) => {
                         let canvas::Transform2D(transform)  = &self.active_transform;
-                        let scale                           = (transform[0][0]*transform[0][0] + transform[1][1]*transform[1][1]).sqrt();
+                        let scale                           = (transform[0][0]*transform[0][0] + transform[1][0]*transform[1][0]).sqrt();
                         let width                           = pixel_width / scale;
 
                         core.sync(|core| core.layers[self.current_layer].state.stroke_settings.line_width = width);
