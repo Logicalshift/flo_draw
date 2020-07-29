@@ -118,7 +118,8 @@ impl CanvasRenderer {
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),
                 restore_point:      None
-            }
+            },
+            stored_states:      vec![]
         }
     }
 
@@ -430,12 +431,20 @@ impl CanvasRenderer {
 
                     // Push the current state of the canvas (line settings, stored image, current path - all state)
                     PushState => {
-                        //unimplemented!()
+                        core.sync(|core| {
+                            for layer in core.layers.iter_mut() {
+                                layer.push_state();
+                            }
+                        })
                     }
 
                     // Restore a state previously pushed
                     PopState => {
-                        //unimplemented!()
+                        core.sync(|core| {
+                            for layer in core.layers.iter_mut() {
+                                layer.pop_state();
+                            }
+                        })
                     }
 
                     // Clears the canvas entirely
