@@ -32,6 +32,9 @@ pub struct RenderStream<'a> {
     /// Render actions waiting to be sent
     pending_stack: Vec<render::RenderAction>,
 
+    /// The stack of operations to run when the rendering is complete (None if they've already been rendered)
+    final_stack: Option<Vec<render::RenderAction>>,
+
     /// The transformation for the viewport
     viewport_transform: canvas::Transform2D
 }
@@ -40,12 +43,13 @@ impl<'a> RenderStream<'a> {
     ///
     /// Creates a new render stream
     ///
-    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, initial_action_stack: Vec<render::RenderAction>) -> RenderStream<'a>
+    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, initial_action_stack: Vec<render::RenderAction>, final_action_stack: Vec<render::RenderAction>) -> RenderStream<'a>
     where   ProcessFuture: 'a+Future<Output=()> {
         RenderStream {
             core:               core,
             processing_future:  Some(processing_future.boxed_local()),
             pending_stack:      initial_action_stack,
+            final_stack:        Some(final_action_stack),
             viewport_transform: viewport_transform,
             layer_id:           0,
             render_index:       0
@@ -180,7 +184,12 @@ impl<'a> Stream for RenderStream<'a> {
 
         // Add the result to the pending queue
         if result.len() > 0 {
+            // There are more actions to add to the pending stack
             self.pending_stack = result;
+            return Poll::Ready(self.pending_stack.pop());
+        } else if let Some(final_actions) = self.final_stack.take() {
+            // There are no more drawing actions, but we have a set of final post-render instructions to execute
+            self.pending_stack = final_actions;
             return Poll::Ready(self.pending_stack.pop());
         } else {
             // No further actions if the result was empty

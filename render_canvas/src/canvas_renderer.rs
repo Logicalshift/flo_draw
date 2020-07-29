@@ -589,11 +589,17 @@ impl CanvasRenderer {
             self.created_render_surface = true;
         }
 
+        // When finished, render the MSAA buffer to the main framebuffer
+        let finalize            = vec![
+            render::RenderAction::DrawFrameBuffer(RenderTargetId(0), 0, 0),
+            render::RenderAction::RenderToFrameBuffer
+        ];
+
         // Start processing the drawing instructions
         let core                = Arc::clone(&self.core);
         let processing          = self.process_drawing(drawing);
 
         // Return a stream of results from processing the drawing
-        RenderStream::new(core, processing, viewport_transform, initialise)
+        RenderStream::new(core, processing, viewport_transform, initialise, finalize)
     }
 }
