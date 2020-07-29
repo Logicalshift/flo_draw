@@ -115,7 +115,8 @@ impl CanvasRenderer {
             render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             fill_color:         render::Rgba8([0, 0, 0, 255]),
             stroke_settings:    StrokeSettings::new(),
-            current_matrix:     canvas::Transform2D::identity()
+            current_matrix:     canvas::Transform2D::identity(),
+            restore_point:      None
         }
     }
 
@@ -366,7 +367,10 @@ impl CanvasRenderer {
 
                     // Stores the content of the clipping path from the current layer in a background buffer
                     Store => {
-                        //unimplemented!()
+                        // TODO: this does not support the clipping behaviour (it stores/restores the whole layer)
+                        // (We currently aren't using the clipping behaviour for anything so it might be easier to just
+                        // remove that capability from the documentation?)
+                        core.sync(|core| core.layers[self.current_layer].restore_point = Some(core.layers[self.current_layer].render_order.len()));
                     }
 
                     // Restores what was stored in the background buffer. This should be done on the
@@ -376,14 +380,23 @@ impl CanvasRenderer {
                     //
                     // (If the clipping path has changed since then, the restored image is clipped against the new path)
                     Restore => {
-                        //unimplemented!()
+                        // Roll back the layer to the restore point
+                        core.sync(|core| {
+                            if let Some(restore_point) = core.layers[self.current_layer].restore_point {
+                                // Remove entries from the layer until we reach the restore point
+                                while core.layers[self.current_layer].render_order.len() > restore_point {
+                                    let removed_entity = core.layers[self.current_layer].render_order.pop();
+                                    removed_entity.map(|removed| core.free_entity(removed));
+                                }
+                            }
+                        })
                     }
 
                     // Releases the buffer created by the last 'Store' operation
                     //
                     // Restore will no longer be valid for the current layer
                     FreeStoredBuffer => {
-                        //unimplemented!()
+                        core.sync(|core| core.layers[self.current_layer].restore_point = None);
                     }
 
                     // Push the current state of the canvas (line settings, stored image, current path - all state)

@@ -50,6 +50,9 @@ pub struct Layer {
     /// The settings for the next brush stroke
     pub stroke_settings: StrokeSettings,
 
+    /// Where the canvas's rendering should be rolled back to on the next 'restore' operation
+    pub restore_point: Option<usize>,
+
     /// The current transformation matrix for this layer
     pub current_matrix: canvas::Transform2D
 }
