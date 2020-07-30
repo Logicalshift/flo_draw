@@ -7,5 +7,8 @@ pub enum RenderTargetType {
     Standard,
 
     /// Multisampled render target
-    Multisampled
+    Multisampled,
+
+    /// Multisampled texture render target
+    MultisampledTexture
 }

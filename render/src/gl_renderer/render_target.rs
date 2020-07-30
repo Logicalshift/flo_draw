@@ -77,6 +77,18 @@ impl RenderTarget {
                     // This type of render target uses a render buffer
                     texture         = None;
                     render_buffer   = Some(backing_renderbuffer);
+                },
+
+                RenderTargetType::MultisampledTexture => {
+                    // Use a backing texture for the rendering
+                    let mut backing_texture = Texture::new();
+                    backing_texture.create_empty_multisampled(width, height, 4);
+
+                    gl::FramebufferTexture2D(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D_MULTISAMPLE, *backing_texture, 0);
+
+                    // This type of render target uses a backing texture
+                    texture         = Some(backing_texture);
+                    render_buffer   = None;
                 }
             };
 

@@ -50,7 +50,7 @@ impl Texture {
     ///
     /// Creates an empty MSAA texture
     ///
-    pub fn create_empty_msaa(&mut self, width: u16, height: u16, samples: usize) {
+    pub fn create_empty_multisampled(&mut self, width: u16, height: u16, samples: usize) {
         unsafe {
             let texture_id = self.texture.texture_id;
 
