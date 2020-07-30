@@ -90,7 +90,7 @@ impl<'a> Stream for RenderStream<'a> {
 
         let result = self.core.sync(|core| {
             // Stop if we've processed all the layers
-            if layer_id <= 0 {
+            if layer_id == 0 {
                 return None;
             }
 

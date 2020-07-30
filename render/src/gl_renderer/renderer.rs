@@ -109,7 +109,7 @@ impl GlRenderer {
         unsafe {
             // Turn on blending
             gl::Enable(gl::BLEND);
-            gl::BlendFuncSeparate(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+            gl::BlendFunc(gl::ONE_MINUS_DST_ALPHA, gl::ONE);
             gl::BlendEquationSeparate(gl::FUNC_ADD, gl::FUNC_ADD);
 
             // Use the basic shader program by default
