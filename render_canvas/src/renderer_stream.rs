@@ -71,42 +71,9 @@ impl<'a> Stream for RenderStream<'a> {
         if let Some(processing_future) = self.processing_future.as_mut() {
             // Poll the future and send over any vertex buffers that might be waiting
             if processing_future.poll_unpin(context) == Poll::Pending {
-                // Still generating render buffers: scan the core to see if we can send any across
-                let mut layer_id        = self.layer_id;
-                let mut render_index    = self.render_index;
-
-                let action = self.core.sync(|core| {
-                    // Clip the layer ID, index
-                    if core.layers.len() == 0 { return None; }
-                    if layer_id >= core.layers.len() {
-                        layer_id        = 0;
-                        render_index    = 0;
-                    }
-                    if render_index > core.layers[layer_id].render_order.len() {
-                        render_index = core.layers[layer_id].render_order.len();
-                    }
-
-                    // TODO: loop through the layer instructions
-
-                    // No action
-                    return None;
-                });
-
-                self.layer_id       = layer_id;
-                self.render_index   = render_index;
-
-                // TODO: can also send actual rendering instrucitons here, though we currently don't because we can't 
-                // tell if a layer is 'finished' or not: we could send things out of order or rendering instructions 
-                // that are later cleared
-
-                // Actions are still pending
-                if let Some(action) = action {
-                    // Return the action we generated earlier
-                    return Poll::Ready(Some(action));
-                } else {
-                    // Will generate the render actions once the draw commands have finished tessellating
-                    return Poll::Pending;
-                }
+                // Still generating render buffers
+                // TODO: can potentially send the buffers to the renderer when they're generated here
+                return Poll::Pending;
             } else {
                 // Finished processing the rendering: can send the actual rendering commands to the hardware layer
                 self.processing_future  = None;
@@ -166,7 +133,6 @@ impl<'a> Stream for RenderStream<'a> {
                     // Ask the core to send this buffer for processing
                     core.send_vertex_buffer(layer_id, render_index)
                 },
-
 
                 DrawIndexed(_op, vertex_buffer, index_buffer, num_items) => {
                     // Move on to the next item to render
