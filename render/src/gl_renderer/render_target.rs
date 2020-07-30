@@ -90,6 +90,30 @@ impl RenderTarget {
                     texture         = Some(backing_texture);
                     render_buffer   = None;
                 }
+
+                RenderTargetType::Monochrome => {
+                    // Use a backing texture for the rendering
+                    let mut backing_texture = Texture::new();
+                    backing_texture.create_monochrome(width, height);
+
+                    gl::FramebufferTexture2D(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D, *backing_texture, 0);
+
+                    // This type of render target uses a backing texture
+                    texture         = Some(backing_texture);
+                    render_buffer   = None;
+                }
+
+                RenderTargetType::MonochromeMultisampledTexture => {
+                    // Use a backing texture for the rendering
+                    let mut backing_texture = Texture::new();
+                    backing_texture.create_monochrome_multisampled(width, height, 4);
+
+                    gl::FramebufferTexture2D(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D_MULTISAMPLE, *backing_texture, 0);
+
+                    // This type of render target uses a backing texture
+                    texture         = Some(backing_texture);
+                    render_buffer   = None;
+                }
             };
 
             // Bind back to the original framebuffer
