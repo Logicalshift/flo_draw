@@ -76,8 +76,9 @@ impl<'a> Stream for RenderStream<'a> {
                 return Poll::Pending;
             } else {
                 // Finished processing the rendering: can send the actual rendering commands to the hardware layer
+                // Layers are rendered in reverse order
                 self.processing_future  = None;
-                self.layer_id           = 0;
+                self.layer_id           = self.core.sync(|core| core.layers.len());
                 self.render_index       = 0;
             }
 
@@ -85,10 +86,80 @@ impl<'a> Stream for RenderStream<'a> {
 
         // We've generated all the vertex buffers: generate the instructions to render them
         let mut layer_id        = self.layer_id;
-        let mut render_index    = self.render_index;
         let viewport_transform  = self.viewport_transform;
 
         let result = self.core.sync(|core| {
+            // Stop if we've processed all the layers
+            if layer_id <= 1 {
+                return None;
+            }
+
+            // Move to the previous layer
+            layer_id -= 1;
+
+            let mut send_vertex_buffers = vec![];
+
+            // Send the vertex buffers
+            use self::RenderEntity::*;
+
+            for render_idx in 0..core.layers[layer_id].render_order.len() {
+                if let VertexBuffer(_op, _buffers) = &core.layers[layer_id].render_order[render_idx] {
+                    send_vertex_buffers.extend(core.send_vertex_buffer(layer_id, render_idx));
+                }
+            }
+
+            // Render the layer in reverse order (this is a stack, so operations are run in reverse order)
+            let mut render_layer_stack  = vec![];
+            let mut active_transform    = canvas::Transform2D::identity();
+
+            for render_idx in 0..core.layers[layer_id].render_order.len() {
+                match &core.layers[layer_id].render_order[render_idx] {
+                    Missing => {
+                        // Temporary state while sending a vertex buffer?
+                        panic!("Tessellation is not complete (vertex buffer went missing)");
+                    },
+
+                    Tessellating(_op, _id) => { 
+                        // Being processed? (shouldn't happen)
+                        panic!("Tessellation is not complete (tried to render too early)");
+                    },
+
+                    VertexBuffer(_op, _buffers) => {
+                        // Should already have sent all the vertex buffers
+                        panic!("Tessellation is not complete (found unexpected vertex buffer in layer)");
+                    },
+
+                    SetTransform(new_transform) => {
+                        // The 'active transform' applies to all the preceding render instructions
+                        let combined_transform  = &viewport_transform * &active_transform;
+                        let combined_matrix     = transform_to_matrix(&combined_transform);
+
+                        render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
+
+                        // The new transform will apply to all the following render instructions
+                        active_transform        = *new_transform;
+                    },
+
+                    DrawIndexed(_op, vertex_buffer, index_buffer, num_items) => {
+                        // Draw the triangles
+                        render_layer_stack.push(render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items));
+                    }
+                }
+            }
+
+            // The 'active transform' applies to all the preceding render instructions
+            let combined_transform  = &viewport_transform * &active_transform;
+            let combined_matrix     = transform_to_matrix(&combined_transform);
+
+            render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
+
+            // Send the vertex buffers first
+            render_layer_stack.extend(send_vertex_buffers);
+
+            // Generate a pending set of actions for the current layer
+            return Some(render_layer_stack);
+
+            /*
             loop {
                 if layer_id >= core.layers.len() {
                     // Reached the end of the layers
@@ -142,14 +213,14 @@ impl<'a> Stream for RenderStream<'a> {
                     vec![render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items)]
                 }
             }
+            */
         });
 
-        // Update the layer and render index to continue iterating
+        // Update the layer ID to continue iterating
         self.layer_id       = layer_id;
-        self.render_index   = render_index;
 
         // Add the result to the pending queue
-        if result.len() > 0 {
+        if let Some(result) = result {
             // There are more actions to add to the pending stack
             self.pending_stack = result;
             return Poll::Ready(self.pending_stack.pop());
