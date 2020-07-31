@@ -158,62 +158,6 @@ impl<'a> Stream for RenderStream<'a> {
 
             // Generate a pending set of actions for the current layer
             return Some(render_layer_stack);
-
-            /*
-            loop {
-                if layer_id >= core.layers.len() {
-                    // Reached the end of the layers
-                    return vec![];
-                }
-
-                if render_index >= core.layers[layer_id].render_order.len() {
-                    // Reached the end of the current layer
-                    layer_id        += 1;
-                    render_index    = 0;
-                } else {
-                    // layer_id, render_index is valid
-                    break;
-                }
-            }
-
-            // Action depends on the contents of the current render item
-            use self::RenderEntity::*;
-            match &core.layers[layer_id].render_order[render_index] {
-                Missing => {
-                    // Temporary state while sending a vertex buffer?
-                    panic!("Tessellation is not complete (vertex buffer went missing)");
-                },
-
-                Tessellating(_op, _id) => { 
-                    // Being processed? (shouldn't happen)
-                    panic!("Tessellation is not complete (tried to render too early)");
-                },
-
-                SetTransform(new_transform) => {
-                    // Move on to the next item
-                    render_index            += 1;
-
-                    // Set a new transformation
-                    let combined_transform  = &viewport_transform * new_transform;
-                    let combined_matrix     = transform_to_matrix(&combined_transform);
-
-                    vec![render::RenderAction::SetTransform(combined_matrix)]
-                },
-
-                VertexBuffer(_op, _buffers) => {
-                    // Ask the core to send this buffer for processing
-                    core.send_vertex_buffer(layer_id, render_index)
-                },
-
-                DrawIndexed(_op, vertex_buffer, index_buffer, num_items) => {
-                    // Move on to the next item to render
-                    render_index += 1;
-
-                    // Draw the triangles
-                    vec![render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items)]
-                }
-            }
-            */
         });
 
         // Update the layer ID to continue iterating
