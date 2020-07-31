@@ -537,7 +537,7 @@ impl CanvasRenderer {
         let workers                 = self.workers.clone();
 
         // Send the jobs from the tessellator to the workers
-        let mut publisher           = SinglePublisher::new(1);
+        let mut publisher           = SinglePublisher::new(40);
         let job_results             = workers.into_iter()
             .map(|worker| {
                 let jobs = publisher.subscribe();
