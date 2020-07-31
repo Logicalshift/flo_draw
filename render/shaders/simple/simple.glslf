@@ -14,8 +14,9 @@ void main() {
     f_Color = IN.v_Color;
 
 #ifdef ERASE_MASK
-    vec4 eraseColor;
-    eraseColor = texelFetch(t_EraseMask, ivec2(0,0), 3);
+    ivec2 eraseSize = textureSize(t_EraseMask);
+    ivec2 pos       = ivec2(IN.v_PaperCoord[0] * eraseSize[0], IN.v_PaperCoord[1] * eraseSize[1]);
+    vec4 eraseColor = texelFetch(t_EraseMask, pos, 3);
 
     f_Color[0] *= eraseColor[0];
     f_Color[1] *= eraseColor[0];
