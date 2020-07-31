@@ -9,10 +9,12 @@ uniform mat4 transform;
 out VS_OUTPUT {
     vec4 v_Color;
     vec2 v_TexCoord;
+    vec2 v_PaperCoord;
 } OUT;
 
 void main() {
-    OUT.v_Color     = vec4(a_Color[0]/255.0, a_Color[1]/255.0, a_Color[2]/255.0, a_Color[3]/255.0);
-    OUT.v_TexCoord  = a_TexCoord;
-    gl_Position     = vec4(a_Pos, 0.0, 1.0) * transform;
+    OUT.v_Color         = vec4(a_Color[0]/255.0, a_Color[1]/255.0, a_Color[2]/255.0, a_Color[3]/255.0);
+    OUT.v_TexCoord      = a_TexCoord;
+    gl_Position         = vec4(a_Pos, 0.0, 1.0) * transform;
+    OUT.v_PaperCoord    = vec2(gl_Position[0], gl_Position[1]);
 }

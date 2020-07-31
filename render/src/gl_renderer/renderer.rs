@@ -32,7 +32,10 @@ pub struct GlRenderer {
     render_targets: Vec<Option<RenderTarget>>,
 
     /// The simple shader program
-    simple_shader: ShaderProgram<ShaderUniform>
+    simple_shader: ShaderProgram<ShaderUniform>,
+
+    /// The shader program that applies an erase buffer
+    simple_shader_with_erase: ShaderProgram<ShaderUniform>
 }
 
 impl GlRenderer {
@@ -40,17 +43,22 @@ impl GlRenderer {
     /// Creates a new renderer that will render to the specified device and factory
     ///
     pub fn new() -> GlRenderer {
-        let simple_vertex_shader    = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), ShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
-        let simple_fragment_shader  = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap(), ShaderType::Fragment, vec![]);
-        let simple_shader           = ShaderProgram::from_shaders(vec![simple_vertex_shader, simple_fragment_shader]);
+        let simple_vertex_shader            = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), ShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
+        let simple_fragment_shader          = Shader::compile(&(String::from("#version 330 core\n") + &String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap()), ShaderType::Fragment, vec![]);
+        let simple_shader                   = ShaderProgram::from_shaders(vec![simple_vertex_shader, simple_fragment_shader]);
+
+        let simple_vertex_shader            = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), ShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
+        let simple_erase_fragment_shader    = Shader::compile(&(String::from("#version 330 core\n#define ERASE_MASK\n") + &String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap()), ShaderType::Fragment, vec![]);
+        let simple_shader_with_erase        = ShaderProgram::from_shaders(vec![simple_vertex_shader, simple_erase_fragment_shader]);
 
         GlRenderer {
-            buffers:                vec![],
-            index_buffers:          vec![],
-            textures:               vec![],
-            default_render_target:  None,
-            render_targets:         vec![],
-            simple_shader:          simple_shader
+            buffers:                    vec![],
+            index_buffers:              vec![],
+            textures:                   vec![],
+            default_render_target:      None,
+            render_targets:             vec![],
+            simple_shader:              simple_shader,
+            simple_shader_with_erase:   simple_shader_with_erase
         }
     }
 
