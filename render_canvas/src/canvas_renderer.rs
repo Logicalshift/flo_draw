@@ -576,6 +576,7 @@ impl CanvasRenderer {
         let mut initialise      = vec![
             render::RenderAction::SetTransform(viewport_matrix),
             render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])),
+            render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
             render::RenderAction::SelectRenderTarget(RenderTargetId(0))
         ];
 

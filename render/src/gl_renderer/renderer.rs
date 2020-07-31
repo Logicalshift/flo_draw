@@ -84,6 +84,7 @@ impl GlRenderer {
                 CreateVertex2DBuffer(id, vertices)                                      => { self.create_vertex_buffer_2d(id, vertices); }
                 CreateIndexBuffer(id, indices)                                          => { self.create_index_buffer(id, indices); }
                 FreeVertexBuffer(id)                                                    => { self.free_vertex_buffer(id); }
+                BlendMode(blend_mode)                                                   => { self.blend_mode(blend_mode); }
                 CreateRenderTarget(render_id, texture_id, width, height, render_type)   => { self.create_render_target(render_id, texture_id, width, height, render_type); }
                 FreeRenderTarget(render_id)                                             => { self.free_render_target(render_id); }
                 SelectRenderTarget(render_id)                                           => { self.select_render_target(render_id); }
@@ -105,15 +106,16 @@ impl GlRenderer {
     ///
     /// Sets the GL options that apply across all operations for this renderer
     ///
-    fn enable_options(&self) {
+    fn enable_options(&mut self) {
         unsafe {
             // Turn on blending
             gl::Enable(gl::BLEND);
-            gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::DST_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::ONE);
             gl::BlendEquationSeparate(gl::FUNC_ADD, gl::FUNC_ADD);
 
             // Use the basic shader program by default
             gl::UseProgram(*self.simple_shader);
+
+            self.blend_mode(BlendMode::SourceOver);
         }
     }
 
@@ -203,6 +205,26 @@ impl GlRenderer {
     ///
     fn free_vertex_buffer(&mut self, VertexBufferId(id): VertexBufferId) {
         self.buffers[id] = None;
+    }
+
+    ///
+    /// Sets the blending mode to use
+    ///
+    fn blend_mode(&mut self, blend_mode: BlendMode) {
+        use self::BlendMode::*;
+
+        unsafe {
+            match blend_mode {
+                SourceOver          => gl::BlendFuncSeparate(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
+                DestinationOver     => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::DST_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::ONE),
+                SourceIn            => gl::BlendFuncSeparate(gl::DST_ALPHA, gl::ZERO, gl::DST_ALPHA, gl::ZERO),
+                DestinationIn       => gl::BlendFuncSeparate(gl::ZERO, gl::SRC_ALPHA, gl::ZERO, gl::SRC_ALPHA),
+                SourceOut           => gl::BlendFuncSeparate(gl::ZERO, gl::ONE_MINUS_DST_ALPHA, gl::ZERO, gl::ONE_MINUS_DST_ALPHA),
+                DestinationOut      => gl::BlendFuncSeparate(gl::ZERO, gl::ONE_MINUS_SRC_ALPHA, gl::ZERO, gl::ONE_MINUS_SRC_ALPHA),
+                SourceATop          => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::SRC_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::SRC_ALPHA),
+                DestinationATop     => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC_ALPHA)
+            }
+        }
     }
 
     ///

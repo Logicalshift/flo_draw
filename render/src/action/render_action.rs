@@ -1,6 +1,7 @@
 use super::identities::*;
 use super::render_target_type::*;
 use super::color::*;
+use super::blend_mode::*;
 
 use crate::buffer::*;
 
@@ -30,6 +31,11 @@ pub enum RenderAction {
     /// Frees an existing vertex buffer
     ///
     FreeVertexBuffer(VertexBufferId),
+
+    ///
+    /// Sets the blend mode for future drawing operations (SourceOver is the default)
+    ///
+    BlendMode(BlendMode),
 
     ///
     /// Creates a new render target of the specified size, as the specified texture
