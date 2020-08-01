@@ -599,7 +599,10 @@ impl CanvasRenderer {
             render::RenderAction::SetTransform(viewport_matrix),
             render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])),
             render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
-            render::RenderAction::SelectRenderTarget(RenderTargetId(0))
+            render::RenderAction::SelectRenderTarget(RenderTargetId(0)),
+
+            render::RenderAction::Clear(render::Rgba8([255, 255, 255, 255])),
+            render::RenderAction::SelectRenderTarget(RenderTargetId(1))
         ];
 
         if !self.created_render_surface {
