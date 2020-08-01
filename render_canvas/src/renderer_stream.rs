@@ -111,6 +111,7 @@ impl<'a> Stream for RenderStream<'a> {
             // Render the layer in reverse order (this is a stack, so operations are run in reverse order)
             let mut render_layer_stack  = vec![];
             let mut active_transform    = canvas::Transform2D::identity();
+            let mut active_blend_mode   = render::BlendMode::DestinationOver;
 
             for render_idx in 0..core.layers[layer_id].render_order.len() {
                 match &core.layers[layer_id].render_order[render_idx] {
@@ -140,6 +141,14 @@ impl<'a> Stream for RenderStream<'a> {
                         active_transform        = *new_transform;
                     },
 
+                    SetBlendMode(new_blend_mode) => {
+                        // Update the blend mode for the preceding render instructions
+                        render_layer_stack.push(render::RenderAction::BlendMode(active_blend_mode));
+
+                        // active_blend_mode will eventually be applied to the following instructions
+                        active_blend_mode = *new_blend_mode;
+                    },
+
                     DrawIndexed(_op, vertex_buffer, index_buffer, num_items) => {
                         // Draw the triangles
                         render_layer_stack.push(render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items));
@@ -152,6 +161,7 @@ impl<'a> Stream for RenderStream<'a> {
             let combined_matrix     = transform_to_matrix(&combined_transform);
 
             render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
+            render_layer_stack.push(render::RenderAction::BlendMode(active_blend_mode));
 
             // Send the vertex buffers first
             render_layer_stack.extend(send_vertex_buffers);

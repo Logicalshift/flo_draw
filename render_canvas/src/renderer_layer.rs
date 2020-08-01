@@ -34,7 +34,10 @@ pub enum RenderEntity {
     DrawIndexed(LayerOperation, render::VertexBufferId, render::IndexBufferId, usize),
 
     /// Updates the transformation matrix for the layer
-    SetTransform(canvas::Transform2D)
+    SetTransform(canvas::Transform2D),
+
+    /// Sets the blend mode to use for the following rendering
+    SetBlendMode(render::BlendMode)
 }
 
 ///
