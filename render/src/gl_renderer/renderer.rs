@@ -43,12 +43,12 @@ impl GlRenderer {
     /// Creates a new renderer that will render to the specified device and factory
     ///
     pub fn new() -> GlRenderer {
-        let simple_vertex_shader            = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), ShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
-        let simple_fragment_shader          = Shader::compile(&(String::from("#version 330 core\n") + &String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap()), ShaderType::Fragment, vec![]);
+        let simple_vertex_shader            = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), GlShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
+        let simple_fragment_shader          = Shader::compile(&(String::from("#version 330 core\n") + &String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap()), GlShaderType::Fragment, vec![]);
         let simple_shader                   = ShaderProgram::from_shaders(vec![simple_vertex_shader, simple_fragment_shader]);
 
-        let simple_vertex_shader            = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), ShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
-        let simple_erase_fragment_shader    = Shader::compile(&(String::from("#version 330 core\n#define ERASE_MASK\n") + &String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap()), ShaderType::Fragment, vec![]);
+        let simple_vertex_shader            = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), GlShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
+        let simple_erase_fragment_shader    = Shader::compile(&(String::from("#version 330 core\n#define ERASE_MASK\n") + &String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap()), GlShaderType::Fragment, vec![]);
         let simple_shader_with_erase        = ShaderProgram::from_shaders(vec![simple_vertex_shader, simple_erase_fragment_shader]);
 
         GlRenderer {
@@ -102,6 +102,7 @@ impl GlRenderer {
                 CreateTextureBgra(texture_id, width, height)                            => { self.create_bgra_texture(texture_id, width, height); }
                 FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
                 Clear(color)                                                            => { self.clear(color); }
+                UseShader(shader_type)                                                  => { self.use_shader(shader_type); }
                 DrawTriangles(buffer_id, buffer_range)                                  => { self.draw_triangles(buffer_id, buffer_range); }
                 DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)         => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices); }
             }
@@ -340,6 +341,35 @@ impl GlRenderer {
     }
 
     ///
+    /// Enables a particular shader for future rendering operations
+    ///
+    fn use_shader(&mut self, shader_type: ShaderType) {
+        unsafe {
+            use self::ShaderType::*;
+
+            match shader_type {
+                Simple { erase_texture: None } => { gl::UseProgram(*self.simple_shader); }
+
+                Simple { erase_texture: Some(TextureId(texture_id)) } => { 
+                    gl::UseProgram(*self.simple_shader_with_erase);
+
+                    if let Some(texture) = &self.textures[texture_id] {
+                        // Set the erase texture
+                        gl::ActiveTexture(gl::TEXTURE0);
+                        gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **texture);
+
+                        self.simple_shader_with_erase.uniform_location(ShaderUniform::EraseTexture, "t_EraseMask")
+                            .map(|erase_mask| {
+                                gl::Uniform1i(erase_mask, 0);
+                            });
+                    }
+
+                }
+            }
+        }
+    }
+
+    ///
     /// Draw triangles from a buffer
     ///
     fn draw_triangles(&mut self, VertexBufferId(buffer_id): VertexBufferId, buffer_range: Range<usize>) {
@@ -377,18 +407,16 @@ impl GlRenderer {
     /// Sets the transformation matrix for this renderer
     ///
     fn set_transform(&mut self, matrix: Matrix) {
-        // The transformation is stored in a uniform in the shader
-        // (TODO: 'shaders' later on)
-        let transform_uniform = self.simple_shader.uniform_location(ShaderUniform::Transform, "transform");
-
         // Convert to an OpenGL matrix
         let matrix: [gl::types::GLfloat; 16] = matrix.to_opengl_matrix();
 
-        // Store in the uniform
+        // Store in the uniform in all of the shaders
         unsafe {
-            transform_uniform.map(|transform_uniform| {
-                gl::UniformMatrix4fv(transform_uniform, 1, gl::FALSE, matrix.as_ptr());
-            });
+            for shader in vec![&mut self.simple_shader, &mut self.simple_shader_with_erase].into_iter() {
+                shader.uniform_location(ShaderUniform::Transform, "transform").map(|transform_uniform| {
+                    gl::UniformMatrix4fv(transform_uniform, 1, gl::FALSE, matrix.as_ptr());
+                });
+            }
         }
     }
 

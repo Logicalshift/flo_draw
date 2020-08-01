@@ -2,6 +2,7 @@ use super::identities::*;
 use super::render_target_type::*;
 use super::color::*;
 use super::blend_mode::*;
+use super::shader_type::*;
 
 use crate::buffer::*;
 
@@ -81,6 +82,11 @@ pub enum RenderAction {
     /// Clears the current render target to the specified colour
     ///
     Clear(Rgba8),
+
+    ///
+    /// Uses the specified shader
+    ///
+    UseShader(ShaderType),
 
     ///
     /// Renders triangles from a vertex buffer (with no texture)

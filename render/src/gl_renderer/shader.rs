@@ -6,7 +6,7 @@ use std::ffi::{CString};
 ///
 /// The types of shader that we can create
 ///
-pub enum ShaderType {
+pub enum GlShaderType {
     Vertex,
     Fragment
 }
@@ -24,12 +24,12 @@ impl Shader {
     ///
     /// Compiles a shader program
     ///
-    pub fn compile<'a, AttributeIter: IntoIterator<Item=&'a str>>(program: &str, shader_type: ShaderType, attributes: AttributeIter) -> Shader {
+    pub fn compile<'a, AttributeIter: IntoIterator<Item=&'a str>>(program: &str, shader_type: GlShaderType, attributes: AttributeIter) -> Shader {
         unsafe {
             // Create the shader
             let shader_type = match shader_type {
-                ShaderType::Vertex      => gl::VERTEX_SHADER,
-                ShaderType::Fragment    => gl::FRAGMENT_SHADER
+                GlShaderType::Vertex    => gl::VERTEX_SHADER,
+                GlShaderType::Fragment  => gl::FRAGMENT_SHADER
             };
 
             let shader = gl::CreateShader(shader_type);

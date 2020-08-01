@@ -4,5 +4,8 @@
 #[derive(Clone, Copy, Hash, PartialEq, Eq)]
 pub enum ShaderUniform {
     /// The transformation matrix to use
-    Transform
+    Transform,
+    
+    /// The texture bound to the 'erase' operation
+    EraseTexture
 }
