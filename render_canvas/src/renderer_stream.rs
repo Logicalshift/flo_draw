@@ -145,6 +145,11 @@ impl<'a> Stream for RenderStream<'a> {
                         // Update the blend mode for the preceding render instructions
                         if active_blend_mode == render::BlendMode::DestinationOut {
 
+                            let combined_transform  = &viewport_transform * &active_transform;
+                            let combined_matrix     = transform_to_matrix(&combined_transform);
+
+                            render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
+
                             // Preceding renders need to update the erase texture
                             render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
                             render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
@@ -153,6 +158,11 @@ impl<'a> Stream for RenderStream<'a> {
                         } else {
 
                             if new_blend_mode == &render::BlendMode::DestinationOut {
+                                let combined_transform  = &viewport_transform * &active_transform;
+                                let combined_matrix     = transform_to_matrix(&combined_transform);
+
+                                render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
+
                                 // Need to update the blend mode to disable the eraser, and apply the eraser texture to the preceding renders
                                 render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: Some(render::TextureId(1)) }));
                             }
