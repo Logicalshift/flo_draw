@@ -587,6 +587,12 @@ impl CanvasRenderer {
                 self.window_size.1 as usize,
                 RenderTargetType::Multisampled));
 
+            // Also create the 'eraser' render surface (render target 1, texture 1)
+            initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(1), TextureId(1),
+                self.window_size.0 as usize,
+                self.window_size.1 as usize,
+                RenderTargetType::MonochromeMultisampledTexture));
+
             self.created_render_surface = true;
         }
 
