@@ -16,5 +16,5 @@ void main() {
     OUT.v_Color         = vec4(a_Color[0]/255.0, a_Color[1]/255.0, a_Color[2]/255.0, a_Color[3]/255.0);
     OUT.v_TexCoord      = a_TexCoord;
     gl_Position         = vec4(a_Pos, 0.0, 1.0) * transform;
-    OUT.v_PaperCoord    = vec2(gl_Position[0], gl_Position[1]);
+    OUT.v_PaperCoord    = vec2((gl_Position[0]+1.0)/2.0, (gl_Position[1]+1.0)/2.0);
 }
