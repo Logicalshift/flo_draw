@@ -112,6 +112,7 @@ impl<'a> Stream for RenderStream<'a> {
             let mut render_layer_stack  = vec![];
             let mut active_transform    = canvas::Transform2D::identity();
             let mut active_blend_mode   = render::BlendMode::DestinationOver;
+            let mut use_erase_texture   = false;
 
             for render_idx in 0..core.layers[layer_id].render_order.len() {
                 match &core.layers[layer_id].render_order[render_idx] {
@@ -149,6 +150,9 @@ impl<'a> Stream for RenderStream<'a> {
                             let combined_matrix     = transform_to_matrix(&combined_transform);
 
                             render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
+
+                            // Flag that we're using the erase texture and it needs to be cleared for this layer
+                            use_erase_texture       = true;
 
                             // Preceding renders need to update the erase texture
                             render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
@@ -193,12 +197,20 @@ impl<'a> Stream for RenderStream<'a> {
             if active_blend_mode == render::BlendMode::DestinationOut {
 
                 // Preceding renders need to update the erase texture
-                render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
-                render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
                 render_layer_stack.push(render::RenderAction::BlendMode(render::BlendMode::DestinationOver));
+                render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
+                render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
 
             } else {
                 render_layer_stack.push(render::RenderAction::BlendMode(active_blend_mode));
+                render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
+                render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(0)));
+            }
+
+            // Clear the erase mask if it's used on this layer
+            if use_erase_texture {
+                render_layer_stack.push(render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])));
+                render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
             }
 
             // Send the vertex buffers first

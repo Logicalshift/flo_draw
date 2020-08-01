@@ -18,9 +18,9 @@ void main() {
     ivec2 pos       = ivec2(IN.v_PaperCoord[0] * eraseSize[0], IN.v_PaperCoord[1] * eraseSize[1]);
     vec4 eraseColor = texelFetch(t_EraseMask, pos, 3);
 
-    f_Color[0] *= eraseColor[0];
-    f_Color[1] *= eraseColor[0];
-    f_Color[2] *= eraseColor[0];
-    f_Color[3] *= eraseColor[0];
+    f_Color[0] *= 1-eraseColor[0];
+    f_Color[1] *= 1-eraseColor[0];
+    f_Color[2] *= 1-eraseColor[0];
+    f_Color[3] *= 1-eraseColor[0];
 #endif
 }
