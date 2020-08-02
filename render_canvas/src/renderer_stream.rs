@@ -157,7 +157,7 @@ impl<'a> Stream for RenderStream<'a> {
                             // Preceding renders need to update the erase texture
                             render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
                             render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
-                            render_layer_stack.push(render::RenderAction::BlendMode(render::BlendMode::DestinationOver));
+                            render_layer_stack.push(render::RenderAction::BlendMode(render::BlendMode::AllChannelAlphaDestinationOver));
 
                         } else {
 
@@ -197,7 +197,7 @@ impl<'a> Stream for RenderStream<'a> {
             if active_blend_mode == render::BlendMode::DestinationOut {
 
                 // Preceding renders need to update the erase texture
-                render_layer_stack.push(render::RenderAction::BlendMode(render::BlendMode::DestinationOver));
+                render_layer_stack.push(render::RenderAction::BlendMode(render::BlendMode::AllChannelAlphaDestinationOver));
                 render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
                 render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
 
