@@ -48,6 +48,9 @@ pub struct LayerState {
     /// The current fill colour
     pub fill_color: render::Rgba8,
 
+    /// The blend mode set for this layer
+    pub blend_mode: canvas::BlendMode,
+
     /// The settings for the next brush stroke
     pub stroke_settings: StrokeSettings,
 

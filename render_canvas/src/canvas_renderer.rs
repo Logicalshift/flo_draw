@@ -130,6 +130,7 @@ impl CanvasRenderer {
                 fill_color:         render::Rgba8([0, 0, 0, 255]),
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),
+                blend_mode:         canvas::BlendMode::SourceOver,
                 restore_point:      None
             },
             stored_states:      vec![]
@@ -226,10 +227,10 @@ impl CanvasRenderer {
 
                         // Publish the fill job to the tessellators
                         if let Some(path) = &current_path {
-                            let path        = path.clone();
-                            let layer_id    = self.current_layer;
-                            let entity_id   = self.next_entity_id;
-                            let active_transform = &self.active_transform;
+                            let path                = path.clone();
+                            let layer_id            = self.current_layer;
+                            let entity_id           = self.next_entity_id;
+                            let active_transform    = &self.active_transform;
 
                             self.next_entity_id += 1;
 
@@ -344,6 +345,7 @@ impl CanvasRenderer {
                     BlendMode(blend_mode) => {
                         core.sync(|core| {
                             use canvas::BlendMode::*;
+                            core.layers[self.current_layer].state.blend_mode = blend_mode;
 
                             let blend_mode = match blend_mode {
                                 SourceOver      => render::BlendMode::DestinationOver,
@@ -446,6 +448,7 @@ impl CanvasRenderer {
                     // (If the clipping path has changed since then, the restored image is clipped against the new path)
                     Restore => {
                         // Roll back the layer to the restore point
+                        // TODO: need to reset the blend mode
                         core.sync(|core| {
                             if let Some(restore_point) = core.layers[self.current_layer].state.restore_point {
                                 // Remove entries from the layer until we reach the restore point
@@ -613,7 +616,7 @@ impl CanvasRenderer {
             initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(1), TextureId(1),
                 self.window_size.0 as usize,
                 self.window_size.1 as usize,
-                RenderTargetType::MultisampledTexture));
+                RenderTargetType::MonochromeMultisampledTexture));
 
             self.created_render_surface = true;
         }
