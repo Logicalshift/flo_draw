@@ -27,14 +27,12 @@ pub enum CanvasJob {
     /// Tessellates a path by filling it
     ///
     Fill { 
-        operation:      LayerOperation,
         path:           path::Path, 
         color:          render::Rgba8,
         entity:         LayerEntityRef
     },
 
     Stroke {
-        operation:      LayerOperation,
         path:           path::Path,
         stroke_options: StrokeSettings,
         entity:         LayerEntityRef
@@ -63,15 +61,15 @@ impl CanvasWorker {
         use self::CanvasJob::*;
 
         match job {
-            Fill    { operation, path, color, entity }          => self.fill(operation, path, color, entity),
-            Stroke  { operation, path, stroke_options, entity } => self.stroke(operation, path, stroke_options, entity)
+            Fill    { path, color, entity }             => self.fill(path, color, entity),
+            Stroke  { path, stroke_options, entity }    => self.stroke(path, stroke_options, entity)
         }
     }
 
     ///
     /// Fills the current path and returns the resulting render entity
     ///
-    fn fill(&mut self, operation: LayerOperation, path: path::Path, render::Rgba8(color): render::Rgba8, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
+    fn fill(&mut self, path: path::Path, render::Rgba8(color): render::Rgba8, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
         // Create the tessellator and geometry
         let mut tessellator     = tessellation::FillTessellator::new();
         let mut geometry        = VertexBuffers::new();
@@ -91,7 +89,7 @@ impl CanvasWorker {
             })).unwrap();
 
         // Result is a vertex buffer render entity
-        (entity, RenderEntity::VertexBuffer(operation, geometry))
+        (entity, RenderEntity::VertexBuffer(geometry))
     }
 
     ///
@@ -120,7 +118,7 @@ impl CanvasWorker {
     ///
     /// Strokes a path and returns the resulting render entity
     ///
-    fn stroke(&mut self, operation: LayerOperation, path: path::Path, stroke_options: StrokeSettings, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
+    fn stroke(&mut self, path: path::Path, stroke_options: StrokeSettings, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
         // Create the tessellator and geometry
         let mut tessellator         = tessellation::StrokeTessellator::new();
         let mut geometry            = VertexBuffers::new();
@@ -140,6 +138,6 @@ impl CanvasWorker {
             })).unwrap();
 
         // Result is a vertex buffer render entity
-        (entity, RenderEntity::VertexBuffer(operation, geometry))
+        (entity, RenderEntity::VertexBuffer(geometry))
     }
 }

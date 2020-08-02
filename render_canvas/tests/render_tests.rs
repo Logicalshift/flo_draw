@@ -98,6 +98,7 @@ fn fill_two_circles() {
         assert!(set_transform.is_some());
         assert!(match set_transform { Some(RenderAction::SetTransform(_)) => true, _ => false });
 
+        // First we upload the vertex buffers...
         let upload_vertices = draw_stream.next().await;
         assert!(upload_vertices.is_some());
         assert!(match upload_vertices { Some(RenderAction::CreateVertex2DBuffer(_, _)) => true, _ => false });
@@ -117,6 +118,7 @@ fn fill_two_circles() {
         // Layer preamble occurs after uploading the buffers
         check_layer_preamble(&mut draw_stream).await;
 
+        // Drawing starts after the layer preamble
         let draw_vertices   = draw_stream.next().await;
         assert!(draw_vertices.is_some());
         assert!(match draw_vertices { Some(RenderAction::DrawIndexedTriangles(_, _, _)) => true, _ => false });

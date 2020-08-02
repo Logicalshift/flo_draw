@@ -103,7 +103,7 @@ impl<'a> Stream for RenderStream<'a> {
             use self::RenderEntity::*;
 
             for render_idx in 0..core.layers[layer_id].render_order.len() {
-                if let VertexBuffer(_op, _buffers) = &core.layers[layer_id].render_order[render_idx] {
+                if let VertexBuffer(_buffers) = &core.layers[layer_id].render_order[render_idx] {
                     send_vertex_buffers.extend(core.send_vertex_buffer(layer_id, render_idx));
                 }
             }
@@ -121,12 +121,12 @@ impl<'a> Stream for RenderStream<'a> {
                         panic!("Tessellation is not complete (vertex buffer went missing)");
                     },
 
-                    Tessellating(_op, _id) => { 
+                    Tessellating(_id) => { 
                         // Being processed? (shouldn't happen)
                         panic!("Tessellation is not complete (tried to render too early)");
                     },
 
-                    VertexBuffer(_op, _buffers) => {
+                    VertexBuffer(_buffers) => {
                         // Should already have sent all the vertex buffers
                         panic!("Tessellation is not complete (found unexpected vertex buffer in layer)");
                     },
@@ -181,7 +181,7 @@ impl<'a> Stream for RenderStream<'a> {
                         active_blend_mode = *new_blend_mode;
                     },
 
-                    DrawIndexed(_op, vertex_buffer, index_buffer, num_items) => {
+                    DrawIndexed(vertex_buffer, index_buffer, num_items) => {
                         // Draw the triangles
                         render_layer_stack.push(render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items));
                     }

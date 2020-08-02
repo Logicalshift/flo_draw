@@ -6,18 +6,6 @@ use flo_render as render;
 use lyon::tessellation::{VertexBuffers};
 
 ///
-/// Operation to use when drawing an item on a layer
-///
-#[derive(Clone, Copy)]
-pub enum LayerOperation {
-    /// Draw the vertex buffer
-    Draw,
-
-    /// Erase the vertex buffer
-    Erase
-}
-
-///
 /// Single rendering operation for a layer
 ///
 pub enum RenderEntity {
@@ -25,13 +13,13 @@ pub enum RenderEntity {
     Missing,
 
     /// Render operation is waiting to be tessellated (with a unique entity ID)
-    Tessellating(LayerOperation, usize),
+    Tessellating(usize),
 
     /// Tessellation waiting to be sent to the renderer
-    VertexBuffer(LayerOperation, VertexBuffers<render::Vertex2D, u16>),
+    VertexBuffer(VertexBuffers<render::Vertex2D, u16>),
 
     /// Render a vertex buffer
-    DrawIndexed(LayerOperation, render::VertexBufferId, render::IndexBufferId, usize),
+    DrawIndexed(render::VertexBufferId, render::IndexBufferId, usize),
 
     /// Updates the transformation matrix for the layer
     SetTransform(canvas::Transform2D),

@@ -36,12 +36,12 @@ impl RenderCore {
 
         match render_entity {
             Missing                         => { }
-            Tessellating(_op, _entity_id)   => { }
-            VertexBuffer(_op, _buffers)     => { }
+            Tessellating(_entity_id)        => { }
+            VertexBuffer(_buffers)          => { }
             SetTransform(_)                 => { }
             SetBlendMode(_)                 => { }
 
-            DrawIndexed(_op, render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices) => {
+            DrawIndexed(render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices) => {
                 // Each buffer is only used by one drawing operation, so we can always free them here
                 self.free_vertex_buffers.push(vertex_id);
                 if index_id != vertex_id {
@@ -69,7 +69,7 @@ impl RenderCore {
 
         // The existing entity should be a 'tessellating' entry that matches the entity_ref ID
         let entity = &mut self.layers[entity_ref.layer_id].render_order[entity_ref.entity_index];
-        if let RenderEntity::Tessellating(_op, entity_id) = entity {
+        if let RenderEntity::Tessellating(entity_id) = entity {
             if *entity_id != entity_ref.entity_id {
                 return;
             }
@@ -104,12 +104,12 @@ impl RenderCore {
 
         // The action we just removed should be a vertex buffer action
         match vertex_action {
-            RenderEntity::VertexBuffer(op, vertices) => {
+            RenderEntity::VertexBuffer(vertices) => {
                 // Allocate a buffer
                 let buffer_id = self.allocate_vertex_buffer();
 
                 // Draw these buffers as the action at this position
-                self.layers[layer_id].render_order[render_index] = RenderEntity::DrawIndexed(op, render::VertexBufferId(buffer_id), render::IndexBufferId(buffer_id), vertices.indices.len());
+                self.layers[layer_id].render_order[render_index] = RenderEntity::DrawIndexed(render::VertexBufferId(buffer_id), render::IndexBufferId(buffer_id), vertices.indices.len());
 
                 // Send the vertices and indices to the rendering engine
                 vec![

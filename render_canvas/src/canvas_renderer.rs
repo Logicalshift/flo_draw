@@ -241,17 +241,16 @@ impl CanvasRenderer {
                                 // Create the render entity in the tessellating state
                                 let color               = core.layers[layer_id].state.fill_color;
                                 let entity_index        = core.layers[layer_id].render_order.len();
-                                let operation           = LayerOperation::Draw;
 
                                 // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
                                 let color               = if core.layers[layer_id].state.blend_mode == canvas::BlendMode::DestinationOut { render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]]) } else { color };
 
-                                core.layers[layer_id].render_order.push(RenderEntity::Tessellating(operation, entity_id));
+                                core.layers[layer_id].render_order.push(RenderEntity::Tessellating(entity_id));
 
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
                                 // Create the canvas job
-                                CanvasJob::Fill { path, color, entity, operation }
+                                CanvasJob::Fill { path, color, entity }
                             });
 
                             job_publisher.publish(job).await;
@@ -281,19 +280,18 @@ impl CanvasRenderer {
                                 // Create the render entity in the tessellating state
                                 let mut stroke_options  = core.layers[layer_id].state.stroke_settings.clone();
                                 let entity_index        = core.layers[layer_id].render_order.len();
-                                let operation           = LayerOperation::Draw;
 
 
                                 // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
                                 let color                   = stroke_options.stroke_color;
                                 stroke_options.stroke_color = if core.layers[layer_id].state.blend_mode == canvas::BlendMode::DestinationOut { render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]]) } else { color };
 
-                                core.layers[layer_id].render_order.push(RenderEntity::Tessellating(operation, entity_id));
+                                core.layers[layer_id].render_order.push(RenderEntity::Tessellating(entity_id));
 
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
                                 // Create the canvas job
-                                CanvasJob::Stroke { path, stroke_options, entity, operation }
+                                CanvasJob::Stroke { path, stroke_options, entity }
                             });
 
                             job_publisher.publish(job).await;
