@@ -10,5 +10,8 @@ pub enum BlendMode {
     SourceOut,
     DestinationOut,
     SourceATop,
-    DestinationATop
+    DestinationATop,
+
+    AllChannelAlphaSourceOver,
+    AllChannelAlphaDestinationOver
 }
