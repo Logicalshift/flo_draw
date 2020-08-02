@@ -18,6 +18,9 @@ pub struct RenderTarget {
     /// The texture attached to the framebuffer (if we're tracking it)
     texture: Option<Texture>,
 
+    /// The target type of this render surface
+    render_type: RenderTargetType,
+
     /// Set to true if this should drop its frame buffer when done
     drop_frame_buffer: bool,
 
@@ -125,6 +128,7 @@ impl RenderTarget {
                 texture:            texture,
                 render_buffer:      render_buffer,
                 size:               (width, height),
+                render_type:        render_type,
                 drop_frame_buffer:  true
             }
         }
@@ -145,6 +149,7 @@ impl RenderTarget {
             texture:            None,
             render_buffer:      None,
             drop_frame_buffer:  false,
+            render_type:        RenderTargetType::Standard,
             size:               (0, 0)
         }
     }
@@ -154,6 +159,13 @@ impl RenderTarget {
     ///
     pub fn texture(&self) -> Option<Texture> {
         self.texture.clone()
+    }
+
+    ///
+    /// Returns the type of render target that this represents
+    ///
+    pub fn render_type(&self) -> RenderTargetType {
+        self.render_type
     }
 
     ///
