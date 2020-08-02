@@ -16,10 +16,10 @@ where UniformAttribute: Hash {
     shader_program: gl::types::GLuint,
 
     /// The shaders that make up the shader program
-    shaders: Vec<Shader>,
+    _shaders: Vec<Shader>,
 
     /// The attributes for the shader program (indexed first by shader, then by attribute number)
-    attributes: Vec<Vec<gl::types::GLuint>>,
+    _attributes: Vec<Vec<gl::types::GLuint>>,
 
     /// The location of the known uniforms for this shader program
     uniform_attributes: HashMap<UniformAttribute, gl::types::GLint>
@@ -73,38 +73,11 @@ impl<UniformAttribute: Hash+Eq> ShaderProgram<UniformAttribute> {
             // Generate the resulting shader program
             ShaderProgram {
                 shader_program:     shader_program,
-                shaders:            shaders,
-                attributes:         attributes,
+                _shaders:           shaders,
+                _attributes:        attributes,
                 uniform_attributes: HashMap::new()
             }
         }
-    }
-
-    ///
-    /// Given a shader number (offset into the shader iterator used to create the program) and an attribute number
-    /// (offset into the attribute iterator supplied when creating the shader), retrieves the attribute ID for this program
-    ///
-    pub fn attribute_id(&self, shader_num: usize, attribute_num: usize) -> gl::types::GLuint {
-        self.attributes[shader_num][attribute_num]
-    }
-
-    ///
-    /// Finds the attribute with the specified name from the shaders in this program
-    ///
-    pub fn attribute_with_name(&self, attribute_name: &str) -> Option<gl::types::GLuint> {
-        // Convert the name to a c-string
-        let name = CString::new(attribute_name).ok()?;
-
-        // Iterate through the attributes until we find one with a matching name
-        for (shader_num, shader) in self.shaders.iter().enumerate() {
-            for (attribute_num, attribute_name) in shader.attributes().iter().enumerate() {
-                if attribute_name == &name {
-                    return Some(self.attributes[shader_num][attribute_num]);
-                }
-            }
-        }
-
-        None
     }
 
     ///
