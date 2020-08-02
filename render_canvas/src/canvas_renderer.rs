@@ -243,6 +243,9 @@ impl CanvasRenderer {
                                 let entity_index        = core.layers[layer_id].render_order.len();
                                 let operation           = LayerOperation::Draw;
 
+                                // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
+                                let color               = if core.layers[layer_id].state.blend_mode == canvas::BlendMode::DestinationOut { render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]]) } else { color };
+
                                 core.layers[layer_id].render_order.push(RenderEntity::Tessellating(operation, entity_id));
 
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
@@ -276,9 +279,14 @@ impl CanvasRenderer {
                                 core.layers[layer_id].update_transform(active_transform);
 
                                 // Create the render entity in the tessellating state
-                                let stroke_options      = core.layers[layer_id].state.stroke_settings.clone();
+                                let mut stroke_options  = core.layers[layer_id].state.stroke_settings.clone();
                                 let entity_index        = core.layers[layer_id].render_order.len();
                                 let operation           = LayerOperation::Draw;
+
+
+                                // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
+                                let color                   = stroke_options.stroke_color;
+                                stroke_options.stroke_color = if core.layers[layer_id].state.blend_mode == canvas::BlendMode::DestinationOut { render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]]) } else { color };
 
                                 core.layers[layer_id].render_order.push(RenderEntity::Tessellating(operation, entity_id));
 
