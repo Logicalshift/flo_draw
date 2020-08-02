@@ -535,7 +535,10 @@ impl CanvasRenderer {
                     }
 
                     // Sets how a particular layer is blended with the underlying layer
-                    LayerBlend(layer_id, blend_mode) => {
+                    LayerBlend(_layer_id, _blend_mode) => {
+                        // TODO: this needs some more work: for some blending modes we probably need to render the layer off-screen
+                        // and the current 'reverse order' drawing makes drawing it in the right order tricky
+
                         //unimplemented!()
                     }
 
