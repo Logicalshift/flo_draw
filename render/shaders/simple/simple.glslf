@@ -24,9 +24,9 @@ void main() {
     ivec2 pos       = ivec2(x, y);
     vec4 eraseColor = texelFetch(t_EraseMask, pos, 3);
 
-    f_Color[0] *= 1-eraseColor[3];
-    f_Color[1] *= 1-eraseColor[3];
-    f_Color[2] *= 1-eraseColor[3];
-    f_Color[3] *= 1-eraseColor[3];
+    f_Color[0] *= 1-eraseColor[0];
+    f_Color[1] *= 1-eraseColor[0];
+    f_Color[2] *= 1-eraseColor[0];
+    f_Color[3] *= 1-eraseColor[0];
 #endif
 }
