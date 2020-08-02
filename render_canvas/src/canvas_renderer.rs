@@ -613,7 +613,7 @@ impl CanvasRenderer {
             initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(1), TextureId(1),
                 self.window_size.0 as usize,
                 self.window_size.1 as usize,
-                RenderTargetType::MonochromeMultisampledTexture));
+                RenderTargetType::MultisampledTexture));
 
             self.created_render_surface = true;
         }
