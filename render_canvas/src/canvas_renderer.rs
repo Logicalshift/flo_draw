@@ -51,6 +51,9 @@ pub struct CanvasRenderer {
     /// The width and size of the window overall
     window_size: (f32, f32),
 
+    /// The width and size of the viewport we're rendering to
+    viewport_size: (f32, f32),
+
     /// True if the MSAA rendering surface has been created
     created_render_surface: bool
 }
@@ -87,6 +90,7 @@ impl CanvasRenderer {
             transform_stack:            vec![],
             next_entity_id:             0,
             window_size:                (1.0, 1.0),
+            viewport_size:              (1.0, 1.0),
             created_render_surface:     false
         }
     }
@@ -109,6 +113,14 @@ impl CanvasRenderer {
 
         if self.window_size != (window_width, window_height) {
             self.window_size            = (window_width, window_height);
+            self.created_render_surface = false;
+        }
+
+        let viewport_width              = x.end-x.start;
+        let viewport_height             = y.end-y.start;
+
+        if self.viewport_size != (viewport_width, viewport_height) {
+            self.viewport_size          = (viewport_width, viewport_height);
             self.created_render_surface = false;
         }
     }
@@ -617,14 +629,14 @@ impl CanvasRenderer {
         if !self.created_render_surface {
             // If the MSAA render surface is missing, create it (it's always render target 0, texture 0)
             initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(0), TextureId(0), 
-                self.window_size.0 as usize,
-                self.window_size.1 as usize,
+                self.viewport_size.0 as usize,
+                self.viewport_size.1 as usize,
                 RenderTargetType::Multisampled));
 
             // Also create the 'eraser' render surface (render target 1, texture 1)
             initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(1), TextureId(1),
-                self.window_size.0 as usize,
-                self.window_size.1 as usize,
+                self.viewport_size.0 as usize,
+                self.viewport_size.1 as usize,
                 RenderTargetType::MonochromeMultisampledTexture));
 
             self.created_render_surface = true;
