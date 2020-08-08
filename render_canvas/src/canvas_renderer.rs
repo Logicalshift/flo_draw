@@ -101,7 +101,7 @@ impl CanvasRenderer {
         let scale_transform             = canvas::Transform2D::scale(2.0/width, 2.0/height);
 
         // Bottom-right corner is currently -width/2.0, -height/2.0 (as we scale around the center)
-        let viewport_transform          = scale_transform * canvas::Transform2D::translate(-(width/2.0) + x.start, -(height/2.0) + y.start);
+        let viewport_transform          = scale_transform * canvas::Transform2D::translate(-(width/2.0) - x.start, -(height/2.0) - y.start);
         let inverse_viewport_transform  = viewport_transform.invert().unwrap();
 
         self.viewport_transform         = viewport_transform;
