@@ -427,11 +427,11 @@ impl CanvasRenderer {
                     // (0,height/2) is the top of the canvas
                     // Pixels are square
                     CanvasHeight(height) => {
-                        let height              = height * self.window_scale;
+                        let window_height       = self.window_size.1/self.window_scale;
 
                         // Work out the scale to use for this widget
                         let height              = f32::max(1.0, height);
-                        let scale               = self.window_size.1 / height;
+                        let scale               = window_height / height;
                         let scale               = canvas::Transform2D::scale(scale, scale);
 
                         // The viewport transform makes (0,0) the lower-left of the canvas: move it to the middle
@@ -444,17 +444,15 @@ impl CanvasRenderer {
 
                     // Moves a particular region to the center of the canvas (coordinates are minx, miny, maxx, maxy)
                     CenterRegion((x1, y1), (x2, y2)) => {
-                        let x1                  = x1 * self.window_scale;
-                        let y1                  = y1 * self.window_scale;
-                        let x2                  = x2 * self.window_scale;
-                        let y2                  = y2 * self.window_scale;
+                        let window_width        = self.window_size.0/self.window_scale;
+                        let window_height       = self.window_size.1/self.window_scale;
 
                         // Work out the scale factor
                         let region_width        = f32::max(0.0, x2-x1);
                         let region_height       = f32::max(0.0, y2-y1);
 
-                        let scale_x             = self.window_size.0 / region_width;
-                        let scale_y             = self.window_size.1 / region_height;
+                        let scale_x             = window_width / region_width;
+                        let scale_y             = window_height / region_height;
                         let scale               = f32::min(scale_x, scale_y);
 
                         let scale               = canvas::Transform2D::scale(scale, scale);
@@ -462,8 +460,8 @@ impl CanvasRenderer {
                         // Move the center point to the middle of the canvas
                         let center_x            = (x1+x2)/2.0;
                         let center_y            = (y1+y2)/2.0;
-                        let left_x              = center_x - self.window_size.0/2.0;
-                        let left_y              = center_y - self.window_size.1/2.0;
+                        let left_x              = center_x - window_width/2.0;
+                        let left_y              = center_y - window_height/2.0;
 
                         let translate           = canvas::Transform2D::translate(left_x, left_y);
 
