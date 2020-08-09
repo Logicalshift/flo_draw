@@ -7,11 +7,14 @@ edition     = "2018"
 repository  = "https://github.com/Logicalshift/flowbetween"
 description = "Streaming API for rendering graphics on hardware"
 
-include     = [ "Cargo.toml", "src/**/*", "shaders/**/*" ]
+include     = [ "Cargo.toml", "src/**/*", "shaders/**/*", "bindings/**/*", "build.rs" ]
 
 [features]
 opengl      = [ "gl" ]
 osx-metal   = [ "metal" ]
+
+[build-dependencies]
+bindgen = "0.54"
 
 [dependencies]
 gl          = { version = "0.14", optional = true }
