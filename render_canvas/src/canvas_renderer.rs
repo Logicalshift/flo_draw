@@ -427,6 +427,8 @@ impl CanvasRenderer {
                     // (0,height/2) is the top of the canvas
                     // Pixels are square
                     CanvasHeight(height) => {
+                        let height              = height * self.window_scale;
+
                         // Work out the scale to use for this widget
                         let height              = f32::max(1.0, height);
                         let scale               = self.window_size.1 / height;
@@ -442,6 +444,11 @@ impl CanvasRenderer {
 
                     // Moves a particular region to the center of the canvas (coordinates are minx, miny, maxx, maxy)
                     CenterRegion((x1, y1), (x2, y2)) => {
+                        let x1                  = x1 * self.window_scale;
+                        let y1                  = y1 * self.window_scale;
+                        let x2                  = x2 * self.window_scale;
+                        let y2                  = y2 * self.window_scale;
+
                         // Work out the scale factor
                         let region_width        = f32::max(0.0, x2-x1);
                         let region_height       = f32::max(0.0, y2-y1);
