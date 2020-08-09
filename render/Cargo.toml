@@ -9,5 +9,8 @@ description = "Streaming API for rendering graphics on hardware"
 
 include     = [ "Cargo.toml", "src/**/*", "shaders/**/*" ]
 
+[features]
+opengl      = [ "gl" ]
+
 [dependencies]
-gl          = "0.14"
+gl          = { version = "0.14", optional = true }

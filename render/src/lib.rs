@@ -1,7 +1,7 @@
 mod action;
 mod buffer;
-mod gl_renderer;
+#[cfg(feature="gl")] mod gl_renderer;
 
 pub use self::action::*;
 pub use self::buffer::*;
-pub use self::gl_renderer::{GlRenderer};
+#[cfg(feature="gl")] pub use self::gl_renderer::{GlRenderer};
