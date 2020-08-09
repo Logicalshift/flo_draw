@@ -51,6 +51,9 @@ pub struct CanvasRenderer {
     /// The width and size of the window overall
     window_size: (f32, f32),
 
+    /// The origin of the viewport
+    viewport_origin: (f32, f32),
+
     /// The width and size of the viewport we're rendering to
     viewport_size: (f32, f32),
 
@@ -90,6 +93,7 @@ impl CanvasRenderer {
             transform_stack:            vec![],
             next_entity_id:             0,
             window_size:                (1.0, 1.0),
+            viewport_origin:            (0.0, 0.0),
             viewport_size:              (1.0, 1.0),
             created_render_surface:     false
         }
@@ -119,10 +123,22 @@ impl CanvasRenderer {
         let viewport_width              = x.end-x.start;
         let viewport_height             = y.end-y.start;
 
+        self.viewport_origin            = (x.start, y.start);
+
         if self.viewport_size != (viewport_width, viewport_height) {
             self.viewport_size          = (viewport_width, viewport_height);
             self.created_render_surface = false;
         }
+    }
+
+    ///
+    /// Returns the coordinates of the viewport, as x and y ranges
+    ///
+    pub fn get_viewport(&self) -> (Range<f32>, Range<f32>) {
+        let x_range = self.viewport_origin.0..(self.viewport_origin.0 + self.viewport_size.0);
+        let y_range = self.viewport_origin.1..(self.viewport_origin.1 + self.viewport_size.1);
+
+        (x_range, y_range)
     }
 
     ///
