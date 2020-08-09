@@ -51,6 +51,9 @@ pub struct CanvasRenderer {
     /// The width and size of the window overall
     window_size: (f32, f32),
 
+    /// The scale factor of the window
+    window_scale: f32,
+
     /// The origin of the viewport
     viewport_origin: (f32, f32),
 
@@ -93,6 +96,7 @@ impl CanvasRenderer {
             transform_stack:            vec![],
             next_entity_id:             0,
             window_size:                (1.0, 1.0),
+            window_scale:               1.0,
             viewport_origin:            (0.0, 0.0),
             viewport_size:              (1.0, 1.0),
             created_render_surface:     false
@@ -102,7 +106,10 @@ impl CanvasRenderer {
     ///
     /// Sets the viewport used by this renderer
     ///
-    pub fn set_viewport(&mut self, x: Range<f32>, y: Range<f32>, window_width: f32, window_height: f32) {
+    /// The viewport and window coordinates are all in pixels. The scale used when generating transformations
+    /// (so with a scale of 2, a CanvasHeight request of 1080 will act as a height 2160 in the viewport)
+    ///
+    pub fn set_viewport(&mut self, x: Range<f32>, y: Range<f32>, window_width: f32, window_height: f32, scale: f32) {
         // By default the x and y coordinates go from -1.0 to 1.0
         let width                       = x.end-x.start;
         let height                      = y.end-y.start;
@@ -124,6 +131,7 @@ impl CanvasRenderer {
         let viewport_height             = y.end-y.start;
 
         self.viewport_origin            = (x.start, y.start);
+        self.window_scale               = scale;
 
         if self.viewport_size != (viewport_width, viewport_height) {
             self.viewport_size          = (viewport_width, viewport_height);
