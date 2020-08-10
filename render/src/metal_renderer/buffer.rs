@@ -9,9 +9,6 @@ use std::ffi::{c_void};
 /// Manages a metal buffer
 ///
 pub struct Buffer {
-    /// The device that owns this buffer
-    device: metal::Device,
-
     /// The buffer that this is managing
     buffer: metal::Buffer
 }
@@ -33,7 +30,6 @@ impl Buffer {
 
         // Return the buffer object
         Buffer {
-            device: device.clone(),
             buffer: buffer
         }
     }
