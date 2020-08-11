@@ -21,6 +21,17 @@ pub struct MetalRenderer {
     index_buffers: Vec<Option<Buffer>>
 }
 
+///
+/// The current state of a renderer
+///
+struct RenderState<'a> {
+    /// The main render buffer
+    main_buffer: &'a metal::Drawable,
+
+    /// The current target render buffer
+    target_buffer: metal::Drawable
+}
+
 impl MetalRenderer {
     ///
     /// Creates a new metal renderer using the system default device
@@ -39,6 +50,13 @@ impl MetalRenderer {
     /// Performs rendering of the specified actions to this device target
     ///
     pub fn render<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions, target_drawable: &metal::Drawable) {
+        // Create the render state
+        let mut render_state = RenderState {
+            main_buffer:    target_drawable,
+            target_buffer:  target_drawable.clone()
+        };
+
+        // Evaluate the actions
         for action in actions {
             use self::RenderAction::*;
 
@@ -51,7 +69,7 @@ impl MetalRenderer {
                 CreateRenderTarget(render_id, texture_id, width, height, render_type)   => { self.create_render_target(render_id, texture_id, width, height, render_type); }
                 FreeRenderTarget(render_id)                                             => { self.free_render_target(render_id); }
                 SelectRenderTarget(render_id)                                           => { self.select_render_target(render_id); }
-                RenderToFrameBuffer                                                     => { self.select_main_frame_buffer(); }
+                RenderToFrameBuffer                                                     => { self.select_main_frame_buffer(&mut render_state); }
                 DrawFrameBuffer(render_id, x, y)                                        => { self.draw_frame_buffer(render_id, x, y); }
                 ShowFrameBuffer                                                         => { /* This doesn't double-buffer so nothing to do */ }
                 CreateTextureBgra(texture_id, width, height)                            => { self.create_bgra_texture(texture_id, width, height); }
@@ -124,8 +142,11 @@ impl MetalRenderer {
 
     }
 
-    fn select_main_frame_buffer(&mut self) {
-
+    ///
+    /// Sets the main frame buffer to be the current render target
+    ///
+    fn select_main_frame_buffer(&mut self, state: &mut RenderState) {
+        state.target_buffer = state.main_buffer.clone();
     }
 
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, x: i32, y: i32) {
