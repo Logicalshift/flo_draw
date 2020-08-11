@@ -68,8 +68,22 @@ impl MetalRenderer {
 
     }
 
+    ///
+    /// Loads a vertex buffer and associates it with an ID
+    ///
     fn create_vertex_buffer_2d(&mut self, VertexBufferId(vertex_id): VertexBufferId, vertices: Vec<Vertex2D>) {
+        // Reserve space for the buffer ID
+        if vertex_id >= self.buffers.len() {
+            self.buffers.extend((self.buffers.len()..(vertex_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
 
+        // Free any existing buffer
+        self.buffers[vertex_id] = None;
+
+        // Load and store the new buffer
+        self.buffers[vertex_id] = Some(Buffer::from_vertices(&self.device, vertices));
     }
 
     fn create_index_buffer(&mut self, IndexBufferId(index_id): IndexBufferId, indices: Vec<u16>) {
