@@ -3,6 +3,7 @@ use crate::buffer::*;
 
 use metal;
 
+use std::ops::{Deref};
 use std::ffi::{c_void};
 
 ///
@@ -32,5 +33,26 @@ impl Buffer {
         Buffer {
             buffer: buffer
         }
+    }
+
+    ///
+    /// Creates a buffer from a list of indexes
+    ///
+    pub fn from_indices(device: &metal::Device, indices: Vec<u16>) -> Buffer {
+        let buffer = device.new_buffer_with_data(indices.as_ptr() as *const c_void,
+            (indices.len() * std::mem::size_of::<u16>()) as u64,
+            metal::MTLResourceOptions::CPUCacheModeDefaultCache | metal::MTLResourceOptions::StorageModeManaged);
+
+        Buffer {
+            buffer: buffer
+        }
+    }
+}
+
+impl Deref for Buffer {
+    type Target = metal::Buffer;
+
+    fn deref(&self) -> &metal::Buffer {
+        &self.buffer
     }
 }

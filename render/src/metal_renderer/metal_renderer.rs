@@ -14,8 +14,8 @@ pub struct MetalRenderer {
     /// The device that this will render to
     device: metal::Device,
 
-    /// The buffers allocated to this renderer
-    buffers: Vec<Option<Buffer>>,
+    /// The vertex buffers allocated to this renderer
+    vertex_buffers: Vec<Option<Buffer>>,
 
     /// The index buffers defined for this renderer
     index_buffers: Vec<Option<Buffer>>
@@ -30,7 +30,7 @@ impl MetalRenderer {
 
         MetalRenderer {
             device:         device,
-            buffers:        vec![],
+            vertex_buffers: vec![],
             index_buffers:  vec![]
         }
     }
@@ -73,25 +73,39 @@ impl MetalRenderer {
     ///
     fn create_vertex_buffer_2d(&mut self, VertexBufferId(vertex_id): VertexBufferId, vertices: Vec<Vertex2D>) {
         // Reserve space for the buffer ID
-        if vertex_id >= self.buffers.len() {
-            self.buffers.extend((self.buffers.len()..(vertex_id+1))
+        if vertex_id >= self.vertex_buffers.len() {
+            self.vertex_buffers.extend((self.vertex_buffers.len()..(vertex_id+1))
                 .into_iter()
                 .map(|_| None));
         }
 
         // Free any existing buffer
-        self.buffers[vertex_id] = None;
+        self.vertex_buffers[vertex_id] = None;
 
         // Load and store the new buffer
-        self.buffers[vertex_id] = Some(Buffer::from_vertices(&self.device, vertices));
+        self.vertex_buffers[vertex_id] = Some(Buffer::from_vertices(&self.device, vertices));
     }
 
+    ///
+    /// Loads an index buffer and associates it with an ID
+    ///
     fn create_index_buffer(&mut self, IndexBufferId(index_id): IndexBufferId, indices: Vec<u16>) {
+        // Reserve space for the buffer ID
+        if index_id >= self.index_buffers.len() {
+            self.index_buffers.extend((self.index_buffers.len()..(index_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
 
+        // Free any existing buffer
+        self.index_buffers[index_id] = None;
+
+        // Load and store the new buffer
+        self.index_buffers[index_id] = Some(Buffer::from_indices(&self.device, indices));
     }
 
     fn free_vertex_buffer(&mut self, VertexBufferId(vertex_id): VertexBufferId) {
-
+        self.vertex_buffers[vertex_id] = None;
     }
 
     fn blend_mode(&mut self, blend_mode: BlendMode) {
