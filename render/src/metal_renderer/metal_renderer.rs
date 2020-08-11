@@ -14,6 +14,9 @@ pub struct MetalRenderer {
     /// The device that this will render to
     device: metal::Device,
 
+    /// The command queue we're using to render to this device
+    command_queue: metal::CommandQueue,
+
     /// The vertex buffers allocated to this renderer
     vertex_buffers: Vec<Option<Buffer>>,
 
@@ -29,7 +32,10 @@ struct RenderState<'a> {
     main_buffer: &'a metal::Drawable,
 
     /// The current target render buffer
-    target_buffer: metal::Drawable
+    target_buffer: metal::Drawable,
+
+    /// The command buffer we're using to send rendering actions
+    command_buffer: &'a metal::CommandBufferRef
 }
 
 impl MetalRenderer {
@@ -37,10 +43,12 @@ impl MetalRenderer {
     /// Creates a new metal renderer using the system default device
     ///
     pub fn with_default_device() -> MetalRenderer {
-        let device = metal::Device::system_default().expect("No Metal device available");
+        let device          = metal::Device::system_default().expect("No Metal device available");
+        let command_queue   = device.new_command_queue();
 
         MetalRenderer {
             device:         device,
+            command_queue:  command_queue,
             vertex_buffers: vec![],
             index_buffers:  vec![]
         }
@@ -51,9 +59,11 @@ impl MetalRenderer {
     ///
     pub fn render<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions, target_drawable: &metal::Drawable) {
         // Create the render state
-        let mut render_state = RenderState {
+        let command_queue       = self.command_queue.clone();
+        let mut render_state    = RenderState {
             main_buffer:    target_drawable,
-            target_buffer:  target_drawable.clone()
+            target_buffer:  target_drawable.clone(),
+            command_buffer: command_queue.new_command_buffer()
         };
 
         // Evaluate the actions
