@@ -15,3 +15,18 @@ impl From<Vertex2D> for MetalVertex2D {
         }
     }
 }
+
+impl From<Matrix> for matrix_float4x4 {
+    fn from(Matrix(src): Matrix) -> matrix_float4x4 {
+        unsafe { 
+            matrix_float4x4 {
+                columns: [
+                    mem::transmute(src[0]),
+                    mem::transmute(src[1]),
+                    mem::transmute(src[2]),
+                    mem::transmute(src[3]),
+                ]
+            }
+        }
+    }
+}
