@@ -1,4 +1,5 @@
 use super::buffer::*;
+use super::matrix_buffer::*;
 
 use crate::action::*;
 use crate::buffer::*;
@@ -34,6 +35,9 @@ struct RenderState<'a> {
     /// The current target render buffer
     target_buffer: metal::Drawable,
 
+    /// Buffer containing the current transformation matrix
+    matrix: MatrixBuffer,
+
     /// The command buffer we're using to send rendering actions
     command_buffer: &'a metal::CommandBufferRef
 }
@@ -60,9 +64,11 @@ impl MetalRenderer {
     pub fn render<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions, target_drawable: &metal::Drawable) {
         // Create the render state
         let command_queue       = self.command_queue.clone();
+        let matrix              = MatrixBuffer::from_matrix(&self.device, Matrix::identity());
         let mut render_state    = RenderState {
             main_buffer:    target_drawable,
             target_buffer:  target_drawable.clone(),
+            matrix:         matrix,
             command_buffer: command_queue.new_command_buffer()
         };
 
@@ -71,7 +77,7 @@ impl MetalRenderer {
             use self::RenderAction::*;
 
             match action {
-                SetTransform(matrix)                                                    => { self.set_transform(matrix); }
+                SetTransform(matrix)                                                    => { self.set_transform(matrix, &mut render_state); }
                 CreateVertex2DBuffer(id, vertices)                                      => { self.create_vertex_buffer_2d(id, vertices); }
                 CreateIndexBuffer(id, indices)                                          => { self.create_index_buffer(id, indices); }
                 FreeVertexBuffer(id)                                                    => { self.free_vertex_buffer(id); }
@@ -93,8 +99,11 @@ impl MetalRenderer {
         }
     }
 
-    fn set_transform(&mut self, matrix: Matrix) {
-
+    ///
+    /// Sets the active transformation matrix
+    ///
+    fn set_transform(&mut self, matrix: Matrix, state: &mut RenderState) {
+        state.matrix.set_matrix(matrix);
     }
 
     ///

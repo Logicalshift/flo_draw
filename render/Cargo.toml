@@ -11,7 +11,7 @@ include     = [ "Cargo.toml", "src/**/*", "shaders/**/*", "bindings/**/*", "buil
 
 [features]
 opengl      = [ "gl" ]
-osx-metal   = [ "metal" ]
+osx-metal   = [ "metal", "cocoa" ]
 
 [build-dependencies]
 bindgen = "0.54"
@@ -19,3 +19,4 @@ bindgen = "0.54"
 [dependencies]
 gl          = { version = "0.14", optional = true }
 metal       = { version = "0.20", optional = true }
+cocoa       = { version = "0.23", optional = true }

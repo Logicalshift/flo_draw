@@ -1,5 +1,6 @@
 #include <simd/vector_types.h>
 #include <simd/matrix_types.h>
+#include "metal_bindings.h"
 
 typedef struct MetalVertex2D {
     vector_float2 pos;
