@@ -38,6 +38,9 @@ struct RenderState<'a> {
     /// Buffer containing the current transformation matrix
     matrix: MatrixBuffer,
 
+    /// The active pipeline state
+    pipeline_state: metal::RenderPipelineState,
+
     /// The command buffer we're using to send rendering actions
     command_buffer: &'a metal::CommandBufferRef
 }
@@ -65,11 +68,15 @@ impl MetalRenderer {
         // Create the render state
         let command_queue       = self.command_queue.clone();
         let matrix              = MatrixBuffer::from_matrix(&self.device, Matrix::identity());
+        let pipeline_descriptor = metal::RenderPipelineDescriptor::new();
+        let pipeline_state      = self.device.new_render_pipeline_state(&pipeline_descriptor).unwrap();
+
         let mut render_state    = RenderState {
-            main_buffer:    target_drawable,
-            target_buffer:  target_drawable.clone(),
-            matrix:         matrix,
-            command_buffer: command_queue.new_command_buffer()
+            main_buffer:            target_drawable,
+            target_buffer:          target_drawable.clone(),
+            matrix:                 matrix,
+            pipeline_state:         pipeline_state,
+            command_buffer:         command_queue.new_command_buffer()
         };
 
         // Evaluate the actions
