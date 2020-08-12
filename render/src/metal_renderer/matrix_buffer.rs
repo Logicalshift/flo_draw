@@ -25,17 +25,15 @@ impl MatrixBuffer {
         // Convert to the internal representation
         let matrix = matrix_float4x4::from(matrix);
 
-        unsafe {
-            // Generate a metal buffer containing the matrix
-            let matrix_ptr: *const matrix_float4x4  = &matrix;
-            let buffer                              = device.new_buffer_with_data(matrix_ptr as *const c_void,
-                std::mem::size_of::<matrix_float4x4>() as u64,
-                metal::MTLResourceOptions::CPUCacheModeDefaultCache | metal::MTLResourceOptions::StorageModeManaged);
+        // Generate a metal buffer containing the matrix
+        let matrix_ptr: *const matrix_float4x4  = &matrix;
+        let buffer                              = device.new_buffer_with_data(matrix_ptr as *const c_void,
+            std::mem::size_of::<matrix_float4x4>() as u64,
+            metal::MTLResourceOptions::CPUCacheModeDefaultCache | metal::MTLResourceOptions::StorageModeManaged);
 
-            // Return the buffer object
-            MatrixBuffer {
-                buffer: buffer
-            }
+        // Return the buffer object
+        MatrixBuffer {
+            buffer: buffer
         }
     }
 
