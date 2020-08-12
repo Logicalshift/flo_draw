@@ -75,6 +75,7 @@ impl MetalRenderer {
                 CreateVertex2DBuffer(id, vertices)                                      => { self.create_vertex_buffer_2d(id, vertices); }
                 CreateIndexBuffer(id, indices)                                          => { self.create_index_buffer(id, indices); }
                 FreeVertexBuffer(id)                                                    => { self.free_vertex_buffer(id); }
+                FreeIndexBuffer(id)                                                     => { self.free_index_buffer(id); }
                 BlendMode(blend_mode)                                                   => { self.blend_mode(blend_mode); }
                 CreateRenderTarget(render_id, texture_id, width, height, render_type)   => { self.create_render_target(render_id, texture_id, width, height, render_type); }
                 FreeRenderTarget(render_id)                                             => { self.free_render_target(render_id); }
@@ -132,8 +133,18 @@ impl MetalRenderer {
         self.index_buffers[index_id] = Some(Buffer::from_indices(&self.device, indices));
     }
 
+    ///
+    /// Releases the memory associated with a vertex buffer
+    ///
     fn free_vertex_buffer(&mut self, VertexBufferId(vertex_id): VertexBufferId) {
         self.vertex_buffers[vertex_id] = None;
+    }
+
+    ///
+    /// Frees the index buffer with the specified ID
+    ///
+    fn free_index_buffer(&mut self, IndexBufferId(id): IndexBufferId) {
+        self.index_buffers[id] = None;
     }
 
     fn blend_mode(&mut self, blend_mode: BlendMode) {
