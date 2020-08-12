@@ -1,5 +1,6 @@
 use super::buffer::*;
 use super::matrix_buffer::*;
+use super::pipeline_configuration::*;
 
 use crate::action::*;
 use crate::buffer::*;
@@ -7,6 +8,7 @@ use crate::buffer::*;
 use metal;
 
 use std::ops::{Range};
+use std::collections::{HashMap};
 
 ///
 /// Renderer that can write to a surface using Apple's Metal API
@@ -25,7 +27,10 @@ pub struct MetalRenderer {
     vertex_buffers: Vec<Option<Buffer>>,
 
     /// The index buffers defined for this renderer
-    index_buffers: Vec<Option<Buffer>>
+    index_buffers: Vec<Option<Buffer>>,
+
+    /// The cache of render pipeline states used by this renderer
+    pipeline_states: HashMap<PipelineConfiguration, metal::RenderPipelineState>
 }
 
 ///
@@ -41,7 +46,10 @@ struct RenderState<'a> {
     /// Buffer containing the current transformation matrix
     matrix: MatrixBuffer,
 
-    /// The active pipeline state
+    /// The active pipeline configuration
+    pipeline_config: PipelineConfiguration,
+
+    /// The active pipeline state corresponding to the pipeline configuration
     pipeline_state: metal::RenderPipelineState,
 
     /// The command buffer we're using to send rendering actions
@@ -58,11 +66,32 @@ impl MetalRenderer {
         let shader_library  = device.new_library_with_data(include_bytes![concat!(env!("OUT_DIR"), "/flo.metallib")]).unwrap();
 
         MetalRenderer {
-            device:         device,
-            command_queue:  command_queue,
-            vertex_buffers: vec![],
-            shader_library: shader_library,
-            index_buffers:  vec![]
+            device:             device,
+            command_queue:      command_queue,
+            vertex_buffers:     vec![],
+            shader_library:     shader_library,
+            index_buffers:      vec![],
+            pipeline_states:    HashMap::new()
+        }
+    }
+
+    ///
+    /// Returns a pipeline state for a configuration
+    ///
+    fn get_pipeline_state(&mut self, config: &PipelineConfiguration) -> metal::RenderPipelineState {
+        // Borrow the fields
+        let pipeline_states = &mut self.pipeline_states;
+        let device          = &self.device;
+        let shader_library  = &self.shader_library;
+
+        // Retrieve the pipeline state for this configuration
+        if let Some(pipeline) = pipeline_states.get(config) {
+            pipeline.clone()
+        } else {
+            let pipeline = config.to_pipeline_state(&device, &shader_library);
+            pipeline_states.insert(config.clone(), pipeline.clone());
+
+            pipeline
         }
     }
 
@@ -73,13 +102,14 @@ impl MetalRenderer {
         // Create the render state
         let command_queue       = self.command_queue.clone();
         let matrix              = MatrixBuffer::from_matrix(&self.device, Matrix::identity());
-        let pipeline_descriptor = metal::RenderPipelineDescriptor::new();
-        let pipeline_state      = self.device.new_render_pipeline_state(&pipeline_descriptor).unwrap();
+        let pipeline_config     = PipelineConfiguration::default();
+        let pipeline_state      = self.get_pipeline_state(&pipeline_config);
 
         let mut render_state    = RenderState {
             main_buffer:            target_drawable,
             target_buffer:          target_drawable.clone(),
             matrix:                 matrix,
+            pipeline_config:        pipeline_config,
             pipeline_state:         pipeline_state,
             command_buffer:         command_queue.new_command_buffer()
         };
