@@ -15,6 +15,9 @@ pub struct MetalRenderer {
     /// The device that this will render to
     device: metal::Device,
 
+    /// The shader library for this renderer
+    shader_library: metal::Library,
+
     /// The command queue we're using to render to this device
     command_queue: metal::CommandQueue,
 
@@ -52,11 +55,13 @@ impl MetalRenderer {
     pub fn with_default_device() -> MetalRenderer {
         let device          = metal::Device::system_default().expect("No Metal device available");
         let command_queue   = device.new_command_queue();
+        let shader_library  = device.new_library_with_data(include_bytes![concat!(env!("OUT_DIR"), "/flo.metallib")]).unwrap();
 
         MetalRenderer {
             device:         device,
             command_queue:  command_queue,
             vertex_buffers: vec![],
+            shader_library: shader_library,
             index_buffers:  vec![]
         }
     }
