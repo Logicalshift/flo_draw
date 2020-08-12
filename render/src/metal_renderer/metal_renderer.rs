@@ -124,7 +124,7 @@ impl MetalRenderer {
                 CreateIndexBuffer(id, indices)                                          => { self.create_index_buffer(id, indices); }
                 FreeVertexBuffer(id)                                                    => { self.free_vertex_buffer(id); }
                 FreeIndexBuffer(id)                                                     => { self.free_index_buffer(id); }
-                BlendMode(blend_mode)                                                   => { self.blend_mode(blend_mode); }
+                BlendMode(blend_mode)                                                   => { self.blend_mode(blend_mode, &mut render_state); }
                 CreateRenderTarget(render_id, texture_id, width, height, render_type)   => { self.create_render_target(render_id, texture_id, width, height, render_type); }
                 FreeRenderTarget(render_id)                                             => { self.free_render_target(render_id); }
                 SelectRenderTarget(render_id)                                           => { self.select_render_target(render_id); }
@@ -198,8 +198,12 @@ impl MetalRenderer {
         self.index_buffers[id] = None;
     }
 
-    fn blend_mode(&mut self, blend_mode: BlendMode) {
-
+    ///
+    /// Updates the blend mode for a render state
+    ///
+    fn blend_mode(&mut self, blend_mode: BlendMode, state: &mut RenderState) {
+        state.pipeline_config.blend_mode    = blend_mode;
+        state.pipeline_state                = self.get_pipeline_state(&state.pipeline_config);
     }
 
     fn create_render_target(&mut self, RenderTargetId(render_id): RenderTargetId, TextureId(texture_id): TextureId, width: usize, height: usize, render_target_type: RenderTargetType) {
