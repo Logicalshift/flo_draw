@@ -32,3 +32,8 @@ vertex RasterizerData simple_vertex(
 
     return data;
 }
+
+fragment float4 simple_fragment(
+      RasterizerData in [[stage_in]]) {
+    return in.v_Color;
+}
