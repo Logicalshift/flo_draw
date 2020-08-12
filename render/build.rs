@@ -19,12 +19,14 @@ fn compile_metal() {
 ///
 #[cfg(feature="osx-metal")]
 fn compile_metal_shader(input_path: &str, output_path: &str) {
+    let out_dir = env::var_os("OUT_DIR").unwrap().into_string().unwrap();
+
     let shader_compile_output = Command::new("xcrun")
         .args(&["-sdk", "macosx"])
         .arg("metal")
         .args(&["-I", "."])
         .args(&["-c", input_path])
-        .args(&["-o", output_path])
+        .args(&["-o", &format!("{}/{}", out_dir, output_path)])
         .spawn()
         .unwrap()
         .wait_with_output()
@@ -40,11 +42,13 @@ fn compile_metal_shader(input_path: &str, output_path: &str) {
 ///
 #[cfg(feature="osx-metal")]
 fn link_metal_shaders(input_paths: Vec<&str>, output_path: &str) {
+    let out_dir = env::var_os("OUT_DIR").unwrap().into_string().unwrap();
+
     let shader_link_output = Command::new("xcrun")
         .args(&["-sdk", "macosx"])
         .arg("metallib")
-        .args(input_paths)
-        .args(&["-o", output_path])
+        .args(input_paths.into_iter().map(|path| format!("{}/{}", out_dir, path)))
+        .args(&["-o", &format!("{}/{}", out_dir, output_path)])
         .spawn()
         .unwrap()
         .wait_with_output()
@@ -60,7 +64,7 @@ fn compile_metal() {
     // Compile the shaders
     println!("cargo:rerun-if-changed=shaders");
     compile_metal_shader("shaders/simple/simple.metal", "simple.air");
-    link_metal_shaders(vec!["simple.air"], "simple.metallib");
+    link_metal_shaders(vec!["simple.air"], "flo.metallib");
 
     // Generate .rs files from the binding headers
     println!("cargo:rerun-if-changed=bindings");
