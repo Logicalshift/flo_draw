@@ -301,6 +301,7 @@ impl MetalRenderer {
         // Create the texture descriptor
         let texture_descriptor = metal::TextureDescriptor::new();
 
+        texture_descriptor.set_texture_type(metal::MTLTextureType::D2);
         texture_descriptor.set_width(width as u64);
         texture_descriptor.set_height(height as u64);
         texture_descriptor.set_pixel_format(metal::MTLPixelFormat::RGBA8Unorm);
@@ -311,6 +312,7 @@ impl MetalRenderer {
 
             RenderTargetType::Multisampled          |
             RenderTargetType::MultisampledTexture   => { 
+                texture_descriptor.set_texture_type(metal::MTLTextureType::D2Multisample);
                 texture_descriptor.set_sample_count(4);
             }
 
@@ -319,6 +321,7 @@ impl MetalRenderer {
             }
 
             RenderTargetType::MonochromeMultisampledTexture => {
+                texture_descriptor.set_texture_type(metal::MTLTextureType::D2Multisample);
                 texture_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
                 texture_descriptor.set_sample_count(4);
             }
