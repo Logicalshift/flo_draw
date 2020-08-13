@@ -125,6 +125,23 @@ impl MetalRenderer {
     }
 
     ///
+    /// Creates a command encoder for rendering to the specified texture, after clearing it
+    ///
+    fn get_command_encoder_with_clear<'a>(&mut self, command_buffer: &'a metal::CommandBufferRef, render_target: &metal::Texture, clear_color: Rgba8) -> &'a metal::RenderCommandEncoderRef {
+        let render_descriptor   = metal::RenderPassDescriptor::new();
+        let color_attachment    = render_descriptor.color_attachments().object_at(0).unwrap();
+        let Rgba8([r, g, b, a]) = clear_color;
+        let clear_color         = metal::MTLClearColor::new((r as f64) / 255.0, (g as f64) / 255.0, (b as f64) / 255.0, (a as f64) / 255.0);
+
+        color_attachment.set_texture(Some(render_target));
+        color_attachment.set_clear_color(clear_color);
+        color_attachment.set_load_action(metal::MTLLoadAction::Clear);
+        color_attachment.set_store_action(metal::MTLStoreAction::Store);
+
+        command_buffer.new_render_command_encoder(&render_descriptor)
+    }
+
+    ///
     /// Sets all the values in the command encoder for the specified state
     ///
     fn setup_command_encoder(&mut self, state: &RenderState) {
@@ -179,7 +196,7 @@ impl MetalRenderer {
                 ShowFrameBuffer                                                         => { /* This doesn't double-buffer so nothing to do */ }
                 CreateTextureBgra(texture_id, width, height)                            => { self.create_bgra_texture(texture_id, width, height); }
                 FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
-                Clear(color)                                                            => { self.clear(color); }
+                Clear(color)                                                            => { self.clear(color, &mut render_state); }
                 UseShader(shader_type)                                                  => { self.use_shader(shader_type); }
                 DrawTriangles(buffer_id, buffer_range)                                  => { self.draw_triangles(buffer_id, buffer_range, &mut render_state); }
                 DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)         => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices, &mut render_state); }
@@ -364,8 +381,15 @@ impl MetalRenderer {
 
     }
 
-    fn clear(&mut self, color: Rgba8) {
+    ///
+    /// Clears the current texture
+    ///
+    fn clear(&mut self, color: Rgba8, state: &mut RenderState) {
+        // Metal forces clears to be done at the start of a new render pass
+        state.command_encoder.end_encoding();
+        state.command_encoder = self.get_command_encoder_with_clear(state.command_buffer, &state.target_texture, color);
 
+        self.setup_command_encoder(state);
     }
 
     fn use_shader(&mut self, shader_type: ShaderType) {
