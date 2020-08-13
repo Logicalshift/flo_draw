@@ -46,8 +46,11 @@ struct RenderState<'a> {
     /// The main render buffer
     main_buffer: &'a metal::Drawable,
 
+    /// The main render buffer texture
+    main_texture: metal::Texture,
+
     /// The current target render buffer
-    target_buffer: metal::Drawable,
+    target_texture: metal::Texture,
 
     /// Buffer containing the current transformation matrix
     matrix: MatrixBuffer,
@@ -136,7 +139,8 @@ impl MetalRenderer {
 
         let mut render_state    = RenderState {
             main_buffer:            target_drawable,
-            target_buffer:          target_drawable.clone(),
+            main_texture:           target_texture.clone(),
+            target_texture:         target_texture.clone(),
             matrix:                 matrix,
             pipeline_config:        pipeline_config,
             pipeline_state:         pipeline_state,
@@ -157,7 +161,7 @@ impl MetalRenderer {
                 BlendMode(blend_mode)                                                   => { self.blend_mode(blend_mode, &mut render_state); }
                 CreateRenderTarget(render_id, texture_id, width, height, render_type)   => { self.create_render_target(render_id, texture_id, width, height, render_type); }
                 FreeRenderTarget(render_id)                                             => { self.free_render_target(render_id); }
-                SelectRenderTarget(render_id)                                           => { self.select_render_target(render_id); }
+                SelectRenderTarget(render_id)                                           => { self.select_render_target(render_id, &mut render_state); }
                 RenderToFrameBuffer                                                     => { self.select_main_frame_buffer(&mut render_state); }
                 DrawFrameBuffer(render_id, x, y)                                        => { self.draw_frame_buffer(render_id, x, y); }
                 ShowFrameBuffer                                                         => { /* This doesn't double-buffer so nothing to do */ }
@@ -303,15 +307,31 @@ impl MetalRenderer {
         self.render_targets[render_id] = None;
     }
 
-    fn select_render_target(&mut self, RenderTargetId(render_id): RenderTargetId) {
+    ///
+    /// Selects an alternative render target
+    ///
+    fn select_render_target(&mut self, RenderTargetId(render_id): RenderTargetId, state: &mut RenderState) {
+        // Fetch the render texture
+        let texture = match &self.render_targets[render_id] { Some(texture) => texture, None => { return } };
 
+        // Set the state to point at the new texture
+        state.target_texture = texture.clone();
+
+        // Create a command encoder that will use this texture
+        state.command_encoder.end_encoding();
+        state.command_encoder = self.get_command_encoder(state.command_buffer, &state.target_texture);
     }
 
     ///
     /// Sets the main frame buffer to be the current render target
     ///
     fn select_main_frame_buffer(&mut self, state: &mut RenderState) {
-        state.target_buffer = state.main_buffer.clone();
+        // Reset the state to point at the main texture
+        state.target_texture = state.main_texture.clone();
+
+        // Create a command encoder that will use this texture
+        state.command_encoder.end_encoding();
+        state.command_encoder = self.get_command_encoder(state.command_buffer, &state.target_texture);
     }
 
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, x: i32, y: i32) {
