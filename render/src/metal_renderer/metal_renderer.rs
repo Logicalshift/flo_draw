@@ -29,6 +29,12 @@ pub struct MetalRenderer {
     /// The index buffers defined for this renderer
     index_buffers: Vec<Option<Buffer>>,
 
+    /// The render targets for this renderer
+    render_targets: Vec<Option<metal::Texture>>,
+
+    /// The tetures for this renderer
+    textures: Vec<Option<metal::Texture>>,
+
     /// The cache of render pipeline states used by this renderer
     pipeline_states: HashMap<PipelineConfiguration, metal::RenderPipelineState>
 }
@@ -69,8 +75,10 @@ impl MetalRenderer {
             device:             device,
             command_queue:      command_queue,
             vertex_buffers:     vec![],
-            shader_library:     shader_library,
             index_buffers:      vec![],
+            render_targets:     vec![],
+            textures:           vec![],
+            shader_library:     shader_library,
             pipeline_states:    HashMap::new()
         }
     }
@@ -206,12 +214,65 @@ impl MetalRenderer {
         state.pipeline_state                = self.get_pipeline_state(&state.pipeline_config);
     }
 
+    ///
+    /// Creates a render target and its backing texture
+    ///
     fn create_render_target(&mut self, RenderTargetId(render_id): RenderTargetId, TextureId(texture_id): TextureId, width: usize, height: usize, render_target_type: RenderTargetType) {
+        // Allocate space for the texture and render target
+        if render_id >= self.render_targets.len() {
+            self.render_targets.extend((self.render_targets.len()..(render_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
 
+        if texture_id >= self.textures.len() {
+            self.textures.extend((self.textures.len()..(texture_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        // Free any existing texture or render target
+        self.render_targets[render_id]  = None;
+        self.textures[texture_id]       = None;
+
+        // Create the texture descriptor
+        let texture_descriptor = metal::TextureDescriptor::new();
+
+        texture_descriptor.set_width(width as u64);
+        texture_descriptor.set_height(height as u64);
+        texture_descriptor.set_pixel_format(metal::MTLPixelFormat::RGBA8Unorm);
+        texture_descriptor.set_usage(metal::MTLTextureUsage::RenderTarget);
+
+        match render_target_type {
+            RenderTargetType::Standard              => { }
+
+            RenderTargetType::Multisampled          |
+            RenderTargetType::MultisampledTexture   => { 
+                texture_descriptor.set_sample_count(4);
+            }
+
+            RenderTargetType::Monochrome            => {
+                texture_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
+            }
+
+            RenderTargetType::MonochromeMultisampledTexture => {
+                texture_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
+                texture_descriptor.set_sample_count(4);
+            }
+        }
+
+        // Turn into a texture
+        let render_texture              = self.device.new_texture(&texture_descriptor);
+
+        self.render_targets[render_id]  = Some(render_texture.clone());
+        self.textures[texture_id]       = Some(render_texture.clone());
     }
 
+    ///
+    /// Frees up a render target for this renderer
+    ///
     fn free_render_target(&mut self, RenderTargetId(render_id): RenderTargetId) {
-
+        self.render_targets[render_id] = None;
     }
 
     fn select_render_target(&mut self, RenderTargetId(render_id): RenderTargetId) {
