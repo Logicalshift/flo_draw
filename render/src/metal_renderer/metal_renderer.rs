@@ -1,4 +1,5 @@
 use super::buffer::*;
+use super::bindings::*;
 use super::matrix_buffer::*;
 use super::pipeline_configuration::*;
 
@@ -124,6 +125,17 @@ impl MetalRenderer {
     }
 
     ///
+    /// Sets all the values in the command encoder for the specified state
+    ///
+    fn setup_command_encoder(&mut self, state: &RenderState) {
+        // Reset the pipeline state
+        state.command_encoder.set_render_pipeline_state(&state.pipeline_state);
+
+        // Set the constant buffers
+        state.command_encoder.set_vertex_buffer(VertexInputIndex_VertexInputIndexMatrix as u64, Some(&state.matrix), 0);
+    }
+
+    ///
     /// Performs rendering of the specified actions to this device target
     ///
     pub fn render<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions, target_drawable: &metal::Drawable, target_texture: &metal::Texture) {
@@ -135,8 +147,6 @@ impl MetalRenderer {
         let command_buffer      = command_queue.new_command_buffer();
         let command_encoder     = self.get_command_encoder(command_buffer, target_texture);
 
-        command_encoder.set_render_pipeline_state(&pipeline_state);
-
         let mut render_state    = RenderState {
             main_buffer:            target_drawable,
             main_texture:           target_texture.clone(),
@@ -147,6 +157,8 @@ impl MetalRenderer {
             command_buffer:         command_buffer,
             command_encoder:        command_encoder
         };
+
+        self.setup_command_encoder(&render_state);
 
         // Evaluate the actions
         for action in actions {
@@ -184,7 +196,9 @@ impl MetalRenderer {
     /// Sets the active transformation matrix
     ///
     fn set_transform(&mut self, matrix: Matrix, state: &mut RenderState) {
-        state.matrix.set_matrix(matrix);
+        // Replace the matrix buffer with a new one
+        state.matrix = MatrixBuffer::from_matrix(&self.device, matrix);
+        state.command_encoder.set_vertex_buffer(VertexInputIndex_VertexInputIndexMatrix as u64, Some(&state.matrix), 0);
     }
 
     ///
@@ -320,6 +334,8 @@ impl MetalRenderer {
         // Create a command encoder that will use this texture
         state.command_encoder.end_encoding();
         state.command_encoder = self.get_command_encoder(state.command_buffer, &state.target_texture);
+
+        self.setup_command_encoder(state);
     }
 
     ///
@@ -332,6 +348,8 @@ impl MetalRenderer {
         // Create a command encoder that will use this texture
         state.command_encoder.end_encoding();
         state.command_encoder = self.get_command_encoder(state.command_buffer, &state.target_texture);
+
+        self.setup_command_encoder(state);
     }
 
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, x: i32, y: i32) {
@@ -362,7 +380,7 @@ impl MetalRenderer {
         let buffer = match &self.vertex_buffers[vertex_buffer_id] { Some(buffer) => buffer, None => { return } };
 
         // Draw these vertices
-        state.command_encoder.set_vertex_buffer(0, Some(buffer), 0);
+        state.command_encoder.set_vertex_buffer(VertexInputIndex_VertexInputIndexVertices as u64, Some(buffer), 0);
         state.command_encoder.draw_primitives(metal::MTLPrimitiveType::Triangle, range.start as u64, range.len() as u64);
     }
 
@@ -375,7 +393,7 @@ impl MetalRenderer {
         let index_buffer    = match &self.index_buffers[index_buffer_id] { Some(buffer) => buffer, None => { return } };
 
         // Draw these vertices
-        state.command_encoder.set_vertex_buffer(0, Some(vertex_buffer), 0);
+        state.command_encoder.set_vertex_buffer(VertexInputIndex_VertexInputIndexVertices as u64, Some(vertex_buffer), 0);
         state.command_encoder.draw_indexed_primitives(metal::MTLPrimitiveType::Triangle, num_vertices as u64, metal::MTLIndexType::UInt16, index_buffer, 0);
     }
 }
