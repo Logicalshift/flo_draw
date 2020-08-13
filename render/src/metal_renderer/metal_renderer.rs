@@ -59,7 +59,10 @@ struct RenderState<'a> {
     pipeline_state: metal::RenderPipelineState,
 
     /// The command buffer we're using to send rendering actions
-    command_buffer: &'a metal::CommandBufferRef
+    command_buffer: &'a metal::CommandBufferRef,
+
+    /// The command encoder we're currently writing to
+    command_encoder: &'a metal::RenderCommandEncoderRef
 }
 
 impl MetalRenderer {
@@ -104,14 +107,30 @@ impl MetalRenderer {
     }
 
     ///
+    /// Creates a command encoder for rendering to the specified texture
+    ///
+    fn get_command_encoder<'a>(&mut self, command_buffer: &'a metal::CommandBufferRef, render_target: &metal::Texture) -> &'a metal::RenderCommandEncoderRef {
+        let render_descriptor   = metal::RenderPassDescriptor::new();
+        let color_attachment    = render_descriptor.color_attachments().object_at(0).unwrap();
+
+        color_attachment.set_texture(Some(render_target));
+        color_attachment.set_load_action(metal::MTLLoadAction::Load);
+        color_attachment.set_store_action(metal::MTLStoreAction::Store);
+
+        command_buffer.new_render_command_encoder(&render_descriptor)
+    }
+
+    ///
     /// Performs rendering of the specified actions to this device target
     ///
-    pub fn render<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions, target_drawable: &metal::Drawable) {
+    pub fn render<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions, target_drawable: &metal::Drawable, target_texture: &metal::Texture) {
         // Create the render state
         let command_queue       = self.command_queue.clone();
         let matrix              = MatrixBuffer::from_matrix(&self.device, Matrix::identity());
         let pipeline_config     = PipelineConfiguration::default();
         let pipeline_state      = self.get_pipeline_state(&pipeline_config);
+        let command_buffer      = command_queue.new_command_buffer();
+        let command_encoder     = self.get_command_encoder(command_buffer, target_texture);
 
         let mut render_state    = RenderState {
             main_buffer:            target_drawable,
@@ -119,7 +138,8 @@ impl MetalRenderer {
             matrix:                 matrix,
             pipeline_config:        pipeline_config,
             pipeline_state:         pipeline_state,
-            command_buffer:         command_queue.new_command_buffer()
+            command_buffer:         command_buffer,
+            command_encoder:        command_encoder
         };
 
         // Evaluate the actions
@@ -147,6 +167,11 @@ impl MetalRenderer {
                 DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)         => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices); }
             }
         }
+
+        // Finish up
+        render_state.command_encoder.end_encoding();
+        command_buffer.present_drawable(target_drawable);
+        command_buffer.commit();
     }
 
     ///
