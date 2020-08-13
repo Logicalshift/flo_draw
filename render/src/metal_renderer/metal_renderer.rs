@@ -132,6 +132,8 @@ impl MetalRenderer {
         let command_buffer      = command_queue.new_command_buffer();
         let command_encoder     = self.get_command_encoder(command_buffer, target_texture);
 
+        command_encoder.set_render_pipeline_state(&pipeline_state);
+
         let mut render_state    = RenderState {
             main_buffer:            target_drawable,
             target_buffer:          target_drawable.clone(),
@@ -163,8 +165,8 @@ impl MetalRenderer {
                 FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
                 Clear(color)                                                            => { self.clear(color); }
                 UseShader(shader_type)                                                  => { self.use_shader(shader_type); }
-                DrawTriangles(buffer_id, buffer_range)                                  => { self.draw_triangles(buffer_id, buffer_range); }
-                DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)         => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices); }
+                DrawTriangles(buffer_id, buffer_range)                                  => { self.draw_triangles(buffer_id, buffer_range, &mut render_state); }
+                DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)         => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices, &mut render_state); }
             }
         }
 
@@ -237,6 +239,7 @@ impl MetalRenderer {
     fn blend_mode(&mut self, blend_mode: BlendMode, state: &mut RenderState) {
         state.pipeline_config.blend_mode    = blend_mode;
         state.pipeline_state                = self.get_pipeline_state(&state.pipeline_config);
+        state.command_encoder.set_render_pipeline_state(&state.pipeline_state);
     }
 
     ///
@@ -331,11 +334,28 @@ impl MetalRenderer {
 
     }
 
-    fn draw_triangles(&mut self, VertexBufferId(vertex_buffer_id): VertexBufferId, range: Range<usize>) {
+    ///
+    /// Draws triangles from a vertex buffer
+    ///
+    fn draw_triangles(&mut self, VertexBufferId(vertex_buffer_id): VertexBufferId, range: Range<usize>, state: &mut RenderState) {
+        // Fetch the buffer to draw
+        let buffer = match &self.vertex_buffers[vertex_buffer_id] { Some(buffer) => buffer, None => { return } };
 
+        // Draw these vertices
+        state.command_encoder.set_vertex_buffer(0, Some(buffer), 0);
+        state.command_encoder.draw_primitives(metal::MTLPrimitiveType::Triangle, range.start as u64, range.len() as u64);
     }
 
-    fn draw_indexed_triangles(&mut self, VertexBufferId(vertex_buffer_id): VertexBufferId, IndexBufferId(index_buffer_id): IndexBufferId, num_vertices: usize) {
+    ///
+    /// Draws triangles using vertices referenced by an index buffer
+    ///
+    fn draw_indexed_triangles(&mut self, VertexBufferId(vertex_buffer_id): VertexBufferId, IndexBufferId(index_buffer_id): IndexBufferId, num_vertices: usize, state: &mut RenderState) {
+        // Fetch the buffer and index buffer to draw
+        let vertex_buffer   = match &self.vertex_buffers[vertex_buffer_id] { Some(buffer) => buffer, None => { return } };
+        let index_buffer    = match &self.index_buffers[index_buffer_id] { Some(buffer) => buffer, None => { return } };
 
+        // Draw these vertices
+        state.command_encoder.set_vertex_buffer(0, Some(vertex_buffer), 0);
+        state.command_encoder.draw_indexed_primitives(metal::MTLPrimitiveType::Triangle, num_vertices as u64, metal::MTLIndexType::UInt16, index_buffer, 0);
     }
 }
