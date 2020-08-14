@@ -130,4 +130,14 @@ impl RenderTarget {
             RenderTarget::Multisampled { samples: _, resolved, width: _, height: _ }    => resolved
         }
     }
+
+    ///
+    /// Returns the texture that is used as the render target
+    ///
+    pub fn render_texture(&self) -> &metal::Texture {
+        match self {
+            RenderTarget::Texture { texture, width: _, height: _ }                      => texture,
+            RenderTarget::Multisampled { samples, resolved: _, width: _, height: _ }    => samples
+        }
+    }
 }

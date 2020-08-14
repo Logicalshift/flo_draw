@@ -1,6 +1,7 @@
 use super::buffer::*;
 use super::bindings::*;
 use super::matrix_buffer::*;
+use super::render_target::*;
 use super::pipeline_configuration::*;
 
 use crate::action::*;
@@ -31,7 +32,7 @@ pub struct MetalRenderer {
     index_buffers: Vec<Option<Buffer>>,
 
     /// The render targets for this renderer
-    render_targets: Vec<Option<metal::Texture>>,
+    render_targets: Vec<Option<RenderTarget>>,
 
     /// The tetures for this renderer
     textures: Vec<Option<metal::Texture>>,
@@ -298,40 +299,12 @@ impl MetalRenderer {
         self.render_targets[render_id]  = None;
         self.textures[texture_id]       = None;
 
-        // Create the texture descriptor
-        let texture_descriptor = metal::TextureDescriptor::new();
+        // Create the render target
+        let new_render_target = RenderTarget::new(&self.device, width, height, render_target_type);
 
-        texture_descriptor.set_texture_type(metal::MTLTextureType::D2);
-        texture_descriptor.set_width(width as u64);
-        texture_descriptor.set_height(height as u64);
-        texture_descriptor.set_pixel_format(metal::MTLPixelFormat::RGBA8Unorm);
-        texture_descriptor.set_usage(metal::MTLTextureUsage::RenderTarget);
-
-        match render_target_type {
-            RenderTargetType::Standard              => { }
-
-            RenderTargetType::Multisampled          |
-            RenderTargetType::MultisampledTexture   => { 
-                texture_descriptor.set_texture_type(metal::MTLTextureType::D2Multisample);
-                texture_descriptor.set_sample_count(4);
-            }
-
-            RenderTargetType::Monochrome            => {
-                texture_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
-            }
-
-            RenderTargetType::MonochromeMultisampledTexture => {
-                texture_descriptor.set_texture_type(metal::MTLTextureType::D2Multisample);
-                texture_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
-                texture_descriptor.set_sample_count(4);
-            }
-        }
-
-        // Turn into a texture
-        let render_texture              = self.device.new_texture(&texture_descriptor);
-
-        self.render_targets[render_id]  = Some(render_texture.clone());
-        self.textures[texture_id]       = Some(render_texture.clone());
+        // Store in this object
+        self.textures[texture_id]       = Some(new_render_target.texture().clone());
+        self.render_targets[render_id]  = Some(new_render_target);
     }
 
     ///
@@ -346,10 +319,10 @@ impl MetalRenderer {
     ///
     fn select_render_target(&mut self, RenderTargetId(render_id): RenderTargetId, state: &mut RenderState) {
         // Fetch the render texture
-        let texture = match &self.render_targets[render_id] { Some(texture) => texture, None => { return } };
+        let render_target = match &self.render_targets[render_id] { Some(texture) => texture, None => { return } };
 
         // Set the state to point at the new texture
-        state.target_texture = texture.clone();
+        state.target_texture = render_target.render_texture().clone();
 
         // Create a command encoder that will use this texture
         state.command_encoder.end_encoding();
@@ -373,7 +346,8 @@ impl MetalRenderer {
     }
 
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, x: i32, y: i32) {
-
+        // TODO: resolve MSAA textures to another texture (maybe we need our own render target type)
+        // TODO: draw using a quad (kind of annoying we need to use a shader for this...)
     }
 
     fn create_bgra_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
