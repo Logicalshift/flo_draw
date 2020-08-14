@@ -120,4 +120,14 @@ impl RenderTarget {
             RenderTarget::Multisampled { samples: _, resolved: _, width, height }   => (*width, *height)
         }
     }
+
+    ///
+    /// Returns the texture that can be used to draw the content of this render buffer
+    ///
+    pub fn texture(&self) -> &metal::Texture {
+        match self {
+            RenderTarget::Texture { texture, width: _, height: _ }                      => texture,
+            RenderTarget::Multisampled { samples: _, resolved, width: _, height: _ }    => resolved
+        }
+    }
 }
