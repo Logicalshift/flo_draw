@@ -1,3 +1,5 @@
+use crate::action::*;
+
 use metal;
 
 ///
@@ -13,7 +15,7 @@ pub enum RenderTarget {
     },
 
     /// MSAA render target
-    MSAA {
+    Multisampled {
         samples:    metal::Texture,
         resolved:   metal::Texture,
         width:      usize,
@@ -22,13 +24,100 @@ pub enum RenderTarget {
 }
 
 impl RenderTarget {
+    pub fn new(device: &metal::Device, width: usize, height: usize, render_target_type: RenderTargetType) -> RenderTarget {
+        // Create the texture descriptor
+        let texture_descriptor = metal::TextureDescriptor::new();
+
+        texture_descriptor.set_texture_type(metal::MTLTextureType::D2);
+        texture_descriptor.set_width(width as u64);
+        texture_descriptor.set_height(height as u64);
+        texture_descriptor.set_pixel_format(metal::MTLPixelFormat::RGBA8Unorm);
+        texture_descriptor.set_usage(metal::MTLTextureUsage::RenderTarget);
+
+        // Customise to the render target type
+        match render_target_type {
+            RenderTargetType::Standard              => { }
+
+            RenderTargetType::Multisampled          |
+            RenderTargetType::MultisampledTexture   => { 
+                texture_descriptor.set_texture_type(metal::MTLTextureType::D2Multisample);
+                texture_descriptor.set_sample_count(4);
+            }
+
+            RenderTargetType::Monochrome            => {
+                texture_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
+            }
+
+            RenderTargetType::MonochromeMultisampledTexture => {
+                texture_descriptor.set_texture_type(metal::MTLTextureType::D2Multisample);
+                texture_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
+                texture_descriptor.set_sample_count(4);
+            }
+        }
+
+        // Turn into a texture
+        let render_texture              = device.new_texture(&texture_descriptor);
+
+        // Create the render target
+        match render_target_type {
+            RenderTargetType::Standard | RenderTargetType::Monochrome => {
+                // Just create a normal texture
+                RenderTarget::Texture { 
+                    texture:    render_texture,
+                    width:      width,
+                    height:     height
+                }
+            },
+
+            RenderTargetType::Multisampled | RenderTargetType::MultisampledTexture   => { 
+                // Create a texture to resolve to as well as the main texture
+                let resolve_descriptor = metal::TextureDescriptor::new();
+
+                resolve_descriptor.set_texture_type(metal::MTLTextureType::D2);
+                resolve_descriptor.set_width(width as u64);
+                resolve_descriptor.set_height(height as u64);
+                resolve_descriptor.set_pixel_format(metal::MTLPixelFormat::RGBA8Unorm);
+                resolve_descriptor.set_usage(metal::MTLTextureUsage::RenderTarget);
+
+                let resolve_texture = device.new_texture(&resolve_descriptor);
+
+                RenderTarget::Multisampled {
+                    samples:    render_texture,
+                    resolved:   resolve_texture,
+                    width:      width,
+                    height:     height
+                }
+            }
+
+            RenderTargetType::MonochromeMultisampledTexture => {
+                // Create a texture to resolve to as well as the main texture
+                let resolve_descriptor = metal::TextureDescriptor::new();
+
+                resolve_descriptor.set_texture_type(metal::MTLTextureType::D2);
+                resolve_descriptor.set_width(width as u64);
+                resolve_descriptor.set_height(height as u64);
+                resolve_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
+                resolve_descriptor.set_usage(metal::MTLTextureUsage::RenderTarget);
+
+                let resolve_texture = device.new_texture(&resolve_descriptor);
+
+                RenderTarget::Multisampled {
+                    samples:    render_texture,
+                    resolved:   resolve_texture,
+                    width:      width,
+                    height:     height
+                }
+            }
+        }
+    }
+
     ///
     /// Returns the width and height of this render target
     ///
-    fn size(&self) -> (usize, usize) {
+    pub fn size(&self) -> (usize, usize) {
         match self {
-            RenderTarget::Texture { texture: _, width, height }             => (*width, *height),
-            RenderTarget::MSAA { samples: _, resolved: _, width, height }   => (*width, *height)
+            RenderTarget::Texture { texture: _, width, height }                     => (*width, *height),
+            RenderTarget::Multisampled { samples: _, resolved: _, width, height }   => (*width, *height)
         }
     }
 }
