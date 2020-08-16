@@ -318,6 +318,8 @@ impl MetalRenderer {
     /// Selects an alternative render target
     ///
     fn select_render_target(&mut self, RenderTargetId(render_id): RenderTargetId, state: &mut RenderState) {
+        return;
+
         // Fetch the render texture
         let render_target = match &self.render_targets[render_id] { Some(texture) => texture, None => { return } };
 
