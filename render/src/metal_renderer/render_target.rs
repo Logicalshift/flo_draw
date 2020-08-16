@@ -31,7 +31,7 @@ impl RenderTarget {
         texture_descriptor.set_texture_type(metal::MTLTextureType::D2);
         texture_descriptor.set_width(width as u64);
         texture_descriptor.set_height(height as u64);
-        texture_descriptor.set_pixel_format(metal::MTLPixelFormat::RGBA8Unorm);
+        texture_descriptor.set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
         texture_descriptor.set_usage(metal::MTLTextureUsage::RenderTarget);
 
         // Customise to the render target type
@@ -42,6 +42,7 @@ impl RenderTarget {
             RenderTargetType::MultisampledTexture   => { 
                 texture_descriptor.set_texture_type(metal::MTLTextureType::D2Multisample);
                 texture_descriptor.set_sample_count(4);
+                texture_descriptor.set_storage_mode(metal::MTLStorageMode::Private);
             }
 
             RenderTargetType::Monochrome            => {
@@ -52,6 +53,7 @@ impl RenderTarget {
                 texture_descriptor.set_texture_type(metal::MTLTextureType::D2Multisample);
                 texture_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
                 texture_descriptor.set_sample_count(4);
+                texture_descriptor.set_storage_mode(metal::MTLStorageMode::Private);
             }
         }
 
@@ -76,7 +78,7 @@ impl RenderTarget {
                 resolve_descriptor.set_texture_type(metal::MTLTextureType::D2);
                 resolve_descriptor.set_width(width as u64);
                 resolve_descriptor.set_height(height as u64);
-                resolve_descriptor.set_pixel_format(metal::MTLPixelFormat::RGBA8Unorm);
+                resolve_descriptor.set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
                 resolve_descriptor.set_usage(metal::MTLTextureUsage::RenderTarget);
 
                 let resolve_texture = device.new_texture(&resolve_descriptor);
