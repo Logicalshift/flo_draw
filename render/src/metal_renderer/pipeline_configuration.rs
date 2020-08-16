@@ -64,6 +64,7 @@ impl PipelineConfiguration {
             AllChannelAlphaDestinationOver  => (OneMinusDestinationColor, One, OneMinusDestinationAlpha, One)
         };
 
+        descriptor.color_attachments().object_at(0).unwrap().set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
         descriptor.color_attachments().object_at(0).unwrap().set_blending_enabled(true);
         descriptor.color_attachments().object_at(0).unwrap().set_source_rgb_blend_factor(src_rgb);
         descriptor.color_attachments().object_at(0).unwrap().set_destination_rgb_blend_factor(dst_rgb);
