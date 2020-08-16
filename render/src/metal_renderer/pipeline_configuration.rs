@@ -50,7 +50,7 @@ impl PipelineConfiguration {
         // Set the blend mode
         use self::BlendMode::*;
         use metal::MTLBlendFactor::{SourceAlpha, OneMinusSourceAlpha, One, DestinationAlpha, OneMinusDestinationAlpha, Zero, OneMinusSourceColor, OneMinusDestinationColor};
-        let (src_rgb, src_alpha, dst_rgb, dst_alpha) = match self.blend_mode {
+        let (src_rgb, dst_rgb, src_alpha, dst_alpha) = match self.blend_mode {
             SourceOver                      => (SourceAlpha, OneMinusSourceAlpha, One, OneMinusSourceAlpha),
             DestinationOver                 => (OneMinusDestinationAlpha, DestinationAlpha, OneMinusDestinationAlpha, One),
             SourceIn                        => (DestinationAlpha, Zero, DestinationAlpha, Zero),
