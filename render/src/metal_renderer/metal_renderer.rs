@@ -235,6 +235,11 @@ impl MetalRenderer {
         // Free any existing buffer
         self.vertex_buffers[vertex_id] = None;
 
+        // Do nothing if there are no vertexes in the buffer (just won't render)
+        if vertices.len() == 0 {
+            return;
+        }
+
         // Load and store the new buffer
         self.vertex_buffers[vertex_id] = Some(Buffer::from_vertices(&self.device, vertices));
     }
