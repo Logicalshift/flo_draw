@@ -193,7 +193,7 @@ impl MetalRenderer {
                 FreeRenderTarget(render_id)                                             => { self.free_render_target(render_id); }
                 SelectRenderTarget(render_id)                                           => { self.select_render_target(render_id, &mut render_state); }
                 RenderToFrameBuffer                                                     => { self.select_main_frame_buffer(&mut render_state); }
-                DrawFrameBuffer(render_id, x, y)                                        => { self.draw_frame_buffer(render_id, x, y); }
+                DrawFrameBuffer(render_id, x, y)                                        => { self.draw_frame_buffer(render_id, x, y, &mut render_state); }
                 ShowFrameBuffer                                                         => { /* This doesn't double-buffer so nothing to do */ }
                 CreateTextureBgra(texture_id, width, height)                            => { self.create_bgra_texture(texture_id, width, height); }
                 FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
@@ -353,7 +353,30 @@ impl MetalRenderer {
         self.setup_command_encoder(state);
     }
 
-    fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, x: i32, y: i32) {
+    ///
+    /// Renders a frame buffer to another texture (resolving multi-sampling if there is any)
+    ///
+    fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, x: i32, y: i32, state: &mut RenderState) {
+        /*
+        if let Some(source_buffer) = &self.render_targets[source_buffer] {
+            // Stop encoding on the current command encoder
+            state.command_encoder.end_encoding();
+
+            // Create a new blit command encoder
+            let blit_encoder    = state.command_buffer.new_blit_command_encoder();
+
+            // Copy the texture using the blit encoder
+            let source_texture  = source_buffer.texture();
+            blit_encoder.copy_from_texture(
+                &source_texture, 0, 0, metal::MTLOrigin { x: 0, y: 0, z: 0 }, metal::MTLSize { width: source_texture.width(), height: source_texture.height(), depth: 1 },
+                &state.target_texture, 0, 0, metal::MTLOrigin { x: x as u64, y: y as u64, z: 0 });
+
+            // Switch back to the normal command encoder
+            blit_encoder.end_encoding();
+            state.command_encoder = self.get_command_encoder(state.command_buffer, &state.target_texture);
+        }
+        */
+
         // TODO: resolve MSAA textures to another texture (maybe we need our own render target type)
         // TODO: draw using a quad (kind of annoying we need to use a shader for this...)
     }
