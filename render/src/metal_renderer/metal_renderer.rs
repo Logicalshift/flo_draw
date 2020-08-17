@@ -7,6 +7,8 @@ use super::pipeline_configuration::*;
 use crate::action::*;
 use crate::buffer::*;
 
+use flo_canvas;
+
 use metal;
 
 use std::ops::{Range};
@@ -357,28 +359,61 @@ impl MetalRenderer {
     /// Renders a frame buffer to another texture (resolving multi-sampling if there is any)
     ///
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, x: i32, y: i32, state: &mut RenderState) {
-        /*
-        if let Some(source_buffer) = &self.render_targets[source_buffer] {
-            // Stop encoding on the current command encoder
-            state.command_encoder.end_encoding();
+        let render_targets  = &self.render_targets;
 
-            // Create a new blit command encoder
-            let blit_encoder    = state.command_buffer.new_blit_command_encoder();
+        if let Some(source_buffer) = &render_targets[source_buffer] {
+            // Read information about the source texture
+            let source_texture      = source_buffer.render_texture().clone();
+            let source_width        = source_texture.width() as f32;
+            let source_height       = source_texture.height() as f32;
 
-            // Copy the texture using the blit encoder
-            let source_texture  = source_buffer.texture();
-            blit_encoder.copy_from_texture(
-                &source_texture, 0, 0, metal::MTLOrigin { x: 0, y: 0, z: 0 }, metal::MTLSize { width: source_texture.width(), height: source_texture.height(), depth: 1 },
-                &state.target_texture, 0, 0, metal::MTLOrigin { x: x as u64, y: y as u64, z: 0 });
+            // Create a pipeline state for rendering this framebuffer
+            let mut config          = PipelineConfiguration::for_texture(&state.target_texture);
 
-            // Switch back to the normal command encoder
-            blit_encoder.end_encoding();
-            state.command_encoder = self.get_command_encoder(state.command_buffer, &state.target_texture);
+            // Basic vertex shader and blend mode
+            config.vertex_shader    = String::from("simple_vertex");
+            config.blend_mode       = BlendMode::SourceOver;
+            config.fragment_shader  = if source_buffer.is_multisampled() { String::from("texture_multisample_fragment") } else { String::from("texture_fragment") };
+
+            // Convert to a pipeline state
+            let pipeline_state      = self.get_pipeline_state(&config);
+
+            // Change the state of the encoder so we're ready to render this frame buffer
+            state.command_encoder.set_render_pipeline_state(&pipeline_state);
+
+            // Generate a viewport matrix
+            let target_width                = state.target_texture.width() as f32;
+            let target_height               = state.target_texture.height() as f32;
+
+            let scale_transform             = flo_canvas::Transform2D::scale(2.0/target_width, 2.0/target_height);
+            let viewport_transform          = scale_transform * flo_canvas::Transform2D::translate(-(target_width/2.0), -(target_height/2.0));
+
+            let viewport_matrix             = transform_to_matrix(&viewport_transform);
+            let viewport_matrix             = MatrixBuffer::from_matrix(&self.device, viewport_matrix);
+
+            // The rendering is a simple triangle strip
+            let triangle_strip              = vec![
+                Vertex2D { pos: [ x as f32, y as f32 ],                                 tex_coord: [ 0.0, 0.0 ],                    color: [0,0,0,0] },
+                Vertex2D { pos: [ x as f32, y as f32 + source_height ],                 tex_coord: [ 0.0, source_height ],          color: [0,0,0,0] },
+                Vertex2D { pos: [ x as f32 + source_width, y as f32 ],                  tex_coord: [ source_width, 0.0 ],           color: [0,0,0,0] },
+                Vertex2D { pos: [ x as f32 + source_width, y as f32 + source_height ],  tex_coord: [ source_width, source_height ], color: [0,0,0,0] },
+            ];
+            let triangle_strip              = Buffer::from_vertices(&self.device, triangle_strip);
+
+            // Set up the command encoder parameters
+            state.command_encoder.set_vertex_buffer(VertexInputIndex_VertexInputIndexMatrix as u64, Some(&viewport_matrix), 0);
+            state.command_encoder.set_vertex_buffer(VertexInputIndex_VertexInputIndexVertices as u64, Some(&triangle_strip), 0);
+            state.command_encoder.set_fragment_texture(FragmentInputIndex_FragmentIndexTexture as u64, Some(&source_texture));
+
+            // Draw the texture
+            state.command_encoder.draw_primitives(metal::MTLPrimitiveType::TriangleStrip, 0, 4);
+
+            // Reset the pipeline state to the one in the render state
+            state.command_encoder.set_fragment_texture(FragmentInputIndex_FragmentIndexTexture as u64, None);
+
+            state.command_encoder.set_render_pipeline_state(&state.pipeline_state);
+            self.setup_command_encoder(state);
         }
-        */
-
-        // TODO: resolve MSAA textures to another texture (maybe we need our own render target type)
-        // TODO: draw using a quad (kind of annoying we need to use a shader for this...)
     }
 
     fn create_bgra_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
@@ -428,4 +463,19 @@ impl MetalRenderer {
         state.command_encoder.set_vertex_buffer(VertexInputIndex_VertexInputIndexVertices as u64, Some(vertex_buffer), 0);
         state.command_encoder.draw_indexed_primitives(metal::MTLPrimitiveType::Triangle, num_vertices as u64, metal::MTLIndexType::UInt16, index_buffer, 0);
     }
+}
+
+
+///
+/// Converts a canvas transform to a rendering matrix
+///
+fn transform_to_matrix(transform: &flo_canvas::Transform2D) -> Matrix {
+    let flo_canvas::Transform2D(t) = transform;
+
+    Matrix([
+        [t[0][0], t[0][1], 0.0, t[0][2]],
+        [t[1][0], t[1][1], 0.0, t[1][2]],
+        [t[2][0], t[2][1], 1.0, t[2][2]],
+        [0.0,     0.0,     0.0, 1.0]
+    ])
 }

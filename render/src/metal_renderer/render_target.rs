@@ -24,6 +24,9 @@ pub enum RenderTarget {
 }
 
 impl RenderTarget {
+    ///
+    /// Creates a new render target
+    ///
     pub fn new(device: &metal::Device, width: usize, height: usize, render_target_type: RenderTargetType) -> RenderTarget {
         // Create the texture descriptor
         let texture_descriptor = metal::TextureDescriptor::new();
@@ -108,6 +111,16 @@ impl RenderTarget {
         match self {
             RenderTarget::Texture { texture, width: _, height: _ }                      => texture,
             RenderTarget::Multisampled { samples, resolved: _, width: _, height: _ }    => samples
+        }
+    }
+
+    ///
+    /// True if this is a multisampled render target
+    ///
+    pub fn is_multisampled(&self) -> bool {
+        match self {
+            RenderTarget::Texture { texture: _, width: _, height: _ }                   => false,
+            RenderTarget::Multisampled { samples: _, width: _, height: _, resolved: _ } => true
         }
     }
 }
