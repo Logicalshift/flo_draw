@@ -35,7 +35,7 @@ impl RenderTarget {
         texture_descriptor.set_width(width as u64);
         texture_descriptor.set_height(height as u64);
         texture_descriptor.set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
-        texture_descriptor.set_usage(metal::MTLTextureUsage::RenderTarget);
+        texture_descriptor.set_usage(metal::MTLTextureUsage::RenderTarget | metal::MTLTextureUsage::ShaderRead);
 
         // Customise to the render target type
         match render_target_type {
