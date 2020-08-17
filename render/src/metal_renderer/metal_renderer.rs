@@ -303,7 +303,7 @@ impl MetalRenderer {
         let new_render_target = RenderTarget::new(&self.device, width, height, render_target_type);
 
         // Store in this object
-        self.textures[texture_id]       = Some(new_render_target.texture().clone());
+        self.textures[texture_id]       = Some(new_render_target.render_texture().clone());
         self.render_targets[render_id]  = Some(new_render_target);
     }
 

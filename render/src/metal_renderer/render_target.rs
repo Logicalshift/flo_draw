@@ -17,7 +17,7 @@ pub enum RenderTarget {
     /// MSAA render target
     Multisampled {
         samples:    metal::Texture,
-        resolved:   metal::Texture,
+        resolved:   Option<metal::Texture>,
         width:      usize,
         height:     usize
     }
@@ -72,40 +72,18 @@ impl RenderTarget {
             },
 
             RenderTargetType::Multisampled | RenderTargetType::MultisampledTexture   => { 
-                // Create a texture to resolve to as well as the main texture
-                let resolve_descriptor = metal::TextureDescriptor::new();
-
-                resolve_descriptor.set_texture_type(metal::MTLTextureType::D2);
-                resolve_descriptor.set_width(width as u64);
-                resolve_descriptor.set_height(height as u64);
-                resolve_descriptor.set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
-                resolve_descriptor.set_usage(metal::MTLTextureUsage::RenderTarget);
-
-                let resolve_texture = device.new_texture(&resolve_descriptor);
-
                 RenderTarget::Multisampled {
                     samples:    render_texture,
-                    resolved:   resolve_texture,
+                    resolved:   None,
                     width:      width,
                     height:     height
                 }
             }
 
             RenderTargetType::MonochromeMultisampledTexture => {
-                // Create a texture to resolve to as well as the main texture
-                let resolve_descriptor = metal::TextureDescriptor::new();
-
-                resolve_descriptor.set_texture_type(metal::MTLTextureType::D2);
-                resolve_descriptor.set_width(width as u64);
-                resolve_descriptor.set_height(height as u64);
-                resolve_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
-                resolve_descriptor.set_usage(metal::MTLTextureUsage::RenderTarget);
-
-                let resolve_texture = device.new_texture(&resolve_descriptor);
-
                 RenderTarget::Multisampled {
                     samples:    render_texture,
-                    resolved:   resolve_texture,
+                    resolved:   None,
                     width:      width,
                     height:     height
                 }
@@ -120,16 +98,6 @@ impl RenderTarget {
         match self {
             RenderTarget::Texture { texture: _, width, height }                     => (*width, *height),
             RenderTarget::Multisampled { samples: _, resolved: _, width, height }   => (*width, *height)
-        }
-    }
-
-    ///
-    /// Returns the texture that can be used to draw the content of this render buffer
-    ///
-    pub fn texture(&self) -> &metal::Texture {
-        match self {
-            RenderTarget::Texture { texture, width: _, height: _ }                      => texture,
-            RenderTarget::Multisampled { samples: _, resolved, width: _, height: _ }    => resolved
         }
     }
 
