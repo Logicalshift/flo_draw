@@ -160,7 +160,7 @@ impl MetalRenderer {
         // Create the render state
         let command_queue       = self.command_queue.clone();
         let matrix              = MatrixBuffer::from_matrix(&self.device, Matrix::identity());
-        let pipeline_config     = PipelineConfiguration::default();
+        let pipeline_config     = PipelineConfiguration::for_texture(target_texture);
         let pipeline_state      = self.get_pipeline_state(&pipeline_config);
         let command_buffer      = command_queue.new_command_buffer();
         let command_encoder     = self.get_command_encoder(command_buffer, target_texture);
@@ -321,14 +321,18 @@ impl MetalRenderer {
         return;
 
         // Fetch the render texture
-        let render_target = match &self.render_targets[render_id] { Some(texture) => texture, None => { return } };
+        let render_target       = match &self.render_targets[render_id] { Some(texture) => texture, None => { return } };
 
         // Set the state to point at the new texture
-        state.target_texture = render_target.render_texture().clone();
+        state.target_texture    = render_target.render_texture().clone();
 
         // Create a command encoder that will use this texture
         state.command_encoder.end_encoding();
-        state.command_encoder = self.get_command_encoder(state.command_buffer, &state.target_texture);
+        state.command_encoder   = self.get_command_encoder(state.command_buffer, &state.target_texture);
+
+        state.pipeline_config.update_for_texture(&state.target_texture);
+        state.pipeline_state    = self.get_pipeline_state(&state.pipeline_config);
+        state.command_encoder.set_render_pipeline_state(&state.pipeline_state);
 
         self.setup_command_encoder(state);
     }
@@ -343,6 +347,10 @@ impl MetalRenderer {
         // Create a command encoder that will use this texture
         state.command_encoder.end_encoding();
         state.command_encoder = self.get_command_encoder(state.command_buffer, &state.target_texture);
+
+        state.pipeline_config.update_for_texture(&state.target_texture);
+        state.pipeline_state    = self.get_pipeline_state(&state.pipeline_config);
+        state.command_encoder.set_render_pipeline_state(&state.pipeline_state);
 
         self.setup_command_encoder(state);
     }

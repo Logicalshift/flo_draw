@@ -8,6 +8,16 @@ use metal;
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct PipelineConfiguration {
     ///
+    /// The sample count for this pipeline configuration
+    ///
+    pub sample_count: u64,
+
+    ///
+    /// The pixel format for this pipeline configuration
+    ///
+    pub pixel_format: metal::MTLPixelFormat,
+
+    ///
     /// The blend mode to use for this configuration
     ///
     pub blend_mode: BlendMode,
@@ -26,6 +36,8 @@ pub struct PipelineConfiguration {
 impl Default for PipelineConfiguration {
     fn default() -> PipelineConfiguration {
         PipelineConfiguration {
+            sample_count:       1,
+            pixel_format:       metal::MTLPixelFormat::BGRA8Unorm,
             blend_mode:         BlendMode::SourceOver,
             vertex_shader:      String::from("simple_vertex"),
             fragment_shader:    String::from("simple_fragment")
@@ -34,6 +46,24 @@ impl Default for PipelineConfiguration {
 }
 
 impl PipelineConfiguration {
+    ///
+    /// Creates a default pipeline configuration for rendering to the specified texture
+    ///
+    pub fn for_texture(texture: &metal::Texture) -> PipelineConfiguration {
+        let mut pipeline_config = Self::default();
+        pipeline_config.update_for_texture(texture);
+
+        pipeline_config
+    }
+
+    ///
+    /// Reads the properties of a texture and sets up this configuration to be appropriate for rendering to it
+    ///
+    pub fn update_for_texture(&mut self, texture: &metal::Texture) {
+        self.sample_count = texture.sample_count();
+        self.pixel_format = texture.pixel_format();
+    }
+
     ///
     /// Creates a pipeline state from a configuration
     ///
@@ -46,6 +76,7 @@ impl PipelineConfiguration {
 
         descriptor.set_vertex_function(Some(&vertex_shader));
         descriptor.set_fragment_function(Some(&fragment_shader));
+        descriptor.set_sample_count(self.sample_count);
 
         // Set the blend mode
         use self::BlendMode::*;
@@ -64,7 +95,7 @@ impl PipelineConfiguration {
             AllChannelAlphaDestinationOver  => (OneMinusDestinationColor, One, OneMinusDestinationAlpha, One)
         };
 
-        descriptor.color_attachments().object_at(0).unwrap().set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
+        descriptor.color_attachments().object_at(0).unwrap().set_pixel_format(self.pixel_format);
         descriptor.color_attachments().object_at(0).unwrap().set_blending_enabled(true);
         descriptor.color_attachments().object_at(0).unwrap().set_source_rgb_blend_factor(src_rgb);
         descriptor.color_attachments().object_at(0).unwrap().set_destination_rgb_blend_factor(dst_rgb);
