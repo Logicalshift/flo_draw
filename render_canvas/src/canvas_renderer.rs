@@ -679,7 +679,6 @@ impl CanvasRenderer {
 
         // When finished, render the MSAA buffer to the main framebuffer
         let finalize            = vec![
-            render::RenderAction::DrawFrameBuffer(RenderTargetId(1), 0, 0),
             render::RenderAction::DrawFrameBuffer(RenderTargetId(0), 0, 0),
             render::RenderAction::BlendMode(render::BlendMode::SourceOver),
             render::RenderAction::RenderToFrameBuffer
