@@ -16,8 +16,6 @@ fragment float4 texture_fragment(
 fragment float4 texture_multisample_fragment(
     RasterizerData              in [[stage_in]],
     metal::texture2d_ms<half>   texture [[ texture(FragmentIndexTexture) ]]) {
-    constexpr metal::sampler texture_sampler (metal::mag_filter::linear, metal::min_filter::linear);
-
     const uint num_samples      = texture.get_num_samples();
     const uint2 tex_coord       = uint2(in.v_TexCoord);
     half4 color_totals          = half4(0,0,0,0);

@@ -6,8 +6,6 @@
 fragment float4 simple_eraser_multisample_fragment(
       RasterizerData            in [[stage_in]],
       metal::texture2d_ms<half> eraser_texture [[ texture(FragmentIndexTexture) ]]) {
-    constexpr metal::sampler texture_sampler (metal::mag_filter::linear, metal::min_filter::linear);
-
     // Work out the coordinates in the eraser texture (which applies to the whole screen)
     float2 paperCoord           = in.v_PaperCoord;
     paperCoord[0]               *= float(eraser_texture.get_width());
