@@ -21,6 +21,8 @@ fn compile_metal() {
 fn compile_metal_shader(input_path: &str, output_path: &str) {
     let out_dir = env::var_os("OUT_DIR").unwrap().into_string().unwrap();
 
+    println!("cargo:rerun-if-changed={}", input_path);
+
     let shader_compile_output = Command::new("xcrun")
         .args(&["-sdk", "macosx"])
         .arg("metal")
