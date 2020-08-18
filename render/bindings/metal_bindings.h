@@ -14,5 +14,8 @@ typedef enum VertexInputIndex {
 ///
 typedef enum FragmentInputIndex {
     /// The texture to render
-    FragmentIndexTexture        = 0
+    FragmentIndexTexture        = 0,
+
+    /// The eraser texture to render
+    FragmentIndexEraseTexture   = 1
 } FragmentInputIndex;
