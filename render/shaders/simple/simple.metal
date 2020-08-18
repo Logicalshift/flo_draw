@@ -17,7 +17,7 @@ vertex RasterizerData simple_vertex(
 
     float4 position     = float4(vertices[vertex_id].pos[0], vertices[vertex_id].pos[1], 0.0, 1.0) * *transform;
     float2 tex_coord    = vertices[vertex_id].tex_coord;
-    float2 paper_coord  = float2((position[0]+1.0)/2.0, (position[1]+1.0)/2.0);
+    float2 paper_coord  = float2((position[0]+1.0)/2.0, 1.0-((position[1]+1.0)/2.0));
 
     RasterizerData data;
 
