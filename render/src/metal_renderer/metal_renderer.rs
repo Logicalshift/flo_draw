@@ -56,6 +56,9 @@ struct RenderState<'a> {
     /// The current target render buffer
     target_texture: metal::Texture,
 
+    /// The texture used in the eraser slot
+    erase_texture: Option<metal::Texture>,
+
     /// Buffer containing the current transformation matrix
     matrix: MatrixBuffer,
 
@@ -153,6 +156,7 @@ impl MetalRenderer {
 
         // Set the constant buffers
         state.command_encoder.set_vertex_buffer(VertexInputIndex_VertexInputIndexMatrix as u64, Some(&state.matrix), 0);
+        state.command_encoder.set_fragment_texture(FragmentInputIndex_FragmentIndexEraseTexture as u64, state.erase_texture.as_ref().map::<&metal::TextureRef, _>(|t| t));
     }
 
     ///
@@ -171,6 +175,7 @@ impl MetalRenderer {
             main_buffer:            target_drawable,
             main_texture:           target_texture.clone(),
             target_texture:         target_texture.clone(),
+            erase_texture:          None,
             matrix:                 matrix,
             pipeline_config:        pipeline_config,
             pipeline_state:         pipeline_state,
@@ -200,7 +205,7 @@ impl MetalRenderer {
                 CreateTextureBgra(texture_id, width, height)                            => { self.create_bgra_texture(texture_id, width, height); }
                 FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
                 Clear(color)                                                            => { self.clear(color, &mut render_state); }
-                UseShader(shader_type)                                                  => { self.use_shader(shader_type); }
+                UseShader(shader_type)                                                  => { self.use_shader(shader_type, &mut render_state); }
                 DrawTriangles(buffer_id, buffer_range)                                  => { self.draw_triangles(buffer_id, buffer_range, &mut render_state); }
                 DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)         => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices, &mut render_state); }
             }
@@ -443,8 +448,28 @@ impl MetalRenderer {
         self.setup_command_encoder(state);
     }
 
-    fn use_shader(&mut self, shader_type: ShaderType) {
+    ///
+    /// Chooses a shader for the following rendering instructions
+    ///
+    fn use_shader(&mut self, shader_type: ShaderType, state: &mut RenderState) {
+        // Reset the current shader state
+        state.erase_texture = None;
 
+        // Update the state according to the shader type
+        match shader_type {
+            ShaderType::Simple { erase_texture: None } => { 
+                state.pipeline_config.fragment_shader   = String::from("simple_fragment") 
+            }
+
+            ShaderType::Simple { erase_texture: Some(TextureId(texture_id)) } => {
+                state.pipeline_config.fragment_shader   = String::from("simple_eraser_multisample_fragment");
+                state.erase_texture                     = self.textures[texture_id].clone();
+            }
+        }
+
+        // Update the command encoder with the new state
+        state.pipeline_state = self.get_pipeline_state(&state.pipeline_config);
+        self.setup_command_encoder(state);
     }
 
     ///
