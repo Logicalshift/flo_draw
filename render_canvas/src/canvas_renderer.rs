@@ -209,12 +209,14 @@ impl CanvasRenderer {
         async move {
             let core                = Arc::clone(&self.core);
             let mut job_publisher   = job_publisher;
+            let mut pending_jobs    = vec![];
+            let batch_size          = 20;
 
             // The current path that is being built up
-            let mut path_builder = None;
+            let mut path_builder    = None;
 
             // The last path that was generated
-            let mut current_path = None;
+            let mut current_path    = None;
 
             // Create the default layer if one doesn't already exist
             core.sync(|core| {
@@ -295,7 +297,11 @@ impl CanvasRenderer {
                                 CanvasJob::Fill { path, color, entity }
                             });
 
-                            job_publisher.publish(vec![job]).await;
+                            pending_jobs.push(job);
+                            if pending_jobs.len() >= batch_size {
+                                job_publisher.publish(pending_jobs).await;
+                                pending_jobs = vec![];
+                            }
                         }
                     }
 
@@ -336,7 +342,11 @@ impl CanvasRenderer {
                                 CanvasJob::Stroke { path, stroke_options, entity }
                             });
 
-                            job_publisher.publish(vec![job]).await;
+                            pending_jobs.push(job);
+                            if pending_jobs.len() >= batch_size {
+                                job_publisher.publish(pending_jobs).await;
+                                pending_jobs = vec![];
+                            }
                         }
                     }
 
@@ -601,6 +611,10 @@ impl CanvasRenderer {
                         });
                     }
                 }
+            }
+
+            if pending_jobs.len() > 0 {
+                job_publisher.publish(pending_jobs).await;
             }
 
             // Wait for any pending jobs to make it to the processor
