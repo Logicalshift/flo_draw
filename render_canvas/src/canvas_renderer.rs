@@ -205,7 +205,7 @@ impl CanvasRenderer {
     ///
     /// Tessellates a drawing to the layers in this renderer
     ///
-    fn tessellate<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter, job_publisher: SinglePublisher<CanvasJob>) -> impl 'a+Future<Output=()> {
+    fn tessellate<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter, job_publisher: SinglePublisher<Vec<CanvasJob>>) -> impl 'a+Future<Output=()> {
         async move {
             let core                = Arc::clone(&self.core);
             let mut job_publisher   = job_publisher;
@@ -295,7 +295,7 @@ impl CanvasRenderer {
                                 CanvasJob::Fill { path, color, entity }
                             });
 
-                            job_publisher.publish(job).await;
+                            job_publisher.publish(vec![job]).await;
                         }
                     }
 
@@ -336,7 +336,7 @@ impl CanvasRenderer {
                                 CanvasJob::Stroke { path, stroke_options, entity }
                             });
 
-                            job_publisher.publish(job).await;
+                            job_publisher.publish(vec![job]).await;
                         }
                     }
 
@@ -618,13 +618,15 @@ impl CanvasRenderer {
         let workers                 = self.workers.clone();
 
         // Send the jobs from the tessellator to the workers
-        let mut publisher           = SinglePublisher::new(40);
+        let mut publisher           = SinglePublisher::new(2);
         let job_results             = workers.into_iter()
             .map(|worker| {
                 let jobs = publisher.subscribe();
-                pipe(worker, jobs, |worker, item| {
+                pipe(worker, jobs, |worker, items: Vec<CanvasJob>| {
                     async move {
-                        worker.process_job(item)
+                        items.into_iter()
+                            .map(|item| worker.process_job(item))
+                            .collect::<Vec<_>>()
                     }.boxed()
                 })
             });
@@ -636,9 +638,11 @@ impl CanvasRenderer {
         // Take the results and put them into the core
         let process_tessellations    = async move {
             // Read job results from the workers until everything is done
-            while let Some((entity, operation)) = job_results.next().await {
-                // Store each result in the core
-                core.sync(|core| core.store_job_result(entity, operation));
+            while let Some(result_list) = job_results.next().await {
+                for (entity, operation) in result_list {
+                    // Store each result in the core
+                    core.sync(|core| core.store_job_result(entity, operation));
+                }
             }
         };
 
