@@ -34,6 +34,11 @@ pub enum RenderAction {
     FreeVertexBuffer(VertexBufferId),
 
     ///
+    /// Frees an existing index buffer
+    ///
+    FreeIndexBuffer(IndexBufferId),
+
+    ///
     /// Sets the blend mode for future drawing operations (SourceOver is the default)
     ///
     BlendMode(BlendMode),
