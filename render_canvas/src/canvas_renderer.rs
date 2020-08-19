@@ -78,7 +78,7 @@ impl CanvasRenderer {
         let core = Arc::new(Desync::new(core));
 
         // Create one worker per cpu
-        let num_workers = num_cpus::get();
+        let num_workers = num_cpus::get().max(2);
         let mut workers = Vec::with_capacity(num_workers);
 
         for _ in 0..num_workers {
