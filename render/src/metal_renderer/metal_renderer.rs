@@ -263,6 +263,11 @@ impl MetalRenderer {
         // Free any existing buffer
         self.index_buffers[index_id] = None;
 
+        // Do nothing if there's no data to store in this buffer
+        if indices.len() == 0 {
+            return;
+        }
+
         // Load and store the new buffer
         self.index_buffers[index_id] = Some(Buffer::from_indices(&self.device, indices));
     }
