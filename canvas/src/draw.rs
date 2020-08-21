@@ -46,6 +46,38 @@ pub enum BlendMode {
 }
 
 ///
+/// Identifier of a canvas 'sprite'
+///
+/// A 'sprite' is just a placeholder for a set of pre-rendered actions (it's useful for things like
+/// images or drawings that are expected to repeat). Sprites survive layer and canvas clears so they
+/// can be re-used repeatedly. The drawing layer may cache these actions in order to render the sprite
+/// quickly.
+///
+/// Sprites are also faster to draw when rendering to a remote surface as they only need to be sent
+/// across once before they can be re-rendered as often as necessary.
+///
+#[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct SpriteId(pub u64);
+
+///
+/// Transformation to apply to a canvas 'sprite'
+///
+#[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum SpriteTransform {
+    /// Move by a particular amount
+    Translate(f32, f32),
+
+    /// Scale by the specified x and y factors about the origin
+    Scale(f32, f32),
+
+    /// Rotate by an angle in degrees about the origin
+    Rotate(f32),
+
+    /// Arbitrary 2D transformation
+    Transform2D(Transform2D)
+}
+
+///
 /// Instructions for drawing to a canvas
 ///
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
