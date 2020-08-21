@@ -56,13 +56,13 @@ pub enum BlendMode {
 /// Sprites are also faster to draw when rendering to a remote surface as they only need to be sent
 /// across once before they can be re-rendered as often as necessary.
 ///
-#[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct SpriteId(pub u64);
 
 ///
 /// Transformation to apply to a canvas 'sprite'
 ///
-#[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum SpriteTransform {
     /// Move by a particular amount
     Translate(f32, f32),
@@ -188,5 +188,27 @@ pub enum Draw {
     LayerBlend(u32, BlendMode),
 
     /// Clears the current layer
-    ClearLayer
+    ClearLayer,
+
+    /// Selects a particular sprite for drawing
+    ///
+    /// Future drawing actions are sent to this sprite: use something like `Layer(0)` to start drawing
+    /// to a layer again.
+    ///
+    /// Sprites can be repeatedly re-rendered with a single command and their appearance may be
+    /// cached for efficiency. Actions that affect the whole canvas or layers are not permitted in
+    /// sprites.
+    Sprite(SpriteId),
+
+    /// Releases the resources used by the current sprite
+    ClearSprite,
+
+    /// Reset the sprite transformation that's currently applied
+    SpriteIdentityTransform,
+
+    /// Adds a sprite transform to the current list of transformations to apply
+    SpriteTransform(SpriteTransform),
+
+    /// Renders a sprite with a set of transformations
+    DrawSprite(SpriteId)
 }
