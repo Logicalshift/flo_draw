@@ -25,40 +25,45 @@ enum DecoderState {
     None,
     Error,
 
-    New,                            // 'N'
-    LineStyle,                      // 'L'
-    Dash,                           // 'D'
-    Color,                          // 'C'
-    Sprite,                         // 's'
-    Transform,                      // 'T'
-    State,                          // 'Z'
+    New,                                // 'N'
+    LineStyle,                          // 'L'
+    Dash,                               // 'D'
+    Color,                              // 'C'
+    Sprite,                             // 's'
+    Transform,                          // 'T'
+    State,                              // 'Z'
 
-    Move(String),                   // m (x, y)
-    Line(String),                   // l (x, y)
-    BezierCurve(String),            // c (x, y, x, y, x, y)
+    Move(String),                       // m (x, y)
+    Line(String),                       // l (x, y)
+    BezierCurve(String),                // c (x, y, x, y, x, y)
 
-    LineStyleWidth(String),         // 'Lw' (w)
-    LineStyleWidthPixels(String),   // 'Lp' (w)
-    LineStyleJoin(String),          // 'Lj' (j)
-    LineStyleCap(String),           // 'Lc' (c)
+    LineStyleWidth(String),             // 'Lw' (w)
+    LineStyleWidthPixels(String),       // 'Lp' (w)
+    LineStyleJoin(String),              // 'Lj' (j)
+    LineStyleCap(String),               // 'Lc' (c)
 
-    DashLength(String),             // 'Dl' (len)
-    DashOffset(String),             // 'Do' (offset)
+    DashLength(String),                 // 'Dl' (len)
+    DashOffset(String),                 // 'Do' (offset)
 
-    ColorStroke(String),            // 'Cs' (r, g, b, a)
-    ColorFill(String),              // 'Cf' (r, g, b, a)
+    ColorStroke(String),                // 'Cs' (r, g, b, a)
+    ColorFill(String),                  // 'Cf' (r, g, b, a)
 
-    BlendMode(String),              // 'M' (mode)
+    BlendMode(String),                  // 'M' (mode)
 
-    TransformHeight(String),        // 'Th' (h)
-    TransformCenter(String),        // 'Tc' (min, max)
-    TransformMultiply(String),      // 'Tm' (transform)
+    TransformHeight(String),            // 'Th' (h)
+    TransformCenter(String),            // 'Tc' (min, max)
+    TransformMultiply(String),          // 'Tm' (transform)
 
-    NewLayer(String),               // 'Nl' (id)
-    NewLayerBlend(String),          // 'Nb' (id, mode)
+    NewLayer(String),                   // 'Nl' (id)
+    NewLayerBlend(String),              // 'Nb' (id, mode)
 
-    NewSprite(String),              // 'Ns' (id)
-    SpriteDraw(String),             // 'sD' (id)
+    NewSprite(String),                  // 'Ns' (id)
+    SpriteDraw(String),                 // 'sD' (id)
+    SpriteTransform,                    // 'sT' (transform)
+    SpriteTransformTranslate(String),   // 'sTt' (x, y)
+    SpriteTransformScale(String),       // 'sTs' (x, y)
+    SpriteTransformRotate(String),      // 'sTr' (degrees)
+    SpriteTransformTransform(String)    // 'sTT' (transform)
 }
 
 ///
@@ -147,6 +152,11 @@ impl CanvasDecoder {
 
             NewSprite(param)                => Self::decode_new_sprite(next_chr, param)?,
             SpriteDraw(param)               => Self::decode_sprite_draw(next_chr, param)?,
+            SpriteTransform                 => Self::decode_sprite_transform(next_chr)?,
+            SpriteTransformTranslate(param) => Self::decode_sprite_transform_translate(next_chr, param)?,
+            SpriteTransformScale(param)     => Self::decode_sprite_transform_scale(next_chr, param)?,
+            SpriteTransformRotate(param)    => Self::decode_sprite_transform_rotate(next_chr, param)?,
+            SpriteTransformTransform(param) => Self::decode_sprite_transform_transform(next_chr, param)?
         };
 
         self.state = next_state;
@@ -242,6 +252,7 @@ impl CanvasDecoder {
         match next_chr {
             'D'     => Ok((DecoderState::SpriteDraw(String::new()), None)),
             'C'     => Ok((DecoderState::None, Some(Draw::ClearSprite))),
+            'T'     => Ok((DecoderState::SpriteTransform, None)),
 
             _       => Err(DecoderError::InvalidCharacter(next_chr))
         }
@@ -530,6 +541,81 @@ impl CanvasDecoder {
         match Self::decode_sprite_id(next_chr, param)? {
             PartialResult::FullMatch(sprite_id) => Ok((DecoderState::None, Some(Draw::DrawSprite(sprite_id)))),
             PartialResult::MatchMore(param)     => Ok((DecoderState::SpriteDraw(param), None))
+        }
+    }
+
+    #[inline] fn decode_sprite_transform(next_chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match next_chr {
+            'i' => Ok((DecoderState::None, Some(Draw::SpriteTransform(SpriteTransform::Identity)))),
+            't' => Ok((DecoderState::SpriteTransformTranslate(String::new()), None)),
+            's' => Ok((DecoderState::SpriteTransformScale(String::new()), None)),
+            'r' => Ok((DecoderState::SpriteTransformRotate(String::new()), None)),
+            'T' => Ok((DecoderState::SpriteTransformTransform(String::new()), None)),
+
+            _   => Err(DecoderError::InvalidCharacter(next_chr))
+        }
+    }
+
+    #[inline] fn decode_sprite_transform_translate(next_chr: char, mut param: String)-> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 11 {
+            param.push(next_chr);
+            Ok((DecoderState::SpriteTransformTranslate(param), None))
+        } else {
+            param.push(next_chr);
+
+            let mut param   = param.chars();
+            let x           = Self::decode_f32(&mut param)?;
+            let y           = Self::decode_f32(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::SpriteTransform(SpriteTransform::Translate(x, y)))))
+        }
+    }
+
+    #[inline] fn decode_sprite_transform_scale(next_chr: char, mut param: String)-> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 11 {
+            param.push(next_chr);
+            Ok((DecoderState::SpriteTransformScale(param), None))
+        } else {
+            param.push(next_chr);
+
+            let mut param   = param.chars();
+            let x           = Self::decode_f32(&mut param)?;
+            let y           = Self::decode_f32(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::SpriteTransform(SpriteTransform::Scale(x, y)))))
+        }
+    }
+
+    #[inline] fn decode_sprite_transform_rotate(next_chr: char, mut param: String)-> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 5 {
+            param.push(next_chr);
+            Ok((DecoderState::SpriteTransformRotate(param), None))
+        } else {
+            param.push(next_chr);
+
+            let mut param   = param.chars();
+            let degrees     = Self::decode_f32(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::SpriteTransform(SpriteTransform::Rotate(degrees)))))
+        }
+    }
+
+    #[inline] fn decode_sprite_transform_transform(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 53 {
+            param.push(next_chr);
+            Ok((DecoderState::SpriteTransformTransform(param), None))
+        } else {
+            param.push(next_chr);
+            let mut param = param.chars();
+
+            let mut matrix = [0.0; 9];
+            for entry in 0..9 {
+                matrix[entry] = Self::decode_f32(&mut param)?;
+            }
+
+            let transform = Transform2D([[matrix[0], matrix[1], matrix[2]], [matrix[3], matrix[4], matrix[5]], [matrix[6], matrix[7], matrix[8]]]);
+
+            Ok((DecoderState::None, Some(Draw::SpriteTransform(SpriteTransform::Transform2D(transform)))))
         }
     }
 
@@ -921,12 +1007,12 @@ mod test {
     }
 
     #[test]
-    fn decode_transform_sprite_rotate() {
+    fn decode_transform_sprite_scale() {
         check_round_trip_single(Draw::SpriteTransform(SpriteTransform::Scale(6.0, 7.0)));
     }
 
     #[test]
-    fn decode_transform_sprite_scale() {
+    fn decode_transform_sprite_rotate() {
         check_round_trip_single(Draw::SpriteTransform(SpriteTransform::Rotate(42.0)));
     }
 
