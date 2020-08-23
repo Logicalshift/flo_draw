@@ -534,12 +534,15 @@ impl CanvasRenderer {
                         // TODO: need to reset the blend mode
                         core.sync(|core| {
                             if let Some(restore_point) = core.layer(self.current_layer).state.restore_point {
-                                let layer = core.layer(self.current_layer);
+                                let mut layer = core.layer(self.current_layer);
 
                                 // Remove entries from the layer until we reach the restore point
                                 while layer.render_order.len() > restore_point {
                                     let removed_entity = layer.render_order.pop();
                                     removed_entity.map(|removed| core.free_entity(removed));
+
+                                    // Reborrow the layer after removal
+                                    layer = core.layer(self.current_layer);
                                 }
                             }
                         })
