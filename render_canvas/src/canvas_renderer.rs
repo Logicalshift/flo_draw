@@ -630,7 +630,7 @@ impl CanvasRenderer {
                     }
 
                     // Clears the current layer
-                    ClearLayer => {
+                    ClearLayer | ClearSprite => {
                         core.sync(|core| {
                             // Create a new layer
                             let mut layer = Self::create_default_layer();
@@ -643,9 +643,27 @@ impl CanvasRenderer {
                         });
                     },
 
-                    Sprite(sprite_id) => { unimplemented!() },
-                    ClearSprite => { unimplemented!() },
+                    // Selects a particular sprite for drawing
+                    Sprite(sprite_id) => { 
+                        core.sync(|core| {
+                            if let Some(sprite_handle) = core.sprites.get(&sprite_id) {
+                                // Use the existing sprite layer if one exists
+                                self.current_layer = *sprite_handle;
+                            } else {
+                                // Create a new sprite layer
+                                let sprite_layer = Self::create_default_layer();
+                                let sprite_layer = core.allocate_layer_handle(sprite_layer);
+                                core.sprites.insert(sprite_id, sprite_layer);
+
+                                self.current_layer = sprite_layer;
+                            }
+                        })
+                    },
+
+                    // Adds a sprite transform to the current list of transformations to apply
                     SpriteTransform(transform) => { unimplemented!() },
+
+                    // Renders a sprite with a set of transformations
                     DrawSprite(sprite_id) => { unimplemented!() },
                 }
             }
