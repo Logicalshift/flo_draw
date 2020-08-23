@@ -669,7 +669,11 @@ impl CanvasRenderer {
                     },
 
                     // Renders a sprite with a set of transformations
-                    DrawSprite(sprite_id) => { unimplemented!() },
+                    DrawSprite(sprite_id) => { 
+                        core.sync(|core| {
+                            core.layer(self.current_layer).render_order.push(RenderEntity::RenderSprite(sprite_id))
+                        })
+                    },
                 }
             }
 

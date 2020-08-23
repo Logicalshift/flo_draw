@@ -133,6 +133,10 @@ impl<'a> Stream for RenderStream<'a> {
                         panic!("Tessellation is not complete (found unexpected vertex buffer in layer)");
                     },
 
+                    RenderSprite(_sprite_id) => { 
+                        todo!("Sprite rendering")
+                    },
+
                     SetTransform(new_transform) => {
                         // The 'active transform' applies to all the preceding render instructions
                         let combined_transform  = &viewport_transform * &active_transform;
