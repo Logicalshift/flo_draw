@@ -20,7 +20,7 @@ pub enum RenderEntity {
     DrawIndexed(render::VertexBufferId, render::IndexBufferId, usize),
 
     /// Render the sprite layer with the specified ID
-    RenderSprite(canvas::SpriteId),
+    RenderSprite(canvas::SpriteId, canvas::Transform2D),
 
     /// Updates the transformation matrix for the layer
     SetTransform(canvas::Transform2D),

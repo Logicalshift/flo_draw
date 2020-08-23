@@ -99,8 +99,9 @@ impl RenderCore {
                     panic!("Tessellation is not complete (found unexpected vertex buffer in layer)");
                 },
 
-                RenderSprite(sprite_id) => { 
-                    let sprite_id = *sprite_id;
+                RenderSprite(sprite_id, sprite_transform) => { 
+                    let sprite_id           = *sprite_id;
+                    let sprite_transform    = *sprite_transform;
 
                     // Set the transform for the preceding rendering instructions
                     let combined_transform  = &viewport_transform * &active_transform;
@@ -119,10 +120,13 @@ impl RenderCore {
                         render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(0)));
                     }
 
+                    // The sprite transform is appended to the viewport transform
+                    let sprite_transform = viewport_transform * sprite_transform;
+
                     // Render the layer associated with the sprite
                     if let Some(sprite_layer) = core.sprites.get(&sprite_id) {
                         let sprite_layer = *sprite_layer;
-                        render_layer_stack.extend(core.render_layer(viewport_transform, sprite_layer));
+                        render_layer_stack.extend(core.render_layer(sprite_transform, sprite_layer));
                     }
 
                     // Reborrow the layer
