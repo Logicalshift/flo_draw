@@ -11,6 +11,14 @@ use std::str::*;
 use std::result::Result;
 
 ///
+/// Represents a partial or full decoding result
+///
+enum PartialResult<T> {
+    MatchMore(String),
+    FullMatch(T)
+}
+
+///
 /// The possible states for a decoder to be in after accepting some characters from the source
 ///
 enum DecoderState {
@@ -21,6 +29,7 @@ enum DecoderState {
     LineStyle,                      // 'L'
     Dash,                           // 'D'
     Color,                          // 'C'
+    Sprite,                         // 's'
     Transform,                      // 'T'
     State,                          // 'Z'
 
@@ -47,6 +56,8 @@ enum DecoderState {
 
     NewLayer(String),               // 'Nl' (id)
     NewLayerBlend(String),          // 'Nb' (id, mode)
+
+    NewSprite(String)               // 'Ns' (id)
 }
 
 ///
@@ -105,6 +116,7 @@ impl CanvasDecoder {
             LineStyle                       => Self::decode_line_style(next_chr)?,
             Dash                            => Self::decode_dash(next_chr)?,
             Color                           => Self::decode_color(next_chr)?,
+            Sprite                          => { unimplemented!() },
             Transform                       => Self::decode_transform(next_chr)?,
             State                           => Self::decode_state(next_chr)?,
 
@@ -130,7 +142,9 @@ impl CanvasDecoder {
             TransformMultiply(param)        => Self::decode_transform_multiply(next_chr, param)?,
 
             NewLayer(param)                 => Self::decode_new_layer(next_chr, param)?,
-            NewLayerBlend(param)            => Self::decode_new_layer_blend(next_chr, param)?
+            NewLayerBlend(param)            => Self::decode_new_layer_blend(next_chr, param)?,
+
+            NewSprite(param)                => Self::decode_new_sprite(next_chr, param)?
         };
 
         self.state = next_state;
@@ -150,6 +164,7 @@ impl CanvasDecoder {
             'L' => Ok((DecoderState::LineStyle, None)),
             'D' => Ok((DecoderState::Dash, None)),
             'C' => Ok((DecoderState::Color, None)),
+            's' => Ok((DecoderState::Sprite, None)),
             'T' => Ok((DecoderState::Transform, None)),
             'Z' => Ok((DecoderState::State, None)),
 
@@ -180,6 +195,7 @@ impl CanvasDecoder {
 
             'l'     => Ok((DecoderState::NewLayer(String::new()), None)),
             'b'     => Ok((DecoderState::NewLayerBlend(String::new()), None)),
+            's'     => Ok((DecoderState::NewSprite(String::new()), None)),
 
             _       => Err(DecoderError::InvalidCharacter(next_chr))
         }
@@ -516,6 +532,38 @@ impl CanvasDecoder {
             ('E', 'L') => Ok(BlendMode::Lighten),
 
             _          => Err(DecoderError::InvalidCharacter(a))
+        }
+    }
+
+    ///
+    /// Consumes characters until we have a sprite ID
+    ///
+    #[inline] fn decode_new_sprite(next_chr: char, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match Self::decode_sprite_id(next_chr, param)? {
+            PartialResult::FullMatch(sprite_id) => Ok((DecoderState::None, Some(Draw::Sprite(sprite_id)))),
+            PartialResult::MatchMore(param)     => Ok((DecoderState::NewSprite(param), None))
+        }
+    }
+
+    ///
+    /// Performs sprite ID decoding
+    ///
+    fn decode_sprite_id(next_chr: char, mut param: String) -> Result<PartialResult<SpriteId>, DecoderError> {
+        // Add the next character
+        param.push(next_chr);
+
+        // Decode to a u64 if the 0x20 bit is not set
+        if (Self::decode_base64(next_chr)? & 0x20) == 0 {
+            let mut result = 0u64;
+
+            while let Some(chr) = param.pop() {
+                result <<= 5;
+                result |= (Self::decode_base64(chr)? & !0x20) as u64;
+            }
+
+            Ok(PartialResult::FullMatch(SpriteId(result)))
+        } else {
+            Ok(PartialResult::MatchMore(param))
         }
     }
 
