@@ -245,9 +245,9 @@ impl CanvasEncoding<String> for Draw {
             &LayerBlend(layer_id, blend_mode)       => ('N', 'b', layer_id, blend_mode).encode_canvas(append_to),
             &ClearLayer                             => ('N', 'C').encode_canvas(append_to),
             &Sprite(sprite_id)                      => ('N', 's', sprite_id).encode_canvas(append_to),
-            &ClearSprite                            => ('S', 'C').encode_canvas(append_to),
-            &SpriteTransform(sprite_transform)      => ('S', 'T', sprite_transform).encode_canvas(append_to),
-            &DrawSprite(sprite_id)                  => ('S', 'D', sprite_id).encode_canvas(append_to)                      
+            &ClearSprite                            => ('s', 'C').encode_canvas(append_to),
+            &SpriteTransform(sprite_transform)      => ('s', 'T', sprite_transform).encode_canvas(append_to),
+            &DrawSprite(sprite_id)                  => ('s', 'D', sprite_id).encode_canvas(append_to)                      
         }
     }
 }
