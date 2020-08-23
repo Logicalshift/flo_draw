@@ -662,7 +662,11 @@ impl CanvasRenderer {
                     },
 
                     // Adds a sprite transform to the current list of transformations to apply
-                    SpriteTransform(transform) => { unimplemented!() },
+                    SpriteTransform(transform) => {
+                        core.sync(|core| {
+                            core.layer(self.current_layer).state.apply_sprite_transform(transform)
+                        })
+                    },
 
                     // Renders a sprite with a set of transformations
                     DrawSprite(sprite_id) => { unimplemented!() },
