@@ -1,8 +1,12 @@
 use super::renderer_layer::*;
+use super::renderer_sprite::*;
 use super::renderer_worker::*;
 
+use flo_canvas as canvas;
 use flo_render as render;
+
 use std::mem;
+use std::collections::{HashMap};
 
 ///
 /// Parts of the renderer that are shared with the workers
@@ -10,6 +14,9 @@ use std::mem;
 pub struct RenderCore {
     /// The definition for the layers
     pub layers: Vec<Layer>,
+
+    /// The definition for the sprites
+    pub sprites: HashMap<canvas::SpriteId, Sprite>,
 
     /// The first unused vertex buffer ID
     pub unused_vertex_buffer: usize,

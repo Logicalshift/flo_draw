@@ -16,6 +16,7 @@ use num_cpus;
 use lyon::path;
 use lyon::math;
 
+use std::collections::{HashMap};
 use std::ops::{Range};
 use std::sync::*;
 use std::mem;
@@ -72,6 +73,7 @@ impl CanvasRenderer {
         // Create the shared core
         let core = RenderCore {
             layers:                 vec![],
+            sprites:                HashMap::new(),
             unused_vertex_buffer:   0,
             free_vertex_buffers:    vec![]
         };
