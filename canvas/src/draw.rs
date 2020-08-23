@@ -64,6 +64,9 @@ pub struct SpriteId(pub u64);
 ///
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum SpriteTransform {
+    /// Resets the transformation to the identity transform
+    Identity,
+
     /// Move by a particular amount
     Translate(f32, f32),
 
@@ -202,9 +205,6 @@ pub enum Draw {
 
     /// Releases the resources used by the current sprite
     ClearSprite,
-
-    /// Reset the sprite transformation that's currently applied
-    SpriteIdentityTransform,
 
     /// Adds a sprite transform to the current list of transformations to apply
     SpriteTransform(SpriteTransform),

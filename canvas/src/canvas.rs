@@ -279,34 +279,38 @@ impl<'a> GraphicsContext for CoreContext<'a> {
         self.pending.push(Draw::BezierCurve((x1, y1), (x2, y2), (x3, y3)));
     }
 
-    fn close_path(&mut self)                        { self.pending.push(Draw::ClosePath); }
-    fn fill(&mut self)                              { self.pending.push(Draw::Fill); }
-    fn stroke(&mut self)                            { self.pending.push(Draw::Stroke); }
-    fn line_width(&mut self, width: f32)            { self.pending.push(Draw::LineWidth(width)); }
-    fn line_width_pixels(&mut self, width: f32)     { self.pending.push(Draw::LineWidthPixels(width)); }
-    fn line_join(&mut self, join: LineJoin)         { self.pending.push(Draw::LineJoin(join)); }
-    fn line_cap(&mut self, cap: LineCap)            { self.pending.push(Draw::LineCap(cap)); }
-    fn new_dash_pattern(&mut self)                  { self.pending.push(Draw::NewDashPattern); }
-    fn dash_length(&mut self, length: f32)          { self.pending.push(Draw::DashLength(length)); }
-    fn dash_offset(&mut self, offset: f32)          { self.pending.push(Draw::DashOffset(offset)); }
-    fn fill_color(&mut self, col: Color)            { self.pending.push(Draw::FillColor(col)); }
-    fn stroke_color(&mut self, col: Color)          { self.pending.push(Draw::StrokeColor(col)); }
-    fn blend_mode(&mut self, mode: BlendMode)       { self.pending.push(Draw::BlendMode(mode)); }
-    fn identity_transform(&mut self)                { self.pending.push(Draw::IdentityTransform); }
-    fn canvas_height(&mut self, height: f32)        { self.pending.push(Draw::CanvasHeight(height)); }
+    fn close_path(&mut self)                                    { self.pending.push(Draw::ClosePath); }
+    fn fill(&mut self)                                          { self.pending.push(Draw::Fill); }
+    fn stroke(&mut self)                                        { self.pending.push(Draw::Stroke); }
+    fn line_width(&mut self, width: f32)                        { self.pending.push(Draw::LineWidth(width)); }
+    fn line_width_pixels(&mut self, width: f32)                 { self.pending.push(Draw::LineWidthPixels(width)); }
+    fn line_join(&mut self, join: LineJoin)                     { self.pending.push(Draw::LineJoin(join)); }
+    fn line_cap(&mut self, cap: LineCap)                        { self.pending.push(Draw::LineCap(cap)); }
+    fn new_dash_pattern(&mut self)                              { self.pending.push(Draw::NewDashPattern); }
+    fn dash_length(&mut self, length: f32)                      { self.pending.push(Draw::DashLength(length)); }
+    fn dash_offset(&mut self, offset: f32)                      { self.pending.push(Draw::DashOffset(offset)); }
+    fn fill_color(&mut self, col: Color)                        { self.pending.push(Draw::FillColor(col)); }
+    fn stroke_color(&mut self, col: Color)                      { self.pending.push(Draw::StrokeColor(col)); }
+    fn blend_mode(&mut self, mode: BlendMode)                   { self.pending.push(Draw::BlendMode(mode)); }
+    fn identity_transform(&mut self)                            { self.pending.push(Draw::IdentityTransform); }
+    fn canvas_height(&mut self, height: f32)                    { self.pending.push(Draw::CanvasHeight(height)); }
     fn center_region(&mut self, minx: f32, miny: f32, maxx: f32, maxy: f32) { self.pending.push(Draw::CenterRegion((minx, miny), (maxx, maxy))); }
-    fn transform(&mut self, transform: Transform2D) { self.pending.push(Draw::MultiplyTransform(transform)); }
-    fn unclip(&mut self)                            { self.pending.push(Draw::Unclip); }
-    fn clip(&mut self)                              { self.pending.push(Draw::Clip); }
-    fn store(&mut self)                             { self.pending.push(Draw::Store); }
-    fn restore(&mut self)                           { self.pending.push(Draw::Restore); }
-    fn free_stored_buffer(&mut self)                { self.pending.push(Draw::FreeStoredBuffer); }
-    fn push_state(&mut self)                        { self.pending.push(Draw::PushState); }
-    fn pop_state(&mut self)                         { self.pending.push(Draw::PopState); }
-    fn clear_canvas(&mut self)                      { self.pending.push(Draw::ClearCanvas); }
-    fn layer(&mut self, layer_id: u32)              { self.pending.push(Draw::Layer(layer_id)); }
+    fn transform(&mut self, transform: Transform2D)             { self.pending.push(Draw::MultiplyTransform(transform)); }
+    fn unclip(&mut self)                                        { self.pending.push(Draw::Unclip); }
+    fn clip(&mut self)                                          { self.pending.push(Draw::Clip); }
+    fn store(&mut self)                                         { self.pending.push(Draw::Store); }
+    fn restore(&mut self)                                       { self.pending.push(Draw::Restore); }
+    fn free_stored_buffer(&mut self)                            { self.pending.push(Draw::FreeStoredBuffer); }
+    fn push_state(&mut self)                                    { self.pending.push(Draw::PushState); }
+    fn pop_state(&mut self)                                     { self.pending.push(Draw::PopState); }
+    fn clear_canvas(&mut self)                                  { self.pending.push(Draw::ClearCanvas); }
+    fn layer(&mut self, layer_id: u32)                          { self.pending.push(Draw::Layer(layer_id)); }
     fn layer_blend(&mut self, layer_id: u32, blend_mode: BlendMode) { self.pending.push(Draw::LayerBlend(layer_id, blend_mode)); }
-    fn clear_layer(&mut self)                       { self.pending.push(Draw::ClearLayer); }
+    fn clear_layer(&mut self)                                   { self.pending.push(Draw::ClearLayer); }
+    fn sprite(&mut self, sprite_id: SpriteId)                   { self.pending.push(Draw::Sprite(sprite_id)); }
+    fn clear_sprite(&mut self)                                  { self.pending.push(Draw::ClearSprite); }
+    fn sprite_transform(&mut self, transform: SpriteTransform)  { self.pending.push(Draw::SpriteTransform(transform)); }
+    fn draw_sprite(&mut self, sprite_id: SpriteId)              { self.pending.push(Draw::DrawSprite(sprite_id)); }
 
     fn draw(&mut self, d: Draw)                     { self.pending.push(d); }
     fn draw_list<'b>(&'b mut self, drawing: Box<dyn 'b+Iterator<Item=Draw>>) {
