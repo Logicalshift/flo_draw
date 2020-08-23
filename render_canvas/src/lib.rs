@@ -1,3 +1,5 @@
+mod render_entity;
+mod layer_state;
 mod stroke_settings;
 mod canvas_renderer;
 mod renderer_core;

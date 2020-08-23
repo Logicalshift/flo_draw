@@ -1,5 +1,5 @@
+use super::render_entity::*;
 use super::renderer_core::*;
-use super::renderer_layer::*;
 
 use flo_canvas as canvas;
 use flo_render as render;

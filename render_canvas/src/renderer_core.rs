@@ -1,3 +1,4 @@
+use super::render_entity::*;
 use super::renderer_layer::*;
 use super::renderer_worker::*;
 

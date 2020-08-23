@@ -1,4 +1,4 @@
-use super::renderer_layer::*;
+use super::render_entity::*;
 use super::stroke_settings::*;
 
 use flo_render as render;

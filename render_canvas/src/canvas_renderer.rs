@@ -1,3 +1,5 @@
+use super::layer_state::*;
+use super::render_entity::*;
 use super::stroke_settings::*;
 use super::renderer_core::*;
 use super::renderer_layer::*;
