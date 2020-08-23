@@ -21,5 +21,8 @@ pub struct LayerState {
     pub restore_point: Option<usize>,
 
     /// The current transformation matrix for this layer
-    pub current_matrix: canvas::Transform2D
+    pub current_matrix: canvas::Transform2D,
+
+    /// The current transform to apply when rendering sprites
+    pub sprite_matrix: canvas::Transform2D
 }
