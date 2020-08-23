@@ -55,139 +55,141 @@ impl<'a> RenderStream<'a> {
             render_index:       0
         }
     }
+}
 
+impl RenderCore {
     ///
     /// Generates the rendering actions for the layer with the specified handle
     ///
     fn render_layer(&mut self, viewport_transform: canvas::Transform2D, layer_handle: LayerHandle) -> Vec<render::RenderAction> {
-        self.core.sync(move |core| {
-            let mut send_vertex_buffers = vec![];
+        let core = self;
 
-            // Send the vertex buffers
-            use self::RenderEntity::*;
+        let mut send_vertex_buffers = vec![];
 
-            for render_idx in 0..core.layer(layer_handle).render_order.len() {
-                if let VertexBuffer(_buffers) = &core.layer(layer_handle).render_order[render_idx] {
-                    send_vertex_buffers.extend(core.send_vertex_buffer(layer_handle, render_idx));
-                }
+        // Send the vertex buffers
+        use self::RenderEntity::*;
+
+        for render_idx in 0..core.layer(layer_handle).render_order.len() {
+            if let VertexBuffer(_buffers) = &core.layer(layer_handle).render_order[render_idx] {
+                send_vertex_buffers.extend(core.send_vertex_buffer(layer_handle, render_idx));
             }
+        }
 
-            // Render the layer in reverse order (this is a stack, so operations are run in reverse order)
-            let mut render_layer_stack  = vec![];
-            let mut active_transform    = canvas::Transform2D::identity();
-            let mut active_blend_mode   = render::BlendMode::DestinationOver;
-            let mut use_erase_texture   = false;
-            let layer                   = core.layer(layer_handle);
+        // Render the layer in reverse order (this is a stack, so operations are run in reverse order)
+        let mut render_layer_stack  = vec![];
+        let mut active_transform    = canvas::Transform2D::identity();
+        let mut active_blend_mode   = render::BlendMode::DestinationOver;
+        let mut use_erase_texture   = false;
+        let mut layer               = core.layer(layer_handle);
 
-            for render_idx in 0..layer.render_order.len() {
-                match &layer.render_order[render_idx] {
-                    Missing => {
-                        // Temporary state while sending a vertex buffer?
-                        panic!("Tessellation is not complete (vertex buffer went missing)");
-                    },
+        for render_idx in 0..layer.render_order.len() {
+            match &layer.render_order[render_idx] {
+                Missing => {
+                    // Temporary state while sending a vertex buffer?
+                    panic!("Tessellation is not complete (vertex buffer went missing)");
+                },
 
-                    Tessellating(_id) => { 
-                        // Being processed? (shouldn't happen)
-                        panic!("Tessellation is not complete (tried to render too early)");
-                    },
+                Tessellating(_id) => { 
+                    // Being processed? (shouldn't happen)
+                    panic!("Tessellation is not complete (tried to render too early)");
+                },
 
-                    VertexBuffer(_buffers) => {
-                        // Should already have sent all the vertex buffers
-                        panic!("Tessellation is not complete (found unexpected vertex buffer in layer)");
-                    },
+                VertexBuffer(_buffers) => {
+                    // Should already have sent all the vertex buffers
+                    panic!("Tessellation is not complete (found unexpected vertex buffer in layer)");
+                },
 
-                    RenderSprite(_sprite_id) => { 
-                        todo!("Sprite rendering")
-                    },
+                RenderSprite(sprite_id) => { 
+                    todo!("Sprite rendering")
+                },
 
-                    SetTransform(new_transform) => {
-                        // The 'active transform' applies to all the preceding render instructions
+                SetTransform(new_transform) => {
+                    // The 'active transform' applies to all the preceding render instructions
+                    let combined_transform  = &viewport_transform * &active_transform;
+                    let combined_matrix     = transform_to_matrix(&combined_transform);
+
+                    render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
+
+                    // The new transform will apply to all the following render instructions
+                    active_transform        = *new_transform;
+                },
+
+                SetBlendMode(new_blend_mode) => {
+                    // Update the blend mode for the preceding render instructions
+                    if active_blend_mode == render::BlendMode::DestinationOut {
+
                         let combined_transform  = &viewport_transform * &active_transform;
                         let combined_matrix     = transform_to_matrix(&combined_transform);
 
                         render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
 
-                        // The new transform will apply to all the following render instructions
-                        active_transform        = *new_transform;
-                    },
+                        // Flag that we're using the erase texture and it needs to be cleared for this layer
+                        use_erase_texture       = true;
 
-                    SetBlendMode(new_blend_mode) => {
-                        // Update the blend mode for the preceding render instructions
-                        if active_blend_mode == render::BlendMode::DestinationOut {
+                        // Preceding renders need to update the erase texture
+                        render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
+                        render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
+                        render_layer_stack.push(render::RenderAction::BlendMode(render::BlendMode::AllChannelAlphaDestinationOver));
 
+                    } else {
+
+                        if new_blend_mode == &render::BlendMode::DestinationOut {
                             let combined_transform  = &viewport_transform * &active_transform;
                             let combined_matrix     = transform_to_matrix(&combined_transform);
 
                             render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
 
-                            // Flag that we're using the erase texture and it needs to be cleared for this layer
-                            use_erase_texture       = true;
-
-                            // Preceding renders need to update the erase texture
-                            render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
-                            render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
-                            render_layer_stack.push(render::RenderAction::BlendMode(render::BlendMode::AllChannelAlphaDestinationOver));
-
-                        } else {
-
-                            if new_blend_mode == &render::BlendMode::DestinationOut {
-                                let combined_transform  = &viewport_transform * &active_transform;
-                                let combined_matrix     = transform_to_matrix(&combined_transform);
-
-                                render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
-
-                                // Need to update the blend mode to disable the eraser, and apply the eraser texture to the preceding renders
-                                render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: Some(render::TextureId(1)) }));
-                            }
-
-                            // Preceding renders need to use the specified blend mode
-                            render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(0)));
-                            render_layer_stack.push(render::RenderAction::BlendMode(active_blend_mode));
-
+                            // Need to update the blend mode to disable the eraser, and apply the eraser texture to the preceding renders
+                            render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: Some(render::TextureId(1)) }));
                         }
 
-                        // active_blend_mode will eventually be applied to the following instructions
-                        active_blend_mode = *new_blend_mode;
-                    },
+                        // Preceding renders need to use the specified blend mode
+                        render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(0)));
+                        render_layer_stack.push(render::RenderAction::BlendMode(active_blend_mode));
 
-                    DrawIndexed(vertex_buffer, index_buffer, num_items) => {
-                        // Draw the triangles
-                        render_layer_stack.push(render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items));
                     }
+
+                    // active_blend_mode will eventually be applied to the following instructions
+                    active_blend_mode = *new_blend_mode;
+                },
+
+                DrawIndexed(vertex_buffer, index_buffer, num_items) => {
+                    // Draw the triangles
+                    render_layer_stack.push(render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items));
                 }
             }
+        }
 
-            // The 'active transform' applies to all the preceding render instructions
-            let combined_transform  = &viewport_transform * &active_transform;
-            let combined_matrix     = transform_to_matrix(&combined_transform);
+        // The 'active transform' applies to all the preceding render instructions
+        let combined_transform  = &viewport_transform * &active_transform;
+        let combined_matrix     = transform_to_matrix(&combined_transform);
 
-            render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
+        render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
 
-            if active_blend_mode == render::BlendMode::DestinationOut {
+        if active_blend_mode == render::BlendMode::DestinationOut {
 
-                // Preceding renders need to update the erase texture
-                render_layer_stack.push(render::RenderAction::BlendMode(render::BlendMode::AllChannelAlphaDestinationOver));
-                render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
-                render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
+            // Preceding renders need to update the erase texture
+            render_layer_stack.push(render::RenderAction::BlendMode(render::BlendMode::AllChannelAlphaDestinationOver));
+            render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
+            render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
 
-            } else {
-                render_layer_stack.push(render::RenderAction::BlendMode(active_blend_mode));
-                render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
-                render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(0)));
-            }
+        } else {
+            render_layer_stack.push(render::RenderAction::BlendMode(active_blend_mode));
+            render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
+            render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(0)));
+        }
 
-            // Clear the erase mask if it's used on this layer
-            if use_erase_texture {
-                render_layer_stack.push(render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])));
-                render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
-            }
+        // Clear the erase mask if it's used on this layer
+        if use_erase_texture {
+            render_layer_stack.push(render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])));
+            render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
+        }
 
-            // Send the vertex buffers first
-            render_layer_stack.extend(send_vertex_buffers);
+        // Send the vertex buffers first
+        render_layer_stack.extend(send_vertex_buffers);
 
-            // Generate a pending set of actions for the current layer
-            return render_layer_stack;
-        })
+        // Generate a pending set of actions for the current layer
+        return render_layer_stack;
     }
 }
 
@@ -228,9 +230,11 @@ impl<'a> Stream for RenderStream<'a> {
         } else {
             // Move to the previous layer
             layer_id -= 1;
-            let layer_handle = self.core.sync(|core| core.layers[layer_id]);
 
-            Some(self.render_layer(viewport_transform, layer_handle))
+            self.core.sync(|core| {
+                let layer_handle = core.layers[layer_id];
+                Some(core.render_layer(viewport_transform, layer_handle))
+            })
         };
 
         // Update the layer ID to continue iterating
