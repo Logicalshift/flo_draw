@@ -56,7 +56,7 @@ pub enum BlendMode {
 /// Sprites are also faster to draw when rendering to a remote surface as they only need to be sent
 /// across once before they can be re-rendered as often as necessary.
 ///
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SpriteId(pub u64);
 
 ///
