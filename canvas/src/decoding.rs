@@ -241,6 +241,7 @@ impl CanvasDecoder {
         // Matched 's' so far
         match next_chr {
             'D'     => Ok((DecoderState::SpriteDraw(String::new()), None)),
+            'C'     => Ok((DecoderState::None, Some(Draw::ClearSprite))),
 
             _       => Err(DecoderError::InvalidCharacter(next_chr))
         }
