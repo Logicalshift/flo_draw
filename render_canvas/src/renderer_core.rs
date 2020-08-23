@@ -1,6 +1,8 @@
+use super::layer_state::*;
 use super::render_entity::*;
 use super::renderer_layer::*;
 use super::renderer_worker::*;
+use super::stroke_settings::*;
 
 use flo_canvas as canvas;
 use flo_render as render;
@@ -9,14 +11,26 @@ use std::mem;
 use std::collections::{HashMap};
 
 ///
+/// Handle referencing a renderer layer
+///
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct LayerHandle(u64);
+
+///
 /// Parts of the renderer that are shared with the workers
 ///
 pub struct RenderCore {
     /// The definition for the layers
-    pub layers: Vec<Layer>,
+    pub layers: Vec<LayerHandle>,
 
     /// The definition for the sprites
-    pub sprites: HashMap<canvas::SpriteId, Layer>,
+    pub sprites: HashMap<canvas::SpriteId, LayerHandle>,
+
+    /// The actual layer definitions
+    pub layer_definitions: Vec<Layer>,
+
+    /// Available layer handles
+    pub free_layers: Vec<LayerHandle>,
 
     /// The first unused vertex buffer ID
     pub unused_vertex_buffer: usize,
@@ -62,22 +76,26 @@ impl RenderCore {
     /// Stores the result of a worker job in this core item
     ///
     pub fn store_job_result(&mut self, entity_ref: LayerEntityRef, render_entity: RenderEntity) {
-        // TODO: if we do nothing, we need to return the entity's vertex buffers to the free pool
+        let LayerHandle(layer_idx)  = entity_ref.layer_id;
+        let layer_idx               = layer_idx as usize;
 
         // Do nothing if the layer no longer exists
-        if self.layers.len() <= entity_ref.layer_id {
+        if self.layer_definitions.len() <= layer_idx {
+            self.free_entity(render_entity);
             return;
         }
 
         // Do nothing if the entity index no longer exists
-        if self.layers[entity_ref.layer_id].render_order.len() <= entity_ref.entity_index {
+        if self.layer_definitions[layer_idx].render_order.len() <= entity_ref.entity_index {
+            self.free_entity(render_entity);
             return;
         }
 
         // The existing entity should be a 'tessellating' entry that matches the entity_ref ID
-        let entity = &mut self.layers[entity_ref.layer_id].render_order[entity_ref.entity_index];
+        let entity = &mut self.layer_definitions[layer_idx].render_order[entity_ref.entity_index];
         if let RenderEntity::Tessellating(entity_id) = entity {
             if *entity_id != entity_ref.entity_id {
+                self.free_entity(render_entity);
                 return;
             }
         } else {
@@ -85,7 +103,7 @@ impl RenderCore {
         }
 
         // Store the render entity
-        self.layers[entity_ref.layer_id]
+        self.layer_definitions[layer_idx]
             .render_order[entity_ref.entity_index] = render_entity;
     }
 
@@ -104,10 +122,13 @@ impl RenderCore {
     ///
     /// Returns the render actions required to send a vertex buffer (as a stack, so in reverse order)
     ///
-    pub fn send_vertex_buffer(&mut self, layer_id: usize, render_index: usize) -> Vec<render::RenderAction> {
+    pub fn send_vertex_buffer(&mut self, layer_id: LayerHandle, render_index: usize) -> Vec<render::RenderAction> {
+        let LayerHandle(layer_idx)  = layer_id;
+        let layer_idx               = layer_idx as usize;
+
         // Remove the action from the layer
         let mut vertex_action = RenderEntity::Missing;
-        mem::swap(&mut self.layers[layer_id].render_order[render_index], &mut vertex_action);
+        mem::swap(&mut self.layer_definitions[layer_idx].render_order[render_index], &mut vertex_action);
 
         // The action we just removed should be a vertex buffer action
         match vertex_action {
@@ -116,7 +137,7 @@ impl RenderCore {
                 let buffer_id = self.allocate_vertex_buffer();
 
                 // Draw these buffers as the action at this position
-                self.layers[layer_id].render_order[render_index] = RenderEntity::DrawIndexed(render::VertexBufferId(buffer_id), render::IndexBufferId(buffer_id), vertices.indices.len());
+                self.layer_definitions[layer_idx].render_order[render_index] = RenderEntity::DrawIndexed(render::VertexBufferId(buffer_id), render::IndexBufferId(buffer_id), vertices.indices.len());
 
                 // Send the vertices and indices to the rendering engine
                 vec![
@@ -127,5 +148,57 @@ impl RenderCore {
 
             _ => panic!("send_vertex_buffer must be used on a vertex buffer item")
         }
+    }
+
+    ///
+    /// Allocates a new layer handle to a blank layer
+    ///
+    pub fn allocate_layer_handle(&mut self, layer: Layer) -> LayerHandle {
+        if let Some(LayerHandle(idx)) = self.free_layers.pop() {
+            // Overwrite the existing layer with the new layer
+            self.layer_definitions[idx as usize] = layer;
+            LayerHandle(idx)
+        } else {
+            // Define a new layer
+            self.layer_definitions.push(layer);
+            LayerHandle((self.layer_definitions.len()-1) as u64)
+        }
+    }
+
+    ///
+    /// Releases a layer from the core (returning the layer that had this handle)
+    ///
+    pub fn release_layer_handle(&mut self, layer_handle: LayerHandle) -> Layer {
+        // Swap in an old layer for the new layer
+        let LayerHandle(layer_idx)  = layer_handle;
+        let mut old_layer           = Layer {
+            render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
+            state:              LayerState {
+                fill_color:         render::Rgba8([0, 0, 0, 255]),
+                stroke_settings:    StrokeSettings::new(),
+                current_matrix:     canvas::Transform2D::identity(),
+                blend_mode:         canvas::BlendMode::SourceOver,
+                restore_point:      None
+            },
+            stored_states:      vec![]
+        };
+
+        mem::swap(&mut old_layer, &mut self.layer_definitions[layer_idx as usize]);
+
+        // Add the handle to the list of free layer handles
+        self.free_layers.push(layer_handle);
+
+        // Result is the layer that was released
+        old_layer
+    }
+
+    ///
+    /// Returns a reference to the layer with the specified handle
+    ///
+    #[inline] pub fn layer(&mut self, layer_handle: LayerHandle) -> &mut Layer {
+        let LayerHandle(layer_idx)  = layer_handle;
+        let layer_idx               = layer_idx as usize;
+
+        &mut self.layer_definitions[layer_idx]
     }
 }
