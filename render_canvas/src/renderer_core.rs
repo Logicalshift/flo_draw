@@ -1,5 +1,4 @@
 use super::renderer_layer::*;
-use super::renderer_sprite::*;
 use super::renderer_worker::*;
 
 use flo_canvas as canvas;
@@ -16,7 +15,7 @@ pub struct RenderCore {
     pub layers: Vec<Layer>,
 
     /// The definition for the sprites
-    pub sprites: HashMap<canvas::SpriteId, Sprite>,
+    pub sprites: HashMap<canvas::SpriteId, Layer>,
 
     /// The first unused vertex buffer ID
     pub unused_vertex_buffer: usize,
