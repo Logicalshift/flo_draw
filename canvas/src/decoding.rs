@@ -837,6 +837,48 @@ mod test {
         check_round_trip_single(Draw::ClearLayer);
     }
 
+
+    #[test]
+    fn decode_sprite() {
+        check_round_trip_single(Draw::Sprite(SpriteId(0)));
+        check_round_trip_single(Draw::Sprite(SpriteId(10)));
+        check_round_trip_single(Draw::Sprite(SpriteId(1300)));
+        check_round_trip_single(Draw::Sprite(SpriteId(1000000000)));
+    }
+
+    #[test]
+    fn decode_clear_sprite() {
+        check_round_trip_single(Draw::ClearSprite);
+    }
+
+    #[test]
+    fn decode_transform_sprite_translate() {
+        check_round_trip_single(Draw::SpriteTransform(SpriteTransform::Translate(4.0, 5.0)));
+    }
+
+    #[test]
+    fn decode_transform_sprite_rotate() {
+        check_round_trip_single(Draw::SpriteTransform(SpriteTransform::Scale(6.0, 7.0)));
+    }
+
+    #[test]
+    fn decode_transform_sprite_scale() {
+        check_round_trip_single(Draw::SpriteTransform(SpriteTransform::Rotate(42.0)));
+    }
+
+    #[test]
+    fn decode_transform_sprite_transform() {
+        check_round_trip_single(Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))));
+    }
+
+    #[test]
+    fn decode_draw_sprite() {
+        check_round_trip_single(Draw::DrawSprite(SpriteId(0)));
+        check_round_trip_single(Draw::DrawSprite(SpriteId(10)));
+        check_round_trip_single(Draw::DrawSprite(SpriteId(1300)));
+        check_round_trip_single(Draw::DrawSprite(SpriteId(1000000000)));
+    }
+
     #[test]
     fn will_accept_newlines() {
         let mut decoder = CanvasDecoder::new();
@@ -887,7 +929,12 @@ mod test {
             Draw::ClearCanvas,
             Draw::Layer(21),
             Draw::ClearLayer,
-            Draw::NewPath
+            Draw::NewPath,
+            Draw::Sprite(SpriteId(1000)),
+            Draw::ClearSprite,
+            Draw::SpriteTransform(SpriteTransform::Translate(4.0, 5.0)),
+            Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))),
+            Draw::DrawSprite(SpriteId(1300))
         ]);
     }
 
@@ -924,7 +971,12 @@ mod test {
             Draw::ClearCanvas,
             Draw::Layer(21),
             Draw::ClearLayer,
-            Draw::NewPath
+            Draw::NewPath,
+            Draw::Sprite(SpriteId(1000)),
+            Draw::ClearSprite,
+            Draw::SpriteTransform(SpriteTransform::Translate(4.0, 5.0)),
+            Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))),
+            Draw::DrawSprite(SpriteId(1300))
         ];
         let mut encoded = String::new();
         all.encode_canvas(&mut encoded);
