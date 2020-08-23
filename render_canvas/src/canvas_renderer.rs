@@ -609,7 +609,12 @@ impl CanvasRenderer {
                             // Free the data for the current layer
                             core.free_layer_entities(layer);
                         });
-                    }
+                    },
+
+                    Sprite(sprite_id) => { unimplemented!() },
+                    ClearSprite => { unimplemented!() },
+                    SpriteTransform(transform) => { unimplemented!() },
+                    DrawSprite(sprite_id) => { unimplemented!() },
                 }
             }
 
