@@ -1,5 +1,6 @@
 mod renderer;
 
+mod error;
 mod vertex_array;
 mod buffer;
 mod vertex;
