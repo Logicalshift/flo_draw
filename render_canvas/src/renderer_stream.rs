@@ -55,54 +55,17 @@ impl<'a> RenderStream<'a> {
             render_index:       0
         }
     }
-}
 
-impl<'a> Stream for RenderStream<'a> {
-    type Item = render::RenderAction;
-
-    fn poll_next(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<render::RenderAction>> { 
-        // Return the next pending action if there is one
-        if self.pending_stack.len() > 0 {
-            // Note that pending is a stack, so the items are returned in reverse
-            return Poll::Ready(self.pending_stack.pop());
-        }
-
-        // Poll the tessellation process if it's still running
-        if let Some(processing_future) = self.processing_future.as_mut() {
-            // Poll the future and send over any vertex buffers that might be waiting
-            if processing_future.poll_unpin(context) == Poll::Pending {
-                // Still generating render buffers
-                // TODO: can potentially send the buffers to the renderer when they're generated here
-                return Poll::Pending;
-            } else {
-                // Finished processing the rendering: can send the actual rendering commands to the hardware layer
-                // Layers are rendered in reverse order
-                self.processing_future  = None;
-                self.layer_id           = self.core.sync(|core| core.layers.len());
-                self.render_index       = 0;
-            }
-
-        }
-
-        // We've generated all the vertex buffers: generate the instructions to render them
-        let mut layer_id        = self.layer_id;
-        let viewport_transform  = self.viewport_transform;
-
-        let result = self.core.sync(|core| {
-            // Stop if we've processed all the layers
-            if layer_id == 0 {
-                return None;
-            }
-
-            // Move to the previous layer
-            layer_id -= 1;
-
+    ///
+    /// Generates the rendering actions for the layer with the specified handle
+    ///
+    fn render_layer(&mut self, viewport_transform: canvas::Transform2D, layer_handle: LayerHandle) -> Vec<render::RenderAction> {
+        self.core.sync(move |core| {
             let mut send_vertex_buffers = vec![];
 
             // Send the vertex buffers
             use self::RenderEntity::*;
 
-            let layer_handle    = core.layers[layer_id];
             for render_idx in 0..core.layer(layer_handle).render_order.len() {
                 if let VertexBuffer(_buffers) = &core.layer(layer_handle).render_order[render_idx] {
                     send_vertex_buffers.extend(core.send_vertex_buffer(layer_handle, render_idx));
@@ -223,8 +186,52 @@ impl<'a> Stream for RenderStream<'a> {
             render_layer_stack.extend(send_vertex_buffers);
 
             // Generate a pending set of actions for the current layer
-            return Some(render_layer_stack);
-        });
+            return render_layer_stack;
+        })
+    }
+}
+
+impl<'a> Stream for RenderStream<'a> {
+    type Item = render::RenderAction;
+
+    fn poll_next(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<render::RenderAction>> { 
+        // Return the next pending action if there is one
+        if self.pending_stack.len() > 0 {
+            // Note that pending is a stack, so the items are returned in reverse
+            return Poll::Ready(self.pending_stack.pop());
+        }
+
+        // Poll the tessellation process if it's still running
+        if let Some(processing_future) = self.processing_future.as_mut() {
+            // Poll the future and send over any vertex buffers that might be waiting
+            if processing_future.poll_unpin(context) == Poll::Pending {
+                // Still generating render buffers
+                // TODO: can potentially send the buffers to the renderer when they're generated here
+                return Poll::Pending;
+            } else {
+                // Finished processing the rendering: can send the actual rendering commands to the hardware layer
+                // Layers are rendered in reverse order
+                self.processing_future  = None;
+                self.layer_id           = self.core.sync(|core| core.layers.len());
+                self.render_index       = 0;
+            }
+
+        }
+
+        // We've generated all the vertex buffers: generate the instructions to render them
+        let mut layer_id        = self.layer_id;
+        let viewport_transform  = self.viewport_transform;
+
+        let result              = if layer_id == 0 {
+            // Stop if we've processed all the layers
+            None
+        } else {
+            // Move to the previous layer
+            layer_id -= 1;
+            let layer_handle = self.core.sync(|core| core.layers[layer_id]);
+
+            Some(self.render_layer(viewport_transform, layer_handle))
+        };
 
         // Update the layer ID to continue iterating
         self.layer_id       = layer_id;
