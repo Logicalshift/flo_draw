@@ -161,11 +161,49 @@ impl CanvasEncoding<String> for BlendMode {
 }
 
 impl CanvasEncoding<String> for Transform2D {
+    #[inline]
     fn encode_canvas(&self, append_to: &mut String) {
         let Transform2D([a, b, c]) = *self;
         a.encode_canvas(append_to);
         b.encode_canvas(append_to);
         c.encode_canvas(append_to);
+    }
+}
+
+impl CanvasEncoding<String> for SpriteId {
+    #[inline]
+    fn encode_canvas(&self, append_to: &mut String) {
+        let SpriteId(mut sprite_id) = self;
+
+        for _ in 0..13 {
+            let five_bits = (sprite_id & 0x1f) as usize;
+            let remaining = sprite_id >> 5;
+
+            if remaining != 0 {
+                let next_char = ENCODING_CHAR_SET[five_bits | 0x20];
+                append_to.push(next_char);
+            } else {
+                let next_char = ENCODING_CHAR_SET[five_bits];
+                append_to.push(next_char);
+                break;
+            }
+
+            sprite_id = remaining;
+        }
+    }
+}
+
+impl CanvasEncoding<String> for SpriteTransform {
+    fn encode_canvas(&self, append_to: &mut String) {
+        use self::SpriteTransform::*;
+
+        match self {
+            Identity                => 'i'.encode_canvas(append_to),
+            Translate(x, y)         => ('t', *x, *y).encode_canvas(append_to),
+            Scale(x, y)             => ('s', *x, *y).encode_canvas(append_to),
+            Rotate(degrees)         => ('r', *degrees).encode_canvas(append_to),
+            Transform2D(transform)  => ('T', *transform).encode_canvas(append_to)
+        }
     }
 }
 
@@ -205,7 +243,11 @@ impl CanvasEncoding<String> for Draw {
             &ClearCanvas                            => ('N', 'A').encode_canvas(append_to),
             &Layer(layer_id)                        => ('N', 'l', layer_id).encode_canvas(append_to),
             &LayerBlend(layer_id, blend_mode)       => ('N', 'b', layer_id, blend_mode).encode_canvas(append_to),
-            &ClearLayer                             => ('N', 'C').encode_canvas(append_to)
+            &ClearLayer                             => ('N', 'C').encode_canvas(append_to),
+            &Sprite(sprite_id)                      => ('N', 's', sprite_id).encode_canvas(append_to),
+            &ClearSprite                            => ('S', 'C').encode_canvas(append_to),
+            &SpriteTransform(sprite_transform)      => ('S', 'T', sprite_transform).encode_canvas(append_to),
+            &DrawSprite(sprite_id)                  => ('S', 'D', sprite_id).encode_canvas(append_to)                      
         }
     }
 }
