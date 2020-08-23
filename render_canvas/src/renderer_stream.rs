@@ -102,9 +102,10 @@ impl<'a> Stream for RenderStream<'a> {
             // Send the vertex buffers
             use self::RenderEntity::*;
 
-            for render_idx in 0..core.layers[layer_id].render_order.len() {
-                if let VertexBuffer(_buffers) = &core.layers[layer_id].render_order[render_idx] {
-                    send_vertex_buffers.extend(core.send_vertex_buffer(layer_id, render_idx));
+            let layer_handle    = core.layers[layer_id];
+            for render_idx in 0..core.layer(layer_handle).render_order.len() {
+                if let VertexBuffer(_buffers) = &core.layer(layer_handle).render_order[render_idx] {
+                    send_vertex_buffers.extend(core.send_vertex_buffer(layer_handle, render_idx));
                 }
             }
 
@@ -113,9 +114,10 @@ impl<'a> Stream for RenderStream<'a> {
             let mut active_transform    = canvas::Transform2D::identity();
             let mut active_blend_mode   = render::BlendMode::DestinationOver;
             let mut use_erase_texture   = false;
+            let layer                   = core.layer(layer_handle);
 
-            for render_idx in 0..core.layers[layer_id].render_order.len() {
-                match &core.layers[layer_id].render_order[render_idx] {
+            for render_idx in 0..layer.render_order.len() {
+                match &layer.render_order[render_idx] {
                     Missing => {
                         // Temporary state while sending a vertex buffer?
                         panic!("Tessellation is not complete (vertex buffer went missing)");
