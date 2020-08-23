@@ -12,11 +12,11 @@ pub enum GlError {
 ///
 /// Collects OpenGL errors and panics if there are any
 ///
-pub fn panic_on_gl_error() {
+pub fn panic_on_gl_error(context: &str) {
     let errors = check_for_gl_errors();
 
     if errors.len() > 0 {
-        panic!("Unexpected OpenGL errors: {:?}", errors);
+        panic!("{}: Unexpected OpenGL errors: {:?}", context, errors);
     }
 }
 

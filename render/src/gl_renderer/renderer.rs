@@ -1,3 +1,4 @@
+use super::error::*;
 use super::buffer::*;
 use super::shader::*;
 use super::texture::*;
@@ -67,6 +68,8 @@ impl GlRenderer {
     ///
     pub fn prepare_to_render_to_active_framebuffer(&mut self, width: usize, height: usize) {
         unsafe {
+            panic_on_gl_error("Preparing to render");
+
             // Set the default render target to be a reference to the current render target
             self.default_render_target = Some(RenderTarget::reference_to_current());
 
@@ -83,6 +86,8 @@ impl GlRenderer {
     pub fn render<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions) {
         // Enable options
         self.enable_options();
+
+        panic_on_gl_error("Enabling options");
 
         for action in actions {
             use self::RenderAction::*;
@@ -107,10 +112,14 @@ impl GlRenderer {
                 DrawTriangles(buffer_id, buffer_range)                                  => { self.draw_triangles(buffer_id, buffer_range); }
                 DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)         => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices); }
             }
+
+            panic_on_gl_error("Post-action");
         }
 
         // Reset options
         self.disable_options();
+
+        panic_on_gl_error("Render tidy up");
     }
 
     ///
