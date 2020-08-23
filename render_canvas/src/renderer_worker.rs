@@ -1,4 +1,5 @@
 use super::render_entity::*;
+use super::renderer_core::*;
 use super::stroke_settings::*;
 
 use flo_render as render;
@@ -14,7 +15,7 @@ use lyon::tessellation::{VertexBuffers, BuffersBuilder, StrokeOptions, FillOptio
 ///
 #[derive(Clone, Copy)]
 pub struct LayerEntityRef {
-    pub layer_id:           usize,
+    pub layer_id:           LayerHandle,
     pub entity_index:       usize,
     pub entity_id:          usize
 }
