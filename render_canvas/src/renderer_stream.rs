@@ -115,29 +115,33 @@ impl RenderCore {
                     let sprite_id           = *sprite_id;
                     let sprite_transform    = *sprite_transform;
 
-                    // Set the transform for the preceding rendering instructions
-                    let combined_transform  = &viewport_transform * &active_transform;
-                    let combined_matrix     = transform_to_matrix(&combined_transform);
-
-                    render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
-
-                    if active_blend_mode == render::BlendMode::DestinationOut {
-                        // Preceding renders need to update the erase texture
-                        render_layer_stack.push(render::RenderAction::BlendMode(render::BlendMode::AllChannelAlphaDestinationOver));
-                        render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
-                        render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
-                    } else {
-                        render_layer_stack.push(render::RenderAction::BlendMode(active_blend_mode));
-                        render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
-                        render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(0)));
-                    }
-
-                    // The sprite transform is appended to the viewport transform
-                    let sprite_transform = viewport_transform * sprite_transform;
-
-                    // Render the layer associated with the sprite
                     if let Some(sprite_layer) = core.sprites.get(&sprite_id) {
                         let sprite_layer = *sprite_layer;
+
+                        // Send any sprite vertex buffers we need to (ahead of the rest of this layer)
+                        send_vertex_buffers.extend(core.send_vertex_buffers(sprite_layer));
+
+                        // Set the transform for the preceding rendering instructions
+                        let combined_transform  = &viewport_transform * &active_transform;
+                        let combined_matrix     = transform_to_matrix(&combined_transform);
+
+                        render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
+
+                        if active_blend_mode == render::BlendMode::DestinationOut {
+                            // Preceding renders need to update the erase texture
+                            render_layer_stack.push(render::RenderAction::BlendMode(render::BlendMode::AllChannelAlphaDestinationOver));
+                            render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
+                            render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
+                        } else {
+                            render_layer_stack.push(render::RenderAction::BlendMode(active_blend_mode));
+                            render_layer_stack.push(render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }));
+                            render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(0)));
+                        }
+
+                        // The sprite transform is appended to the viewport transform
+                        let sprite_transform = viewport_transform * sprite_transform;
+
+                        // Render the layer associated with the sprite
                         render_layer_stack.extend(core.render_layer(sprite_transform, sprite_layer));
                     }
 
