@@ -59,21 +59,33 @@ impl<'a> RenderStream<'a> {
 
 impl RenderCore {
     ///
-    /// Generates the rendering actions for the layer with the specified handle
+    /// Returns the render actions needed to prepare the render buffers for the specified layer (and updates the layer
+    /// so that the buffers are not sent again)
     ///
-    fn render_layer(&mut self, viewport_transform: canvas::Transform2D, layer_handle: LayerHandle) -> Vec<render::RenderAction> {
-        let core = self;
+    fn send_vertex_buffers(&mut self, layer_handle: LayerHandle) -> Vec<render::RenderAction> {
+        use self::RenderEntity::*;
 
         let mut send_vertex_buffers = vec![];
 
-        // Send the vertex buffers
-        use self::RenderEntity::*;
-
-        for render_idx in 0..core.layer(layer_handle).render_order.len() {
-            if let VertexBuffer(_buffers) = &core.layer(layer_handle).render_order[render_idx] {
-                send_vertex_buffers.extend(core.send_vertex_buffer(layer_handle, render_idx));
+        for render_idx in 0..self.layer(layer_handle).render_order.len() {
+            if let VertexBuffer(_buffers) = &self.layer(layer_handle).render_order[render_idx] {
+                send_vertex_buffers.extend(self.send_vertex_buffer(layer_handle, render_idx));
             }
         }
+
+        send_vertex_buffers
+    }
+
+    ///
+    /// Generates the rendering actions for the layer with the specified handle
+    ///
+    fn render_layer(&mut self, viewport_transform: canvas::Transform2D, layer_handle: LayerHandle) -> Vec<render::RenderAction> {
+        use self::RenderEntity::*;
+
+        let core = self;
+
+        // Remember how to send the vertex buffers (as we're building a stack, these will need to go last so that they are executed first)
+        let mut send_vertex_buffers = core.send_vertex_buffers(layer_handle);
 
         // Render the layer in reverse order (this is a stack, so operations are run in reverse order)
         let mut render_layer_stack  = vec![];
