@@ -39,6 +39,24 @@ pub struct RenderStream<'a> {
     viewport_transform: canvas::Transform2D
 }
 
+///
+/// Represents the active state of the render stream
+///
+#[derive(Clone, Copy)]
+struct RenderStreamState {
+    /// The render target
+    render_target: Option<render::RenderTargetId>,
+
+    /// The blend mode to use
+    blend_mode: Option<render::BlendMode>,
+
+    /// The shader to use
+    shader: Option<render::ShaderType>,
+
+    /// The transform to apply to the rendering instructions
+    transform: Option<canvas::Transform2D>
+}
+
 impl<'a> RenderStream<'a> {
     ///
     /// Creates a new render stream
@@ -54,6 +72,53 @@ impl<'a> RenderStream<'a> {
             layer_id:           0,
             render_index:       0
         }
+    }
+}
+
+impl RenderStreamState {
+    ///
+    /// Creates a new render stream state
+    ///
+    fn new() -> RenderStreamState {
+        RenderStreamState {
+            render_target:  None,
+            blend_mode:     None,
+            shader:         None,
+            transform:      None
+        }
+    }
+
+    ///
+    /// Returns the render actions needed to update from the specified state to this state (in reverse order, for replaying as a render stack)
+    ///
+    fn update_from_state(&self, from: &RenderStreamState) -> Vec<render::RenderAction> {
+        let mut updates = vec![];
+
+        if let Some(transform) = self.transform {
+            if Some(transform) != from.transform {
+                updates.push(render::RenderAction::SetTransform(transform_to_matrix(&transform)));
+            }
+        }
+
+        if let Some(shader) = self.shader {
+            if Some(shader) != from.shader {
+                updates.push(render::RenderAction::UseShader(shader));
+            }
+        }
+
+        if let Some(blend_mode) = self.blend_mode {
+            if Some(blend_mode) != from.blend_mode {
+                updates.push(render::RenderAction::BlendMode(blend_mode));
+            }
+        }
+
+        if let Some(render_target) = self.render_target {
+            if Some(render_target) != from.render_target {
+                updates.push(render::RenderAction::SelectRenderTarget(render_target));
+            }
+        }
+
+        updates
     }
 }
 
