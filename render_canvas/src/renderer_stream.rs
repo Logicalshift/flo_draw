@@ -59,41 +59,6 @@ impl<'a> RenderStream<'a> {
 
 impl RenderCore {
     ///
-    /// Returns the render actions needed to prepare the render buffers for the specified layer (and updates the layer
-    /// so that the buffers are not sent again)
-    ///
-    fn send_vertex_buffers(&mut self, layer_handle: LayerHandle) -> Vec<render::RenderAction> {
-        use self::RenderEntity::*;
-
-        let mut send_vertex_buffers = vec![];
-        let mut layer               = self.layer(layer_handle);
-
-        for render_idx in 0..layer.render_order.len() {
-            match &layer.render_order[render_idx] {
-                VertexBuffer(_buffers)                      => { 
-                    send_vertex_buffers.extend(self.send_vertex_buffer(layer_handle, render_idx)); 
-                    layer = self.layer(layer_handle);
-                },
-
-                RenderSprite(sprite_id, _sprite_transform)  => { 
-                    let sprite_id           = *sprite_id;
-                    let sprite_layer_handle = self.sprites.get(&sprite_id).cloned();
-
-                    if let Some(sprite_layer_handle) = sprite_layer_handle {
-                        send_vertex_buffers.extend(self.send_vertex_buffers(sprite_layer_handle));
-                    }
-
-                    layer = self.layer(layer_handle);
-                },
-
-                _                                           => { }
-            }
-        }
-
-        send_vertex_buffers
-    }
-
-    ///
     /// Generates the rendering actions for the layer with the specified handle
     ///
     fn render_layer(&mut self, viewport_transform: canvas::Transform2D, layer_handle: LayerHandle) -> Vec<render::RenderAction> {
@@ -102,7 +67,7 @@ impl RenderCore {
         let core = self;
 
         // Remember how to send the vertex buffers (as we're building a stack, these will need to go last so that they are executed first)
-        let mut send_vertex_buffers = core.send_vertex_buffers(layer_handle);
+        let send_vertex_buffers     = core.send_vertex_buffers(layer_handle);
 
         // Render the layer in reverse order (this is a stack, so operations are run in reverse order)
         let mut render_layer_stack  = vec![];
