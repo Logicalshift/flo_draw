@@ -118,7 +118,7 @@ impl RenderCore {
                         }
 
                         // The sprite transform is appended to the viewport transform
-                        let sprite_transform = viewport_transform * sprite_transform;
+                        let sprite_transform = combined_transform * sprite_transform;
 
                         // Render the layer associated with the sprite
                         render_layer_stack.extend(core.render_layer(sprite_transform, sprite_layer));
