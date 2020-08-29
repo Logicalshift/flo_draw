@@ -133,7 +133,9 @@ impl RenderCore {
                     let combined_transform  = &viewport_transform * &active_transform;
                     let combined_matrix     = transform_to_matrix(&combined_transform);
 
-                    render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
+                    if render_layer_stack.len() > 0 {
+                        render_layer_stack.push(render::RenderAction::SetTransform(combined_matrix));
+                    }
 
                     // The new transform will apply to all the following render instructions
                     active_transform        = *new_transform;
