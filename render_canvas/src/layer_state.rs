@@ -32,6 +32,9 @@ impl LayerState {
     /// Applies a sprite transformation to this state
     ///
     pub fn apply_sprite_transform(&mut self, transform: canvas::SpriteTransform) {
-        self.sprite_matrix = self.sprite_matrix * canvas::Transform2D::from(transform);
+        match transform {
+            canvas::SpriteTransform::Identity   => { self.sprite_matrix = canvas::Transform2D::identity(); },
+            other                               => { self.sprite_matrix = self.sprite_matrix * canvas::Transform2D::from(other); }
+        }
     }
 }
