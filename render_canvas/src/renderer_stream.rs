@@ -66,10 +66,27 @@ impl RenderCore {
         use self::RenderEntity::*;
 
         let mut send_vertex_buffers = vec![];
+        let mut layer               = self.layer(layer_handle);
 
-        for render_idx in 0..self.layer(layer_handle).render_order.len() {
-            if let VertexBuffer(_buffers) = &self.layer(layer_handle).render_order[render_idx] {
-                send_vertex_buffers.extend(self.send_vertex_buffer(layer_handle, render_idx));
+        for render_idx in 0..layer.render_order.len() {
+            match &layer.render_order[render_idx] {
+                VertexBuffer(_buffers)                      => { 
+                    send_vertex_buffers.extend(self.send_vertex_buffer(layer_handle, render_idx)); 
+                    layer = self.layer(layer_handle);
+                },
+
+                RenderSprite(sprite_id, _sprite_transform)  => { 
+                    let sprite_id           = *sprite_id;
+                    let sprite_layer_handle = self.sprites.get(&sprite_id).cloned();
+
+                    if let Some(sprite_layer_handle) = sprite_layer_handle {
+                        send_vertex_buffers.extend(self.send_vertex_buffers(sprite_layer_handle));
+                    }
+
+                    layer = self.layer(layer_handle);
+                },
+
+                _                                           => { }
             }
         }
 
@@ -117,9 +134,6 @@ impl RenderCore {
 
                     if let Some(sprite_layer) = core.sprites.get(&sprite_id) {
                         let sprite_layer = *sprite_layer;
-
-                        // Send any sprite vertex buffers we need to (ahead of the rest of this layer)
-                        send_vertex_buffers.extend(core.send_vertex_buffers(sprite_layer));
 
                         // Set the transform for the preceding rendering instructions
                         let combined_transform  = &viewport_transform * &active_transform;
