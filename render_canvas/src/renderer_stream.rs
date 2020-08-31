@@ -138,7 +138,6 @@ impl RenderCore {
         // Render the layer in reverse order (this is a stack, so operations are run in reverse order)
         let mut render_layer_stack  = vec![];
         let mut active_transform    = canvas::Transform2D::identity();
-        let mut active_blend_mode   = render::BlendMode::DestinationOver;
         let mut use_erase_texture   = false;
         let mut layer               = core.layer(layer_handle);
 
@@ -231,9 +230,6 @@ impl RenderCore {
 
                     // Apply the old state for the preceding instrucitons
                     render_layer_stack.extend(old_state.update_from_state(render_state));
-
-                    // active_blend_mode will eventually be applied to the following instructions
-                    active_blend_mode = *new_blend_mode;
                 },
 
                 DrawIndexed(vertex_buffer, index_buffer, num_items) => {
