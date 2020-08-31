@@ -126,7 +126,11 @@ impl RenderCore {
     ///
     /// Generates the rendering actions for the layer with the specified handle
     ///
-    fn render_layer(&mut self, viewport_transform: canvas::Transform2D, layer_handle: LayerHandle) -> Vec<render::RenderAction> {
+    /// The render state passed in is the expected state after this rendering has completed, and is updated to be the expected state
+    /// before the rendering is completed. This slightly weird arrangement is because the rendering operations are returned as a stack:
+    /// ie, they'll run in reverse order.
+    ///
+    fn render_layer(&mut self, viewport_transform: canvas::Transform2D, layer_handle: LayerHandle, render_state: &mut RenderStreamState) -> Vec<render::RenderAction> {
         use self::RenderEntity::*;
 
         let core = self;
@@ -183,7 +187,7 @@ impl RenderCore {
                         let sprite_transform = combined_transform * sprite_transform;
 
                         // Render the layer associated with the sprite
-                        render_layer_stack.extend(core.render_layer(sprite_transform, sprite_layer));
+                        render_layer_stack.extend(core.render_layer(sprite_transform, sprite_layer, render_state));
                     }
 
                     // Reborrow the layer
@@ -321,8 +325,10 @@ impl<'a> Stream for RenderStream<'a> {
                 // Send any pending vertex buffers, then render the layer (note that the rendering is a stack, so the vertex buffers go on the end)
                 let layer_handle        = core.layers[layer_id];
                 let send_vertex_buffers = core.send_vertex_buffers(layer_handle);
+                let mut render_state    = RenderStreamState::new();
 
-                let mut render_layer    = core.render_layer(viewport_transform, layer_handle);
+                let mut render_layer    = core.render_layer(viewport_transform, layer_handle, &mut render_state);
+                render_layer.extend(render_state.update_from_state(&RenderStreamState::new()));
                 render_layer.extend(send_vertex_buffers);
 
                 Some(render_layer)
