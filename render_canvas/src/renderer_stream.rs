@@ -131,9 +131,6 @@ impl RenderCore {
 
         let core = self;
 
-        // Remember how to send the vertex buffers (as we're building a stack, these will need to go last so that they are executed first)
-        let send_vertex_buffers     = core.send_vertex_buffers(layer_handle);
-
         // Render the layer in reverse order (this is a stack, so operations are run in reverse order)
         let mut render_layer_stack  = vec![];
         let mut active_transform    = canvas::Transform2D::identity();
@@ -277,9 +274,6 @@ impl RenderCore {
             render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
         }
 
-        // Send the vertex buffers first
-        render_layer_stack.extend(send_vertex_buffers);
-
         // Generate a pending set of actions for the current layer
         return render_layer_stack;
     }
@@ -324,8 +318,14 @@ impl<'a> Stream for RenderStream<'a> {
             layer_id -= 1;
 
             self.core.sync(|core| {
-                let layer_handle = core.layers[layer_id];
-                Some(core.render_layer(viewport_transform, layer_handle))
+                // Send any pending vertex buffers, then render the layer (note that the rendering is a stack, so the vertex buffers go on the end)
+                let layer_handle        = core.layers[layer_id];
+                let send_vertex_buffers = core.send_vertex_buffers(layer_handle);
+
+                let mut render_layer    = core.render_layer(viewport_transform, layer_handle);
+                render_layer.extend(send_vertex_buffers);
+
+                Some(render_layer)
             })
         };
 
