@@ -172,8 +172,23 @@ impl RenderCore {
                         let combined_transform  = &viewport_transform * &active_transform;
                         let sprite_transform    = combined_transform * sprite_transform;
 
+                        // The items from before the sprite should be rendered using the current state
+                        let old_state           = *render_state;
+
                         // Render the layer associated with the sprite
-                        render_layer_stack.extend(core.render_layer(sprite_transform, sprite_layer, render_state));
+                        let render_sprite       = core.render_layer(sprite_transform, sprite_layer, render_state);
+
+                        // Items before the sprite are rendered using the 'pre-sprite' rendering
+                        render_layer_stack.extend(old_state.update_from_state(render_state));
+
+                        // ... before that, the sprite is renderered
+                        render_layer_stack.extend(render_sprite);
+
+                        // ... using its render state
+                        render_layer_stack.extend(render_state.update_from_state(&old_state));
+
+                        // Following instructions are rendered using the state before the sprite
+                        *render_state           = old_state;
                     }
 
                     // Reborrow the layer
