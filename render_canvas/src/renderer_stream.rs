@@ -206,9 +206,14 @@ impl RenderCore {
                 },
 
                 SetBlendMode(new_blend_mode) => {
-                    let old_state   = *render_state;
+                    let mut old_state   = *render_state;
 
                     if new_blend_mode == &render::BlendMode::DestinationOut {
+                        // The previous state should use the eraser texture that we're abount to generate
+                        if old_state.render_target == Some(render::RenderTargetId(0)) {
+                            old_state.shader = Some(render::ShaderType::Simple { erase_texture: Some(render::TextureId(1)) });
+                        }
+
                         // Render to the eraser texture
                         render_state.blend_mode     = Some(render::BlendMode::AllChannelAlphaDestinationOver);
                         render_state.render_target  = Some(render::RenderTargetId(1));
@@ -241,6 +246,10 @@ impl RenderCore {
 
         // Clear the erase mask if it's used on this layer
         if use_erase_texture {
+            render_state.render_target.map(|render_target| {
+                render_layer_stack.push(render::RenderAction::SelectRenderTarget(render_target));
+            });
+
             render_layer_stack.push(render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])));
             render_layer_stack.push(render::RenderAction::SelectRenderTarget(render::RenderTargetId(1)));
         }
