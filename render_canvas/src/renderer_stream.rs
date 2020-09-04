@@ -142,6 +142,8 @@ impl RenderCore {
         let mut layer               = core.layer(layer_handle);
 
         render_state.transform      = Some(&viewport_transform * &active_transform);
+        render_state.render_target  = Some(render::RenderTargetId(0));
+        render_state.shader         = Some(render::ShaderType::Simple { erase_texture: None });
 
         for render_idx in 0..layer.render_order.len() {
             match &layer.render_order[render_idx] {
