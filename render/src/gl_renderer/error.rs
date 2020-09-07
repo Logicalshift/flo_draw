@@ -5,6 +5,9 @@ pub enum GlError {
     /// Error without a string translation
     UnknownError(u32),
 
+    InvalidOperation,
+    InvalidEnum,
+
     /// Error where we can provide a string versiom
     Error(u32, String)
 }
@@ -54,7 +57,9 @@ fn check_next_gl_error() -> Option<GlError> {
     let error = unsafe { gl::GetError() };
 
     match error {
-        gl::NO_ERROR    => None,
-        unknown         => Some(GlError::UnknownError(unknown))
+        gl::NO_ERROR            => None,
+        gl::INVALID_OPERATION   => Some(GlError::InvalidOperation),
+        gl::INVALID_ENUM        => Some(GlError::InvalidEnum),
+        unknown                 => Some(GlError::UnknownError(unknown))
     }
 }
