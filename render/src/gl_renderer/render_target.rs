@@ -1,3 +1,4 @@
+use super::error::*;
 use super::texture::*;
 use crate::action::*;
 
@@ -39,11 +40,13 @@ impl RenderTarget {
             // Find the currently bound frame buffer (so we can rebind it)
             let mut old_frame_buffer = 0;
             gl::GetIntegerv(gl::DRAW_FRAMEBUFFER_BINDING, &mut old_frame_buffer);
+            panic_on_gl_error("Get old framebuffer");
 
             // Create the frame buffer
             let mut frame_buffer =0;
             gl::GenFramebuffers(1, &mut frame_buffer);
             gl::BindFramebuffer(gl::FRAMEBUFFER, frame_buffer);
+            panic_on_gl_error("Bind new framebuffer");
 
             // Generate the texture or the render buffer for the render target
             let texture;
@@ -118,6 +121,8 @@ impl RenderTarget {
                     render_buffer   = None;
                 }
             };
+
+            panic_on_gl_error("Create framebuffer");
 
             // Bind back to the original framebuffer
             gl::BindFramebuffer(gl::FRAMEBUFFER, old_frame_buffer as u32);

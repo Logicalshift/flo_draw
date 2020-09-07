@@ -1,3 +1,5 @@
+use super::error::*;
+
 use gl;
 
 use std::ptr;
@@ -44,6 +46,8 @@ impl Texture {
             gl::TextureParameteri(texture_id, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 
             gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGBA as i32, width as gl::types::GLsizei, height as gl::types::GLsizei, 0, gl::RGBA, gl::UNSIGNED_BYTE, ptr::null());
+
+            panic_on_gl_error("Create texture");
         }
     }
 
@@ -62,10 +66,9 @@ impl Texture {
             // Set up a MSAA texture
             gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, texture_id);
 
-            gl::TextureParameteri(texture_id, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-            gl::TextureParameteri(texture_id, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
-
             gl::TexImage2DMultisample(gl::TEXTURE_2D_MULTISAMPLE, samples, gl::RGBA, width as gl::types::GLsizei, height as gl::types::GLsizei, gl::FALSE);
+
+            panic_on_gl_error("Create multisampled texture");
         }
     }
 
@@ -82,6 +85,8 @@ impl Texture {
             gl::TextureParameteri(texture_id, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 
             gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RED as i32, width as gl::types::GLsizei, height as gl::types::GLsizei, 0, gl::RED, gl::UNSIGNED_BYTE, ptr::null());
+
+            panic_on_gl_error("Create monochrome texture");
         }
     }
 
@@ -100,10 +105,9 @@ impl Texture {
             // Set up a MSAA texture
             gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, texture_id);
 
-            gl::TextureParameteri(texture_id, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-            gl::TextureParameteri(texture_id, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
-
             gl::TexImage2DMultisample(gl::TEXTURE_2D_MULTISAMPLE, samples, gl::RED, width as gl::types::GLsizei, height as gl::types::GLsizei, gl::FALSE);
+
+            panic_on_gl_error("Create monochrome multisampled texture");
         }
     }
 }
