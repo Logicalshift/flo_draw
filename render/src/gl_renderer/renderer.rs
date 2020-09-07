@@ -26,6 +26,12 @@ pub struct GlRenderer {
     /// The textures allocated to this renderer
     textures: Vec<Option<Texture>>,
 
+    /// The shader that's currently set to be used
+    active_shader: Option<ShaderType>,
+
+    /// The matrix that's currently in use
+    transform_matrix: Option<[gl::types::GLfloat; 16]>,
+
     /// The 'main' render target that represents the output for this renderer
     default_render_target: Option<RenderTarget>,
 
@@ -57,6 +63,8 @@ impl GlRenderer {
             index_buffers:              vec![],
             textures:                   vec![],
             default_render_target:      None,
+            active_shader:              None,
+            transform_matrix:           None,
             render_targets:             vec![],
             simple_shader:              simple_shader,
             simple_shader_with_erase:   simple_shader_with_erase
@@ -76,7 +84,10 @@ impl GlRenderer {
             // Set the viewport to the specified width and height
             gl::Viewport(0, 0, width as gl::types::GLsizei, height as gl::types::GLsizei);
 
-            self.set_transform(Matrix::identity());
+            self.active_shader      = None;
+            self.transform_matrix   = Some(Matrix::identity().to_opengl_matrix());
+
+            panic_on_gl_error("After preparing to render");
         }
     }
 
@@ -367,6 +378,8 @@ impl GlRenderer {
         unsafe {
             use self::ShaderType::*;
 
+            self.active_shader = Some(shader_type);
+
             match shader_type {
                 Simple { erase_texture: None } => { gl::UseProgram(*self.simple_shader); }
 
@@ -386,6 +399,9 @@ impl GlRenderer {
 
                 }
             }
+
+            // Set the transform for the newly selected shader
+            self.update_shader_transform();
         }
     }
 
@@ -428,15 +444,33 @@ impl GlRenderer {
     ///
     fn set_transform(&mut self, matrix: Matrix) {
         // Convert to an OpenGL matrix
-        let matrix: [gl::types::GLfloat; 16] = matrix.to_opengl_matrix();
+        self.transform_matrix = Some(matrix.to_opengl_matrix());
 
         // Store in the uniform in all of the shaders
+        self.update_shader_transform();
+    }
+
+    ///
+    /// Set the transform in the active shader
+    ///
+    fn update_shader_transform(&mut self) {
         unsafe {
-            for shader in vec![&mut self.simple_shader, &mut self.simple_shader_with_erase].into_iter() {
+            use self::ShaderType::*;
+
+            let shader = match &self.active_shader {
+                Some(Simple { erase_texture: None })        => Some(&mut self.simple_shader),
+                Some(Simple { erase_texture: Some(_) })     => Some(&mut self.simple_shader_with_erase),
+
+                None                                        => None
+            };
+
+            self.transform_matrix.as_ref().and_then(|transform_matrix|
+                shader.map(|shader| (shader, transform_matrix))
+            ).map(|(shader, matrix)| {
                 shader.uniform_location(ShaderUniform::Transform, "transform").map(|transform_uniform| {
                     gl::UniformMatrix4fv(transform_uniform, 1, gl::FALSE, matrix.as_ptr());
                 });
-            }
+            });
         }
     }
 
