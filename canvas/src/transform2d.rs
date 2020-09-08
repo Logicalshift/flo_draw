@@ -1,3 +1,5 @@
+use super::draw::{SpriteTransform};
+use std::f32;
 use std::ops::{Mul};
 
 ///
@@ -151,5 +153,17 @@ impl Mul<&Transform2D> for &Transform2D {
             [a[1][0]*b[0][0] + a[1][1]*b[1][0] + a[1][2]*b[2][0],   a[1][0]*b[0][1] + a[1][1]*b[1][1] + a[1][2]*b[2][1],    a[1][0]*b[0][2] + a[1][1]*b[1][2] + a[1][2]*b[2][2]],
             [a[2][0]*b[0][0] + a[2][1]*b[1][0] + a[2][2]*b[2][0],   a[2][0]*b[0][1] + a[2][1]*b[1][1] + a[2][2]*b[2][1],    a[2][0]*b[0][2] + a[2][1]*b[1][2] + a[2][2]*b[2][2]],
         ])
+    }
+}
+
+impl From<SpriteTransform> for Transform2D {
+    fn from(sprite_transform: SpriteTransform) -> Transform2D {
+        match sprite_transform {
+            SpriteTransform::Identity               => Transform2D::identity(),
+            SpriteTransform::Translate(x, y)        => Transform2D::translate(x, y),
+            SpriteTransform::Scale(x, y)            => Transform2D::scale(x, y),
+            SpriteTransform::Rotate(degrees)        => Transform2D::rotate(degrees / 180.0 * f32::consts::PI),
+            SpriteTransform::Transform2D(transform) => transform
+        }
     }
 }

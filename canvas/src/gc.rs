@@ -44,6 +44,10 @@ pub trait GraphicsContext {
     fn layer(&mut self, layer_id: u32);
     fn layer_blend(&mut self, layer_id: u32, blend_mode: BlendMode);
     fn clear_layer(&mut self);
+    fn sprite(&mut self, sprite_id: SpriteId);
+    fn clear_sprite(&mut self);
+    fn sprite_transform(&mut self, transform: SpriteTransform);
+    fn draw_sprite(&mut self, sprite_id: SpriteId);
 
     fn draw(&mut self, d: Draw) {
         use self::Draw::*;
@@ -80,7 +84,11 @@ pub trait GraphicsContext {
             ClearCanvas                                 => self.clear_canvas(),
             Layer(layer_id)                             => self.layer(layer_id),
             LayerBlend(layer_id, blend_mode)            => self.layer_blend(layer_id, blend_mode),
-            ClearLayer                                  => self.clear_layer()
+            ClearLayer                                  => self.clear_layer(),
+            Sprite(sprite_id)                           => self.sprite(sprite_id),
+            ClearSprite                                 => self.clear_sprite(),
+            SpriteTransform(transform)                  => self.sprite_transform(transform),
+            DrawSprite(sprite_id)                       => self.draw_sprite(sprite_id)
         }
     }
 
@@ -209,6 +217,10 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn layer(&mut self, layer_id: u32)                                        { self.push(Draw::Layer(layer_id)); }
     #[inline] fn layer_blend(&mut self, layer_id: u32, blend_mode: BlendMode)           { self.push(Draw::LayerBlend(layer_id, blend_mode)); }
     #[inline] fn clear_layer(&mut self)                                                 { self.push(Draw::ClearLayer); }
+    #[inline] fn sprite(&mut self, sprite_id: SpriteId)                                 { self.push(Draw::Sprite(sprite_id)); }
+    #[inline] fn clear_sprite(&mut self)                                                { self.push(Draw::ClearSprite); }
+    #[inline] fn sprite_transform(&mut self, transform: SpriteTransform)                { self.push(Draw::SpriteTransform(transform)); }
+    #[inline] fn draw_sprite(&mut self, sprite_id: SpriteId)                            { self.push(Draw::DrawSprite(sprite_id)); }
 
     #[inline]
     fn draw(&mut self, d: Draw) {

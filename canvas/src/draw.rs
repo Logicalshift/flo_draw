@@ -46,6 +46,41 @@ pub enum BlendMode {
 }
 
 ///
+/// Identifier of a canvas 'sprite'
+///
+/// A 'sprite' is just a placeholder for a set of pre-rendered actions (it's useful for things like
+/// images or drawings that are expected to repeat). Sprites survive layer and canvas clears so they
+/// can be re-used repeatedly. The drawing layer may cache these actions in order to render the sprite
+/// quickly.
+///
+/// Sprites are also faster to draw when rendering to a remote surface as they only need to be sent
+/// across once before they can be re-rendered as often as necessary.
+///
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct SpriteId(pub u64);
+
+///
+/// Transformation to apply to a canvas 'sprite'
+///
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum SpriteTransform {
+    /// Resets the transformation to the identity transform
+    Identity,
+
+    /// Move by a particular amount
+    Translate(f32, f32),
+
+    /// Scale by the specified x and y factors about the origin
+    Scale(f32, f32),
+
+    /// Rotate by an angle in degrees about the origin
+    Rotate(f32),
+
+    /// Arbitrary 2D transformation
+    Transform2D(Transform2D)
+}
+
+///
 /// Instructions for drawing to a canvas
 ///
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
@@ -156,5 +191,24 @@ pub enum Draw {
     LayerBlend(u32, BlendMode),
 
     /// Clears the current layer
-    ClearLayer
+    ClearLayer,
+
+    /// Selects a particular sprite for drawing
+    ///
+    /// Future drawing actions are sent to this sprite: use something like `Layer(0)` to start drawing
+    /// to a layer again.
+    ///
+    /// Sprites can be repeatedly re-rendered with a single command and their appearance may be
+    /// cached for efficiency. Actions that affect the whole canvas or layers are not permitted in
+    /// sprites.
+    Sprite(SpriteId),
+
+    /// Releases the resources used by the current sprite
+    ClearSprite,
+
+    /// Adds a sprite transform to the current list of transformations to apply
+    SpriteTransform(SpriteTransform),
+
+    /// Renders a sprite with a set of transformations
+    DrawSprite(SpriteId)
 }

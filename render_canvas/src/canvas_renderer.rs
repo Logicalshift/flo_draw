@@ -1,3 +1,5 @@
+use super::layer_state::*;
+use super::render_entity::*;
 use super::stroke_settings::*;
 use super::renderer_core::*;
 use super::renderer_layer::*;
@@ -16,6 +18,7 @@ use num_cpus;
 use lyon::path;
 use lyon::math;
 
+use std::collections::{HashMap};
 use std::ops::{Range};
 use std::sync::*;
 use std::mem;
@@ -31,7 +34,7 @@ pub struct CanvasRenderer {
     core: Arc<Desync<RenderCore>>,
 
     /// The layer that the next drawing instruction will apply to
-    current_layer: usize,
+    current_layer: LayerHandle,
 
     /// The viewport transformation
     viewport_transform: canvas::Transform2D,
@@ -72,10 +75,21 @@ impl CanvasRenderer {
         // Create the shared core
         let core = RenderCore {
             layers:                 vec![],
+            free_layers:            vec![],
+            layer_definitions:      vec![],
+            sprites:                HashMap::new(),
             unused_vertex_buffer:   0,
             free_vertex_buffers:    vec![]
         };
         let core = Arc::new(Desync::new(core));
+
+        // Create the initial layer
+        let initial_layer = Self::create_default_layer();
+        let initial_layer = core.sync(move |core| {
+            let layer0 = core.allocate_layer_handle(initial_layer);
+            core.layers.push(layer0);
+            layer0
+        });
 
         // Create one worker per cpu
         let num_workers = num_cpus::get().max(2);
@@ -89,7 +103,7 @@ impl CanvasRenderer {
         CanvasRenderer {
             workers:                    workers,
             core:                       core,
-            current_layer:              0,
+            current_layer:              initial_layer,
             viewport_transform:         canvas::Transform2D::identity(),
             inverse_viewport_transform: canvas::Transform2D::identity(),
             active_transform:           canvas::Transform2D::identity(),
@@ -165,13 +179,14 @@ impl CanvasRenderer {
     ///
     /// Creates a new layer with the default properties
     ///
-    fn create_default_layer(&self) -> Layer {
+    fn create_default_layer() -> Layer {
         Layer {
             render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             state:              LayerState {
                 fill_color:         render::Rgba8([0, 0, 0, 255]),
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),
+                sprite_matrix:      canvas::Transform2D::identity(),
                 blend_mode:         canvas::BlendMode::SourceOver,
                 restore_point:      None
             },
@@ -221,8 +236,10 @@ impl CanvasRenderer {
             // Create the default layer if one doesn't already exist
             core.sync(|core| {
                 if core.layers.len() == 0 {
-                    core.layers         = vec![self.create_default_layer()];
-                    self.current_layer  = 0;
+                    let layer0          = Self::create_default_layer();
+                    let layer0          = core.allocate_layer_handle(layer0);
+                    core.layers         = vec![layer0];
+                    self.current_layer  = layer0;
                 }
             });
 
@@ -279,17 +296,19 @@ impl CanvasRenderer {
                             self.next_entity_id += 1;
 
                             let job         = core.sync(move |core| {
+                                let layer               = core.layer(layer_id);
+
                                 // Update the transformation matrix
-                                core.layers[layer_id].update_transform(active_transform);
+                                layer.update_transform(active_transform);
 
                                 // Create the render entity in the tessellating state
-                                let color               = core.layers[layer_id].state.fill_color;
-                                let entity_index        = core.layers[layer_id].render_order.len();
+                                let color               = layer.state.fill_color;
+                                let entity_index        = layer.render_order.len();
 
                                 // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
-                                let color               = if core.layers[layer_id].state.blend_mode == canvas::BlendMode::DestinationOut { render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]]) } else { color };
+                                let color               = if layer.state.blend_mode == canvas::BlendMode::DestinationOut { render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]]) } else { color };
 
-                                core.layers[layer_id].render_order.push(RenderEntity::Tessellating(entity_id));
+                                layer.render_order.push(RenderEntity::Tessellating(entity_id));
 
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
@@ -322,19 +341,21 @@ impl CanvasRenderer {
                             self.next_entity_id += 1;
 
                             let job         = core.sync(move |core| {
+                                let layer               = core.layer(layer_id);
+
                                 // Update the transformation matrix
-                                core.layers[layer_id].update_transform(active_transform);
+                                layer.update_transform(active_transform);
 
                                 // Create the render entity in the tessellating state
-                                let mut stroke_options  = core.layers[layer_id].state.stroke_settings.clone();
-                                let entity_index        = core.layers[layer_id].render_order.len();
+                                let mut stroke_options  = layer.state.stroke_settings.clone();
+                                let entity_index        = layer.render_order.len();
 
 
                                 // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
                                 let color                   = stroke_options.stroke_color;
-                                stroke_options.stroke_color = if core.layers[layer_id].state.blend_mode == canvas::BlendMode::DestinationOut { render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]]) } else { color };
+                                stroke_options.stroke_color = if layer.state.blend_mode == canvas::BlendMode::DestinationOut { render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]]) } else { color };
 
-                                core.layers[layer_id].render_order.push(RenderEntity::Tessellating(entity_id));
+                                layer.render_order.push(RenderEntity::Tessellating(entity_id));
 
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
@@ -352,7 +373,7 @@ impl CanvasRenderer {
 
                     // Set the line width
                     LineWidth(width) => {
-                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.line_width = width);
+                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.line_width = width);
                     }
 
                     // Set the line width in pixels
@@ -361,49 +382,49 @@ impl CanvasRenderer {
                         let scale                           = (transform[0][0]*transform[0][0] + transform[1][0]*transform[1][0]).sqrt();
                         let width                           = pixel_width / scale;
 
-                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.line_width = width);
+                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.line_width = width);
                     }
 
                     // Line join
                     LineJoin(join_type) => {
-                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.join = join_type);
+                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.join = join_type);
                     }
 
                     // The cap to use on lines
                     LineCap(cap_type) => {
-                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.cap = cap_type);
+                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.cap = cap_type);
                     }
 
                     // Resets the dash pattern to empty (which is a solid line)
                     NewDashPattern => {
-                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.dash_pattern = vec![]);
+                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.dash_pattern = vec![]);
                     }
 
                     // Adds a dash to the current dash pattern
                     DashLength(dash_length) => {
-                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.dash_pattern.push(dash_length));
+                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.dash_pattern.push(dash_length));
                     }
 
                     // Sets the offset for the dash pattern
                     DashOffset(offset) => {
-                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.dash_offset = offset);
+                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.dash_offset = offset);
                     }
 
                     // Set the fill color
                     FillColor(color) => {
-                        core.sync(|core| core.layers[self.current_layer].state.fill_color = Self::render_color(color));
+                        core.sync(|core| core.layer(self.current_layer).state.fill_color = Self::render_color(color));
                     }
 
                     // Set the line color
                     StrokeColor(color) => {
-                        core.sync(|core| core.layers[self.current_layer].state.stroke_settings.stroke_color = Self::render_color(color));
+                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.stroke_color = Self::render_color(color));
                     }
 
                     // Set how future renderings are blended with one another
                     BlendMode(blend_mode) => {
                         core.sync(|core| {
                             use canvas::BlendMode::*;
-                            core.layers[self.current_layer].state.blend_mode = blend_mode;
+                            core.layer(self.current_layer).state.blend_mode = blend_mode;
 
                             let blend_mode = match blend_mode {
                                 SourceOver      => render::BlendMode::DestinationOver,
@@ -423,7 +444,7 @@ impl CanvasRenderer {
                                 Lighten         => render::BlendMode::DestinationOver
                             };
 
-                            core.layers[self.current_layer].render_order.push(RenderEntity::SetBlendMode(blend_mode));
+                            core.layer(self.current_layer).render_order.push(RenderEntity::SetBlendMode(blend_mode));
                         });
                     }
 
@@ -500,7 +521,7 @@ impl CanvasRenderer {
                         // TODO: this does not support the clipping behaviour (it stores/restores the whole layer)
                         // (We currently aren't using the clipping behaviour for anything so it might be easier to just
                         // remove that capability from the documentation?)
-                        core.sync(|core| core.layers[self.current_layer].state.restore_point = Some(core.layers[self.current_layer].render_order.len()));
+                        core.sync(|core| core.layer(self.current_layer).state.restore_point = Some(core.layer(self.current_layer).render_order.len()));
                     }
 
                     // Restores what was stored in the background buffer. This should be done on the
@@ -513,11 +534,16 @@ impl CanvasRenderer {
                         // Roll back the layer to the restore point
                         // TODO: need to reset the blend mode
                         core.sync(|core| {
-                            if let Some(restore_point) = core.layers[self.current_layer].state.restore_point {
+                            if let Some(restore_point) = core.layer(self.current_layer).state.restore_point {
+                                let mut layer = core.layer(self.current_layer);
+
                                 // Remove entries from the layer until we reach the restore point
-                                while core.layers[self.current_layer].render_order.len() > restore_point {
-                                    let removed_entity = core.layers[self.current_layer].render_order.pop();
+                                while layer.render_order.len() > restore_point {
+                                    let removed_entity = layer.render_order.pop();
                                     removed_entity.map(|removed| core.free_entity(removed));
+
+                                    // Reborrow the layer after removal
+                                    layer = core.layer(self.current_layer);
                                 }
                             }
                         })
@@ -527,7 +553,7 @@ impl CanvasRenderer {
                     //
                     // Restore will no longer be valid for the current layer
                     FreeStoredBuffer => {
-                        core.sync(|core| core.layers[self.current_layer].state.restore_point = None);
+                        core.sync(|core| core.layer(self.current_layer).state.restore_point = None);
                     }
 
                     // Push the current state of the canvas (line settings, stored image, current path - all state)
@@ -535,8 +561,8 @@ impl CanvasRenderer {
                         self.transform_stack.push(self.active_transform);
 
                         core.sync(|core| {
-                            for layer in core.layers.iter_mut() {
-                                layer.push_state();
+                            for layer_id in core.layers.clone() {
+                                core.layer(layer_id).push_state();
                             }
                         })
                     }
@@ -547,8 +573,8 @@ impl CanvasRenderer {
                             .map(|transform| self.active_transform = transform);
 
                         core.sync(|core| {
-                            for layer in core.layers.iter_mut() {
-                                layer.pop_state();
+                            for layer_id in core.layers.clone() {
+                                core.layer(layer_id).pop_state();
                             }
                         })
                     }
@@ -558,18 +584,23 @@ impl CanvasRenderer {
                         //todo!("Stop any incoming tessellated data for this layer");
                         //todo!("Mark vertex buffers as freed");
                         core.sync(|core| {
-                            // Create the new layers
-                            let mut layers      = vec![self.create_default_layer()];
+                            // Release the existing layers
+                            let mut old_layers = vec![];
+                            mem::swap(&mut core.layers, &mut old_layers);
 
-                            // Swap into the core
-                            mem::swap(&mut core.layers, &mut layers);
-                            self.current_layer  = 0;
-
-                            // Free all the entities in all the layers
-                            for layer in layers {
+                            for layer_id in old_layers {
+                                let layer = core.release_layer_handle(layer_id);
                                 core.free_layer_entities(layer);
                             }
+
+                            // Create a new default layer
+                            let layer0 = Self::create_default_layer();
+                            let layer0 = core.allocate_layer_handle(layer0);
+                            core.layers.push(layer0);
+
+                            self.current_layer = layer0;
                         });
+
                         self.active_transform   = canvas::Transform2D::identity();
                     }
 
@@ -582,10 +613,12 @@ impl CanvasRenderer {
                         // Generate layers 
                         core.sync(|core| {
                             while core.layers.len() <= layer_id  {
-                                core.layers.push(self.create_default_layer());
+                                let new_layer = Self::create_default_layer();
+                                let new_layer = core.allocate_layer_handle(new_layer);
+                                core.layers.push(new_layer);
                             }
 
-                            self.current_layer = layer_id;
+                            self.current_layer = core.layers[layer_id];
                         });
                     }
 
@@ -598,18 +631,52 @@ impl CanvasRenderer {
                     }
 
                     // Clears the current layer
-                    ClearLayer => {
+                    ClearLayer | ClearSprite => {
                         core.sync(|core| {
                             // Create a new layer
-                            let mut layer = self.create_default_layer();
+                            let mut layer = Self::create_default_layer();
 
                             // Swap into the layer list to replace the old one
-                            mem::swap(&mut core.layers[self.current_layer], &mut layer);
+                            mem::swap(core.layer(self.current_layer), &mut layer);
 
                             // Free the data for the current layer
                             core.free_layer_entities(layer);
                         });
-                    }
+                    },
+
+                    // Selects a particular sprite for drawing
+                    Sprite(sprite_id) => { 
+                        core.sync(|core| {
+                            if let Some(sprite_handle) = core.sprites.get(&sprite_id) {
+                                // Use the existing sprite layer if one exists
+                                self.current_layer = *sprite_handle;
+                            } else {
+                                // Create a new sprite layer
+                                let sprite_layer = Self::create_default_layer();
+                                let sprite_layer = core.allocate_layer_handle(sprite_layer);
+                                core.sprites.insert(sprite_id, sprite_layer);
+
+                                self.current_layer = sprite_layer;
+                            }
+                        })
+                    },
+
+                    // Adds a sprite transform to the current list of transformations to apply
+                    SpriteTransform(transform) => {
+                        core.sync(|core| {
+                            core.layer(self.current_layer).state.apply_sprite_transform(transform)
+                        })
+                    },
+
+                    // Renders a sprite with a set of transformations
+                    DrawSprite(sprite_id) => { 
+                        core.sync(|core| {
+                            let layer           = core.layer(self.current_layer);
+                            let sprite_matrix   = layer.state.sprite_matrix;
+
+                            layer.render_order.push(RenderEntity::RenderSprite(sprite_id, sprite_matrix))
+                        })
+                    },
                 }
             }
 
