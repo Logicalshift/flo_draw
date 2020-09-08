@@ -672,7 +672,7 @@ impl CanvasRenderer {
                     DrawSprite(sprite_id) => { 
                         core.sync(|core| {
                             let layer           = core.layer(self.current_layer);
-                            let sprite_matrix   = layer.state.sprite_matrix;
+                            let sprite_matrix   = self.active_transform * layer.state.sprite_matrix;
 
                             layer.render_order.push(RenderEntity::RenderSprite(sprite_id, sprite_matrix))
                         })
