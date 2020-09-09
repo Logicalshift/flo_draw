@@ -574,7 +574,10 @@ impl CanvasRenderer {
 
                         core.sync(|core| {
                             for layer_id in core.layers.clone() {
+                                // The 'current matrix' is the matrix that's currently applied to the layer: it doesn't change when we pop the state
+                                let layer_matrix = core.layer(layer_id).state.current_matrix;
                                 core.layer(layer_id).pop_state();
+                                core.layer(layer_id).state.current_matrix = layer_matrix;
                             }
                         })
                     }
