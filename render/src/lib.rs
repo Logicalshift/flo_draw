@@ -2,6 +2,7 @@ mod action;
 mod buffer;
 #[cfg(feature="gl")] mod gl_renderer;
 #[cfg(feature="osx-metal")] mod metal_renderer;
+mod offscreen;
 
 pub use self::action::*;
 pub use self::buffer::*;
