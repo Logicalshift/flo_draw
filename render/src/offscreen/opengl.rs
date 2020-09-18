@@ -5,6 +5,8 @@ use crate::gl_renderer::*;
 
 use gl;
 
+use std::ffi::{c_void};
+
 ///
 /// An offscreen renderer that uses OpenGL (whichever variety is initialised)
 ///
@@ -74,6 +76,17 @@ impl OffscreenRenderTarget for OpenGlOffscreenRenderer {
     /// Consumes this render target and returns the realized pixels as a byte array
     ///
     fn realize(self) -> Vec<u8> {
-        unimplemented!()
+        // Allocate space for the image
+        let size_bytes  = self.width * self.height * 4;
+        let mut pixels  = vec![0; size_bytes];
+
+        // Read the image from the main texture into the pixel array
+        let texture     = self.main_render_target.texture().expect("Offscreen texture");
+        unsafe {
+            gl::BindTexture(gl::TEXTURE_2D, *texture);
+            gl::GetTexImage(gl::TEXTURE_2D, 0, gl::RGB, gl::BYTE, pixels.as_mut_ptr() as *mut c_void);
+        }
+
+        pixels
     }
 }
