@@ -9,5 +9,11 @@ pub enum RenderInitError {
     CannotOpenGraphicsDevice,
 
     /// Indicates that the graphics device could not be attached to
-    CannotCreateGraphicsDevice
+    CannotCreateGraphicsDevice,
+
+    /// The graphics driver failed to initialise
+    CannotStartGraphicsDriver,
+
+    /// The graphics display is not available
+    DisplayNotAvailable
 }
