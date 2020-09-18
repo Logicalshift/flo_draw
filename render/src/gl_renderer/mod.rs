@@ -12,6 +12,7 @@ mod shader_uniforms;
 
 pub use self::renderer::*;
 
+pub use self::error::*;
 pub use self::vertex_array::*;
 pub use self::buffer::*;
 pub use self::vertex::*;
