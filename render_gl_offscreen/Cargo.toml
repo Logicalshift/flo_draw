@@ -13,10 +13,11 @@ description = "Re-exports platform-appropriate libraries for initialising offscr
 [dependencies]
 
 [target.'cfg(target_os = "linux")'.dependencies]
-egl = "0.2"
+egl             = "0.2"
+gbm-sys         = "0.1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-cgl = "0.3"
+cgl             = "0.3"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-glutin_wgl_sys = "0.1"
+glutin_wgl_sys  = "0.1"
