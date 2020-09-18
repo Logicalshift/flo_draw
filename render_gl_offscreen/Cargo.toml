@@ -1,0 +1,22 @@
+[package]
+name        = "flo_render_gl_offscreen"
+version     = "0.1.0"
+authors     = ["Andrew Hunter"]
+license     = "Apache-2.0"
+edition     = "2018"
+repository  = "https://github.com/Logicalshift/flowbetween"
+description = "Re-exports platform-appropriate libraries for initialising offscreen rendering"
+
+# Cargo can base dependencies on features or the current platform but not both (which is also why you have to specify
+# 'gtk' on linux), so we need a separate crate to re-export egl/wgl/cgl based on the platform we're compiling on
+
+[dependencies]
+
+[target.'cfg(target_os = "linux")'.dependencies]
+egl = "0.2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+cgl = "0.3"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+glutin_wgl_sys = "0.1"

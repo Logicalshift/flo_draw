@@ -10,7 +10,7 @@ description = "Streaming API for rendering graphics on hardware"
 include     = [ "Cargo.toml", "src/**/*", "shaders/**/*", "bindings/**/*", "build.rs" ]
 
 [features]
-opengl      = [ "gl" ]
+opengl      = [ "gl", "flo_render_gl_offscreen" ]
 osx-metal   = [ "metal", "cocoa", "flo_canvas" ]
 
 [build-dependencies]
@@ -21,3 +21,4 @@ gl          = { version = "0.14", optional = true }
 metal       = { version = "0.20", optional = true }
 cocoa       = { version = "0.23", optional = true }
 flo_canvas  = { path = "../canvas", version = "0.2", optional = true }
+flo_render_gl_offscreen = { path = "../render_gl_offscreen", optional = true }
