@@ -2,6 +2,7 @@ use super::error::*;
 
 use gl;
 use flo_render_gl_offscreen::egl;
+use flo_render_gl_offscreen::egl::ffi;
 use flo_render_gl_offscreen::gbm;
 use libc::{open, O_RDWR};
 
@@ -19,7 +20,7 @@ use std::ffi::{CString, c_void};
 pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
     unsafe {
         // Open the card0 file descriptor
-        let card0 = open(CString::new("/dev/dri/renderD128").unwrap().as_ptr(), O_RDWR);
+        let card0 = open(CString::new("/dev/dri/card0").unwrap().as_ptr(), O_RDWR);
         if card0 == 0 { Err(RenderInitError::CannotOpenGraphicsDevice)? }
 
         // Create the GBM device for the card
@@ -27,13 +28,16 @@ pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
         if gbm.is_null() { Err(RenderInitError::CannotCreateGraphicsDevice)? }
 
         // Initialise EGL
+        // let egl_display = ffi::eglGetPlatformDisplay(egl::EGL_PLATFORM_SURFACELESS_MESA, ptr::null_mut(), ptr::null());
+
+        let egl_display = ffi::eglGetPlatformDisplay(egl::EGL_PLATFORM_GBM_MESA, gbm as *mut c_void, ptr::null());
+        let egl_display = if egl_display.is_null() { None } else { Some(egl_display) };
+        let egl_display = if let Some(egl_display) = egl_display { egl_display } else { println!("eglGetPlatformDisplay {:x}", egl::get_error()); Err(RenderInitError::DisplayNotAvailable)? };
+
         let mut major = 0;
         let mut minor = 0;
-        let init_result = egl::initialize(gbm as *mut c_void, &mut major, &mut minor);
-        if !init_result { Err(RenderInitError::CannotStartGraphicsDriver)? }
-
-        let egl_display = egl::get_current_display();
-        let egl_display = if let Some(egl_display) = egl_display { egl_display } else { Err(RenderInitError::DisplayNotAvailable)? };
+        let init_result = egl::initialize(egl_display as *mut c_void, &mut major, &mut minor);
+        if !init_result { println!("egl::initialize {:x}", egl::get_error()); Err(RenderInitError::CannotStartGraphicsDriver)? }
 
 
         Ok(())
