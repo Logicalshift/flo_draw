@@ -28,8 +28,6 @@ pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
         if gbm.is_null() { Err(RenderInitError::CannotCreateGraphicsDevice)? }
 
         // Initialise EGL
-        // let egl_display = ffi::eglGetPlatformDisplay(egl::EGL_PLATFORM_SURFACELESS_MESA, ptr::null_mut(), ptr::null());
-
         let egl_display = ffi::eglGetPlatformDisplay(egl::EGL_PLATFORM_GBM_MESA, gbm as *mut c_void, ptr::null());
         let egl_display = if egl_display.is_null() { None } else { Some(egl_display) };
         let egl_display = if let Some(egl_display) = egl_display { egl_display } else { println!("eglGetPlatformDisplay {:x}", egl::get_error()); Err(RenderInitError::DisplayNotAvailable)? };
@@ -53,22 +51,19 @@ pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
                 egl::EGL_GREEN_SIZE,        8,
                 egl::EGL_BLUE_SIZE,         8,
                 egl::EGL_DEPTH_SIZE,        24,
-                egl::EGL_SURFACE_TYPE,      egl::EGL_PBUFFER_BIT,
+                // egl::EGL_SURFACE_TYPE,      egl::EGL_PBUFFER_BIT,
+                egl::EGL_CONFORMANT,        egl::EGL_OPENGL_BIT,
                 egl::EGL_RENDERABLE_TYPE,   egl::EGL_OPENGL_BIT, 
                 egl::EGL_NONE
             ], 1);
         let config = if let Some(config) = config { config } else { println!("egl::choose_config {:x}", egl::get_error()); Err(RenderInitError::CouldNotConfigureDisplay)? };
-
-        // Create a pbuffer surface
-        let surface = egl::create_pbuffer_surface(egl_display, config, &[egl::EGL_WIDTH, 100, egl::EGL_HEIGHT, 100, egl::EGL_NONE]);
-        let surface = if let Some(surface) = surface { surface } else { println!("egl::create_pbuffer_surface {:x}", egl::get_error()); Err(RenderInitError::CouldNotCreateSurface)? };
 
         // Create the context
         let context = egl::create_context(egl_display, config, egl::EGL_NO_CONTEXT, &[egl::EGL_CONTEXT_CLIENT_VERSION, 3, egl::EGL_NONE]);
         let context = if let Some(context) = context { context } else { println!("egl::create_context {:x}", egl::get_error()); Err(RenderInitError::CouldNotCreateContext)? };
 
         // End with this set as the current context
-        let activated_context = egl::make_current(egl_display, surface, surface, context);
+        let activated_context = egl::make_current(egl_display, egl::EGL_NO_SURFACE, egl::EGL_NO_SURFACE, context);
 
         if !activated_context { println!("egl::make_current {:x}", egl::get_error()); Err(RenderInitError::ContextDidNotStart)? }
 
