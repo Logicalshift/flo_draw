@@ -106,7 +106,7 @@ mod test {
                 Vertex2D { pos: [1.0, 1.0], tex_coord: [0.0, 0.0], color: black },
                 Vertex2D { pos: [1.0, -1.0], tex_coord: [0.0, 0.0], color: black },
             ]),
-            DrawTriangles(VertexBufferId(0), 0..2)
+            DrawTriangles(VertexBufferId(0), 0..3)
         ]);
 
         let image           = renderer.realize();
