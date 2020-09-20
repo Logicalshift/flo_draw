@@ -15,5 +15,14 @@ pub enum RenderInitError {
     CannotStartGraphicsDriver,
 
     /// The graphics display is not available
-    DisplayNotAvailable
+    DisplayNotAvailable,
+
+    /// A required extension was missing
+    MissingRequiredExtension,
+
+    /// Unable to configure the display
+    CouldNotConfigureDisplay,
+
+    /// The context failed to create
+    CouldNotCreateContext
 }

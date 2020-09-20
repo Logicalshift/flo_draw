@@ -39,6 +39,25 @@ pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
         let init_result = egl::initialize(egl_display as *mut c_void, &mut major, &mut minor);
         if !init_result { println!("egl::initialize {:x}", egl::get_error()); Err(RenderInitError::CannotStartGraphicsDriver)? }
 
+        // Check for the create context and surfaceless extensions
+        let extensions = egl::query_string(egl_display, egl::EGL_EXTENSIONS);
+        let extensions = if let Some(extensions) = extensions { extensions } else { Err(RenderInitError::MissingRequiredExtension)? };
+        let extensions = extensions.to_string_lossy();
+
+        if !extensions.contains("EGL_KHR_create_context ")      { Err(RenderInitError::MissingRequiredExtension)? }
+        if !extensions.contains("EGL_KHR_surfaceless_context ") { Err(RenderInitError::MissingRequiredExtension)? }
+
+        // Pick the configuration
+        let config = egl::choose_config(egl_display, &[egl::EGL_RENDERABLE_TYPE, egl::EGL_OPENGL_BIT, egl::EGL_NONE], 1);
+        let config = if let Some(config) = config { config } else { Err(RenderInitError::CouldNotConfigureDisplay)? };
+
+        // Create the context
+        let context = egl::create_context(egl_display, config, egl::EGL_NO_CONTEXT, &[egl::EGL_CONTEXT_CLIENT_VERSION, 3, egl::EGL_NONE]);
+        let context = if let Some(context) = context { context } else { println!("egl::create_context {:x}", egl::get_error()); Err(RenderInitError::CouldNotCreateContext)? };
+
+        // End with this set as the current context
+        let activated_context = egl::make_current(egl_display, egl::EGL_NO_SURFACE, egl::EGL_NO_SURFACE, context);
+        gl::load_with(|s| egl::get_proc_address(s) as *const c_void);
 
         Ok(())
     }
