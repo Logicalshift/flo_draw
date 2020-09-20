@@ -84,7 +84,7 @@ impl OffscreenRenderTarget for OpenGlOffscreenRenderer {
         let texture     = self.main_render_target.texture().expect("Offscreen texture");
         unsafe {
             gl::BindTexture(gl::TEXTURE_2D, *texture);
-            gl::GetTexImage(gl::TEXTURE_2D, 0, gl::RGB, gl::BYTE, pixels.as_mut_ptr() as *mut c_void);
+            gl::GetTexImage(gl::TEXTURE_2D, 0, gl::RGBA, gl::BYTE, pixels.as_mut_ptr() as *mut c_void);
         }
 
         pixels
