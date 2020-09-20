@@ -65,10 +65,30 @@ pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use crate::action::*;
+    use crate::buffer::*;
+    use crate::offscreen::*;
 
     #[test]
-    fn init_opengl_subsystem() {
+    fn simple_offscreen_render() {
+        // Initialise offscreen rendering
         assert!(initialize_offscreen_rendering().is_ok());
+
+        // Draw a triangle in a 100x100 buffer
+        use self::RenderAction::*;
+
+        let mut renderer    = OpenGlOffscreenRenderer::new(100, 100);
+        let black           = [0, 0, 0, 255];
+        renderer.render(vec![
+            Clear(Rgba8([255, 255, 255, 255])),
+            CreateVertex2DBuffer(VertexBufferId(0), vec![
+                Vertex2D { pos: [-1.0, -1.0], tex_coord: [0.0, 0.0], color: black },
+                Vertex2D { pos: [1.0, 1.0], tex_coord: [0.0, 0.0], color: black },
+                Vertex2D { pos: [1.0, -1.0], tex_coord: [0.0, 0.0], color: black },
+            ]),
+            DrawTriangles(VertexBufferId(0), 0..2)
+        ]);
+
+        let image           = renderer.realize();
     }
 }
