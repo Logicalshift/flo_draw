@@ -5,6 +5,9 @@
 ///
 #[derive(Clone, Debug, PartialEq)]
 pub enum RenderInitError {
+    /// The required rendering API is not available
+    ApiNotAvailable,
+
     /// Indicates that the graphics device could not be opened
     CannotOpenGraphicsDevice,
 

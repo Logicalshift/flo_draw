@@ -28,6 +28,8 @@ pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
         if gbm.is_null() { Err(RenderInitError::CannotCreateGraphicsDevice)? }
 
         // Initialise EGL
+        if !egl::bind_api(egl::EGL_OPENGL_API) { Err(RenderInitError::ApiNotAvailable)? }
+
         let egl_display = ffi::eglGetPlatformDisplay(egl::EGL_PLATFORM_GBM_MESA, gbm as *mut c_void, ptr::null());
         let egl_display = if egl_display.is_null() { None } else { Some(egl_display) };
         let egl_display = if let Some(egl_display) = egl_display { egl_display } else { println!("eglGetPlatformDisplay {:x}", egl::get_error()); Err(RenderInitError::DisplayNotAvailable)? };
@@ -59,7 +61,11 @@ pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
         let config = if let Some(config) = config { config } else { println!("egl::choose_config {:x}", egl::get_error()); Err(RenderInitError::CouldNotConfigureDisplay)? };
 
         // Create the context
-        let context = egl::create_context(egl_display, config, egl::EGL_NO_CONTEXT, &[egl::EGL_CONTEXT_CLIENT_VERSION, 3, egl::EGL_NONE]);
+        let context = egl::create_context(egl_display, config, egl::EGL_NO_CONTEXT, &[
+                egl::EGL_CONTEXT_MAJOR_VERSION, 3, 
+                egl::EGL_CONTEXT_MINOR_VERSION, 3, 
+                egl::EGL_NONE
+            ]);
         let context = if let Some(context) = context { context } else { println!("egl::create_context {:x}", egl::get_error()); Err(RenderInitError::CouldNotCreateContext)? };
 
         // End with this set as the current context

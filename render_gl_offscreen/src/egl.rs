@@ -17,6 +17,8 @@ pub const EGL_PLATFORM_X11_EXT:             EGLenum = 0x31D5;
 pub const EGL_PLATFORM_X11_SCREEN_EXT:      EGLenum = 0x31D6;
 pub const EGL_PLATFORM_GBM_MESA:            EGLenum = 0x31D7;
 pub const EGL_PLATFORM_SURFACELESS_MESA:    EGLenum = 0x31DD;
+pub const EGL_CONTEXT_MAJOR_VERSION:        EGLint = 0x3098;
+pub const EGL_CONTEXT_MINOR_VERSION:        EGLint = 0x30FB;
 
 //
 // FFI functions missing from the EGL crate
