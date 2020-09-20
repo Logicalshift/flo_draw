@@ -24,5 +24,8 @@ pub enum RenderInitError {
     CouldNotConfigureDisplay,
 
     /// The context failed to create
-    CouldNotCreateContext
+    CouldNotCreateContext,
+
+    /// Could not set the active context
+    ContextDidNotStart
 }

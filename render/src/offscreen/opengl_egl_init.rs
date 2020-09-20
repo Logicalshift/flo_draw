@@ -57,7 +57,14 @@ pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
 
         // End with this set as the current context
         let activated_context = egl::make_current(egl_display, egl::EGL_NO_SURFACE, egl::EGL_NO_SURFACE, context);
+
+        if !activated_context { println!("egl::make_current {:x}", egl::get_error()); Err(RenderInitError::ContextDidNotStart)? }
+
+        // Set up the GL funcitons and check for errors
         gl::load_with(|s| egl::get_proc_address(s) as *const c_void);
+        let error = unsafe { gl::GetError() };
+        if error != gl::NO_ERROR { println!("gl::GetError {:x}", error); Err(RenderInitError::ContextDidNotStart)? }
+        assert!(error == gl::NO_ERROR);
 
         Ok(())
     }
