@@ -85,6 +85,8 @@ impl OffscreenRenderTarget for OpenGlOffscreenRenderer {
         unsafe {
             gl::BindTexture(gl::TEXTURE_2D, *texture);
             gl::GetTexImage(gl::TEXTURE_2D, 0, gl::RGBA, gl::BYTE, pixels.as_mut_ptr() as *mut c_void);
+
+            panic_on_gl_error("Read offscreen texture");
         }
 
         pixels
