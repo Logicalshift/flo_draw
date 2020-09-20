@@ -48,15 +48,27 @@ pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
         if !extensions.contains("EGL_KHR_surfaceless_context ") { Err(RenderInitError::MissingRequiredExtension)? }
 
         // Pick the configuration
-        let config = egl::choose_config(egl_display, &[egl::EGL_RENDERABLE_TYPE, egl::EGL_OPENGL_BIT, egl::EGL_NONE], 1);
-        let config = if let Some(config) = config { config } else { Err(RenderInitError::CouldNotConfigureDisplay)? };
+        let config = egl::choose_config(egl_display, &[
+                egl::EGL_RED_SIZE,          8,
+                egl::EGL_GREEN_SIZE,        8,
+                egl::EGL_BLUE_SIZE,         8,
+                egl::EGL_DEPTH_SIZE,        24,
+                egl::EGL_SURFACE_TYPE,      egl::EGL_PBUFFER_BIT,
+                egl::EGL_RENDERABLE_TYPE,   egl::EGL_OPENGL_BIT, 
+                egl::EGL_NONE
+            ], 1);
+        let config = if let Some(config) = config { config } else { println!("egl::choose_config {:x}", egl::get_error()); Err(RenderInitError::CouldNotConfigureDisplay)? };
+
+        // Create a pbuffer surface
+        let surface = egl::create_pbuffer_surface(egl_display, config, &[egl::EGL_WIDTH, 100, egl::EGL_HEIGHT, 100, egl::EGL_NONE]);
+        let surface = if let Some(surface) = surface { surface } else { println!("egl::create_pbuffer_surface {:x}", egl::get_error()); Err(RenderInitError::CouldNotCreateSurface)? };
 
         // Create the context
         let context = egl::create_context(egl_display, config, egl::EGL_NO_CONTEXT, &[egl::EGL_CONTEXT_CLIENT_VERSION, 3, egl::EGL_NONE]);
         let context = if let Some(context) = context { context } else { println!("egl::create_context {:x}", egl::get_error()); Err(RenderInitError::CouldNotCreateContext)? };
 
         // End with this set as the current context
-        let activated_context = egl::make_current(egl_display, egl::EGL_NO_SURFACE, egl::EGL_NO_SURFACE, context);
+        let activated_context = egl::make_current(egl_display, surface, surface, context);
 
         if !activated_context { println!("egl::make_current {:x}", egl::get_error()); Err(RenderInitError::ContextDidNotStart)? }
 

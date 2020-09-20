@@ -26,6 +26,9 @@ pub enum RenderInitError {
     /// The context failed to create
     CouldNotCreateContext,
 
+    /// The render surface failed to create
+    CouldNotCreateSurface,
+
     /// Could not set the active context
     ContextDidNotStart
 }
