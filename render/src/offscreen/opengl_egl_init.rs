@@ -75,7 +75,7 @@ pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
 
         // Set up the GL funcitons and check for errors
         gl::load_with(|s| egl::get_proc_address(s) as *const c_void);
-        let error = unsafe { gl::GetError() };
+        let error = gl::GetError();
         if error != gl::NO_ERROR { println!("gl::GetError {:x}", error); Err(RenderInitError::ContextDidNotStart)? }
         assert!(error == gl::NO_ERROR);
 
