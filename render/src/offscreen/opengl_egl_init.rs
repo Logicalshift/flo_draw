@@ -1,13 +1,29 @@
 use super::error::*;
+use super::opengl::*;
+use super::offscreen_trait::*;
 
 use gl;
 use flo_render_gl_offscreen::egl;
 use flo_render_gl_offscreen::egl::ffi;
 use flo_render_gl_offscreen::gbm;
-use libc::{open, O_RDWR};
+use libc::{open, close, O_RDWR};
 
 use std::ptr;
 use std::ffi::{CString, c_void};
+
+///
+/// An OpenGL offscreen rendering context initialised by EGL
+///
+struct EglOffscreenRenderContext {
+    /// The file descriptor of the DRI file for the graphics card we're using to render
+    card_fd: i32,
+
+    /// The EGL display that we created
+    display: egl::EGLDisplay,
+
+    /// The rendering context
+    context: egl::EGLContext,
+}
 
 ///
 /// Performs on-startup initialisation steps for offscreen rendering
@@ -17,7 +33,7 @@ use std::ffi::{CString, c_void};
 ///
 /// This version is the EGL version for Linux
 ///
-pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
+pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     unsafe {
         // Open the card0 file descriptor
         let card0 = open(CString::new("/dev/dri/card0").unwrap().as_ptr(), O_RDWR);
@@ -53,7 +69,6 @@ pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
                 egl::EGL_GREEN_SIZE,        8,
                 egl::EGL_BLUE_SIZE,         8,
                 egl::EGL_DEPTH_SIZE,        24,
-                // egl::EGL_SURFACE_TYPE,      egl::EGL_PBUFFER_BIT,
                 egl::EGL_CONFORMANT,        egl::EGL_OPENGL_BIT,
                 egl::EGL_RENDERABLE_TYPE,   egl::EGL_OPENGL_BIT, 
                 egl::EGL_NONE
@@ -79,7 +94,34 @@ pub fn initialize_offscreen_rendering() -> Result<(), RenderInitError> {
         if error != gl::NO_ERROR { println!("gl::GetError {:x}", error); Err(RenderInitError::ContextDidNotStart)? }
         assert!(error == gl::NO_ERROR);
 
-        Ok(())
+        Ok(EglOffscreenRenderContext {
+            card_fd: card0,
+            display: egl_display,
+            context: context
+        })
+    }
+}
+
+impl OffscreenRenderContext for EglOffscreenRenderContext {
+    type RenderTarget = OpenGlOffscreenRenderer;
+
+    ///
+    /// Creates a new render target for this context
+    ///
+    fn create_render_target(&mut self, width: usize, height: usize) -> Self::RenderTarget {
+        let activated_context = egl::make_current(self.display, egl::EGL_NO_SURFACE, egl::EGL_NO_SURFACE, self.context);
+        if !activated_context { panic!("egl::make_current {:x}", egl::get_error()); }
+
+        OpenGlOffscreenRenderer::new(width, height)
+    }
+}
+
+impl Drop for EglOffscreenRenderContext {
+    fn drop(&mut self) {
+        unsafe {
+            egl::destroy_context(self.display, self.context);
+            close(self.card_fd);
+        }
     }
 }
 
@@ -92,12 +134,12 @@ mod test {
     #[test]
     fn simple_offscreen_render() {
         // Initialise offscreen rendering
-        assert!(initialize_offscreen_rendering().is_ok());
+        let mut context     = initialize_offscreen_rendering().unwrap();
 
         // Draw a triangle in a 100x100 buffer
         use self::RenderAction::*;
 
-        let mut renderer    = OpenGlOffscreenRenderer::new(100, 100);
+        let mut renderer    = context.create_render_target(100, 100);
         let black           = [0, 0, 0, 255];
         renderer.render(vec![
             Clear(Rgba8([128, 128, 128, 255])),

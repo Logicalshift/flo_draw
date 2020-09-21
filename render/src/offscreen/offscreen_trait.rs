@@ -14,3 +14,15 @@ pub trait OffscreenRenderTarget {
     ///
     fn realize(self) -> Vec<u8>;
 }
+
+///
+/// Trait implemented by objects that represent a offscreen drawing context
+///
+pub trait OffscreenRenderContext {
+    type RenderTarget: OffscreenRenderTarget;
+
+    ///
+    /// Creates a new render target for this context
+    ///
+    fn create_render_target(&mut self, width: usize, height: usize) -> Self::RenderTarget;
+}
