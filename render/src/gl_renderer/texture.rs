@@ -42,8 +42,8 @@ impl Texture {
 
             gl::BindTexture(gl::TEXTURE_2D, texture_id);
 
-            gl::TextureParameteri(texture_id, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-            gl::TextureParameteri(texture_id, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 
             gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGBA as i32, width as gl::types::GLsizei, height as gl::types::GLsizei, 0, gl::RGBA, gl::UNSIGNED_BYTE, ptr::null());
 
@@ -81,8 +81,8 @@ impl Texture {
 
             gl::BindTexture(gl::TEXTURE_2D, texture_id);
 
-            gl::TextureParameteri(texture_id, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-            gl::TextureParameteri(texture_id, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 
             gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RED as i32, width as gl::types::GLsizei, height as gl::types::GLsizei, 0, gl::RED, gl::UNSIGNED_BYTE, ptr::null());
 
