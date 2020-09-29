@@ -7,3 +7,4 @@ mod render_target;
 mod pipeline_configuration;
 
 pub use self::metal_renderer::*;
+pub use self::render_target::*;

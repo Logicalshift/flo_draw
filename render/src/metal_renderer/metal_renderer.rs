@@ -94,6 +94,26 @@ impl MetalRenderer {
     }
 
     ///
+    /// Creates a new metal renderer using the system default device
+    ///
+    pub fn with_device(device: &metal::Device) -> MetalRenderer {
+        let device          = device.clone();
+        let command_queue   = device.new_command_queue();
+        let shader_library  = device.new_library_with_data(include_bytes![concat!(env!("OUT_DIR"), "/flo.metallib")]).unwrap();
+
+        MetalRenderer {
+            device:             device,
+            command_queue:      command_queue,
+            vertex_buffers:     vec![],
+            index_buffers:      vec![],
+            render_targets:     vec![],
+            textures:           vec![],
+            shader_library:     shader_library,
+            pipeline_states:    HashMap::new()
+        }
+    }
+
+    ///
     /// Returns a pipeline state for a configuration
     ///
     fn get_pipeline_state(&mut self, config: &PipelineConfiguration) -> metal::RenderPipelineState {
