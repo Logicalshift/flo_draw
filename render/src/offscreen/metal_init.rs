@@ -83,7 +83,7 @@ impl OffscreenRenderTarget for MetalOffscreenRenderTarget {
             origin: metal::MTLOrigin    { x: 0, y: 0, z: 0 },
             size:   metal::MTLSize      { width: self.width as u64, height: self.height as u64, depth: 1 }
         };
-        texture.get_bytes(result.as_mut_ptr() as *mut c_void, 0, region, 0);
+        texture.get_bytes(result.as_mut_ptr() as *mut c_void, (self.width*4) as u64, region, 0);
 
         result
     }
