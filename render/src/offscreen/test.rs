@@ -1,4 +1,4 @@
-#[cfg(all(test, any(feature = "opengl")))]
+#[cfg(all(test, any(feature = "opengl", feature = "osx-metal")))]
 mod test {
     use crate::action::*;
     use crate::buffer::*;
