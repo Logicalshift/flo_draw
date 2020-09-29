@@ -47,9 +47,6 @@ pub struct MetalRenderer {
 /// The current state of a renderer
 ///
 struct RenderState<'a> {
-    /// The main render buffer
-    main_buffer: &'a metal::Drawable,
-
     /// The main render buffer texture
     main_texture: metal::Texture,
 
@@ -160,9 +157,9 @@ impl MetalRenderer {
     }
 
     ///
-    /// Performs rendering of the specified actions to this device target
+    /// Performs some rendering instructions and returns the resulting command buffer
     ///
-    pub fn render<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions, target_drawable: &metal::Drawable, target_texture: &metal::Texture) {
+    pub fn render_to_buffer<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions, target_texture: &metal::Texture) -> metal::CommandBuffer {
         // Create the render state
         let command_queue       = self.command_queue.clone();
         let matrix              = MatrixBuffer::from_matrix(&self.device, Matrix::identity());
@@ -172,7 +169,6 @@ impl MetalRenderer {
         let command_encoder     = self.get_command_encoder(command_buffer, target_texture);
 
         let mut render_state    = RenderState {
-            main_buffer:            target_drawable,
             main_texture:           target_texture.clone(),
             target_texture:         target_texture.clone(),
             erase_texture:          None,
@@ -213,6 +209,18 @@ impl MetalRenderer {
 
         // Finish up
         render_state.command_encoder.end_encoding();
+
+        command_buffer.to_owned()
+    }
+
+    ///
+    /// Performs rendering of the specified actions to this device target
+    ///
+    pub fn render<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions, target_drawable: &metal::Drawable, target_texture: &metal::Texture) {
+        // Perform the rendering
+        let command_buffer = self.render_to_buffer(actions, target_texture);
+
+        // Present the result
         command_buffer.present_drawable(target_drawable);
         command_buffer.commit();
     }
