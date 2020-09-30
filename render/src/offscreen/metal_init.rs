@@ -68,8 +68,14 @@ impl OffscreenRenderTarget for MetalOffscreenRenderTarget {
     /// Sends render actions to this offscreen render target
     ///
     fn render<ActionIter: IntoIterator<Item=RenderAction>>(&mut self, actions: ActionIter) {
-        let buffer = self.renderer.render_to_buffer(actions, self.render_target.render_texture());
+        let buffer          = self.renderer.render_to_buffer(actions, self.render_target.render_texture());
+
+        let blit_encoder    = buffer.new_blit_command_encoder();
+        blit_encoder.synchronize_resource(self.render_target.render_texture());
+        blit_encoder.end_encoding();
+
         buffer.commit();
+        buffer.wait_until_completed();
     }
 
     ///
