@@ -30,4 +30,18 @@ impl Matrix {
             matrix[3][0], matrix[3][1], matrix[3][2], matrix[3][3]
         ]
     }
+
+    ///
+    /// Flips the Y-coordinates of this matrix
+    ///
+    pub fn flip_y(self) -> Matrix {
+        let Matrix(mut matrix) = self;
+
+        matrix[1][0] = -matrix[1][0];
+        matrix[1][1] = -matrix[1][1];
+        matrix[1][2] = -matrix[1][2];
+        matrix[1][3] = -matrix[1][3];
+
+        Matrix(matrix)
+    }
 }
