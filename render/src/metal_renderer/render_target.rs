@@ -40,6 +40,9 @@ impl RenderTarget {
         // Customise to the render target type
         match render_target_type {
             RenderTargetType::Standard              => { }
+            RenderTargetType::StandardForReading    => {
+                texture_descriptor.set_pixel_format(metal::MTLPixelFormat::RGBA8Unorm);
+            }
 
             RenderTargetType::Multisampled          |
             RenderTargetType::MultisampledTexture   => { 
@@ -65,7 +68,7 @@ impl RenderTarget {
 
         // Create the render target
         match render_target_type {
-            RenderTargetType::Standard | RenderTargetType::Monochrome => {
+            RenderTargetType::Standard | RenderTargetType::StandardForReading | RenderTargetType::Monochrome => {
                 // Just create a normal texture
                 RenderTarget::Texture { 
                     texture:    render_texture,

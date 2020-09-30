@@ -6,6 +6,9 @@ pub enum RenderTargetType {
     /// Standard off-screen render target (with a texture)
     Standard,
 
+    /// Off-screen render target for reading back to the CPU
+    StandardForReading,
+
     /// Multisampled render target
     Multisampled,
 

@@ -53,7 +53,7 @@ impl RenderTarget {
             let render_buffer;
 
             match render_type {
-                RenderTargetType::Standard => {
+                RenderTargetType::Standard | RenderTargetType::StandardForReading => {
                     // Use a backing texture for the rendering
                     let mut backing_texture = Texture::new();
                     backing_texture.create_empty(width, height);
