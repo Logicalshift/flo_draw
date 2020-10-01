@@ -21,6 +21,9 @@ pub struct MetalRenderer {
     /// The device that this will render to
     device: metal::Device,
 
+    /// True if the y coordinates should be flipped (eg, for off-screen rendering)
+    flip_y: bool,
+
     /// The shader library for this renderer
     shader_library: metal::Library,
 
@@ -83,6 +86,7 @@ impl MetalRenderer {
 
         MetalRenderer {
             device:             device,
+            flip_y:             false,
             command_queue:      command_queue,
             vertex_buffers:     vec![],
             index_buffers:      vec![],
@@ -96,13 +100,14 @@ impl MetalRenderer {
     ///
     /// Creates a new metal renderer using the system default device
     ///
-    pub fn with_device(device: &metal::Device) -> MetalRenderer {
+    pub fn with_device(device: &metal::Device, flip_y: bool) -> MetalRenderer {
         let device          = device.clone();
         let command_queue   = device.new_command_queue();
         let shader_library  = device.new_library_with_data(include_bytes![concat!(env!("OUT_DIR"), "/flo.metallib")]).unwrap();
 
         MetalRenderer {
             device:             device,
+            flip_y:             flip_y,
             command_queue:      command_queue,
             vertex_buffers:     vec![],
             index_buffers:      vec![],
@@ -182,7 +187,8 @@ impl MetalRenderer {
     pub fn render_to_buffer<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions, target_texture: &metal::Texture) -> metal::CommandBuffer {
         // Create the render state
         let command_queue       = self.command_queue.clone();
-        let matrix              = MatrixBuffer::from_matrix(&self.device, Matrix::identity());
+        let matrix              = if self.flip_y { Matrix::identity().flip_y() } else { Matrix::identity() };
+        let matrix              = MatrixBuffer::from_matrix(&self.device, matrix);
         let pipeline_config     = PipelineConfiguration::for_texture(target_texture);
         let pipeline_state      = self.get_pipeline_state(&pipeline_config);
         let command_buffer      = command_queue.new_command_buffer();
@@ -249,6 +255,8 @@ impl MetalRenderer {
     /// Sets the active transformation matrix
     ///
     fn set_transform(&mut self, matrix: Matrix, state: &mut RenderState) {
+        let matrix = if self.flip_y { matrix.flip_y() } else { matrix };
+
         // Replace the matrix buffer with a new one
         state.matrix = MatrixBuffer::from_matrix(&self.device, matrix);
         state.command_encoder.set_vertex_buffer(VertexInputIndex_VertexInputIndexMatrix as u64, Some(&state.matrix), 0);

@@ -51,7 +51,7 @@ impl OffscreenRenderContext for MetalOffscreenRenderContext {
     fn create_render_target(&mut self, width: usize, height: usize) -> Self::RenderTarget {
         let device          = self.device.clone();
         let render_target   = RenderTarget::new(&self.device, width, height, RenderTargetType::StandardForReading);
-        let renderer        = MetalRenderer::with_device(&self.device);
+        let renderer        = MetalRenderer::with_device(&self.device, true);
 
         MetalOffscreenRenderTarget {
             device:         device,
