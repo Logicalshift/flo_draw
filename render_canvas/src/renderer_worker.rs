@@ -77,7 +77,7 @@ impl CanvasWorker {
 
         // Set up the fill options
         let mut fill_options    = FillOptions::default();
-        fill_options.fill_rule  = FillRule::NonZero;
+        fill_options.fill_rule  = FillRule::EvenOdd;
 
         // Tessellate the current path
         tessellator.tessellate_path(&path, &fill_options,
