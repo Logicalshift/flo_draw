@@ -41,6 +41,7 @@ enum DecoderState {
     LineStyleWidthPixels(String),       // 'Lp' (w)
     LineStyleJoin(String),              // 'Lj' (j)
     LineStyleCap(String),               // 'Lc' (c)
+    WindingRule,                        // 'W' (r)
 
     DashLength(String),                 // 'Dl' (len)
     DashOffset(String),                 // 'Do' (offset)
@@ -134,6 +135,7 @@ impl CanvasDecoder {
             LineStyleWidthPixels(param)     => Self::decode_line_width_pixels(next_chr, param)?,
             LineStyleJoin(param)            => Self::decode_line_style_join(next_chr, param)?,
             LineStyleCap(param)             => Self::decode_line_style_cap(next_chr, param)?,
+            WindingRule                     => Self::decode_winding_rule(next_chr)?,
 
             DashLength(param)               => Self::decode_dash_length(next_chr, param)?,
             DashOffset(param)               => Self::decode_dash_offset(next_chr, param)?,
@@ -179,6 +181,7 @@ impl CanvasDecoder {
             's' => Ok((DecoderState::Sprite, None)),
             'T' => Ok((DecoderState::Transform, None)),
             'Z' => Ok((DecoderState::State, None)),
+            'W' => Ok((DecoderState::WindingRule, None)),
 
             // Single character commands
             '.' => Ok((DecoderState::None, Some(Draw::ClosePath))),
@@ -619,6 +622,14 @@ impl CanvasDecoder {
         }
     }
 
+    #[inline] fn decode_winding_rule(next_chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match next_chr {
+            'n' => Ok((DecoderState::None, Some(Draw::WindingRule(WindingRule::NonZero)))),
+            'e' => Ok((DecoderState::None, Some(Draw::WindingRule(WindingRule::EvenOdd)))),
+            _   => Err(DecoderError::InvalidCharacter(next_chr))
+        }
+    }
+
     ///
     /// Consumes 2 characters to decode a blend mode
     ///
@@ -1022,6 +1033,12 @@ mod test {
     }
 
     #[test]
+    fn decode_winding_rule() {
+        check_round_trip_single(Draw::WindingRule(WindingRule::NonZero));
+        check_round_trip_single(Draw::WindingRule(WindingRule::EvenOdd));
+    }
+
+    #[test]
     fn decode_draw_sprite() {
         check_round_trip_single(Draw::DrawSprite(SpriteId(0)));
         check_round_trip_single(Draw::DrawSprite(SpriteId(10)));
@@ -1060,6 +1077,7 @@ mod test {
             Draw::LineWidthPixels(43.0),
             Draw::LineJoin(LineJoin::Bevel),
             Draw::LineCap(LineCap::Round),
+            Draw::WindingRule(WindingRule::NonZero),
             Draw::NewDashPattern,
             Draw::DashLength(56.0),
             Draw::DashOffset(13.0),
@@ -1102,6 +1120,7 @@ mod test {
             Draw::LineWidthPixels(43.0),
             Draw::LineJoin(LineJoin::Bevel),
             Draw::LineCap(LineCap::Round),
+            Draw::WindingRule(WindingRule::EvenOdd),
             Draw::NewDashPattern,
             Draw::DashLength(56.0),
             Draw::DashOffset(13.0),

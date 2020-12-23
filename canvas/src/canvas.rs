@@ -286,6 +286,7 @@ impl<'a> GraphicsContext for CoreContext<'a> {
     fn line_width_pixels(&mut self, width: f32)                 { self.pending.push(Draw::LineWidthPixels(width)); }
     fn line_join(&mut self, join: LineJoin)                     { self.pending.push(Draw::LineJoin(join)); }
     fn line_cap(&mut self, cap: LineCap)                        { self.pending.push(Draw::LineCap(cap)); }
+    fn winding_rule(&mut self, rule: WindingRule)               { self.pending.push(Draw::WindingRule(rule)); }
     fn new_dash_pattern(&mut self)                              { self.pending.push(Draw::NewDashPattern); }
     fn dash_length(&mut self, length: f32)                      { self.pending.push(Draw::DashLength(length)); }
     fn dash_offset(&mut self, offset: f32)                      { self.pending.push(Draw::DashOffset(offset)); }

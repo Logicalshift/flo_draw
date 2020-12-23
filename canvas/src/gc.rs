@@ -23,6 +23,7 @@ pub trait GraphicsContext {
     fn line_width_pixels(&mut self, width: f32);
     fn line_join(&mut self, join: LineJoin);
     fn line_cap(&mut self, cap: LineCap);
+    fn winding_rule(&mut self, winding_rule: WindingRule);
     fn new_dash_pattern(&mut self);
     fn dash_length(&mut self, length: f32);
     fn dash_offset(&mut self, offset: f32);
@@ -64,6 +65,7 @@ pub trait GraphicsContext {
             LineWidthPixels(width)                      => self.line_width_pixels(width),
             LineJoin(join)                              => self.line_join(join),
             LineCap(cap)                                => self.line_cap(cap),
+            WindingRule(rule)                           => self.winding_rule(rule),
             NewDashPattern                              => self.new_dash_pattern(),
             DashLength(dash_length)                     => self.dash_length(dash_length),
             DashOffset(dash_offset)                     => self.dash_offset(dash_offset),
@@ -196,6 +198,7 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn line_width_pixels(&mut self, width: f32)                               { self.push(Draw::LineWidthPixels(width)); }
     #[inline] fn line_join(&mut self, join: LineJoin)                                   { self.push(Draw::LineJoin(join)); }
     #[inline] fn line_cap(&mut self, cap: LineCap)                                      { self.push(Draw::LineCap(cap)); }
+    #[inline] fn winding_rule(&mut self, rule: WindingRule)                             { self.push(Draw::WindingRule(rule)); }
     #[inline] fn new_dash_pattern(&mut self)                                            { self.push(Draw::NewDashPattern); }
     #[inline] fn dash_length(&mut self, length: f32)                                    { self.push(Draw::DashLength(length)); }
     #[inline] fn dash_offset(&mut self, offset: f32)                                    { self.push(Draw::DashOffset(offset)); }

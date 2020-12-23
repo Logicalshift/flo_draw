@@ -138,6 +138,17 @@ impl CanvasEncoding<String> for LineCap {
     }
 }
 
+impl CanvasEncoding<String> for WindingRule {
+    fn encode_canvas(&self, append_to: &mut String) {
+        use self::WindingRule::*;
+
+        match self {
+            &NonZero => 'n',
+            &EvenOdd => 'e'
+        }.encode_canvas(append_to)
+    }
+}
+
 impl CanvasEncoding<String> for BlendMode {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::BlendMode::*;
@@ -223,6 +234,7 @@ impl CanvasEncoding<String> for Draw {
             &LineWidthPixels(width)                 => ('L', 'p', width).encode_canvas(append_to),
             &LineJoin(join)                         => ('L', 'j', join).encode_canvas(append_to),
             &LineCap(cap)                           => ('L', 'c', cap).encode_canvas(append_to),
+            &WindingRule(rule)                      => ('W', rule).encode_canvas(append_to),
             &NewDashPattern                         => ('D', 'n').encode_canvas(append_to),
             &DashLength(length)                     => ('D', 'l', length).encode_canvas(append_to),
             &DashOffset(offset)                     => ('D', 'o', offset).encode_canvas(append_to),
@@ -263,7 +275,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn can_encode_u32() {
+    fn encode_u32() {
         let test_number: u32 = 0xabcd1234;
 
         let mut encoded = String::new();
@@ -273,7 +285,7 @@ mod test {
     }
 
     #[test]
-    fn can_encode_f32() {
+    fn encode_f32() {
         let test_number: f32 = 3.141;
 
         let mut encoded = String::new();
@@ -289,61 +301,65 @@ mod test {
     }
 
     #[test]
-    fn can_encode_newpath() { assert!(&encode_draw(Draw::NewPath) == "Np") }
+    fn encode_newpath() { assert!(&encode_draw(Draw::NewPath) == "Np") }
     #[test]
-    fn can_encode_move() { assert!(&encode_draw(Draw::Move(20.0, 20.0)) == "mAAAoBBAAAoBB") }
+    fn encode_move() { assert!(&encode_draw(Draw::Move(20.0, 20.0)) == "mAAAoBBAAAoBB") }
     #[test]
-    fn can_encode_line() { assert!(&encode_draw(Draw::Line(20.0, 20.0)) == "lAAAoBBAAAoBB") }
+    fn encode_line() { assert!(&encode_draw(Draw::Line(20.0, 20.0)) == "lAAAoBBAAAoBB") }
     #[test]
-    fn can_encode_bezier() { assert!(&encode_draw(Draw::BezierCurve((20.0, 20.0), (20.0, 20.0), (20.0, 20.0))) == "cAAAoBBAAAoBBAAAoBBAAAoBBAAAoBBAAAoBB") }
+    fn encode_bezier() { assert!(&encode_draw(Draw::BezierCurve((20.0, 20.0), (20.0, 20.0), (20.0, 20.0))) == "cAAAoBBAAAoBBAAAoBBAAAoBBAAAoBBAAAoBB") }
     #[test]
-    fn can_encode_close_path() { assert!(&encode_draw(Draw::ClosePath) == ".") }
+    fn encode_close_path() { assert!(&encode_draw(Draw::ClosePath) == ".") }
     #[test]
-    fn can_encode_fill() { assert!(&encode_draw(Draw::Fill) == "F") }
+    fn encode_fill() { assert!(&encode_draw(Draw::Fill) == "F") }
     #[test]
-    fn can_encode_stroke() { assert!(&encode_draw(Draw::Stroke) == "S") }
+    fn encode_stroke() { assert!(&encode_draw(Draw::Stroke) == "S") }
     #[test]
-    fn can_encode_linewidth() { assert!(&encode_draw(Draw::LineWidth(20.0)) == "LwAAAoBB") }
+    fn encode_linewidth() { assert!(&encode_draw(Draw::LineWidth(20.0)) == "LwAAAoBB") }
     #[test]
-    fn can_encode_linewidthpixels() { assert!(&encode_draw(Draw::LineWidthPixels(20.0)) == "LpAAAoBB") }
+    fn encode_linewidthpixels() { assert!(&encode_draw(Draw::LineWidthPixels(20.0)) == "LpAAAoBB") }
     #[test]
-    fn can_encode_linejoin() { assert!(&encode_draw(Draw::LineJoin(LineJoin::Bevel)) == "LjB") }
+    fn encode_linejoin() { assert!(&encode_draw(Draw::LineJoin(LineJoin::Bevel)) == "LjB") }
     #[test]
-    fn can_encode_linecap() { assert!(&encode_draw(Draw::LineCap(LineCap::Butt)) == "LcB") }
+    fn encode_linecap() { assert!(&encode_draw(Draw::LineCap(LineCap::Butt)) == "LcB") }
     #[test]
-    fn can_encode_newdashpattern() { assert!(&encode_draw(Draw::NewDashPattern) == "Dn") }
+    fn encode_newdashpattern() { assert!(&encode_draw(Draw::NewDashPattern) == "Dn") }
     #[test]
-    fn can_encode_dashlength() { assert!(&encode_draw(Draw::DashLength(20.0)) == "DlAAAoBB") }
+    fn encode_dashlength() { assert!(&encode_draw(Draw::DashLength(20.0)) == "DlAAAoBB") }
     #[test]
-    fn can_encode_dashoffset() { assert!(&encode_draw(Draw::DashOffset(20.0)) == "DoAAAoBB") }
+    fn encode_dashoffset() { assert!(&encode_draw(Draw::DashOffset(20.0)) == "DoAAAoBB") }
     #[test]
-    fn can_encode_strokecolor() { assert!(&encode_draw(Draw::StrokeColor(Color::Rgba(1.0, 1.0, 1.0, 1.0))) == "CsRAAAg/AAAAg/AAAAg/AAAAg/A") }
+    fn encode_strokecolor() { assert!(&encode_draw(Draw::StrokeColor(Color::Rgba(1.0, 1.0, 1.0, 1.0))) == "CsRAAAg/AAAAg/AAAAg/AAAAg/A") }
     #[test]
-    fn can_encode_fillcolor() { assert!(&encode_draw(Draw::FillColor(Color::Rgba(1.0, 1.0, 1.0, 1.0))) == "CfRAAAg/AAAAg/AAAAg/AAAAg/A") }
+    fn encode_fillcolor() { assert!(&encode_draw(Draw::FillColor(Color::Rgba(1.0, 1.0, 1.0, 1.0))) == "CfRAAAg/AAAAg/AAAAg/AAAAg/A") }
     #[test]
-    fn can_encode_blendmode() { assert!(&encode_draw(Draw::BlendMode(BlendMode::SourceOver)) == "MSV") }
+    fn encode_blendmode() { assert!(&encode_draw(Draw::BlendMode(BlendMode::SourceOver)) == "MSV") }
     #[test]
-    fn can_encode_identity_transform() { assert!(&encode_draw(Draw::IdentityTransform) == "Ti") }
+    fn encode_identity_transform() { assert!(&encode_draw(Draw::IdentityTransform) == "Ti") }
     #[test]
-    fn can_encode_canvas_height() { assert!(&encode_draw(Draw::CanvasHeight(20.0)) == "ThAAAoBB") }
+    fn encode_canvas_height() { assert!(&encode_draw(Draw::CanvasHeight(20.0)) == "ThAAAoBB") }
     #[test]
-    fn can_encode_multiply_transform() { assert!(&encode_draw(Draw::MultiplyTransform(Transform2D([[1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]))) == "TmAAAg/AAAAAAAAAAAAAAAAg/AAAAAAAAAAAAAAAAg/AAAAAAAAAAAAA") }
+    fn encode_multiply_transform() { assert!(&encode_draw(Draw::MultiplyTransform(Transform2D([[1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]))) == "TmAAAg/AAAAAAAAAAAAAAAAg/AAAAAAAAAAAAAAAAg/AAAAAAAAAAAAA") }
     #[test]
-    fn can_encode_unclip() { assert!(&encode_draw(Draw::Unclip) == "Zn") }
+    fn encode_unclip() { assert!(&encode_draw(Draw::Unclip) == "Zn") }
     #[test]
-    fn can_encode_clip() { assert!(&encode_draw(Draw::Clip) == "Zc") }
+    fn encode_clip() { assert!(&encode_draw(Draw::Clip) == "Zc") }
     #[test]
-    fn can_encode_store() { assert!(&encode_draw(Draw::Store) == "Zs") }
+    fn encode_store() { assert!(&encode_draw(Draw::Store) == "Zs") }
     #[test]
-    fn can_encode_restore() { assert!(&encode_draw(Draw::Restore) == "Zr") }
+    fn encode_restore() { assert!(&encode_draw(Draw::Restore) == "Zr") }
     #[test]
-    fn can_encode_pushstate() { assert!(&encode_draw(Draw::PushState) == "P") }
+    fn encode_pushstate() { assert!(&encode_draw(Draw::PushState) == "P") }
     #[test]
-    fn can_encode_popstate() { assert!(&encode_draw(Draw::PopState) == "p") }
+    fn encode_popstate() { assert!(&encode_draw(Draw::PopState) == "p") }
     #[test]
-    fn can_encode_clearcanvas() { assert!(&encode_draw(Draw::ClearCanvas) == "NA") }
+    fn encode_clearcanvas() { assert!(&encode_draw(Draw::ClearCanvas) == "NA") }
     #[test]
-    fn can_encode_layer() { assert!(&encode_draw(Draw::Layer(2)) == "NlCAAAAA") }
+    fn encode_layer() { assert!(&encode_draw(Draw::Layer(2)) == "NlCAAAAA") }
     #[test]
-    fn can_encode_clearlayer() { assert!(&encode_draw(Draw::ClearLayer) == "NC") }
+    fn encode_clearlayer() { assert!(&encode_draw(Draw::ClearLayer) == "NC") }
+    #[test]
+    fn encode_nonzero_winding_rule() { assert!(&encode_draw(Draw::WindingRule(WindingRule::NonZero)) == "Wn") }
+    #[test]
+    fn encode_evenodd_winding_rule() { assert!(&encode_draw(Draw::WindingRule(WindingRule::EvenOdd)) == "We") }
 }

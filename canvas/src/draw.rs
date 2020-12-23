@@ -46,6 +46,18 @@ pub enum BlendMode {
 }
 
 ///
+/// How a path should determine if it's an outer edge or not
+///
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+pub enum WindingRule {
+    /// A line is an outer edge if it's moving in the opposite direction to the 'inner edge' lines
+    NonZero,
+
+    /// Every line is an outer edge
+    EvenOdd
+}
+
+///
 /// Identifier of a canvas 'sprite'
 ///
 /// A 'sprite' is just a placeholder for a set of pre-rendered actions (it's useful for things like
@@ -132,6 +144,9 @@ pub enum Draw {
 
     /// Set the line color
     StrokeColor(Color),
+
+    /// Set the winding rule for fill operations
+    WindingRule(WindingRule),
 
     /// Set how future renderings are blended with one another
     BlendMode(BlendMode),
