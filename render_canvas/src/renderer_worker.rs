@@ -30,6 +30,7 @@ pub enum CanvasJob {
     Fill { 
         path:           path::Path, 
         color:          render::Rgba8,
+        fill_rule:      FillRule,
         entity:         LayerEntityRef
     },
 
@@ -62,7 +63,7 @@ impl CanvasWorker {
         use self::CanvasJob::*;
 
         match job {
-            Fill    { path, color, entity }             => self.fill(path, color, entity),
+            Fill    { path, fill_rule, color, entity }  => self.fill(path, fill_rule, color, entity),
             Stroke  { path, stroke_options, entity }    => self.stroke(path, stroke_options, entity)
         }
     }
@@ -70,14 +71,14 @@ impl CanvasWorker {
     ///
     /// Fills the current path and returns the resulting render entity
     ///
-    fn fill(&mut self, path: path::Path, render::Rgba8(color): render::Rgba8, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
+    fn fill(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
         // Create the tessellator and geometry
         let mut tessellator     = tessellation::FillTessellator::new();
         let mut geometry        = VertexBuffers::new();
 
         // Set up the fill options
         let mut fill_options    = FillOptions::default();
-        fill_options.fill_rule  = FillRule::EvenOdd;
+        fill_options.fill_rule  = fill_rule;
 
         // Tessellate the current path
         tessellator.tessellate_path(&path, &fill_options,

@@ -7,6 +7,8 @@ use super::stroke_settings::*;
 use flo_canvas as canvas;
 use flo_render as render;
 
+use lyon::tessellation::{FillRule};
+
 use std::mem;
 use std::collections::{HashMap};
 
@@ -212,6 +214,7 @@ impl RenderCore {
             render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             state:              LayerState {
                 fill_color:         render::Rgba8([0, 0, 0, 255]),
+                winding_rule:       FillRule::NonZero,
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),
                 sprite_matrix:      canvas::Transform2D::identity(),

@@ -3,6 +3,8 @@ use super::stroke_settings::*;
 use flo_canvas as canvas;
 use flo_render as render;
 
+use lyon::tessellation::{FillRule};
+
 ///
 /// The current state of a layer
 ///
@@ -10,6 +12,9 @@ use flo_render as render;
 pub struct LayerState {
     /// The current fill colour
     pub fill_color: render::Rgba8,
+
+    /// The fill rule to use
+    pub winding_rule: FillRule,
 
     /// The blend mode set for this layer
     pub blend_mode: canvas::BlendMode,

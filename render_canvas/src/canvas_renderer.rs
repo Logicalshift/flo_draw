@@ -17,6 +17,7 @@ use futures::prelude::*;
 use num_cpus;
 use lyon::path;
 use lyon::math;
+use lyon::tessellation::{FillRule};
 
 use std::collections::{HashMap};
 use std::ops::{Range};
@@ -184,6 +185,7 @@ impl CanvasRenderer {
             render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             state:              LayerState {
                 fill_color:         render::Rgba8([0, 0, 0, 255]),
+                winding_rule:       FillRule::NonZero,
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),
                 sprite_matrix:      canvas::Transform2D::identity(),
@@ -303,6 +305,7 @@ impl CanvasRenderer {
 
                                 // Create the render entity in the tessellating state
                                 let color               = layer.state.fill_color;
+                                let fill_rule           = layer.state.winding_rule;
                                 let entity_index        = layer.render_order.len();
 
                                 // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
@@ -313,7 +316,7 @@ impl CanvasRenderer {
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
                                 // Create the canvas job
-                                CanvasJob::Fill { path, color, entity }
+                                CanvasJob::Fill { path, fill_rule, color, entity }
                             });
 
                             pending_jobs.push(job);
@@ -393,6 +396,14 @@ impl CanvasRenderer {
                     // The cap to use on lines
                     LineCap(cap_type) => {
                         core.sync(|core| core.layer(self.current_layer).state.stroke_settings.cap = cap_type);
+                    }
+
+                    // The winding rule to use when filling areas
+                    WindingRule(canvas::WindingRule::EvenOdd) => {
+                        core.sync(|core| core.layer(self.current_layer).state.winding_rule = FillRule::EvenOdd);
+                    }
+                    WindingRule(canvas::WindingRule::NonZero) => {
+                        core.sync(|core| core.layer(self.current_layer).state.winding_rule = FillRule::NonZero);
                     }
 
                     // Resets the dash pattern to empty (which is a solid line)
