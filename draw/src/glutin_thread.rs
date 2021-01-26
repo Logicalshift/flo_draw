@@ -67,22 +67,7 @@ fn create_glutin_thread() -> Arc<GlutinThread> {
     thread::Builder::new()
         .name("Glutin event thread".into())
         .spawn(move || {
-            // Create the event loop
-            let event_loop  = EventLoop::with_user_event();
-
-            // We communicate with the event loop via the proxy
-            let proxy       = event_loop.create_proxy();
-
-            // Send the proxy back to the creating thread
-            send_proxy.send(proxy).expect("Main thread is waiting to receive its proxy");
-
-            // The runtime struct is used to maintain state when the event loop is running
-            let mut runtime = GlutinRuntime { };
-
-            // Run the event loop
-            event_loop.run(move |event, window_target, control_flow| { 
-                runtime.handle_event(event, window_target, control_flow);
-            });
+            run_glutin_thread(send_proxy)
         })
         .expect("Glutin thread is running");
 
@@ -93,6 +78,28 @@ fn create_glutin_thread() -> Arc<GlutinThread> {
     Arc::new(GlutinThread {
         event_proxy: Desync::new(proxy)
     })
+}
+
+///
+/// Runs a glutin thread, posting the proxy to the specified channel
+///
+fn run_glutin_thread(send_proxy: mpsc::Sender<EventLoopProxy<GlutinThreadEvent>>) {
+    // Create the event loop
+    let event_loop  = EventLoop::with_user_event();
+
+    // We communicate with the event loop via the proxy
+    let proxy       = event_loop.create_proxy();
+
+    // Send the proxy back to the creating thread
+    send_proxy.send(proxy).expect("Main thread is waiting to receive its proxy");
+
+    // The runtime struct is used to maintain state when the event loop is running
+    let mut runtime = GlutinRuntime { };
+
+    // Run the event loop
+    event_loop.run(move |event, window_target, control_flow| { 
+        runtime.handle_event(event, window_target, control_flow);
+    });
 }
 
 impl GlutinRuntime {
