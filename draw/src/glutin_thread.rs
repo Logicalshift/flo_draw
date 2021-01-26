@@ -57,6 +57,41 @@ pub fn glutin_thread() -> Arc<GlutinThread> {
 }
 
 ///
+/// Steals the current thread to run the UI event loop and calls the application function
+/// back to continue execution
+///
+/// This is required because some operating systems (OS X) can't handle UI events from any
+/// thread other than the one that's created when the app starts. `flo_draw` will work
+/// without this call on operating systems with more robust event handling designs.
+///
+pub fn with_2d_graphics<TAppFn: 'static+Send+FnOnce() -> ()>(app_fn: TAppFn) {
+    // The event loop thread will send us a proxy once it's initialized
+    let (send_proxy, recv_proxy) = mpsc::channel();
+
+    // Run the application on a background thread
+    thread::Builder::new()
+        .name("Application thread".into())
+        .spawn(move || {
+            GLUTIN_THREAD.sync(move |thread| {
+                // Wait for the proxy to be created
+                let proxy = recv_proxy.recv().expect("Glutin thread will send us a proxy after initialising");
+
+                // Create the main thread object
+                *thread = Some(Arc::new(GlutinThread {
+                    event_proxy: Desync::new(proxy)
+                }));
+            });
+
+            // Call back to start the app running
+            app_fn();
+        })
+        .expect("Application thread is running");
+
+    // Run the graphics thread on this thread
+    run_glutin_thread(send_proxy);
+}
+
+///
 /// Starts the glutin thread running
 ///
 fn create_glutin_thread() -> Arc<GlutinThread> {
