@@ -7,7 +7,9 @@
 pub use flo_canvas as canvas;
 
 mod canvas_window;
+mod render_window;
 mod glutin_thread;
 mod glutin_thread_event;
 
 pub use self::canvas_window::*;
+pub use self::render_window::*;

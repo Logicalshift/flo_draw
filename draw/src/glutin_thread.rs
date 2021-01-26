@@ -19,6 +19,15 @@ pub struct GlutinThread {
     event_proxy: Desync<EventLoopProxy<GlutinThreadEvent>>
 }
 
+impl GlutinThread {
+    ///
+    /// Sends an event to the Glutin thread
+    ///
+    pub fn send_event(&self, event: GlutinThreadEvent) {
+        self.event_proxy.desync(move |proxy| { proxy.send_event(event).ok(); });
+    }
+}
+
 ///
 /// Creates or retrieves the glutin thread
 ///
