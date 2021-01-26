@@ -184,6 +184,10 @@ impl GlutinRuntime {
                 let window      = GlutinWindow::new(windowed_context);
 
                 self.windows.insert(window_id, window);
+            },
+
+            RunProcess(start_process) => {
+                
             }
         }
     }
