@@ -1,6 +1,9 @@
+use super::draw_event::*;
 use super::glutin_window::*;
 use super::glutin_thread::*;
 use super::glutin_thread_event::*;
+
+use flo_stream::*;
 
 use glutin::event::{Event};
 use glutin::event_loop::{ControlFlow, EventLoopWindowTarget};
@@ -19,8 +22,8 @@ static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 /// Represents the state of the Glutin runtime
 ///
 pub (super) struct GlutinRuntime {
-    /// The state of the windows being managed by the runtime
-    pub (super) windows: HashMap<WindowId, GlutinWindow>,
+    /// The event publishers for the windows being managed by the runtime
+    pub (super) window_events: HashMap<WindowId, Publisher<DrawEvent>>,
 
     /// Maps future IDs to running futures
     pub (super) futures: HashMap<u64, LocalBoxFuture<'static, ()>>
@@ -73,6 +76,9 @@ impl GlutinRuntime {
                 // Store the window context in a new glutin window
                 let window_id   = windowed_context.window().id();
                 let window      = GlutinWindow::new(windowed_context);
+
+                // Store the publisher for the events for this window
+                self.window_events.insert(window_id, events);
 
                 // Run the window as a process on this thread
                 self.run_process(async { send_actions_to_window(window, actions).await; });

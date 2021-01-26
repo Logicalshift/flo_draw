@@ -122,8 +122,8 @@ fn run_glutin_thread(send_proxy: mpsc::Sender<EventLoopProxy<GlutinThreadEvent>>
 
     // The runtime struct is used to maintain state when the event loop is running
     let mut runtime = GlutinRuntime { 
-        windows: HashMap::new(),
-        futures: HashMap::new()
+        window_events:  HashMap::new(),
+        futures:        HashMap::new()
     };
 
     // Run the event loop
