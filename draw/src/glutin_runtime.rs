@@ -74,7 +74,8 @@ impl GlutinRuntime {
                 let window_id   = windowed_context.window().id();
                 let window      = GlutinWindow::new(windowed_context);
 
-                self.windows.insert(window_id, window);
+                // Run the window as a process on this thread
+                self.run_process(async { send_actions_to_window(window, actions).await; });
             },
 
             WakeFuture(future_id) => {
