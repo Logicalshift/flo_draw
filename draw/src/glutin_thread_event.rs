@@ -3,6 +3,7 @@ use super::draw_event::*;
 use flo_stream::*;
 use flo_render::*;
 
+use glutin::window::{WindowId};
 use futures::future::{LocalBoxFuture};
 
 ///
@@ -13,5 +14,8 @@ pub enum GlutinThreadEvent {
     CreateRenderWindow(Subscriber<Vec<RenderAction>>, Publisher<DrawEvent>),
 
     /// Polls the future with the specified ID
-    WakeFuture(u64)
+    WakeFuture(u64),
+
+    /// Stop sending events for the specified window
+    StopSendingToWindow(WindowId)
 }

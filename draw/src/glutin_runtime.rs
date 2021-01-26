@@ -81,8 +81,18 @@ impl GlutinRuntime {
                 self.window_events.insert(window_id, events);
 
                 // Run the window as a process on this thread
-                self.run_process(async { send_actions_to_window(window, actions).await; });
-            },
+                self.run_process(async move { 
+                    // Process the actions for the window
+                    send_actions_to_window(window, actions).await; 
+
+                    // Stop processing events for the window once there are no more actions
+                    glutin_thread().send_event(GlutinThreadEvent::StopSendingToWindow(window_id));
+                });
+            }
+
+            StopSendingToWindow(window_id) => {
+                self.window_events.remove(&window_id);
+            }
 
             WakeFuture(future_id) => {
                 self.poll_future(future_id);
