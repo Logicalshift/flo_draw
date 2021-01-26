@@ -2,7 +2,10 @@ use super::glutin_thread_event::*;
 
 use ::desync::*;
 
-use glutin::event_loop::{EventLoop, EventLoopProxy};
+use glutin::{ContextBuilder};
+use glutin::event::{Event};
+use glutin::event_loop::{ControlFlow, EventLoop, EventLoopProxy, EventLoopWindowTarget};
+use glutin::window::{WindowBuilder};
 
 use std::sync::*;
 use std::sync::mpsc;
@@ -17,6 +20,13 @@ lazy_static! {
 ///
 pub struct GlutinThread {
     event_proxy: Desync<EventLoopProxy<GlutinThreadEvent>>
+}
+
+///
+/// Represents the state of the Glutin runtime
+///
+struct GlutinRuntime {
+
 }
 
 impl GlutinThread {
@@ -66,8 +76,13 @@ fn create_glutin_thread() -> Arc<GlutinThread> {
             // Send the proxy back to the creating thread
             send_proxy.send(proxy).expect("Main thread is waiting to receive its proxy");
 
+            // The runtime struct is used to maintain state when the event loop is running
+            let mut runtime = GlutinRuntime { };
+
             // Run the event loop
-            event_loop.run(|_event, _window_target, _control_flow| { });
+            event_loop.run(move |event, window_target, control_flow| { 
+                runtime.handle_event(event, window_target, control_flow);
+            });
         })
         .expect("Glutin thread is running");
 
@@ -78,4 +93,26 @@ fn create_glutin_thread() -> Arc<GlutinThread> {
     Arc::new(GlutinThread {
         event_proxy: Desync::new(proxy)
     })
+}
+
+impl GlutinRuntime {
+    ///
+    /// Handles an event from the rest of the process and updates the state
+    ///
+    pub fn handle_event(&mut self, event: Event<'_, GlutinThreadEvent>, window_target: &EventLoopWindowTarget<GlutinThreadEvent>, control_flow: &ControlFlow) {
+        use Event::*;
+
+        match event {
+            NewEvents(_cause)                       => { }
+            WindowEvent { window_id: _, event: _ }  => { }
+            DeviceEvent { device_id: _, event: _ }  => { }
+            UserEvent(_thread_event)                => { }
+            Suspended                               => { }
+            Resumed                                 => { }
+            MainEventsCleared                       => { }
+            RedrawRequested(_window_id)             => { }
+            RedrawEventsCleared                     => { }
+            LoopDestroyed                           => { }
+        }
+    }
 }
