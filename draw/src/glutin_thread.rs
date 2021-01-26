@@ -1,28 +1,18 @@
-use super::glutin_window::*;
 use super::glutin_runtime::*;
 use super::glutin_thread_event::*;
 
 use ::desync::*;
 
-use glutin::{ContextBuilder};
-use glutin::event::{Event};
-use glutin::event_loop::{ControlFlow, EventLoop, EventLoopProxy, EventLoopWindowTarget};
-use glutin::window::{WindowId, WindowBuilder};
-use futures::task;
-use futures::prelude::*;
-use futures::future::{LocalBoxFuture};
+use glutin::event_loop::{EventLoop, EventLoopProxy};
 
 use std::sync::*;
 use std::sync::mpsc;
 use std::thread;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{HashMap};
 
 lazy_static! {
     static ref GLUTIN_THREAD: Desync<Option<Arc<GlutinThread>>> = Desync::new(None);
 }
-
-static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 
 ///
 /// Represents the thread running the glutin event loop

@@ -2,19 +2,14 @@ use super::glutin_window::*;
 use super::glutin_thread::*;
 use super::glutin_thread_event::*;
 
-use ::desync::*;
-
-use glutin::{ContextBuilder};
 use glutin::event::{Event};
-use glutin::event_loop::{ControlFlow, EventLoop, EventLoopProxy, EventLoopWindowTarget};
-use glutin::window::{WindowId, WindowBuilder};
+use glutin::event_loop::{ControlFlow, EventLoopWindowTarget};
+use glutin::window::{WindowId};
 use futures::task;
 use futures::prelude::*;
 use futures::future::{LocalBoxFuture};
 
 use std::sync::*;
-use std::sync::mpsc;
-use std::thread;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{HashMap};
 
