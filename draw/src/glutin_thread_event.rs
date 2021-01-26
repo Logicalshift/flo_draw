@@ -16,5 +16,5 @@ pub enum GlutinThreadEvent {
     RunProcess(Box<dyn Send+FnOnce() -> LocalBoxFuture<'static, ()>>),
 
     /// Polls the future with the specified ID
-    WakeFuture(usize)
+    WakeFuture(u64)
 }

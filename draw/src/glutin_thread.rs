@@ -14,14 +14,14 @@ use futures::future::{LocalBoxFuture};
 use std::sync::*;
 use std::sync::mpsc;
 use std::thread;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{HashMap};
 
 lazy_static! {
     static ref GLUTIN_THREAD: Desync<Option<Arc<GlutinThread>>> = Desync::new(None);
 }
 
-static NEXT_FUTURE_ID: AtomicUsize = AtomicUsize::new(0);
+static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 
 ///
 /// Represents the thread running the glutin event loop
@@ -38,14 +38,14 @@ struct GlutinRuntime {
     windows: HashMap<WindowId, GlutinWindow>,
 
     /// Maps future IDs to running futures
-    futures: HashMap<usize, LocalBoxFuture<'static, ()>>
+    futures: HashMap<u64, LocalBoxFuture<'static, ()>>
 }
 
 ///
 /// Used to wake a future running on the glutin thread
 ///
 struct GlutinFutureWaker {
-    future_id: usize
+    future_id: u64
 }
 
 impl GlutinThread {
@@ -233,7 +233,7 @@ impl GlutinRuntime {
     ///
     /// Causes the future with the specified ID to be polled
     ///
-    fn poll_future(&mut self, future_id: usize) {
+    fn poll_future(&mut self, future_id: u64) {
         if let Some(future) = self.futures.get_mut(&future_id) {
             // Create a context to poll this future in
             let glutin_waker        = GlutinFutureWaker { future_id };
