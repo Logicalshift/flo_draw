@@ -5,6 +5,7 @@ use super::glutin_thread_event::*;
 
 use flo_stream::*;
 
+use glutin::{GlRequest, Api};
 use glutin::event::{Event};
 use glutin::event_loop::{ControlFlow, EventLoopWindowTarget};
 use glutin::window::{WindowId};
@@ -70,6 +71,7 @@ impl GlutinRuntime {
                     .with_title("flo_draw")
                     .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
                 let windowed_context    = glutin::ContextBuilder::new()
+                    .with_gl(GlRequest::Specific(Api::OpenGl, (3, 3)))
                     .build_windowed(window_builder, &window_target)
                     .unwrap();
 
