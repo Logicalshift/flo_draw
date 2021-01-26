@@ -13,5 +13,8 @@ pub enum GlutinThreadEvent {
     CreateRenderWindow(Subscriber<Vec<RenderAction>>, Publisher<DrawEvent>),
 
     /// Runs a future on the Glutin thread
-    RunProcess(Box<dyn Send+FnOnce() -> LocalBoxFuture<'static, ()>>)
+    RunProcess(Box<dyn Send+FnOnce() -> LocalBoxFuture<'static, ()>>),
+
+    /// Polls the future with the specified ID
+    WakeFuture(usize)
 }

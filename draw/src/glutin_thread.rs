@@ -7,15 +7,21 @@ use glutin::{ContextBuilder};
 use glutin::event::{Event};
 use glutin::event_loop::{ControlFlow, EventLoop, EventLoopProxy, EventLoopWindowTarget};
 use glutin::window::{WindowId, WindowBuilder};
+use futures::task;
+use futures::prelude::*;
+use futures::future::{LocalBoxFuture};
 
 use std::sync::*;
 use std::sync::mpsc;
 use std::thread;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::collections::{HashMap};
 
 lazy_static! {
     static ref GLUTIN_THREAD: Desync<Option<Arc<GlutinThread>>> = Desync::new(None);
 }
+
+static NEXT_FUTURE_ID: AtomicUsize = AtomicUsize::new(0);
 
 ///
 /// Represents the thread running the glutin event loop
@@ -29,7 +35,17 @@ pub struct GlutinThread {
 ///
 struct GlutinRuntime {
     /// The state of the windows being managed by the runtime
-    windows: HashMap<WindowId, GlutinWindow>
+    windows: HashMap<WindowId, GlutinWindow>,
+
+    /// Maps future IDs to running futures
+    futures: HashMap<usize, LocalBoxFuture<'static, ()>>
+}
+
+///
+/// Used to wake a future running on the glutin thread
+///
+struct GlutinFutureWaker {
+    future_id: usize
 }
 
 impl GlutinThread {
@@ -133,7 +149,8 @@ fn run_glutin_thread(send_proxy: mpsc::Sender<EventLoopProxy<GlutinThreadEvent>>
 
     // The runtime struct is used to maintain state when the event loop is running
     let mut runtime = GlutinRuntime { 
-        windows: HashMap::new()
+        windows: HashMap::new(),
+        futures: HashMap::new()
     };
 
     // Run the event loop
@@ -187,8 +204,57 @@ impl GlutinRuntime {
             },
 
             RunProcess(start_process) => {
-                
+                self.run_process(start_process());
+            },
+
+            WakeFuture(future_id) => {
+                self.poll_future(future_id);
             }
         }
+    }
+
+    ///
+    /// Runs a process in the context of this runtime
+    ///
+    fn run_process<Fut: 'static+Future<Output=()>>(&mut self, future: Fut) {
+        // Box the future for polling
+        let future = future.boxed_local();
+
+        // Assign an ID to this future (we use this for waking it up)
+        let future_id = NEXT_FUTURE_ID.fetch_add(1, Ordering::Relaxed);
+
+        // Store in the runtime
+        self.futures.insert(future_id, future);
+
+        // Perform the initial polling operation on the future
+        self.poll_future(future_id);
+    }
+
+    ///
+    /// Causes the future with the specified ID to be polled
+    ///
+    fn poll_future(&mut self, future_id: usize) {
+        if let Some(future) = self.futures.get_mut(&future_id) {
+            // Create a context to poll this future in
+            let glutin_waker        = GlutinFutureWaker { future_id };
+            let glutin_waker        = task::waker(Arc::new(glutin_waker));
+            let mut glutin_context  = task::Context::from_waker(&glutin_waker);
+
+            // Poll the future
+            let poll_result         = future.poll_unpin(&mut glutin_context);
+
+            // Remove the future from the list if it has completed
+            if let task::Poll::Ready(result) = poll_result {
+                self.futures.remove(&future_id);
+            }
+        }
+    }
+}
+
+
+impl task::ArcWake for GlutinFutureWaker {
+    fn wake_by_ref(arc_self: &Arc<Self>) {
+        // Send a wake request to glutin
+        glutin_thread().send_event(GlutinThreadEvent::WakeFuture(arc_self.future_id));
     }
 }
