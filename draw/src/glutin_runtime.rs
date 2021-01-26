@@ -77,10 +77,6 @@ impl GlutinRuntime {
                 self.windows.insert(window_id, window);
             },
 
-            RunProcess(start_process) => {
-                self.run_process(start_process());
-            },
-
             WakeFuture(future_id) => {
                 self.poll_future(future_id);
             }
@@ -124,7 +120,6 @@ impl GlutinRuntime {
         }
     }
 }
-
 
 impl task::ArcWake for GlutinFutureWaker {
     fn wake_by_ref(arc_self: &Arc<Self>) {
