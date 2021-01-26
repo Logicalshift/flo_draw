@@ -1,3 +1,4 @@
+use super::glutin_window::*;
 use super::glutin_thread_event::*;
 
 use ::desync::*;
@@ -5,11 +6,12 @@ use ::desync::*;
 use glutin::{ContextBuilder};
 use glutin::event::{Event};
 use glutin::event_loop::{ControlFlow, EventLoop, EventLoopProxy, EventLoopWindowTarget};
-use glutin::window::{WindowBuilder};
+use glutin::window::{WindowId, WindowBuilder};
 
 use std::sync::*;
 use std::sync::mpsc;
 use std::thread;
+use std::collections::{HashMap};
 
 lazy_static! {
     static ref GLUTIN_THREAD: Desync<Option<Arc<GlutinThread>>> = Desync::new(None);
@@ -26,7 +28,8 @@ pub struct GlutinThread {
 /// Represents the state of the Glutin runtime
 ///
 struct GlutinRuntime {
-
+    /// The state of the windows being managed by the runtime
+    windows: HashMap<WindowId, GlutinWindow>
 }
 
 impl GlutinThread {
@@ -129,7 +132,9 @@ fn run_glutin_thread(send_proxy: mpsc::Sender<EventLoopProxy<GlutinThreadEvent>>
     send_proxy.send(proxy).expect("Main thread is waiting to receive its proxy");
 
     // The runtime struct is used to maintain state when the event loop is running
-    let mut runtime = GlutinRuntime { };
+    let mut runtime = GlutinRuntime { 
+        windows: HashMap::new()
+    };
 
     // Run the event loop
     event_loop.run(move |event, window_target, control_flow| { 
@@ -148,13 +153,38 @@ impl GlutinRuntime {
             NewEvents(_cause)                       => { }
             WindowEvent { window_id: _, event: _ }  => { }
             DeviceEvent { device_id: _, event: _ }  => { }
-            UserEvent(_thread_event)                => { }
+            UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target, control_flow); }
             Suspended                               => { }
             Resumed                                 => { }
             MainEventsCleared                       => { }
             RedrawRequested(_window_id)             => { }
             RedrawEventsCleared                     => { }
             LoopDestroyed                           => { }
+        }
+    }
+
+    ///
+    /// Handles one of our user events from the GlutinThreadEvent enum
+    ///
+    fn handle_thread_event(&mut self, event: GlutinThreadEvent, window_target: &EventLoopWindowTarget<GlutinThreadEvent>, control_flow: &ControlFlow) {
+        use GlutinThreadEvent::*;
+
+        match event {
+            CreateRenderWindow(actions, events) => {
+                // Create a window
+                let window_builder      = glutin::window::WindowBuilder::new()
+                    .with_title("flo_draw")
+                    .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
+                let windowed_context    = glutin::ContextBuilder::new()
+                    .build_windowed(window_builder, &window_target)
+                    .unwrap();
+
+                // Store the window context in a new glutin window
+                let window_id   = windowed_context.window().id();
+                let window      = GlutinWindow::new(windowed_context);
+
+                self.windows.insert(window_id, window);
+            }
         }
     }
 }
