@@ -8,7 +8,7 @@ use flo_render::*;
 ///
 /// Creates a window that can be rendered to by sending groups of render actions
 ///
-pub fn create_window_render() -> (Publisher<Vec<RenderAction>>, Subscriber<DrawEvent>) {
+pub fn create_render_window() -> (Publisher<Vec<RenderAction>>, Subscriber<DrawEvent>) {
     // Create the publisher to send the render actions to the stream
     let mut render_publisher    = Publisher::new(1);
     let mut event_publisher     = Publisher::new(1);
