@@ -1,6 +1,5 @@
 use flo_stream::*;
 use flo_render::*;
-use flo_render::*;
 
 use glutin::{WindowedContext, NotCurrent};
 use futures::prelude::*;
@@ -61,9 +60,7 @@ pub (super) async fn send_actions_to_window(window: GlutinWindow, render_actions
                 // Load the functions for the current context
                 // TODO: we're assuming they stay loaded to avoid loading them for every render, which might not be safe
                 gl::load_with(|symbol_name| {
-                    unsafe {
-                        current_context.get_proc_address(symbol_name)
-                    }
+                    current_context.get_proc_address(symbol_name)
                 });
 
                 // Create the renderer

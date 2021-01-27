@@ -61,7 +61,7 @@ impl GlutinRuntime {
     ///
     /// Handles one of our user events from the GlutinThreadEvent enum
     ///
-    fn handle_thread_event(&mut self, event: GlutinThreadEvent, window_target: &EventLoopWindowTarget<GlutinThreadEvent>, control_flow: &ControlFlow) {
+    fn handle_thread_event(&mut self, event: GlutinThreadEvent, window_target: &EventLoopWindowTarget<GlutinThreadEvent>, _control_flow: &ControlFlow) {
         use GlutinThreadEvent::*;
 
         match event {
@@ -133,7 +133,7 @@ impl GlutinRuntime {
             let poll_result         = future.poll_unpin(&mut glutin_context);
 
             // Remove the future from the list if it has completed
-            if let task::Poll::Ready(result) = poll_result {
+            if let task::Poll::Ready(_) = poll_result {
                 self.futures.remove(&future_id);
             }
         }

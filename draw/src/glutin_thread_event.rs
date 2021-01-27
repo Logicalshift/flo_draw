@@ -4,7 +4,6 @@ use flo_stream::*;
 use flo_render::*;
 
 use glutin::window::{WindowId};
-use futures::future::{LocalBoxFuture};
 
 ///
 /// Event that can be sent to a glutin thread
