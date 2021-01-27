@@ -27,7 +27,9 @@ pub fn main() {
                     Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: black },
                     Vertex2D { pos: [1.0, -1.0],    tex_coord: [0.0, 0.0], color: black },
                 ]),
-                RenderAction::DrawTriangles(VertexBufferId(0), 0..3)
+                RenderAction::DrawTriangles(VertexBufferId(0), 0..3),
+
+                RenderAction::ShowFrameBuffer
             ]).await;
 
             // Wait until it stops producing events
