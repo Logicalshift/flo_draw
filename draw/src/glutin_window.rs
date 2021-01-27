@@ -76,6 +76,9 @@ pub (super) async fn send_actions_to_window(window: GlutinWindow, render_actions
                 renderer.render(next_action);
             });
 
+            // Swap buffers to finish the drawing (TODO: only if ShowFrameBuffer was in the rendering instructions)
+            current_context.swap_buffers().ok();
+
             // Release the current context
             let context     = current_context.make_not_current();
             let context     = if let Ok(context) = context { context } else { break; };
