@@ -17,10 +17,23 @@ pub fn main() {
 
             // Render a triangle to it
             canvas.draw(|gc| {
+                // Clear the canvas and set up the coordinates
                 gc.clear_canvas();
                 gc.canvas_height(1000.0);
                 gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
+                // Draw a rectangle...
+                gc.new_path();
+                gc.move_to(0.0, 0.0);
+                gc.line_to(1000.0, 0.0);
+                gc.line_to(1000.0, 1000.0);
+                gc.line_to(0.0, 1000.0);
+                gc.line_to(0.0, 0.0);
+
+                gc.fill_color(Color::Rgba(1.0, 1.0, 0.8, 1.0));
+                gc.fill();
+
+                // Draw a triangle on top
                 gc.new_path();
                 gc.move_to(200.0, 200.0);
                 gc.line_to(800.0, 200.0);
