@@ -1,5 +1,7 @@
 use super::draw_event::*;
+use super::glutin_thread::*;
 use super::render_window::*;
+use super::glutin_thread_event::*;
 
 use flo_canvas::*;
 use flo_stream::*;
@@ -56,11 +58,14 @@ pub fn create_canvas_window() -> (Canvas, Subscriber<DrawEvent>) {
             state.renderer.draw(drawing.into_iter()).collect::<Vec<_>>().await
         }.boxed());
 
-    // Publish the resulting actions to glutin
-    let mut render_actions              = render_actions;
-    let rendering                       = render_actions.send_all(render_action_stream);
+    // Await the rendering future on the glutin thread
+    glutin_thread().send_event(GlutinThreadEvent::RunProcess(Box::new(move || async move {
+        // Publish the resulting actions to glutin
+        let mut render_actions          = render_actions;
+        let rendering                   = render_actions.send_all(render_action_stream);
 
-    // TODO: await the rendering future somewhere (on the glutin thread?)
+        rendering.await;
+    }.boxed_local())));
 
     // Return the events
     (canvas, window_events)
