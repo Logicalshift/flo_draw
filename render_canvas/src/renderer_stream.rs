@@ -8,7 +8,7 @@ use ::desync::*;
 
 use futures::prelude::*;
 use futures::task::{Context, Poll};
-use futures::future::{LocalBoxFuture};
+use futures::future::{BoxFuture};
 
 use std::pin::*;
 use std::sync::*;
@@ -21,7 +21,7 @@ pub struct RenderStream<'a> {
     core: Arc<Desync<RenderCore>>,
 
     /// The future that is processing new drawing instructions
-    processing_future: Option<LocalBoxFuture<'a, ()>>,
+    processing_future: Option<BoxFuture<'a, ()>>,
 
     /// The current layer ID that we're processing
     layer_id: usize,
@@ -62,10 +62,10 @@ impl<'a> RenderStream<'a> {
     /// Creates a new render stream
     ///
     pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, initial_action_stack: Vec<render::RenderAction>, final_action_stack: Vec<render::RenderAction>) -> RenderStream<'a>
-    where   ProcessFuture: 'a+Future<Output=()> {
+    where   ProcessFuture: 'a+Send+Future<Output=()> {
         RenderStream {
             core:               core,
-            processing_future:  Some(processing_future.boxed_local()),
+            processing_future:  Some(processing_future.boxed()),
             pending_stack:      initial_action_stack,
             final_stack:        Some(final_action_stack),
             viewport_transform: viewport_transform,

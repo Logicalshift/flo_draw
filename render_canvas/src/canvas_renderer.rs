@@ -749,7 +749,7 @@ impl CanvasRenderer {
     ///
     /// Returns a stream of render actions after applying a set of canvas drawing operations to this renderer
     ///
-    pub fn draw<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter) -> impl 'a+Stream<Item=render::RenderAction> {
+    pub fn draw<'a, DrawIter: 'a+Send+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter) -> impl 'a+Send+Stream<Item=render::RenderAction> {
         // Set up the initial set of rendering actions
         let viewport_transform  = self.viewport_transform;
         let viewport_matrix     = transform_to_matrix(&self.viewport_transform);
