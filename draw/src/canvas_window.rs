@@ -3,12 +3,27 @@ use super::render_window::*;
 
 use flo_canvas::*;
 use flo_stream::*;
+use flo_render::*;
 use flo_render_canvas::*;
+
+use ::desync::*;
 
 use futures::prelude::*;
 use futures::task::{Poll, Context};
 
 use std::pin::*;
+use std::sync::*;
+
+///
+/// Structure used to store the current state of the canvas renderer
+///
+struct RendererState {
+    /// The renderer for the canvas
+    renderer:   CanvasRenderer,
+
+    /// Represents the current canvas state
+    canvas:     Canvas
+}
 
 ///
 /// Creates a canvas that will render to a window
@@ -26,10 +41,44 @@ pub fn create_canvas_window() -> (Canvas, Subscriber<DrawEvent>) {
 
     // Create a canvas renderer
     let renderer                        = CanvasRenderer::new();
+    let renderer                        = RendererState { renderer: renderer, canvas: Canvas::new() };
+    let renderer                        = Arc::new(Desync::new(renderer));
     let render_events                   = window_events.clone();
+
+    // Handle events from the window
+    let mut redraw_render_actions       = render_actions.republish();
+    pipe_in(Arc::clone(&renderer), render_events, move |state, event| { handle_event(state, event, &mut redraw_render_actions).boxed() });
+
+    // Pipe from the canvas stream to the renderer to generate a stream of render actions
+    let render_action_stream            = pipe(Arc::clone(&renderer), canvas_stream, 
+        |state, drawing| async move { 
+            state.canvas.write(drawing.clone());
+            state.renderer.draw(drawing.into_iter()).collect::<Vec<_>>().await
+        }.boxed());
+
+    // Publish the resulting actions to glutin
+    let mut render_actions              = render_actions;
+    let rendering                       = render_actions.send_all(render_action_stream);
+
+    // TODO: await the rendering future somewhere (on the glutin thread?)
 
     // Return the events
     (canvas, window_events)
+}
+
+///
+/// Handles an event from the window
+///
+fn handle_event<'a>(state: &'a mut RendererState, event: DrawEvent, render_actions: &mut Publisher<Vec<RenderAction>>) -> impl 'a+Send+Future<Output=()> {
+    async move {
+        match event {
+            DrawEvent::Redraw                   => { },
+            DrawEvent::Resize(width, height)    => { 
+                let (width, height) = (width as f32, height as f32); 
+                state.renderer.set_viewport(0.0..width, 0.0..height, width, height, 1.0); 
+            }
+        }
+    }
 }
 
 ///
