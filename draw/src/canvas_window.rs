@@ -48,8 +48,13 @@ pub fn create_canvas_window() -> (Canvas, Subscriber<DrawEvent>) {
     let render_events                   = window_events.clone();
 
     // Handle events from the window
-    let mut redraw_render_actions       = render_actions.republish();
-    pipe_in(Arc::clone(&renderer), render_events, move |state, event| { handle_event(state, event, &mut redraw_render_actions).boxed() });
+    let redraw_render_actions           = render_actions.republish();
+    pipe_in(Arc::clone(&renderer), render_events, move |state, event| { 
+        let mut redraw_render_actions = redraw_render_actions.republish();
+        async move { 
+            handle_event(state, event, &mut redraw_render_actions).await; 
+        }.boxed() 
+    });
 
     // Pipe from the canvas stream to the renderer to generate a stream of render actions
     let render_action_stream            = pipe(Arc::clone(&renderer), canvas_stream, 
@@ -74,10 +79,14 @@ pub fn create_canvas_window() -> (Canvas, Subscriber<DrawEvent>) {
 ///
 /// Handles an event from the window
 ///
-fn handle_event<'a>(state: &'a mut RendererState, event: DrawEvent, render_actions: &mut Publisher<Vec<RenderAction>>) -> impl 'a+Send+Future<Output=()> {
+fn handle_event<'a>(state: &'a mut RendererState, event: DrawEvent, render_actions: &'a mut Publisher<Vec<RenderAction>>) -> impl 'a+Send+Future<Output=()> {
     async move {
         match event {
-            DrawEvent::Redraw                   => { },
+            DrawEvent::Redraw                   => { 
+                let redraw = state.renderer.draw(state.canvas.get_drawing().into_iter()).collect::<Vec<_>>().await;
+                render_actions.publish(redraw).await;
+            },
+
             DrawEvent::Resize(width, height)    => { 
                 let (width, height) = (width as f32, height as f32); 
                 state.renderer.set_viewport(0.0..width, 0.0..height, width, height, 1.0); 
