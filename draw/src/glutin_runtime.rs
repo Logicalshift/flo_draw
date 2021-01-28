@@ -96,6 +96,10 @@ impl GlutinRuntime {
                 self.window_events.remove(&window_id);
             }
 
+            RunProcess(start_process) => {
+                self.run_process(start_process());
+            },
+
             WakeFuture(future_id) => {
                 self.poll_future(future_id);
             }
