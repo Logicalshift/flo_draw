@@ -89,7 +89,12 @@ fn handle_event<'a>(state: &'a mut RendererState, event: DrawEvent, render_actio
 
             DrawEvent::Resize(width, height)    => { 
                 let (width, height) = (width as f32, height as f32); 
-                state.renderer.set_viewport(0.0..width, 0.0..height, width, height, 1.0); 
+
+                let scale           = 2.0;
+                let vp_x            = 0.0;
+                let vp_y            = 0.0;
+
+                state.renderer.set_viewport(vp_x..vp_x+width, vp_y..vp_y+height, width, height, scale); 
             }
         }
     }
