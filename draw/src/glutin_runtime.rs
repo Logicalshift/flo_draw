@@ -6,7 +6,7 @@ use super::glutin_thread_event::*;
 use flo_stream::*;
 
 use glutin::{GlRequest, Api};
-use glutin::event::{Event};
+use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::{ControlFlow, EventLoopWindowTarget};
 use glutin::window::{WindowId};
 use futures::task;
@@ -46,15 +46,75 @@ impl GlutinRuntime {
 
         match event {
             NewEvents(_cause)                       => { }
-            WindowEvent { window_id: _, event: _ }  => { }
+            WindowEvent { window_id, event }        => { self.handle_window_event(window_id, event); }
             DeviceEvent { device_id: _, event: _ }  => { }
             UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target, control_flow); }
             Suspended                               => { }
             Resumed                                 => { }
             MainEventsCleared                       => { }
-            RedrawRequested(_window_id)             => { }
+            RedrawRequested(window_id)              => { self.request_redraw(window_id); }
             RedrawEventsCleared                     => { }
             LoopDestroyed                           => { }
+        }
+    }
+
+    ///
+    /// Handles a glutin window event
+    ///
+    fn handle_window_event(&mut self, window_id: WindowId, event: WindowEvent) {
+        if let Some(window_events) = self.window_events.get_mut(&window_id) {
+            use WindowEvent::*;
+
+            // Generate draw_events for the window event
+            let draw_events = match event {
+                Resized(new_size)                                               => vec![DrawEvent::Resize(new_size.width as f64, new_size.height as f64)],
+                Moved(_position)                                                => vec![],
+                CloseRequested                                                  => vec![],
+                Destroyed                                                       => vec![],
+                DroppedFile(_path)                                              => vec![],
+                HoveredFile(_path)                                              => vec![],
+                HoveredFileCancelled                                            => vec![],
+                ReceivedCharacter(_c)                                           => vec![],
+                Focused(_focused)                                               => vec![],
+                KeyboardInput { device_id: _, input: _, is_synthetic: _, }      => vec![],
+                ModifiersChanged(_state)                                        => vec![],
+                CursorMoved { device_id: _, position: _, .. }                   => vec![],
+                CursorEntered { device_id: _ }                                  => vec![],
+                CursorLeft { device_id: _ }                                     => vec![],
+                MouseWheel { device_id: _, delta: _, phase: _, .. }             => vec![],
+                MouseInput { device_id: _, state: _, button: _, .. }            => vec![],
+                TouchpadPressure { device_id: _, pressure: _, stage: _, }       => vec![],
+                AxisMotion { device_id: _, axis: _, value: _ }                  => vec![],
+                Touch(_touch)                                                   => vec![],
+                ScaleFactorChanged { scale_factor: _, new_inner_size: _ }       => vec![],
+                ThemeChanged(_theme)                                            => vec![],
+            };
+
+            // Dispatch the draw events using a process
+            if draw_events.len() > 0 {
+                // Need to republish the window events so we can share with the process
+                let mut window_events = window_events.republish();
+
+                self.run_process(async move {
+                    for evt in draw_events {
+                        window_events.publish(evt).await;
+                    }
+                });
+            }
+        }
+    }
+
+    ///
+    /// Sends a redraw request to a window
+    ///
+    fn request_redraw(&mut self, window_id: WindowId) {
+        if let Some(window_events) = self.window_events.get_mut(&window_id) {
+            // Need to republish the window events so we can share with the process
+            let mut window_events = window_events.republish();
+
+            self.run_process(async move {
+                window_events.publish(DrawEvent::Redraw).await;
+            });
         }
     }
 
