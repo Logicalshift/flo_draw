@@ -6,7 +6,7 @@ use futures::prelude::*;
 use futures::executor;
 
 ///
-/// Simple example that displays a render window and does nothing with it
+/// Simple example that displays a render window and renders a triangle
 ///
 pub fn main() {
     // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
