@@ -59,6 +59,8 @@ pub (super) async fn send_actions_to_window(window: GlutinWindow, render_actions
             if window.renderer.is_none() {
                 // Load the functions for the current context
                 // TODO: we're assuming they stay loaded to avoid loading them for every render, which might not be safe
+                // TODO: probably better to have the renderer load the functions itself (gl::load doesn't work well
+                // when we load GL twice, which could happen if we want to use the offscreen renderer)
                 gl::load_with(|symbol_name| {
                     current_context.get_proc_address(symbol_name)
                 });
