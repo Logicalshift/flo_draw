@@ -90,7 +90,7 @@ fn handle_event<'a>(state: &'a mut RendererState, event: DrawEvent, render_actio
             DrawEvent::Resize(width, height)    => { 
                 let (width, height) = (width as f32, height as f32); 
 
-                let scale           = 2.0;
+                let scale           = 1.0;
                 let vp_x            = 0.0;
                 let vp_y            = 0.0;
 
