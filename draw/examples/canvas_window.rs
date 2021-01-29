@@ -22,11 +22,6 @@ pub fn main() {
                 gc.canvas_height(1000.0);
                 gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
-                gc.new_path();
-                gc.circle(0.0, 0.0, 400.0);
-                gc.fill_color(Color::Rgba(1.0, 1.0, 0.8, 1.0));
-                gc.fill();
-
                 // Draw a rectangle...
                 gc.new_path();
                 gc.move_to(0.0, 0.0);
