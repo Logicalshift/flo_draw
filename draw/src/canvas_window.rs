@@ -47,6 +47,10 @@ pub fn create_canvas_window() -> (Canvas, Subscriber<DrawEvent>) {
     let renderer                        = Arc::new(Desync::new(renderer));
     let render_events                   = window_events.clone();
 
+    renderer.desync(|state| {
+        state.renderer.set_viewport(0.0..1024.0, 0.0..768.0, 1024.0, 768.0, 1.0);
+    });
+
     // Handle events from the window
     let redraw_render_actions           = render_actions.republish();
     pipe_in(Arc::clone(&renderer), render_events, move |state, event| { 
