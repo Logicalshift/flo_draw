@@ -20,7 +20,7 @@ pub fn main() {
                 // Clear the canvas and set up the coordinates
                 gc.clear_canvas();
                 gc.canvas_height(1000.0);
-                //gc.center_region(0.0, 0.0, 1000.0, 1000.0);
+                gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
                 gc.new_path();
                 gc.circle(0.0, 0.0, 400.0);
