@@ -199,7 +199,26 @@ mod test {
         let inverse     = translate.invert().unwrap();
 
         let (x, y)      = inverse.transform_point(220.0, 330.0);
-        assert!((x-20.0).abs() < 0.01);
         assert!((y-30.0).abs() < 0.01);
+        assert!((x-20.0).abs() < 0.01);
+    }
+
+    #[test]
+    pub fn apply_scale() {
+        let scale       = Transform2D::scale(2.0, 3.0);
+
+        let (x, y)      = scale.transform_point(20.0, 30.0);
+        assert!((x-40.0).abs() < 0.01);
+        assert!((y-90.0).abs() < 0.01);
+    }
+
+    #[test]
+    pub fn invert_scale() {
+        let scale       = Transform2D::scale(2.0, 3.0);
+        let inverse     = scale.invert().unwrap();
+
+        let (x, y)      = inverse.transform_point(40.0, 90.0);
+        assert!((y-30.0).abs() < 0.01);
+        assert!((x-20.0).abs() < 0.01);
     }
 }
