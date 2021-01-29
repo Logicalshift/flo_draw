@@ -486,30 +486,23 @@ impl CanvasRenderer {
 
                     // Moves a particular region to the center of the canvas (coordinates are minx, miny, maxx, maxy)
                     CenterRegion((x1, y1), (x2, y2)) => {
-                        let window_width        = self.window_size.0/self.window_scale;
-                        let window_height       = self.window_size.1/self.window_scale;
+                        // Get the center point in viewport coordinates
+                        let center_x                = (self.viewport_origin.0 + self.viewport_size.0) / 2.0;
+                        let center_y                = (self.viewport_origin.1 + self.viewport_size.1) / 2.0;
+                        let center_x                = center_x / self.window_scale;
+                        let center_y                = center_y / self.window_scale;
 
-                        // Work out the scale factor
-                        let region_width        = f32::max(0.0, x2-x1);
-                        let region_height       = f32::max(0.0, y2-y1);
+                        // Find the current center point
+                        let current_transform       = self.active_transform.clone();
+                        let inverse_transform       = current_transform.invert().unwrap();
 
-                        let scale_x             = window_width / region_width;
-                        let scale_y             = window_height / region_height;
-                        let scale               = f32::min(scale_x, scale_y);
+                        let (center_x, center_y)    = inverse_transform.transform_point(center_x, center_y);
 
-                        let scale               = canvas::Transform2D::scale(scale, scale);
+                        // Translate the center point onto the center of the region
+                        let (new_x, new_y)          = ((x1+x2)/2.0, (y1+y2)/2.0);
+                        let translation             = canvas::Transform2D::translate(-(new_x - center_x), -(new_y - center_y));
 
-                        // Move the center point to the middle of the canvas
-                        let center_x            = (x1+x2)/2.0;
-                        let center_y            = (y1+y2)/2.0;
-                        let left_x              = center_x - window_width/2.0;
-                        let left_y              = center_y - window_height/2.0;
-
-                        let translate           = canvas::Transform2D::translate(left_x, left_y);
-
-                        // Combine to set the active transform
-                        let transform           = translate * scale;
-                        self.active_transform   = transform;
+                        self.active_transform       = self.active_transform * translation;
                     }
 
                     // Multiply a 2D transform into the canvas
