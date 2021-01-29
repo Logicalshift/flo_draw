@@ -83,7 +83,7 @@ fn handle_event<'a>(state: &'a mut RendererState, event: DrawEvent, render_actio
     async move {
         match event {
             DrawEvent::Redraw                   => { 
-                let redraw = state.renderer.draw(state.canvas.get_drawing().into_iter()).collect::<Vec<_>>().await;
+                let redraw = state.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
                 render_actions.publish(redraw).await;
             },
 
