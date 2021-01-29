@@ -10,6 +10,18 @@ pub struct Transform2D(pub [[f32; 3]; 3]);
 
 impl Transform2D {
     ///
+    /// Applies this transformation to a point, returning the transformed point
+    ///
+    pub fn transform_point(&self, x: f32, y: f32) -> (f32, f32) {
+        let Transform2D(ref a) = self;
+
+        (
+            x*a[0][0] + y*a[0][1] + 1.0*a[0][2],
+            x*a[1][0] + y*a[1][1] + 1.0*a[1][2]
+        )
+    }
+
+    ///
     /// Creates the identity transform
     ///
     pub fn identity() -> Transform2D {
@@ -165,5 +177,29 @@ impl From<SpriteTransform> for Transform2D {
             SpriteTransform::Rotate(degrees)        => Transform2D::rotate(degrees / 180.0 * f32::consts::PI),
             SpriteTransform::Transform2D(transform) => transform
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    pub fn apply_translate() {
+        let translate   = Transform2D::translate(200.0, 300.0);
+
+        let (x, y)      = translate.transform_point(20.0, 30.0);
+        assert!((x-220.0).abs() < 0.01);
+        assert!((y-330.0).abs() < 0.01);
+    }
+
+    #[test]
+    pub fn invert_translate() {
+        let translate   = Transform2D::translate(200.0, 300.0);
+        let inverse     = translate.invert().unwrap();
+
+        let (x, y)      = inverse.transform_point(220.0, 330.0);
+        assert!((x-20.0).abs() < 0.01);
+        assert!((y-30.0).abs() < 0.01);
     }
 }
