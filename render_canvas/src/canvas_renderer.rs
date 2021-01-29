@@ -487,8 +487,8 @@ impl CanvasRenderer {
                     // Moves a particular region to the center of the canvas (coordinates are minx, miny, maxx, maxy)
                     CenterRegion((x1, y1), (x2, y2)) => {
                         // Get the center point in viewport coordinates
-                        let center_x                = (self.viewport_origin.0 + self.viewport_size.0) / 2.0;
-                        let center_y                = (self.viewport_origin.1 + self.viewport_size.1) / 2.0;
+                        let center_x                = self.window_size.0 / 2.0;
+                        let center_y                = self.window_size.1 / 2.0;
                         let center_x                = center_x / self.window_scale;
                         let center_y                = center_y / self.window_scale;
 
