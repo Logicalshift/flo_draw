@@ -70,7 +70,7 @@ impl Transform2D {
     /// Computes the determinant of a 2x2 matrix
     ///
     fn det2(matrix: &[[f32; 2]; 2]) -> f32 {
-        matrix[0][0]*matrix[1][1] + matrix[0][1]*matrix[1][0]
+        matrix[0][0]*matrix[1][1] - matrix[0][1]*matrix[1][0]
     }
 
     ///
@@ -220,5 +220,16 @@ mod test {
         let (x, y)      = inverse.transform_point(40.0, 90.0);
         assert!((y-30.0).abs() < 0.01);
         assert!((x-20.0).abs() < 0.01);
+    }
+
+    #[test]
+    pub fn invert_rotate() {
+        let rotate      = Transform2D::rotate(1.2);
+        let inverse     = rotate.invert().unwrap();
+
+        let (x1, y1)    = rotate.transform_point(40.0, 90.0);
+        let (x2, y2)    = inverse.transform_point(x1, y1);
+        assert!((y2-90.0).abs() < 0.01);
+        assert!((x2-40.0).abs() < 0.01);
     }
 }
