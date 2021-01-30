@@ -22,6 +22,15 @@ use std::sync::*;
 struct RendererState {
     /// The renderer for the canvas
     renderer:   CanvasRenderer,
+
+    /// The scale factor of the canvas
+    scale:      f64,
+
+    /// The width of the canvas
+    width:      f64,
+
+    /// The height of the canvas
+    height:     f64
 }
 
 ///
@@ -40,7 +49,7 @@ pub fn create_canvas_window() -> (Canvas, Subscriber<DrawEvent>) {
 
     // Create a canvas renderer
     let renderer                        = CanvasRenderer::new();
-    let renderer                        = RendererState { renderer: renderer };
+    let renderer                        = RendererState { renderer: renderer, scale: 1.0, width: 1.0, height: 1.0 };
     let renderer                        = Arc::new(Desync::new(renderer));
     let render_events                   = window_events.clone();
 
@@ -101,14 +110,25 @@ fn handle_event<'a>(state: &'a mut RendererState, event: DrawEvent, render_actio
                 render_actions.publish(redraw).await;
             },
 
+            DrawEvent::Scale(new_scale)         => {
+                state.scale = new_scale;
+
+                let width           = state.width as f32;
+                let height          = state.height as f32;
+                let scale           = state.scale as f32;
+
+                state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale); 
+            }
+
             DrawEvent::Resize(width, height)    => { 
-                let (width, height) = (width as f32, height as f32); 
+                state.width         = width;
+                state.height        = height;
 
-                let scale           = 1.0;
-                let vp_x            = 0.0;
-                let vp_y            = 0.0;
+                let width           = state.width as f32;
+                let height          = state.height as f32;
+                let scale           = state.scale as f32;
 
-                state.renderer.set_viewport(vp_x..vp_x+width, vp_y..vp_y+height, width, height, scale); 
+                state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale); 
             }
         }
     }

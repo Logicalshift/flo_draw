@@ -87,7 +87,7 @@ impl GlutinRuntime {
                 TouchpadPressure { device_id: _, pressure: _, stage: _, }       => vec![],
                 AxisMotion { device_id: _, axis: _, value: _ }                  => vec![],
                 Touch(_touch)                                                   => vec![],
-                ScaleFactorChanged { scale_factor: _, new_inner_size: _ }       => vec![],
+                ScaleFactorChanged { scale_factor, new_inner_size }             => vec![DrawEvent::Scale(scale_factor), DrawEvent::Resize(new_inner_size.width as f64, new_inner_size.height as f64)],
                 ThemeChanged(_theme)                                            => vec![],
             };
 
@@ -139,6 +139,7 @@ impl GlutinRuntime {
                 // Store the window context in a new glutin window
                 let window_id           = windowed_context.window().id();
                 let size                = windowed_context.window().inner_size();
+                let scale               = windowed_context.window().scale_factor();
                 let window              = GlutinWindow::new(windowed_context);
 
                 // Store the publisher for the events for this window
@@ -149,6 +150,7 @@ impl GlutinRuntime {
                 self.run_process(async move { 
                     // Send the initial events for this window (set the size and the DPI)
                     initial_events.publish(DrawEvent::Resize(size.width as f64, size.height as f64)).await;
+                    initial_events.publish(DrawEvent::Scale(scale)).await;
                     initial_events.publish(DrawEvent::Redraw).await;
                     mem::drop(initial_events);
 
