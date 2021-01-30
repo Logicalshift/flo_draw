@@ -978,4 +978,28 @@ mod test {
             assert!((x-(1792.0)).abs() < 0.01);
         });
     }
+
+    #[test]
+    pub fn window_transform_after_setting_canvas_height_in_big_window_with_scroll_and_scale() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(512.0..1536.0, 512.0..1280.0, 2048.0, 1536.0, 2.0);
+            renderer.draw(vec![Draw::ClearCanvas, Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let window_transform = renderer.get_window_transform();
+
+            // The point 0, 500 should be at the top-middle of the viewport (height of 1000)
+            let (x, y) = window_transform.transform_point(0.0, 500.0);
+            assert!((x-(1024.0)).abs() < 0.01);
+            assert!((y-(1536.0)).abs() < 0.01);
+
+            // The point 500, 0 should be at the right of the viewport (height of 1000). Pixels are square
+            let (x, y) = window_transform.transform_point(500.0, 0.0);
+            assert!((y-(768.0)).abs() < 0.01);
+            assert!((x-(1792.0)).abs() < 0.01);
+        });
+    }
 }
