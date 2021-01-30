@@ -201,7 +201,7 @@ impl CanvasRenderer {
         let scale_x                     = self.window_size.0/2.0;
         let scale_y                     = self.window_size.1/2.0;
 
-        canvas::Transform2D::translate(-self.viewport_origin.0, -self.viewport_origin.1)
+        canvas::Transform2D::translate(self.viewport_origin.0, self.viewport_origin.1)
             * canvas::Transform2D::scale(scale_y, scale_y)
             * canvas::Transform2D::translate(scale_x/scale_y, 1.0) 
             * to_normalized_coordinates 
@@ -945,13 +945,13 @@ mod test {
 
             // The point 0, 500 should be at the top-middle of the viewport (height of 1000)
             let (x, y) = viewport_transform.transform_point(0.0, 500.0);
-            assert!((x-(1024.0-512.0)).abs() < 0.01);
-            assert!((y-(1536.0-512.0)).abs() < 0.01);
+            assert!((x-(1024.0+512.0)).abs() < 0.01);
+            assert!((y-(1536.0+512.0)).abs() < 0.01);
 
             // The point 500, 0 should be at the right of the viewport (height of 1000). Pixels are square
             let (x, y) = viewport_transform.transform_point(500.0, 0.0);
-            assert!((y-(768.0-512.0)).abs() < 0.01);
-            assert!((x-(1792.0-512.0)).abs() < 0.01);
+            assert!((y-(768.0+512.0)).abs() < 0.01);
+            assert!((x-(1792.0+512.0)).abs() < 0.01);
         });
     }
 
@@ -1000,6 +1000,82 @@ mod test {
             let (x, y) = window_transform.transform_point(500.0, 0.0);
             assert!((y-(768.0)).abs() < 0.01);
             assert!((x-(1792.0)).abs() < 0.01);
+        });
+    }
+
+    #[test]
+    pub fn viewport_transform_for_full_viewport_window() {
+        let mut renderer = CanvasRenderer::new();
+
+        renderer.set_viewport(0.0..1024.0, 0.0..768.0, 1024.0, 768.0, 1.0);
+        let viewport_transform = renderer.viewport_transform;
+
+        // Top-midpoint is the same
+        let (x, y) = viewport_transform.transform_point(0.0, 1.0);
+        assert!((x-0.0).abs() < 0.01);
+        assert!((y-1.0).abs() < 0.01);
+
+        // Top-left is transformed to give a square aspect ratio
+        let (x, y) = viewport_transform.transform_point(-1.0, 1.0);
+        assert!((x- -(768.0/1024.0)).abs() < 0.01);
+        assert!((y-1.0).abs() < 0.01);
+    }
+
+    #[test]
+    pub fn window_transform_with_small_viewport_1() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set up a 1:1 transform on the window and a small viewport
+            renderer.set_viewport(200.0..300.0, 400.0..450.0, 1024.0, 768.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas, Draw::CanvasHeight(768.0), Draw::CenterRegion((0.0, 0.0), (1024.0, 768.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let window_transform    = renderer.get_window_transform();
+            let viewport_transform  = renderer.get_viewport_transform();
+
+            // In the window transform, everything should map 1-to-1
+            let (x, y) = window_transform.transform_point(0.0, 500.0);
+            assert!((x-(0.0)).abs() < 0.01);
+            assert!((y-(500.0)).abs() < 0.01);
+
+            let (x, y) = window_transform.transform_point(500.0, 0.0);
+            assert!((y-(0.0)).abs() < 0.01);
+            assert!((x-(500.0)).abs() < 0.01);
+
+            // The 0,0 point in the viewport should map to 200, 400 on the canvas
+            let (x, y) = viewport_transform.transform_point(0.0, 0.0);
+            assert!((x-(200.0)).abs() < 0.01);
+            assert!((y-(400.0)).abs() < 0.01);
+        });
+    }
+
+    #[test]
+    pub fn window_transform_with_small_viewport_2() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set up a 1:1 transform on the window and a small viewport
+            renderer.set_viewport(0.0..300.0, 0.0..450.0, 1024.0, 768.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas, Draw::CanvasHeight(768.0), Draw::CenterRegion((0.0, 0.0), (1024.0, 768.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let window_transform    = renderer.get_window_transform();
+            let viewport_transform  = renderer.get_viewport_transform();
+
+            // In the window transform, everything should map 1-to-1
+            let (x, y) = window_transform.transform_point(0.0, 500.0);
+            assert!((x-(0.0)).abs() < 0.01);
+            assert!((y-(500.0)).abs() < 0.01);
+
+            let (x, y) = window_transform.transform_point(500.0, 0.0);
+            assert!((y-(0.0)).abs() < 0.01);
+            assert!((x-(500.0)).abs() < 0.01);
+
+            // The 0,0 point in the viewport should map to 0, 0 on the canvas
+            let (x, y) = viewport_transform.transform_point(0.0, 0.0);
+            assert!((x-(0.0)).abs() < 0.01);
+            assert!((y-(0.0)).abs() < 0.01);
         });
     }
 }
