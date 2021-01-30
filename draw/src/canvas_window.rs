@@ -22,9 +22,6 @@ use std::sync::*;
 struct RendererState {
     /// The renderer for the canvas
     renderer:   CanvasRenderer,
-
-    /// Represents the current canvas state
-    canvas:     Canvas
 }
 
 ///
@@ -43,7 +40,7 @@ pub fn create_canvas_window() -> (Canvas, Subscriber<DrawEvent>) {
 
     // Create a canvas renderer
     let renderer                        = CanvasRenderer::new();
-    let renderer                        = RendererState { renderer: renderer, canvas: Canvas::new() };
+    let renderer                        = RendererState { renderer: renderer };
     let renderer                        = Arc::new(Desync::new(renderer));
     let render_events                   = window_events.clone();
 
@@ -63,7 +60,6 @@ pub fn create_canvas_window() -> (Canvas, Subscriber<DrawEvent>) {
     // Pipe from the canvas stream to the renderer to generate a stream of render actions
     let render_action_stream            = pipe(Arc::clone(&renderer), canvas_stream, 
         |state, drawing| async move { 
-            state.canvas.write(drawing.clone());
             state.renderer.draw(drawing.into_iter()).collect::<Vec<_>>().await
         }.boxed());
 
