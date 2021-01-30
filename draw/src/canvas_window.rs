@@ -44,8 +44,22 @@ pub fn create_canvas_window() -> (Canvas, Subscriber<DrawEvent>) {
     let renderer                        = Arc::new(Desync::new(renderer));
     let render_events                   = window_events.clone();
 
-    renderer.desync(|state| {
-        state.renderer.set_viewport(0.0..1024.0, 0.0..768.0, 1024.0, 768.0, 1.0);
+    // Block up the renderer until the first 'redraw' event arrives (while this future is running, neither the renderer nor the main event loop can run)
+    // Note: window_events must be set up with a buffer large enough to contain copies of all the events up until the redraw request or this may block permanently
+    let mut blocking_events             = window_events.clone();
+    let mut blocking_render_actions     = render_actions.republish();
+    renderer.future_desync(move |state| {
+        async move { 
+            while let Some(event) = blocking_events.next().await {
+                // Once the first redraw event arrives, the window is ready for display, so we stop to allow the main event loops to start
+                if let DrawEvent::Redraw = event {
+                    break;
+                }
+
+                // Handle the 'initial' events (they'll get processed again by the main loop)
+                handle_event(state, event, &mut blocking_render_actions).await;
+            }
+        }.boxed()
     });
 
     // Handle events from the window
