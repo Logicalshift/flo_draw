@@ -121,8 +121,12 @@ impl CanvasRenderer {
     ///
     /// Sets the viewport used by this renderer
     ///
+    /// The window width and height is the overall size of the canvas (which can be considered to have 
+    /// coordinates from 0,0 to window_width, window_height). The viewport, given by x and y here, is the
+    /// region of the window that will actually be rendered.
+    ///
     /// The viewport and window coordinates are all in pixels. The scale used when generating transformations
-    /// (so with a scale of 2, a CanvasHeight request of 1080 will act as a height 2160 in the viewport)
+    /// (so with a scale of 2, a CanvasHeight request of 1080 will act as a height 2160 in the viewport).
     ///
     pub fn set_viewport(&mut self, x: Range<f32>, y: Range<f32>, window_width: f32, window_height: f32, scale: f32) {
         // By default the x and y coordinates go from -1.0 to 1.0
