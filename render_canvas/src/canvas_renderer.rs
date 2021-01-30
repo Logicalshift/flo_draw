@@ -37,7 +37,7 @@ pub struct CanvasRenderer {
     /// The layer that the next drawing instruction will apply to
     current_layer: LayerHandle,
 
-    /// The viewport transformation
+    /// The viewport transformation (this makes for rectangular pixels with the bottom of the window at 0, -1 and the top at 0, 1)
     viewport_transform: canvas::Transform2D,
 
     /// The inverse of the viewport transformation
@@ -129,21 +129,33 @@ impl CanvasRenderer {
     /// (so with a scale of 2, a CanvasHeight request of 1080 will act as a height 2160 in the viewport).
     ///
     pub fn set_viewport(&mut self, x: Range<f32>, y: Range<f32>, window_width: f32, window_height: f32, scale: f32) {
-        // By default the x and y coordinates go from -1.0 to 1.0
+        // By default the x and y coordinates go from -1.0 to 1.0 and represent the viewport coordinates
+
+        // Width and height of the viewport
         let width                       = x.end-x.start;
         let height                      = y.end-y.start;
 
-        let scale_x                     = (x.start/scale)..(x.end/scale);
-        let scale_y                     = (y.start/scale)..(y.start/scale);
+        // Widths/heights of 0.0 will cause issues with calculating ratios and scales
+        let window_width                = if window_width == 0.0 { 1.0 } else { window_width };
+        let window_height               = if window_height == 0.0 { 1.0 } else { window_height };
+        let width                       = if width == 0.0 { 1.0 } else { width };
+        let height                      = if height == 0.0 { 1.0 } else { height };
 
-        let scale_width                 = width/scale;
-        let scale_height                = height/scale;
-        let scale_transform             = canvas::Transform2D::scale(2.0/scale_width, 2.0/scale_height);
+        // Create a scale to make the viewport have square pixels (the viewport is the shape of our render surface)
+        let viewport_ratio              = height / width;
+        let square_pixels               = canvas::Transform2D::scale(viewport_ratio, 1.0);
 
-        // Bottom-right corner is currently -width/2.0, -height/2.0 (as we scale around the center)
-        let viewport_transform          = scale_transform * canvas::Transform2D::translate(-(scale_width/2.0) - scale_x.start, -(scale_height/2.0) - scale_y.start);
+        // Viewport is scaled and translated relative to the window size
+        let pixel_size                  = 1.0 / window_height;
+        let window_scale                = window_height / height;
+        let translate_x                 = (-x.start) * pixel_size;
+        let translate_y                 = (-y.start) * pixel_size;
+
+        // Create a viewport transform such that the top of the window is at (0,1) and the bottom is at (0,-1)
+        let viewport_transform          = square_pixels * canvas::Transform2D::scale(window_scale, window_scale) * canvas::Transform2D::translate(translate_x, translate_y);
         let inverse_viewport_transform  = viewport_transform.invert().unwrap();
 
+        // Store the size of the window
         self.viewport_transform         = viewport_transform;
         self.inverse_viewport_transform = inverse_viewport_transform;
 
@@ -385,7 +397,10 @@ impl CanvasRenderer {
 
                     // Set the line width in pixels
                     LineWidthPixels(pixel_width) => {
+                        // TODO: if the window width changes we won't re-tessellate the lines affected by this line width
                         let canvas::Transform2D(transform)  = &self.active_transform;
+                        let pixel_size                      = 2.0/self.window_size.1;
+                        let pixel_width                     = pixel_width * pixel_size;
                         let scale                           = (transform[0][0]*transform[0][0] + transform[1][0]*transform[1][0]).sqrt();
                         let width                           = pixel_width / scale;
 
@@ -473,16 +488,16 @@ impl CanvasRenderer {
                     // (0,height/2) is the top of the canvas
                     // Pixels are square
                     CanvasHeight(height) => {
-                        let window_height       = self.window_size.1/self.window_scale;
+                        // Window height is set at 2.0 by the viewport transform
+                        let window_height       = 2.0;
 
                         // Work out the scale to use for this widget
                         let height              = f32::max(1.0, height);
                         let scale               = window_height / height;
                         let scale               = canvas::Transform2D::scale(scale, scale);
 
-                        // The viewport transform makes (0,0) the lower-left of the canvas: move it to the middle
-                        let translate           = canvas::Transform2D::translate(self.window_size.0/2.0, self.window_size.1/2.0);
-                        let transform           = translate * scale;
+                        // (0, 0) is already the center of the window
+                        let transform           = scale;
 
                         // Set as the active transform
                         self.active_transform   = transform;
@@ -491,10 +506,8 @@ impl CanvasRenderer {
                     // Moves a particular region to the center of the canvas (coordinates are minx, miny, maxx, maxy)
                     CenterRegion((x1, y1), (x2, y2)) => {
                         // Get the center point in viewport coordinates
-                        let center_x                = self.window_size.0 / 2.0;
-                        let center_y                = self.window_size.1 / 2.0;
-                        let center_x                = center_x / self.window_scale;
-                        let center_y                = center_y / self.window_scale;
+                        let center_x                = 0.0;
+                        let center_y                = 0.0;
 
                         // Find the current center point
                         let current_transform       = self.active_transform.clone();
