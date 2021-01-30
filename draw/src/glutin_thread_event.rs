@@ -21,5 +21,8 @@ pub enum GlutinThreadEvent {
     WakeFuture(u64),
 
     /// Stop sending events for the specified window
-    StopSendingToWindow(WindowId)
+    StopSendingToWindow(WindowId),
+
+    /// Tells the UI thread to stop when there are no more windows open
+    StopWhenAllWindowsClosed
 }

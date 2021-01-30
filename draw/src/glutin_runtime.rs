@@ -28,7 +28,10 @@ pub (super) struct GlutinRuntime {
     pub (super) window_events: HashMap<WindowId, Publisher<DrawEvent>>,
 
     /// Maps future IDs to running futures
-    pub (super) futures: HashMap<u64, LocalBoxFuture<'static, ()>>
+    pub (super) futures: HashMap<u64, LocalBoxFuture<'static, ()>>,
+
+    /// Set to true if this runtime will stop when all the windows are closed
+    pub (super) will_stop_when_no_windows: bool
 }
 
 ///
@@ -42,7 +45,7 @@ impl GlutinRuntime {
     ///
     /// Handles an event from the rest of the process and updates the state
     ///
-    pub fn handle_event(&mut self, event: Event<'_, GlutinThreadEvent>, window_target: &EventLoopWindowTarget<GlutinThreadEvent>, control_flow: &ControlFlow) {
+    pub fn handle_event(&mut self, event: Event<'_, GlutinThreadEvent>, window_target: &EventLoopWindowTarget<GlutinThreadEvent>, control_flow: &mut ControlFlow) {
         use Event::*;
 
         match event {
@@ -122,7 +125,7 @@ impl GlutinRuntime {
     ///
     /// Handles one of our user events from the GlutinThreadEvent enum
     ///
-    fn handle_thread_event(&mut self, event: GlutinThreadEvent, window_target: &EventLoopWindowTarget<GlutinThreadEvent>, _control_flow: &ControlFlow) {
+    fn handle_thread_event(&mut self, event: GlutinThreadEvent, window_target: &EventLoopWindowTarget<GlutinThreadEvent>, control_flow: &mut ControlFlow) {
         use GlutinThreadEvent::*;
 
         match event {
@@ -164,6 +167,10 @@ impl GlutinRuntime {
 
             StopSendingToWindow(window_id) => {
                 self.window_events.remove(&window_id);
+
+                if self.window_events.len() == 0 && self.will_stop_when_no_windows {
+                    *control_flow = ControlFlow::Exit;
+                }
             }
 
             RunProcess(start_process) => {
@@ -172,6 +179,14 @@ impl GlutinRuntime {
 
             WakeFuture(future_id) => {
                 self.poll_future(future_id);
+            },
+
+            StopWhenAllWindowsClosed => {
+                self.will_stop_when_no_windows = true;
+
+                if self.window_events.len() == 0 {
+                    *control_flow = ControlFlow::Exit;
+                }
             }
         }
     }

@@ -5,6 +5,7 @@ use ::desync::*;
 
 use glutin::event_loop::{EventLoop, EventLoopProxy};
 
+use std::mem;
 use std::sync::*;
 use std::sync::mpsc;
 use std::thread;
@@ -48,6 +49,13 @@ pub fn glutin_thread() -> Arc<GlutinThread> {
     })
 }
 
+struct StopGlutinWhenDropped;
+impl Drop for StopGlutinWhenDropped {
+    fn drop(&mut self) {
+        glutin_thread().send_event(GlutinThreadEvent::StopWhenAllWindowsClosed);
+    }
+}
+
 ///
 /// Steals the current thread to run the UI event loop and calls the application function
 /// back to continue execution
@@ -55,6 +63,10 @@ pub fn glutin_thread() -> Arc<GlutinThread> {
 /// This is required because some operating systems (OS X) can't handle UI events from any
 /// thread other than the one that's created when the app starts. `flo_draw` will work
 /// without this call on operating systems with more robust event handling designs.
+///
+/// This will also ensure that any graphics are displayed until the user closes the window,
+/// which may be useful behaviour even on operating systems where the thread takeover is
+/// not required.
 ///
 pub fn with_2d_graphics<TAppFn: 'static+Send+FnOnce() -> ()>(app_fn: TAppFn) {
     // The event loop thread will send us a proxy once it's initialized
@@ -75,7 +87,11 @@ pub fn with_2d_graphics<TAppFn: 'static+Send+FnOnce() -> ()>(app_fn: TAppFn) {
             });
 
             // Call back to start the app running
+            let stop_glutin = StopGlutinWhenDropped;
+
             app_fn();
+
+            mem::drop(stop_glutin);
         })
         .expect("Application thread is running");
 
@@ -122,11 +138,12 @@ fn run_glutin_thread(send_proxy: mpsc::Sender<EventLoopProxy<GlutinThreadEvent>>
 
     // The runtime struct is used to maintain state when the event loop is running
     let mut runtime = GlutinRuntime { 
-        window_events:  HashMap::new(),
-        futures:        HashMap::new()
+        window_events:              HashMap::new(),
+        futures:                    HashMap::new(),
+        will_stop_when_no_windows:  false
     };
 
-    // Run the event loop
+    // Run the glutin event loop
     event_loop.run(move |event, window_target, control_flow| { 
         runtime.handle_event(event, window_target, control_flow);
     });
