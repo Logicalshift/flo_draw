@@ -208,6 +208,19 @@ impl CanvasRenderer {
     }
 
     ///
+    /// Retrieves a transformation that maps a point from canvas coordinates to window coordinates
+    ///
+    pub fn get_window_transform(&self) -> canvas::Transform2D {
+        let to_normalized_coordinates   = self.get_active_transform();
+        let scale_x                     = self.window_size.0/2.0;
+        let scale_y                     = self.window_size.1/2.0;
+
+        canvas::Transform2D::scale(scale_y, scale_y)
+            * canvas::Transform2D::translate(scale_x/scale_y, 1.0) 
+            * to_normalized_coordinates 
+    }
+
+    ///
     /// Creates a new layer with the default properties
     ///
     fn create_default_layer() -> Layer {
@@ -846,6 +859,7 @@ mod test {
         });
     }
 
+    #[test]
     pub fn active_transform_after_setting_canvas_height_in_big_window() {
         let mut renderer = CanvasRenderer::new();
 
@@ -938,6 +952,30 @@ mod test {
             let (x, y) = viewport_transform.transform_point(500.0, 0.0);
             assert!((y-(768.0-512.0)).abs() < 0.01);
             assert!((x-(1792.0-512.0)).abs() < 0.01);
+        });
+    }
+
+    #[test]
+    pub fn window_transform_after_setting_canvas_height_in_big_window_with_scroll() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(512.0..1536.0, 512.0..1280.0, 2048.0, 1536.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas, Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let window_transform = renderer.get_window_transform();
+
+            // The point 0, 500 should be at the top-middle of the viewport (height of 1000)
+            let (x, y) = window_transform.transform_point(0.0, 500.0);
+            assert!((x-(1024.0)).abs() < 0.01);
+            assert!((y-(1536.0)).abs() < 0.01);
+
+            // The point 500, 0 should be at the right of the viewport (height of 1000). Pixels are square
+            let (x, y) = window_transform.transform_point(500.0, 0.0);
+            assert!((y-(768.0)).abs() < 0.01);
+            assert!((x-(1792.0)).abs() < 0.01);
         });
     }
 }
