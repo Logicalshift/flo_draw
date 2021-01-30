@@ -192,7 +192,7 @@ impl MetalRenderer {
         let pipeline_config     = PipelineConfiguration::for_texture(target_texture);
         let pipeline_state      = self.get_pipeline_state(&pipeline_config);
         let command_buffer      = command_queue.new_command_buffer();
-        let command_encoder     = self.get_command_encoder(command_buffer, target_texture);
+        let command_encoder     = self.get_command_encoder_with_clear(command_buffer, target_texture, Rgba8([0, 0, 0, 0]));
 
         let mut render_state    = RenderState {
             main_texture:           target_texture.clone(),
