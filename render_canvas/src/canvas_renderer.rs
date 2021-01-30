@@ -194,6 +194,20 @@ impl CanvasRenderer {
     }
 
     ///
+    /// Retrieves a transformation that maps a point from canvas coordinates to viewport coordinates
+    ///
+    pub fn get_viewport_transform(&self) -> canvas::Transform2D {
+        let to_normalized_coordinates   = self.get_active_transform();
+        let scale_x                     = self.window_size.0/2.0;
+        let scale_y                     = self.window_size.1/2.0;
+
+        canvas::Transform2D::translate(-self.viewport_origin.0, -self.viewport_origin.1)
+            * canvas::Transform2D::scale(scale_y, scale_y)
+            * canvas::Transform2D::translate(scale_x/scale_y, 1.0) 
+            * to_normalized_coordinates 
+    }
+
+    ///
     /// Creates a new layer with the default properties
     ///
     fn create_default_layer() -> Layer {
@@ -799,5 +813,131 @@ impl CanvasRenderer {
 
         // Return a stream of results from processing the drawing
         RenderStream::new(core, processing, viewport_transform, initialise, finalize)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use flo_canvas::*;
+    use futures::executor;
+
+    #[test]
+    pub fn active_transform_after_setting_canvas_height() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(0.0..1024.0, 0.0..768.0, 1024.0, 768.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas, Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let active_transform = renderer.get_active_transform();
+
+            // The point 0, 500 should be at the top-middle of the viewport (height of 1000)
+            let (x, y) = active_transform.transform_point(0.0, 500.0);
+            assert!((x-0.0).abs() < 0.01);
+            assert!((y-1.0).abs() < 0.01);
+
+            // The point 500, 0 should be at the right of the viewport (height of 1000). Dimensions are in terms of the window height.
+            let (x, y) = active_transform.transform_point(500.0, 0.0);
+            assert!((y-0.0).abs() < 0.01);
+            assert!((x-1.0).abs() < 0.01);
+        });
+    }
+
+    pub fn active_transform_after_setting_canvas_height_in_big_window() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height, viewport is half the window
+            renderer.set_viewport(0.0..1024.0, 0.0..768.0, 2048.0, 1536.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas, Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let active_transform = renderer.get_active_transform();
+
+            // The point 0, 500 should be at the top-middle of the viewport (height of 1000)
+            let (x, y) = active_transform.transform_point(0.0, 500.0);
+            assert!((x-0.0).abs() < 0.01);
+            assert!((y-1.0).abs() < 0.01);
+
+            // The point 500, 0 should be at the right of the viewport (height of 1000). Dimensions are in terms of the window height.
+            let (x, y) = active_transform.transform_point(500.0, 0.0);
+            assert!((y-0.0).abs() < 0.01);
+            assert!((x-1.0).abs() < 0.01);
+        });
+    }
+
+    #[test]
+    pub fn viewport_transform_after_setting_canvas_height() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(0.0..1024.0, 0.0..768.0, 1024.0, 768.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas, Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let viewport_transform = renderer.get_viewport_transform();
+
+            // The point 0, 500 should be at the top-middle of the viewport (height of 1000)
+            let (x, y) = viewport_transform.transform_point(0.0, 500.0);
+            assert!((x-512.0).abs() < 0.01);
+            assert!((y-768.0).abs() < 0.01);
+
+            // The point 500, 0 should be at the right of the viewport (height of 1000). Pixels are square
+            let (x, y) = viewport_transform.transform_point(500.0, 0.0);
+            assert!((y-384.0).abs() < 0.01);
+            assert!((x-896.0).abs() < 0.01);
+        });
+    }
+
+    #[test]
+    pub fn viewport_transform_after_setting_canvas_height_in_big_window() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(0.0..1024.0, 0.0..768.0, 2048.0, 1536.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas, Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let viewport_transform = renderer.get_viewport_transform();
+
+            // The point 0, 500 should be at the top-middle of the viewport (height of 1000)
+            let (x, y) = viewport_transform.transform_point(0.0, 500.0);
+            assert!((x-1024.0).abs() < 0.01);
+            assert!((y-1536.0).abs() < 0.01);
+
+            // The point 500, 0 should be at the right of the viewport (height of 1000). Pixels are square
+            let (x, y) = viewport_transform.transform_point(500.0, 0.0);
+            assert!((y-768.0).abs() < 0.01);
+            assert!((x-1792.0).abs() < 0.01);
+        });
+    }
+
+    #[test]
+    pub fn viewport_transform_after_setting_canvas_height_in_big_window_with_scroll() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(512.0..1536.0, 512.0..1280.0, 2048.0, 1536.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas, Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let viewport_transform = renderer.get_viewport_transform();
+
+            // The point 0, 500 should be at the top-middle of the viewport (height of 1000)
+            let (x, y) = viewport_transform.transform_point(0.0, 500.0);
+            assert!((x-(1024.0-512.0)).abs() < 0.01);
+            assert!((y-(1536.0-512.0)).abs() < 0.01);
+
+            // The point 500, 0 should be at the right of the viewport (height of 1000). Pixels are square
+            let (x, y) = viewport_transform.transform_point(500.0, 0.0);
+            assert!((y-(768.0-512.0)).abs() < 0.01);
+            assert!((x-(1792.0-512.0)).abs() < 0.01);
+        });
     }
 }
