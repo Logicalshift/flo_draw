@@ -13,6 +13,7 @@ use futures::task;
 use futures::prelude::*;
 use futures::future::{LocalBoxFuture};
 
+use std::mem;
 use std::sync::*;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{HashMap};
@@ -136,14 +137,21 @@ impl GlutinRuntime {
                     .unwrap();
 
                 // Store the window context in a new glutin window
-                let window_id   = windowed_context.window().id();
-                let window      = GlutinWindow::new(windowed_context);
+                let window_id           = windowed_context.window().id();
+                let size                = windowed_context.window().inner_size();
+                let window              = GlutinWindow::new(windowed_context);
 
                 // Store the publisher for the events for this window
+                let mut initial_events  = events.republish();
                 self.window_events.insert(window_id, events);
 
                 // Run the window as a process on this thread
                 self.run_process(async move { 
+                    // Send the initial events for this window (set the size and the DPI)
+                    initial_events.publish(DrawEvent::Resize(size.width as f64, size.height as f64)).await;
+                    initial_events.publish(DrawEvent::Redraw).await;
+                    mem::drop(initial_events);
+
                     // Process the actions for the window
                     send_actions_to_window(window, actions).await; 
 
