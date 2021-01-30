@@ -432,7 +432,7 @@ impl CanvasRenderer {
                     LineWidthPixels(pixel_width) => {
                         // TODO: if the window width changes we won't re-tessellate the lines affected by this line width
                         let canvas::Transform2D(transform)  = &self.active_transform;
-                        let pixel_size                      = 2.0/self.window_size.1;
+                        let pixel_size                      = 2.0/self.window_size.1 * self.window_scale;
                         let pixel_width                     = pixel_width * pixel_size;
                         let scale                           = (transform[0][0]*transform[0][0] + transform[1][0]*transform[1][0]).sqrt();
                         let width                           = pixel_width / scale;
