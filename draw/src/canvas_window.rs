@@ -36,7 +36,17 @@ struct RendererState {
 ///
 /// Creates a canvas that will render to a window
 ///
-pub fn create_canvas_window() -> (Canvas, Subscriber<DrawEvent>) {
+pub fn create_canvas_window() -> Canvas {
+    let (canvas, _events) = create_canvas_window_with_events();
+
+    // Dropping the events will stop the window from blocking when they're not handled
+    canvas
+}
+
+///
+/// Creates a canvas that will render to a window, along with a stream of events from that window
+///
+pub fn create_canvas_window_with_events() -> (Canvas, Subscriber<DrawEvent>) {
     // Create the canvas
     let canvas                          = Canvas::new();
 
