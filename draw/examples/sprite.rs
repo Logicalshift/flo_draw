@@ -33,15 +33,6 @@ pub fn main() {
             // Draw the triangle in a few places
             gc.layer(0);
 
-            gc.new_path();
-            gc.move_to(200.0, 200.0);
-            gc.line_to(800.0, 200.0);
-            gc.line_to(500.0, 800.0);
-            gc.line_to(200.0, 200.0);
-
-            gc.fill_color(Color::Rgba(0.0, 0.0, 0.8, 1.0));
-            gc.fill();
-
             gc.sprite_transform(SpriteTransform::Identity);
             gc.draw_sprite(SpriteId(0));
 
