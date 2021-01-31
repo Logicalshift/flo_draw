@@ -354,6 +354,7 @@ impl GlRenderer {
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, x: i32, y: i32) {
         self.render_targets[source_buffer].as_ref().map(|source_buffer| {
             unsafe {
+                // TODO: to get the background colour to show up properly, need to draw using the frame buffer texture
                 let (width, height) = source_buffer.get_size();
                 let width           = width as i32;
                 let height          = height as i32;
