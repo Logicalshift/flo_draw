@@ -76,7 +76,7 @@ pub fn create_canvas_window_with_events() -> (Canvas, Subscriber<DrawEvent>) {
                 }
 
                 // Handle the 'initial' events (they'll get processed again by the main loop)
-                handle_event(state, event, &mut blocking_render_actions).await;
+                handle_window_event(state, event, &mut blocking_render_actions).await;
             }
         }.boxed()
     });
@@ -86,7 +86,7 @@ pub fn create_canvas_window_with_events() -> (Canvas, Subscriber<DrawEvent>) {
     pipe_in(Arc::clone(&renderer), render_events, move |state, event| { 
         let mut redraw_render_actions = redraw_render_actions.republish();
         async move { 
-            handle_event(state, event, &mut redraw_render_actions).await; 
+            handle_window_event(state, event, &mut redraw_render_actions).await; 
         }.boxed() 
     });
 
@@ -112,7 +112,7 @@ pub fn create_canvas_window_with_events() -> (Canvas, Subscriber<DrawEvent>) {
 ///
 /// Handles an event from the window
 ///
-fn handle_event<'a>(state: &'a mut RendererState, event: DrawEvent, render_actions: &'a mut Publisher<Vec<RenderAction>>) -> impl 'a+Send+Future<Output=()> {
+fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, render_actions: &'a mut Publisher<Vec<RenderAction>>) -> impl 'a+Send+Future<Output=()> {
     async move {
         match event {
             DrawEvent::Redraw                   => { 
