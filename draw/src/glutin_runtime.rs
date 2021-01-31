@@ -61,13 +61,11 @@ impl GlutinRuntime {
             
             MainEventsCleared                       => {
                 if self.window_events.len() == 0 && self.will_stop_when_no_windows {
-                    println!("Main events cleared"); 
                     *control_flow = ControlFlow::Exit;
                 }
             }
             RedrawEventsCleared                     => { 
                 if self.window_events.len() == 0 && self.will_stop_when_no_windows {
-                    println!("Redraw events cleared"); 
                     *control_flow = ControlFlow::Exit;
                 }
             }
