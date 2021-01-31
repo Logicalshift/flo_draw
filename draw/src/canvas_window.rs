@@ -10,6 +10,8 @@ use flo_render_canvas::*;
 
 use ::desync::*;
 
+use std::mem;
+use futures::future;
 use futures::prelude::*;
 use futures::task::{Poll, Context};
 
@@ -103,6 +105,12 @@ pub fn create_canvas_window_with_events() -> (Canvas, Subscriber<DrawEvent>) {
         let rendering                   = render_actions.send_all(render_action_stream);
 
         rendering.await;
+
+        // The canvas is no longer sending new rendering instructions (TODO: we need to wait until the window is closed to finish up)
+        future::pending::<()>().await;
+
+        // Drop the renderer once the window is closed
+        mem::drop(renderer);
     }.boxed_local())));
 
     // Return the events
@@ -116,6 +124,7 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, rende
     async move {
         match event {
             DrawEvent::Redraw                   => { 
+                // Drawing nothing will regenerate the current contents of the renderer
                 let redraw = state.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
                 render_actions.publish(redraw).await;
             },
