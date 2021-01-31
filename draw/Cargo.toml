@@ -17,5 +17,4 @@ desync              = { git = "https://github.com/Logicalshift/desync", branch =
 glutin              = "0.26.0"
 lazy_static         = "1.2"
 futures             = "0.3"
-futures-timer       = "3.0"
 gl                  = "0.14"
