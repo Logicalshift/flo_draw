@@ -87,20 +87,30 @@ pub fn create_canvas_window_with_events() -> (Canvas, Subscriber<DrawEvent>) {
     });
 
     // Handle events from the window
-    let redraw_render_actions           = render_actions.republish();
+    let mut redraw_render_actions       = Some(render_actions.republish());
+
     pipe_in(Arc::clone(&renderer), render_events, move |state, event| { 
-        let mut on_closed               = on_closed.clone();
-        let mut redraw_render_actions   = redraw_render_actions.republish();
-
-        async move { 
-            // Notify the main process that the window is closed when that occurs
+        if let Some(render_actions) = &mut redraw_render_actions {
+            // We haven't received a close event so we're still processing events
             if let DrawEvent::Closed = event {
-                on_closed.send(()).await.ok();
-            }
+                // If the window is closed, shut down our copy of the rendering thread so we won't draw any more
+                redraw_render_actions = None;
 
-            // Handle the window event
-            handle_window_event(state, event, &mut redraw_render_actions).await; 
-        }.boxed() 
+                // Send the close event
+                let mut on_closed = on_closed.clone();
+                async move { on_closed.send(()).await.ok(); }.boxed()
+            } else {
+                // Handle the window event
+                let mut redraw_render_actions = render_actions.republish();
+
+                async move {
+                    handle_window_event(state, event, &mut redraw_render_actions).await; 
+                }.boxed()
+            }
+        } else {
+            // Ignore all other events
+            async move { }.boxed()
+        }
     });
 
     // Pipe from the canvas stream to the renderer to generate a stream of render actions
