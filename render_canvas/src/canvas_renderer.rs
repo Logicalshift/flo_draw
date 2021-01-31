@@ -34,6 +34,9 @@ pub struct CanvasRenderer {
     /// Layers defined by the canvas
     core: Arc<Desync<RenderCore>>,
 
+    /// Vertex buffer used to draw the background quad (if we need to)
+    background_vertex_buffer: Option<render::VertexBufferId>,
+
     /// The layer that the next drawing instruction will apply to
     current_layer: LayerHandle,
 
@@ -105,6 +108,7 @@ impl CanvasRenderer {
         CanvasRenderer {
             workers:                    workers,
             core:                       core,
+            background_vertex_buffer:   None,
             current_layer:              initial_layer,
             viewport_transform:         canvas::Transform2D::identity(),
             inverse_viewport_transform: canvas::Transform2D::identity(),
@@ -843,12 +847,47 @@ impl CanvasRenderer {
         }
 
         // When finished, render the MSAA buffer to the main framebuffer
-        let finalize            = vec![
+        let mut finalize        = vec![
             render::RenderAction::DrawFrameBuffer(RenderTargetId(0), 0, 0),
             render::RenderAction::Clear(background_color),
             render::RenderAction::BlendMode(render::BlendMode::SourceOver),
             render::RenderAction::RenderToFrameBuffer
         ];
+
+        // If there's a background colour, then the finalize step should draw it (the OpenGL renderer has issues blitting alpha blended multisampled textures, so this hides that the 'clear' step above doesn't work there)
+        let render::Rgba8([br, bg, bb, ba]) = background_color;
+
+        if ba > 0 {
+            let background_color = [br, bg, bb, ba];
+            let background_vertex_buffer = match self.background_vertex_buffer {
+                Some(buffer_id) => buffer_id,
+                None            => {
+                    // Allocate the buffer
+                    let buffer_id                   = self.core.sync(|core| core.allocate_vertex_buffer());
+                    let buffer_id                   = render::VertexBufferId(buffer_id);
+                    self.background_vertex_buffer   = Some(buffer_id);
+                    buffer_id
+                }
+            };
+
+            finalize.extend(vec![
+                render::RenderAction::DrawTriangles(background_vertex_buffer, 0..6),
+                render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }),
+                render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
+                render::RenderAction::SetTransform(render::Matrix::identity()),
+
+                // Generate a full-screen quad
+                render::RenderAction::CreateVertex2DBuffer(background_vertex_buffer, vec![
+                    render::Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: background_color },
+                    render::Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: background_color },
+                    render::Vertex2D { pos: [1.0, -1.0],    tex_coord: [0.0, 0.0], color: background_color },
+
+                    render::Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: background_color },
+                    render::Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: background_color },
+                    render::Vertex2D { pos: [-1.0, 1.0],    tex_coord: [0.0, 0.0], color: background_color },
+                ])
+            ]);
+        }
 
         // Start processing the drawing instructions
         let core                = Arc::clone(&self.core);
