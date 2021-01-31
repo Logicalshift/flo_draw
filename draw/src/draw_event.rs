@@ -10,5 +10,8 @@ pub enum DrawEvent {
     Scale(f64),
 
     /// Window has a new size
-    Resize(f64, f64)
+    Resize(f64, f64),
+
+    /// Window has been closed
+    Closed
 }

@@ -12,7 +12,9 @@ use ::desync::*;
 
 use std::mem;
 use futures::future;
+use futures::future::{Either};
 use futures::prelude::*;
+use futures::channel::mpsc;
 use futures::task::{Poll, Context};
 
 use std::pin::*;
@@ -64,6 +66,7 @@ pub fn create_canvas_window_with_events() -> (Canvas, Subscriber<DrawEvent>) {
     let renderer                        = RendererState { renderer: renderer, scale: 1.0, width: 1.0, height: 1.0 };
     let renderer                        = Arc::new(Desync::new(renderer));
     let render_events                   = window_events.clone();
+    let (on_closed, window_closed)      = mpsc::channel(1);
 
     // Block up the renderer until the first 'redraw' event arrives (while this future is running, neither the renderer nor the main event loop can run)
     // Note: window_events must be set up with a buffer large enough to contain copies of all the events up until the redraw request or this may block permanently
@@ -86,8 +89,16 @@ pub fn create_canvas_window_with_events() -> (Canvas, Subscriber<DrawEvent>) {
     // Handle events from the window
     let redraw_render_actions           = render_actions.republish();
     pipe_in(Arc::clone(&renderer), render_events, move |state, event| { 
-        let mut redraw_render_actions = redraw_render_actions.republish();
+        let mut on_closed               = on_closed.clone();
+        let mut redraw_render_actions   = redraw_render_actions.republish();
+
         async move { 
+            // Notify the main process that the window is closed when that occurs
+            if let DrawEvent::Closed = event {
+                on_closed.send(()).await.ok();
+            }
+
+            // Handle the window event
             handle_window_event(state, event, &mut redraw_render_actions).await; 
         }.boxed() 
     });
@@ -101,13 +112,17 @@ pub fn create_canvas_window_with_events() -> (Canvas, Subscriber<DrawEvent>) {
     // Await the rendering future on the glutin thread
     glutin_thread().send_event(GlutinThreadEvent::RunProcess(Box::new(move || async move {
         // Publish the resulting actions to glutin
+        let mut window_closed           = window_closed;
         let mut render_actions          = render_actions;
         let rendering                   = render_actions.send_all(render_action_stream);
 
-        rendering.await;
+        // Stop rendering when the window is closed or there are no more drawing instructions
+        let rendering_or_closed         = future::select(rendering, window_closed.next());
 
-        // The canvas is no longer sending new rendering instructions (TODO: we need to wait until the window is closed to finish up)
-        future::pending::<()>().await;
+        if let Either::Left((_, window_closed)) = rendering_or_closed.await {
+            // Wait for the window to be closed if the drawing finished first
+            window_closed.await;
+        }
 
         // Drop the renderer once the window is closed
         mem::drop(renderer);
@@ -148,6 +163,10 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, rende
                 let scale           = state.scale as f32;
 
                 state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale); 
+            }
+
+            DrawEvent::Closed                   => {
+
             }
         }
     }

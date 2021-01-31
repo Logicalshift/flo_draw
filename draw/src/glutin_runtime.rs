@@ -73,7 +73,7 @@ impl GlutinRuntime {
             let draw_events = match event {
                 Resized(new_size)                                               => vec![DrawEvent::Resize(new_size.width as f64, new_size.height as f64)],
                 Moved(_position)                                                => vec![],
-                CloseRequested                                                  => vec![],
+                CloseRequested                                                  => vec![DrawEvent::Closed],
                 Destroyed                                                       => vec![],
                 DroppedFile(_path)                                              => vec![],
                 HoveredFile(_path)                                              => vec![],
