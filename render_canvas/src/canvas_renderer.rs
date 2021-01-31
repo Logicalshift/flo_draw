@@ -241,6 +241,7 @@ impl CanvasRenderer {
                 blend_mode:         canvas::BlendMode::SourceOver,
                 restore_point:      None
             },
+            is_sprite:          false,
             stored_states:      vec![]
         }
     }
@@ -691,7 +692,13 @@ impl CanvasRenderer {
                     ClearLayer | ClearSprite => {
                         core.sync(|core| {
                             // Create a new layer
-                            let mut layer = Self::create_default_layer();
+                            let mut layer               = Self::create_default_layer();
+
+                            // Sprite layers act as if their transform is already set
+                            if core.layer(self.current_layer).is_sprite {
+                                layer.is_sprite             = true;
+                                layer.state.current_matrix  = self.active_transform;
+                            }
 
                             // Swap into the layer list to replace the old one
                             mem::swap(core.layer(self.current_layer), &mut layer);
@@ -709,12 +716,20 @@ impl CanvasRenderer {
                                 self.current_layer = *sprite_handle;
                             } else {
                                 // Create a new sprite layer
-                                let sprite_layer = Self::create_default_layer();
-                                let sprite_layer = core.allocate_layer_handle(sprite_layer);
+                                let mut sprite_layer    = Self::create_default_layer();
+                                sprite_layer.is_sprite  = true;
+
+                                // Associate it with the sprite ID
+                                let sprite_layer        = core.allocate_layer_handle(sprite_layer);
                                 core.sprites.insert(sprite_id, sprite_layer);
 
-                                self.current_layer = sprite_layer;
+                                // Choose the layer as the current sprite layer
+                                self.current_layer      = sprite_layer;
                             }
+
+                            // Set the sprite matrix to be 'unchanged' from the active transform
+                            let layer                   = core.layer(self.current_layer);
+                            layer.state.current_matrix  = self.active_transform;
                         })
                     },
 

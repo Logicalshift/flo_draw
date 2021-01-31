@@ -221,6 +221,7 @@ impl RenderCore {
                 blend_mode:         canvas::BlendMode::SourceOver,
                 restore_point:      None
             },
+            is_sprite:          false,
             stored_states:      vec![]
         };
 

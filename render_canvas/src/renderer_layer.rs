@@ -10,6 +10,9 @@ pub struct Layer {
     /// The render order for this layer
     pub render_order: Vec<RenderEntity>,
 
+    /// True if this is a sprite layer
+    pub is_sprite: bool,
+
     /// The state of this layer
     pub state: LayerState,
 
