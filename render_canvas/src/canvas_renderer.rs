@@ -821,7 +821,7 @@ impl CanvasRenderer {
         let viewport_matrix     = transform_to_matrix(&self.viewport_transform);
         let mut initialise      = vec![
             render::RenderAction::SetTransform(viewport_matrix),
-            render::RenderAction::Clear(background_color),
+            render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])),
             render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
             render::RenderAction::SelectRenderTarget(RenderTargetId(0)),
         ];
@@ -845,6 +845,7 @@ impl CanvasRenderer {
         // When finished, render the MSAA buffer to the main framebuffer
         let finalize            = vec![
             render::RenderAction::DrawFrameBuffer(RenderTargetId(0), 0, 0),
+            render::RenderAction::Clear(background_color),
             render::RenderAction::BlendMode(render::BlendMode::SourceOver),
             render::RenderAction::RenderToFrameBuffer
         ];
