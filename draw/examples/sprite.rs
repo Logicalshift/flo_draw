@@ -19,6 +19,7 @@ pub fn main() {
             gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
             // Create a triangle sprite
+            gc.identity_transform();
             gc.sprite(SpriteId(0));
             gc.clear_sprite();
             gc.new_path();
@@ -32,6 +33,9 @@ pub fn main() {
 
             // Draw the triangle in a few places
             gc.layer(0);
+
+            gc.canvas_height(1000.0);
+            gc.center_region(0.0, 0.0, 1000.0, 1000.0);
             gc.sprite_transform(SpriteTransform::Identity);
             gc.draw_sprite(SpriteId(0));
 
