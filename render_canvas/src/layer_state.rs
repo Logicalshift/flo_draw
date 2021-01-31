@@ -10,6 +10,9 @@ use lyon::tessellation::{FillRule};
 ///
 #[derive(Clone)]
 pub struct LayerState {
+    /// True if this layer contains a sprite
+    pub is_sprite: bool,
+
     /// The current fill colour
     pub fill_color: render::Rgba8,
 

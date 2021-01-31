@@ -213,6 +213,7 @@ impl RenderCore {
         let mut old_layer           = Layer {
             render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             state:              LayerState {
+                is_sprite:          false,
                 fill_color:         render::Rgba8([0, 0, 0, 255]),
                 winding_rule:       FillRule::NonZero,
                 stroke_settings:    StrokeSettings::new(),
@@ -221,7 +222,6 @@ impl RenderCore {
                 blend_mode:         canvas::BlendMode::SourceOver,
                 restore_point:      None
             },
-            is_sprite:          false,
             stored_states:      vec![]
         };
 

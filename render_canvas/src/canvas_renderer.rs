@@ -233,6 +233,7 @@ impl CanvasRenderer {
         Layer {
             render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             state:              LayerState {
+                is_sprite:          false,
                 fill_color:         render::Rgba8([0, 0, 0, 255]),
                 winding_rule:       FillRule::NonZero,
                 stroke_settings:    StrokeSettings::new(),
@@ -241,7 +242,6 @@ impl CanvasRenderer {
                 blend_mode:         canvas::BlendMode::SourceOver,
                 restore_point:      None
             },
-            is_sprite:          false,
             stored_states:      vec![]
         }
     }
@@ -695,8 +695,8 @@ impl CanvasRenderer {
                             let mut layer               = Self::create_default_layer();
 
                             // Sprite layers act as if their transform is already set
-                            if core.layer(self.current_layer).is_sprite {
-                                layer.is_sprite             = true;
+                            if core.layer(self.current_layer).state.is_sprite {
+                                layer.state.is_sprite       = true;
                                 layer.state.current_matrix  = self.active_transform;
                             }
 
@@ -716,15 +716,15 @@ impl CanvasRenderer {
                                 self.current_layer = *sprite_handle;
                             } else {
                                 // Create a new sprite layer
-                                let mut sprite_layer    = Self::create_default_layer();
-                                sprite_layer.is_sprite  = true;
+                                let mut sprite_layer            = Self::create_default_layer();
+                                sprite_layer.state.is_sprite    = true;
 
                                 // Associate it with the sprite ID
-                                let sprite_layer        = core.allocate_layer_handle(sprite_layer);
+                                let sprite_layer                = core.allocate_layer_handle(sprite_layer);
                                 core.sprites.insert(sprite_id, sprite_layer);
 
                                 // Choose the layer as the current sprite layer
-                                self.current_layer      = sprite_layer;
+                                self.current_layer              = sprite_layer;
                             }
 
                             // Set the sprite matrix to be 'unchanged' from the active transform
