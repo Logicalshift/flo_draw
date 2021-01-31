@@ -25,6 +25,9 @@ pub struct RenderCore {
     /// The definition for the layers
     pub layers: Vec<LayerHandle>,
 
+    /// The background colour to clear to when rendering the canvas
+    pub background_color: render::Rgba8,
+
     /// The definition for the sprites
     pub sprites: HashMap<canvas::SpriteId, LayerHandle>,
 
