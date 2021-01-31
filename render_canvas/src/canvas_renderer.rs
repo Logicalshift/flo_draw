@@ -746,6 +746,10 @@ impl CanvasRenderer {
                             let layer           = core.layer(self.current_layer);
                             let sprite_matrix   = layer.state.sprite_matrix;
 
+                            // Update the transformation matrix
+                            layer.update_transform(&self.active_transform);
+
+                            // Render the sprite
                             layer.render_order.push(RenderEntity::RenderSprite(sprite_id, sprite_matrix))
                         })
                     },
