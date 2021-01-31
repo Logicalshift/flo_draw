@@ -108,7 +108,7 @@ pub fn create_canvas_window_with_events() -> (Canvas, Subscriber<DrawEvent>) {
                 }.boxed()
             }
         } else {
-            // Ignore all other events
+            // The render actions were dropped as the window was closed: ignore any further events
             async move { }.boxed()
         }
     });
