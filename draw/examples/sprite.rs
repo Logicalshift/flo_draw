@@ -12,7 +12,7 @@ pub fn main() {
         // Sprites are a way to rapidly repeat a set of drawing instructions
         canvas.draw(|gc| {
             // Clear the canvas and set up the coordinates
-            gc.clear_canvas();
+            gc.clear_canvas(Color::Rgba(0.0, 2.0, 0.0, 1.0));
             gc.canvas_height(1000.0);
             gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
