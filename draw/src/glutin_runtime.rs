@@ -52,7 +52,7 @@ impl GlutinRuntime {
 
         match event {
             NewEvents(_cause)                       => { }
-            WindowEvent { window_id, event }        => { self.handle_window_event(window_id, event); }
+            WindowEvent { window_id, event }        => { self.handle_window_event(window_id, event, control_flow); }
             DeviceEvent { device_id: _, event: _ }  => { }
             UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target, control_flow); }
             Suspended                               => { }
@@ -76,7 +76,17 @@ impl GlutinRuntime {
     ///
     /// Handles a glutin window event
     ///
-    fn handle_window_event(&mut self, window_id: WindowId, event: WindowEvent) {
+    fn handle_window_event(&mut self, window_id: WindowId, event: WindowEvent, control_flow: &mut ControlFlow) {
+        if let WindowEvent::CloseRequested = event {
+            // Glutin has a bug (at least in OS X) where setting control_flow to Exit does not actually shut it down
+            // This issue does not occur if the 'Exit' request is done in response to closing a window
+            // (This only partially works around the bug: the process will still not quit properly if the last window
+            // is closed before the main routine finishes, ie when 'will_stop_when_no_windows' is still false)
+            if self.will_stop_when_no_windows && self.window_events.len() <= 1 {
+                *control_flow = ControlFlow::Exit;
+            }
+        }
+
         if let Some(window_events) = self.window_events.get_mut(&window_id) {
             use WindowEvent::*;
 
