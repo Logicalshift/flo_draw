@@ -50,7 +50,7 @@ pub fn create_canvas_window() -> Canvas {
 ///
 /// Creates a canvas that will render to a window, along with a stream of events from that window
 ///
-pub fn create_canvas_window_with_events() -> (Canvas, Subscriber<DrawEvent>) {
+pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Item=DrawEvent>) {
     // Create the canvas
     let canvas                          = Canvas::new();
 
