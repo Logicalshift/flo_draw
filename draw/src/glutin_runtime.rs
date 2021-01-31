@@ -57,10 +57,21 @@ impl GlutinRuntime {
             UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target, control_flow); }
             Suspended                               => { }
             Resumed                                 => { }
-            MainEventsCleared                       => { }
             RedrawRequested(window_id)              => { self.request_redraw(window_id); }
-            RedrawEventsCleared                     => { }
-            LoopDestroyed                           => { }
+            
+            MainEventsCleared                       => {
+                if self.window_events.len() == 0 && self.will_stop_when_no_windows {
+                    println!("Main events cleared"); 
+                    *control_flow = ControlFlow::Exit;
+                }
+            }
+            RedrawEventsCleared                     => { 
+                if self.window_events.len() == 0 && self.will_stop_when_no_windows {
+                    println!("Redraw events cleared"); 
+                    *control_flow = ControlFlow::Exit;
+                }
+            }
+            LoopDestroyed                           => { *control_flow = ControlFlow::Exit; }
         }
     }
 
