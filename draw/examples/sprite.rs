@@ -19,9 +19,20 @@ pub fn main() {
             gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
             // Create a triangle sprite
-            gc.identity_transform();
             gc.sprite(SpriteId(0));
             gc.clear_sprite();
+            gc.new_path();
+            gc.move_to(200.0, 200.0);
+            gc.line_to(800.0, 200.0);
+            gc.line_to(500.0, 800.0);
+            gc.line_to(200.0, 200.0);
+
+            gc.fill_color(Color::Rgba(0.8, 0.4, 0.2, 1.0));
+            gc.fill();
+
+            // Draw the triangle in a few places
+            gc.layer(0);
+
             gc.new_path();
             gc.move_to(200.0, 200.0);
             gc.line_to(800.0, 200.0);
@@ -31,20 +42,18 @@ pub fn main() {
             gc.fill_color(Color::Rgba(0.0, 0.0, 0.8, 1.0));
             gc.fill();
 
-            // Draw the triangle in a few places
-            gc.layer(0);
-
-            gc.canvas_height(1000.0);
-            gc.center_region(0.0, 0.0, 1000.0, 1000.0);
             gc.sprite_transform(SpriteTransform::Identity);
             gc.draw_sprite(SpriteId(0));
 
+            gc.sprite_transform(SpriteTransform::Identity);
             gc.sprite_transform(SpriteTransform::Translate(100.0, 100.0));
             gc.draw_sprite(SpriteId(0));
 
+            gc.sprite_transform(SpriteTransform::Identity);
             gc.sprite_transform(SpriteTransform::Translate(200.0, 100.0));
             gc.draw_sprite(SpriteId(0));
 
+            gc.sprite_transform(SpriteTransform::Identity);
             gc.sprite_transform(SpriteTransform::Translate(300.0, 100.0));
             gc.draw_sprite(SpriteId(0));
         });
