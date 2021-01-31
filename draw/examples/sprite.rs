@@ -1,8 +1,6 @@
 use flo_draw::*;
 use flo_canvas::*;
 
-use std::io::*;
-
 ///
 /// Simple example that displays a canvas window and renders a triangle
 ///
@@ -48,9 +46,5 @@ pub fn main() {
             gc.sprite_transform(SpriteTransform::Translate(300.0, 100.0));
             gc.draw_sprite(SpriteId(0));
         });
-
-        println!("Press enter when done");
-        let _ = stdin().read(&mut [0u8]).unwrap();
-        println!("Stopping");
     });
 }

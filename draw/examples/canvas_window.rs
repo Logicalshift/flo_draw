@@ -1,8 +1,6 @@
 use flo_draw::*;
 use flo_canvas::*;
 
-use std::io::*;
-
 ///
 /// Simple example that displays a canvas window and renders a triangle
 ///
@@ -40,9 +38,5 @@ pub fn main() {
             gc.fill_color(Color::Rgba(0.0, 0.0, 0.8, 1.0));
             gc.fill();
         });
-
-        println!("Press enter when done");
-        let _ = stdin().read(&mut [0u8]).unwrap();
-        println!("Stopping");
     });
 }
