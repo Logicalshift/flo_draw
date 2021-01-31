@@ -22,7 +22,7 @@ impl Layer {
     /// Updates the transformation set for this layer
     ///
     pub fn update_transform(&mut self, active_transform: &canvas::Transform2D) {
-        if &self.state.current_matrix != active_transform {
+        if &self.state.current_matrix != active_transform && !self.state.is_sprite {
             // Update the current matrix
             self.state.current_matrix = *active_transform;
 
