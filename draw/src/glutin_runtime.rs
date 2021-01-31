@@ -13,10 +13,13 @@ use futures::task;
 use futures::prelude::*;
 use futures::future::{LocalBoxFuture};
 
+use futures_timer::*;
+
 use std::mem;
 use std::sync::*;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{HashMap};
+use std::time::{Duration};
 
 static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 
@@ -70,6 +73,17 @@ impl GlutinRuntime {
                 }
             }
             LoopDestroyed                           => { *control_flow = ControlFlow::Exit; }
+        }
+
+        if let ControlFlow::Exit = control_flow {
+            // For some reason, Glutin sometimes goes on processing events even though we set the control flow to 'Exit'
+            // (it sticks at 'Exit' but never actually exits...). So here's a panic handler that will crash the process
+            // if glutin gets stuck.
+            self.run_process(async {
+                Delay::new(Duration::from_secs(3)).await;
+
+                panic!("Glutin did not shut down after control_flow was set to ControlFlow::Exit");
+            });
         }
     }
 
