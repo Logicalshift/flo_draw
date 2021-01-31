@@ -91,7 +91,7 @@ impl CanvasCore {
         let new_drawing = old_drawing.into_iter()
             .filter(|drawing| {
                 match drawing {
-                    &(_, Draw::ClearCanvas)         => true,
+                    &(_, Draw::ClearCanvas(_))      => true,
                     &(_, Draw::LayerBlend(_, _))    => true,
                     &(layer, _)                     => layer != layer_id
                 }
@@ -113,7 +113,7 @@ impl CanvasCore {
         // Process the drawing commands
         to_draw.iter().for_each(|draw| {
             match draw {
-                &Draw::ClearCanvas => {
+                &Draw::ClearCanvas(_) => {
                     // Clearing the canvas empties the command list and updates the clear count
                     self.drawing_since_last_clear   = vec![];
                     self.current_layer              = 0;
@@ -189,7 +189,7 @@ impl Canvas {
     pub fn new() -> Canvas {
         // A canvas is initially just a clear command
         let core = CanvasCore {
-            drawing_since_last_clear:   vec![ (0, Draw::ClearCanvas) ],
+            drawing_since_last_clear:   vec![ (0, Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))) ],
             current_layer:              0,
             pending_streams:            vec![ ]
         };
@@ -304,7 +304,7 @@ impl<'a> GraphicsContext for CoreContext<'a> {
     fn free_stored_buffer(&mut self)                            { self.pending.push(Draw::FreeStoredBuffer); }
     fn push_state(&mut self)                                    { self.pending.push(Draw::PushState); }
     fn pop_state(&mut self)                                     { self.pending.push(Draw::PopState); }
-    fn clear_canvas(&mut self)                                  { self.pending.push(Draw::ClearCanvas); }
+    fn clear_canvas(&mut self, color: Color)                    { self.pending.push(Draw::ClearCanvas(color)); }
     fn layer(&mut self, layer_id: u32)                          { self.pending.push(Draw::Layer(layer_id)); }
     fn layer_blend(&mut self, layer_id: u32, blend_mode: BlendMode) { self.pending.push(Draw::LayerBlend(layer_id, blend_mode)); }
     fn clear_layer(&mut self)                                   { self.pending.push(Draw::ClearLayer); }
@@ -494,7 +494,7 @@ mod test {
 
         // Check we can get the results via the stream
         executor::block_on(async {
-            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
             assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
@@ -522,7 +522,7 @@ mod test {
 
         // Check we can get the results via the stream
         executor::block_on(async {
-            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
             assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
@@ -555,7 +555,7 @@ mod test {
         let mut stream  = canvas.stream();
 
         executor::block_on(async {
-            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
             assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
@@ -595,7 +595,7 @@ mod test {
 
         executor::block_on(async
         {
-            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
             assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
@@ -628,7 +628,7 @@ mod test {
         let mut stream  = canvas.stream();
 
         executor::block_on(async {
-            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
             assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
@@ -665,11 +665,11 @@ mod test {
 
         executor::block_on(async {
             // Check we can get the results via the stream
-            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
 
-            assert!(stream2.next().await == Some(Draw::ClearCanvas));
+            assert!(stream2.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream2.next().await == Some(Draw::NewPath));
             assert!(stream2.next().await == Some(Draw::Move(0.0, 0.0)));
 
@@ -708,7 +708,7 @@ mod test {
             sleep(Duration::from_millis(100));
 
             canvas.write(vec![
-                Draw::ClearCanvas,
+                Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)),
                 Draw::Move(200.0, 200.0),
             ]);
         });
@@ -716,14 +716,14 @@ mod test {
         // TODO: if the canvas fails to notify, this will block forever :-/
         executor::block_on(async {
             // Check we can get the results via the stream
-            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
 
             // Give the thread some time to clear the canvas
             sleep(Duration::from_millis(120));
 
             // Commands we sent before the flush are gone
-            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::Move(200.0, 200.0)));
 
             // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
@@ -755,7 +755,7 @@ mod test {
         let mut stream  = canvas.stream();
 
         executor::block_on(async {
-            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::Layer(0)));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
@@ -792,7 +792,7 @@ mod test {
         let mut stream  = canvas.stream();
 
         executor::block_on(async {
-            assert!(stream.next().await == Some(Draw::ClearCanvas));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(20.0, 20.0)));
             assert!(stream.next().await == Some(Draw::Stroke));

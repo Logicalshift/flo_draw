@@ -41,7 +41,7 @@ pub trait GraphicsContext {
     fn free_stored_buffer(&mut self);
     fn push_state(&mut self);
     fn pop_state(&mut self);
-    fn clear_canvas(&mut self);
+    fn clear_canvas(&mut self, color: Color);
     fn layer(&mut self, layer_id: u32);
     fn layer_blend(&mut self, layer_id: u32, blend_mode: BlendMode);
     fn clear_layer(&mut self);
@@ -83,7 +83,7 @@ pub trait GraphicsContext {
             FreeStoredBuffer                            => self.free_stored_buffer(),
             PushState                                   => self.push_state(),
             PopState                                    => self.pop_state(),
-            ClearCanvas                                 => self.clear_canvas(),
+            ClearCanvas(color)                          => self.clear_canvas(color),
             Layer(layer_id)                             => self.layer(layer_id),
             LayerBlend(layer_id, blend_mode)            => self.layer_blend(layer_id, blend_mode),
             ClearLayer                                  => self.clear_layer(),
@@ -216,7 +216,7 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn free_stored_buffer(&mut self)                                          { self.push(Draw::FreeStoredBuffer); }
     #[inline] fn push_state(&mut self)                                                  { self.push(Draw::PushState); }
     #[inline] fn pop_state(&mut self)                                                   { self.push(Draw::PopState); }
-    #[inline] fn clear_canvas(&mut self)                                                { self.push(Draw::ClearCanvas); }
+    #[inline] fn clear_canvas(&mut self, color: Color)                                  { self.push(Draw::ClearCanvas(color)); }
     #[inline] fn layer(&mut self, layer_id: u32)                                        { self.push(Draw::Layer(layer_id)); }
     #[inline] fn layer_blend(&mut self, layer_id: u32, blend_mode: BlendMode)           { self.push(Draw::LayerBlend(layer_id, blend_mode)); }
     #[inline] fn clear_layer(&mut self)                                                 { self.push(Draw::ClearLayer); }

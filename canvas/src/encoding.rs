@@ -252,7 +252,7 @@ impl CanvasEncoding<String> for Draw {
             &FreeStoredBuffer                       => ('Z', 'f').encode_canvas(append_to),
             &PushState                              => 'P'.encode_canvas(append_to),
             &PopState                               => 'p'.encode_canvas(append_to),
-            &ClearCanvas                            => ('N', 'A').encode_canvas(append_to),
+            &ClearCanvas(color)                     => ('N', 'A', color).encode_canvas(append_to),
             &Layer(layer_id)                        => ('N', 'l', layer_id).encode_canvas(append_to),
             &LayerBlend(layer_id, blend_mode)       => ('N', 'b', layer_id, blend_mode).encode_canvas(append_to),
             &ClearLayer                             => ('N', 'C').encode_canvas(append_to),
@@ -353,7 +353,7 @@ mod test {
     #[test]
     fn encode_popstate() { assert!(&encode_draw(Draw::PopState) == "p") }
     #[test]
-    fn encode_clearcanvas() { assert!(&encode_draw(Draw::ClearCanvas) == "NA") }
+    fn encode_clearcanvas() { assert!(&encode_draw(Draw::ClearCanvas(Color::Rgba(1.0, 1.0, 1.0, 1.0))) == "NARAAAg/AAAAg/AAAAg/AAAAg/A") }
     #[test]
     fn encode_layer() { assert!(&encode_draw(Draw::Layer(2)) == "NlCAAAAA") }
     #[test]

@@ -33,6 +33,8 @@ enum DecoderState {
     Transform,                          // 'T'
     State,                              // 'Z'
 
+    ClearCanvas(String),                // 'NA' (r, g, b, a)
+
     Move(String),                       // m (x, y)
     Line(String),                       // l (x, y)
     BezierCurve(String),                // c (x, y, x, y, x, y)
@@ -140,6 +142,8 @@ impl CanvasDecoder {
             DashLength(param)               => Self::decode_dash_length(next_chr, param)?,
             DashOffset(param)               => Self::decode_dash_offset(next_chr, param)?,
 
+            ClearCanvas(param)              => Self::decode_clear_canvas(next_chr, param)?,
+
             ColorStroke(param)              => Self::decode_color_stroke(next_chr, param)?,
             ColorFill(param)                => Self::decode_color_fill(next_chr, param)?,
 
@@ -205,7 +209,7 @@ impl CanvasDecoder {
         // Matched 'N' so far
         match next_chr {
             'p'     => Ok((DecoderState::None, Some(Draw::NewPath))),
-            'A'     => Ok((DecoderState::None, Some(Draw::ClearCanvas))),
+            'A'     => Ok((DecoderState::ClearCanvas(String::new()), None)),
             'C'     => Ok((DecoderState::None, Some(Draw::ClearLayer))),
 
             'l'     => Ok((DecoderState::NewLayer(String::new()), None)),
@@ -402,6 +406,28 @@ impl CanvasDecoder {
             param.push(next_chr);
             let mut param = param.chars();
             Ok((DecoderState::None, Some(Draw::DashOffset(Self::decode_f32(&mut param)?))))
+        }
+    }
+
+    #[inline] fn decode_clear_canvas(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 24 {
+            param.push(next_chr);
+            Ok((DecoderState::ClearCanvas(param), None))
+        } else {
+            param.push(next_chr);
+
+            let mut param   = param.chars();
+            let col_type    = param.next();
+            let r           = Self::decode_f32(&mut param)?;
+            let g           = Self::decode_f32(&mut param)?;
+            let b           = Self::decode_f32(&mut param)?;
+            let a           = Self::decode_f32(&mut param)?;
+
+            if col_type != Some('R') {
+                Err(DecoderError::UnknownColorType)?;
+            }
+
+            Ok((DecoderState::None, Some(Draw::ClearCanvas(Color::Rgba(r, g, b, a)))))
         }
     }
 
@@ -980,7 +1006,7 @@ mod test {
 
     #[test]
     fn decode_clear_canvas() {
-        check_round_trip_single(Draw::ClearCanvas);
+        check_round_trip_single(Draw::ClearCanvas(Color::Rgba(0.1, 0.2, 0.3, 0.4)));
     }
 
     #[test]
@@ -1094,7 +1120,7 @@ mod test {
             Draw::FreeStoredBuffer,
             Draw::PushState,
             Draw::PopState,
-            Draw::ClearCanvas,
+            Draw::ClearCanvas(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
             Draw::Layer(21),
             Draw::ClearLayer,
             Draw::NewPath,
@@ -1137,7 +1163,7 @@ mod test {
             Draw::FreeStoredBuffer,
             Draw::PushState,
             Draw::PopState,
-            Draw::ClearCanvas,
+            Draw::ClearCanvas(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
             Draw::Layer(21),
             Draw::ClearLayer,
             Draw::NewPath,

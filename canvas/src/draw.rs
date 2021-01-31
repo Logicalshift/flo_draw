@@ -194,8 +194,8 @@ pub enum Draw {
     /// Restore a state previously pushed
     PopState,
 
-    /// Clears the canvas entirely
-    ClearCanvas,
+    /// Clears the canvas entirely to a background colour
+    ClearCanvas(Color),
 
     /// Selects a particular layer for drawing
     /// Layer 0 is selected initially. Layers are drawn in order starting from 0.
