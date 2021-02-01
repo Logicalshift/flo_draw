@@ -21,3 +21,4 @@ cgl             = "0.3"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 glutin_wgl_sys  = "0.1"
+winapi 			= "0.3"
