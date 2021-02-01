@@ -5,16 +5,18 @@ use super::offscreen_trait::*;
 use flo_render_gl_offscreen::wgl;
 use flo_render_gl_offscreen::winapi;
 use flo_render_gl_offscreen::winapi::um::winuser::{CreateWindowExW, RegisterClassExW, GetDC, WNDCLASSEXW, CS_OWNDC, WS_OVERLAPPEDWINDOW};
-use flo_render_gl_offscreen::winapi::um::wingdi::{PIXELFORMATDESCRIPTOR, PFD_DRAW_TO_WINDOW, PFD_SUPPORT_OPENGL, PFD_DOUBLEBUFFER, PFD_TYPE_RGBA, PFD_MAIN_PLANE};
+use flo_render_gl_offscreen::winapi::um::wingdi::{ChoosePixelFormat, SetPixelFormat, PIXELFORMATDESCRIPTOR, PFD_DRAW_TO_WINDOW, PFD_SUPPORT_OPENGL, PFD_DOUBLEBUFFER, PFD_TYPE_RGBA, PFD_MAIN_PLANE};
 use flo_render_gl_offscreen::winapi::um::libloaderapi::{GetModuleHandleW};
+use flo_render_gl_offscreen::winapi::shared::windef::{HWND};
 
 use std::mem;
 use std::ptr;
-use std::ffi::{OsStr};
+use std::ffi;
+use std::ffi::{CString, OsStr};
 use std::os::windows::ffi::{OsStrExt};
 
 struct WglOffscreenRenderContext {
-
+    window: HWND
 }
 
 ///
@@ -81,9 +83,23 @@ pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, R
             dwDamageMask:       0
         };
 
+        // Set the pixel format for the window
+        let chosen_format = ChoosePixelFormat(dc, &pixel_format);
+        SetPixelFormat(dc, chosen_format, &pixel_format);
+
+        // Load the GL commands
+        gl::load_with(|name| {
+            unsafe {
+                let name = CString::new(name.as_bytes()).unwrap();
+                let name = name.as_ptr();
+
+                wgl::wgl::GetProcAddress(name) as *const ffi::c_void
+            }
+        });
+
         // The result is a new WglOffscreenRenderContext
         Ok(WglOffscreenRenderContext {
-
+            window: window
         })
     }
 }
