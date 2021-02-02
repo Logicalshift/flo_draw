@@ -3,8 +3,7 @@ use super::opengl::*;
 use super::offscreen_trait::*;
 
 use flo_render_gl_offscreen::wgl;
-use flo_render_gl_offscreen::winapi;
-use flo_render_gl_offscreen::winapi::um::winuser::{CreateWindowExW, RegisterClassExW, GetDC, DefWindowProcW, WNDCLASSEXW, CS_OWNDC, WS_EX_APPWINDOW, WS_OVERLAPPEDWINDOW};
+use flo_render_gl_offscreen::winapi::um::winuser::{CreateWindowExW, RegisterClassExW, GetDC, DefWindowProcW, DestroyWindow, WNDCLASSEXW, CS_OWNDC, WS_EX_APPWINDOW, WS_OVERLAPPEDWINDOW};
 use flo_render_gl_offscreen::winapi::um::wingdi::{ChoosePixelFormat, SetPixelFormat, PIXELFORMATDESCRIPTOR, PFD_DRAW_TO_WINDOW, PFD_SUPPORT_OPENGL, PFD_DOUBLEBUFFER, PFD_TYPE_RGBA, PFD_MAIN_PLANE};
 use flo_render_gl_offscreen::winapi::um::libloaderapi::{LoadLibraryW, FreeLibrary, GetModuleHandleW, GetProcAddress};
 use flo_render_gl_offscreen::winapi::um::errhandlingapi::{GetLastError};
@@ -179,11 +178,16 @@ pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, R
 
 impl Drop for WglOffscreenRenderContext {
     fn drop(&mut self) {
-        // Delete the context
+        unsafe {
+            // Delete the context
+            wgl::wgl::DeleteContext(self.context as *const _);
 
-        // Delete the window
+            // Delete the window
+            DestroyWindow(self.window);
 
-        // Close the library
+            // Close the library
+            FreeLibrary(self.opengl_library);
+        }
     }
 }
 
