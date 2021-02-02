@@ -426,6 +426,13 @@ impl GlRenderer {
     ///
     fn draw_indexed_triangles(&mut self, VertexBufferId(vertex_buffer): VertexBufferId, IndexBufferId(index_buffer): IndexBufferId, num_vertices: usize) {
         unsafe {
+            if vertex_buffer >= self.buffers.len() || index_buffer >= self.index_buffers.len() {
+                // Treat the same as the buffer being none
+                // TODO: this seems to happen sometimes with the flo_draw examples on Windows, but it's not clear why and is likely a bug
+                // It's possible we're rendering things out of order somehow (eg, rendering the results of a 'resize' event after the initial draw, so the buffers aren't loaded)
+                return;
+            }
+
             if let (Some((vertex_array, _buffer)), Some(index_buffer)) = (&self.buffers[vertex_buffer], &self.index_buffers[index_buffer]) {
                 let num_vertices = num_vertices as gl::types::GLsizei;
 
