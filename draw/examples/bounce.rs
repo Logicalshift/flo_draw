@@ -85,7 +85,7 @@ pub fn main() {
             });
 
             // Wait for the next frame
-            thread::sleep(Duration::from_millis(1000 / 60));
+            thread::sleep(Duration::from_nanos(1_000_000_000 / 60));
         }
     });
 }
