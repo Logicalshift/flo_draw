@@ -19,3 +19,6 @@ glutin              = "0.26.0"
 lazy_static         = "1.2"
 futures             = "0.3"
 gl                  = "0.14"
+
+[dev-dependencies]
+rand                = "0.8"
