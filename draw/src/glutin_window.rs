@@ -1,3 +1,5 @@
+use super::draw_event::*;
+
 use flo_stream::*;
 use flo_render::*;
 
@@ -31,10 +33,11 @@ impl GlutinWindow {
 ///
 /// Sends render actions to a window
 ///
-pub (super) async fn send_actions_to_window(window: GlutinWindow, render_actions: Subscriber<Vec<RenderAction>>) {
+pub (super) async fn send_actions_to_window(window: GlutinWindow, render_actions: Subscriber<Vec<RenderAction>>, events: Publisher<DrawEvent>) {
     // Read events from the render actions list
     let mut render_actions  = render_actions;
     let mut window          = window;
+    let mut events          = events;
 
     while let Some(next_action) = render_actions.next().await {
         // Do nothing if there are no actions
@@ -82,6 +85,9 @@ pub (super) async fn send_actions_to_window(window: GlutinWindow, render_actions
             let context     = current_context.make_not_current();
             let context     = if let Ok(context) = context { context } else { break; };
             window.context  = Some(context);
+
+            // Notify that a new frame has been drawn
+            events.publish(DrawEvent::NewFrame).await;
         }
     }
 

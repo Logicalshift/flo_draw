@@ -175,6 +175,10 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, rende
                 state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale); 
             }
 
+            DrawEvent::NewFrame                 => {
+                
+            }
+
             DrawEvent::Closed                   => {
 
             }

@@ -13,7 +13,6 @@ use futures::task;
 use futures::prelude::*;
 use futures::future::{LocalBoxFuture};
 
-use std::mem;
 use std::sync::*;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{HashMap};
@@ -176,10 +175,11 @@ impl GlutinRuntime {
                     initial_events.publish(DrawEvent::Resize(size.width as f64, size.height as f64)).await;
                     initial_events.publish(DrawEvent::Scale(scale)).await;
                     initial_events.publish(DrawEvent::Redraw).await;
-                    mem::drop(initial_events);
+
+                    let window_events = initial_events;
 
                     // Process the actions for the window
-                    send_actions_to_window(window, actions).await; 
+                    send_actions_to_window(window, actions, window_events).await; 
 
                     // Stop processing events for the window once there are no more actions
                     glutin_thread().send_event(GlutinThreadEvent::StopSendingToWindow(window_id));

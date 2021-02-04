@@ -6,6 +6,9 @@ pub enum DrawEvent {
     /// Request to re-render the window (this is automatic for canvas windows)
     Redraw,
 
+    /// Indicates that a frame has finished rendering to the canvas
+    NewFrame,
+
     /// The window has a new scale
     Scale(f64),
 
