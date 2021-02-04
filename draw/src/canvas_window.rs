@@ -15,6 +15,7 @@ use futures::future;
 use futures::future::{Either};
 use futures::prelude::*;
 use futures::channel::mpsc;
+use futures::channel::oneshot;
 use futures::task::{Poll, Context};
 
 use std::pin::*;
@@ -25,16 +26,19 @@ use std::sync::*;
 ///
 struct RendererState {
     /// The renderer for the canvas
-    renderer:   CanvasRenderer,
+    renderer:       CanvasRenderer,
 
     /// The scale factor of the canvas
-    scale:      f64,
+    scale:          f64,
 
     /// The width of the canvas
-    width:      f64,
+    width:          f64,
 
     /// The height of the canvas
-    height:     f64
+    height:         f64,
+
+    /// Oneshot that indicates when a frame is ready, if something is waiting for a rendering to complete
+    frame_ready:    Option<oneshot::Sender<()>>
 }
 
 ///
@@ -63,7 +67,7 @@ pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Ite
 
     // Create a canvas renderer
     let renderer                        = CanvasRenderer::new();
-    let renderer                        = RendererState { renderer: renderer, scale: 1.0, width: 1.0, height: 1.0 };
+    let renderer                        = RendererState { renderer: renderer, scale: 1.0, width: 1.0, height: 1.0, frame_ready: None };
     let renderer                        = Arc::new(Desync::new(renderer));
     let render_events                   = window_events.clone();
     let (on_closed, window_closed)      = mpsc::channel(1);
@@ -176,7 +180,9 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, rende
             }
 
             DrawEvent::NewFrame                 => {
-                
+                if let Some(ready) = state.frame_ready.take() {
+                    ready.send(()).ok();
+                }
             }
 
             DrawEvent::Closed                   => {
