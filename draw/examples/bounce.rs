@@ -42,7 +42,9 @@ impl Ball {
         if self.y+self.dy-self.radius < 0.0 && self.dy < 0.0        { self.dy = -self.dy; }
 
         // Gravity
-        self.dy -= 0.2;
+        if self.y >= self.radius {
+            self.dy -= 0.2;
+        }
 
         // Move this ball in whatever direction it's going
         self.x += self.dx;
