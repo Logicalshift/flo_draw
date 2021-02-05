@@ -48,8 +48,8 @@ impl Shader {
 
             if is_compiled == gl::FALSE.into() {
                 // Fetch the logs for this shader
-                let mut logs    = vec![0i8; 8192];
-                let mut len     = 0;
+                let mut logs: Vec<gl::types::GLchar>    = vec![0; 8192];
+                let mut len                             = 0;
                 gl::GetShaderInfoLog(shader, 8192, &mut len, logs.as_mut_ptr());
 
                 // Convert to a string (despite gl using i8s we can just read them as u8s...)
