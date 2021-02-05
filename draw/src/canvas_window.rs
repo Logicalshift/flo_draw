@@ -121,11 +121,11 @@ pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Ite
 
                                 // Process the event while we wait for the frame to render
                                 let mut event_actions = render_actions.republish();
-                                renderer.future_sync(move |state| async move { 
+                                renderer.future_desync(move |state| async move { 
                                     for event in events.into_iter() {
                                         handle_window_event(state, event, &mut event_actions).await; 
                                     }
-                                }.boxed()).await.ok();
+                                }.boxed());
 
                                 // Fetch the next event
                                 next_event = render_events.next();
@@ -144,11 +144,11 @@ pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Ite
                         }
 
                         let mut event_actions = render_actions.republish();
-                        renderer.future_sync(move |state| async move { 
+                        renderer.future_desync(move |state| async move { 
                             for event in events.into_iter() {
                                 handle_window_event(state, event, &mut event_actions).await; 
                             }
-                        }.boxed()).await.ok();
+                        }.boxed());
 
                         // Continue processing events
                         next_event      = render_events.next();
@@ -190,11 +190,11 @@ pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Ite
 
                     // Process the event while we wait for the frame to render
                     let mut event_actions = render_actions.republish();
-                    renderer.future_sync(move |state| async move { 
+                    renderer.future_desync(move |state| async move { 
                         for event in events.into_iter() {
                             handle_window_event(state, event, &mut event_actions).await; 
                         }
-                    }.boxed()).await.ok();
+                    }.boxed());
 
                     // Fetch the next event
                     next_event = render_events.next();
