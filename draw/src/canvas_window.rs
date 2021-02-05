@@ -268,6 +268,10 @@ enum CanvasUpdate {
 ///
 /// Stream that generates canvas update events
 ///
+/// We avoid reading drawing events if we're waiting for a frame to render (this means that if the canvas
+/// turns out to be expensive to render, we won't waste time tessellating frames that will never actually
+/// show up)
+///
 struct CanvasUpdateStream<TDrawStream, TEventStream> {
     draw_stream:            Option<TDrawStream>,
     event_stream:           TEventStream,
