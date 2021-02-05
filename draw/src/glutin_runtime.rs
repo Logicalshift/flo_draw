@@ -156,6 +156,7 @@ impl GlutinRuntime {
                     .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
                 let windowed_context    = glutin::ContextBuilder::new()
                     .with_gl(GlRequest::Specific(Api::OpenGl, (3, 3)))
+                    .with_vsync(false)
                     .build_windowed(window_builder, &window_target)
                     .unwrap();
 
