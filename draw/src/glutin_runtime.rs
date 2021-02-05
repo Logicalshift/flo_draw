@@ -1,14 +1,16 @@
 use super::draw_event::*;
 use super::glutin_window::*;
 use super::glutin_thread::*;
+use super::window_properties::*;
 use super::glutin_thread_event::*;
 
 use flo_stream::*;
+use flo_binding::*;
 
 use glutin::{GlRequest, Api};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::{ControlFlow, EventLoopWindowTarget};
-use glutin::window::{WindowId};
+use glutin::window::{WindowId, Fullscreen};
 use futures::task;
 use futures::prelude::*;
 use futures::future::{LocalBoxFuture};
@@ -150,11 +152,21 @@ impl GlutinRuntime {
         use GlutinThreadEvent::*;
 
         match event {
-            CreateRenderWindow(actions, events) => {
+            CreateRenderWindow(actions, events, window_properties) => {
+                // Get the initial set of properties for the window
+                let title               = window_properties.title().get();
+                let (size_x, size_y)    = window_properties.size().get();
+                let fullscreen          = window_properties.fullscreen().get();
+                let decorations         = window_properties.has_decorations().get();
+
+                let fullscreen          = if fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
+
                 // Create a window
                 let window_builder      = glutin::window::WindowBuilder::new()
-                    .with_title("flo_draw")
-                    .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
+                    .with_title(title)
+                    .with_inner_size(glutin::dpi::LogicalSize::new(size_x as f64, size_y as _))
+                    .with_fullscreen(fullscreen)
+                    .with_decorations(decorations);
                 let windowed_context    = glutin::ContextBuilder::new()
                     .with_gl(GlRequest::Specific(Api::OpenGl, (3, 3)))
                     .with_vsync(false)

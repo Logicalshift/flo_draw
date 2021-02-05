@@ -1,4 +1,5 @@
 use super::draw_event::*;
+use super::window_properties::*;
 
 use flo_stream::*;
 use flo_render::*;
@@ -12,7 +13,7 @@ use glutin::window::{WindowId};
 ///
 pub enum GlutinThreadEvent {
     /// Creates a window that will render the specified actions
-    CreateRenderWindow(Subscriber<Vec<RenderAction>>, Publisher<DrawEvent>),
+    CreateRenderWindow(Subscriber<Vec<RenderAction>>, Publisher<DrawEvent>, WindowProperties),
 
     /// Runs a future on the Glutin thread
     RunProcess(Box<dyn Send+FnOnce() -> LocalBoxFuture<'static, ()>>),

@@ -35,7 +35,7 @@ impl FloWindowProperties for () {
     fn title(&self) -> BindRef<String>          { BindRef::from(bind("flo_draw".to_string())) }
     fn size(&self) -> BindRef<(u64, u64)>       { BindRef::from(bind((1024, 768))) }
     fn fullscreen(&self) -> BindRef<bool>       { BindRef::from(bind(false)) }
-    fn has_decorations(&self) -> BindRef<bool>  { BindRef::from(bind(false)) }
+    fn has_decorations(&self) -> BindRef<bool>  { BindRef::from(bind(true)) }
 }
 
 ///
@@ -45,7 +45,7 @@ impl<'a> FloWindowProperties for &'a str {
     fn title(&self) -> BindRef<String>          { BindRef::from(bind(self.to_string())) }
     fn size(&self) -> BindRef<(u64, u64)>       { BindRef::from(bind((1024, 768))) }
     fn fullscreen(&self) -> BindRef<bool>       { BindRef::from(bind(false)) }
-    fn has_decorations(&self) -> BindRef<bool>  { BindRef::from(bind(false)) }
+    fn has_decorations(&self) -> BindRef<bool>  { BindRef::from(bind(true)) }
 }
 
 ///
@@ -64,7 +64,7 @@ impl WindowProperties {
     ///
     /// Creates a clone of an object implementing the FloWindowProperties trait
     ///
-    pub fn from_properties<T: FloWindowProperties>(properties: &T) -> WindowProperties {
+    pub fn from<T: FloWindowProperties>(properties: &T) -> WindowProperties {
         WindowProperties {
             title:              properties.title(),
             size:               properties.size(),

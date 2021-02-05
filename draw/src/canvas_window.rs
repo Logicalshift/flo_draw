@@ -53,7 +53,7 @@ pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Ite
     let canvas                          = Canvas::new();
 
     // Create a render window
-    let (render_actions, window_events) = create_render_window();
+    let (render_actions, window_events) = create_render_window("flo_draw canvas");
 
     // Get the stream of drawing instructions (and gather them into batches)
     let canvas_stream                   = canvas.stream();
