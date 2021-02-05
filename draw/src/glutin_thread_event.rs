@@ -5,6 +5,7 @@ use flo_stream::*;
 use flo_render::*;
 
 use futures::future::{LocalBoxFuture};
+use futures::stream::{BoxStream};
 
 use glutin::window::{WindowId};
 
@@ -13,7 +14,7 @@ use glutin::window::{WindowId};
 ///
 pub enum GlutinThreadEvent {
     /// Creates a window that will render the specified actions
-    CreateRenderWindow(Subscriber<Vec<RenderAction>>, Publisher<DrawEvent>, WindowProperties),
+    CreateRenderWindow(BoxStream<'static, Vec<RenderAction>>, Publisher<DrawEvent>, WindowProperties),
 
     /// Runs a future on the Glutin thread
     RunProcess(Box<dyn Send+FnOnce() -> LocalBoxFuture<'static, ()>>),
