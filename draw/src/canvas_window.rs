@@ -57,7 +57,7 @@ pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Ite
 
     // Get the stream of drawing instructions (and gather them into batches)
     let canvas_stream                   = canvas.stream();
-    let mut canvas_stream               = BatchedCanvasStream { canvas_stream: Some(canvas_stream) };
+    let mut canvas_stream               = BatchedStream { stream: Some(canvas_stream) };
 
     // Create a canvas renderer
     let renderer                        = CanvasRenderer::new();
@@ -248,28 +248,28 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, rende
 ///
 /// Stream that takes a canvas stream and batches as many draw requests as possible
 ///
-struct BatchedCanvasStream<TStream>
-where TStream: Stream<Item=Draw> {
+struct BatchedStream<TStream>
+where TStream: Stream {
     // Stream of individual draw events
-    canvas_stream: Option<TStream>
+    stream: Option<TStream>
 }
 
-impl<TStream> Stream for BatchedCanvasStream<TStream>
-where TStream: Unpin+Stream<Item=Draw> {
-    type Item = Vec<Draw>;
+impl<TStream> Stream for BatchedStream<TStream>
+where TStream: Unpin+Stream {
+    type Item = Vec<TStream::Item>;
 
-    fn poll_next(mut self: Pin<&mut Self>, context: &mut Context) -> Poll<Option<Vec<Draw>>> {
-        match &mut self.canvas_stream {
+    fn poll_next(mut self: Pin<&mut Self>, context: &mut Context) -> Poll<Option<Vec<TStream::Item>>> {
+        match &mut self.stream {
             None                =>  Poll::Ready(None), 
-            Some(canvas_stream) => {
+            Some(stream) => {
                 // Poll the canvas stream until there are no more items to fetch
                 let mut batch = vec![];
 
                 loop {
                     // Fill up the batch
-                    match canvas_stream.poll_next_unpin(context) {
+                    match stream.poll_next_unpin(context) {
                         Poll::Ready(None)       => {
-                            self.canvas_stream = None;
+                            self.stream = None;
                             break;
                         }
 
@@ -283,10 +283,10 @@ where TStream: Unpin+Stream<Item=Draw> {
                     }
                 }
 
-                if batch.len() == 0 && self.canvas_stream.is_none() {
+                if batch.len() == 0 && self.stream.is_none() {
                     // Stream finished with no more items
                     Poll::Ready(None)
-                } else if batch.len() == 0 && self.canvas_stream.is_some() {
+                } else if batch.len() == 0 && self.stream.is_some() {
                     // No items were fetched for this batch
                     Poll::Pending
                 } else {
