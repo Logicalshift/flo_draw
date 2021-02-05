@@ -92,6 +92,7 @@ pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Ite
 
         // For the main event loop, we're always processing the window events, but alternate between reading from the canvas 
         // and waiting for the frame to render. We stop once there are no more events.
+        let mut render_events   = BatchedStream { stream: Some(render_events) };
         let mut next_event      = render_events.next();
         let mut next_drawing    = canvas_stream.next();
 
@@ -111,16 +112,20 @@ pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Ite
                         // The canvas stream has finished: switch to just processing events until they run out
                         next_event = waiting_for_events;
                         loop {
-                            if let Some(event) = next_event.await {
+                            if let Some(events) = next_event.await {
                                 // Received an event
-                                if let DrawEvent::Closed = event {
+                                if events.iter().any(|evt| evt == &DrawEvent::Closed) {
                                     // The window is closed: stop processing events
                                     return;
                                 }
 
                                 // Process the event while we wait for the frame to render
                                 let mut event_actions = render_actions.republish();
-                                renderer.future_sync(move |state| async move { handle_window_event(state, event, &mut event_actions).await; }.boxed()).await.ok();
+                                renderer.future_sync(move |state| async move { 
+                                    for event in events.into_iter() {
+                                        handle_window_event(state, event, &mut event_actions).await; 
+                                    }
+                                }.boxed()).await.ok();
 
                                 // Fetch the next event
                                 next_event = render_events.next();
@@ -131,15 +136,19 @@ pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Ite
                         }
                     }
 
-                    Either::Left((Some(event), waiting_for_drawing))  => {
+                    Either::Left((Some(events), waiting_for_drawing))  => {
                         // Received an event to process with the renderer
-                        if let DrawEvent::Closed = event {
+                        if events.iter().any(|evt| evt == &DrawEvent::Closed) {
                             // Stop if the window is closed
                             return;
                         }
 
                         let mut event_actions = render_actions.republish();
-                        renderer.future_sync(move |state| async move { handle_window_event(state, event, &mut event_actions).await; }.boxed()).await.ok();
+                        renderer.future_sync(move |state| async move { 
+                            for event in events.into_iter() {
+                                handle_window_event(state, event, &mut event_actions).await; 
+                            }
+                        }.boxed()).await.ok();
 
                         // Continue processing events
                         next_event      = render_events.next();
@@ -170,25 +179,30 @@ pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Ite
             // When we exit the above loop, we've dispatched a frame and want to monitor events until we get a 'newframe' event
             // This stops us from trying to queue more rendering instructions while the previous set are still being processed, so we don't start to get behind when the renderer lags behind the canvas
             loop {
-                if let Some(event) = next_event.await {
+                if let Some(events) = next_event.await {
                     // Received an event
-                    if let DrawEvent::NewFrame = event {
-                        // The frame we were waiting for has renderered: go back to processing canvas drawing instructions
-                        next_event = render_events.next();
-                        break;
-                    }
+                    let is_new_frame = events.iter().any(|evt| evt == &DrawEvent::NewFrame);
 
-                    if let DrawEvent::Closed = event {
+                    if events.iter().any(|evt| evt == &DrawEvent::Closed) {
                         // The window is closed: stop processing events
                         return;
                     }
 
                     // Process the event while we wait for the frame to render
                     let mut event_actions = render_actions.republish();
-                    renderer.future_sync(move |state| async move { handle_window_event(state, event, &mut event_actions).await; }.boxed()).await.ok();
+                    renderer.future_sync(move |state| async move { 
+                        for event in events.into_iter() {
+                            handle_window_event(state, event, &mut event_actions).await; 
+                        }
+                    }.boxed()).await.ok();
 
                     // Fetch the next event
                     next_event = render_events.next();
+
+                    if is_new_frame {
+                        // The frame we were waiting for has renderered: go back to processing canvas drawing instructions
+                        break;
+                    }
                 } else {
                     // No more events: stop the renderer loop
                     return;
