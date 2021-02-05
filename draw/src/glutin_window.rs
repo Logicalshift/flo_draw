@@ -6,7 +6,10 @@ use flo_render::*;
 
 use glutin::{WindowedContext, NotCurrent};
 use futures::prelude::*;
+use futures::task::{Poll, Context};
 use gl;
+
+use std::pin::*;
 
 ///
 /// Manages the state of a Glutin window
@@ -93,4 +96,75 @@ pub (super) async fn send_actions_to_window(window: GlutinWindow, render_actions
     }
 
     // Window will close once the render actions are finished as we drop it here
+}
+
+///
+/// The list of update events that can occur to a window
+///
+enum WindowUpdate {
+    Render(Vec<RenderAction>),
+    SetTitle(String),
+    SetSize((u64, u64)),
+    SetFullscreen(bool),
+    SetHasDecorations(bool)
+}
+
+///
+/// Stream that merges the streams from the window properties and the renderer into a single stream
+///
+struct WindowUpdateStream<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream> {
+    render_stream:      TRenderStream,
+    title_stream:       TTitleStream,
+    size:               TSizeStream,
+    fullscreen:         TFullscreenStream,
+    has_decorations:    TDecorationStream
+}
+
+impl<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream> Stream for WindowUpdateStream<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream>
+where
+TRenderStream:      Unpin+Stream<Item=Vec<RenderAction>>,
+TTitleStream:       Unpin+Stream<Item=String>,
+TSizeStream:        Unpin+Stream<Item=(u64, u64)>,
+TFullscreenStream:  Unpin+Stream<Item=bool>,
+TDecorationStream:  Unpin+Stream<Item=bool> {
+    type Item = WindowUpdate;
+
+    fn poll_next(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        // Poll each stream in turn to see if they have an item
+
+        // Rendering instructions have priority
+        match self.render_stream.poll_next_unpin(context) {
+            Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::Render(item))); }
+            Poll::Ready(None)       => { return Poll::Ready(None); }
+            Poll::Pending           => { }
+        }
+
+        // The various binding streams
+        match self.title_stream.poll_next_unpin(context) {
+            Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::SetTitle(item))); }
+            Poll::Ready(None)       => { return Poll::Ready(None); }
+            Poll::Pending           => { }
+        }
+
+        match self.size.poll_next_unpin(context) {
+            Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::SetSize(item))); }
+            Poll::Ready(None)       => { return Poll::Ready(None); }
+            Poll::Pending           => { }
+        }
+
+        match self.fullscreen.poll_next_unpin(context) {
+            Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::SetFullscreen(item))); }
+            Poll::Ready(None)       => { return Poll::Ready(None); }
+            Poll::Pending           => { }
+        }
+
+        match self.has_decorations.poll_next_unpin(context) {
+            Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::SetHasDecorations(item))); }
+            Poll::Ready(None)       => { return Poll::Ready(None); }
+            Poll::Pending           => { }
+        }
+
+        // No stream matched anything
+        Poll::Pending
+    }
 }
