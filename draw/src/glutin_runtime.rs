@@ -37,7 +37,8 @@ pub (super) struct GlutinRuntime {
 /// Used to wake a future running on the glutin thread
 ///
 struct GlutinFutureWaker {
-    future_id: u64
+    /// The ID of the future to wake, or 'None' if the future has already been woken up
+    future_id: Mutex<Option<u64>>
 }
 
 impl GlutinRuntime {
@@ -236,7 +237,7 @@ impl GlutinRuntime {
     fn poll_future(&mut self, future_id: u64) {
         if let Some(future) = self.futures.get_mut(&future_id) {
             // Create a context to poll this future in
-            let glutin_waker        = GlutinFutureWaker { future_id };
+            let glutin_waker        = GlutinFutureWaker { future_id: Mutex::new(Some(future_id)) };
             let glutin_waker        = task::waker(Arc::new(glutin_waker));
             let mut glutin_context  = task::Context::from_waker(&glutin_waker);
 
@@ -253,7 +254,10 @@ impl GlutinRuntime {
 
 impl task::ArcWake for GlutinFutureWaker {
     fn wake_by_ref(arc_self: &Arc<Self>) {
-        // Send a wake request to glutin
-        glutin_thread().send_event(GlutinThreadEvent::WakeFuture(arc_self.future_id));
+        // If this is the first wake request for this waker...
+        if let Some(future_id) = arc_self.future_id.lock().unwrap().take() {
+            // Send a wake request to glutin
+            glutin_thread().send_event(GlutinThreadEvent::WakeFuture(future_id));
+        }
     }
 }
