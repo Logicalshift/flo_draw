@@ -36,7 +36,7 @@ impl Shader {
 
             // Load the source and compile the shader
             let mut length   = [ program.len() as i32 ];
-            let program     = program.as_bytes().as_ptr() as *const i8;
+            let program     = program.as_bytes().as_ptr() as *const gl::types::GLchar;
             let program     = [ program ];
 
             gl::ShaderSource(shader, 1, &program[0], &mut length[0]);
