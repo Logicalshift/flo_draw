@@ -1,4 +1,5 @@
 use super::draw_event::*;
+use super::window_properties::*;
 
 use flo_stream::*;
 use flo_render::*;
@@ -33,7 +34,7 @@ impl GlutinWindow {
 ///
 /// Sends render actions to a window
 ///
-pub (super) async fn send_actions_to_window(window: GlutinWindow, render_actions: Subscriber<Vec<RenderAction>>, events: Publisher<DrawEvent>) {
+pub (super) async fn send_actions_to_window(window: GlutinWindow, render_actions: Subscriber<Vec<RenderAction>>, events: Publisher<DrawEvent>, window_properties: WindowProperties) {
     // Read events from the render actions list
     let mut render_actions  = render_actions;
     let mut window          = window;
