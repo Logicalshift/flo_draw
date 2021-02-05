@@ -1,6 +1,7 @@
 use super::draw_event::*;
 use super::glutin_thread::*;
 use super::render_window::*;
+use super::window_properties::*;
 use super::glutin_thread_event::*;
 
 use flo_canvas::*;
@@ -38,8 +39,8 @@ struct RendererState {
 ///
 /// Creates a canvas that will render to a window
 ///
-pub fn create_canvas_window() -> Canvas {
-    let (canvas, _events) = create_canvas_window_with_events();
+pub fn create_canvas_window<'a, TProperties: 'a+FloWindowProperties>(window_properties: TProperties) -> Canvas {
+    let (canvas, _events) = create_canvas_window_with_events(window_properties);
 
     // Dropping the events will stop the window from blocking when they're not handled
     canvas
@@ -48,12 +49,15 @@ pub fn create_canvas_window() -> Canvas {
 ///
 /// Creates a canvas that will render to a window, along with a stream of events from that window
 ///
-pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Item=DrawEvent>) {
+pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>(window_properties: TProperties) -> (Canvas, impl Clone+Send+Stream<Item=DrawEvent>) {
+    // Create a static copy of the window properties bindings
+    let window_properties               = WindowProperties::from(&window_properties);
+
     // Create the canvas
     let canvas                          = Canvas::new();
 
     // Create a render window
-    let (render_actions, window_events) = create_render_window("flo_draw canvas");
+    let (render_actions, window_events) = create_render_window(window_properties);
 
     // Get the stream of drawing instructions (and gather them into batches)
     let canvas_stream                   = canvas.stream();

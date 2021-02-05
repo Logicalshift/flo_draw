@@ -14,7 +14,7 @@ pub fn main() {
         // Create a render window and loop until it stops sending events
         executor::block_on(async {
             // Create a window
-            let (mut renderer, mut events) = create_render_window();
+            let (mut renderer, mut events) = create_render_window("Direct render action window");
 
             // Render a triangle to it
             let black = [0, 0, 0, 255];
