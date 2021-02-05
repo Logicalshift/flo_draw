@@ -6,6 +6,8 @@ use flo_render::*;
 use flo_binding::*;
 
 use glutin::{WindowedContext, NotCurrent};
+use glutin::dpi::{LogicalSize};
+use glutin::window::{Fullscreen};
 use futures::prelude::*;
 use futures::task::{Poll, Context};
 use gl;
@@ -104,7 +106,22 @@ pub (super) async fn send_actions_to_window(window: GlutinWindow, render_actions
                 }
             }
 
-            _ => {}
+            WindowUpdate::SetTitle(new_title)   => {
+                window.context.as_ref().map(|ctxt| ctxt.window().set_title(&new_title));
+            }
+
+            WindowUpdate::SetSize((size_x, size_y)) => {
+                window.context.as_ref().map(|ctxt| ctxt.window().set_inner_size(LogicalSize::new(size_x as f64, size_y as _)));
+            }
+
+            WindowUpdate::SetFullscreen(is_fullscreen) => {
+                let fullscreen = if is_fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
+                window.context.as_ref().map(|ctxt| ctxt.window().set_fullscreen(fullscreen));
+            }
+
+            WindowUpdate::SetHasDecorations(decorations) => {
+                window.context.as_ref().map(|ctxt| ctxt.window().set_decorations(decorations));
+            }
         }
     }
 
