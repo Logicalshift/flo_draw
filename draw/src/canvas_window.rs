@@ -159,6 +159,9 @@ pub fn create_canvas_window_with_events() -> (Canvas, impl Clone+Send+Stream<Ite
                         // Received some drawing commands to forward to the canvas (which has rendered its previous frame)
                         let mut event_actions = render_actions.republish();
                         renderer.future_desync(move |state| async move {
+                            // Wait for any pending render actions to clear the queue before trying to generate new ones
+                            event_actions.when_empty().await;
+
                             // Ask the renderer to process the drawing instructions into render instructions
                             let render_actions = state.renderer.draw(drawing.into_iter()).collect::<Vec<_>>().await;
 
@@ -222,6 +225,9 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, rende
     async move {
         match event {
             DrawEvent::Redraw                   => { 
+                // Wait for any pending render actions to clear the queue before trying to generate new ones
+                render_actions.when_empty().await;
+
                 // Drawing nothing will regenerate the current contents of the renderer
                 let redraw = state.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
                 render_actions.publish(redraw).await;
