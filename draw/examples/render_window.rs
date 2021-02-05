@@ -33,7 +33,12 @@ pub fn main() {
             ]).await;
 
             // Wait until it stops producing events
-            while let Some(_evt) = events.next().await {
+            while let Some(evt) = events.next().await {
+                // Stop reading events when the window is closed (this will close our streams, so the window will disappear)
+                match evt {
+                    DrawEvent::Closed   => { break; }
+                    _                   => { }
+                }
             }
         });
     });
