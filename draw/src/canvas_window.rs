@@ -85,7 +85,9 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
 
                 // Handle the next event (until the first 'redraw', we're receiving things like the window size in preparation for the next event)
                 let mut event_actions = render_actions.republish();
-                renderer.future_sync(move |state| async move { handle_window_event(state, event, &mut event_actions).await; }.boxed()).await.ok();
+                renderer.future_sync(move |state| async move { 
+                    handle_window_event(state, event, &mut |actions| event_actions.publish(actions)).await; 
+                }.boxed()).await.ok();
             } else {
                 // Ran out of events
                 return;
@@ -119,7 +121,7 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
                     let mut event_actions = render_actions.republish();
                     renderer.future_desync(move |state| async move { 
                         for event in events.into_iter() {
-                            handle_window_event(state, event, &mut event_actions).await; 
+                            handle_window_event(state, event, &mut |actions| event_actions.publish(actions)).await; 
                         }
                     }.boxed());
                 }
@@ -157,16 +159,16 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
 ///
 /// Handles an event from the window
 ///
-fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, render_actions: &'a mut Publisher<Vec<RenderAction>>) -> impl 'a+Send+Future<Output=()> {
+fn handle_window_event<'a, SendFuture, SendRenderActionsFn>(state: &'a mut RendererState, event: DrawEvent, send_render_actions: &'a mut SendRenderActionsFn) -> impl 'a+Send+Future<Output=()> 
+where 
+SendRenderActionsFn:    Send+FnMut(Vec<RenderAction>) -> SendFuture,
+SendFuture:             Send+Future<Output=()> {
     async move {
         match event {
             DrawEvent::Redraw                   => { 
-                // Wait for any pending render actions to clear the queue before trying to generate new ones
-                render_actions.when_empty().await;
-
                 // Drawing nothing will regenerate the current contents of the renderer
                 let redraw = state.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
-                render_actions.publish(redraw).await;
+                send_render_actions(redraw).await;
             },
 
             DrawEvent::Scale(new_scale)         => {
