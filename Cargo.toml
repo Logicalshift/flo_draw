@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "canvas", 
+    "render", 
+    "render_canvas",
+    "render_gl_offscreen",
+    "draw"
+]
