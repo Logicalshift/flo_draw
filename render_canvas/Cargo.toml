@@ -1,6 +1,6 @@
 [package]
 name        = "flo_render_canvas"
-version     = "0.1.0"
+version     = "0.2.0"
 authors     = ["Andrew Hunter"]
 license     = "Apache-2.0"
 edition     = "2018"
@@ -10,7 +10,7 @@ description = "Converts flo_canvas streams to flo_render streams"
 include     = [ "Cargo.toml", "src/**/*", "svg/**/*" ]
 
 [dependencies]
-flo_render  = { path = "../render", version = "0.1" }
+flo_render  = { path = "../render", version = "0.2" }
 flo_canvas  = { path = "../canvas", version = "0.2" }
 flo_stream  = { git = "https://github.com/Logicalshift/flo_stream", branch = "v0.6", version = "0.6" }
 futures     = "0.3"

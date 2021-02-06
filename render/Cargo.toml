@@ -1,6 +1,6 @@
 [package]
 name        = "flo_render"
-version     = "0.1.0"
+version     = "0.2.0"
 authors     = ["Andrew Hunter"]
 license     = "Apache-2.0"
 edition     = "2018"
@@ -22,7 +22,7 @@ metal                   = { version = "0.20", optional = true }
 cocoa                   = { version = "0.23", optional = true }
 libc                    = { version = "0.2", optional = true }
 flo_canvas              = { path = "../canvas", version = "0.2", optional = true }
-flo_render_gl_offscreen = { path = "../render_gl_offscreen", optional = true }
+flo_render_gl_offscreen = { path = "../render_gl_offscreen", version = "0.2", optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation         = "0.9"
