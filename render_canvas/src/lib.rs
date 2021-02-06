@@ -10,3 +10,6 @@ mod offscreen;
 
 pub use self::canvas_renderer::*;
 pub use self::offscreen::*;
+
+pub use flo_render::*;
+pub use flo_canvas as canvas;
