@@ -42,4 +42,12 @@ pub fn main() {
 }
 ```
 
-See also the examples folder in the `draw` subdirectory for some more things that can be done with the library.
+# Examples
+
+See the examples folder in the `draw` and `render_canvas` subdirectories for some more things that can be done with the library.
+
+![Screenshot](./images/bounce.png)
+
+* `cargo run --example canvas_window` - displays a basic window
+* `cargo run --example bounce_sprites` - animates some bouncing balls
+* `cargo run --example png_triangle` - renders a triangle to a png file
