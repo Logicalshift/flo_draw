@@ -5,6 +5,9 @@
 #[macro_use] extern crate lazy_static;
 
 pub use flo_canvas as canvas;
+pub use flo_render_canvas as render_canvas;
+pub use flo_render::{initialize_offscreen_rendering};
+pub use flo_render_canvas::{render_canvas_offscreen};
 
 mod draw_event;
 mod canvas_window;
