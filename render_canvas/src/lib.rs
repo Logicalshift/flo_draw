@@ -6,5 +6,7 @@ mod renderer_core;
 mod renderer_layer;
 mod renderer_worker;
 mod renderer_stream;
+mod offscreen;
 
 pub use self::canvas_renderer::*;
+pub use self::offscreen::*;
