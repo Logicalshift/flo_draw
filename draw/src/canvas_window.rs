@@ -188,8 +188,9 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
                         let render_actions = state.renderer.draw(drawing.into_iter()).collect::<Vec<_>>().await;
 
                         // Send an update that the canvas transform has changed
-                        state.window_transform = Some(state.renderer.get_window_transform());
-                        canvas_events.publish(DrawEvent::CanvasTransform(state.renderer.get_window_transform())).await;
+                        let window_transform    = state.renderer.get_window_transform().invert().unwrap();
+                        state.window_transform  = Some(window_transform);
+                        canvas_events.publish(DrawEvent::CanvasTransform(window_transform)).await;
 
                         // Send the render actions to the window once they're ready
                         event_actions.publish(render_actions).await;
@@ -229,8 +230,9 @@ SendFuture:             Send+Future<Output=()> {
                 let redraw = state.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
                 send_render_actions(redraw).await;
 
-                state.window_transform = Some(state.renderer.get_window_transform());
-                vec![DrawEvent::CanvasTransform(state.renderer.get_window_transform())]
+                let window_transform    = state.renderer.get_window_transform().invert().unwrap();
+                state.window_transform  = Some(window_transform);
+                vec![DrawEvent::CanvasTransform(window_transform)]
             },
 
             DrawEvent::Scale(new_scale)         => {
