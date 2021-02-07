@@ -25,11 +25,11 @@ pub enum DrawEvent {
     /// A pointer device has changed its state
     Pointer(PointerAction, PointerId, PointerState),
 
-    /// The user has pressed a key
-    KeyDown(Key),
+    /// The user has pressed a key (parameters are scancode and the name of the key that was pressed, if known)
+    KeyDown(u64, Option<Key>),
 
-    /// The user has released a key
-    KeyUp(Key),
+    /// The user has released a key (parameters are scancode and the name of the key that was pressed, if known)
+    KeyUp(u64, Option<Key>),
 
     /// Window has been closed
     Closed

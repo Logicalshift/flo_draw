@@ -137,7 +137,6 @@ impl GlutinRuntime {
             HoveredFileCancelled                                            => vec![],
             ReceivedCharacter(_c)                                           => vec![],
             Focused(_focused)                                               => vec![],
-            KeyboardInput { device_id: _, input: _, is_synthetic: _, }      => vec![],
             ModifiersChanged(_state)                                        => vec![],
             TouchpadPressure { device_id: _, pressure: _, stage: _ }        => vec![],
             AxisMotion { device_id: _, axis: _, value: _ }                  => vec![],
@@ -145,6 +144,22 @@ impl GlutinRuntime {
             ScaleFactorChanged { scale_factor, new_inner_size }             => vec![DrawEvent::Scale(scale_factor), DrawEvent::Resize(new_inner_size.width as f64, new_inner_size.height as f64)],
             ThemeChanged(_theme)                                            => vec![],
 
+            // Keyboard events
+            KeyboardInput { device_id: _, input, is_synthetic: _, }         => {
+                // Convert the keycode
+                let key = input.virtual_keycode.map(|keycode| Key::from(&keycode));
+                let key = if key == Some(Key::Unknown) { None } else { key };
+
+                // TODO: for modifier keys, generate keydown/up using the modifier state
+
+                // Generate the event for this keypress
+                match input.state {
+                    ElementState::Pressed   => vec![DrawEvent::KeyDown(input.scancode as _, key)],
+                    ElementState::Released  => vec![DrawEvent::KeyUp(input.scancode as _, key)]
+                }
+            },
+
+            // Pointer events
             CursorMoved { device_id, position, .. }                         => {
                 // Update the pointer state
                 let pointer_id                      = self.id_for_pointer(&device_id);
@@ -184,6 +199,8 @@ impl GlutinRuntime {
                 // Generate the 'entered' event with the current pointer state
                 let pointer_id                      = self.id_for_pointer(&device_id);
                 let pointer_state                   = self.state_for_pointer(&device_id);
+
+                // TODO: for modifier keys, generate keydown/up using the modifier state
 
                 // Update the pointe state
                 let button                          = Button::from(&button);
