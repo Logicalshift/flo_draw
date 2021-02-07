@@ -51,7 +51,7 @@ pub fn main() {
                 gc.line_to(-8.0, -6.0);
                 gc.line_to(-10.0, -8.0);
 
-                gc.line_width(1.0);
+                gc.line_width(2.0);
                 gc.stroke_color(Color::Rgba(0.8, 0.7, 0.0, 1.0));
                 gc.stroke();
 
@@ -81,7 +81,7 @@ pub fn main() {
                 gc.line_to(10.0, -25.0);
                 gc.line_to(0.0, -15.0);
 
-                gc.line_width(1.0);
+                gc.line_width(3.0);
                 gc.stroke_color(Color::Rgba(0.6, 0.5, 0.0, 1.0));
                 gc.stroke();
 
@@ -100,7 +100,7 @@ pub fn main() {
             });
 
             // Run the game by processing events
-            let mut game_state = GameState::new(ship_sprite);
+            let mut game_state = GameState::new(ship_sprite, roid_sprite);
 
             while let Some(event) = events.next().await {
                 match event {
@@ -154,7 +154,10 @@ enum VectorEvent {
 /// Represents the state of a game
 ///
 struct GameState {
-    ship: Ship
+    ship:           Ship,
+
+    roid_sprite:    SpriteId,
+    roids:          Vec<Roid>
 }
 
 ///
@@ -172,13 +175,29 @@ struct Ship {
     thrust:     f64
 }
 
+///
+/// Represents the state of a 'roid
+///
+struct Roid {
+    sprite:     SpriteId,
+
+    x:          f64,
+    y:          f64,
+    angle:      f64,
+    rotation:   f64,
+    vel_x:      f64,
+    vel_y:      f64,
+}
+
 impl GameState {
     ///
     /// Creates a new game state
     ///
-    pub fn new(ship_sprite: SpriteId) -> GameState {
+    pub fn new(ship_sprite: SpriteId, roid_sprite: SpriteId) -> GameState {
         GameState {
-            ship:   Ship::new(ship_sprite)
+            ship:           Ship::new(ship_sprite),
+            roid_sprite:    roid_sprite,
+            roids:          (0..20).into_iter().map(|_| Roid::new(roid_sprite)).collect()
         }
     }
 
@@ -187,9 +206,11 @@ impl GameState {
     ///
     pub fn tick(&mut self) {
         self.ship.tick();
+        self.roids.iter_mut().for_each(|roid| roid.tick());
     }
 
     pub fn draw(&self, gc: &mut dyn GraphicsPrimitives) {
+        self.roids.iter().for_each(|roid| roid.draw(gc));
         self.ship.draw(gc);
     }
 }
@@ -236,6 +257,49 @@ impl Ship {
         // Friction
         self.vel_x *= 0.99;
         self.vel_y *= 0.99;
+    }
+
+    pub fn draw(&self, gc: &mut dyn GraphicsPrimitives) {
+        gc.sprite_transform(SpriteTransform::Identity);
+        gc.sprite_transform(SpriteTransform::Translate(self.x as _, self.y as _));
+        gc.sprite_transform(SpriteTransform::Rotate(self.angle as _));
+        gc.draw_sprite(self.sprite);
+    }
+}
+
+
+impl Roid {
+    ///
+    /// Creates a new 'roid state
+    ///
+    pub fn new(sprite: SpriteId) -> Roid {
+        Roid {
+            sprite:     sprite,
+            x:          random::<f64>() * 1000.0,
+            y:          random::<f64>() * 1000.0,
+            vel_x:      random::<f64>() * 3.0 - 1.5,
+            vel_y:      random::<f64>() * 3.0 - 1.5,
+            angle:      random::<f64>() * 360.0,
+            rotation:   random::<f64>() * 8.0 - 4.0
+        }        
+    }
+
+    ///
+    /// Updates the 'roid state after a tick
+    ///
+    pub fn tick(&mut self) {
+        // Move the 'roid
+        self.x      += self.vel_x;
+        self.y      += self.vel_y;
+        self.angle  += self.rotation;
+        self.angle  = self.angle % 360.0;
+
+        // Clip to the play area
+        if self.x < 0.0 { self.x = 1000.0 };
+        if self.y < 0.0 { self.y = 1000.0 };
+
+        if self.x > 1000.0 { self.x = 0.0 };
+        if self.y > 1000.0 { self.y = 0.0 };
     }
 
     pub fn draw(&self, gc: &mut dyn GraphicsPrimitives) {
