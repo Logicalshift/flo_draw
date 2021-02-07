@@ -1,10 +1,17 @@
 ///
+/// A unique identifier assigned to a specific pointer on the system (a device that has a mouse and touch input might be tracking
+/// multiple pointer devices)
+///
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PointerId(u64);
+
+///
 /// The button on a mouse or other device
 ///
 /// If a device only has one means of input (eg, a pen being pressed against the screen),
 /// this is considered to be the 'Left' button.
 ///
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Button {
     Left,
     Middle,
@@ -15,14 +22,21 @@ pub enum Button {
 ///
 /// The action associated with a pointer event
 ///
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum PointerAction {
+    /// The pointer has entered the window
+    Enter,
+
+    /// The pointer has left the window
+    Leave,
+
     /// Moving a pointer with no buttons pressed
     Move,
 
     /// A new button has been pressed
     ButtonDown,
 
-    /// Moving the pointer with a button pressed
+    /// Moving the pointer with a button pressed (drag events can move outside the bounds of the window)
     Drag,
 
     /// A button has been released
@@ -35,7 +49,10 @@ pub enum PointerAction {
 ///
 /// Describes the state of a pointer device
 ///
-#[derive(Clone, Debug)]
+/// Note: while we support the various different axes that a tablet device might support, presently glutin does not provide
+/// this information to us, so these values are currently always set to 'None'.
+///
+#[derive(Clone, PartialEq, Debug)]
 pub struct PointerState {
     /// The x and y coordinates of the pointer's location in the window
     pub location_in_window: (f64, f64),

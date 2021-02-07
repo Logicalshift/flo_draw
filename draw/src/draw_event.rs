@@ -1,3 +1,5 @@
+use super::events::*;
+
 use flo_canvas::*;
 
 ///
@@ -19,6 +21,9 @@ pub enum DrawEvent {
 
     /// Canvas transformation for the window has changed (this will convert between window coordinates and canvas coordinates)
     CanvasTransform(Transform2D),
+
+    /// A pointer device has changed its state
+    Pointer(PointerAction, PointerId, PointerState),
 
     /// Window has been closed
     Closed
