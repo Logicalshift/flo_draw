@@ -14,6 +14,9 @@ use futures::executor;
 /// also demonstrates that layers can be used to partially update the canvas without erasing whatever else is drawn,
 /// and shows that we can get canvas coordinates directly from a mouse event.
 ///
+/// Is supposed to stop once the window is closed, but glutin appears to not always respond correctly to setting the
+/// control flow to ControlFlow::Exit.
+///
 pub fn main() {
     // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
     with_2d_graphics(|| {
