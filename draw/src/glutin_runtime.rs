@@ -40,6 +40,7 @@ pub (super) struct GlutinRuntime {
     /// The current state of each pointer (as a glutin device)
     pub (super) pointer_state: HashMap<DeviceId, PointerState>,
 
+    /// Set to true when we'll set the control flow to 'Exit' once the current set of events have finished processing
     pub (super) will_exit: bool
 }
 
