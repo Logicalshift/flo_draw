@@ -53,6 +53,13 @@ impl Transform2D {
     }
 
     ///
+    /// Creates a transformation that's a rotation in degrees
+    ///
+    pub fn rotate_degrees(degrees: f32) -> Transform2D {
+        Self::rotate(f32::consts::PI * degrees / 180.0)
+    }
+
+    ///
     /// Creates a rotation transformation
     ///
     pub fn rotate(radians: f32) -> Transform2D {
