@@ -99,7 +99,7 @@ pub fn main() {
                 }
             });
 
-            // Run the game by processing events
+            // Run the main game loop
             let mut game_state = GameState::new(ship_sprite, roid_sprite);
 
             while let Some(event) = events.next().await {
@@ -135,6 +135,10 @@ pub fn main() {
                         game_state.ship.thrust = 0.0;
                     }
 
+                    VectorEvent::DrawEvent(DrawEvent::KeyDown(_, Some(Key::KeySpace))) => {
+                        game_state.bullets.push(Bullet::new(bullet_sprite, game_state.ship.x, game_state.ship.y, game_state.ship.vel_x, game_state.ship.vel_y, game_state.ship.angle));
+                    }
+
                     _ => { /* Other events are ignored */ }
                 }
             }
@@ -155,9 +159,8 @@ enum VectorEvent {
 ///
 struct GameState {
     ship:           Ship,
-
-    roid_sprite:    SpriteId,
-    roids:          Vec<Roid>
+    roids:          Vec<Roid>,
+    bullets:        Vec<Bullet>
 }
 
 ///
@@ -189,6 +192,18 @@ struct Roid {
     vel_y:      f64,
 }
 
+///
+/// Represents the state of a bullet
+///
+struct Bullet {
+    sprite:     SpriteId,
+    x:          f64,
+    y:          f64,
+    vel_x:      f64,
+    vel_y:      f64,
+    time_left:  usize
+}
+
 impl GameState {
     ///
     /// Creates a new game state
@@ -196,8 +211,8 @@ impl GameState {
     pub fn new(ship_sprite: SpriteId, roid_sprite: SpriteId) -> GameState {
         GameState {
             ship:           Ship::new(ship_sprite),
-            roid_sprite:    roid_sprite,
-            roids:          (0..20).into_iter().map(|_| Roid::new(roid_sprite)).collect()
+            roids:          (0..20).into_iter().map(|_| Roid::new(roid_sprite)).collect(),
+            bullets:        vec![]
         }
     }
 
@@ -207,11 +222,15 @@ impl GameState {
     pub fn tick(&mut self) {
         self.ship.tick();
         self.roids.iter_mut().for_each(|roid| roid.tick());
+        self.bullets.iter_mut().for_each(|bullet| bullet.tick());
+
+        self.bullets.retain(|bullet| bullet.time_left > 0);
     }
 
     pub fn draw(&self, gc: &mut dyn GraphicsPrimitives) {
         self.roids.iter().for_each(|roid| roid.draw(gc));
         self.ship.draw(gc);
+        self.bullets.iter().for_each(|bullet| bullet.draw(gc));
     }
 }
 
@@ -267,7 +286,6 @@ impl Ship {
     }
 }
 
-
 impl Roid {
     ///
     /// Creates a new 'roid state
@@ -306,6 +324,52 @@ impl Roid {
         gc.sprite_transform(SpriteTransform::Identity);
         gc.sprite_transform(SpriteTransform::Translate(self.x as _, self.y as _));
         gc.sprite_transform(SpriteTransform::Rotate(self.angle as _));
+        gc.draw_sprite(self.sprite);
+    }
+}
+
+impl Bullet {
+    ///
+    /// Creates a new bullet state
+    ///
+    pub fn new(sprite: SpriteId, x: f64, y: f64, ship_vel_x: f64, ship_vel_y: f64, ship_angle: f64) -> Bullet {
+        let transform               = Transform2D::rotate_degrees(ship_angle as _);
+        let (offset_x, offset_y)    = transform.transform_point(0.0, 11.0);
+        let (x, y)                  = (x+offset_x as f64, y+offset_y as f64);
+
+        let (vel_x, vel_y)          = transform.transform_point(0.0, 4.0);
+        let (vel_x, vel_y)          = (ship_vel_x+vel_x as f64, ship_vel_y+vel_y as f64);
+
+        Bullet {
+            sprite:     sprite,
+            x:          x,
+            y:          y,
+            vel_x:      vel_x,
+            vel_y:      vel_y,
+            time_left:  90
+        }        
+    }
+
+    ///
+    /// Updates the bullet state after a tick
+    ///
+    pub fn tick(&mut self) {
+        // Move the bullet
+        self.x          += self.vel_x;
+        self.y          += self.vel_y;
+        self.time_left  -= 1;
+
+        // Clip to the play area
+        if self.x < 0.0 { self.x = 1000.0 };
+        if self.y < 0.0 { self.y = 1000.0 };
+
+        if self.x > 1000.0 { self.x = 0.0 };
+        if self.y > 1000.0 { self.y = 0.0 };
+    }
+
+    pub fn draw(&self, gc: &mut dyn GraphicsPrimitives) {
+        gc.sprite_transform(SpriteTransform::Identity);
+        gc.sprite_transform(SpriteTransform::Translate(self.x as _, self.y as _));
         gc.draw_sprite(self.sprite);
     }
 }
