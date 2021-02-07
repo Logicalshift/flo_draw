@@ -11,7 +11,7 @@ pub fn main() {
     // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
     with_2d_graphics(|| {
         // Create a window and an event queue
-        let (canvas, events) = create_canvas_window_with_events("Canvas window");
+        let (canvas, events) = create_canvas_window_with_events("Mouse tracking");
 
         // Render a triangle to it
         canvas.draw(|gc| {
