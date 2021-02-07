@@ -1,3 +1,4 @@
+use super::events::*;
 use super::draw_event::*;
 use super::glutin_window::*;
 use super::glutin_thread::*;
@@ -8,7 +9,7 @@ use flo_stream::*;
 use flo_binding::*;
 
 use glutin::{GlRequest, Api};
-use glutin::event::{Event, WindowEvent};
+use glutin::event::{DeviceId, Event, WindowEvent, ElementState};
 use glutin::event_loop::{ControlFlow, EventLoopWindowTarget};
 use glutin::window::{WindowId, Fullscreen};
 use futures::task;
@@ -32,7 +33,13 @@ pub (super) struct GlutinRuntime {
     pub (super) futures: HashMap<u64, LocalBoxFuture<'static, ()>>,
 
     /// Set to true if this runtime will stop when all the windows are closed
-    pub (super) will_stop_when_no_windows: bool
+    pub (super) will_stop_when_no_windows: bool,
+
+    /// The pointer ID that we've assigned to glutin devices
+    pub (super) pointer_id: HashMap<DeviceId, PointerId>,
+
+    /// The current state of each pointer (as a glutin device)
+    pub (super) pointer_state: HashMap<DeviceId, PointerState>
 }
 
 ///
@@ -44,6 +51,32 @@ struct GlutinFutureWaker {
 }
 
 impl GlutinRuntime {
+    ///
+    /// Retrieves or assigns an ID to a device
+    ///
+    fn id_for_pointer(&mut self, device_id: &DeviceId) -> PointerId {
+        if let Some(pointer_id) = self.pointer_id.get(device_id) {
+            // Already assigned
+            *pointer_id
+        } else {
+            // Assign a new pointer ID
+            let pointer_id = self.pointer_id.len() as _;
+            let pointer_id = PointerId(pointer_id);
+
+            // Store in the hash map
+            self.pointer_id.insert(*device_id, pointer_id);
+            pointer_id
+        }
+    }
+
+    ///
+    /// Retrieves the current state for a particular pointer in a mutable form
+    ///
+    fn state_for_pointer<'a>(&'a mut self, device_id: &'a DeviceId) -> &'a mut PointerState {
+        &mut *self.pointer_state.entry(*device_id)
+            .or_insert_with(|| PointerState::new())
+    }
+
     ///
     /// Handles an event from the rest of the process and updates the state
     ///
@@ -89,34 +122,94 @@ impl GlutinRuntime {
             }
         }
 
+        use WindowEvent::*;
+
+        // Generate draw_events for the window event
+        let draw_events = match event {
+            Resized(new_size)                                               => vec![DrawEvent::Resize(new_size.width as f64, new_size.height as f64)],
+            Moved(_position)                                                => vec![],
+            CloseRequested                                                  => vec![DrawEvent::Closed],
+            Destroyed                                                       => vec![],
+            DroppedFile(_path)                                              => vec![],
+            HoveredFile(_path)                                              => vec![],
+            HoveredFileCancelled                                            => vec![],
+            ReceivedCharacter(_c)                                           => vec![],
+            Focused(_focused)                                               => vec![],
+            KeyboardInput { device_id: _, input: _, is_synthetic: _, }      => vec![],
+            ModifiersChanged(_state)                                        => vec![],
+            TouchpadPressure { device_id: _, pressure: _, stage: _ }        => vec![],
+            AxisMotion { device_id: _, axis: _, value: _ }                  => vec![],
+            Touch(_touch)                                                   => vec![],
+            ScaleFactorChanged { scale_factor, new_inner_size }             => vec![DrawEvent::Scale(scale_factor), DrawEvent::Resize(new_inner_size.width as f64, new_inner_size.height as f64)],
+            ThemeChanged(_theme)                                            => vec![],
+
+            CursorMoved { device_id, position, .. }                         => {
+                // Update the pointer state
+                let pointer_id                      = self.id_for_pointer(&device_id);
+                let pointer_state                   = self.state_for_pointer(&device_id);
+
+                pointer_state.location_in_window    = (position.x, position.y);
+
+                // Generate the mouse event
+                let pointer_state                   = pointer_state.clone();
+                let is_drag                         = pointer_state.buttons.len() > 0;
+                let action                          = if is_drag { PointerAction::Drag } else { PointerAction::Move };
+
+                vec![DrawEvent::Pointer(action, pointer_id, pointer_state)]
+            },
+
+            CursorEntered { device_id }                                     => {
+                // Generate the 'entered' event with the current pointer state
+                let pointer_id                      = self.id_for_pointer(&device_id);
+                let pointer_state                   = self.state_for_pointer(&device_id);
+
+                // Generate the mouse event
+                let pointer_state                   = pointer_state.clone();
+                vec![DrawEvent::Pointer(PointerAction::Enter, pointer_id, pointer_state)]
+            },
+
+            CursorLeft { device_id }                                        => {
+                // Generate the 'entered' event with the current pointer state
+                let pointer_id                      = self.id_for_pointer(&device_id);
+                let pointer_state                   = self.state_for_pointer(&device_id);
+
+                // Generate the mouse event
+                let pointer_state                   = pointer_state.clone();
+                vec![DrawEvent::Pointer(PointerAction::Leave, pointer_id, pointer_state)]
+            },
+
+            MouseInput { device_id, state, button, .. }                     => { 
+                // Generate the 'entered' event with the current pointer state
+                let pointer_id                      = self.id_for_pointer(&device_id);
+                let pointer_state                   = self.state_for_pointer(&device_id);
+
+                // Update the pointe state
+                let button                          = Button::from(&button);
+                let action                          = match state {
+                    ElementState::Pressed => {
+                        if !pointer_state.buttons.contains(&button) {
+                            pointer_state.buttons.push(button);
+                        }
+
+                        PointerAction::ButtonDown
+                    }
+
+                    ElementState::Released => {
+                        pointer_state.buttons.retain(|item| item != &button);
+
+                        PointerAction::ButtonUp
+                    }
+                };
+
+                // Generate the mouse event
+                let pointer_state                   = pointer_state.clone();
+                vec![DrawEvent::Pointer(action, pointer_id, pointer_state)]
+            },
+
+            MouseWheel { device_id: _, delta: _, phase: _, .. }             => vec![],
+        };
+
         if let Some(window_events) = self.window_events.get_mut(&window_id) {
-            use WindowEvent::*;
-
-            // Generate draw_events for the window event
-            let draw_events = match event {
-                Resized(new_size)                                               => vec![DrawEvent::Resize(new_size.width as f64, new_size.height as f64)],
-                Moved(_position)                                                => vec![],
-                CloseRequested                                                  => vec![DrawEvent::Closed],
-                Destroyed                                                       => vec![],
-                DroppedFile(_path)                                              => vec![],
-                HoveredFile(_path)                                              => vec![],
-                HoveredFileCancelled                                            => vec![],
-                ReceivedCharacter(_c)                                           => vec![],
-                Focused(_focused)                                               => vec![],
-                KeyboardInput { device_id: _, input: _, is_synthetic: _, }      => vec![],
-                ModifiersChanged(_state)                                        => vec![],
-                CursorMoved { device_id: _, position: _, .. }                   => vec![],
-                CursorEntered { device_id: _ }                                  => vec![],
-                CursorLeft { device_id: _ }                                     => vec![],
-                MouseWheel { device_id: _, delta: _, phase: _, .. }             => vec![],
-                MouseInput { device_id: _, state: _, button: _, .. }            => vec![],
-                TouchpadPressure { device_id: _, pressure: _, stage: _, }       => vec![],
-                AxisMotion { device_id: _, axis: _, value: _ }                  => vec![],
-                Touch(_touch)                                                   => vec![],
-                ScaleFactorChanged { scale_factor, new_inner_size }             => vec![DrawEvent::Scale(scale_factor), DrawEvent::Resize(new_inner_size.width as f64, new_inner_size.height as f64)],
-                ThemeChanged(_theme)                                            => vec![],
-            };
-
             // Dispatch the draw events using a process
             if draw_events.len() > 0 {
                 // Need to republish the window events so we can share with the process

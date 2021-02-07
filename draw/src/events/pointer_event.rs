@@ -2,8 +2,8 @@
 /// A unique identifier assigned to a specific pointer on the system (a device that has a mouse and touch input might be tracking
 /// multiple pointer devices)
 ///
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PointerId(u64);
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct PointerId(pub (crate) u64);
 
 ///
 /// The button on a mouse or other device
@@ -74,4 +74,34 @@ pub struct PointerState {
 
     /// If the device has a 'flow rate' adjustment (emulating an airbrush, for example) this is the value of that (from 0.0 to 1.0).
     pub flow_rate: Option<f64>
+}
+
+impl PointerState {
+    ///
+    /// Creates a pointer state in the default state
+    ///
+    pub (crate) fn new() -> PointerState {
+        PointerState {
+            location_in_window: (0.0, 0.0),
+            location_in_canvas: None,
+            buttons:            vec![],
+            pressure:           None,
+            tilt:               None,
+            rotation:           None,
+            flow_rate:          None
+        }
+    }
+}
+
+impl From<&glutin::event::MouseButton> for Button {
+    fn from(mouse_button: &glutin::event::MouseButton) -> Button {
+        use glutin::event::MouseButton;
+
+        match mouse_button {
+            MouseButton::Left           => Button::Left,
+            MouseButton::Middle         => Button::Middle,
+            MouseButton::Right          => Button::Right,
+            MouseButton::Other(other)   => Button::Other(*other as _)
+        }
+    }
 }

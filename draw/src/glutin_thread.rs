@@ -140,7 +140,9 @@ fn run_glutin_thread(send_proxy: mpsc::Sender<EventLoopProxy<GlutinThreadEvent>>
     let mut runtime = GlutinRuntime { 
         window_events:              HashMap::new(),
         futures:                    HashMap::new(),
-        will_stop_when_no_windows:  false
+        will_stop_when_no_windows:  false,
+        pointer_id:                 HashMap::new(),
+        pointer_state:              HashMap::new()
     };
 
     // Run the glutin event loop
