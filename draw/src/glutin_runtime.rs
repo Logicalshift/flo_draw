@@ -39,7 +39,9 @@ pub (super) struct GlutinRuntime {
     pub (super) pointer_id: HashMap<DeviceId, PointerId>,
 
     /// The current state of each pointer (as a glutin device)
-    pub (super) pointer_state: HashMap<DeviceId, PointerState>
+    pub (super) pointer_state: HashMap<DeviceId, PointerState>,
+
+    pub (super) will_exit: bool
 }
 
 ///
@@ -89,38 +91,36 @@ impl GlutinRuntime {
 
         match event {
             NewEvents(_cause)                       => { }
-            WindowEvent { window_id, event }        => { self.handle_window_event(window_id, event, control_flow); }
+            WindowEvent { window_id, event }        => { self.handle_window_event(window_id, event); }
             DeviceEvent { device_id: _, event: _ }  => { }
-            UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target, control_flow); }
+            UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target); }
             Suspended                               => { }
             Resumed                                 => { }
             RedrawRequested(window_id)              => { self.request_redraw(window_id); }
             
             MainEventsCleared                       => {
-                if self.window_events.len() == 0 && self.will_stop_when_no_windows {
+                // Glutin doesn't always respond to ControlFlow::Exit requests, setting it after the other events have cleared is an attempt
+                // to make it exit more reliably (only partially successful).
+                if self.will_exit {
                     *control_flow = ControlFlow::Exit;
                 }
             }
-            RedrawEventsCleared                     => { 
-                if self.window_events.len() == 0 && self.will_stop_when_no_windows {
-                    *control_flow = ControlFlow::Exit;
-                }
-            }
-            LoopDestroyed                           => { *control_flow = ControlFlow::Exit; }
+            RedrawEventsCleared                     => { }
+            LoopDestroyed                           => { }
         }
     }
 
     ///
     /// Handles a glutin window event
     ///
-    fn handle_window_event(&mut self, window_id: WindowId, event: WindowEvent, control_flow: &mut ControlFlow) {
+    fn handle_window_event(&mut self, window_id: WindowId, event: WindowEvent) {
         if let WindowEvent::CloseRequested = event {
             // Glutin has a bug (at least in OS X) where setting control_flow to Exit does not actually shut it down
             // This issue does not occur if the 'Exit' request is done in response to closing a window
             // (This only partially works around the bug: the process will still not quit properly if the last window
             // is closed before the main routine finishes, ie when 'will_stop_when_no_windows' is still false)
             if self.will_stop_when_no_windows && self.window_events.len() <= 1 {
-                *control_flow = ControlFlow::Exit;
+                self.will_exit = true;
             }
         }
 
@@ -243,7 +243,7 @@ impl GlutinRuntime {
     ///
     /// Handles one of our user events from the GlutinThreadEvent enum
     ///
-    fn handle_thread_event(&mut self, event: GlutinThreadEvent, window_target: &EventLoopWindowTarget<GlutinThreadEvent>, control_flow: &mut ControlFlow) {
+    fn handle_thread_event(&mut self, event: GlutinThreadEvent, window_target: &EventLoopWindowTarget<GlutinThreadEvent>) {
         use GlutinThreadEvent::*;
 
         match event {
@@ -299,7 +299,7 @@ impl GlutinRuntime {
                 self.window_events.remove(&window_id);
 
                 if self.window_events.len() == 0 && self.will_stop_when_no_windows {
-                    *control_flow = ControlFlow::Exit;
+                    self.will_exit = true;
                 }
             }
 
@@ -315,7 +315,7 @@ impl GlutinRuntime {
                 self.will_stop_when_no_windows = true;
 
                 if self.window_events.len() == 0 {
-                    *control_flow = ControlFlow::Exit;
+                    self.will_exit = true;
                 }
             }
         }
