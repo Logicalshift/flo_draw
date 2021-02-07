@@ -1,5 +1,4 @@
 use super::events::*;
-use super::draw_event::*;
 use super::glutin_window::*;
 use super::glutin_thread::*;
 use super::window_properties::*;

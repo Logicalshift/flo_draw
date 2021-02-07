@@ -1,4 +1,4 @@
-use super::events::*;
+use crate::events::*;
 
 use flo_canvas::*;
 
