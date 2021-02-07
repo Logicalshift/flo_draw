@@ -83,7 +83,9 @@ impl GlutinRuntime {
     pub fn handle_event(&mut self, event: Event<'_, GlutinThreadEvent>, window_target: &EventLoopWindowTarget<GlutinThreadEvent>, control_flow: &mut ControlFlow) {
         use Event::*;
 
-        *control_flow = ControlFlow::Wait;
+        if *control_flow != ControlFlow::Exit {
+            *control_flow = ControlFlow::Wait;
+        }
 
         match event {
             NewEvents(_cause)                       => { }
