@@ -50,5 +50,11 @@ pub struct PointerState {
     pub pressure: Option<f64>,
 
     /// tilt in degrees relative to the normal to the surface of the screen along the X and Y axes (values from -90 to 90)
-    pub tilt: Option<(f64, f64)>
+    pub tilt: Option<(f64, f64)>,
+
+    /// If the device supports detecting rotation around its own axis, this is amount of rotation in degrees (values from -180 to 180)
+    pub rotation: Option<f64>,
+
+    /// If the device has a 'flow rate' adjustment (emulating an airbrush, for example) this is the value of that (from 0.0 to 1.0).
+    pub flow_rate: Option<f64>
 }
