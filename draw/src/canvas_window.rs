@@ -280,6 +280,8 @@ SendFuture:             Send+Future<Output=()> {
             DrawEvent::Closed                   => { vec![] }
             DrawEvent::CanvasTransform(_)       => { vec![] }
             DrawEvent::Pointer(_, _, _)         => { vec![] }
+            DrawEvent::KeyDown(_)               => { vec![] }
+            DrawEvent::KeyUp(_)                 => { vec![] }
         }
     }
 }

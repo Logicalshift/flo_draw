@@ -7,7 +7,7 @@
 //!
 
 mod pointer_event;
-mod keypress;
+mod key;
 
 pub use self::pointer_event::*;
-pub use self::keypress::*;
+pub use self::key::*;

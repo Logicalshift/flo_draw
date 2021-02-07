@@ -1,8 +1,8 @@
 ///
-/// Represents a keypress
+/// Represents a key
 ///
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash, Debug)]
-pub enum KeyPress {
+pub enum Key {
     ModifierShift,
     ModifierCtrl,
     ModifierAlt,
