@@ -50,4 +50,5 @@ See the examples folder in the `draw` and `render_canvas` subdirectories for som
 
 * `cargo run --example canvas_window` - displays a basic window
 * `cargo run --example bounce_sprites` - animates some bouncing balls
+* `cargo run --example follow_mouse` - demonstrates event handling by tracking the mouse around
 * `cargo run --example png_triangle` - renders a triangle to a png file

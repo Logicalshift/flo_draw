@@ -63,7 +63,12 @@ pub fn main() {
 
                                 gc.new_path();
                                 gc.circle(*x as _, *y as _, 20.0);
-                                gc.stroke_color(Color::Rgba(0.8, 0.9, 0.8, 0.8));
+
+                                gc.stroke_color(Color::Rgba(0.1, 0.1, 0.1, 0.8));
+                                gc.line_width_pixels(3.0);
+                                gc.stroke();
+
+                                gc.stroke_color(Color::Rgba(0.6, 0.9, 0.6, 0.8));
                                 gc.line_width_pixels(2.0);
                                 gc.stroke();
                             });
