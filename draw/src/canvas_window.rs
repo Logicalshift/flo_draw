@@ -37,6 +37,24 @@ struct RendererState {
     height:         f64,
 }
 
+impl RendererState {
+    ///
+    /// Updates the window transform for this state
+    ///
+    fn update_window_transform(&mut self) -> Transform2D {
+        // Fetch the window tranform from the canvas, and invert it to get the transform from window coordinates to canvas coordinates
+        let window_transform    = self.renderer.get_window_transform().invert().unwrap();
+
+        // Window coordinates are inverted compared to canvas coordinates
+        let window_transform    = Transform2D::scale(1.0, -1.0) * window_transform;
+        let window_transform    = window_transform * Transform2D::translate(0.0, -self.height as _);
+
+        // Update the value of the transform in the state
+        self.window_transform   = Some(window_transform);
+        window_transform
+    }
+}
+
 ///
 /// Creates a canvas that will render to a window
 ///
@@ -188,8 +206,7 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
                         let render_actions = state.renderer.draw(drawing.into_iter()).collect::<Vec<_>>().await;
 
                         // Send an update that the canvas transform has changed
-                        let window_transform    = state.renderer.get_window_transform().invert().unwrap();
-                        state.window_transform  = Some(window_transform);
+                        let window_transform    = state.update_window_transform();
                         canvas_events.publish(DrawEvent::CanvasTransform(window_transform)).await;
 
                         // Send the render actions to the window once they're ready
@@ -230,8 +247,7 @@ SendFuture:             Send+Future<Output=()> {
                 let redraw = state.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
                 send_render_actions(redraw).await;
 
-                let window_transform    = state.renderer.get_window_transform().invert().unwrap();
-                state.window_transform  = Some(window_transform);
+                let window_transform    = state.update_window_transform();
                 vec![DrawEvent::CanvasTransform(window_transform)]
             },
 
