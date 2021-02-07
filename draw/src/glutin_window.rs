@@ -40,7 +40,7 @@ impl GlutinWindow {
 ///
 /// Sends render actions to a window
 ///
-pub (super) async fn send_actions_to_window<RenderStream: Unpin+Stream<Item=Vec<RenderAction>>>(window: GlutinWindow, render_actions: RenderStream, events: Publisher<DrawEvent>, window_properties: WindowProperties) {
+pub (super) async fn send_actions_to_window<RenderStream: Unpin+Stream<Item=Vec<RenderAction>>, EventPublisher: MessagePublisher<Message=DrawEvent>>(window: GlutinWindow, render_actions: RenderStream, events: EventPublisher, window_properties: WindowProperties) {
     // Read events from the render actions list
     let mut window          = window;
     let mut events          = events;

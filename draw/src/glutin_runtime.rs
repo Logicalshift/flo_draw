@@ -273,7 +273,7 @@ impl GlutinRuntime {
                 let window              = GlutinWindow::new(windowed_context);
 
                 // Store the publisher for the events for this window
-                let mut initial_events  = events.republish();
+                let mut initial_events  = events.republish_weak();
                 self.window_events.insert(window_id, events);
 
                 // Run the window as a process on this thread
