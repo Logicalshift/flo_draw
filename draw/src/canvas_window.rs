@@ -24,6 +24,9 @@ struct RendererState {
     /// The renderer for the canvas
     renderer:       CanvasRenderer,
 
+    /// The transformation from window coordinates to canvas coordinates
+    window_transform: Option<Transform2D>,
+
     /// The scale factor of the canvas
     scale:          f64,
 
@@ -63,7 +66,7 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
 
     // Create a canvas renderer
     let renderer                        = CanvasRenderer::new();
-    let renderer                        = RendererState { renderer: renderer, scale: 1.0, width: 1.0, height: 1.0 };
+    let renderer                        = RendererState { renderer: renderer, window_transform: None, scale: 1.0, width: 1.0, height: 1.0 };
     let renderer                        = Arc::new(Desync::new(renderer));
     let mut render_events               = render_events;
 
@@ -109,18 +112,46 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
             waiting_frame_count:    0
         };
 
+        // The window transform is used to track pointer events: it's invalidated when the size changes or the canvas is updated
+        let mut window_transform            = None;
+        let mut window_transform_invalid    = false;
+
         loop {
             // Retrieve the next canvas update
             match canvas_updates.next().await {
                 Some(CanvasUpdate::DrawEvents(events)) => {
+                    // Update the window transform if it is invalidated
+                    if window_transform_invalid {
+                        window_transform            = renderer.future_sync(|state| async move { state.window_transform }.boxed()).await.unwrap();
+                        window_transform_invalid    = false;
+                    }
+
                     // Process the events
                     for evt in events.iter() {
-                        canvas_events.publish(evt.clone()).await;
+                        // Republish the event (adding the location on the canvas if necessary)
+                        match evt {
+                            DrawEvent::Pointer(action, pointer_id, pointer_state) => {
+                                let mut pointer_state = pointer_state.clone();
+                                
+                                if let Some(window_transform) = &window_transform {
+                                    let (x, y)                          = pointer_state.location_in_window;
+                                    let (x, y)                          = (x as _, y as _);
+                                    let (cx, cy)                        = window_transform.transform_point(x, y);
+                                    pointer_state.location_in_canvas    = Some((cx as _, cy as _));
+                                }
+
+                                canvas_events.publish(DrawEvent::Pointer(*action, *pointer_id, pointer_state)).await;
+                            }
+
+                            _ => { canvas_events.publish(evt.clone()).await; }
+                        }
 
                         // Closing the window immediately terminates the event loop, a new frame event reduces the waiting frame count
                         match evt {
                             DrawEvent::Closed       => { return; }
                             DrawEvent::NewFrame     => { if canvas_updates.waiting_frame_count > 0 { canvas_updates.waiting_frame_count -= 1; } },
+                            DrawEvent::Redraw       => { window_transform_invalid = true; }
+                            DrawEvent::Resize(_, _) => { window_transform_invalid = true; }
                             _                       => { }
                         }
                     }
@@ -157,11 +188,14 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
                         let render_actions = state.renderer.draw(drawing.into_iter()).collect::<Vec<_>>().await;
 
                         // Send an update that the canvas transform has changed
+                        state.window_transform = Some(state.renderer.get_window_transform());
                         canvas_events.publish(DrawEvent::CanvasTransform(state.renderer.get_window_transform())).await;
 
                         // Send the render actions to the window once they're ready
                         event_actions.publish(render_actions).await;
                     }.boxed());
+
+                    window_transform_invalid = true;
                     
                     // Don't read any more from the canvas until the frame has finished rendering
                     canvas_updates.waiting_frame_count += 1;
@@ -195,6 +229,7 @@ SendFuture:             Send+Future<Output=()> {
                 let redraw = state.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
                 send_render_actions(redraw).await;
 
+                state.window_transform = Some(state.renderer.get_window_transform());
                 vec![DrawEvent::CanvasTransform(state.renderer.get_window_transform())]
             },
 
