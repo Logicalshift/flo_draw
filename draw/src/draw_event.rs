@@ -1,3 +1,5 @@
+use flo_canvas::*;
+
 ///
 /// Events that can arrive from a flo_draw window
 ///
@@ -14,6 +16,9 @@ pub enum DrawEvent {
 
     /// Window has a new size
     Resize(f64, f64),
+
+    /// Canvas transformation for the window has changed (this will convert between window coordinates and canvas coordinates)
+    CanvasTransform(Transform2D),
 
     /// Window has been closed
     Closed

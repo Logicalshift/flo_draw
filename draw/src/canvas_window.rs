@@ -55,7 +55,7 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
     let canvas                          = Canvas::new();
 
     // Create a render window
-    let (render_actions, window_events) = create_render_window(window_properties);
+    let (render_actions, render_events) = create_render_window(window_properties);
 
     // Get the stream of drawing instructions (and gather them into batches)
     let canvas_stream                   = canvas.stream();
@@ -65,13 +65,19 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
     let renderer                        = CanvasRenderer::new();
     let renderer                        = RendererState { renderer: renderer, scale: 1.0, width: 1.0, height: 1.0 };
     let renderer                        = Arc::new(Desync::new(renderer));
-    let mut render_events               = window_events.clone();
+    let mut render_events               = render_events;
+
+    // We republish the events, so we can add our own canvas events
+    let mut canvas_events               = Publisher::new(1000);
+    let window_events                   = canvas_events.subscribe();
 
     // Run the main canvas event loop as a process on the glutin thread
     glutin_thread().send_event(GlutinThreadEvent::RunProcess(Box::new(move || async move {
         // Handle events until the first 'redraw' event arrives (or stop if closed)
         loop {
             if let Some(event) = render_events.next().await {
+                canvas_events.publish(event.clone()).await;
+
                 if let DrawEvent::Redraw = event {
                     // Begin the main event loop
                     // We've read nothing from the canvas yet so we can drop this event as the first canvas read will trigger a redraw anyway
@@ -109,6 +115,8 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
                 Some(CanvasUpdate::DrawEvents(events)) => {
                     // Process the events
                     for evt in events.iter() {
+                        canvas_events.publish(evt.clone()).await;
+
                         // Closing the window immediately terminates the event loop, a new frame event reduces the waiting frame count
                         match evt {
                             DrawEvent::Closed       => { return; }
@@ -118,23 +126,38 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
                     }
 
                     // Handle the events on the renderer thread
-                    let mut event_actions = render_actions.republish();
-                    renderer.future_desync(move |state| async move { 
+                    let mut event_actions   = render_actions.republish();
+                    let new_events          = renderer.future_sync(move |state| async move { 
+                        let mut new_events = vec![];
+
                         for event in events.into_iter() {
-                            handle_window_event(state, event, &mut |actions| event_actions.publish(actions)).await; 
+                            // Handle the event
+                            new_events.extend(handle_window_event(state, event, &mut |actions| event_actions.publish(actions)).await);
                         }
-                    }.boxed());
+
+                        new_events
+                    }.boxed()).await.unwrap_or_else(|_| vec![]);
+
+                    // Send any new events to the canvas events publisher
+                    for new_event in new_events.into_iter() {
+                        canvas_events.publish(new_event).await;
+                    }
                 }
 
                 Some(CanvasUpdate::Drawing(drawing)) => {
                      // Received some drawing commands to forward to the canvas (which has rendered its previous frame)
-                    let mut event_actions = render_actions.republish();
+                    let mut event_actions   = render_actions.republish();
+                    let mut canvas_events   = canvas_events.republish();
+
                     renderer.future_desync(move |state| async move {
                         // Wait for any pending render actions to clear the queue before trying to generate new ones
                         event_actions.when_empty().await;
 
                         // Ask the renderer to process the drawing instructions into render instructions
                         let render_actions = state.renderer.draw(drawing.into_iter()).collect::<Vec<_>>().await;
+
+                        // Send an update that the canvas transform has changed
+                        canvas_events.publish(DrawEvent::CanvasTransform(state.renderer.get_window_transform())).await;
 
                         // Send the render actions to the window once they're ready
                         event_actions.publish(render_actions).await;
@@ -159,7 +182,9 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
 ///
 /// Handles an event from the window
 ///
-fn handle_window_event<'a, SendFuture, SendRenderActionsFn>(state: &'a mut RendererState, event: DrawEvent, send_render_actions: &'a mut SendRenderActionsFn) -> impl 'a+Send+Future<Output=()> 
+/// The return value is any extra events to synthesize as a result of the initial event
+///
+fn handle_window_event<'a, SendFuture, SendRenderActionsFn>(state: &'a mut RendererState, event: DrawEvent, send_render_actions: &'a mut SendRenderActionsFn) -> impl 'a+Send+Future<Output=Vec<DrawEvent>> 
 where 
 SendRenderActionsFn:    Send+FnMut(Vec<RenderAction>) -> SendFuture,
 SendFuture:             Send+Future<Output=()> {
@@ -169,6 +194,8 @@ SendFuture:             Send+Future<Output=()> {
                 // Drawing nothing will regenerate the current contents of the renderer
                 let redraw = state.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
                 send_render_actions(redraw).await;
+
+                vec![DrawEvent::CanvasTransform(state.renderer.get_window_transform())]
             },
 
             DrawEvent::Scale(new_scale)         => {
@@ -178,7 +205,9 @@ SendFuture:             Send+Future<Output=()> {
                 let height          = state.height as f32;
                 let scale           = state.scale as f32;
 
-                state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale); 
+                state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale);
+
+                vec![]
             }
 
             DrawEvent::Resize(width, height)    => { 
@@ -190,15 +219,13 @@ SendFuture:             Send+Future<Output=()> {
                 let scale           = state.scale as f32;
 
                 state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale); 
+
+                vec![]
             }
 
-            DrawEvent::NewFrame                 => {
-
-            }
-
-            DrawEvent::Closed                   => {
-
-            }
+            DrawEvent::NewFrame                 => { vec![] }
+            DrawEvent::Closed                   => { vec![] }
+            DrawEvent::CanvasTransform(_)       => { vec![] }
         }
     }
 }
