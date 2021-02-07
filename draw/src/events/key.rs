@@ -69,6 +69,7 @@ pub enum Key {
     KeyMinus,
     KeyEquals,
 
+    KeySpace,
     KeyEscape,
     KeyInsert,
     KeyHome,
@@ -127,6 +128,7 @@ impl From<&VirtualKeyCode> for Key {
             VirtualKeyCode::RAlt                => Key::ModifierAlt,
             VirtualKeyCode::RWin                => Key::ModifierMeta,
             VirtualKeyCode::Tab                 => Key::KeyTab,
+            VirtualKeyCode::Space               => Key::KeySpace,
             VirtualKeyCode::A                   => Key::KeyA,
             VirtualKeyCode::B                   => Key::KeyB,
             VirtualKeyCode::C                   => Key::KeyC,
