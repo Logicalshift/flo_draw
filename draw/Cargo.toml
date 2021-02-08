@@ -13,7 +13,7 @@ flo_canvas          = { path = "../canvas", version = "0.2" }
 flo_stream          = "0.6"
 flo_render          = { path = "../render", version = "0.2", features = [ "opengl" ] }
 flo_render_canvas   = { path = "../render_canvas", version = "0.2"}
-flo_binding         = { git = "https://github.com/Logicalshift/flo_binding", version = "2.0" }
+flo_binding         = "2.0"
 desync              = "0.7"
 
 glutin              = "0.26.0"
