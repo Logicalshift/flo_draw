@@ -9,7 +9,7 @@ repository  = "https://github.com/Logicalshift/flo_draw"
 description = "Library for describing graphics context drawing actions without requiring a specific implementation"
 
 [dependencies]
-flo_curves      = { git = "https://github.com/Logicalshift/flo_curves", version = "0.4" }
+flo_curves      = "0.4"
 
 futures         = "0.3"
 desync          = "0.7"
