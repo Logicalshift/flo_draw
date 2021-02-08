@@ -53,3 +53,14 @@ See the examples folder in the `draw` and `render_canvas` subdirectories for som
 * `cargo run --example follow_mouse` - demonstrates event handling by tracking the mouse around
 * `cargo run --example vectoroids` - more involved example of event handling with an incomplete game (arrow keys to move, space to fire)
 * `cargo run --example png_triangle` - renders a triangle to a png file
+
+# Companion crates
+
+`flo_draw` was developed alongside several other crates, which may be of interest when developing software that uses the canvas:
+
+* `flo_curves` provides a lot of functionality for manipulating bezier curves.
+* `flo_stream` provides pubsub and generator streams, which are useful for distributing events around an application.
+    (See the vectoroids example for a way to use a generator stream as a game clock)
+* `desync` provides a simpler way to write asynchronous code than traditional threads
+* `flo_binding` provides a way to convert between state changes and message streams, used in `flo_draw` to update the window configuration
+
