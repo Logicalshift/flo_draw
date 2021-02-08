@@ -4,7 +4,7 @@ version     = "0.2.0"
 authors     = ["Andrew Hunter"]
 license     = "Apache-2.0"
 edition     = "2018"
-repository  = "https://github.com/Logicalshift/flowbetween"
+repository  = "https://github.com/Logicalshift/flo_draw"
 description = "Re-exports platform-appropriate libraries for initialising offscreen rendering"
 
 # Cargo can base dependencies on features or the current platform but not both (which is also why you have to specify
