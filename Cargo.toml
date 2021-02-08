@@ -6,3 +6,10 @@ members = [
     "render_gl_offscreen",
     "draw"
 ]
+
+[patch.crates-io]
+flo_canvas              = { path = "./canvas" }
+flo_render              = { path = "./render" }
+flo_render_canvas       = { path = "./render_canvas" }
+flo_render_gl_offscreen = { path = "./render_gl_offscreen" }
+flo_draw                = { path = "./draw" }

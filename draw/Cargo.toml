@@ -9,10 +9,10 @@ repository          = "https://github.com/Logicalshift/flo_draw"
 description         = "Quickly render 2D graphics to the screen"
 
 [dependencies]
-flo_canvas          = { path = "../canvas", version = "0.2" }
+flo_canvas          = "0.2"
+flo_render          = { version = "0.2", features = [ "opengl" ] }
+flo_render_canvas   = "0.2"
 flo_stream          = "0.6"
-flo_render          = { path = "../render", version = "0.2", features = [ "opengl" ] }
-flo_render_canvas   = { path = "../render_canvas", version = "0.2"}
 flo_binding         = "2.0"
 desync              = "0.7"
 

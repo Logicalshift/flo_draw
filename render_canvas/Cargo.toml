@@ -10,8 +10,8 @@ description = "Converts flo_canvas streams to flo_render streams"
 include     = [ "Cargo.toml", "src/**/*", "svg/**/*" ]
 
 [dependencies]
-flo_render  = { path = "../render", version = "0.2" }
-flo_canvas  = { path = "../canvas", version = "0.2" }
+flo_render  = "0.2"
+flo_canvas  = "0.2"
 flo_stream  = "0.6"
 futures     = "0.3"
 desync      = "0.7"
