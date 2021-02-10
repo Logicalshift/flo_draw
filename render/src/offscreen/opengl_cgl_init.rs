@@ -40,6 +40,16 @@ fn get_proc_address(addr: &str) -> *const libc::c_void {
 }
 
 ///
+/// Converts a CGLError into a result
+///
+fn to_render_error(error: cgl::CGLError) -> Result<(), RenderInitError> {
+    match error {
+        cgl::kCGLNoError    => Ok(()),
+        _                   => Err(RenderInitError::CannotStartGraphicsDriver)
+    }
+}
+
+///
 /// Performs on-startup initialisation steps for offscreen rendering
 ///
 /// Only required if not using a toolkit renderer (eg, in an HTTP renderer or command-line tool). Will likely replace
@@ -60,6 +70,7 @@ pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, R
         let mut pixel_format        = ptr::null_mut();
         let mut num_pixel_formats   = 0;
         let pixel_format_error      = cgl::CGLChoosePixelFormat(pixel_attributes.as_ptr(), &mut pixel_format, &mut num_pixel_formats);
+        to_render_error(pixel_format_error)?;
 
         if pixel_format.is_null() {
             Err(RenderInitError::DisplayNotAvailable)?
@@ -68,6 +79,7 @@ pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, R
         // Try to create a context from the pixel format we selected
         let mut context     = ptr::null_mut();
         let context_error   = cgl::CGLCreateContext(pixel_format, ptr::null_mut(), &mut context);
+        to_render_error(context_error)?;
 
         if context.is_null() {
             Err(RenderInitError::CouldNotCreateContext)?
