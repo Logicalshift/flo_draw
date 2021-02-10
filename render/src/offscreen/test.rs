@@ -7,7 +7,12 @@ mod test {
     #[test]
     fn clear_offscreen() {
         // Initialise offscreen rendering
-        let mut context     = initialize_offscreen_rendering().unwrap();
+        let context         = initialize_offscreen_rendering();
+        let mut context     = match context {
+            Ok(context)     => context,
+            Err(RenderInitError::CannotCreateGraphicsDevice)    => { println!("Test not run: graphics device unavailable"); return; }
+            Err(other)      => { panic!("Unexpected error: {:?}", other); }
+        };
 
         // Draw a triangle in a 100x100 buffer
         use self::RenderAction::*;
@@ -46,7 +51,12 @@ mod test {
     #[test]
     fn clears_in_rgba_order() {
         // Initialise offscreen rendering
-        let mut context     = initialize_offscreen_rendering().unwrap();
+        let context         = initialize_offscreen_rendering();
+        let mut context     = match context {
+            Ok(context)     => context,
+            Err(RenderInitError::CannotCreateGraphicsDevice)    => { println!("Test not run: graphics device unavailable"); return; }
+            Err(other)      => { panic!("Unexpected error: {:?}", other); }
+        };
 
         // Draw a triangle in a 100x100 buffer
         use self::RenderAction::*;
@@ -85,7 +95,12 @@ mod test {
     #[test]
     fn simple_offscreen_render() {
         // Initialise offscreen rendering
-        let mut context     = initialize_offscreen_rendering().unwrap();
+        let context         = initialize_offscreen_rendering();
+        let mut context     = match context {
+            Ok(context)     => context,
+            Err(RenderInitError::CannotCreateGraphicsDevice)    => { println!("Test not run: graphics device unavailable"); return; }
+            Err(other)      => { panic!("Unexpected error: {:?}", other); }
+        };
 
         // Draw a triangle in a 100x100 buffer
         use self::RenderAction::*;
@@ -136,7 +151,12 @@ mod test {
     #[test]
     fn simple_offscreen_render_with_transform() {
         // Initialise offscreen rendering
-        let mut context     = initialize_offscreen_rendering().unwrap();
+        let context         = initialize_offscreen_rendering();
+        let mut context     = match context {
+            Ok(context)     => context,
+            Err(RenderInitError::CannotCreateGraphicsDevice)    => { println!("Test not run: graphics device unavailable"); return; }
+            Err(other)      => { panic!("Unexpected error: {:?}", other); }
+        };
 
         // Draw a triangle in a 100x100 buffer
         use self::RenderAction::*;
@@ -188,7 +208,12 @@ mod test {
     #[test]
     fn offscreen_order_is_rgba() {
         // Initialise offscreen rendering
-        let mut context     = initialize_offscreen_rendering().unwrap();
+        let context         = initialize_offscreen_rendering();
+        let mut context     = match context {
+            Ok(context)     => context,
+            Err(RenderInitError::CannotCreateGraphicsDevice)    => { println!("Test not run: graphics device unavailable"); return; }
+            Err(other)      => { panic!("Unexpected error: {:?}", other); }
+        };
 
         // Draw a triangle in a 100x100 buffer
         use self::RenderAction::*;
