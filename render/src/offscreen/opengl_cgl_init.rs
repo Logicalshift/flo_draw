@@ -16,7 +16,7 @@ use std::ptr;
 ///
 struct CglOffscreenRenderContext {
     /// The pixel format used for the context
-    pixel_format: cgl::CGLPixelFormatObj,
+    _pixel_format: cgl::CGLPixelFormatObj,
 
     /// The CGL context itself
     context: cgl::CGLContextObj
@@ -89,7 +89,7 @@ pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, R
 
         // Result is a CGL offscreen context
         Ok(CglOffscreenRenderContext {
-            pixel_format:   pixel_format,
+            _pixel_format:  pixel_format,
             context:        context
         })
     }
