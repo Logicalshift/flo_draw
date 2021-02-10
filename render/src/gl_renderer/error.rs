@@ -8,7 +8,8 @@ pub enum GlError {
     InvalidOperation,
     InvalidEnum,
 
-    /// Error where we can provide a string versiom
+    /// Error where we can provide a string version
+    #[allow(dead_code)]
     Error(u32, String)
 }
 
