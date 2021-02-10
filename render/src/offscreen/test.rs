@@ -18,7 +18,6 @@ mod test {
         use self::RenderAction::*;
 
         let mut renderer    = context.create_render_target(100, 100);
-        let black           = [0, 0, 0, 255];
         renderer.render(vec![
             Clear(Rgba8([128, 128, 128, 255])),
         ]);
