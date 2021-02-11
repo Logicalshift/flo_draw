@@ -6,6 +6,7 @@ use super::glutin_thread_event::*;
 
 use flo_canvas::*;
 use flo_stream::*;
+use flo_binding::*;
 use flo_render::*;
 use flo_render_canvas::*;
 
@@ -71,9 +72,16 @@ pub fn create_canvas_window<'a, TProperties: 'a+FloWindowProperties>(window_prop
 pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>(window_properties: TProperties) -> (Canvas, impl Clone+Send+Stream<Item=DrawEvent>) {
     // Create a static copy of the window properties bindings
     let window_properties               = WindowProperties::from(&window_properties);
+    let (width, height)                 = window_properties.size().get();
 
     // Create the canvas
     let canvas                          = Canvas::new();
+    canvas.draw(|gc| {
+        // Default window layout is 1:1 for the requested window size
+        gc.clear_canvas(Color::Rgba(1.0, 1.0, 1.0, 1.0));
+        gc.canvas_height(height as _);
+        gc.center_region(0.0, 0.0, width as _, height as _);
+    });
 
     // Create a render window
     let (render_actions, render_events) = create_render_window(window_properties);
