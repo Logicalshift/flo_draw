@@ -36,7 +36,8 @@ struct EglOffscreenRenderContext {
 pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     unsafe {
         // Open the card0 file descriptor
-        let card0 = open(CString::new("/dev/dri/card0").unwrap().as_ptr(), O_RDWR);
+        let card0_file = CString::new("/dev/dri/card0").unwrap();
+        let card0 = open(card0_file.as_ptr(), O_RDWR);
         if card0 == 0 { Err(RenderInitError::CannotOpenGraphicsDevice)? }
 
         // Create the GBM device for the card
