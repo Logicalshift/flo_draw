@@ -10,11 +10,13 @@ description = "Re-exports platform-appropriate libraries for initialising offscr
 # Cargo can base dependencies on features or the current platform but not both (which is also why you have to specify
 # 'gtk' on linux), so we need a separate crate to re-export egl/wgl/cgl based on the platform we're compiling on
 
+[target.'cfg(target_os = "linux")'.build-dependencies]
+bindgen = "0.54"
+
 [dependencies]
 
 [target.'cfg(target_os = "linux")'.dependencies]
 egl             = "0.2"
-gbm-sys         = "0.1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cgl             = "0.3"
