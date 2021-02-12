@@ -16,12 +16,12 @@ void main() {
 #ifdef ERASE_MASK
     ivec2 eraseSize = textureSize(t_EraseMask);
     
-    float width         = eraseSize[0];
-    float height        = eraseSize[1];
+    float width         = float(eraseSize[0]);
+    float height        = float(eraseSize[1]);
     float x             = IN.v_PaperCoord[0] * width;
     float y             = IN.v_PaperCoord[1] * height;
 
-    ivec2 pos           = ivec2(x, y);
+    ivec2 pos           = ivec2(int(x), int(y));
     float eraseColor    = 0.0;
 
     for (int i=0; i<4; ++i) {
@@ -30,9 +30,9 @@ void main() {
 
     eraseColor /= 4.0;
 
-    f_Color[0] *= 1-eraseColor;
-    f_Color[1] *= 1-eraseColor;
-    f_Color[2] *= 1-eraseColor;
-    f_Color[3] *= 1-eraseColor;
+    f_Color[0] *= 1.0-eraseColor;
+    f_Color[1] *= 1.0-eraseColor;
+    f_Color[2] *= 1.0-eraseColor;
+    f_Color[3] *= 1.0-eraseColor;
 #endif
 }
