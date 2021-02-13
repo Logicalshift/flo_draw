@@ -227,7 +227,7 @@ impl GameState {
         self.bullets.retain(|bullet| bullet.time_left > 0);
     }
 
-    pub fn draw(&self, gc: &mut dyn GraphicsPrimitives) {
+    pub fn draw(&self, gc: &mut dyn GraphicsContext) {
         self.roids.iter().for_each(|roid| roid.draw(gc));
         self.ship.draw(gc);
         self.bullets.iter().for_each(|bullet| bullet.draw(gc));
@@ -278,7 +278,7 @@ impl Ship {
         self.vel_y *= 0.99;
     }
 
-    pub fn draw(&self, gc: &mut dyn GraphicsPrimitives) {
+    pub fn draw(&self, gc: &mut dyn GraphicsContext) {
         gc.sprite_transform(SpriteTransform::Identity);
         gc.sprite_transform(SpriteTransform::Translate(self.x as _, self.y as _));
         gc.sprite_transform(SpriteTransform::Rotate(self.angle as _));
@@ -320,7 +320,7 @@ impl Roid {
         if self.y > 1000.0 { self.y = 0.0 };
     }
 
-    pub fn draw(&self, gc: &mut dyn GraphicsPrimitives) {
+    pub fn draw(&self, gc: &mut dyn GraphicsContext) {
         gc.sprite_transform(SpriteTransform::Identity);
         gc.sprite_transform(SpriteTransform::Translate(self.x as _, self.y as _));
         gc.sprite_transform(SpriteTransform::Rotate(self.angle as _));
@@ -367,7 +367,7 @@ impl Bullet {
         if self.y > 1000.0 { self.y = 0.0 };
     }
 
-    pub fn draw(&self, gc: &mut dyn GraphicsPrimitives) {
+    pub fn draw(&self, gc: &mut dyn GraphicsContext) {
         gc.sprite_transform(SpriteTransform::Identity);
         gc.sprite_transform(SpriteTransform::Translate(self.x as _, self.y as _));
         gc.draw_sprite(self.sprite);
