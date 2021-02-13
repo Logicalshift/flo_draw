@@ -319,8 +319,6 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     }
 }
 
-impl<'a> GraphicsPrimitives for CanvasGraphicsContext<'a> { }
-
 impl<'a> Drop for CanvasGraphicsContext<'a> {
     fn drop(&mut self) {
         let mut to_draw = vec![];

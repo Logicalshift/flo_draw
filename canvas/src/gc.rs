@@ -262,8 +262,9 @@ impl GraphicsContext for Vec<Draw> {
 }
 
 ///
-/// A Vec<Draw> can be treated as a target for graphics primitives (just pushing the appropriate draw instructions)
+/// All graphics contexts provide graphics primitives
 ///
-impl GraphicsPrimitives for Vec<Draw> {
+impl<T> GraphicsPrimitives for T
+where T: GraphicsContext {
 
 }
