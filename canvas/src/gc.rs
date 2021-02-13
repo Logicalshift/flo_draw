@@ -268,3 +268,10 @@ impl<T> GraphicsPrimitives for T
 where T: GraphicsContext {
 
 }
+
+///
+/// The dynamic graphics context object also implements the graphics primitives
+///
+impl<'a> GraphicsPrimitives for dyn 'a+GraphicsContext {
+
+}
