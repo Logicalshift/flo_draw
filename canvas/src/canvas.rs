@@ -213,9 +213,9 @@ impl Canvas {
     /// Provides a way to draw on this canvas via a GC
     ///
     pub fn draw<FnAction>(&self, action: FnAction)
-    where FnAction: Send+FnOnce(&mut dyn GraphicsPrimitives) -> () {
+    where FnAction: Send+FnOnce(&mut CanvasGraphicsContext) -> () {
         self.core.sync(move |core| {
-            let mut graphics_context = CoreContext {
+            let mut graphics_context = CanvasGraphicsContext {
                 core:       core,
                 pending:    vec![]
             };
@@ -263,14 +263,14 @@ impl Drop for Canvas {
 }
 
 ///
-/// Graphics context built from a canvas core
+/// Graphics context for a Canvas
 ///
-struct CoreContext<'a> {
+pub struct CanvasGraphicsContext<'a> {
     core:       &'a mut CanvasCore,
     pending:    Vec<Draw>
 }
 
-impl<'a> GraphicsContext for CoreContext<'a> {
+impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn new_path(&mut self)                          { self.pending.push(Draw::NewPath); }
     fn move_to(&mut self, x: f32, y: f32)           { self.pending.push(Draw::Move(x, y)); }
     fn line_to(&mut self, x: f32, y: f32)           { self.pending.push(Draw::Line(x, y)); }
@@ -319,9 +319,9 @@ impl<'a> GraphicsContext for CoreContext<'a> {
     }
 }
 
-impl<'a> GraphicsPrimitives for CoreContext<'a> { }
+impl<'a> GraphicsPrimitives for CanvasGraphicsContext<'a> { }
 
-impl<'a> Drop for CoreContext<'a> {
+impl<'a> Drop for CanvasGraphicsContext<'a> {
     fn drop(&mut self) {
         let mut to_draw = vec![];
         mem::swap(&mut self.pending, &mut to_draw);
