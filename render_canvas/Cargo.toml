@@ -6,6 +6,7 @@ license     = "Apache-2.0"
 edition     = "2018"
 repository  = "https://github.com/Logicalshift/flo_draw"
 description = "Converts flo_canvas streams to flo_render streams"
+categories  = [ "graphics", "rendering", "rendering::engine" ]
 
 include     = [ "Cargo.toml", "src/**/*", "svg/**/*" ]
 

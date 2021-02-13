@@ -6,6 +6,7 @@ license     = "Apache-2.0"
 edition     = "2018"
 repository  = "https://github.com/Logicalshift/flowbetween"
 description = "Streaming API for rendering graphics on hardware"
+categories  = [ "graphics", "rendering", "rendering::graphics-api" ]
 
 include     = [ "Cargo.toml", "src/**/*", "shaders/**/*", "bindings/**/*", "build.rs" ]
 
