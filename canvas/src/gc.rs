@@ -4,7 +4,8 @@ use super::transform2d::*;
 
 use curves::*;
 use curves::arc;
-use curves::bezier::BezierCurve;
+use curves::bezier::{BezierCurve};
+use curves::bezier::path::{BezierPath};
 
 use std::iter;
 
@@ -121,6 +122,30 @@ pub trait GraphicsPrimitives : GraphicsContext {
         for d in draw_circle(center_x, center_y, radius) {
             self.draw(d);
         }
+    }
+
+    ///
+    /// Draws a bezier path
+    ///
+    fn bezier_path<TPath: BezierPath>(&mut self, path: &TPath)
+    where TPath::Point: Coordinate2D {
+        let start_point = path.start_point();
+
+        self.move_to(start_point.x() as _, start_point.y() as _);
+        for (cp1, cp2, end) in path.points() {
+            self.bezier_curve_to(end.x() as _, end.y() as _, cp1.x() as _, cp1.y() as _, cp2.x() as _, cp2.y() as _);
+        }
+    }
+
+    ///
+    /// Draws a bezier curve (defined by the BezierCurve trait)
+    ///
+    fn bezier_curve<TCurve: BezierCurve>(&mut self, curve: &TCurve)
+    where TCurve::Point: Coordinate2D {
+        let (cp1, cp2)  = curve.control_points();
+        let end         = curve.end_point();
+
+        self.bezier_curve_to(end.x() as _, end.y() as _, cp1.x() as _, cp1.y() as _, cp2.x() as _, cp2.y() as _);
     }
 }
 
