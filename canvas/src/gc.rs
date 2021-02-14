@@ -2,10 +2,10 @@ use super::draw::*;
 use super::color::*;
 use super::transform2d::*;
 
-use curves::*;
-use curves::arc;
-use curves::bezier::{BezierCurve};
-use curves::bezier::path::{BezierPath};
+use flo_curves::*;
+use flo_curves::arc;
+use flo_curves::bezier::{BezierCurve};
+use flo_curves::bezier::path::{BezierPath};
 
 use std::iter;
 

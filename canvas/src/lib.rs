@@ -26,7 +26,7 @@
 extern crate serde_derive;
 
 extern crate futures;
-extern crate flo_curves as curves;
+extern crate flo_curves;
 extern crate desync;
 extern crate hsluv;
 
