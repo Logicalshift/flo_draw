@@ -94,12 +94,6 @@ pub trait GraphicsContext {
             DrawSprite(sprite_id)                       => self.draw_sprite(sprite_id)
         }
     }
-
-    fn draw_list<'a>(&'a mut self, drawing: Box<dyn 'a+Iterator<Item=Draw>>) {
-        for d in drawing {
-            self.draw(d);
-        }
-    }
 }
 
 ///
@@ -146,6 +140,15 @@ pub trait GraphicsPrimitives : GraphicsContext {
         let end         = curve.end_point();
 
         self.bezier_curve_to(end.x() as _, end.y() as _, cp1.x() as _, cp1.y() as _, cp2.x() as _, cp2.y() as _);
+    }
+
+    ///
+    /// Draws a series of instructions
+    ///
+    fn draw_list<'a, DrawIter: 'a+IntoIterator<Item=Draw>>(&'a mut self, drawing: DrawIter) {
+        for d in drawing.into_iter() {
+            self.draw(d);
+        }
     }
 }
 
@@ -253,11 +256,6 @@ impl GraphicsContext for Vec<Draw> {
     #[inline]
     fn draw(&mut self, d: Draw) {
         self.push(d);
-    }
-
-    #[inline]
-    fn draw_list<'b>(&'b mut self, drawing: Box<dyn 'b+Iterator<Item=Draw>>) {
-        self.extend(drawing)
     }
 }
 

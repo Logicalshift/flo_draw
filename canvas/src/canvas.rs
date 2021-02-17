@@ -313,10 +313,7 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn sprite_transform(&mut self, transform: SpriteTransform)  { self.pending.push(Draw::SpriteTransform(transform)); }
     fn draw_sprite(&mut self, sprite_id: SpriteId)              { self.pending.push(Draw::DrawSprite(sprite_id)); }
 
-    fn draw(&mut self, d: Draw)                     { self.pending.push(d); }
-    fn draw_list<'b>(&'b mut self, drawing: Box<dyn 'b+Iterator<Item=Draw>>) {
-        self.pending.extend(drawing);
-    }
+    fn draw(&mut self, d: Draw)                                 { self.pending.push(d); }
 }
 
 impl<'a> Drop for CanvasGraphicsContext<'a> {
