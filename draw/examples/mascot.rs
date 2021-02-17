@@ -1,6 +1,9 @@
 use flo_draw::*;
 use flo_draw::canvas::*;
 
+///
+/// Draws FlowBetween's mascot as vector graphics in a window
+///
 pub fn main() {
     with_2d_graphics(|| {
         // Decode
@@ -14,7 +17,7 @@ pub fn main() {
     });
 }
 
-// Mascot in canvas encoding form
+/// Mascot in canvas encoding form
 const MASCOT: &'static str = "
     NARdyJn+A+2bP/AHaoB/AAAAg/A
     ThAAAQEB
