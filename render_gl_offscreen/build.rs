@@ -13,7 +13,7 @@ fn main() {
     let out = out.join("gbm.rs");
 
     bindgen::Builder::default()
-        .header("linux_gbm.h")
+        .header("tiny_gbm.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .generate()
         .expect("Failed to generate bindings for gbm")
