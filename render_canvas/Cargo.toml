@@ -11,8 +11,8 @@ categories  = [ "graphics", "rendering", "rendering::engine" ]
 include     = [ "Cargo.toml", "src/**/*", "svg/**/*" ]
 
 [dependencies]
-flo_render  = "0.2"
-flo_canvas  = "0.2"
+flo_render  = "0.3"
+flo_canvas  = "0.3"
 flo_stream  = "0.6"
 futures     = "0.3"
 desync      = "0.7"

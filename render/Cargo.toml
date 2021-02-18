@@ -22,8 +22,8 @@ gl                      = { version = "0.14", optional = true }
 metal                   = { version = "0.20", optional = true }
 cocoa                   = { version = "0.23", optional = true }
 libc                    = { version = "0.2", optional = true }
-flo_canvas              = { version = "0.2", optional = true }
-flo_render_gl_offscreen = { version = "0.2", optional = true }
+flo_canvas              = { version = "0.3", optional = true }
+flo_render_gl_offscreen = { version = "0.3", optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation         = "0.9"
