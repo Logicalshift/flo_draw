@@ -371,7 +371,7 @@ impl CanvasRenderer {
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
                                 // Create the canvas job
-                                CanvasJob::Fill { path, fill_rule, color, entity }
+                                CanvasJob::Fill { path, fill_rule, color, scale_factor: 1.0, entity }
                             });
 
                             pending_jobs.push(job);
@@ -418,7 +418,7 @@ impl CanvasRenderer {
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
                                 // Create the canvas job
-                                CanvasJob::Stroke { path, stroke_options, entity }
+                                CanvasJob::Stroke { path, stroke_options, scale_factor: 1.0, entity }
                             });
 
                             pending_jobs.push(job);
