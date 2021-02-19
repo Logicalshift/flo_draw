@@ -48,4 +48,18 @@ impl LayerState {
             other                               => { self.sprite_matrix = self.sprite_matrix * canvas::Transform2D::from(other); }
         }
     }
+
+    ///
+    /// Returns the scale factor to use for fills and strokes given a particular viewport height
+    ///
+    pub fn tolerance_scale_factor(&mut self, viewport_height: f32) -> f64 {
+        // Assume the viewport is at least a certain size (so if the rendering is initially to a very small viewport during initialisation we won't produce a wildly inaccurate rendering)
+        let _viewport_height = if viewport_height < 1000.0 {
+            1000.0
+        } else {
+            viewport_height
+        };
+
+        1.0
+    }
 }

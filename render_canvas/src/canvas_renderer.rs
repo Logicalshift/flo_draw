@@ -349,6 +349,7 @@ impl CanvasRenderer {
                             let path                = path.clone();
                             let layer_id            = self.current_layer;
                             let entity_id           = self.next_entity_id;
+                            let viewport_height     = self.viewport_size.1;
                             let active_transform    = &self.active_transform;
 
                             self.next_entity_id += 1;
@@ -360,6 +361,7 @@ impl CanvasRenderer {
                                 layer.update_transform(active_transform);
 
                                 // Create the render entity in the tessellating state
+                                let scale_factor        = layer.state.tolerance_scale_factor(viewport_height);
                                 let color               = layer.state.fill_color;
                                 let fill_rule           = layer.state.winding_rule;
                                 let entity_index        = layer.render_order.len();
@@ -372,7 +374,7 @@ impl CanvasRenderer {
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
                                 // Create the canvas job
-                                CanvasJob::Fill { path, fill_rule, color, scale_factor: 1.0, entity }
+                                CanvasJob::Fill { path, fill_rule, color, scale_factor, entity }
                             });
 
                             pending_jobs.push(job);
@@ -392,10 +394,11 @@ impl CanvasRenderer {
 
                         // Publish the job to the tessellators
                         if let Some(path) = &current_path {
-                            let path        = path.clone();
-                            let layer_id    = self.current_layer;
-                            let entity_id   = self.next_entity_id;
-                            let active_transform = &self.active_transform;
+                            let path                = path.clone();
+                            let layer_id            = self.current_layer;
+                            let entity_id           = self.next_entity_id;
+                            let viewport_height     = self.viewport_size.1;
+                            let active_transform    = &self.active_transform;
 
                             self.next_entity_id += 1;
 
@@ -406,9 +409,9 @@ impl CanvasRenderer {
                                 layer.update_transform(active_transform);
 
                                 // Create the render entity in the tessellating state
+                                let scale_factor        = layer.state.tolerance_scale_factor(viewport_height);
                                 let mut stroke_options  = layer.state.stroke_settings.clone();
                                 let entity_index        = layer.render_order.len();
-
 
                                 // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
                                 let color                   = stroke_options.stroke_color;
@@ -419,7 +422,7 @@ impl CanvasRenderer {
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
                                 // Create the canvas job
-                                CanvasJob::Stroke { path, stroke_options, scale_factor: 1.0, entity }
+                                CanvasJob::Stroke { path, stroke_options, scale_factor, entity }
                             });
 
                             pending_jobs.push(job);
