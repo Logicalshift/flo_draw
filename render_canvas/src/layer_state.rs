@@ -31,6 +31,9 @@ pub struct LayerState {
     /// The current transformation matrix for this layer
     pub current_matrix: canvas::Transform2D,
 
+    /// The scale factor applied by the current matrix (used to determine the precision of the tessellator)
+    pub scale_factor: f32,
+
     /// The current transform to apply when rendering sprites
     pub sprite_matrix: canvas::Transform2D
 }
