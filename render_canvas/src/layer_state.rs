@@ -54,12 +54,16 @@ impl LayerState {
     ///
     pub fn tolerance_scale_factor(&mut self, viewport_height: f32) -> f64 {
         // Assume the viewport is at least a certain size (so if the rendering is initially to a very small viewport during initialisation we won't produce a wildly inaccurate rendering)
-        let _viewport_height = if viewport_height < 1000.0 {
+        let viewport_height = if viewport_height < 1000.0 {
             1000.0
         } else {
-            viewport_height
+            viewport_height as f64
         };
 
-        1.0
+        let scale_factor = self.scale_factor as f64;
+        let scale_factor = if scale_factor.abs() < 0.000001 { 0.000001 } else { scale_factor };
+
+        // The window height is 2.0 - so 2.0/scale_factor = the height of the viewport with the current transformation. We use 4.0 instead of 2.0 to reduce the precision a bit for rendering.
+        (4.0/scale_factor) / viewport_height
     }
 }
