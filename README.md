@@ -27,7 +27,7 @@ for both OpenGL 3.3 and Metal.
 The 2D graphics model used here has a few interesting features that are not present in many other rendering libraries. In particular, 
 there is a layer system which is very useful for simplifying the design of interactive graphics applications by reducing the amount of
 work involved in a redraw, and it's possible to both draw and erase shapes. With the hardware renderers in `flo_render`, the number of
-layers is effectively unlimited.
+layers is effectively unlimited. There's also a 'sprite' system, which makes it possible to easily re-render complicated shapes.
 
 # Getting started
 
