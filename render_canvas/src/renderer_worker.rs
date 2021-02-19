@@ -10,6 +10,12 @@ use lyon::math::{Point};
 use lyon::tessellation;
 use lyon::tessellation::{VertexBuffers, BuffersBuilder, StrokeOptions, FillOptions, FillRule, FillAttributes, StrokeAttributes};
 
+/// The minimum tolerance to use when rendering fills/strokes
+const MIN_TOLERANCE: f32 = 0.0001;
+
+/// The maximum tolerance to use when rendering fills/strokes
+const MAX_TOLERANCE: f32 = 1000.0;
+
 ///
 /// References an entity in a layer
 ///
@@ -31,12 +37,14 @@ pub enum CanvasJob {
         path:           path::Path, 
         color:          render::Rgba8,
         fill_rule:      FillRule,
+        scale_factor:   f64,
         entity:         LayerEntityRef
     },
 
     Stroke {
         path:           path::Path,
         stroke_options: StrokeSettings,
+        scale_factor:   f64,
         entity:         LayerEntityRef
     }
 }
@@ -63,15 +71,15 @@ impl CanvasWorker {
         use self::CanvasJob::*;
 
         match job {
-            Fill    { path, fill_rule, color, entity }  => self.fill(path, fill_rule, color, entity),
-            Stroke  { path, stroke_options, entity }    => self.stroke(path, stroke_options, entity)
+            Fill    { path, fill_rule, color, scale_factor, entity }    => self.fill(path, fill_rule, color, scale_factor, entity),
+            Stroke  { path, stroke_options, scale_factor, entity }      => self.stroke(path, stroke_options, scale_factor, entity)
         }
     }
 
     ///
     /// Fills the current path and returns the resulting render entity
     ///
-    fn fill(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
+    fn fill(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
         // Create the tessellator and geometry
         let mut tessellator     = tessellation::FillTessellator::new();
         let mut geometry        = VertexBuffers::new();
@@ -79,6 +87,9 @@ impl CanvasWorker {
         // Set up the fill options
         let mut fill_options    = FillOptions::default();
         fill_options.fill_rule  = fill_rule;
+        fill_options.tolerance  = FillOptions::DEFAULT_TOLERANCE * (scale_factor as f32);
+        fill_options.tolerance  = f32::min(MAX_TOLERANCE, fill_options.tolerance);
+        fill_options.tolerance  = f32::max(MIN_TOLERANCE, fill_options.tolerance);
 
         // Tessellate the current path
         tessellator.tessellate_path(&path, &fill_options,
@@ -120,14 +131,17 @@ impl CanvasWorker {
     ///
     /// Strokes a path and returns the resulting render entity
     ///
-    fn stroke(&mut self, path: path::Path, stroke_options: StrokeSettings, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
+    fn stroke(&mut self, path: path::Path, stroke_options: StrokeSettings, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
         // Create the tessellator and geometry
         let mut tessellator         = tessellation::StrokeTessellator::new();
         let mut geometry            = VertexBuffers::new();
 
         // Set up the stroke options
         let render::Rgba8(color)    = stroke_options.stroke_color;
-        let stroke_options          = Self::convert_stroke_settings(stroke_options);
+        let mut stroke_options      = Self::convert_stroke_settings(stroke_options);
+        stroke_options.tolerance    = StrokeOptions::DEFAULT_TOLERANCE * (scale_factor as f32);
+        stroke_options.tolerance    = f32::min(MAX_TOLERANCE, stroke_options.tolerance);
+        stroke_options.tolerance    = f32::max(MIN_TOLERANCE, stroke_options.tolerance);
 
         // Stroke the path
         tessellator.tessellate_path(&path, &stroke_options,

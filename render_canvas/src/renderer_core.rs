@@ -222,6 +222,7 @@ impl RenderCore {
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),
                 sprite_matrix:      canvas::Transform2D::identity(),
+                scale_factor:       1.0,
                 blend_mode:         canvas::BlendMode::SourceOver,
                 restore_point:      None
             },
