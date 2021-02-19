@@ -10,6 +10,12 @@ use lyon::math::{Point};
 use lyon::tessellation;
 use lyon::tessellation::{VertexBuffers, BuffersBuilder, StrokeOptions, FillOptions, FillRule, FillAttributes, StrokeAttributes};
 
+/// The minimum tolerance to use when rendering fills/strokes
+const MIN_TOLERANCE: f32 = 0.0001;
+
+/// The maximum tolerance to use when rendering fills/strokes
+const MAX_TOLERANCE: f32 = 1000.0;
+
 ///
 /// References an entity in a layer
 ///
@@ -82,6 +88,8 @@ impl CanvasWorker {
         let mut fill_options    = FillOptions::default();
         fill_options.fill_rule  = fill_rule;
         fill_options.tolerance  = FillOptions::DEFAULT_TOLERANCE * (scale_factor as f32);
+        fill_options.tolerance  = f32::min(MAX_TOLERANCE, fill_options.tolerance);
+        fill_options.tolerance  = f32::max(MIN_TOLERANCE, fill_options.tolerance);
 
         // Tessellate the current path
         tessellator.tessellate_path(&path, &fill_options,
@@ -132,6 +140,8 @@ impl CanvasWorker {
         let render::Rgba8(color)    = stroke_options.stroke_color;
         let mut stroke_options      = Self::convert_stroke_settings(stroke_options);
         stroke_options.tolerance    = StrokeOptions::DEFAULT_TOLERANCE * (scale_factor as f32);
+        stroke_options.tolerance    = f32::min(MAX_TOLERANCE, stroke_options.tolerance);
+        stroke_options.tolerance    = f32::max(MIN_TOLERANCE, stroke_options.tolerance);
 
         // Stroke the path
         tessellator.tessellate_path(&path, &stroke_options,
