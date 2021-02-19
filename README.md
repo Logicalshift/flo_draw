@@ -12,6 +12,23 @@ an abstraction API.
 There are some other implementations of the `flo_canvas` protocol that are not yet packaged up conveniently: in particular,
 `canvas.js` allows rendering to an HTML canvas, and FlowBetween contains implementations for Quartz and Cairo.
 
+# Why use these crates?
+
+The main reason to use `flo_draw` or the offscreen renderer in `flo_render_canvas` is that they provide a very straightforward API: the
+setup needed to start drawing graphics to a window or a byte buffer is almost nonexistent. In spite of this they are also very flexible,
+capable of being used to create fully interactive applications which can run on any system supported by glutin and OpenGL 3.3.
+
+The rendering system is very flexible and easily ported to a different target, so if you outgrow the glutin-based windowing system and
+want to integrate your algorithms into another application, the architecture supplied by `flo_canvas` and `flo_render` makes it easy to
+intercept the underlying rendering operations and integrate them into any other system. Additional renderers are already available in
+FlowBetween to render `flo_canvas` instructions to HTML canvases, OS X Quartz render contexts and to Cairo. `flo_render` has native support
+for both OpenGL 3.3 and Metal.
+
+The 2D graphics model used here has a few interesting features that are not present in many other rendering libraries. In particular, 
+there is a layer system which is very useful for simplifying the design of interactive graphics applications by reducing the amount of
+work involved in a redraw, and it's possible to both draw and erase shapes. With the hardware renderers in `flo_render`, the number of
+layers is effectively unlimited.
+
 # Getting started
 
 The `flo_draw` library is the best place to start, it provides a very easy way to render things on-screen:
