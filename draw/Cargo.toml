@@ -6,7 +6,7 @@ license             = "Apache-2.0"
 edition             = "2018"
 readme              = "README.md"
 repository          = "https://github.com/Logicalshift/flo_draw"
-description         = "Quickly render 2D graphics to the screen"
+description         = "Hassle-free windowed 2D graphics rendering"
 categories          = [ "graphics", "rendering", "gui" ]
 
 [dependencies]
