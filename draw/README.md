@@ -49,6 +49,8 @@ pub fn main() {
 }
 ```
 
+For more information, you may be interested in the [guide](GUIDE.md), or the [examples](examples).
+
 `flo_draw` provides an independent implementation of the rendering system used by FlowBetween, a
 project to develop a vector animation editor. It was created to assist in debugging: often it's
 much easier to draw a diagram, but until now it's been quite involved to write a program to tell
