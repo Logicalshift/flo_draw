@@ -95,6 +95,7 @@ pub trait GraphicsContext {
 
             Font(font_id, font_op)                      => { todo!() },
             Texture(texture_id, texture_op)             => { todo!() },
+            DrawText(font_id, string, x, y)             => { todo!() }
         }
     }
 }

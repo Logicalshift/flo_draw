@@ -32,16 +32,20 @@ extern crate hsluv;
 
 mod gc;
 mod draw;
+mod font;
 mod color;
 mod canvas;
+mod texture;
 mod encoding;
 mod decoding;
 mod transform2d;
 
 pub use self::gc::*;
 pub use self::draw::*;
+pub use self::font::*;
 pub use self::color::*;
 pub use self::canvas::*;
+pub use self::texture::*;
 pub use self::encoding::*;
 pub use self::decoding::*;
 pub use self::transform2d::*;

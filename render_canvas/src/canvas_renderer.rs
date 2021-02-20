@@ -770,6 +770,11 @@ impl CanvasRenderer {
                         // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
                     },
 
+                    // Draws some text in a particular font
+                    DrawText(_, _, _, _) => {
+                        // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
+                    },
+
                     // Performs an operation on a texture
                     Texture(_, _) => {
                         todo!()

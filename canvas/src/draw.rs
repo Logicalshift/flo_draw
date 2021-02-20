@@ -3,7 +3,9 @@
 //!
 
 use super::transform2d::*;
+use super::texture::*;
 use super::color::*;
+use super::font::*;
 
 ///
 /// Possible way to join lines
@@ -264,17 +266,8 @@ pub enum Draw {
     Texture(TextureId, TextureOp),
 
     /// Performs an operation on a font
-    Font(FontId, FontOp)
+    Font(FontId, FontOp),
+
+    /// Draws a string using a font with a baseline starting at the specified position
+    DrawText(FontId, String, f32, f32)
 }
-
-///
-/// Operations that can be performed on a texture
-///
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub enum TextureOp { }
-
-///
-/// Operations that can be performed on a font
-///
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub enum FontOp { }
