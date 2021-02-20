@@ -874,11 +874,14 @@ pub fn decode_drawing_stream<In: Unpin+Stream<Item=Result<char, E>>, E>(source: 
 
 #[cfg(test)]
 mod test {
+    use super::*;
+    use crate::font::*;
+    use crate::encoding::*;
+
     use futures::prelude::*;
     use futures::executor;
 
-    use super::*;
-    use super::super::encoding::*;
+    use std::sync::*;
 
     ///
     /// Checks if a particular drawing operation can be both encoded and decoded
@@ -1134,6 +1137,26 @@ mod test {
         let mut decoder = CanvasDecoder::new();
         assert!(decoder.decode('N') == Ok(None));
         assert!(decoder.decode('X') == Err(DecoderError::InvalidCharacter('X')));
+    }
+
+    #[test]
+    fn decode_font_system() {
+        check_round_trip_single(Draw::Font(FontId(42), FontOp::UseSystemFont("Some font".to_string(), FontProperties::default())));
+    }
+
+    #[test]
+    fn decode_font_data() {
+        check_round_trip_single(Draw::Font(FontId(42), FontOp::UseFontDefinition(FontData::Otf(Arc::new(vec![0, 1, 2, 3, 4, 5, 6])))));
+    }
+
+    #[test]
+    fn decode_font_size() {
+        check_round_trip_single(Draw::Font(FontId(42), FontOp::FontSize(32.0)));
+    }
+
+    #[test]
+    fn decode_draw_text() {
+        check_round_trip_single(Draw::DrawText(FontId(42), "Hello, world".to_string(), 100.0, 200.0));
     }
 
     #[test]
