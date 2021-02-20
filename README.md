@@ -81,14 +81,6 @@ See the examples folder in the `draw` and `render_canvas` subdirectories for som
 * `desync` provides a simpler way to write asynchronous code than traditional threads
 * `flo_binding` provides a way to convert between state changes and message streams, used in `flo_draw` to update the window configuration
 
-# Version 0.2
+# Version 0.3
 
-This is version 0.2 of `flo_draw`, which is the initial release. There are a few more things planned for v0.3:
-
-* Remove this list (I seem to always forget...)
-* Clipping region support (`flo_canvas` has these but they have no effect in `flo_render_canvas` yet)
-* Bitmap/textures
-* Gradient fills
-* Tiled textures
-* Text/font support
-* Platform renderer creates (Quartz, HTML canvas, Cairo are currently available)
+This is version 0.3 of `flo_draw`.
