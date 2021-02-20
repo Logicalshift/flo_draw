@@ -21,10 +21,21 @@ enum PartialResult<T> {
 }
 
 impl<T> PartialResult<T> {
+    pub fn new() -> PartialResult<T> {
+        PartialResult::MatchMore(String::new())
+    }
+
     pub fn map<TFn: FnOnce(T) -> S, S>(self, map_fn: TFn) -> PartialResult<S> {
         match self {
             PartialResult::FullMatch(result)    => PartialResult::FullMatch(map_fn(result)),
             PartialResult::MatchMore(data)      => PartialResult::MatchMore(data)
+        }
+    }
+
+    #[inline] pub fn complete(&self) -> bool {
+        match self {
+            PartialResult::FullMatch(_) => true,
+            PartialResult::MatchMore(_) => false
         }
     }
 }
@@ -42,6 +53,77 @@ struct DecodeBytes {
 type DecodeLayerId      = PartialResult<LayerId>;
 type DecodeFontId       = PartialResult<FontId>;
 type DecodeFontProps    = PartialResult<FontProperties>;
+
+impl DecodeString {
+    fn new() -> DecodeString {
+        DecodeString {
+            length:             PartialResult::new(),
+            string_encoding:    PartialResult::new()
+        }
+    }
+
+    #[inline] fn ready(&self) -> bool {
+        match (&self.length, &self.string_encoding) {
+            (PartialResult::FullMatch(_), PartialResult::FullMatch(_))  => true,
+            _                                                           => false
+        }
+    }
+
+    #[inline] fn to_string(self) -> Result<String, DecoderError> {
+        match self.string_encoding {
+            PartialResult::FullMatch(string)    => Ok(string),
+            PartialResult::MatchMore(_)         => Err(DecoderError::NotReady)
+        }
+    }
+
+    #[inline] fn decode(mut self, chr: char) -> Result<DecodeString, DecoderError> {
+        // Decode or fetch the length of the string
+        let length = match self.length {
+            PartialResult::MatchMore(so_far)    => {
+                self.length = CanvasDecoder::decode_compact_id(chr, so_far)?;
+
+                if let &PartialResult::FullMatch(0) = &self.length {
+                    self.string_encoding = PartialResult::FullMatch(String::new());
+                }
+                return Ok(self);
+            }
+
+            PartialResult::FullMatch(length)    => {
+                self.length = PartialResult::FullMatch(length);
+                length as usize
+            }
+        };
+
+        // Try to decode the rest of the string
+        match self.string_encoding {
+            PartialResult::FullMatch(string)    => {
+                // Nothing to do
+                self.string_encoding = PartialResult::FullMatch(string);
+            }
+
+            PartialResult::MatchMore(mut string)    => {
+                string.push(chr);
+
+                if string.len() >= length {
+                    self.string_encoding = PartialResult::FullMatch(string);
+                } else {
+                    self.string_encoding = PartialResult::MatchMore(string);
+                }
+            }
+        }
+
+        Ok(self)
+    }
+}
+
+impl DecodeBytes {
+    fn new() -> DecodeBytes {
+        DecodeBytes {
+            length:         PartialResult::new(),
+            byte_encoding:  PartialResult::new()
+        }
+    }
+}
 
 ///
 /// The possible states for a decoder to be in after accepting some characters from the source
@@ -124,7 +206,10 @@ pub enum DecoderError {
     UnknownColorType,
 
     /// The decoder previously encountered an error and cannot continue
-    IsInErrorState
+    IsInErrorState,
+
+    /// The decoder was asked for a result when it was not ready (usually indicates an internal bug)
+    NotReady
 }
 
 ///
@@ -203,8 +288,8 @@ impl CanvasDecoder {
             SpriteTransformRotate(param)    => Self::decode_sprite_transform_rotate(next_chr, param)?,
             SpriteTransformTransform(param) => Self::decode_sprite_transform_transform(next_chr, param)?,
 
-            FontDrawing                                         => { todo!() },
-            FontDrawText(font_id, string_decode, coords)        => { todo!() },
+            FontDrawing                                         => { Self::decode_font_drawing(next_chr)? },
+            FontDrawText(font_id, string_decode, coords)        => { Self::decode_font_draw_text(next_chr, font_id, string_decode, coords)? },
 
             FontOp(font_id)                                     => { todo!() },
             FontOpSystem(font_id, string_decode, props_decode)  => { todo!() },
@@ -789,6 +874,52 @@ impl CanvasDecoder {
     fn decode_layer_id(next_chr: char, param: String) -> Result<PartialResult<LayerId>, DecoderError> {
         Self::decode_compact_id(next_chr, param)
             .map(|id| id.map(|id| LayerId(id)))
+    }
+
+    ///
+    /// Consumes characters until we have a layer ID
+    ///
+    fn decode_font_id(next_chr: char, param: String) -> Result<PartialResult<FontId>, DecoderError> {
+        Self::decode_compact_id(next_chr, param)
+            .map(|id| id.map(|id| FontId(id)))
+    }
+
+    ///
+    /// Decodes a font drawing command
+    ///
+    #[inline] fn decode_font_drawing(chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match chr {
+            'T' => Ok((DecoderState::FontDrawText(PartialResult::new(), DecodeString::new(), String::new()), None)),
+            _   => Err(DecoderError::InvalidCharacter(chr))
+        }
+    }
+
+    fn decode_font_draw_text(chr: char, font_id: DecodeFontId, string: DecodeString, mut coords: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match (font_id, string.ready(), coords.len()) {
+            (PartialResult::MatchMore(font_id), _, _)       => Ok((DecoderState::FontDrawText(Self::decode_font_id(chr, font_id)?, string, coords), None)),
+            (PartialResult::FullMatch(font_id), false, _)   => Ok((DecoderState::FontDrawText(PartialResult::FullMatch(font_id), string.decode(chr)?, coords), None)),
+            (PartialResult::FullMatch(font_id), true, 0)    |
+            (PartialResult::FullMatch(font_id), true, 1)    |
+            (PartialResult::FullMatch(font_id), true, 2)    |
+            (PartialResult::FullMatch(font_id), true, 3)    |
+            (PartialResult::FullMatch(font_id), true, 4)    |
+            (PartialResult::FullMatch(font_id), true, 5)    |
+            (PartialResult::FullMatch(font_id), true, 6)    |
+            (PartialResult::FullMatch(font_id), true, 7)    |
+            (PartialResult::FullMatch(font_id), true, 8)    |
+            (PartialResult::FullMatch(font_id), true, 9)    |
+            (PartialResult::FullMatch(font_id), true, 10)   => { coords.push(chr); Ok((DecoderState::FontDrawText(PartialResult::FullMatch(font_id), string, coords), None)) },
+            
+            (PartialResult::FullMatch(font_id), true, _)    => {
+                coords.push(chr);
+
+                let mut coords  = coords.chars();
+                let x           = Self::decode_f32(&mut coords)?;
+                let y           = Self::decode_f32(&mut coords)?;
+
+                Ok((DecoderState::None, Some(Draw::DrawText(font_id, string.to_string()?, x, y))))
+            }
+        }
     }
 
     ///
