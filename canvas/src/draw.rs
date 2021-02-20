@@ -88,6 +88,23 @@ pub struct LayerId(pub u64);
 pub struct SpriteId(pub u64);
 
 ///
+/// Identifier for a font
+///
+/// Fonts can be used to render text: they need to be pre-loaded and are removed from the canvas by
+/// `Draw::ClearCanvas`
+///
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct FontId(pub u64);
+
+///
+/// Identifier for a texture
+///
+/// Textures are bitmaps that can be used as fills
+///
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct TextureId(pub u64);
+
+///
 /// Transformation to apply to a canvas 'sprite'
 ///
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -210,7 +227,7 @@ pub enum Draw {
     /// Restore a state previously pushed
     PopState,
 
-    /// Clears the canvas entirely to a background colour
+    /// Clears the canvas entirely to a background colour, and removes any stored resources (layers, sprites, fonts, textures)
     ClearCanvas(Color),
 
     /// Selects a particular layer for drawing

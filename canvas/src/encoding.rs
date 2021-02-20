@@ -18,6 +18,30 @@ pub (crate) const ENCODING_CHAR_SET: [char; 64] = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
 ];
 
+///
+/// Encodes a u64 using a compact representation that is smaller for smaller values
+///
+#[inline]
+fn encode_compact_u64(val: &u64, append_to: &mut String) {
+    let mut val = *val;
+
+    for _ in 0..13 {
+        let five_bits = (val & 0x1f) as usize;
+        let remaining = val >> 5;
+
+        if remaining != 0 {
+            let next_char = ENCODING_CHAR_SET[five_bits | 0x20];
+            append_to.push(next_char);
+        } else {
+            let next_char = ENCODING_CHAR_SET[five_bits];
+            append_to.push(next_char);
+            break;
+        }
+
+        val = remaining;
+    }
+}
+
 impl CanvasEncoding<String> for char {
     #[inline]
     fn encode_canvas(&self, append_to: &mut String) {
@@ -184,46 +208,32 @@ impl CanvasEncoding<String> for Transform2D {
 impl CanvasEncoding<String> for LayerId {
     #[inline]
     fn encode_canvas(&self, append_to: &mut String) {
-        let LayerId(mut layer_id) = self;
-
-        for _ in 0..13 {
-            let five_bits = (layer_id & 0x1f) as usize;
-            let remaining = layer_id >> 5;
-
-            if remaining != 0 {
-                let next_char = ENCODING_CHAR_SET[five_bits | 0x20];
-                append_to.push(next_char);
-            } else {
-                let next_char = ENCODING_CHAR_SET[five_bits];
-                append_to.push(next_char);
-                break;
-            }
-
-            layer_id = remaining;
-        }
+        let LayerId(layer_id) = self;
+        encode_compact_u64(layer_id, append_to)
     }
 }
 
 impl CanvasEncoding<String> for SpriteId {
     #[inline]
     fn encode_canvas(&self, append_to: &mut String) {
-        let SpriteId(mut sprite_id) = self;
+        let SpriteId(sprite_id) = self;
+        encode_compact_u64(sprite_id, append_to)
+    }
+}
 
-        for _ in 0..13 {
-            let five_bits = (sprite_id & 0x1f) as usize;
-            let remaining = sprite_id >> 5;
+impl CanvasEncoding<String> for TextureId {
+    #[inline]
+    fn encode_canvas(&self, append_to: &mut String) {
+        let TextureId(texture_id) = self;
+        encode_compact_u64(texture_id, append_to)
+    }
+}
 
-            if remaining != 0 {
-                let next_char = ENCODING_CHAR_SET[five_bits | 0x20];
-                append_to.push(next_char);
-            } else {
-                let next_char = ENCODING_CHAR_SET[five_bits];
-                append_to.push(next_char);
-                break;
-            }
-
-            sprite_id = remaining;
-        }
+impl CanvasEncoding<String> for FontId {
+    #[inline]
+    fn encode_canvas(&self, append_to: &mut String) {
+        let FontId(font_id) = self;
+        encode_compact_u64(font_id, append_to)
     }
 }
 
