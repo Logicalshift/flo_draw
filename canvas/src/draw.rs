@@ -258,5 +258,23 @@ pub enum Draw {
     SpriteTransform(SpriteTransform),
 
     /// Renders a sprite with a set of transformations
-    DrawSprite(SpriteId)
+    DrawSprite(SpriteId),
+
+    /// Performs an operation on a texture
+    Texture(TextureId, TextureOp),
+
+    /// Performs an operation on a font
+    Font(FontId, FontOp)
 }
+
+///
+/// Operations that can be performed on a texture
+///
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+pub enum TextureOp { }
+
+///
+/// Operations that can be performed on a font
+///
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+pub enum FontOp { }

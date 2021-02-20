@@ -764,6 +764,16 @@ impl CanvasRenderer {
                             layer.render_order.push(RenderEntity::RenderSprite(sprite_id, sprite_matrix))
                         })
                     },
+
+                    // Performs a font operation
+                    Font(_, _) => {
+                        // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
+                    },
+
+                    // Performs an operation on a texture
+                    Texture(_, _) => {
+                        todo!()
+                    }
                 }
             }
 

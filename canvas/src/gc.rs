@@ -91,7 +91,10 @@ pub trait GraphicsContext {
             Sprite(sprite_id)                           => self.sprite(sprite_id),
             ClearSprite                                 => self.clear_sprite(),
             SpriteTransform(transform)                  => self.sprite_transform(transform),
-            DrawSprite(sprite_id)                       => self.draw_sprite(sprite_id)
+            DrawSprite(sprite_id)                       => self.draw_sprite(sprite_id),
+
+            Font(font_id, font_op)                      => { todo!() },
+            Texture(texture_id, texture_op)             => { todo!() },
         }
     }
 }

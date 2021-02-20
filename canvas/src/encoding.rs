@@ -251,6 +251,26 @@ impl CanvasEncoding<String> for SpriteTransform {
     }
 }
 
+impl CanvasEncoding<String> for TextureOp {
+    fn encode_canvas(&self, append_to: &mut String) {
+        use self::TextureOp::*;
+
+        match self {
+            _ => { }
+        }
+    }
+}
+
+impl CanvasEncoding<String> for FontOp {
+    fn encode_canvas(&self, append_to: &mut String) {
+        use self::FontOp::*;
+
+        match self {
+            _ => { }
+        }
+    }
+}
+
 impl CanvasEncoding<String> for Draw {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::Draw::*;
@@ -292,7 +312,9 @@ impl CanvasEncoding<String> for Draw {
             &Sprite(sprite_id)                      => ('N', 's', sprite_id).encode_canvas(append_to),
             &ClearSprite                            => ('s', 'C').encode_canvas(append_to),
             &SpriteTransform(sprite_transform)      => ('s', 'T', sprite_transform).encode_canvas(append_to),
-            &DrawSprite(sprite_id)                  => ('s', 'D', sprite_id).encode_canvas(append_to)                      
+            &DrawSprite(sprite_id)                  => ('s', 'D', sprite_id).encode_canvas(append_to),
+            &Texture(texture_id, op)                => ('T', texture_id, op).encode_canvas(append_to),
+            &Font(font_id, op)                      => ('F', font_id, op).encode_canvas(append_to)
         }
     }
 }
