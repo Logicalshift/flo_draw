@@ -51,6 +51,7 @@ mod texture;
 mod encoding;
 mod decoding;
 mod transform2d;
+mod conversion_streams;
 
 pub use self::gc::*;
 pub use self::draw::*;
@@ -61,3 +62,5 @@ pub use self::texture::*;
 pub use self::encoding::*;
 pub use self::decoding::*;
 pub use self::transform2d::*;
+pub use self::conversion_streams::*;
+

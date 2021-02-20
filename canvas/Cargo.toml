@@ -10,10 +10,11 @@ repository  = "https://github.com/Logicalshift/flo_draw"
 description = "Library for describing graphics context drawing actions without requiring a specific implementation"
 
 [features]
-outline-fonts   = [ "font-kit" ]
+outline-fonts   = [ "font-kit", "flo_stream" ]
 
 [dependencies]
 flo_curves      = "0.4"
+flo_stream      = { version = "0.6", optional = true }
 
 futures         = "0.3"
 desync          = "0.7"
