@@ -48,5 +48,8 @@ pub enum FontOp {
     UseSystemFont(String, FontProperties),
 
     /// Loads a font from a font data file
-    UseFontDefinition(FontData)
+    UseFontDefinition(FontData),
+
+    /// Sets the font size to use for this font ID (in canvas units)
+    FontSize(f32)
 }
