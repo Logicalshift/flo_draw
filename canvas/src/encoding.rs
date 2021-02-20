@@ -412,8 +412,8 @@ impl CanvasEncoding<String> for Draw {
             &SpriteTransform(sprite_transform)      => ('s', 'T', sprite_transform).encode_canvas(append_to),
             &DrawSprite(sprite_id)                  => ('s', 'D', sprite_id).encode_canvas(append_to),
             &Texture(texture_id, ref op)            => ('T', texture_id, op).encode_canvas(append_to),
-            &Font(font_id, ref op)                  => ('F', font_id, op).encode_canvas(append_to),
-            &DrawText(font_id, ref string, x, y)    => ('f', 'T', font_id, string, x, y).encode_canvas(append_to)
+            &Font(font_id, ref op)                  => ('f', font_id, op).encode_canvas(append_to),
+            &DrawText(font_id, ref string, x, y)    => ('t', 'T', font_id, string, x, y).encode_canvas(append_to)
         }
     }
 }
