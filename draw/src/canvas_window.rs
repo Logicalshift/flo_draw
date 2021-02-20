@@ -83,6 +83,7 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
 
     // Get the stream of drawing instructions (and gather them into batches)
     let canvas_stream       = canvas.stream();
+    let canvas_stream       = stream_outline_fonts(canvas_stream);
     let canvas_stream       = BatchedStream { stream: Some(canvas_stream) };
 
     // Create the events stream
