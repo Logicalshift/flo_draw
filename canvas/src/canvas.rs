@@ -111,9 +111,9 @@ impl CanvasCore {
         let mut clear_pending   = false;
 
         // Process the drawing commands
-        to_draw.iter().for_each(|draw| {
-            match draw {
-                &Draw::ClearCanvas(_) => {
+        to_draw.into_iter().for_each(|draw| {
+            match &draw {
+                Draw::ClearCanvas(_) => {
                     // Clearing the canvas empties the command list and updates the clear count
                     self.drawing_since_last_clear   = vec![];
                     self.current_layer              = LayerId(0);
@@ -122,34 +122,34 @@ impl CanvasCore {
                     new_drawing = vec![];
 
                     // Start the new drawing with the 'clear' command
-                    self.drawing_since_last_clear.push((LayerId(0), *draw));
+                    self.drawing_since_last_clear.push((LayerId(0), draw.clone()));
                 },
 
-                &Draw::Restore => {
+                Draw::Restore => {
                     // Have to push the restore in case it can't be cleared
-                    self.drawing_since_last_clear.push((self.current_layer, *draw));
+                    self.drawing_since_last_clear.push((self.current_layer, draw.clone()));
 
                     // On a 'restore' command we clear out everything since the 'store' if we can (so we don't build a backlog)
                     self.rewind_to_last_store();
                 },
 
-                &Draw::FreeStoredBuffer => {
+                Draw::FreeStoredBuffer => {
                     // If the last operation was a store, pop it
                     if let Some(&(_, Draw::Store)) = self.drawing_since_last_clear.last() {
                         // Store and immediate free = just free
                         self.drawing_since_last_clear.pop();
                     } else {
                         // Something else: the free becomes part of the drawing log (this is often inefficient)
-                        self.drawing_since_last_clear.push((self.current_layer, *draw));
+                        self.drawing_since_last_clear.push((self.current_layer, draw.clone()));
                     }
                 },
 
-                &Draw::Layer(new_layer) => {
-                    self.current_layer = new_layer;
-                    self.drawing_since_last_clear.push((new_layer, *draw));
+                Draw::Layer(new_layer) => {
+                    self.current_layer = *new_layer;
+                    self.drawing_since_last_clear.push((*new_layer, draw.clone()));
                 },
 
-                &Draw::ClearLayer => {
+                Draw::ClearLayer => {
                     // Remove all of the commands for the current layer, replacing them with just a switch to this layer
                     let current_layer = self.current_layer;
                     self.clear_layer(current_layer);
@@ -157,11 +157,11 @@ impl CanvasCore {
                 },
 
                 // Default is to add to the current drawing
-                _ => self.drawing_since_last_clear.push((self.current_layer, *draw))
+                _ => self.drawing_since_last_clear.push((self.current_layer, draw.clone()))
             }
 
             // Send everything to the streams
-            new_drawing.push(*draw);
+            new_drawing.push(draw);
         });
 
         // Send the new drawing commands to the streams
@@ -169,7 +169,7 @@ impl CanvasCore {
 
         for stream_index in 0..self.pending_streams.len() {
             // Send commands to this stream
-            if !self.pending_streams[stream_index].send_drawing(new_drawing.iter().map(|draw| *draw), clear_pending) {
+            if !self.pending_streams[stream_index].send_drawing(new_drawing.iter().map(|draw| draw.clone()), clear_pending) {
                 // If it returns false then the stream has been dropped and we should remove it from this object
                 to_remove.push(stream_index);
             }
@@ -235,7 +235,7 @@ impl Canvas {
         let add_stream = Arc::clone(&new_stream);
         self.core.sync(move |core| {
             // Send the data we've received since the last clear
-            add_stream.send_drawing(core.drawing_since_last_clear.iter().map(|&(_, draw)| draw), true);
+            add_stream.send_drawing(core.drawing_since_last_clear.iter().map(|(_, draw)| draw.clone()), true);
 
             // Store the stream in the core so future notifications get sent there
             core.pending_streams.push(add_stream);
@@ -249,7 +249,7 @@ impl Canvas {
     /// Retrieves the list of drawing actions in this canvas
     ///
     pub fn get_drawing(&self) -> Vec<Draw> {
-        self.core.sync(|core| core.drawing_since_last_clear.iter().map(|&(_, draw)| draw.clone()).collect())
+        self.core.sync(|core| core.drawing_since_last_clear.iter().map(|(_, draw)| draw.clone()).collect())
     }
 }
 

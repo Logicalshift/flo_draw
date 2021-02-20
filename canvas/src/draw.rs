@@ -128,7 +128,7 @@ pub enum SpriteTransform {
 ///
 /// Instructions for drawing to a canvas
 ///
-#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum Draw {
     /// Begins a new path
     NewPath,
@@ -270,11 +270,11 @@ pub enum Draw {
 ///
 /// Operations that can be performed on a texture
 ///
-#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum TextureOp { }
 
 ///
 /// Operations that can be performed on a font
 ///
-#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum FontOp { }
