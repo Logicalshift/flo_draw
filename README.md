@@ -1,7 +1,8 @@
 # flo_draw
 
 This is a set of libraries that provide a 2D rendering framework for Rust. It provides on and off-screen rendering and
-an abstraction API.
+an abstraction API. You might want to read the [guide](draw/GUIDE.md) for some in-depth discussion of what can be achieved
+with the libraries in this repository.
 
 * `flo_draw` is a library that renders 2D graphics on-screen via glutin
 * `flo_canvas` provides a way to describe 2D drawing operations without being tied to any particular rendering implementation

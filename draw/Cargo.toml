@@ -9,6 +9,8 @@ repository          = "https://github.com/Logicalshift/flo_draw"
 description         = "Hassle-free windowed 2D graphics rendering"
 categories          = [ "graphics", "rendering", "gui" ]
 
+include             = [ "Cargo.toml", "src/**/*", "examples/**/*", "GUIDE.md", "README.md" ]
+
 [dependencies]
 flo_canvas          = "0.3"
 flo_render          = { version = "0.3", features = [ "opengl" ] }
