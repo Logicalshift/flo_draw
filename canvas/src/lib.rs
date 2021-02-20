@@ -1,4 +1,6 @@
 //!
+//! # flo_canvas
+//!
 //! `flo_canvas` provides an abstraction of a 2D vector canvas, and supporting methods to stream
 //! updates to implementations.
 //!
@@ -19,6 +21,16 @@
 //! `canvas.js` provides a Javascript implementation that can render the instructions to a HTML 
 //! canvas, and there are also Quartz and Cairo implementations of the canvas provided in FlowBetween's
 //! user interface layers.
+//!
+//! # Features
+//!
+//! Some features of `flo_canvas` are optional due to the extra dependencies they can bring in. They
+//! can be enabled if the extra functionality is required or left out to get a more compact library.
+//!
+//! * `outline-fonts` - provides a function that will convert a stream of Draw instructions into
+//!   another stream of Draw instructions, except all the font commands will be removed and replaced
+//!   with an outline rendering of the font (useful for rendering back-ends that don't have native
+//!   font support or for generating vector files that don't require particular fonts to be installed)
 //!
 #![warn(bare_trait_objects)]
 
