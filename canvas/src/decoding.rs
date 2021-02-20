@@ -1,4 +1,5 @@
 use super::draw::*;
+use super::font::*;
 use super::color::*;
 use super::transform2d::*;
 
@@ -27,6 +28,20 @@ impl<T> PartialResult<T> {
         }
     }
 }
+
+struct DecodeString {
+    length:             PartialResult<u64>,
+    string_encoding:    PartialResult<String>
+}
+
+struct DecodeBytes {
+    length:         PartialResult<u64>,
+    byte_encoding:  PartialResult<String>
+}
+
+type DecodeLayerId      = PartialResult<LayerId>;
+type DecodeFontId       = PartialResult<FontId>;
+type DecodeFontProps    = PartialResult<FontProperties>;
 
 ///
 /// The possible states for a decoder to be in after accepting some characters from the source
@@ -70,7 +85,7 @@ enum DecoderState {
     NewLayerU32(String),                // 'Nl' (id)
     NewLayerBlendU32(String),           // 'Nb' (id, mode)
     NewLayer(String),                   // 'NL' (id)
-    NewLayerBlend(PartialResult<LayerId>, String),  // 'NB' (id, mode)
+    NewLayerBlend(DecodeLayerId, String),  // 'NB' (id, mode)
 
     NewSprite(String),                  // 'Ns' (id)
     SpriteDraw(String),                 // 'sD' (id)
@@ -78,7 +93,17 @@ enum DecoderState {
     SpriteTransformTranslate(String),   // 'sTt' (x, y)
     SpriteTransformScale(String),       // 'sTs' (x, y)
     SpriteTransformRotate(String),      // 'sTr' (degrees)
-    SpriteTransformTransform(String)    // 'sTT' (transform)
+    SpriteTransformTransform(String),   // 'sTT' (transform)
+
+    FontDrawing,                                            // 't'
+    FontDrawText(DecodeFontId, DecodeString, String),       // 'tT' (font_id, string, x, y)
+
+    FontOp(DecodeFontId),                                   // 'f'
+    FontOpSystem(FontId, DecodeString, DecodeFontProps),    // 'f<id>s' (font_name, font_properties)
+    FontOpSize(FontId, String),                             // 'f<id>S' (size)
+    FontOpData(FontId),                                     // 'f<id>d'
+    FontOpTtf(FontId, DecodeBytes),                         // 'f<id>dT (bytes)'
+    FontOpOtf(FontId, DecodeBytes),                         // 'f<id>dO (bytes)'
 }
 
 ///
@@ -176,7 +201,17 @@ impl CanvasDecoder {
             SpriteTransformTranslate(param) => Self::decode_sprite_transform_translate(next_chr, param)?,
             SpriteTransformScale(param)     => Self::decode_sprite_transform_scale(next_chr, param)?,
             SpriteTransformRotate(param)    => Self::decode_sprite_transform_rotate(next_chr, param)?,
-            SpriteTransformTransform(param) => Self::decode_sprite_transform_transform(next_chr, param)?
+            SpriteTransformTransform(param) => Self::decode_sprite_transform_transform(next_chr, param)?,
+
+            FontDrawing                                         => { todo!() },
+            FontDrawText(font_id, string_decode, coords)        => { todo!() },
+
+            FontOp(font_id)                                     => { todo!() },
+            FontOpSystem(font_id, string_decode, props_decode)  => { todo!() },
+            FontOpSize(font_id, size)                           => { todo!() },
+            FontOpData(font_id)                                 => { todo!() },
+            FontOpTtf(font_id, bytes)                           => { todo!() },
+            FontOpOtf(font_id, bytes)                           => { todo!() }
         };
 
         self.state = next_state;
@@ -213,6 +248,9 @@ impl CanvasDecoder {
             'l' => Ok((DecoderState::Line(String::new()), None)),
             'c' => Ok((DecoderState::BezierCurve(String::new()), None)),
             'M' => Ok((DecoderState::BlendMode(String::new()), None)),
+
+            't' => Ok((DecoderState::FontDrawing, None)),
+            'f' => Ok((DecoderState::FontOp(PartialResult::MatchMore(String::new())), None)),
 
             // Other characters are not accepted
             _   => Err(DecoderError::InvalidCharacter(next_chr))
