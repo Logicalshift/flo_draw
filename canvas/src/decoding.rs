@@ -895,22 +895,25 @@ impl CanvasDecoder {
     }
 
     fn decode_font_draw_text(chr: char, font_id: DecodeFontId, string: DecodeString, mut coords: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        use PartialResult::*;
+
         match (font_id, string.ready(), coords.len()) {
-            (PartialResult::MatchMore(font_id), _, _)       => Ok((DecoderState::FontDrawText(Self::decode_font_id(chr, font_id)?, string, coords), None)),
-            (PartialResult::FullMatch(font_id), false, _)   => Ok((DecoderState::FontDrawText(PartialResult::FullMatch(font_id), string.decode(chr)?, coords), None)),
-            (PartialResult::FullMatch(font_id), true, 0)    |
-            (PartialResult::FullMatch(font_id), true, 1)    |
-            (PartialResult::FullMatch(font_id), true, 2)    |
-            (PartialResult::FullMatch(font_id), true, 3)    |
-            (PartialResult::FullMatch(font_id), true, 4)    |
-            (PartialResult::FullMatch(font_id), true, 5)    |
-            (PartialResult::FullMatch(font_id), true, 6)    |
-            (PartialResult::FullMatch(font_id), true, 7)    |
-            (PartialResult::FullMatch(font_id), true, 8)    |
-            (PartialResult::FullMatch(font_id), true, 9)    |
-            (PartialResult::FullMatch(font_id), true, 10)   => { coords.push(chr); Ok((DecoderState::FontDrawText(PartialResult::FullMatch(font_id), string, coords), None)) },
+            (MatchMore(font_id), _, _)      => Ok((DecoderState::FontDrawText(Self::decode_font_id(chr, font_id)?, string, coords), None)),
+            (FullMatch(font_id), false, _)  => Ok((DecoderState::FontDrawText(FullMatch(font_id), string.decode(chr)?, coords), None)),
+
+            (FullMatch(font_id), true, 0)   |
+            (FullMatch(font_id), true, 1)   |
+            (FullMatch(font_id), true, 2)   |
+            (FullMatch(font_id), true, 3)   |
+            (FullMatch(font_id), true, 4)   |
+            (FullMatch(font_id), true, 5)   |
+            (FullMatch(font_id), true, 6)   |
+            (FullMatch(font_id), true, 7)   |
+            (FullMatch(font_id), true, 8)   |
+            (FullMatch(font_id), true, 9)   |
+            (FullMatch(font_id), true, 10)  => { coords.push(chr); Ok((DecoderState::FontDrawText(FullMatch(font_id), string, coords), None)) },
             
-            (PartialResult::FullMatch(font_id), true, _)    => {
+            (FullMatch(font_id), true, _)   => {
                 coords.push(chr);
 
                 let mut coords  = coords.chars();
