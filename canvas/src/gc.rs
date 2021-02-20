@@ -43,8 +43,8 @@ pub trait GraphicsContext {
     fn push_state(&mut self);
     fn pop_state(&mut self);
     fn clear_canvas(&mut self, color: Color);
-    fn layer(&mut self, layer_id: u32);
-    fn layer_blend(&mut self, layer_id: u32, blend_mode: BlendMode);
+    fn layer(&mut self, layer_id: LayerId);
+    fn layer_blend(&mut self, layer_id: LayerId, blend_mode: BlendMode);
     fn clear_layer(&mut self);
     fn sprite(&mut self, sprite_id: SpriteId);
     fn clear_sprite(&mut self);
@@ -245,8 +245,8 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn push_state(&mut self)                                                  { self.push(Draw::PushState); }
     #[inline] fn pop_state(&mut self)                                                   { self.push(Draw::PopState); }
     #[inline] fn clear_canvas(&mut self, color: Color)                                  { self.push(Draw::ClearCanvas(color)); }
-    #[inline] fn layer(&mut self, layer_id: u32)                                        { self.push(Draw::Layer(layer_id)); }
-    #[inline] fn layer_blend(&mut self, layer_id: u32, blend_mode: BlendMode)           { self.push(Draw::LayerBlend(layer_id, blend_mode)); }
+    #[inline] fn layer(&mut self, layer_id: LayerId)                                    { self.push(Draw::Layer(layer_id)); }
+    #[inline] fn layer_blend(&mut self, layer_id: LayerId, blend_mode: BlendMode)       { self.push(Draw::LayerBlend(layer_id, blend_mode)); }
     #[inline] fn clear_layer(&mut self)                                                 { self.push(Draw::ClearLayer); }
     #[inline] fn sprite(&mut self, sprite_id: SpriteId)                                 { self.push(Draw::Sprite(sprite_id)); }
     #[inline] fn clear_sprite(&mut self)                                                { self.push(Draw::ClearSprite); }

@@ -676,7 +676,7 @@ impl CanvasRenderer {
                     // Selects a particular layer for drawing
                     // Layer 0 is selected initially. Layers are drawn in order starting from 0.
                     // Layer IDs don't have to be sequential.
-                    Layer(layer_id) => {
+                    Layer(canvas::LayerId(layer_id)) => {
                         let layer_id = layer_id as usize;
 
                         // Generate layers 

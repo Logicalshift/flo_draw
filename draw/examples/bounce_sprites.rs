@@ -96,7 +96,7 @@ pub fn main() {
 
             // Render the frame on layer 0
             canvas.draw(|gc| {
-                gc.layer(0);
+                gc.layer(LayerId(0));
                 gc.clear_layer();
                 gc.canvas_height(1000.0);
                 gc.center_region(0.0, 0.0, 1000.0, 1000.0);

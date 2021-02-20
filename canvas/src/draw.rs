@@ -58,6 +58,22 @@ pub enum WindingRule {
 }
 
 ///
+/// Identifier of a canvas layer
+///
+/// Layers make it possible to re-draw part of a design without affecting the rest, which is particularly
+/// useful for applications where different parts of the application are responsible for drawing different
+/// parts of the canvas.
+///
+/// Layer rendering are usually cached, so they are also a good way to reduce the amount of time required
+/// to do a redraw.
+///
+/// If a layer is cleared, other entities (such as sprites) are not affected, whereas `ClearCanvas` will
+/// remove all entities from the canvas.
+///
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct LayerId(pub u64);
+
+///
 /// Identifier of a canvas 'sprite'
 ///
 /// A 'sprite' is just a placeholder for a set of pre-rendered actions (it's useful for things like
@@ -200,10 +216,10 @@ pub enum Draw {
     /// Selects a particular layer for drawing
     /// Layer 0 is selected initially. Layers are drawn in order starting from 0.
     /// Layer IDs don't have to be sequential.
-    Layer(u32),
+    Layer(LayerId),
 
     /// Sets how a particular layer is blended with the underlying layer
-    LayerBlend(u32, BlendMode),
+    LayerBlend(LayerId, BlendMode),
 
     /// Clears the current layer
     ClearLayer,

@@ -86,7 +86,7 @@ pub fn main() {
                 gc.stroke();
 
                 // Background is a random starscape made of squares
-                gc.layer(0);
+                gc.layer(LayerId(0));
                 gc.clear_layer();
 
                 gc.fill_color(Color::Rgba(0.7, 0.7, 0.8, 1.0));
@@ -110,7 +110,7 @@ pub fn main() {
 
                         // Draw the game on layer 1
                         canvas.draw(|gc| {
-                            gc.layer(1);
+                            gc.layer(LayerId(1));
                             gc.clear_layer();
 
                             game_state.draw(gc);

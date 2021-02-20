@@ -29,7 +29,7 @@ pub fn main() {
             gc.fill();
 
             // Draw the triangle in a few places
-            gc.layer(0);
+            gc.layer(LayerId(0));
 
             gc.sprite_transform(SpriteTransform::Identity);
             gc.draw_sprite(SpriteId(0));

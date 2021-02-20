@@ -31,7 +31,7 @@ pub fn main() {
             gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
             // We'll draw some graphics to layer 0 (we can leave these alone as we track the mouse around)
-            gc.layer(0);
+            gc.layer(LayerId(0));
 
             // Draw a rectangle...
             gc.new_path();
@@ -68,7 +68,7 @@ pub fn main() {
                             // Draw a circle at the mouse position
                             canvas.draw(|gc| {
                                 // Draw on layer 1 to avoid disrupting the image underneath
-                                gc.layer(1);
+                                gc.layer(LayerId(1));
                                 gc.clear_layer();
 
                                 gc.new_path();

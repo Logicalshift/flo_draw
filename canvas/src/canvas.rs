@@ -18,10 +18,10 @@ use futures::{Stream};
 ///
 struct CanvasCore {
     /// What was drawn since the last clear command was sent to this canvas (and the layer that it's on)
-    drawing_since_last_clear: Vec<(u32, Draw)>,
+    drawing_since_last_clear: Vec<(LayerId, Draw)>,
 
     /// The current layer that we're drawing on
-    current_layer: u32,
+    current_layer: LayerId,
 
     // Tasks to notify next time we add to the canvas
     pending_streams: Vec<Arc<CanvasStream>>,
@@ -82,7 +82,7 @@ impl CanvasCore {
     ///
     /// (Except for ClearCanvas)
     ///
-    fn clear_layer(&mut self, layer_id: u32) {
+    fn clear_layer(&mut self, layer_id: LayerId) {
         // Take the old drawing from this object
         let mut old_drawing = vec![];
         mem::swap(&mut self.drawing_since_last_clear, &mut old_drawing);
@@ -116,13 +116,13 @@ impl CanvasCore {
                 &Draw::ClearCanvas(_) => {
                     // Clearing the canvas empties the command list and updates the clear count
                     self.drawing_since_last_clear   = vec![];
-                    self.current_layer              = 0;
+                    self.current_layer              = LayerId(0);
                     clear_pending                   = true;
 
                     new_drawing = vec![];
 
                     // Start the new drawing with the 'clear' command
-                    self.drawing_since_last_clear.push((0, *draw));
+                    self.drawing_since_last_clear.push((LayerId(0), *draw));
                 },
 
                 &Draw::Restore => {
@@ -189,8 +189,8 @@ impl Canvas {
     pub fn new() -> Canvas {
         // A canvas is initially just a clear command
         let core = CanvasCore {
-            drawing_since_last_clear:   vec![ (0, Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))) ],
-            current_layer:              0,
+            drawing_since_last_clear:   vec![ (LayerId(0), Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))) ],
+            current_layer:              LayerId(0),
             pending_streams:            vec![ ]
         };
 
@@ -305,8 +305,8 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn push_state(&mut self)                                    { self.pending.push(Draw::PushState); }
     fn pop_state(&mut self)                                     { self.pending.push(Draw::PopState); }
     fn clear_canvas(&mut self, color: Color)                    { self.pending.push(Draw::ClearCanvas(color)); }
-    fn layer(&mut self, layer_id: u32)                          { self.pending.push(Draw::Layer(layer_id)); }
-    fn layer_blend(&mut self, layer_id: u32, blend_mode: BlendMode) { self.pending.push(Draw::LayerBlend(layer_id, blend_mode)); }
+    fn layer(&mut self, layer_id: LayerId)                      { self.pending.push(Draw::Layer(layer_id)); }
+    fn layer_blend(&mut self, layer_id: LayerId, blend_mode: BlendMode) { self.pending.push(Draw::LayerBlend(layer_id, blend_mode)); }
     fn clear_layer(&mut self)                                   { self.pending.push(Draw::ClearLayer); }
     fn sprite(&mut self, sprite_id: SpriteId)                   { self.pending.push(Draw::Sprite(sprite_id)); }
     fn clear_sprite(&mut self)                                  { self.pending.push(Draw::ClearSprite); }
@@ -751,7 +751,7 @@ mod test {
 
         executor::block_on(async {
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
-            assert!(stream.next().await == Some(Draw::Layer(0)));
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
             assert!(stream.next().await == Some(Draw::Fill));
@@ -769,7 +769,7 @@ mod test {
 
             gc.stroke();
 
-            gc.layer(1);
+            gc.layer(LayerId(1));
             gc.new_path();
             gc.move_to(0.0, 0.0);
             gc.line_to(10.0, 0.0);
@@ -792,7 +792,7 @@ mod test {
             assert!(stream.next().await == Some(Draw::Move(20.0, 20.0)));
             assert!(stream.next().await == Some(Draw::Stroke));
 
-            assert!(stream.next().await == Some(Draw::Layer(1)));
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
             assert!(stream.next().await == Some(Draw::Fill));

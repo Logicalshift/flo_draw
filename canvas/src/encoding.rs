@@ -181,6 +181,29 @@ impl CanvasEncoding<String> for Transform2D {
     }
 }
 
+impl CanvasEncoding<String> for LayerId {
+    #[inline]
+    fn encode_canvas(&self, append_to: &mut String) {
+        let LayerId(mut layer_id) = self;
+
+        for _ in 0..13 {
+            let five_bits = (layer_id & 0x1f) as usize;
+            let remaining = layer_id >> 5;
+
+            if remaining != 0 {
+                let next_char = ENCODING_CHAR_SET[five_bits | 0x20];
+                append_to.push(next_char);
+            } else {
+                let next_char = ENCODING_CHAR_SET[five_bits];
+                append_to.push(next_char);
+                break;
+            }
+
+            layer_id = remaining;
+        }
+    }
+}
+
 impl CanvasEncoding<String> for SpriteId {
     #[inline]
     fn encode_canvas(&self, append_to: &mut String) {
@@ -253,8 +276,8 @@ impl CanvasEncoding<String> for Draw {
             &PushState                              => 'P'.encode_canvas(append_to),
             &PopState                               => 'p'.encode_canvas(append_to),
             &ClearCanvas(color)                     => ('N', 'A', color).encode_canvas(append_to),
-            &Layer(layer_id)                        => ('N', 'l', layer_id).encode_canvas(append_to),
-            &LayerBlend(layer_id, blend_mode)       => ('N', 'b', layer_id, blend_mode).encode_canvas(append_to),
+            &Layer(layer_id)                        => ('N', 'L', layer_id).encode_canvas(append_to),
+            &LayerBlend(layer_id, blend_mode)       => ('N', 'B', layer_id, blend_mode).encode_canvas(append_to),
             &ClearLayer                             => ('N', 'C').encode_canvas(append_to),
             &Sprite(sprite_id)                      => ('N', 's', sprite_id).encode_canvas(append_to),
             &ClearSprite                            => ('s', 'C').encode_canvas(append_to),
@@ -355,7 +378,9 @@ mod test {
     #[test]
     fn encode_clearcanvas() { assert!(&encode_draw(Draw::ClearCanvas(Color::Rgba(1.0, 1.0, 1.0, 1.0))) == "NARAAAg/AAAAg/AAAAg/AAAAg/A") }
     #[test]
-    fn encode_layer() { assert!(&encode_draw(Draw::Layer(2)) == "NlCAAAAA") }
+    fn encode_layer() { assert!(&encode_draw(Draw::Layer(LayerId(2))) == "NLC") }
+    #[test]
+    fn encode_layer_blend() { assert!(&encode_draw(Draw::LayerBlend(LayerId(2), BlendMode::Screen)) == "NBCES") }
     #[test]
     fn encode_clearlayer() { assert!(&encode_draw(Draw::ClearLayer) == "NC") }
     #[test]

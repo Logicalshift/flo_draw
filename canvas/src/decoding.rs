@@ -13,9 +13,19 @@ use std::result::Result;
 ///
 /// Represents a partial or full decoding result
 ///
+#[derive(Debug)]
 enum PartialResult<T> {
     MatchMore(String),
     FullMatch(T)
+}
+
+impl<T> PartialResult<T> {
+    pub fn map<TFn: FnOnce(T) -> S, S>(self, map_fn: TFn) -> PartialResult<S> {
+        match self {
+            PartialResult::FullMatch(result)    => PartialResult::FullMatch(map_fn(result)),
+            PartialResult::MatchMore(data)      => PartialResult::MatchMore(data)
+        }
+    }
 }
 
 ///
@@ -57,8 +67,10 @@ enum DecoderState {
     TransformCenter(String),            // 'Tc' (min, max)
     TransformMultiply(String),          // 'Tm' (transform)
 
-    NewLayer(String),                   // 'Nl' (id)
-    NewLayerBlend(String),              // 'Nb' (id, mode)
+    NewLayerU32(String),                // 'Nl' (id)
+    NewLayerBlendU32(String),           // 'Nb' (id, mode)
+    NewLayer(String),                   // 'NL' (id)
+    NewLayerBlend(PartialResult<LayerId>, String),  // 'NB' (id, mode)
 
     NewSprite(String),                  // 'Ns' (id)
     SpriteDraw(String),                 // 'sD' (id)
@@ -153,8 +165,10 @@ impl CanvasDecoder {
             TransformCenter(param)          => Self::decode_transform_center(next_chr, param)?,
             TransformMultiply(param)        => Self::decode_transform_multiply(next_chr, param)?,
 
+            NewLayerU32(param)              => Self::decode_new_layer_u32(next_chr, param)?,
+            NewLayerBlendU32(param)         => Self::decode_new_layer_blend_u32(next_chr, param)?,
             NewLayer(param)                 => Self::decode_new_layer(next_chr, param)?,
-            NewLayerBlend(param)            => Self::decode_new_layer_blend(next_chr, param)?,
+            NewLayerBlend(layer, blend)     => Self::decode_new_layer_blend(next_chr, layer, blend)?,
 
             NewSprite(param)                => Self::decode_new_sprite(next_chr, param)?,
             SpriteDraw(param)               => Self::decode_sprite_draw(next_chr, param)?,
@@ -212,8 +226,10 @@ impl CanvasDecoder {
             'A'     => Ok((DecoderState::ClearCanvas(String::new()), None)),
             'C'     => Ok((DecoderState::None, Some(Draw::ClearLayer))),
 
-            'l'     => Ok((DecoderState::NewLayer(String::new()), None)),
-            'b'     => Ok((DecoderState::NewLayerBlend(String::new()), None)),
+            'l'     => Ok((DecoderState::NewLayerU32(String::new()), None)),
+            'b'     => Ok((DecoderState::NewLayerBlendU32(String::new()), None)),
+            'L'     => Ok((DecoderState::NewLayer(String::new()), None)),
+            'B'     => Ok((DecoderState::NewLayerBlend(PartialResult::MatchMore(String::new()), String::new()), None)),
             's'     => Ok((DecoderState::NewSprite(String::new()), None)),
 
             _       => Err(DecoderError::InvalidCharacter(next_chr))
@@ -533,21 +549,21 @@ impl CanvasDecoder {
         }
     }
 
-    #[inline] fn decode_new_layer(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+    #[inline] fn decode_new_layer_u32(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 5 {
             param.push(next_chr);
-            Ok((DecoderState::NewLayer(param), None))
+            Ok((DecoderState::NewLayerU32(param), None))
         } else {
             param.push(next_chr);
             let mut param = param.chars();
-            Ok((DecoderState::None, Some(Draw::Layer(Self::decode_u32(&mut param)?))))
+            Ok((DecoderState::None, Some(Draw::Layer(LayerId(Self::decode_u32(&mut param)? as _)))))
         }
     }
 
-    #[inline] fn decode_new_layer_blend(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+    #[inline] fn decode_new_layer_blend_u32(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         if param.len() < 7 {
             param.push(next_chr);
-            Ok((DecoderState::NewLayerBlend(param), None))
+            Ok((DecoderState::NewLayerBlendU32(param), None))
         } else {
             param.push(next_chr);
 
@@ -555,7 +571,22 @@ impl CanvasDecoder {
             let layer_id    = Self::decode_u32(&mut param)?;
             let blend_mode  = Self::decode_blend_mode_only(&mut param)?;
 
-            Ok((DecoderState::None, Some(Draw::LayerBlend(layer_id, blend_mode))))
+            Ok((DecoderState::None, Some(Draw::LayerBlend(LayerId(layer_id as _), blend_mode))))
+        }
+    }
+
+    #[inline] fn decode_new_layer(next_chr: char, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match Self::decode_layer_id(next_chr, param)? {
+            PartialResult::FullMatch(layer_id)  => Ok((DecoderState::None, Some(Draw::Layer(layer_id)))),
+            PartialResult::MatchMore(param)     => Ok((DecoderState::NewLayer(param), None))
+        }
+    }
+
+    #[inline] fn decode_new_layer_blend(next_chr: char, layer_param: PartialResult<LayerId>, mut blend_mode: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match (layer_param, blend_mode.len()) {
+            (PartialResult::MatchMore(layer_param), _)  => Ok((DecoderState::NewLayerBlend(Self::decode_layer_id(next_chr, layer_param)?, blend_mode), None)),
+            (PartialResult::FullMatch(layer_id), 0)     => { blend_mode.push(next_chr); Ok((DecoderState::NewLayerBlend(PartialResult::FullMatch(layer_id), blend_mode), None)) },
+            (PartialResult::FullMatch(layer_id), _)     => { blend_mode.push(next_chr); Ok((DecoderState::None, Some(Draw::LayerBlend(layer_id, Self::decode_blend_mode_only(&mut blend_mode.chars())?)))) }
         }
     }
 
@@ -685,9 +716,9 @@ impl CanvasDecoder {
     }
 
     ///
-    /// Consumes characters until we have a sprite ID
+    /// Consumes characters until we have a u64 ID
     ///
-    fn decode_sprite_id(next_chr: char, mut param: String) -> Result<PartialResult<SpriteId>, DecoderError> {
+    fn decode_compact_id(next_chr: char, mut param: String) -> Result<PartialResult<u64>, DecoderError> {
         // Add the next character
         param.push(next_chr);
 
@@ -700,10 +731,26 @@ impl CanvasDecoder {
                 result |= (Self::decode_base64(chr)? & !0x20) as u64;
             }
 
-            Ok(PartialResult::FullMatch(SpriteId(result)))
+            Ok(PartialResult::FullMatch(result))
         } else {
             Ok(PartialResult::MatchMore(param))
         }
+    }
+
+    ///
+    /// Consumes characters until we have a sprite ID
+    ///
+    fn decode_sprite_id(next_chr: char, param: String) -> Result<PartialResult<SpriteId>, DecoderError> {
+        Self::decode_compact_id(next_chr, param)
+            .map(|id| id.map(|id| SpriteId(id)))
+    }
+
+    ///
+    /// Consumes characters until we have a layer ID
+    ///
+    fn decode_layer_id(next_chr: char, param: String) -> Result<PartialResult<LayerId>, DecoderError> {
+        Self::decode_compact_id(next_chr, param)
+            .map(|id| id.map(|id| LayerId(id)))
     }
 
     ///
@@ -1011,12 +1058,12 @@ mod test {
 
     #[test]
     fn decode_layer() {
-        check_round_trip_single(Draw::Layer(21));
+        check_round_trip_single(Draw::Layer(LayerId(21)));
     }
 
     #[test]
     fn decode_layer_blend() {
-        check_round_trip_single(Draw::LayerBlend(76, BlendMode::Lighten))
+        check_round_trip_single(Draw::LayerBlend(LayerId(76), BlendMode::Lighten))
     }
 
     #[test]
@@ -1121,7 +1168,7 @@ mod test {
             Draw::PushState,
             Draw::PopState,
             Draw::ClearCanvas(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
-            Draw::Layer(21),
+            Draw::Layer(LayerId(21)),
             Draw::ClearLayer,
             Draw::NewPath,
             Draw::Sprite(SpriteId(1000)),
@@ -1164,7 +1211,7 @@ mod test {
             Draw::PushState,
             Draw::PopState,
             Draw::ClearCanvas(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
-            Draw::Layer(21),
+            Draw::Layer(LayerId(21)),
             Draw::ClearLayer,
             Draw::NewPath,
             Draw::Sprite(SpriteId(1000)),
