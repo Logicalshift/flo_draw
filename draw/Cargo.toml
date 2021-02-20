@@ -12,7 +12,7 @@ categories          = [ "graphics", "rendering", "gui" ]
 include             = [ "Cargo.toml", "src/**/*", "examples/**/*", "GUIDE.md", "README.md" ]
 
 [dependencies]
-flo_canvas          = "0.3"
+flo_canvas          = { version = "0.3", features = [ "outline-fonts" ] }
 flo_render          = { version = "0.3", features = [ "opengl" ] }
 flo_render_canvas   = "0.3"
 flo_stream          = "0.6"
