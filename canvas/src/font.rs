@@ -39,6 +39,24 @@ impl Default for FontProperties {
     fn default() -> FontProperties { FontProperties { style: FontStyle::default(), weight: 400 } }
 }
 
+impl FontProperties {
+    ///
+    /// Returns an updated font properties object with a new weight
+    ///
+    pub fn with_weight(mut self, new_weight: u32) -> FontProperties {
+        self.weight = new_weight;
+        self
+    }
+
+    ///
+    /// Returns an updated font properties object with a new style
+    ///
+    pub fn with_style(mut self, new_style: FontStyle) -> FontProperties {
+        self.style = new_style;
+        self
+    }
+}
+
 ///
 /// Operations that can be performed on a font
 ///
