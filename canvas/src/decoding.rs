@@ -34,13 +34,6 @@ impl<T> PartialResult<T> {
             PartialResult::MatchMore(data)      => PartialResult::MatchMore(data)
         }
     }
-
-    #[inline] pub fn complete(&self) -> bool {
-        match self {
-            PartialResult::FullMatch(_) => true,
-            PartialResult::MatchMore(_) => false
-        }
-    }
 }
 
 ///
@@ -210,7 +203,7 @@ impl DecodeBytes {
 
         // Try to decode the rest of the string
         match self.byte_encoding {
-            FullMatch(string)    => {
+            FullMatch(_)                    => {
                 // Already finished matching
                 return Err(DecoderError::NotReady);
             }
@@ -1365,13 +1358,9 @@ pub fn decode_drawing_stream<In: Unpin+Stream<Item=Result<char, E>>, E>(source: 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::font::*;
     use crate::encoding::*;
 
-    use futures::prelude::*;
     use futures::executor;
-
-    use std::sync::*;
 
     ///
     /// Checks if a particular drawing operation can be both encoded and decoded
