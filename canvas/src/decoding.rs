@@ -401,7 +401,7 @@ impl CanvasDecoder {
 
             FontOp(font_id)                                     => { Self::decode_font_op(next_chr, font_id)? },
             FontOpSystem(font_id, string_decode, props_decode)  => { Self::decode_font_op_system(next_chr, font_id, string_decode, props_decode)? },
-            FontOpSize(font_id, size)                           => { todo!() },
+            FontOpSize(font_id, size)                           => { Self::decode_font_op_size(next_chr, font_id, size)? },
             FontOpData(font_id)                                 => { todo!() },
             FontOpTtf(font_id, bytes)                           => { todo!() },
             FontOpOtf(font_id, bytes)                           => { todo!() }
@@ -1083,6 +1083,23 @@ impl CanvasDecoder {
             return Ok((DecoderState::FontOpSystem(font_id, name, properties), None));
         } else {
             return Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::UseSystemFont(name.to_string()?, properties.to_properties()?)))));
+        }
+    }
+
+    ///
+    /// Decodes a FontSize fontop
+    ///
+    fn decode_font_op_size(chr: char, font_id: FontId, size: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Add the character to the size
+        let mut size = size;
+        size.push(chr);
+
+        // Can decode once we have 6 characters
+        if size.len() >= 6 {
+            Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::FontSize(Self::decode_f32(&mut size.chars())?)))))
+        } else {
+            // Haven't got enough characters yet
+            Ok((DecoderState::FontOpSize(font_id, size), None))
         }
     }
 
