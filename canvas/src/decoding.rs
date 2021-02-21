@@ -40,21 +40,47 @@ impl<T> PartialResult<T> {
     }
 }
 
+///
+/// Represents the state of an operation decoding a string value
+///
 struct DecodeString {
     length:             PartialResult<u64>,
     string_encoding:    PartialResult<String>
 }
 
+///
+/// Represents the state of an operation decoding a set of bytes
+///
 struct DecodeBytes {
     length:         PartialResult<u64>,
     byte_encoding:  PartialResult<String>
 }
 
+///
+/// State of the font properties decoder
+///
+enum FontPropDecoderState {
+    None,           // No match
+    Finished,       // Read the final '.'
+    Style,          // 's' <style>
+    Weight(String)  // 'w' <weight>
+}
+
+///
+/// Represents the state of an operation decoding font properties
+///
+struct DecodeFontProps {
+    properties: FontProperties,
+    state:      FontPropDecoderState
+}
+
 type DecodeLayerId      = PartialResult<LayerId>;
 type DecodeFontId       = PartialResult<FontId>;
-type DecodeFontProps    = PartialResult<FontProperties>;
 
 impl DecodeString {
+    ///
+    /// Creates a new string decoder that has matched 0 characters
+    ///
     fn new() -> DecodeString {
         DecodeString {
             length:             PartialResult::new(),
@@ -62,6 +88,9 @@ impl DecodeString {
         }
     }
 
+    ///
+    /// Indicates if this string decoder is ready or not
+    ///
     #[inline] fn ready(&self) -> bool {
         match (&self.length, &self.string_encoding) {
             (PartialResult::FullMatch(_), PartialResult::FullMatch(_))  => true,
@@ -69,6 +98,9 @@ impl DecodeString {
         }
     }
 
+    ///
+    /// Returns the string matched by this decoder (once it's ready)
+    ///
     #[inline] fn to_string(self) -> Result<String, DecoderError> {
         match self.string_encoding {
             PartialResult::FullMatch(string)    => Ok(string),
@@ -76,6 +108,9 @@ impl DecodeString {
         }
     }
 
+    ///
+    /// Decodes a single character and returns the new state of the decoder
+    ///
     #[inline] fn decode(mut self, chr: char) -> Result<DecodeString, DecoderError> {
         // Decode or fetch the length of the string
         let length = match self.length {
@@ -117,10 +152,83 @@ impl DecodeString {
 }
 
 impl DecodeBytes {
+    ///
+    /// Creates a new byte string decoder
+    ///
     fn new() -> DecodeBytes {
         DecodeBytes {
             length:         PartialResult::new(),
             byte_encoding:  PartialResult::new()
+        }
+    }
+}
+
+impl DecodeFontProps {
+    ///
+    /// Creates a new font properties decoder
+    ///
+    fn new() -> DecodeFontProps {
+        DecodeFontProps {
+            properties: FontProperties::default(),
+            state:      FontPropDecoderState::None
+        }
+    }
+
+    ///
+    /// Decodes the next character in some font properties
+    ///
+    pub fn decode(mut self, next_chr: char) -> Result<DecodeFontProps, DecoderError> {
+        use FontPropDecoderState::*;
+
+        match (self.state, next_chr) {
+            (None, '.')             => { self.state = Finished; Ok(self) },
+            (None, 's')             => { self.state = Style; Ok(self) },
+            (None, 'w')             => { self.state = Weight(String::new()); Ok(self) },
+
+            (Finished, _)           => { Err(DecoderError::NotReady) },
+
+            (Style, 'n')            => { self.state = None; self.properties = self.properties.with_style(FontStyle::Normal); Ok(self) },
+            (Style, 'i')            => { self.state = None; self.properties = self.properties.with_style(FontStyle::Italic); Ok(self) },
+            (Style, 'o')            => { self.state = None; self.properties = self.properties.with_style(FontStyle::Oblique); Ok(self) },
+
+            (Weight(weight), chr)   => {
+                let mut weight = weight;
+                weight.push(chr);
+
+                if weight.len() >= 6 {
+                    // Can decode the font weight now
+                    self.state      = None;
+                    self.properties = self.properties.with_weight(CanvasDecoder::decode_u32(&mut weight.chars())?);
+
+                    Ok(self)
+                } else {
+                    // More characters needed for the weight
+                    self.state = Weight(weight);
+                    Ok(self)
+                }
+            }
+
+            _           => Err(DecoderError::InvalidCharacter(next_chr))
+        }
+    }
+
+    ///
+    /// Returns true if the font properties decoding is ready
+    ///
+    pub fn ready(&self) -> bool {
+        match self.state {
+            FontPropDecoderState::Finished  => true,
+            _                               => false
+        }
+    }
+
+    ///
+    /// Returns the properties matched by this decoder
+    ///
+    pub fn to_properties(self) -> Result<FontProperties, DecoderError> {
+        match self.state {
+            FontPropDecoderState::Finished  => Ok(self.properties),
+            _                               => Err(DecoderError::NotReady)
         }
     }
 }
@@ -292,7 +400,7 @@ impl CanvasDecoder {
             FontDrawText(font_id, string_decode, coords)        => { Self::decode_font_draw_text(next_chr, font_id, string_decode, coords)? },
 
             FontOp(font_id)                                     => { Self::decode_font_op(next_chr, font_id)? },
-            FontOpSystem(font_id, string_decode, props_decode)  => { todo!() },
+            FontOpSystem(font_id, string_decode, props_decode)  => { Self::decode_font_op_system(next_chr, font_id, string_decode, props_decode)? },
             FontOpSize(font_id, size)                           => { todo!() },
             FontOpData(font_id)                                 => { todo!() },
             FontOpTtf(font_id, bytes)                           => { todo!() },
@@ -955,6 +1063,26 @@ impl CanvasDecoder {
             'S' => Ok((DecoderState::FontOpSize(font_id, String::new()), None)),
 
             _   => Err(DecoderError::InvalidCharacter(chr))
+        }
+    }
+
+    ///
+    /// Decodes a UseSystemFont fontop
+    ///
+    fn decode_font_op_system(chr: char, font_id: FontId, name: DecodeString, properties: DecodeFontProps) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Decode the name first
+        if !name.ready() {
+            let name = name.decode(chr)?;
+            return Ok((DecoderState::FontOpSystem(font_id, name, properties), None));
+        }
+
+        // Decode the font properties
+        let properties = properties.decode(chr)?;
+
+        if !properties.ready() {
+            return Ok((DecoderState::FontOpSystem(font_id, name, properties), None));
+        } else {
+            return Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::UseSystemFont(name.to_string()?, properties.to_properties()?)))));
         }
     }
 
