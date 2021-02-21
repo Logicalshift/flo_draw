@@ -7,8 +7,11 @@ use futures::*;
 use futures::stream;
 use futures::task::{Poll};
 
+use itertools::*;
+
 use std::mem;
 use std::str::*;
+use std::sync::*;
 use std::result::Result;
 
 ///
@@ -53,7 +56,7 @@ struct DecodeString {
 ///
 struct DecodeBytes {
     length:         PartialResult<u64>,
-    byte_encoding:  PartialResult<String>
+    byte_encoding:  PartialResult<Vec<u8>>
 }
 
 ///
@@ -111,7 +114,7 @@ impl DecodeString {
     ///
     /// Decodes a single character and returns the new state of the decoder
     ///
-    #[inline] fn decode(mut self, chr: char) -> Result<DecodeString, DecoderError> {
+    fn decode(mut self, chr: char) -> Result<DecodeString, DecoderError> {
         // Decode or fetch the length of the string
         let length = match self.length {
             PartialResult::MatchMore(so_far)    => {
@@ -159,6 +162,100 @@ impl DecodeBytes {
         DecodeBytes {
             length:         PartialResult::new(),
             byte_encoding:  PartialResult::new()
+        }
+    }
+
+    ///
+    /// Indicates if this string decoder is ready or not
+    ///
+    #[inline] fn ready(&self) -> bool {
+        match (&self.length, &self.byte_encoding) {
+            (PartialResult::FullMatch(_), PartialResult::FullMatch(_))  => true,
+            _                                                           => false
+        }
+    }
+
+    ///
+    /// Returns the string matched by this decoder (once it's ready)
+    ///
+    #[inline] fn to_bytes(self) -> Result<Vec<u8>, DecoderError> {
+        match self.byte_encoding {
+            PartialResult::FullMatch(bytes) => Ok(bytes),
+            PartialResult::MatchMore(_)     => Err(DecoderError::NotReady)
+        }
+    }
+
+    ///
+    /// Decodes a single character and returns the new state of the decoder
+    ///
+    fn decode(mut self, chr: char) -> Result<DecodeBytes, DecoderError> {
+        use PartialResult::*;
+
+        // Decode or fetch the length of the bytes
+        let length = match self.length {
+            MatchMore(so_far)    => {
+                self.length = CanvasDecoder::decode_compact_id(chr, so_far)?;
+
+                if let &FullMatch(0) = &self.length {
+                    self.byte_encoding = FullMatch(vec![]);
+                }
+                return Ok(self);
+            }
+
+            FullMatch(length)    => {
+                self.length = PartialResult::FullMatch(length);
+                length as usize
+            }
+        };
+
+        // Try to decode the rest of the string
+        match self.byte_encoding {
+            FullMatch(string)    => {
+                // Already finished matching
+                return Err(DecoderError::NotReady);
+            }
+
+            MatchMore(mut encoded_bytes)    => {
+                encoded_bytes.push(chr);
+
+                // Every 4 encoded bytes makes up 3 output bytes (and the encoding rounds up overall)
+                let encoded_length = (encoded_bytes.len()/4)*3;
+
+                if encoded_length >= length {
+                    // Decode the bytes
+                    let mut decoded_bytes = vec![];
+
+                    // 4 characters decode into 3 bytes
+                    for (a, b, c, d) in encoded_bytes.chars().tuples() {
+                        // Decode to 6-bit values
+                        let a = CanvasDecoder::decode_base64(a)?;
+                        let b = CanvasDecoder::decode_base64(b)?;
+                        let c = CanvasDecoder::decode_base64(c)?;
+                        let d = CanvasDecoder::decode_base64(d)?;
+
+                        // Decode to 8-bit values
+                        let a = a | ((b<<6)&0xff);
+                        let b = (b>>2) | ((c<<4)&0xff);
+                        let c = (c>>4) | ((d<<2)&0xff);
+
+                        // Add to the result
+                        decoded_bytes.push(a);
+                        decoded_bytes.push(b);
+                        decoded_bytes.push(c);
+                    }
+
+                    // Trim to the actual required length
+                    decoded_bytes.truncate(length);
+
+                    // Have decoded the bytes for this object
+                    self.byte_encoding = FullMatch(decoded_bytes);
+                } else {
+                    // Not enough bytes to make up the full string yet
+                    self.byte_encoding = MatchMore(encoded_bytes);
+                }
+
+                return Ok(self);
+            }
         }
     }
 }
@@ -402,9 +499,9 @@ impl CanvasDecoder {
             FontOp(font_id)                                     => { Self::decode_font_op(next_chr, font_id)? },
             FontOpSystem(font_id, string_decode, props_decode)  => { Self::decode_font_op_system(next_chr, font_id, string_decode, props_decode)? },
             FontOpSize(font_id, size)                           => { Self::decode_font_op_size(next_chr, font_id, size)? },
-            FontOpData(font_id)                                 => { todo!() },
-            FontOpTtf(font_id, bytes)                           => { todo!() },
-            FontOpOtf(font_id, bytes)                           => { todo!() }
+            FontOpData(font_id)                                 => { Self::decode_font_op_data(next_chr, font_id)? },
+            FontOpTtf(font_id, bytes)                           => { Self::decode_font_data_ttf(next_chr, font_id, bytes)? },
+            FontOpOtf(font_id, bytes)                           => { Self::decode_font_data_otf(next_chr, font_id, bytes)? },
         };
 
         self.state = next_state;
@@ -1100,6 +1197,49 @@ impl CanvasDecoder {
         } else {
             // Haven't got enough characters yet
             Ok((DecoderState::FontOpSize(font_id, size), None))
+        }
+    }
+
+    ///
+    /// Decodes a font data item
+    ///
+    fn decode_font_op_data(chr: char, font_id: FontId) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match chr {
+            'T' => Ok((DecoderState::FontOpTtf(font_id, DecodeBytes::new()), None)),
+            'O' => Ok((DecoderState::FontOpOtf(font_id, DecodeBytes::new()), None)),
+            _   => Err(DecoderError::InvalidCharacter(chr))
+        }
+    }
+
+    ///
+    /// Decodes OTF font data
+    ///
+    fn decode_font_data_otf(chr: char, font_id: FontId, bytes: DecodeBytes) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Decode the next byte
+        let bytes = bytes.decode(chr)?;
+
+        // Generate the result once finished
+        if bytes.ready() {
+            let bytes = bytes.to_bytes()?;
+            Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::UseFontDefinition(FontData::Otf(Arc::new(bytes)))))))
+        } else {
+            Ok((DecoderState::FontOpOtf(font_id, bytes), None))
+        }
+    }
+
+    ///
+    /// Decodes TTF font data
+    ///
+    fn decode_font_data_ttf(chr: char, font_id: FontId, bytes: DecodeBytes) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Decode the next byte
+        let bytes = bytes.decode(chr)?;
+
+        // Generate the result once finished
+        if bytes.ready() {
+            let bytes = bytes.to_bytes()?;
+            Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::UseFontDefinition(FontData::Ttf(Arc::new(bytes)))))))
+        } else {
+            Ok((DecoderState::FontOpTtf(font_id, bytes), None))
         }
     }
 
