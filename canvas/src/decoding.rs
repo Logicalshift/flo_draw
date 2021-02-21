@@ -291,7 +291,7 @@ impl CanvasDecoder {
             FontDrawing                                         => { Self::decode_font_drawing(next_chr)? },
             FontDrawText(font_id, string_decode, coords)        => { Self::decode_font_draw_text(next_chr, font_id, string_decode, coords)? },
 
-            FontOp(font_id)                                     => { todo!() },
+            FontOp(font_id)                                     => { Self::decode_font_op(next_chr, font_id)? },
             FontOpSystem(font_id, string_decode, props_decode)  => { todo!() },
             FontOpSize(font_id, size)                           => { todo!() },
             FontOpData(font_id)                                 => { todo!() },
@@ -894,6 +894,10 @@ impl CanvasDecoder {
         }
     }
 
+    ///
+    /// Decodes the DrawText command (which is one of the more complicated ones, with a font ID, a string and a set of coordinates
+    /// to deal with)
+    ///
     fn decode_font_draw_text(chr: char, font_id: DecodeFontId, string: DecodeString, mut coords: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         use PartialResult::*;
 
@@ -922,6 +926,35 @@ impl CanvasDecoder {
 
                 Ok((DecoderState::None, Some(Draw::DrawText(font_id, string.to_string()?, x, y))))
             }
+        }
+    }
+
+    ///
+    /// Decodes a FontOp command
+    ///
+    /// These all start with a font ID, followed by an operation identifier which determines how the
+    /// rest of the decoding should go
+    ///
+    fn decode_font_op(chr: char, font_id: DecodeFontId) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        use PartialResult::*;
+
+        // Decode the font ID first
+        let font_id = match font_id {
+            MatchMore(font_id) => { 
+                let font_id = Self::decode_font_id(chr, font_id)?;
+                return Ok((DecoderState::FontOp(font_id), None));
+            }
+
+            FullMatch(font_id) => font_id
+        };
+
+        // The character following the font ID determines what state we move on to
+        match chr {
+            's' => Ok((DecoderState::FontOpSystem(font_id, DecodeString::new(), DecodeFontProps::new()), None)),
+            'd' => Ok((DecoderState::FontOpData(font_id), None)),
+            'S' => Ok((DecoderState::FontOpSize(font_id, String::new()), None)),
+
+            _   => Err(DecoderError::InvalidCharacter(chr))
         }
     }
 
