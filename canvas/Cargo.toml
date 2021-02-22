@@ -9,6 +9,8 @@ categories      = [ "graphics", "rendering::data-formats" ]
 repository      = "https://github.com/Logicalshift/flo_draw"
 description     = "Library for describing graphics context drawing actions without requiring a specific implementation"
 
+include         = [ "Cargo.toml", "src/**/*", "test_data/**/*", "README.md" ]
+
 [features]
 outline-fonts   = [ "allsorts", "font-kit", "flo_stream" ]
 
