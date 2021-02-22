@@ -35,10 +35,12 @@ impl FontState {
     pub fn load_font_data(&mut self, id: FontId, data: Arc<Vec<u8>>) {
         match Font::from_bytes(data, 0) {
             Ok(font) => {
+                // Font was successfully loaded: add to the loaded-fonts list
                 self.loaded_fonts.insert(id, Arc::new(font));
             }
 
             Err(err) => {
+                // Font was not loaded (TODO: some way of handling this error better)
                 println!("Could not load font: {:?}", err);
             }
         }
