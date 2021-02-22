@@ -1,6 +1,7 @@
 use super::draw::*;
 use super::font::*;
 use super::color::*;
+use super::texture::*;
 use super::transform2d::*;
 
 use flo_curves::*;
@@ -9,6 +10,7 @@ use flo_curves::bezier::{BezierCurve};
 use flo_curves::bezier::path::{BezierPath};
 
 use std::iter;
+use std::sync::*;
 
 ///
 /// A graphics context provides the basic set of graphics actions that can be performed
@@ -59,6 +61,9 @@ pub trait GraphicsContext {
     fn set_font_size(&mut self, font_id: FontId, size: f32);
     fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32);
 
+    fn create_texture(&mut self, texture_id: TextureId, width: u32, height: u32, format: TextureFormat);
+    fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, width: u32, height: u32, bytes: Arc<Vec<u8>>);
+
     fn draw(&mut self, d: Draw) {
         use self::Draw::*;
 
@@ -105,7 +110,8 @@ pub trait GraphicsContext {
             Font(font_id, FontOp::UseFontDefinition(font_data))                     => self.define_font_data(font_id, font_data),
             Font(font_id, FontOp::FontSize(font_size))                              => self.set_font_size(font_id, font_size),
             DrawText(font_id, string, x, y)                                         => self.draw_text(font_id, string, x, y),
-            Texture(texture_id, texture_op)                                         => { todo!() },
+            Texture(texture_id, TextureOp::Create(width, height, format))           => self.create_texture(texture_id, width, height, format),
+            Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))             => self.set_texture_bytes(texture_id, x, y, w, h, bytes)
         }
     }
 }
@@ -267,10 +273,13 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn sprite_transform(&mut self, transform: SpriteTransform)                { self.push(Draw::SpriteTransform(transform)); }
     #[inline] fn draw_sprite(&mut self, sprite_id: SpriteId)                            { self.push(Draw::DrawSprite(sprite_id)); }
 
-    #[inline] fn define_font_system(&mut self, font_id: FontId, font_name: String, properties: FontProperties)  { self.push(Draw::Font(font_id, FontOp::UseSystemFont(font_name, properties))); }
-    #[inline] fn define_font_data(&mut self, font_id: FontId, font_data: FontData)                              { self.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
-    #[inline] fn set_font_size(&mut self, font_id: FontId, size: f32)                                           { self.push(Draw::Font(font_id, FontOp::FontSize(size))); }
-    #[inline] fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)          { self.push(Draw::DrawText(font_id, text, baseline_x, baseline_y)); }
+    #[inline] fn define_font_system(&mut self, font_id: FontId, font_name: String, properties: FontProperties)                  { self.push(Draw::Font(font_id, FontOp::UseSystemFont(font_name, properties))); }
+    #[inline] fn define_font_data(&mut self, font_id: FontId, font_data: FontData)                                              { self.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
+    #[inline] fn set_font_size(&mut self, font_id: FontId, size: f32)                                                           { self.push(Draw::Font(font_id, FontOp::FontSize(size))); }
+    #[inline] fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)                          { self.push(Draw::DrawText(font_id, text, baseline_x, baseline_y)); }
+
+    #[inline] fn create_texture(&mut self, texture_id: TextureId, w: u32, h: u32, format: TextureFormat)                        { self.push(Draw::Texture(texture_id, TextureOp::Create(w, h, format))); }
+    #[inline] fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>)       { self.push(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))); }
 
     #[inline]
     fn draw(&mut self, d: Draw) {
