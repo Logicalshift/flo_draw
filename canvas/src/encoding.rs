@@ -263,12 +263,23 @@ impl CanvasEncoding<String> for SpriteTransform {
     }
 }
 
+impl CanvasEncoding<String> for TextureFormat {
+    fn encode_canvas(&self, append_to: &mut String) {
+        use self::TextureFormat::*;
+
+        match self {
+            Rgba => 'r'.encode_canvas(append_to)
+        }
+    }
+}
+
 impl<'a> CanvasEncoding<String> for &'a TextureOp {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::TextureOp::*;
 
         match self {
-            _ => { }
+            Create(width, height, format)           => ('N', *width, *height, *format).encode_canvas(append_to), 
+            SetBytes(x, y, width, height, bytes)    => ('D', *x, *y, *width, *height, &**bytes).encode_canvas(append_to)
         }
     }
 }

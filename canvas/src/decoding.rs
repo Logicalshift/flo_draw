@@ -1,6 +1,7 @@
 use super::draw::*;
 use super::font::*;
 use super::color::*;
+use super::texture::*;
 use super::transform2d::*;
 
 use futures::*;
@@ -1636,6 +1637,16 @@ mod test {
     #[test]
     fn decode_draw_text() {
         check_round_trip_single(Draw::DrawText(FontId(42), "Hello, world".to_string(), 100.0, 200.0));
+    }
+
+    #[test]
+    fn decode_create_texture() {
+        check_round_trip_single(Draw::Texture(TextureId(42), TextureOp::Create(100, 200, TextureFormat::Rgba)));
+    }
+
+    #[test]
+    fn decode_texture_set_bytes() {
+        check_round_trip_single(Draw::Texture(TextureId(42), TextureOp::SetBytes(100, 200, 300, 400, Arc::new(vec![240, 230, 220, 210, 200, 190]))));
     }
 
     #[test]
