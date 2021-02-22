@@ -73,6 +73,7 @@ struct DecodeFontProps {
 
 type DecodeLayerId      = PartialResult<LayerId>;
 type DecodeFontId       = PartialResult<FontId>;
+type DecodeTextureId    = PartialResult<TextureId>;
 
 impl DecodeString {
     ///
@@ -379,12 +380,16 @@ enum DecoderState {
     FontDrawing,                                            // 't'
     FontDrawText(DecodeFontId, DecodeString, String),       // 'tT' (font_id, string, x, y)
 
-    FontOp(DecodeFontId),                                   // 'f'
+    FontOp(DecodeFontId),                                   // 'f' (id, op)
     FontOpSystem(FontId, DecodeString, DecodeFontProps),    // 'f<id>s' (font_name, font_properties)
     FontOpSize(FontId, String),                             // 'f<id>S' (size)
     FontOpData(FontId),                                     // 'f<id>d'
     FontOpTtf(FontId, DecodeBytes),                         // 'f<id>dT (bytes)'
     FontOpOtf(FontId, DecodeBytes),                         // 'f<id>dO (bytes)'
+
+    TextureOp(DecodeTextureId),                             // 'B<id>' (id, op)
+    TextureOpCreate(TextureId, String),                     // 'B<id>N' (w, h, format)
+    TextureOpSetBytes(TextureId, String, DecodeBytes),      // 'B<id>D' (x, y, w, h, bytes)
 }
 
 ///
@@ -487,15 +492,19 @@ impl CanvasDecoder {
             SpriteTransformRotate(param)    => Self::decode_sprite_transform_rotate(next_chr, param)?,
             SpriteTransformTransform(param) => Self::decode_sprite_transform_transform(next_chr, param)?,
 
-            FontDrawing                                         => { Self::decode_font_drawing(next_chr)? },
-            FontDrawText(font_id, string_decode, coords)        => { Self::decode_font_draw_text(next_chr, font_id, string_decode, coords)? },
+            FontDrawing                                         => Self::decode_font_drawing(next_chr)?,
+            FontDrawText(font_id, string_decode, coords)        => Self::decode_font_draw_text(next_chr, font_id, string_decode, coords)?,
 
-            FontOp(font_id)                                     => { Self::decode_font_op(next_chr, font_id)? },
-            FontOpSystem(font_id, string_decode, props_decode)  => { Self::decode_font_op_system(next_chr, font_id, string_decode, props_decode)? },
-            FontOpSize(font_id, size)                           => { Self::decode_font_op_size(next_chr, font_id, size)? },
-            FontOpData(font_id)                                 => { Self::decode_font_op_data(next_chr, font_id)? },
-            FontOpTtf(font_id, bytes)                           => { Self::decode_font_data_ttf(next_chr, font_id, bytes)? },
-            FontOpOtf(font_id, bytes)                           => { Self::decode_font_data_otf(next_chr, font_id, bytes)? },
+            FontOp(font_id)                                     => Self::decode_font_op(next_chr, font_id)?,
+            FontOpSystem(font_id, string_decode, props_decode)  => Self::decode_font_op_system(next_chr, font_id, string_decode, props_decode)?,
+            FontOpSize(font_id, size)                           => Self::decode_font_op_size(next_chr, font_id, size)?,
+            FontOpData(font_id)                                 => Self::decode_font_op_data(next_chr, font_id)?,
+            FontOpTtf(font_id, bytes)                           => Self::decode_font_data_ttf(next_chr, font_id, bytes)?,
+            FontOpOtf(font_id, bytes)                           => Self::decode_font_data_otf(next_chr, font_id, bytes)?,
+
+            TextureOp(texture_id)                               => Self::decode_texture_op(next_chr, texture_id)?,
+            TextureOpCreate(texture_id, param)                  => Self::decode_texture_create(next_chr, texture_id, param)?,
+            TextureOpSetBytes(texture_id, param, bytes)         => Self::decode_texture_set_bytes(next_chr, texture_id, param, bytes)?,
         };
 
         self.state = next_state;
@@ -535,6 +544,8 @@ impl CanvasDecoder {
 
             't' => Ok((DecoderState::FontDrawing, None)),
             'f' => Ok((DecoderState::FontOp(PartialResult::MatchMore(String::new())), None)),
+
+            'B' => Ok((DecoderState::TextureOp(PartialResult::new()), None)),
 
             // Other characters are not accepted
             _   => Err(DecoderError::InvalidCharacter(next_chr))
@@ -1076,11 +1087,19 @@ impl CanvasDecoder {
     }
 
     ///
-    /// Consumes characters until we have a layer ID
+    /// Consumes characters until we have a font ID
     ///
     fn decode_font_id(next_chr: char, param: String) -> Result<PartialResult<FontId>, DecoderError> {
         Self::decode_compact_id(next_chr, param)
             .map(|id| id.map(|id| FontId(id)))
+    }
+
+    ///
+    /// Consumes characters until we have a texture ID
+    ///
+    fn decode_texture_id(next_chr: char, param: String) -> Result<PartialResult<TextureId>, DecoderError> {
+        Self::decode_compact_id(next_chr, param)
+            .map(|id| id.map(|id| TextureId(id)))
     }
 
     ///
@@ -1235,6 +1254,84 @@ impl CanvasDecoder {
         } else {
             Ok((DecoderState::FontOpTtf(font_id, bytes), None))
         }
+    }
+
+    ///
+    /// Decodes a texture operation
+    ///
+    fn decode_texture_op(chr: char, texture_id: DecodeTextureId) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        use PartialResult::*;
+
+        // Decode the texture ID first
+        let texture_id = match texture_id {
+            MatchMore(texture_id) => { 
+                let texture_id = Self::decode_texture_id(chr, texture_id)?;
+                return Ok((DecoderState::TextureOp(texture_id), None));
+            }
+
+            FullMatch(texture_id) => texture_id
+        };
+
+        // The character following the texture ID determines what state we move on to
+        match chr {
+            'N' => Ok((DecoderState::TextureOpCreate(texture_id, String::new()), None)),
+            'D' => Ok((DecoderState::TextureOpSetBytes(texture_id, String::new(), DecodeBytes::new()), None)),
+
+            _   => Err(DecoderError::InvalidCharacter(chr))
+        }
+    }
+
+    ///
+    /// Decodes a texture create operation
+    ///
+    fn decode_texture_create(chr: char, texture_id: TextureId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Follow-up is 2 u32s and 1 format character for 13 characters total
+        let mut param = param;
+        param.push(chr);
+
+        if param.len() < 13 {
+            return Ok((DecoderState::TextureOpCreate(texture_id, param), None));
+        }
+
+        // Decode the texture
+        let mut chars   = param.chars();
+        let w           = Self::decode_u32(&mut chars)?;
+        let h           = Self::decode_u32(&mut chars)?;
+
+        let format      = match chars.next() {
+            Some('r')   => TextureFormat::Rgba,
+            Some(c)     => { return Err(DecoderError::InvalidCharacter(c)); }
+            None        => { return Err(DecoderError::NotReady); }
+        };
+
+        Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::Create(w, h, format)))))
+    }
+
+    ///
+    /// Decodes a texture 'set bytes' operation
+    ///
+    fn decode_texture_set_bytes(chr: char, texture_id: TextureId, param: String, bytes: DecodeBytes) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // 4 u32s and some data
+        if param.len() < 24 {
+            let mut param = param;
+            param.push(chr);
+            return Ok((DecoderState::TextureOpSetBytes(texture_id, param, bytes), None));
+        }
+
+        let bytes = bytes.decode(chr)?;
+
+        if !bytes.ready() {
+            return Ok((DecoderState::TextureOpSetBytes(texture_id, param, bytes), None));
+        }
+
+        // Decode the data
+        let mut chars   = param.chars();
+        let x           = Self::decode_u32(&mut chars)?;
+        let y           = Self::decode_u32(&mut chars)?;
+        let w           = Self::decode_u32(&mut chars)?;
+        let h           = Self::decode_u32(&mut chars)?;
+
+        Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, Arc::new(bytes.to_bytes()?))))))
     }
 
     ///
