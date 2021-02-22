@@ -1,7 +1,7 @@
 use crate::draw::*;
 
 use futures::prelude::*;
-use font_kit::*;
+use allsorts::*;
 use flo_stream::*;
 
 ///
