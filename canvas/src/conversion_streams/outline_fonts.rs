@@ -10,7 +10,6 @@ use allsorts;
 use allsorts::binary::read::{ReadScope};
 use allsorts::font::{MatchingPresentation};
 use allsorts::font_data;
-use allsorts::font_data::{DynamicFontTableProvider};
 use allsorts::gpos;
 use allsorts::gsub;
 use allsorts::tag;
