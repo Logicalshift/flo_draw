@@ -4,10 +4,9 @@ use flo_canvas::*;
 use std::sync::*;
 
 ///
-/// Simple example that displays a canvas window and renders a triangle
+/// Displays 'Hello, World' in a window
 ///
 pub fn main() {
-    // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
     with_2d_graphics(|| {
         let lato    = Arc::new(Vec::from(include_bytes!("Lato-Regular.ttf").clone()));
 
