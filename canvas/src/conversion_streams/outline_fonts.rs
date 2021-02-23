@@ -18,6 +18,7 @@ use allsorts::tag;
 use font_kit::handle::{Handle};
 use font_kit::loaders::default::{Font};
 use font_kit::outline::{OutlineSink};
+use font_kit::hinting::{HintingOptions};
 
 use pathfinder_geometry::vector::{Vector2F};
 use pathfinder_geometry::line_segment::{LineSegment2F};
@@ -198,9 +199,47 @@ impl FontState {
         // Fetch some information about this font
         let metrics         = font.metrics();
         let scale_factor    = font_size / (metrics.units_per_em as f32);
+        let mut x_pos       = x;
+        let mut y_pos       = y;
 
-        // TODO: generate the outlines
-        Some(vec![])
+        // Produce the drawing for these glyphs
+        let mut drawing     = vec![];
+        for glyph in glyphs {
+            // Fetch information about this glyph
+            let glyph_index     = glyph.glyph.glyph_index as u32;
+            let advance         = font.advance(glyph_index);
+            let advance         = if let Ok(advance) = advance { advance } else { continue; };
+
+            // Adjust by any requested offset
+            let (off_x, off_y)  = match glyph.placement {
+                gpos::Placement::None           => (0.0, 0.0),
+                gpos::Placement::Distance(x, y) => (x as f32, y as f32),
+                gpos::Placement::Anchor(_ ,_)   => (0.0, 0.0), // TODO: https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-3-cursive-attachment-positioning-subtable
+            };
+            let off_x           = off_x * scale_factor;
+            let off_y           = off_y * scale_factor;
+
+            // Generate the outline
+            let mut outliner    = FontOutliner { 
+                drawing: &mut drawing, 
+                scale_factor, 
+                x_pos: x_pos + off_x, 
+                y_pos: y_pos + off_y, 
+                last: (0.0, 0.0) 
+            };
+            font.outline(glyph_index, HintingOptions::None, &mut outliner).ok();
+
+            // Move to the next position
+            let advance_x       = advance.x() + (glyph.kerning as f32);
+            let advance_y       = advance.y();
+            let advance_x       = advance_x * scale_factor;
+            let advance_y       = advance_y * scale_factor;
+
+            x_pos               += advance_x;
+            y_pos               += advance_y;
+        }
+
+        Some(drawing)
     }
 }
 
@@ -302,7 +341,6 @@ mod test {
             // The font stream should generate some glyph rendering
             println!("{:?}", instructions);
             assert!(instructions.len() != 0);
-            assert!(false);
         });
     }
 }
