@@ -119,6 +119,14 @@ impl Default for FontState {
 
 impl FontState {
     ///
+    /// Clears any loaded fonts
+    ///
+    fn clear(&mut self) {
+        self.loaded_fonts   = HashMap::new();
+        self.font_size      = HashMap::new();
+    }
+
+    ///
     /// Loads a font from a raw data file 
     ///
     pub fn load_font_data(&mut self, id: FontId, data: Arc<Vec<u8>>) {
@@ -211,6 +219,12 @@ pub fn stream_outline_fonts<InStream: 'static+Send+Unpin+Stream<Item=Draw>>(draw
         // Pass through the drawing instructions, and process any font instructions that we may come across
         while let Some(draw) = draw_stream.next().await {
             match draw {
+                Draw::ClearCanvas(_) => {
+                    state.clear();
+
+                    yield_value(draw).await;
+                }
+
                 Draw::Font(font_id, FontOp::UseFontDefinition(FontData::Ttf(data))) |
                 Draw::Font(font_id, FontOp::UseFontDefinition(FontData::Otf(data))) => {
                     state.load_font_data(font_id, data);
