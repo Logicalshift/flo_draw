@@ -27,12 +27,16 @@ use std::collections::{HashMap};
 struct FontState {
     /// Fontkit handles for the fonts that are loaded
     loaded_fonts: HashMap<FontId, Arc<Font>>,
+
+    /// The size specified for each font
+    font_size: HashMap<FontId, f32>
 }
 
 impl Default for FontState {
     fn default() -> Self {
         FontState {
-            loaded_fonts: HashMap::new()
+            loaded_fonts:   HashMap::new(),
+            font_size:      HashMap::new()
         }
     }
 }
@@ -46,6 +50,7 @@ impl FontState {
             Ok(font) => {
                 // Font was successfully loaded: add to the loaded-fonts list
                 self.loaded_fonts.insert(id, Arc::new(font));
+                self.font_size.insert(id, 12.0);
             }
 
             Err(err) => {
@@ -110,12 +115,14 @@ pub fn stream_outline_fonts<InStream: 'static+Send+Unpin+Stream<Item=Draw>>(draw
                     state.load_font_data(font_id, data);
                 }
 
+                Draw::Font(font_id, FontOp::FontSize(new_size)) => {
+                    state.set_font_size(font_id, new_size);
+                }
+
                 Draw::DrawText(font_id, text, x, y) => {
                     let shape = state.shape_text(font_id, text);
                     if let Some(shape) = shape {
                         println!("OK {:?}", shape);
-                    } else {
-                        println!("Bleh");
                     }
                 }
 
