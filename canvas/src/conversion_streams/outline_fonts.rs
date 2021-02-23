@@ -218,6 +218,9 @@ impl FontState {
             let off_x           = off_x * scale_factor;
             let off_y           = off_y * scale_factor;
 
+            // Start a new path
+            drawing.push(Draw::NewPath);
+
             // Generate the outline
             let mut outliner    = FontOutliner { 
                 drawing: &mut drawing, 
@@ -227,6 +230,9 @@ impl FontState {
                 last: (0.0, 0.0) 
             };
             font.outline(glyph_index, HintingOptions::None, &mut outliner).ok();
+
+            // Fill the glyph
+            drawing.push(Draw::Fill);
 
             // Move to the next position
             let advance_x       = advance.x() + (glyph.kerning as f32);
@@ -278,13 +284,10 @@ pub fn stream_outline_fonts<InStream: 'static+Send+Unpin+Stream<Item=Draw>>(draw
 
                     // Render them as outlines
                     if let Some(glyphs) = glyphs {
-                        yield_value(Draw::NewPath).await;
-
                         for draw in state.generate_outlines(font_id, glyphs, x, y).into_iter().flatten() {
                             yield_value(draw).await;
                         }
 
-                        yield_value(Draw::Fill).await;
                         yield_value(Draw::NewPath).await;
                     }
                 }
