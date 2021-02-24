@@ -13,7 +13,7 @@ use futures::prelude::*;
 ///
 /// This can be used to render text to a render target that does not have any font support of its own.
 ///
-pub fn stream_outline_fonts<InStream: 'static+Send+Unpin+Stream<Item=Draw>>(draw_stream: InStream) -> impl Send+Unpin+Stream<Item=Draw> {
+pub fn drawing_with_text_as_paths<InStream: 'static+Send+Unpin+Stream<Item=Draw>>(draw_stream: InStream) -> impl Send+Unpin+Stream<Item=Draw> {
     generator_stream(move |yield_value| async move {
         // Set up
         let mut draw_stream = draw_stream;
@@ -76,7 +76,7 @@ mod test {
 
             let instructions    = vec![Draw::Font(FontId(1), FontOp::UseFontDefinition(FontData::Ttf(lato)))];
             let instructions    = stream::iter(instructions);
-            let instructions    = stream_outline_fonts(instructions);
+            let instructions    = drawing_with_text_as_paths(instructions);
 
             let instructions    = instructions.collect::<Vec<_>>().await;
 
@@ -97,7 +97,7 @@ mod test {
                 Draw::DrawText(FontId(1), "Hello".to_string(), 100.0, 200.0),
             ];
             let instructions    = stream::iter(instructions);
-            let instructions    = stream_outline_fonts(instructions);
+            let instructions    = drawing_with_text_as_paths(instructions);
 
             let instructions    = instructions.collect::<Vec<_>>().await;
 
