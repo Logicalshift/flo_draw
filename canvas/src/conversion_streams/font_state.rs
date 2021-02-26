@@ -9,13 +9,7 @@ use allsorts::gpos;
 use allsorts::gsub;
 use allsorts::tag;
 
-use font_kit::handle::{Handle};
-use font_kit::loaders::default::{Font};
-use font_kit::outline::{OutlineSink};
-use font_kit::hinting::{HintingOptions};
-
-use pathfinder_geometry::vector::{Vector2F};
-use pathfinder_geometry::line_segment::{LineSegment2F};
+use ttf_parser::*;
 
 use std::sync::*;
 use std::collections::{HashMap};
@@ -31,9 +25,8 @@ struct FontOutliner<'a> {
     last:           (f32, f32)
 }
 
-impl<'a> OutlineSink for FontOutliner<'a> {
-    fn move_to(&mut self, to: Vector2F) {
-        let (x, y)  = (to.x(), to.y());
+impl<'a> OutlineBuilder for FontOutliner<'a> {
+    fn move_to(&mut self, x: f32, y: f32) {
         let (x, y)  = (x * self.scale_factor, y * self.scale_factor);
 
         self.last   = (x, y);
@@ -41,8 +34,7 @@ impl<'a> OutlineSink for FontOutliner<'a> {
         self.drawing.push(Draw::Move(self.x_pos + x, self.y_pos + y));
     }
 
-    fn line_to(&mut self, to: Vector2F) {
-        let (x, y) = (to.x(), to.y());
+    fn line_to(&mut self, x: f32, y: f32) {
         let (x, y) = (x * self.scale_factor, y * self.scale_factor);
 
         self.last   = (x, y);
@@ -50,13 +42,13 @@ impl<'a> OutlineSink for FontOutliner<'a> {
         self.drawing.push(Draw::Line(self.x_pos + x, self.y_pos + y));
     }
 
-    fn quadratic_curve_to(&mut self, ctrl: Vector2F, to: Vector2F) {
+    fn quad_to(&mut self, cp_x1: f32, cp_y1: f32, to_x: f32, to_y:f32) {
         let (x0q, y0q)  = self.last;
 
-        let (x1q, y1q)  = (to.x(), to.y());
+        let (x1q, y1q)  = (to_x, to_y);
         let (x1q, y1q)  = (x1q * self.scale_factor, y1q * self.scale_factor);
 
-        let (x2q, y2q)  = (ctrl.x(), ctrl.y());
+        let (x2q, y2q)  = (cp_x1, cp_y1);
         let (x2q, y2q)  = (x2q * self.scale_factor, y2q * self.scale_factor);
 
         self.last       = (x1q, y1q);
@@ -70,13 +62,13 @@ impl<'a> OutlineSink for FontOutliner<'a> {
             (self.x_pos + x3, self.y_pos + y3)));
     }
 
-    fn cubic_curve_to(&mut self, ctrl: LineSegment2F, to: Vector2F) {
-        let (x1, y1)    = (to.x(), to.y());
+    fn curve_to(&mut self, cp_x1: f32, cp_y1: f32, cp_x2: f32, cp_y2: f32, to_x: f32, to_y: f32) {
+        let (x1, y1)    = (to_x, to_y);
         let (x1, y1)    = (x1 * self.scale_factor, y1 * self.scale_factor);
 
-        let (x2, y2)    = (ctrl.from_x(), ctrl.from_y());
+        let (x2, y2)    = (cp_x1, cp_y1);
         let (x2, y2)    = (x2 * self.scale_factor, y2 * self.scale_factor);
-        let (x3, y3)    = (ctrl.to_x(), ctrl.to_y());
+        let (x3, y3)    = (cp_x2, cp_y2);
         let (x3, y3)    = (x3 * self.scale_factor, y3 * self.scale_factor);
 
         self.last       = (x1, y1);
@@ -97,7 +89,7 @@ impl<'a> OutlineSink for FontOutliner<'a> {
 ///
 pub (crate) struct FontState {
     /// Fontkit handles for the fonts that are loaded
-    loaded_fonts: HashMap<FontId, Arc<Font>>,
+    loaded_fonts: HashMap<FontId, Arc<Vec<u8>>>,
 
     /// The size specified for each font
     font_size: HashMap<FontId, f32>
@@ -125,18 +117,8 @@ impl FontState {
     /// Loads a font from a raw data file 
     ///
     pub fn load_font_data(&mut self, id: FontId, data: Arc<Vec<u8>>) {
-        match Font::from_bytes(data, 0) {
-            Ok(font) => {
-                // Font was successfully loaded: add to the loaded-fonts list
-                self.loaded_fonts.insert(id, Arc::new(font));
-                self.font_size.insert(id, 12.0);
-            }
-
-            Err(err) => {
-                // Font was not loaded (TODO: some way of handling this error better)
-                println!("Could not load font: {:?}", err);
-            }
-        }
+        self.loaded_fonts.insert(id, data);
+        self.font_size.insert(id, 12.0);
     }
 
     ///
@@ -158,13 +140,8 @@ impl FontState {
         let font        = if let Some(font) = self.loaded_fonts.get(&id) { font } else { return None; };
 
         // The font handle contains the font data
-        let handle      = if let Some(handle) = font.handle() { handle } else { return None; };
-
-        // Retrieve the font data
-        let (data, font_index) = match handle {
-            Handle::Path { .. }                     => { return None; /* TODO */}
-            Handle::Memory { bytes, font_index }    => { (bytes, font_index) }
-        };
+        let data        = &**font;
+        let font_index  = 0;
 
         let scope       = ReadScope::new(&*data);
         let font_file   = scope.read::<font_data::FontData<'_>>().ok()?;
@@ -190,9 +167,16 @@ impl FontState {
         let font            = if let Some(font) = self.loaded_fonts.get(&id)    { font } else { return None; };
         let font_size       = if let Some(font_size) = self.font_size.get(&id)  { *font_size } else { return None; };
 
+        // Load into ttf-parser
+        
+        // TODO: 'Face' does some parsing so we'd like to not regenerate it every time, 
+        // but it also has lifetime requirements that make it impossible to keep around as state
+        let font            = Face::from_slice(&**font, 0);
+        let font            = if let Ok(font) = font { font } else { return None; };
+
         // Fetch some information about this font
-        let metrics         = font.metrics();
-        let scale_factor    = font_size / (metrics.units_per_em as f32);
+        let units_per_em    = font.units_per_em().unwrap_or(16385);
+        let scale_factor    = font_size / (units_per_em as f32);
         let mut x_pos       = x;
         let mut y_pos       = y;
 
@@ -200,9 +184,11 @@ impl FontState {
         let mut drawing     = vec![];
         for glyph in glyphs {
             // Fetch information about this glyph
-            let glyph_index     = glyph.glyph.glyph_index as u32;
-            let advance         = font.advance(glyph_index);
-            let advance         = if let Ok(advance) = advance { advance } else { continue; };
+            let glyph_index     = GlyphId(glyph.glyph.glyph_index);
+            let advance_x       = font.glyph_hor_advance(glyph_index);
+            let advance_y       = font.glyph_ver_advance(glyph_index);
+            let advance_x       = if let Some(advance) = advance_x { advance } else { 0 };
+            let advance_y       = if let Some(advance) = advance_y { advance } else { 0 };
 
             // Adjust by any requested offset
             let (off_x, off_y)  = match glyph.placement {
@@ -224,14 +210,14 @@ impl FontState {
                 y_pos: y_pos + off_y, 
                 last: (0.0, 0.0) 
             };
-            font.outline(glyph_index, HintingOptions::None, &mut outliner).ok();
+            font.outline_glyph(glyph_index, &mut outliner);
 
             // Fill the glyph
             drawing.push(Draw::Fill);
 
             // Move to the next position
-            let advance_x       = advance.x() + (glyph.kerning as f32);
-            let advance_y       = advance.y();
+            let advance_x       = (advance_x as f32) + (glyph.kerning as f32);
+            let advance_y       = advance_y as f32;
             let advance_x       = advance_x * scale_factor;
             let advance_y       = advance_y * scale_factor;
 
