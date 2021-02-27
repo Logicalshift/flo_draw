@@ -50,6 +50,7 @@ mod canvas;
 mod texture;
 mod encoding;
 mod decoding;
+mod font_face;
 mod transform2d;
 mod conversion_streams;
 
@@ -61,6 +62,7 @@ pub use self::canvas::*;
 pub use self::texture::*;
 pub use self::encoding::*;
 pub use self::decoding::*;
+pub use self::font_face::*;
 pub use self::transform2d::*;
 pub use self::conversion_streams::*;
 
