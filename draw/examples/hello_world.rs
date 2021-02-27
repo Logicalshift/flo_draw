@@ -8,7 +8,7 @@ use std::sync::*;
 ///
 pub fn main() {
     with_2d_graphics(|| {
-        let lato    = Arc::new(Vec::from(include_bytes!("Lato-Regular.ttf").clone()));
+        let lato    = CanvasFontFace::from_slice(&include_bytes!("Lato-Regular.ttf").clone());
 
         // Create a window
         let canvas  = create_canvas_window("Hello");
@@ -20,7 +20,7 @@ pub fn main() {
             gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
             // Load a font
-            gc.define_font_data(FontId(1), FontData::Ttf(Arc::clone(&lato)));
+            gc.define_font_data(FontId(1), Arc::clone(&lato));
             gc.set_font_size(FontId(1), 100.0);
 
             // Draw some text in our font
