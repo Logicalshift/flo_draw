@@ -60,6 +60,13 @@ impl<'a> CanvasFontLineLayout<'a> {
     /// Creates a new line layout.
     ///
     pub fn new(font: &'a Arc<CanvasFontFace>, em_size: f32) -> CanvasFontLineLayout<'a> {
+        Self::from_font_face(&* font, em_size)
+    }
+
+    ///
+    /// Creates a new line layout.
+    ///
+    pub (crate) fn from_font_face(font: &'a CanvasFontFace, em_size: f32) -> CanvasFontLineLayout<'a> {
         // Gather font info
         let ttf_font            = font.ttf_font();
         let units_per_em        = ttf_font.units_per_em().unwrap_or(16385) as f32;
