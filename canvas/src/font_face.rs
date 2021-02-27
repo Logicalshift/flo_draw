@@ -5,6 +5,7 @@
 #[cfg(feature = "outline-fonts")] use ttf_parser;
 
 use std::marker::{PhantomPinned};
+use std::fmt;
 use std::slice;
 use std::pin::*;
 use std::sync::*;
@@ -107,6 +108,20 @@ impl CanvasFontFace {
     ///
     pub fn font_data<'a>(&'a self) -> &'a [u8] {
         &**self.data
+    }
+}
+
+impl PartialEq for CanvasFontFace {
+    fn eq(&self, other: &CanvasFontFace) -> bool {
+        self.data.eq(&other.data)
+    }
+}
+
+impl fmt::Debug for CanvasFontFace {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CanvasFontFace")
+         .field("data", &self.data)
+         .finish()
     }
 }
 
