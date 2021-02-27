@@ -289,7 +289,6 @@ impl<'a> CanvasEncoding<String> for &'a FontOp {
         use self::FontOp::*;
 
         match self {
-            UseSystemFont(font_name, properties)    => ('s', font_name, properties).encode_canvas(append_to),
             FontSize(font_size)                     => ('S', *font_size).encode_canvas(append_to),
 
             UseFontDefinition(data)                 => ('d', 'T', data.font_data()).encode_canvas(append_to),

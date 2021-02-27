@@ -57,7 +57,6 @@ pub trait GraphicsContext {
     fn sprite_transform(&mut self, transform: SpriteTransform);
     fn draw_sprite(&mut self, sprite_id: SpriteId);
 
-    fn define_font_system(&mut self, font_id: FontId, font_name: String, properties: FontProperties);
     fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>);
     fn set_font_size(&mut self, font_id: FontId, size: f32);
     fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32);
@@ -107,7 +106,6 @@ pub trait GraphicsContext {
             SpriteTransform(transform)                  => self.sprite_transform(transform),
             DrawSprite(sprite_id)                       => self.draw_sprite(sprite_id),
 
-            Font(font_id, FontOp::UseSystemFont(font_name, font_properties))        => self.define_font_system(font_id, font_name, font_properties),
             Font(font_id, FontOp::UseFontDefinition(font_data))                     => self.define_font_data(font_id, font_data),
             Font(font_id, FontOp::FontSize(font_size))                              => self.set_font_size(font_id, font_size),
             DrawText(font_id, string, x, y)                                         => self.draw_text(font_id, string, x, y),
@@ -274,7 +272,6 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn sprite_transform(&mut self, transform: SpriteTransform)                { self.push(Draw::SpriteTransform(transform)); }
     #[inline] fn draw_sprite(&mut self, sprite_id: SpriteId)                            { self.push(Draw::DrawSprite(sprite_id)); }
 
-    #[inline] fn define_font_system(&mut self, font_id: FontId, font_name: String, properties: FontProperties)                  { self.push(Draw::Font(font_id, FontOp::UseSystemFont(font_name, properties))); }
     #[inline] fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>)                                   { self.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
     #[inline] fn set_font_size(&mut self, font_id: FontId, size: f32)                                                           { self.push(Draw::Font(font_id, FontOp::FontSize(size))); }
     #[inline] fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)                          { self.push(Draw::DrawText(font_id, text, baseline_x, baseline_y)); }

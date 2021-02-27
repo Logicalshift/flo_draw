@@ -52,9 +52,6 @@ impl FontProperties {
 ///
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum FontOp { 
-    /// Associates a system font with this font ID
-    UseSystemFont(String, FontProperties),
-
     /// Loads a font from a font data file
     UseFontDefinition(Arc<CanvasFontFace>),
 
