@@ -19,14 +19,14 @@ pub struct CanvasTableProvider<'a>(&'a ttf_parser::Face<'a>);
 
 impl<'b> FontTableProvider for CanvasTableProvider<'b> {
     fn table_data<'a>(&'a self, tag: u32) -> Result<Option<Cow<'a, [u8]>>, ParseError> {
-        let table_data = self.0.table_data(ttf_parser::Tag::from_bytes(&tag.to_le_bytes()));
+        let table_data = self.0.table_data(ttf_parser::Tag::from_bytes(&tag.to_be_bytes()));
         let table_data = table_data.map(|data| Cow::Borrowed(data));
 
         Ok(table_data)
     }
 
     fn has_table<'a>(&'a self, tag: u32) -> bool {
-        let table_data = self.0.table_data(ttf_parser::Tag::from_bytes(&tag.to_le_bytes()));
+        let table_data = self.0.table_data(ttf_parser::Tag::from_bytes(&tag.to_be_bytes()));
         table_data.is_some()
     }
 }
