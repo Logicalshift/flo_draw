@@ -103,6 +103,9 @@ impl CanvasFontFace {
         // This 'should' be safe, I think. We've declared the TTF font as 'static but we've pinned it so that it can't
         // be moved away from this structure which manages the lifetime of its owning data. Later on, we force it to be
         // dropped ahead of the data so we're sure that the face no longer exists at the point we drop the data itself.
+        //
+        // (For allsorts, it seems we can probably implement `FontTableProvider` for an Arc<[u8]> quite easily, but for
+        // ttf_parser, it's not really clear how to make a 'static version of FaceTables)
         let ttf_font        = ttf_parser::Face::from_slice(unsafe { slice::from_raw_parts(slice, len) }, font_index as _).unwrap();
 
         font_face.ttf_font  = Some(Box::pin(ttf_font));
@@ -130,5 +133,7 @@ impl Drop for CanvasFontFace {
 
         // Ensure that the TTF font is dropped before we free the data it's using
         self.ttf_font       = None;
+
+        // Now safe to drop data as nothing is using it
     }
 }
