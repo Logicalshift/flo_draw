@@ -3,6 +3,7 @@ use super::draw::*;
 use super::font::*;
 use super::color::*;
 use super::texture::*;
+use super::font_face::*;
 use super::transform2d::*;
 
 use std::collections::vec_deque::*;
@@ -316,7 +317,7 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn draw_sprite(&mut self, sprite_id: SpriteId)              { self.pending.push(Draw::DrawSprite(sprite_id)); }
 
     fn define_font_system(&mut self, font_id: FontId, font_name: String, properties: FontProperties)                        { self.pending.push(Draw::Font(font_id, FontOp::UseSystemFont(font_name, properties))); }
-    fn define_font_data(&mut self, font_id: FontId, font_data: FontData)                                                    { self.pending.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
+    fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>)                                         { self.pending.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
     fn set_font_size(&mut self, font_id: FontId, size: f32)                                                                 { self.pending.push(Draw::Font(font_id, FontOp::FontSize(size))); }
     fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)                                { self.pending.push(Draw::DrawText(font_id, text, baseline_x, baseline_y)); }
 

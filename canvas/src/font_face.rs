@@ -1,5 +1,3 @@
-use super::font::*;
-
 #[cfg(feature = "outline-fonts")] use allsorts;
 #[cfg(feature = "outline-fonts")] use allsorts::font;
 #[cfg(feature = "outline-fonts")] use allsorts::error::{ParseError};
@@ -14,6 +12,7 @@ use std::borrow::{Cow};
 
 /// allsorts table provider implementation based on a unsafe (based on lifetime) pointer to a TTF parser face
 struct UnsafePinnedTtfTableProvider(*const ttf_parser::Face<'static>);
+unsafe impl Send for UnsafePinnedTtfTableProvider {}
 
 impl FontTableProvider for UnsafePinnedTtfTableProvider {
     fn table_data<'a>(&'a self, 

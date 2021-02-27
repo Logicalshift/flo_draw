@@ -1,3 +1,5 @@
+use super::font_face::*;
+
 use std::sync::*;
 
 ///
@@ -8,18 +10,6 @@ pub enum FontStyle {
     Normal,
     Italic,
     Oblique
-}
-
-///
-/// Data for a font definition
-///
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub enum FontData {
-    /// Binary data representing a TTF format font file
-    Ttf(Arc<Vec<u8>>),
-
-    /// Binary data representing an OTF format font file
-    Otf(Arc<Vec<u8>>)
 }
 
 ///
@@ -66,7 +56,7 @@ pub enum FontOp {
     UseSystemFont(String, FontProperties),
 
     /// Loads a font from a font data file
-    UseFontDefinition(FontData),
+    UseFontDefinition(Arc<CanvasFontFace>),
 
     /// Sets the font size to use for this font ID (in canvas units)
     FontSize(f32)

@@ -1,10 +1,9 @@
 use crate::draw::*;
+use crate::font_face::*;
 
 // Allsorts is used for shaping, and font-kit for glyph loading and rendering (and finding the font that corresponds to particular properties)
 use allsorts;
-use allsorts::binary::read::{ReadScope};
 use allsorts::font::{MatchingPresentation};
-use allsorts::font_data;
 use allsorts::gpos;
 use allsorts::gsub;
 use allsorts::tag;
@@ -89,7 +88,7 @@ impl<'a> OutlineBuilder for FontOutliner<'a> {
 ///
 pub (crate) struct FontState {
     /// Fontkit handles for the fonts that are loaded
-    loaded_fonts: HashMap<FontId, Arc<Vec<u8>>>,
+    loaded_fonts: HashMap<FontId, Arc<CanvasFontFace>>,
 
     /// The size specified for each font
     font_size: HashMap<FontId, f32>
@@ -116,7 +115,7 @@ impl FontState {
     ///
     /// Loads a font from a raw data file 
     ///
-    pub fn load_font_data(&mut self, id: FontId, data: Arc<Vec<u8>>) {
+    pub fn load_font_data(&mut self, id: FontId, data: Arc<CanvasFontFace>) {
         self.loaded_fonts.insert(id, data);
         self.font_size.insert(id, 12.0);
     }
@@ -139,17 +138,6 @@ impl FontState {
         // Fetch the font-kit font
         let font        = if let Some(font) = self.loaded_fonts.get(&id) { font } else { return None; };
 
-        // The font handle contains the font data
-        let data        = &**font;
-        let font_index  = 0;
-
-        let scope       = ReadScope::new(&*data);
-        let font_file   = scope.read::<font_data::FontData<'_>>().ok()?;
-        let provider    = font_file.table_provider(font_index as _).ok()?;
-        let mut font    = allsorts::Font::new(provider)
-            .expect("unable to load font tables")
-            .expect("unable to find suitable cmap sub-table");
-
         // Map glyphs
         let glyphs      = font.map_glyphs(&text, MatchingPresentation::NotRequired);
 
@@ -171,8 +159,7 @@ impl FontState {
         
         // TODO: 'Face' does some parsing so we'd like to not regenerate it every time, 
         // but it also has lifetime requirements that make it impossible to keep around as state
-        let font            = Face::from_slice(&**font, 0);
-        let font            = if let Ok(font) = font { font } else { return None; };
+        let font            = font.ttf_font();
 
         // Fetch some information about this font
         let units_per_em    = font.units_per_em().unwrap_or(16385);

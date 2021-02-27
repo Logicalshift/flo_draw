@@ -2,6 +2,7 @@ use super::draw::*;
 use super::font::*;
 use super::color::*;
 use super::texture::*;
+use super::font_face::*;
 use super::transform2d::*;
 
 use flo_curves::*;
@@ -57,7 +58,7 @@ pub trait GraphicsContext {
     fn draw_sprite(&mut self, sprite_id: SpriteId);
 
     fn define_font_system(&mut self, font_id: FontId, font_name: String, properties: FontProperties);
-    fn define_font_data(&mut self, font_id: FontId, font_data: FontData);
+    fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>);
     fn set_font_size(&mut self, font_id: FontId, size: f32);
     fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32);
 
@@ -274,7 +275,7 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn draw_sprite(&mut self, sprite_id: SpriteId)                            { self.push(Draw::DrawSprite(sprite_id)); }
 
     #[inline] fn define_font_system(&mut self, font_id: FontId, font_name: String, properties: FontProperties)                  { self.push(Draw::Font(font_id, FontOp::UseSystemFont(font_name, properties))); }
-    #[inline] fn define_font_data(&mut self, font_id: FontId, font_data: FontData)                                              { self.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
+    #[inline] fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>)                                   { self.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
     #[inline] fn set_font_size(&mut self, font_id: FontId, size: f32)                                                           { self.push(Draw::Font(font_id, FontOp::FontSize(size))); }
     #[inline] fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)                          { self.push(Draw::DrawText(font_id, text, baseline_x, baseline_y)); }
 

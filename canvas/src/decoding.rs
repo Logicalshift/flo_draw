@@ -2,6 +2,7 @@ use super::draw::*;
 use super::font::*;
 use super::color::*;
 use super::texture::*;
+use super::font_face::*;
 use super::transform2d::*;
 
 use futures::*;
@@ -385,7 +386,6 @@ enum DecoderState {
     FontOpSize(FontId, String),                             // 'f<id>S' (size)
     FontOpData(FontId),                                     // 'f<id>d'
     FontOpTtf(FontId, DecodeBytes),                         // 'f<id>dT (bytes)'
-    FontOpOtf(FontId, DecodeBytes),                         // 'f<id>dO (bytes)'
 
     TextureOp(DecodeTextureId),                             // 'B<id>' (id, op)
     TextureOpCreate(TextureId, String),                     // 'B<id>N' (w, h, format)
@@ -500,7 +500,6 @@ impl CanvasDecoder {
             FontOpSize(font_id, size)                           => Self::decode_font_op_size(next_chr, font_id, size)?,
             FontOpData(font_id)                                 => Self::decode_font_op_data(next_chr, font_id)?,
             FontOpTtf(font_id, bytes)                           => Self::decode_font_data_ttf(next_chr, font_id, bytes)?,
-            FontOpOtf(font_id, bytes)                           => Self::decode_font_data_otf(next_chr, font_id, bytes)?,
 
             TextureOp(texture_id)                               => Self::decode_texture_op(next_chr, texture_id)?,
             TextureOpCreate(texture_id, param)                  => Self::decode_texture_create(next_chr, texture_id, param)?,
@@ -1219,24 +1218,7 @@ impl CanvasDecoder {
     fn decode_font_op_data(chr: char, font_id: FontId) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         match chr {
             'T' => Ok((DecoderState::FontOpTtf(font_id, DecodeBytes::new()), None)),
-            'O' => Ok((DecoderState::FontOpOtf(font_id, DecodeBytes::new()), None)),
             _   => Err(DecoderError::InvalidCharacter(chr))
-        }
-    }
-
-    ///
-    /// Decodes OTF font data
-    ///
-    fn decode_font_data_otf(chr: char, font_id: FontId, bytes: DecodeBytes) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        // Decode the next byte
-        let bytes = bytes.decode(chr)?;
-
-        // Generate the result once finished
-        if bytes.ready() {
-            let bytes = bytes.to_bytes()?;
-            Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::UseFontDefinition(FontData::Otf(Arc::new(bytes)))))))
-        } else {
-            Ok((DecoderState::FontOpOtf(font_id, bytes), None))
         }
     }
 
@@ -1249,8 +1231,9 @@ impl CanvasDecoder {
 
         // Generate the result once finished
         if bytes.ready() {
-            let bytes = bytes.to_bytes()?;
-            Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::UseFontDefinition(FontData::Ttf(Arc::new(bytes)))))))
+            let bytes   = bytes.to_bytes()?;
+            let font    = CanvasFontFace::from_bytes(bytes);
+            Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::UseFontDefinition(font)))))
         } else {
             Ok((DecoderState::FontOpTtf(font_id, bytes), None))
         }
@@ -1723,7 +1706,9 @@ mod test {
 
     #[test]
     fn decode_font_data() {
-        check_round_trip_single(Draw::Font(FontId(42), FontOp::UseFontDefinition(FontData::Otf(Arc::new(vec![0, 1, 2, 3, 4, 5, 6])))));
+        let font = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
+
+        check_round_trip_single(Draw::Font(FontId(42), FontOp::UseFontDefinition(font)));
     }
 
     #[test]

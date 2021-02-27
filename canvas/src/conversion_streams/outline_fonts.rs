@@ -28,8 +28,7 @@ pub fn drawing_with_text_as_paths<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                     yield_value(draw).await;
                 }
 
-                Draw::Font(font_id, FontOp::UseFontDefinition(FontData::Ttf(data))) |
-                Draw::Font(font_id, FontOp::UseFontDefinition(FontData::Otf(data))) => {
+                Draw::Font(font_id, FontOp::UseFontDefinition(data)) => {
                     state.load_font_data(font_id, data);
                 }
 
@@ -63,18 +62,17 @@ pub fn drawing_with_text_as_paths<InStream: 'static+Send+Unpin+Stream<Item=Draw>
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::font_face::*;
     use futures::stream;
     use futures::executor;
-
-    use std::sync::*;
 
     #[test]
     fn load_font_from_bytes() {
         executor::block_on(async {
             // Set up loading a font from a byte stream
-            let lato            = Arc::new(Vec::from(include_bytes!("../../test_data/Lato-Regular.ttf").clone()));
+            let lato            = CanvasFontFace::from_slice(include_bytes!("../../test_data/Lato-Regular.ttf").clone());
 
-            let instructions    = vec![Draw::Font(FontId(1), FontOp::UseFontDefinition(FontData::Ttf(lato)))];
+            let instructions    = vec![Draw::Font(FontId(1), FontOp::UseFontDefinition(lato))];
             let instructions    = stream::iter(instructions);
             let instructions    = drawing_with_text_as_paths(instructions);
 
@@ -89,10 +87,10 @@ mod test {
     fn draw_text() {
         executor::block_on(async {
             // Set up loading a font from a byte stream
-            let lato            = Arc::new(Vec::from(include_bytes!("../../test_data/Lato-Regular.ttf").clone()));
+            let lato            = CanvasFontFace::from_slice(include_bytes!("../../test_data/Lato-Regular.ttf").clone());
 
             let instructions    = vec![
-                Draw::Font(FontId(1), FontOp::UseFontDefinition(FontData::Ttf(lato))), 
+                Draw::Font(FontId(1), FontOp::UseFontDefinition(lato)), 
                 Draw::Font(FontId(1), FontOp::FontSize(12.0)),
                 Draw::DrawText(FontId(1), "Hello".to_string(), 100.0, 200.0),
             ];
