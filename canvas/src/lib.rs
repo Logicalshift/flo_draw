@@ -54,6 +54,8 @@ mod font_face;
 mod transform2d;
 mod conversion_streams;
 
+#[cfg(feature = "outline-fonts")] mod font_line_layout;
+
 pub use self::gc::*;
 pub use self::draw::*;
 pub use self::font::*;
@@ -66,3 +68,4 @@ pub use self::font_face::*;
 pub use self::transform2d::*;
 pub use self::conversion_streams::*;
 
+#[cfg(feature = "outline-fonts")] pub use self::font_line_layout::*;
