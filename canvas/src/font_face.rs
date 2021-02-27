@@ -1,6 +1,7 @@
 use super::font::*;
 
 #[cfg(feature = "outline-fonts")] use allsorts;
+#[cfg(feature = "outline-fonts")] use allsorts::font;
 #[cfg(feature = "outline-fonts")] use allsorts::error::{ParseError};
 #[cfg(feature = "outline-fonts")] use allsorts::tables::{FontTableProvider};
 #[cfg(feature = "outline-fonts")] use ttf_parser;
@@ -118,6 +119,13 @@ impl CanvasFontFace {
         // Generate the font face
         Arc::new(font_face)
     }
+
+    ///
+    /// Retrieves the data bytes for this font
+    ///
+    pub fn font_data<'a>(&'a self) -> &'a [u8] {
+        &**self.data
+    }
 }
 
 #[cfg(feature = "outline-fonts")]
@@ -130,5 +138,38 @@ impl Drop for CanvasFontFace {
         self.ttf_font       = None;
 
         // Now safe to drop data as nothing is using it
+    }
+}
+
+#[cfg(feature = "outline-fonts")]
+impl CanvasFontFace {
+    ///
+    /// Retrieves the TTF font face for this font
+    ///
+    pub fn ttf_font<'a>(&'a self) -> &'a ttf_parser::Face<'a> {
+        &**self.ttf_font.as_ref().unwrap()
+    }
+}
+
+///
+/// See `allsorts` for what these functions do
+///
+#[cfg(feature = "outline-fonts")]
+impl CanvasFontFace {
+    pub fn num_glyphs(&self) -> u16 { self.allsorts_font.as_ref().unwrap().lock().unwrap().num_glyphs() }
+
+    pub fn lookup_glyph_index(&self, ch: char, match_presentation: font::MatchingPresentation, variation_selector: Option<allsorts::unicode::VariationSelector>) -> (u16, allsorts::unicode::VariationSelector) {
+        self.allsorts_font.as_ref().unwrap().lock().unwrap()
+            .lookup_glyph_index(ch, match_presentation, variation_selector)
+    }
+
+    pub fn shape(&self, glyphs: Vec<allsorts::gsub::RawGlyph<()>>, script_tag: u32, opt_lang_tag: Option<u32>, features: &allsorts::gsub::Features, kerning: bool) -> Result<Vec<allsorts::gpos::Info>,  allsorts::error::ShapingError> {
+        self.allsorts_font.as_ref().unwrap().lock().unwrap()
+            .shape(glyphs, script_tag, opt_lang_tag, features, kerning)
+    }
+
+    pub fn map_glyphs(&mut self, text: &str, match_presentation: font::MatchingPresentation) -> Vec<allsorts::gsub::RawGlyph<()>> {
+        self.allsorts_font.as_ref().unwrap().lock().unwrap()
+            .map_glyphs(text, match_presentation)
     }
 }
