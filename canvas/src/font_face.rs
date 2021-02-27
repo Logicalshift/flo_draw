@@ -1,3 +1,6 @@
+#[cfg(feature = "outline-fonts")] use super::font::*;
+#[cfg(feature = "outline-fonts")] use super::font_line_layout::*;
+
 #[cfg(feature = "outline-fonts")] use allsorts;
 #[cfg(feature = "outline-fonts")] use allsorts::error::{ParseError};
 #[cfg(feature = "outline-fonts")] use allsorts::tables::{FontTableProvider};
@@ -113,6 +116,22 @@ impl CanvasFontFace {
         &**self.data
     }
 }
+
+#[cfg(feature = "outline-fonts")]
+impl CanvasFontFace {
+    ///
+    /// Measures some text in this font
+    ///
+    pub fn measure(&self, text: &str, em_size: f32) -> TextLayoutMetrics {
+        // Create a layout for the text
+        let mut layout = CanvasFontLineLayout::from_font_face(self, em_size);
+
+        // Layout the text and return the measurements
+        layout.layout_text(text);
+        layout.measure()
+    }
+}
+
 
 impl PartialEq for CanvasFontFace {
     fn eq(&self, other: &CanvasFontFace) -> bool {
