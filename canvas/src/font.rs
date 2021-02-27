@@ -48,6 +48,16 @@ impl FontProperties {
 }
 
 ///
+/// Determines how text is drawn relative to its alignment's origin point
+///
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+pub enum TextAlignment {
+    Left,
+    Right,
+    Center
+}
+
+///
 /// Operations that can be performed on a font
 ///
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
@@ -56,7 +66,10 @@ pub enum FontOp {
     UseFontDefinition(Arc<CanvasFontFace>),
 
     /// Sets the font size to use for this font ID (in canvas units)
-    FontSize(f32)
+    FontSize(f32),
+
+    /// Lays out some text in the active layout, to be rendered in the current fill style
+    LayoutText(String),
 }
 
 ///

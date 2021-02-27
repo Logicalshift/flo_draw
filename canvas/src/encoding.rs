@@ -292,6 +292,19 @@ impl<'a> CanvasEncoding<String> for &'a FontOp {
             FontSize(font_size)                     => ('S', *font_size).encode_canvas(append_to),
 
             UseFontDefinition(data)                 => ('d', 'T', data.font_data()).encode_canvas(append_to),
+            LayoutText(text)                        => ('L', text).encode_canvas(append_to),
+        }
+    }
+}
+
+impl<'a> CanvasEncoding<String> for TextAlignment {
+    fn encode_canvas(&self, append_to: &mut String) {
+        use TextAlignment::*;
+
+        match self {
+            Left    => { 'l'.encode_canvas(append_to); }
+            Right   => { 'r'.encode_canvas(append_to); }
+            Center  => { 'c'.encode_canvas(append_to); }
         }
     }
 }
@@ -450,7 +463,9 @@ impl CanvasEncoding<String> for Draw {
             &Texture(texture_id, ref op)                => ('B', texture_id, op).encode_canvas(append_to),
             &Font(font_id, ref op)                      => ('f', font_id, op).encode_canvas(append_to),
             &DrawText(font_id, ref string, x, y)        => ('t', 'T', font_id, string, x, y).encode_canvas(append_to),
-            &DrawGlyphs(font_id, ref glyph_positions)   => ('t', 'G', font_id, glyph_positions).encode_canvas(append_to)
+            &DrawGlyphs(font_id, ref glyph_positions)   => ('t', 'G', font_id, glyph_positions).encode_canvas(append_to),
+            &BeginLineLayout(x, y, align)               => ('t', 'l', x, y, align).encode_canvas(append_to),
+            &DrawLaidOutText                            => ('t', 'R').encode_canvas(append_to)
         }
     }
 }

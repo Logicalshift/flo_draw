@@ -61,6 +61,9 @@ pub trait GraphicsContext {
     fn set_font_size(&mut self, font_id: FontId, size: f32);
     fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32);
     fn draw_glyphs(&mut self, font_id: FontId, glyphs: Vec<GlyphPosition>);
+    fn begin_line_layout(&mut self, x: f32, y: f32, align: TextAlignment);
+    fn layout_text(&mut self, font_id: FontId, text: String);
+    fn draw_text_layout(&mut self);
 
     fn create_texture(&mut self, texture_id: TextureId, width: u32, height: u32, format: TextureFormat);
     fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, width: u32, height: u32, bytes: Arc<Vec<u8>>);
@@ -109,8 +112,11 @@ pub trait GraphicsContext {
 
             Font(font_id, FontOp::UseFontDefinition(font_data))                     => self.define_font_data(font_id, font_data),
             Font(font_id, FontOp::FontSize(font_size))                              => self.set_font_size(font_id, font_size),
+            Font(font_id, FontOp::LayoutText(text))                                 => self.layout_text(font_id, text),
             DrawText(font_id, string, x, y)                                         => self.draw_text(font_id, string, x, y),
             DrawGlyphs(font_id, glyphs)                                             => self.draw_glyphs(font_id, glyphs),
+            BeginLineLayout(x, y, alignment)                                        => self.begin_line_layout(x, y, alignment),
+            DrawLaidOutText                                                         => self.draw_text_layout(),
             Texture(texture_id, TextureOp::Create(width, height, format))           => self.create_texture(texture_id, width, height, format),
             Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))             => self.set_texture_bytes(texture_id, x, y, w, h, bytes)
         }
@@ -278,6 +284,9 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn set_font_size(&mut self, font_id: FontId, size: f32)                                                           { self.push(Draw::Font(font_id, FontOp::FontSize(size))); }
     #[inline] fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)                          { self.push(Draw::DrawText(font_id, text, baseline_x, baseline_y)); }
     #[inline] fn draw_glyphs(&mut self, font_id: FontId, glyphs: Vec<GlyphPosition>)                                            { self.push(Draw::DrawGlyphs(font_id, glyphs)); }
+    #[inline] fn begin_line_layout(&mut self, x: f32, y: f32, align: TextAlignment)                                             { self.push(Draw::BeginLineLayout(x, y, align)); }
+    #[inline] fn layout_text(&mut self, font_id: FontId, text: String)                                                          { self.push(Draw::Font(font_id, FontOp::LayoutText(text))); }
+    #[inline] fn draw_text_layout(&mut self)                                                                                    { self.push(Draw::DrawLaidOutText); }
 
     #[inline] fn create_texture(&mut self, texture_id: TextureId, w: u32, h: u32, format: TextureFormat)                        { self.push(Draw::Texture(texture_id, TextureOp::Create(w, h, format))); }
     #[inline] fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>)       { self.push(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))); }

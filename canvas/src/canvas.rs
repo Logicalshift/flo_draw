@@ -320,6 +320,9 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn set_font_size(&mut self, font_id: FontId, size: f32)                                                     { self.pending.push(Draw::Font(font_id, FontOp::FontSize(size))); }
     fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)                    { self.pending.push(Draw::DrawText(font_id, text, baseline_x, baseline_y)); }
     fn draw_glyphs(&mut self, font_id: FontId, glyphs: Vec<GlyphPosition>)                                      { self.pending.push(Draw::DrawGlyphs(font_id, glyphs)); }
+    fn begin_line_layout(&mut self, x: f32, y: f32, align: TextAlignment)                                       { self.pending.push(Draw::BeginLineLayout(x, y, align)); }
+    fn layout_text(&mut self, font_id: FontId, text: String)                                                    { self.pending.push(Draw::Font(font_id, FontOp::LayoutText(text))); }
+    fn draw_text_layout(&mut self)                                                                              { self.pending.push(Draw::DrawLaidOutText); }
 
     fn create_texture(&mut self, texture_id: TextureId, w: u32, h: u32, format: TextureFormat)                  { self.pending.push(Draw::Texture(texture_id, TextureOp::Create(w, h, format))); }
     fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>) { self.pending.push(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))); }
