@@ -209,8 +209,8 @@ impl FontState {
             let advance_x       = advance_x * scale_factor;
             let advance_y       = advance_y * scale_factor;
 
-            x_pos               += advance_x;
-            y_pos               += advance_y;
+            x_pos               += advance_x + off_x;
+            y_pos               += advance_y + off_y;
         }
 
         Some(drawing)

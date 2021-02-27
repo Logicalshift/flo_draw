@@ -204,8 +204,8 @@ impl<'a> CanvasFontLineLayout<'a> {
             let advance_x       = advance_x * scale_factor;
             let advance_y       = advance_y * scale_factor;
 
-            self.x_off          += advance_x;
-            self.y_off          += advance_y;
+            self.x_off          += advance_x + off_x;
+            self.y_off          += advance_y + off_y;
         }
     }
 }
