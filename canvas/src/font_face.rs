@@ -38,7 +38,7 @@ impl FontTableProvider for UnsafePinnedTtfTableProvider {
 ///
 pub struct CanvasFontFace {
     /// Data for this font face
-    data: Pin<Box<[u8]>>,
+    data: Arc<Pin<Box<[u8]>>>,
 
     /// The font face for the data
     #[cfg(feature = "outline-fonts")] ttf_font: Option<Pin<Box<ttf_parser::Face<'static>>>>,
@@ -64,11 +64,11 @@ impl CanvasFontFace {
     pub fn from_bytes(bytes: Vec<u8>) -> Arc<CanvasFontFace> {
         // Pin the data for this font face
         let data = bytes.into_boxed_slice();
-        Self::from_pinned(data.into())
+        Self::from_pinned(Arc::new(data.into()), 0)
     }
 
     #[cfg(not(feature = "outline-fonts"))]
-    fn from_pinned(data: Pin<Box<[u8]>>) -> Arc<CanvasFontFace> {
+    fn from_pinned(data: Arc<Pin<Box<[u8]>>>) -> Arc<CanvasFontFace> {
         // Generate the font face
         Arc::new(CanvasFontFace {
             data:       data,
@@ -77,7 +77,7 @@ impl CanvasFontFace {
     }
 
     #[cfg(feature = "outline-fonts")]
-    fn from_pinned(data: Pin<Box<[u8]>>) -> Arc<CanvasFontFace> {
+    fn from_pinned(data: Arc<Pin<Box<[u8]>>>, font_index: u32) -> Arc<CanvasFontFace> {
         // Create the data pointer
         let len             = data.len();
         let slice           = data.as_ptr();
@@ -101,7 +101,7 @@ impl CanvasFontFace {
         //
         // (For allsorts, it seems we can probably implement `FontTableProvider` for an Arc<[u8]> quite easily, but for
         // ttf_parser, it's not really clear how to make a 'static version of FaceTables)
-        let ttf_font        = ttf_parser::Face::from_slice(unsafe { slice::from_raw_parts(slice, len) }, 0).unwrap();
+        let ttf_font        = ttf_parser::Face::from_slice(unsafe { slice::from_raw_parts(slice, len) }, font_index as _).unwrap();
 
         font_face.ttf_font  = Some(Box::pin(ttf_font));
 
