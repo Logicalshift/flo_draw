@@ -249,3 +249,31 @@ impl CanvasFontFace {
             .expect("unable to find suitable cmap sub-table")
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use serde_json;
+
+    #[cfg(feature = "outline-fonts")]
+    #[test]
+    fn load_lato() {
+        CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
+    }
+
+    #[cfg(feature = "outline-fonts")]
+    #[test]
+    fn load_allsorts() {
+        let font = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
+        font.allsorts_font();
+    }
+
+    #[test]
+    fn serialize_deserialize_font_face() {
+        let font    = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
+        let encoded = serde_json::to_string(&font).unwrap();
+        let decoded = serde_json::from_str::<Arc<CanvasFontFace>>(&encoded).unwrap();
+
+        assert!(font == decoded);
+    }
+}
