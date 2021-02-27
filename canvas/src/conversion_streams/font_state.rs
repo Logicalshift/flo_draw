@@ -137,6 +137,7 @@ impl FontState {
     pub fn shape_text<'a>(&'a self, id: FontId, text: String) -> Option<Vec<gpos::Info>> {
         // Fetch the font-kit font
         let font        = if let Some(font) = self.loaded_fonts.get(&id) { font } else { return None; };
+        let font        = font.allsorts_font();
 
         // Map glyphs
         let glyphs      = font.map_glyphs(&text, MatchingPresentation::NotRequired);

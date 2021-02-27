@@ -11,22 +11,19 @@ use std::sync::*;
 use std::borrow::{Cow};
 
 /// allsorts table provider implementation based on a unsafe (based on lifetime) pointer to a TTF parser face
-struct UnsafePinnedTtfTableProvider(*const ttf_parser::Face<'static>);
-unsafe impl Send for UnsafePinnedTtfTableProvider {}
+pub struct CanvasTableProvider<'a>(&'a ttf_parser::Face<'a>);
 
-impl FontTableProvider for UnsafePinnedTtfTableProvider {
-    fn table_data<'a>(&'a self, 
-        tag: u32) -> Result<Option<Cow<'a, [u8]>>, ParseError> {
-        unsafe { 
-            let table_data = (*self.0).table_data(ttf_parser::Tag::from_bytes(&tag.to_le_bytes()));
-            let table_data = table_data.map(|data| Cow::Borrowed(data));
+impl<'b> FontTableProvider for CanvasTableProvider<'b> {
+    fn table_data<'a>(&'a self, tag: u32) -> Result<Option<Cow<'a, [u8]>>, ParseError> {
+        let table_data = self.0.table_data(ttf_parser::Tag::from_bytes(&tag.to_le_bytes()));
+        let table_data = table_data.map(|data| Cow::Borrowed(data));
 
-            Ok(table_data)
-        }
+        Ok(table_data)
     }
 
     fn has_table<'a>(&'a self, tag: u32) -> bool {
-        unsafe { (*self.0).table_data(ttf_parser::Tag::from_bytes(&tag.to_le_bytes())).is_some() }
+        let table_data = self.0.table_data(ttf_parser::Tag::from_bytes(&tag.to_le_bytes()));
+        table_data.is_some()
     }
 }
 
@@ -42,9 +39,6 @@ pub struct CanvasFontFace {
 
     /// The font face for the data
     #[cfg(feature = "outline-fonts")] ttf_font: Option<Pin<Box<ttf_parser::Face<'static>>>>,
-
-    /// The allsorts font
-    #[cfg(feature = "outline-fonts")] allsorts_font: Option<Mutex<Pin<Box<allsorts::Font<UnsafePinnedTtfTableProvider>>>>>,
 
     /// The font face is pinned: Allsorts and ttf-parser both need to be able to refer to it
     _pinned: PhantomPinned
@@ -87,7 +81,6 @@ impl CanvasFontFace {
             data:           data,
 
             ttf_font:       None,
-            allsorts_font:  None,
             _pinned:        PhantomPinned
         };
 
@@ -105,16 +98,6 @@ impl CanvasFontFace {
 
         font_face.ttf_font  = Some(Box::pin(ttf_font));
 
-        // Load into allsorts with a similar technique
-        let font_ptr        = &**font_face.ttf_font.as_ref().unwrap() as *const _;
-
-        let provider        = UnsafePinnedTtfTableProvider(font_ptr);
-        let allsorts_font   = allsorts::Font::new(provider)
-            .expect("unable to load font tables")
-            .expect("unable to find suitable cmap sub-table");
-
-        font_face.allsorts_font     = Some(Mutex::new(Box::pin(allsorts_font)));
-
         // Generate the font face
         Arc::new(font_face)
     }
@@ -130,9 +113,6 @@ impl CanvasFontFace {
 #[cfg(feature = "outline-fonts")]
 impl Drop for CanvasFontFace {
     fn drop(&mut self) {
-        // Allsorts is using the TTF font so we want to drop that first
-        self.allsorts_font  = None;
-
         // Ensure that the TTF font is dropped before we free the data it's using
         self.ttf_font       = None;
 
@@ -155,20 +135,15 @@ impl CanvasFontFace {
 ///
 #[cfg(feature = "outline-fonts")]
 impl CanvasFontFace {
-    pub fn num_glyphs(&self) -> u16 { self.allsorts_font.as_ref().unwrap().lock().unwrap().num_glyphs() }
+    ///
+    /// Creates a TTF font face for this font
+    ///
+    pub fn allsorts_font<'a>(&'a self) -> allsorts::Font<CanvasTableProvider<'a>> {
+        let face            = self.ttf_font();
+        let table_provider  = CanvasTableProvider(face);
 
-    pub fn lookup_glyph_index(&self, ch: char, match_presentation: font::MatchingPresentation, variation_selector: Option<allsorts::unicode::VariationSelector>) -> (u16, allsorts::unicode::VariationSelector) {
-        self.allsorts_font.as_ref().unwrap().lock().unwrap()
-            .lookup_glyph_index(ch, match_presentation, variation_selector)
-    }
-
-    pub fn shape(&self, glyphs: Vec<allsorts::gsub::RawGlyph<()>>, script_tag: u32, opt_lang_tag: Option<u32>, features: &allsorts::gsub::Features, kerning: bool) -> Result<Vec<allsorts::gpos::Info>,  allsorts::error::ShapingError> {
-        self.allsorts_font.as_ref().unwrap().lock().unwrap()
-            .shape(glyphs, script_tag, opt_lang_tag, features, kerning)
-    }
-
-    pub fn map_glyphs(&mut self, text: &str, match_presentation: font::MatchingPresentation) -> Vec<allsorts::gsub::RawGlyph<()>> {
-        self.allsorts_font.as_ref().unwrap().lock().unwrap()
-            .map_glyphs(text, match_presentation)
+        allsorts::Font::new(table_provider)
+            .expect("unable to load font tables")
+            .expect("unable to find suitable cmap sub-table")
     }
 }
