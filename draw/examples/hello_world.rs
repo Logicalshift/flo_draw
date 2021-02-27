@@ -17,6 +17,9 @@ pub fn main() {
         let hello_size  = lato.measure("Hello, World", 100.0);
         let (min, max)  = hello_size.inner_bounds;
 
+        let x_pos       = (1000.0 - (max.x()-min.x()))/2.0;
+        let y_pos       = (1000.0 - (max.y()-min.y()))/2.0;
+
         // Say 'hello, world'
         canvas.draw(|gc| {
             // Set up the canvas
@@ -29,12 +32,7 @@ pub fn main() {
 
             // Draw some text in our font
             gc.fill_color(Color::Rgba(0.0, 0.0, 0.6, 1.0));
-            gc.draw_text(FontId(1), "Hello, World".to_string(), 50.0, 500.0);
-
-            gc.new_path();
-            gc.rect(50.0 + min.x() as f32, 500.0 + min.y() as f32, 
-                50.0 + max.x() as f32, 500.0 + max.y() as f32);
-            gc.stroke();
+            gc.draw_text(FontId(1), "Hello, World".to_string(), x_pos as _, y_pos as _);
         });
     });
 }
