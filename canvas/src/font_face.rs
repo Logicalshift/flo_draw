@@ -40,9 +40,6 @@ pub struct CanvasFontFace {
     /// Data for this font face
     data: Pin<Box<[u8]>>,
 
-    /// Index of the font within the font data
-    font_index: usize,
-
     /// The font face for the data
     #[cfg(feature = "outline-fonts")] ttf_font: Option<Pin<Box<ttf_parser::Face<'static>>>>,
 
@@ -57,31 +54,30 @@ impl CanvasFontFace {
     ///
     /// Creates a new font by loading the fonts from a slice
     ///
-    pub fn from_slice(bytes: &[u8], font_index: usize) -> Arc<CanvasFontFace> {
-        Self::from_bytes(Vec::from(bytes), font_index)
+    pub fn from_slice(bytes: &[u8]) -> Arc<CanvasFontFace> {
+        Self::from_bytes(Vec::from(bytes))
     }
 
     ///
     /// Creates a new font by loading the fonts from a byte array
     ///
-    pub fn from_bytes(bytes: Vec<u8>, font_index: usize) -> Arc<CanvasFontFace> {
+    pub fn from_bytes(bytes: Vec<u8>) -> Arc<CanvasFontFace> {
         // Pin the data for this font face
         let data = bytes.into_boxed_slice();
-        Self::from_pinned(data.into(), font_index)
+        Self::from_pinned(data.into())
     }
 
     #[cfg(not(feature = "outline-fonts"))]
-    fn from_pinned(data: Pin<Box<[u8]>>, font_index: usize) -> Arc<CanvasFontFace> {
+    fn from_pinned(data: Pin<Box<[u8]>>) -> Arc<CanvasFontFace> {
         // Generate the font face
         Arc::new(CanvasFontFace {
             data:       data,
-            font_index: font_index,
             _pinned:    PhantomPinned
         })
     }
 
     #[cfg(feature = "outline-fonts")]
-    fn from_pinned(data: Pin<Box<[u8]>>, font_index: usize) -> Arc<CanvasFontFace> {
+    fn from_pinned(data: Pin<Box<[u8]>>) -> Arc<CanvasFontFace> {
         // Create the data pointer
         let len             = data.len();
         let slice           = data.as_ptr();
@@ -89,7 +85,6 @@ impl CanvasFontFace {
         // Load into the TTF parser with scary unsafe self-referential data
         let mut font_face   = CanvasFontFace {
             data:           data,
-            font_index:     font_index,
 
             ttf_font:       None,
             allsorts_font:  None,
@@ -106,7 +101,7 @@ impl CanvasFontFace {
         //
         // (For allsorts, it seems we can probably implement `FontTableProvider` for an Arc<[u8]> quite easily, but for
         // ttf_parser, it's not really clear how to make a 'static version of FaceTables)
-        let ttf_font        = ttf_parser::Face::from_slice(unsafe { slice::from_raw_parts(slice, len) }, font_index as _).unwrap();
+        let ttf_font        = ttf_parser::Face::from_slice(unsafe { slice::from_raw_parts(slice, len) }, 0).unwrap();
 
         font_face.ttf_font  = Some(Box::pin(ttf_font));
 
