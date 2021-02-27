@@ -8,7 +8,7 @@ use std::sync::*;
 ///
 pub fn main() {
     with_2d_graphics(|| {
-        let lato    = CanvasFontFace::from_slice(&include_bytes!("Lato-Regular.ttf").clone());
+        let lato    = CanvasFontFace::from_slice(include_bytes!("Lato-Regular.ttf"));
 
         // Create a window
         let canvas  = create_canvas_window("Hello");
