@@ -292,7 +292,7 @@ impl<'a> CanvasEncoding<String> for &'a FontOp {
             UseSystemFont(font_name, properties)    => ('s', font_name, properties).encode_canvas(append_to),
             FontSize(font_size)                     => ('S', *font_size).encode_canvas(append_to),
 
-            UseFontDefinition(data)                 => ('d', 'T', &**data).encode_canvas(append_to),
+            UseFontDefinition(data)                 => ('d', 'T', data.font_data()).encode_canvas(append_to),
         }
     }
 }
@@ -337,6 +337,12 @@ impl<'a> CanvasEncoding<String> for (u8, u8, u8) {
 }
 
 impl<'a> CanvasEncoding<String> for &'a Vec<u8> {
+    fn encode_canvas(&self, append_to: &mut String) {
+        self.as_slice().encode_canvas(append_to)
+    }
+}
+
+impl<'a> CanvasEncoding<String> for &'a [u8] {
     fn encode_canvas(&self, append_to: &mut String) {
         // Length of the vec
         encode_compact_u64(&(self.len() as u64), append_to);
