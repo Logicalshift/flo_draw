@@ -75,7 +75,7 @@ impl<'a> CanvasFontLineLayout<'a> {
         let scale_factor        = (em_size / units_per_em) as f64;
         let ascent              = ttf_font.ascender() as f64;
         let descent             = ttf_font.descender() as f64;
-        let inner_bounds        = Bounds::from_min_max(Coord2(0.0, -descent * scale_factor), Coord2(0.0, ascent * scale_factor));
+        let inner_bounds        = (Coord2(0.0, descent * scale_factor), Coord2(0.0, ascent * scale_factor));
 
         let initial_metrics     = TextLayoutMetrics {
             inner_bounds: inner_bounds
@@ -244,11 +244,14 @@ impl<'a> CanvasFontLineLayout<'a> {
             let advance_x       = advance_x * scale_factor;
             let advance_y       = advance_y * scale_factor;
 
+            let last_x          = self.x_off;
+            let last_y          = self.y_off;
+
             self.x_off          += advance_x + off_x;
             self.y_off          += advance_y + off_y;
 
             // The inner bounds just uses the x, y offsets to amend the bounding box
-            self.metrics.inner_bounds = self.metrics.inner_bounds.union_bounds(Bounds::from_min_max(Coord2(self.x_off as _, self.y_off as _), Coord2(self.x_off as _, self.y_off as _)));
+            self.metrics.inner_bounds = self.metrics.inner_bounds.union_bounds((Coord2(last_x as _, last_y as _), Coord2(self.x_off as _, self.y_off as _)));
         }
     }
 }
