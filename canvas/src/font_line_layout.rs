@@ -2,6 +2,8 @@ use super::draw::*;
 use super::font::*;
 use super::font_face::*;
 
+use flo_curves::geo::*;
+
 use allsorts::tag;
 use allsorts::font::{MatchingPresentation};
 use allsorts::gpos;
@@ -31,6 +33,9 @@ pub struct CanvasFontLineLayout<'a> {
     /// The TTF font
     font: &'a ttf_parser::Face<'a>,
 
+    /// Metrics for the text we've laid out
+    metrics: TextLayoutMetrics,
+
     /// Number of font units per em
     units_per_em: f32,
 
@@ -54,11 +59,26 @@ impl<'a> CanvasFontLineLayout<'a> {
     ///
     /// Creates a new line layout.
     ///
-    pub fn new(font: &'a Arc<CanvasFontFace>, em_size: f32) -> CanvasFontLineLayout {
+    pub fn new(font: &'a Arc<CanvasFontFace>, em_size: f32) -> CanvasFontLineLayout<'a> {
+        // Gather font info
+        let ttf_font            = font.ttf_font();
+        let units_per_em        = ttf_font.units_per_em().unwrap_or(16385) as f32;
+
+        // Generate the initial font metrics
+        let scale_factor        = (em_size / units_per_em) as f64;
+        let ascent              = ttf_font.ascender() as f64;
+        let descent             = ttf_font.descender() as f64;
+        let inner_bounds        = Bounds::from_min_max(Coord2(0.0, -descent * scale_factor), Coord2(0.0, ascent * scale_factor));
+
+        let initial_metrics     = TextLayoutMetrics {
+            inner_bounds: inner_bounds
+        };
+
         CanvasFontLineLayout {
             shaper:         font.allsorts_font(),
-            font:           font.ttf_font(),
-            units_per_em:   font.ttf_font().units_per_em().unwrap_or(16385) as f32,
+            font:           ttf_font,
+            units_per_em:   units_per_em,
+            metrics:        initial_metrics,
             x_off:          0.0,
             y_off:          0.0,
             em_size:        em_size,
@@ -80,6 +100,16 @@ impl<'a> CanvasFontLineLayout<'a> {
     ///
     pub fn layout_text(&mut self, text: &str) {
         self.pending.extend(text.chars())
+    }
+
+    ///
+    /// Measures the text that's been laid out so far
+    ///
+    /// (Note that this will perform a layout so it's usually best to call before converting to drawing instructions or glyphs)
+    ///
+    pub fn measure(&mut self) -> TextLayoutMetrics {
+        self.layout_pending();
+        self.metrics.clone()
     }
 
     ///
@@ -141,6 +171,7 @@ impl<'a> CanvasFontLineLayout<'a> {
         // Finish the current layout by generating the drawing actions, and remember the state
         let x_off           = self.x_off;
         let y_off           = self.y_off;
+        let metrics         = self.metrics.clone();
         let drawing         = self.to_drawing(last_font_id);
 
         // Create a new layout with the new font
@@ -150,6 +181,8 @@ impl<'a> CanvasFontLineLayout<'a> {
         new_layout.layout   = drawing.into_iter().map(|draw| LayoutAction::Draw(draw)).collect();
         new_layout.x_off    = x_off;
         new_layout.y_off    = y_off;
+
+        new_layout.metrics.inner_bounds = new_layout.metrics.inner_bounds.union_bounds(metrics.inner_bounds);
 
         new_layout
     }
@@ -206,6 +239,9 @@ impl<'a> CanvasFontLineLayout<'a> {
 
             self.x_off          += advance_x + off_x;
             self.y_off          += advance_y + off_y;
+
+            // The inner bounds just uses the x, y offsets to amend the bounding box
+            self.metrics.inner_bounds = self.metrics.inner_bounds.union_bounds(Bounds::from_min_max(Coord2(self.x_off as _, self.y_off as _), Coord2(self.x_off as _, self.y_off as _)));
         }
     }
 }
