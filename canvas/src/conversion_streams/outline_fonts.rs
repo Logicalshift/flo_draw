@@ -70,7 +70,7 @@ mod test {
     fn load_font_from_bytes() {
         executor::block_on(async {
             // Set up loading a font from a byte stream
-            let lato            = CanvasFontFace::from_slice(include_bytes!("../../test_data/Lato-Regular.ttf").clone());
+            let lato            = CanvasFontFace::from_slice(&include_bytes!("../../test_data/Lato-Regular.ttf").clone());
 
             let instructions    = vec![Draw::Font(FontId(1), FontOp::UseFontDefinition(lato))];
             let instructions    = stream::iter(instructions);
@@ -87,7 +87,7 @@ mod test {
     fn draw_text() {
         executor::block_on(async {
             // Set up loading a font from a byte stream
-            let lato            = CanvasFontFace::from_slice(include_bytes!("../../test_data/Lato-Regular.ttf").clone());
+            let lato            = CanvasFontFace::from_slice(&include_bytes!("../../test_data/Lato-Regular.ttf").clone());
 
             let instructions    = vec![
                 Draw::Font(FontId(1), FontOp::UseFontDefinition(lato)), 
