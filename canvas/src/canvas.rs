@@ -319,7 +319,7 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>)                             { self.pending.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
     fn set_font_size(&mut self, font_id: FontId, size: f32)                                                     { self.pending.push(Draw::Font(font_id, FontOp::FontSize(size))); }
     fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)                    { self.pending.push(Draw::DrawText(font_id, text, baseline_x, baseline_y)); }
-    fn draw_glyphs(&mut self, font_id: FontId, glyphs: Vec<GlyphPosition>)                                      { self.pending.push(Draw::DrawGlyphs(font_id, glyphs)); }
+    fn draw_glyphs(&mut self, font_id: FontId, glyphs: Vec<GlyphPosition>)                                      { self.pending.push(Draw::Font(font_id, FontOp::DrawGlyphs(glyphs))); }
     fn begin_line_layout(&mut self, x: f32, y: f32, align: TextAlignment)                                       { self.pending.push(Draw::BeginLineLayout(x, y, align)); }
     fn layout_text(&mut self, font_id: FontId, text: String)                                                    { self.pending.push(Draw::Font(font_id, FontOp::LayoutText(text))); }
     fn draw_text_layout(&mut self)                                                                              { self.pending.push(Draw::DrawLaidOutText); }

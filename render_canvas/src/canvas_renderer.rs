@@ -775,6 +775,14 @@ impl CanvasRenderer {
                         // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
                     },
 
+                    BeginLineLayout(_, _, _) => {
+                        // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
+                    },
+
+                    DrawLaidOutText => {
+                        // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
+                    },
+
                     // Performs an operation on a texture
                     Texture(_, _) => {
                         todo!()

@@ -70,6 +70,9 @@ pub enum FontOp {
 
     /// Lays out some text in the active layout, to be rendered in the current fill style
     LayoutText(String),
+
+    /// Draws a series of glyphs using the current fill style
+    DrawGlyphs(Vec<GlyphPosition>)
 }
 
 ///

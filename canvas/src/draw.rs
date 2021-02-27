@@ -276,7 +276,4 @@ pub enum Draw {
 
     /// Draws a string using a font with a baseline starting at the specified position
     DrawText(FontId, String, f32, f32),
-
-    /// Draws a series of glyphs using the current fill style
-    DrawGlyphs(FontId, Vec<GlyphPosition>)
 }
