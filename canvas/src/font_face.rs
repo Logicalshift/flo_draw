@@ -1,8 +1,11 @@
 #[cfg(feature = "outline-fonts")] use allsorts;
-#[cfg(feature = "outline-fonts")] use allsorts::font;
 #[cfg(feature = "outline-fonts")] use allsorts::error::{ParseError};
 #[cfg(feature = "outline-fonts")] use allsorts::tables::{FontTableProvider};
 #[cfg(feature = "outline-fonts")] use ttf_parser;
+
+use serde::de::{Deserialize, Deserializer, Visitor, SeqAccess, MapAccess};
+use serde::ser::{Serialize, SerializeStruct, Serializer};
+use serde::de;
 
 use std::marker::{PhantomPinned};
 use std::fmt;
@@ -59,20 +62,20 @@ impl CanvasFontFace {
     pub fn from_bytes(bytes: Vec<u8>) -> Arc<CanvasFontFace> {
         // Pin the data for this font face
         let data = bytes.into_boxed_slice();
-        Self::from_pinned(Arc::new(data.into()), 0)
+        Arc::new(Self::from_pinned(Arc::new(data.into()), 0))
     }
 
     #[cfg(not(feature = "outline-fonts"))]
-    fn from_pinned(data: Arc<Pin<Box<[u8]>>>) -> Arc<CanvasFontFace> {
+    fn from_pinned(data: Arc<Pin<Box<[u8]>>>) -> CanvasFontFace {
         // Generate the font face
-        Arc::new(CanvasFontFace {
+        CanvasFontFace {
             data:       data,
             _pinned:    PhantomPinned
-        })
+        }
     }
 
     #[cfg(feature = "outline-fonts")]
-    fn from_pinned(data: Arc<Pin<Box<[u8]>>>, font_index: u32) -> Arc<CanvasFontFace> {
+    fn from_pinned(data: Arc<Pin<Box<[u8]>>>, font_index: u32) -> CanvasFontFace {
         // Create the data pointer
         let len             = data.len();
         let slice           = data.as_ptr();
@@ -100,7 +103,7 @@ impl CanvasFontFace {
         font_face.ttf_font  = Some(Box::pin(ttf_font));
 
         // Generate the font face
-        Arc::new(font_face)
+        font_face
     }
 
     ///
@@ -122,6 +125,90 @@ impl fmt::Debug for CanvasFontFace {
         f.debug_struct("CanvasFontFace")
          .field("data", &self.data)
          .finish()
+    }
+}
+
+impl Serialize for CanvasFontFace {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+    S: Serializer {
+        let mut s = serializer.serialize_struct("CanvasFontFace", 1)?;
+        s.serialize_field("data", &**self.data)?;
+        s.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for CanvasFontFace {
+    fn deserialize<D>(deserializer: D) -> Result<CanvasFontFace, D::Error>
+    where D: Deserializer<'de> {
+        // Field deserializer
+        enum Field { Data }
+        const FIELDS: &'static [&'static str] = &["data"];
+
+        impl<'de> Deserialize<'de> for Field {
+            fn deserialize<D>(deserializer: D) -> Result<Field, D::Error>
+            where D: Deserializer<'de> {
+                struct FieldVisitor;
+                impl<'de> Visitor<'de> for FieldVisitor {
+                    type Value = Field;
+
+                    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                        formatter.write_str("`data`")
+                    }
+
+                    fn visit_str<E>(self, value: &str) -> Result<Field, E>
+                    where E: de::Error {
+                        match value {
+                            "data"  => Ok(Field::Data),
+                            _       => Err(de::Error::unknown_field(value, FIELDS)),
+                        }
+                    }
+                }
+
+                deserializer.deserialize_identifier(FieldVisitor)
+            }
+        }
+
+        // Field visitor
+        struct CanvasFontFaceVisitor;
+        impl<'de> Visitor<'de> for CanvasFontFaceVisitor {
+            type Value = CanvasFontFace;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct CanvasFontFace")
+            }
+
+            fn visit_seq<V>(self, mut seq: V) -> Result<CanvasFontFace, V::Error>
+            where V: SeqAccess<'de> {
+                let bytes: Vec<u8>  = seq.next_element()? .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+                let data            = bytes.into_boxed_slice();
+                let data            = Arc::new(data.into());
+                Ok(CanvasFontFace::from_pinned(data, 0))
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<CanvasFontFace, V::Error>
+            where V: MapAccess<'de> {
+                let mut data: Option<Vec<u8>> = None;
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Data => {
+                            if data.is_some() {
+                                return Err(de::Error::duplicate_field("data"));
+                            }
+                            data = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                let data            = data.ok_or_else(|| de::Error::missing_field("data"))?;
+                let data            = data.into_boxed_slice();
+                let data            = Arc::new(data.into());
+                Ok(CanvasFontFace::from_pinned(data, 0))
+            }
+        }
+
+        // Deserialize the structure
+        deserializer.deserialize_struct("CanvasFontFace", FIELDS, CanvasFontFaceVisitor)
     }
 }
 
