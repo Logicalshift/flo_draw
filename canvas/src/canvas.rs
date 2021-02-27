@@ -316,12 +316,13 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn sprite_transform(&mut self, transform: SpriteTransform)  { self.pending.push(Draw::SpriteTransform(transform)); }
     fn draw_sprite(&mut self, sprite_id: SpriteId)              { self.pending.push(Draw::DrawSprite(sprite_id)); }
 
-    fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>)                                         { self.pending.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
-    fn set_font_size(&mut self, font_id: FontId, size: f32)                                                                 { self.pending.push(Draw::Font(font_id, FontOp::FontSize(size))); }
-    fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)                                { self.pending.push(Draw::DrawText(font_id, text, baseline_x, baseline_y)); }
+    fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>)                             { self.pending.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
+    fn set_font_size(&mut self, font_id: FontId, size: f32)                                                     { self.pending.push(Draw::Font(font_id, FontOp::FontSize(size))); }
+    fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)                    { self.pending.push(Draw::DrawText(font_id, text, baseline_x, baseline_y)); }
+    fn draw_glyphs(&mut self, font_id: FontId, glyphs: Vec<GlyphPosition>)                                      { self.pending.push(Draw::DrawGlyphs(font_id, glyphs)); }
 
-    #[inline] fn create_texture(&mut self, texture_id: TextureId, w: u32, h: u32, format: TextureFormat)                    { self.pending.push(Draw::Texture(texture_id, TextureOp::Create(w, h, format))); }
-    #[inline] fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>)   { self.pending.push(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))); }
+    fn create_texture(&mut self, texture_id: TextureId, w: u32, h: u32, format: TextureFormat)                  { self.pending.push(Draw::Texture(texture_id, TextureOp::Create(w, h, format))); }
+    fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>) { self.pending.push(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))); }
 
     fn draw(&mut self, d: Draw)                                 { self.pending.push(d); }
 }

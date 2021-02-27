@@ -58,3 +58,24 @@ pub enum FontOp {
     /// Sets the font size to use for this font ID (in canvas units)
     FontSize(f32)
 }
+
+///
+/// ID for a glyph within a font
+///
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+pub struct GlyphId(pub u32);
+
+///
+/// Describes how a glyph is positioned on the canvas
+///
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+pub struct GlyphPosition {
+    /// The ID of the glyph to render
+    pub id: GlyphId,
+
+    /// Position of the glyph's baseline
+    pub location: (f32, f32),
+
+    /// The number of canvas units that map to one em in font units
+    pub em_size: f32
+}

@@ -60,6 +60,7 @@ pub trait GraphicsContext {
     fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>);
     fn set_font_size(&mut self, font_id: FontId, size: f32);
     fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32);
+    fn draw_glyphs(&mut self, font_id: FontId, glyphs: Vec<GlyphPosition>);
 
     fn create_texture(&mut self, texture_id: TextureId, width: u32, height: u32, format: TextureFormat);
     fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, width: u32, height: u32, bytes: Arc<Vec<u8>>);
@@ -109,6 +110,7 @@ pub trait GraphicsContext {
             Font(font_id, FontOp::UseFontDefinition(font_data))                     => self.define_font_data(font_id, font_data),
             Font(font_id, FontOp::FontSize(font_size))                              => self.set_font_size(font_id, font_size),
             DrawText(font_id, string, x, y)                                         => self.draw_text(font_id, string, x, y),
+            DrawGlyphs(font_id, glyphs)                                             => self.draw_glyphs(font_id, glyphs),
             Texture(texture_id, TextureOp::Create(width, height, format))           => self.create_texture(texture_id, width, height, format),
             Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))             => self.set_texture_bytes(texture_id, x, y, w, h, bytes)
         }
@@ -275,6 +277,7 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>)                                   { self.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
     #[inline] fn set_font_size(&mut self, font_id: FontId, size: f32)                                                           { self.push(Draw::Font(font_id, FontOp::FontSize(size))); }
     #[inline] fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)                          { self.push(Draw::DrawText(font_id, text, baseline_x, baseline_y)); }
+    #[inline] fn draw_glyphs(&mut self, font_id: FontId, glyphs: Vec<GlyphPosition>)                                            { self.push(Draw::DrawGlyphs(font_id, glyphs)); }
 
     #[inline] fn create_texture(&mut self, texture_id: TextureId, w: u32, h: u32, format: TextureFormat)                        { self.push(Draw::Texture(texture_id, TextureOp::Create(w, h, format))); }
     #[inline] fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>)       { self.push(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))); }

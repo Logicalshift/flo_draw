@@ -384,51 +384,73 @@ impl<'a> CanvasEncoding<String> for &'a String {
     }
 }
 
+impl CanvasEncoding<String> for GlyphId {
+    fn encode_canvas(&self, append_to: &mut String) {
+        self.0.encode_canvas(append_to)
+    }
+}
+
+impl CanvasEncoding<String> for GlyphPosition {
+    fn encode_canvas(&self, append_to: &mut String) {
+        self.id.encode_canvas(append_to);
+        self.location.encode_canvas(append_to);
+        self.em_size.encode_canvas(append_to);
+    }
+}
+
+impl<'a> CanvasEncoding<String> for &'a Vec<GlyphPosition> {
+    fn encode_canvas(&self, append_to: &mut String) {
+        encode_compact_u64(&(self.len() as u64), append_to);
+        self.iter().for_each(|pos| pos.encode_canvas(append_to));
+    }
+}
+
 impl CanvasEncoding<String> for Draw {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::Draw::*;
 
         match self {
-            &NewPath                                => ('N', 'p').encode_canvas(append_to),
-            &Move(x, y)                             => ('m', x, y).encode_canvas(append_to),
-            &Line(x, y)                             => ('l', x, y).encode_canvas(append_to),
-            &BezierCurve(p1, p2, p3)                => ('c', p1, p2, p3).encode_canvas(append_to),
-            &ClosePath                              => ('.').encode_canvas(append_to),
-            &Fill                                   => 'F'.encode_canvas(append_to),
-            &Stroke                                 => 'S'.encode_canvas(append_to),
-            &LineWidth(width)                       => ('L', 'w', width).encode_canvas(append_to),
-            &LineWidthPixels(width)                 => ('L', 'p', width).encode_canvas(append_to),
-            &LineJoin(join)                         => ('L', 'j', join).encode_canvas(append_to),
-            &LineCap(cap)                           => ('L', 'c', cap).encode_canvas(append_to),
-            &WindingRule(rule)                      => ('W', rule).encode_canvas(append_to),
-            &NewDashPattern                         => ('D', 'n').encode_canvas(append_to),
-            &DashLength(length)                     => ('D', 'l', length).encode_canvas(append_to),
-            &DashOffset(offset)                     => ('D', 'o', offset).encode_canvas(append_to),
-            &StrokeColor(col)                       => ('C', 's', col).encode_canvas(append_to),
-            &FillColor(col)                         => ('C', 'f', col).encode_canvas(append_to),
-            &BlendMode(mode)                        => ('M', mode).encode_canvas(append_to),
-            &IdentityTransform                      => ('T', 'i').encode_canvas(append_to),
-            &CanvasHeight(height)                   => ('T', 'h', height).encode_canvas(append_to),
-            &CenterRegion(min, max)                 => ('T', 'c', min, max).encode_canvas(append_to),
-            &MultiplyTransform(transform)           => ('T', 'm', transform).encode_canvas(append_to),
-            &Unclip                                 => ('Z', 'n').encode_canvas(append_to),
-            &Clip                                   => ('Z', 'c').encode_canvas(append_to),
-            &Store                                  => ('Z', 's').encode_canvas(append_to),
-            &Restore                                => ('Z', 'r').encode_canvas(append_to),
-            &FreeStoredBuffer                       => ('Z', 'f').encode_canvas(append_to),
-            &PushState                              => 'P'.encode_canvas(append_to),
-            &PopState                               => 'p'.encode_canvas(append_to),
-            &ClearCanvas(color)                     => ('N', 'A', color).encode_canvas(append_to),
-            &Layer(layer_id)                        => ('N', 'L', layer_id).encode_canvas(append_to),
-            &LayerBlend(layer_id, blend_mode)       => ('N', 'B', layer_id, blend_mode).encode_canvas(append_to),
-            &ClearLayer                             => ('N', 'C').encode_canvas(append_to),
-            &Sprite(sprite_id)                      => ('N', 's', sprite_id).encode_canvas(append_to),
-            &ClearSprite                            => ('s', 'C').encode_canvas(append_to),
-            &SpriteTransform(sprite_transform)      => ('s', 'T', sprite_transform).encode_canvas(append_to),
-            &DrawSprite(sprite_id)                  => ('s', 'D', sprite_id).encode_canvas(append_to),
-            &Texture(texture_id, ref op)            => ('B', texture_id, op).encode_canvas(append_to),
-            &Font(font_id, ref op)                  => ('f', font_id, op).encode_canvas(append_to),
-            &DrawText(font_id, ref string, x, y)    => ('t', 'T', font_id, string, x, y).encode_canvas(append_to)
+            &NewPath                                    => ('N', 'p').encode_canvas(append_to),
+            &Move(x, y)                                 => ('m', x, y).encode_canvas(append_to),
+            &Line(x, y)                                 => ('l', x, y).encode_canvas(append_to),
+            &BezierCurve(p1, p2, p3)                    => ('c', p1, p2, p3).encode_canvas(append_to),
+            &ClosePath                                  => ('.').encode_canvas(append_to),
+            &Fill                                       => 'F'.encode_canvas(append_to),
+            &Stroke                                     => 'S'.encode_canvas(append_to),
+            &LineWidth(width)                           => ('L', 'w', width).encode_canvas(append_to),
+            &LineWidthPixels(width)                     => ('L', 'p', width).encode_canvas(append_to),
+            &LineJoin(join)                             => ('L', 'j', join).encode_canvas(append_to),
+            &LineCap(cap)                               => ('L', 'c', cap).encode_canvas(append_to),
+            &WindingRule(rule)                          => ('W', rule).encode_canvas(append_to),
+            &NewDashPattern                             => ('D', 'n').encode_canvas(append_to),
+            &DashLength(length)                         => ('D', 'l', length).encode_canvas(append_to),
+            &DashOffset(offset)                         => ('D', 'o', offset).encode_canvas(append_to),
+            &StrokeColor(col)                           => ('C', 's', col).encode_canvas(append_to),
+            &FillColor(col)                             => ('C', 'f', col).encode_canvas(append_to),
+            &BlendMode(mode)                            => ('M', mode).encode_canvas(append_to),
+            &IdentityTransform                          => ('T', 'i').encode_canvas(append_to),
+            &CanvasHeight(height)                       => ('T', 'h', height).encode_canvas(append_to),
+            &CenterRegion(min, max)                     => ('T', 'c', min, max).encode_canvas(append_to),
+            &MultiplyTransform(transform)               => ('T', 'm', transform).encode_canvas(append_to),
+            &Unclip                                     => ('Z', 'n').encode_canvas(append_to),
+            &Clip                                       => ('Z', 'c').encode_canvas(append_to),
+            &Store                                      => ('Z', 's').encode_canvas(append_to),
+            &Restore                                    => ('Z', 'r').encode_canvas(append_to),
+            &FreeStoredBuffer                           => ('Z', 'f').encode_canvas(append_to),
+            &PushState                                  => 'P'.encode_canvas(append_to),
+            &PopState                                   => 'p'.encode_canvas(append_to),
+            &ClearCanvas(color)                         => ('N', 'A', color).encode_canvas(append_to),
+            &Layer(layer_id)                            => ('N', 'L', layer_id).encode_canvas(append_to),
+            &LayerBlend(layer_id, blend_mode)           => ('N', 'B', layer_id, blend_mode).encode_canvas(append_to),
+            &ClearLayer                                 => ('N', 'C').encode_canvas(append_to),
+            &Sprite(sprite_id)                          => ('N', 's', sprite_id).encode_canvas(append_to),
+            &ClearSprite                                => ('s', 'C').encode_canvas(append_to),
+            &SpriteTransform(sprite_transform)          => ('s', 'T', sprite_transform).encode_canvas(append_to),
+            &DrawSprite(sprite_id)                      => ('s', 'D', sprite_id).encode_canvas(append_to),
+            &Texture(texture_id, ref op)                => ('B', texture_id, op).encode_canvas(append_to),
+            &Font(font_id, ref op)                      => ('f', font_id, op).encode_canvas(append_to),
+            &DrawText(font_id, ref string, x, y)        => ('t', 'T', font_id, string, x, y).encode_canvas(append_to),
+            &DrawGlyphs(font_id, ref glyph_positions)   => ('t', 'G', font_id, glyph_positions).encode_canvas(append_to)
         }
     }
 }
