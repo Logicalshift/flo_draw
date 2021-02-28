@@ -46,7 +46,7 @@ pub fn main() {
             gc.layout_text(FontId(1), "Or we could change ".to_string());
             gc.fill_color(Color::Rgba(0.8, 0.6, 0.0, 1.0));
             gc.layout_text(FontId(1), "colours".to_string());
-            gc.fill_color(Color::Rgba(0.0, 0.0, 0.8, 1.0));
+            gc.fill_color(Color::Rgba(0.0, 0.0, 0.6, 1.0));
             gc.layout_text(FontId(1), " during layout ".to_string());
             gc.draw_text_layout();
 
@@ -67,7 +67,7 @@ pub fn main() {
             gc.set_font_size(FontId(1), 18.0);
             gc.fill_color(Color::Rgba(0.8, 0.6, 0.0, 1.0));
             gc.layout_text(FontId(1), " colours,".to_string());
-            gc.fill_color(Color::Rgba(0.0, 0.0, 0.8, 1.0));
+            gc.fill_color(Color::Rgba(0.0, 0.0, 0.6, 1.0));
             gc.layout_text(FontId(2), " fonts,".to_string());
             gc.layout_text(FontId(1), " and center alignment ".to_string());
             gc.draw_text_layout();
