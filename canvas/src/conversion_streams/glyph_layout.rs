@@ -123,10 +123,35 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                     }
                 }
 
+                Draw::Layer(_) => {
+                    // These instructions interrupt text layout
+                    current_line = None;
+                    current_font = None;
+
+                    yield_value(draw).await;
+                }
+
+                Draw::Sprite(_) => {
+                    // These instructions interrupt text layout
+                    current_line = None;
+                    current_font = None;
+
+                    yield_value(draw).await;
+                }
+
+                Draw::ClearLayer => {
+                    // These instructions interrupt text layout
+                    current_line = None;
+                    current_font = None;
+
+                    yield_value(draw).await;
+                }
+
                 Draw::ClearCanvas(_) => {
                     // Clear state
                     font_map        = HashMap::new();
                     current_line    = None;
+                    current_font    = None;
 
                     yield_value(draw).await;
                 }
