@@ -274,6 +274,9 @@ pub struct CanvasGraphicsContext<'a> {
 }
 
 impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
+    fn start_frame(&mut self)                       { self.pending.push(Draw::StartFrame); }
+    fn show_frame(&mut self)                        { self.pending.push(Draw::ShowFrame); }
+
     fn new_path(&mut self)                          { self.pending.push(Draw::NewPath); }
     fn move_to(&mut self, x: f32, y: f32)           { self.pending.push(Draw::Move(x, y)); }
     fn line_to(&mut self, x: f32, y: f32)           { self.pending.push(Draw::Line(x, y)); }

@@ -132,6 +132,18 @@ pub enum SpriteTransform {
 ///
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum Draw {
+    /// Suspends rendering to the display until the next 'ShowFrame'
+    ///
+    /// The renderer may perform tessellation or rendering in the background after 'StartFrame' but won't
+    /// commit anything to the visible frame buffer until 'ShowFrame' is hit. If 'StartFrame' is nested,
+    /// then the frame won't be displayed until 'ShowFrame' has been requested at least that many times.
+    ///
+    /// 'ClearCanvas' will clear the 'StartFrame' state as well (use layers and ClearLayer to avoid this).
+    StartFrame,
+
+    /// Displays any requested queued after 'StartFrame'
+    ShowFrame,
+
     /// Begins a new path
     NewPath,
 
