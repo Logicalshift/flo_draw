@@ -117,8 +117,8 @@ impl CanvasCore {
     /// Writes some drawing commands to this core
     ///
     fn write(&mut self, to_draw: Vec<Draw>) {
-        // Build up the list of new drawing commands
-        let mut new_drawing     = vec![];
+        // Build up the list of new drawing commands. new_drawing are the commands sent to the streams, and we build up a representation of the layer in drawing_since_last_clear
+        let mut new_drawing     = vec![Draw::StartFrame];
         let mut clear_pending   = false;
 
         // Process the drawing commands
@@ -177,6 +177,9 @@ impl CanvasCore {
 
         // Send the new drawing commands to the streams
         let mut to_remove = vec![];
+
+        // All these commands should be rendered as a single frame
+        new_drawing.push(Draw::ShowFrame);
 
         for stream_index in 0..self.pending_streams.len() {
             // Send commands to this stream
