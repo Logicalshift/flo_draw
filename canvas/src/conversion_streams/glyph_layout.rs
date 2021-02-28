@@ -6,6 +6,8 @@ use flo_stream::*;
 
 use futures::prelude::*;
 
+use std::mem;
+use std::iter;
 use std::sync::*;
 use std::collections::{HashMap};
 
@@ -62,12 +64,39 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                                 }).or_else(|| {
                                     Some(CanvasFontLineLayout::new(&new_font, font_size))
                                 });
+                            current_font = Some(font_id);
                         }
                     }
 
                     // Lay out the text
                     current_line.as_mut().map(|line| line.layout_text(&text));
                 }
+
+                Draw::DrawLaidOutText => {
+                    if let Some(layout) = mem::take(&mut current_line) {
+                        // Align the layout
+                        let mut layout = layout;
+                        layout.align(x_pos, y_pos, alignment);
+
+                        if let Some(current_font) = mem::take(&mut current_font) {
+                            // Convert to drawing actions, and send those
+                            let drawing = layout.to_drawing(current_font);
+
+                            for draw in drawing {
+                                yield_value(draw).await;
+                            }
+                        }
+                    }
+                },
+
+                Draw::FillColor(fill_color) => {
+                    // This is added as a drawing instruction to the current layout
+                    if let Some(current_line) = &mut current_line {
+                        current_line.draw(iter::once(Draw::FillColor(fill_color.clone())));
+                    }
+
+                    yield_value(Draw::FillColor(fill_color)).await;
+                },
 
                 Draw::ClearCanvas(_) => {
                     // Clear state
