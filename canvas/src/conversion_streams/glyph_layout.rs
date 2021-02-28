@@ -1,5 +1,3 @@
-use super::font_state::*;
-
 use crate::draw::*;
 use crate::font::*;
 use crate::font_line_layout::*;
@@ -17,6 +15,8 @@ use std::collections::{HashMap};
 ///
 pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>>(draw_stream: InStream) -> impl Send+Unpin+Stream<Item=Draw> {
     generator_stream(move |yield_value| async move {
+        let mut draw_stream         = draw_stream;
+
         // State of this stream
         let mut font_map            = HashMap::new();
         let mut font_size           = HashMap::new();
@@ -34,7 +34,7 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                     font_size.insert(font_id, 12.0);
 
                     // Send the font to the next part of the stream
-                    yield_value(draw).await;
+                    yield_value(Draw::Font(font_id, FontOp::UseFontDefinition(font_defn))).await;
                 }
 
                 Draw::BeginLineLayout(x, y, align)   => {
@@ -57,16 +57,16 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                             let font_size   = *font_size;
 
                             current_line = current_line
-                                .map(move |line| {
+                                .map(|line: CanvasFontLineLayout| {
                                     line.continue_with_new_font(last_font, &new_font, font_size)
-                                }).unwrap_or_else(|| {
-                                    CanvasFontLineLayout::new(&new_font, font_size)
+                                }).or_else(|| {
+                                    Some(CanvasFontLineLayout::new(&new_font, font_size))
                                 });
                         }
                     }
 
                     // Lay out the text
-                    current_line.as_mut().map(|line| line.layout_text(text));
+                    current_line.as_mut().map(|line| line.layout_text(&text));
                 }
 
                 Draw::ClearCanvas(_) => {
