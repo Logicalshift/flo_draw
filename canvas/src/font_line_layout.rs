@@ -84,13 +84,6 @@ impl CanvasFontLineLayout {
     }
 
     ///
-    /// Creates a new line layout.
-    ///
-    pub (crate) fn from_font_face(font: &CanvasFontFace, em_size: f32) -> CanvasFontLineLayout {
-        unimplemented!()
-    }
-
-    ///
     /// Update the rendering between the glyphs
     ///
     pub fn draw<DrawIter: IntoIterator<Item=Draw>>(&mut self, drawing: DrawIter) {
