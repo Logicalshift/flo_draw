@@ -322,6 +322,12 @@ impl CanvasRenderer {
                         });
                     }
 
+                    ResetFrame => {
+                        self.core.desync(|core| {
+                            core.frame_starts = 0;
+                        });
+                    }
+
                     // Begins a new path
                     NewPath => {
                         current_path = None;

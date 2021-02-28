@@ -426,6 +426,7 @@ impl CanvasEncoding<String> for Draw {
         match self {
             &StartFrame                                 => ('N', 'F').encode_canvas(append_to),
             &ShowFrame                                  => ('N', 'f').encode_canvas(append_to),
+            &ResetFrame                                 => ('N', 'G').encode_canvas(append_to),
             &NewPath                                    => ('N', 'p').encode_canvas(append_to),
             &Move(x, y)                                 => ('m', x, y).encode_canvas(append_to),
             &Line(x, y)                                 => ('l', x, y).encode_canvas(append_to),

@@ -99,6 +99,7 @@ impl CanvasCore {
                     (_, Draw::LayerBlend(_, _))                         => true,
                     (_, Draw::StartFrame)                               => true,
                     (_, Draw::ShowFrame)                                => true,
+                    (_, Draw::ResetFrame)                               => true,
                     (_, Draw::Font(_, FontOp::UseFontDefinition(_)))    => true,
                     (_, Draw::Font(_, FontOp::FontSize(_)))             => true,
 
@@ -125,11 +126,11 @@ impl CanvasCore {
             match &draw {
                 Draw::ClearCanvas(_) => {
                     // Clearing the canvas empties the command list and updates the clear count
-                    self.drawing_since_last_clear   = vec![];
+                    self.drawing_since_last_clear   = vec![(LayerId(0), Draw::ResetFrame)];
                     self.current_layer              = LayerId(0);
                     clear_pending                   = true;
 
-                    new_drawing = vec![];
+                    new_drawing                     = vec![];
 
                     // Start the new drawing with the 'clear' command
                     self.drawing_since_last_clear.push((LayerId(0), draw.clone()));
@@ -199,7 +200,10 @@ impl Canvas {
     pub fn new() -> Canvas {
         // A canvas is initially just a clear command
         let core = CanvasCore {
-            drawing_since_last_clear:   vec![ (LayerId(0), Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))) ],
+            drawing_since_last_clear:   vec![ 
+                (LayerId(0), Draw::ResetFrame),
+                (LayerId(0), Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)))
+            ],
             current_layer:              LayerId(0),
             pending_streams:            vec![ ]
         };
@@ -283,6 +287,7 @@ pub struct CanvasGraphicsContext<'a> {
 impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn start_frame(&mut self)                       { self.pending.push(Draw::StartFrame); }
     fn show_frame(&mut self)                        { self.pending.push(Draw::ShowFrame); }
+    fn reset_frame(&mut self)                       { self.pending.push(Draw::ResetFrame); }
 
     fn new_path(&mut self)                          { self.pending.push(Draw::NewPath); }
     fn move_to(&mut self, x: f32, y: f32)           { self.pending.push(Draw::Move(x, y)); }
@@ -342,9 +347,7 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
 
 impl<'a> Drop for CanvasGraphicsContext<'a> {
     fn drop(&mut self) {
-        let mut to_draw = vec![];
-        mem::swap(&mut self.pending, &mut to_draw);
-        self.core.write(to_draw);
+        self.core.write(mem::take(&mut self.pending));
     }
 }
 

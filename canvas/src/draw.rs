@@ -144,6 +144,9 @@ pub enum Draw {
     /// Displays any requested queued after 'StartFrame'
     ShowFrame,
 
+    /// Resets the frame count back to 0 (for when regenerating the state of a canvas)
+    ResetFrame,
+
     /// Begins a new path
     NewPath,
 

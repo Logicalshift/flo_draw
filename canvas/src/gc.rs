@@ -19,6 +19,7 @@ use std::sync::*;
 pub trait GraphicsContext {
     fn start_frame(&mut self);
     fn show_frame(&mut self);
+    fn reset_frame(&mut self);
 
     fn new_path(&mut self);
     fn move_to(&mut self, x: f32, y: f32);
@@ -77,6 +78,7 @@ pub trait GraphicsContext {
         match d {
             StartFrame                                  => self.start_frame(),
             ShowFrame                                   => self.show_frame(),
+            ResetFrame                                  => self.reset_frame(),
             NewPath                                     => self.new_path(),
             Move(x, y)                                  => self.move_to(x, y),
             Line(x, y)                                  => self.line_to(x, y),
@@ -249,6 +251,7 @@ where Curve::Point: Coordinate2D {
 impl GraphicsContext for Vec<Draw> {
     #[inline] fn start_frame(&mut self)                                                 { self.push(Draw::StartFrame); }
     #[inline] fn show_frame(&mut self)                                                  { self.push(Draw::ShowFrame); }
+    #[inline] fn reset_frame(&mut self)                                                 { self.push(Draw::ResetFrame); }
     #[inline] fn new_path(&mut self)                                                    { self.push(Draw::NewPath); }
     #[inline] fn move_to(&mut self, x: f32, y: f32)                                     { self.push(Draw::Move(x, y)); }
     #[inline] fn line_to(&mut self, x: f32, y: f32)                                     { self.push(Draw::Line(x, y)); }
