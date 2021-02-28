@@ -42,7 +42,7 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                 Draw::Font(font_id, FontOp::FontSize(new_size)) => {
                     font_size.insert(font_id, new_size);
 
-                    yield_value(Draw::Font(font_id, FontOp::FontSize(new_size)));
+                    yield_value(Draw::Font(font_id, FontOp::FontSize(new_size))).await;
                 }
 
                 Draw::BeginLineLayout(x, y, align)   => {
