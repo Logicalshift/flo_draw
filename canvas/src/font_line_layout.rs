@@ -120,6 +120,38 @@ impl<'a> CanvasFontLineLayout<'a> {
     }
 
     ///
+    /// Aligns the glyphs according to a text alignment around a specific position
+    ///
+    /// Doesn't adjust the metrics, if you continue layout after this call, new glyphs will be
+    /// positioned at the current baseline position, so this is usually only useful before finishing
+    /// the text layout.
+    ///
+    pub fn align(&mut self, x: f32, y: f32, align: TextAlignment) {
+        // Finish laying out any text that hasn't yet been laid out
+        self.layout_pending();
+
+        // We want to apply a constant offset to all of the glyphs: we can calculate this based on the inner bounds of the text
+        let (Coord2(min_x, _min_y), Coord2(max_x, _max_y))  = self.metrics.inner_bounds;
+        let (min_x, max_x)                                  = (min_x as f32, max_x as f32)
+
+        let y_offset = y;
+        let x_offset = match align {
+            TextAlignment::Left     => x,
+            TextAlignment::Right    => x - max_x,
+            TextAlignment::Center   => (max_x+min_x)/2.0 + x
+        };
+
+        // Move all of the glyph positions
+        self.layout.iter_mut()
+            .for_each(|action| {
+                match action {
+                    LayoutAction::Glyph(pos)    => { pos.location.0 += x_offset; pos.location.1 += y_offset; }
+                    _                           => { }
+                }
+            });
+    }
+
+    ///
     /// Finishes the layout and returns a list of glyph positions (any drawing instructions are discarded)
     ///
     pub fn to_glyphs(mut self) -> Vec<GlyphPosition> {
