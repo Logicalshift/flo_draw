@@ -20,6 +20,9 @@ pub struct RenderStream<'a> {
     /// The core where the render instructions are read from
     core: Arc<Desync<RenderCore>>,
 
+    /// True if the frame is suspended (we're not going to generate any direct rendering due to this drawing operation)
+    frame_suspended: bool,
+
     /// The future that is processing new drawing instructions
     processing_future: Option<BoxFuture<'a, ()>>,
 
@@ -61,10 +64,11 @@ impl<'a> RenderStream<'a> {
     ///
     /// Creates a new render stream
     ///
-    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, initial_action_stack: Vec<render::RenderAction>, final_action_stack: Vec<render::RenderAction>) -> RenderStream<'a>
+    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, frame_suspended: bool, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, initial_action_stack: Vec<render::RenderAction>, final_action_stack: Vec<render::RenderAction>) -> RenderStream<'a>
     where   ProcessFuture: 'a+Send+Future<Output=()> {
         RenderStream {
             core:               core,
+            frame_suspended:    frame_suspended,
             processing_future:  Some(processing_future.boxed()),
             pending_stack:      initial_action_stack,
             final_stack:        Some(final_action_stack),
@@ -286,6 +290,16 @@ impl<'a> Stream for RenderStream<'a> {
                 self.render_index       = 0;
             }
 
+        }
+
+        // We've generated all the vertex buffers: if frame rendering is suspended, stop here
+        if self.frame_suspended {
+            if let Some(final_actions) = self.final_stack.take() {
+                self.pending_stack = final_actions;
+                return Poll::Ready(self.pending_stack.pop());
+            } else {
+                return Poll::Ready(None);
+            }
         }
 
         // We've generated all the vertex buffers: generate the instructions to render them

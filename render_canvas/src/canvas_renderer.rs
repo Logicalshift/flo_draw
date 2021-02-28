@@ -668,7 +668,11 @@ impl CanvasRenderer {
                             let mut old_layers = vec![];
                             mem::swap(&mut core.layers, &mut old_layers);
 
-                            core.background_color = Self::render_color(background);
+                            // Reset the frame start count (ClearCanvas resets the canvas state entirely)
+                            core.frame_starts       = 0;
+
+                            // Set the background colour for when we render
+                            core.background_color   = Self::render_color(background);
 
                             for layer_id in old_layers {
                                 let layer = core.release_layer_handle(layer_id);
@@ -859,16 +863,23 @@ impl CanvasRenderer {
     /// Returns a stream of render actions after applying a set of canvas drawing operations to this renderer
     ///
     pub fn draw<'a, DrawIter: 'a+Send+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter) -> impl 'a+Send+Stream<Item=render::RenderAction> {
+        // See if rendering is suspended (we just load vertex buffers if it is)
+        let rendering_suspended = self.core.sync(|core| core.frame_starts > 0);
+
         // Set up the initial set of rendering actions
         let background_color    = self.core.sync(|core| core.background_color);
         let viewport_transform  = self.viewport_transform;
         let viewport_matrix     = transform_to_matrix(&self.viewport_transform);
-        let mut initialise      = vec![
-            render::RenderAction::SetTransform(viewport_matrix),
-            render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])),
-            render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
-            render::RenderAction::SelectRenderTarget(RenderTargetId(0)),
-        ];
+        let mut initialise      = if rendering_suspended {
+            vec![render::RenderAction::SelectRenderTarget(RenderTargetId(0))]
+        } else { 
+            vec![
+                render::RenderAction::SetTransform(viewport_matrix),
+                render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])),
+                render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
+                render::RenderAction::SelectRenderTarget(RenderTargetId(0)),
+            ]
+        };
 
         if !self.created_render_surface {
             // If the MSAA render surface is missing, create it (it's always render target 0, texture 0)
@@ -887,12 +898,16 @@ impl CanvasRenderer {
         }
 
         // When finished, render the MSAA buffer to the main framebuffer
-        let mut finalize        = vec![
-            render::RenderAction::DrawFrameBuffer(RenderTargetId(0), 0, 0),
-            render::RenderAction::Clear(background_color),
-            render::RenderAction::BlendMode(render::BlendMode::SourceOver),
-            render::RenderAction::RenderToFrameBuffer
-        ];
+        let mut finalize        = if rendering_suspended {
+            vec![]
+        } else {
+            vec![
+                render::RenderAction::DrawFrameBuffer(RenderTargetId(0), 0, 0),
+                render::RenderAction::Clear(background_color),
+                render::RenderAction::BlendMode(render::BlendMode::SourceOver),
+                render::RenderAction::RenderToFrameBuffer
+            ]
+        };
 
         // If there's a background colour, then the finalize step should draw it (the OpenGL renderer has issues blitting alpha blended multisampled textures, so this hides that the 'clear' step above doesn't work there)
         let render::Rgba8([br, bg, bb, ba]) = background_color;
@@ -934,7 +949,7 @@ impl CanvasRenderer {
         let processing          = self.process_drawing(drawing);
 
         // Return a stream of results from processing the drawing
-        RenderStream::new(core, processing, viewport_transform, initialise, finalize)
+        RenderStream::new(core, rendering_suspended, processing, viewport_transform, initialise, finalize)
     }
 }
 
