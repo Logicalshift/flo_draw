@@ -60,6 +60,14 @@ pub (super) async fn send_actions_to_window<RenderStream: Unpin+Stream<Item=Vec<
                     continue;
                 }
 
+                let show_frame_buffer = if next_action[next_action.len() - 1] == RenderAction::ShowFrameBuffer {
+                    // Typically this is the last instruction
+                    true
+                } else {
+                    // Search harder if it's not the last instruction
+                    next_action.iter().any(|item| item == &RenderAction::ShowFrameBuffer)
+                };
+
                 unsafe {
                     // TODO: report errors if we can't set the context rather than just stopping mysteriously
 
@@ -93,8 +101,10 @@ pub (super) async fn send_actions_to_window<RenderStream: Unpin+Stream<Item=Vec<
                         renderer.render(next_action);
                     });
 
-                    // Swap buffers to finish the drawing (TODO: only if ShowFrameBuffer was in the rendering instructions)
-                    current_context.swap_buffers().ok();
+                    // Swap buffers to finish the drawing
+                    if show_frame_buffer {
+                        current_context.swap_buffers().ok();
+                    }
 
                     // Release the current context
                     let context     = current_context.make_not_current();
