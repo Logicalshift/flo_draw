@@ -69,7 +69,7 @@ pub fn main() {
             gc.layout_text(FontId(1), " colours,".to_string());
             gc.fill_color(Color::Rgba(0.0, 0.0, 0.8, 1.0));
             gc.layout_text(FontId(2), " fonts,".to_string());
-            gc.layout_text(FontId(1), " and alignment ".to_string());
+            gc.layout_text(FontId(1), " and center alignment ".to_string());
             gc.draw_text_layout();
         });
     });
