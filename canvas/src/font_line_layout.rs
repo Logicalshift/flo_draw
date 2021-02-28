@@ -132,7 +132,7 @@ impl<'a> CanvasFontLineLayout<'a> {
 
         // We want to apply a constant offset to all of the glyphs: we can calculate this based on the inner bounds of the text
         let (Coord2(min_x, _min_y), Coord2(max_x, _max_y))  = self.metrics.inner_bounds;
-        let (min_x, max_x)                                  = (min_x as f32, max_x as f32)
+        let (min_x, max_x)                                  = (min_x as f32, max_x as f32);
 
         let y_offset = y;
         let x_offset = match align {
