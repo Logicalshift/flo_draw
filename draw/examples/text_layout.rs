@@ -71,6 +71,10 @@ pub fn main() {
             gc.layout_text(FontId(2), " fonts,".to_string());
             gc.layout_text(FontId(1), " and center alignment ".to_string());
             gc.draw_text_layout();
+
+            gc.begin_line_layout(1000.0-18.0, 80.0, TextAlignment::Right);
+            gc.layout_text(FontId(1), "Right alignment is supported too".to_string());
+            gc.draw_text_layout();
         });
     });
 }
