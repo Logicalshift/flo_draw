@@ -321,11 +321,11 @@ mod test {
                 assert!(glyphs[3].id == GlyphId(1140));
                 assert!(glyphs[4].id == GlyphId(55));
 
-                assert!(dist(glyphs[0].location, (777.75, 500.0)) < 1.0);
-                assert!(dist(glyphs[1].location, (855.6, 500.0)) < 1.0);
-                assert!(dist(glyphs[2].location, (912.3, 500.0)) < 1.0);
-                assert!(dist(glyphs[3].location, (948.7, 500.0)) < 1.0);
-                assert!(dist(glyphs[4].location, (972.3, 500.0)) < 1.0);
+                assert!(dist(glyphs[0].location, (779.8, 500.0)) < 1.0);
+                assert!(dist(glyphs[1].location, (857.7, 500.0)) < 1.0);
+                assert!(dist(glyphs[2].location, (914.4, 500.0)) < 1.0);
+                assert!(dist(glyphs[3].location, (950.8, 500.0)) < 1.0);
+                assert!(dist(glyphs[4].location, (974.4, 500.0)) < 1.0);
             } else {
                 // Not the expected layout instruction
                 println!("{:?}", instructions[5]);
