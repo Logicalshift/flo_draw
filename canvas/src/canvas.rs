@@ -167,6 +167,27 @@ impl CanvasCore {
                     self.drawing_since_last_clear.push((current_layer, Draw::Layer(current_layer)));
                 },
 
+                Draw::ShowFrame => {
+                    // Search for a 'StartFrame' instruction in the existing drawing and remove it
+                    for idx in (0..self.drawing_since_last_clear.len()).into_iter().rev() {
+                        if let (_, Draw::StartFrame) = &self.drawing_since_last_clear[idx] {
+                            self.drawing_since_last_clear.remove(idx);
+                            break;
+                        }
+                    }
+                },
+
+                Draw::ResetFrame => {
+                    // Remove any frame instructions in the current drawing
+                    self.drawing_since_last_clear.retain(|item| {
+                        match item {
+                            (_, Draw::StartFrame)   => false,
+                            (_, Draw::ShowFrame)    => false,
+                            _                       => true
+                        }
+                    });
+                },
+
                 // Default is to add to the current drawing
                 _ => self.drawing_since_last_clear.push((self.current_layer, draw.clone()))
             }
