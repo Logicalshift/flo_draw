@@ -78,6 +78,7 @@ impl CanvasRenderer {
     pub fn new() -> CanvasRenderer {
         // Create the shared core
         let core = RenderCore {
+            frame_starts:           0,
             layers:                 vec![],
             free_layers:            vec![],
             layer_definitions:      vec![],
@@ -307,6 +308,18 @@ impl CanvasRenderer {
                 use math::point;
 
                 match draw {
+                    StartFrame => {
+                        self.core.desync(|core| core.frame_starts += 1);
+                    }
+
+                    ShowFrame => {
+                        self.core.desync(|core| {
+                            if core.frame_starts > 0 { 
+                                core.frame_starts -= 1
+                            }
+                        });
+                    }
+
                     // Begins a new path
                     NewPath => {
                         current_path = None;

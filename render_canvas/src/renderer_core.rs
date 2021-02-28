@@ -22,6 +22,9 @@ pub struct LayerHandle(u64);
 /// Parts of the renderer that are shared with the workers
 ///
 pub struct RenderCore {
+    /// Number of times that StartFrame has been specified without a corresponding ShowFrame
+    pub frame_starts: usize,
+
     /// The definition for the layers
     pub layers: Vec<LayerHandle>,
 
