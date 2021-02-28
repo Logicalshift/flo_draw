@@ -20,6 +20,9 @@ pub struct RenderStream<'a> {
     /// The core where the render instructions are read from
     core: Arc<Desync<RenderCore>>,
 
+    /// The ID of the buffer to use for rendering the background quad
+    background_vertex_buffer: render::VertexBufferId,
+
     /// True if the frame is suspended (we're not going to generate any direct rendering due to this drawing operation)
     frame_suspended: bool,
 
@@ -64,17 +67,18 @@ impl<'a> RenderStream<'a> {
     ///
     /// Creates a new render stream
     ///
-    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, frame_suspended: bool, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, initial_action_stack: Vec<render::RenderAction>, final_action_stack: Vec<render::RenderAction>) -> RenderStream<'a>
+    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, frame_suspended: bool, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, background_vertex_buffer: render::VertexBufferId, initial_action_stack: Vec<render::RenderAction>, final_action_stack: Vec<render::RenderAction>) -> RenderStream<'a>
     where   ProcessFuture: 'a+Send+Future<Output=()> {
         RenderStream {
-            core:               core,
-            frame_suspended:    frame_suspended,
-            processing_future:  Some(processing_future.boxed()),
-            pending_stack:      initial_action_stack,
-            final_stack:        Some(final_action_stack),
-            viewport_transform: viewport_transform,
-            layer_id:           0,
-            render_index:       0
+            core:                       core,
+            frame_suspended:            frame_suspended,
+            background_vertex_buffer:   background_vertex_buffer,
+            processing_future:          Some(processing_future.boxed()),
+            pending_stack:              initial_action_stack,
+            final_stack:                Some(final_action_stack),
+            viewport_transform:         viewport_transform,
+            layer_id:                   0,
+            render_index:               0
         }
     }
 }
@@ -265,6 +269,40 @@ impl RenderCore {
     }
 }
 
+impl<'a> RenderStream<'a> {
+    ///
+    /// Adds the instructions required to render the background colour to the pending queue
+    ///
+    fn render_background(&mut self) {
+        let background_color = self.core.sync(|core| core.background_color);
+
+        // If there's a background colour, then the finalize step should draw it (the OpenGL renderer has issues blitting alpha blended multisampled textures, so this hides that the 'clear' step above doesn't work there)
+        let render::Rgba8([br, bg, bb, ba]) = background_color;
+
+        if ba > 0 {
+            let background_color = [br, bg, bb, ba];
+
+            self.pending_stack.extend(vec![
+                render::RenderAction::DrawTriangles(self.background_vertex_buffer, 0..6),
+                render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }),
+                render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
+                render::RenderAction::SetTransform(render::Matrix::identity()),
+
+                // Generate a full-screen quad
+                render::RenderAction::CreateVertex2DBuffer(self.background_vertex_buffer, vec![
+                    render::Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: background_color },
+                    render::Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: background_color },
+                    render::Vertex2D { pos: [1.0, -1.0],    tex_coord: [0.0, 0.0], color: background_color },
+
+                    render::Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: background_color },
+                    render::Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: background_color },
+                    render::Vertex2D { pos: [-1.0, 1.0],    tex_coord: [0.0, 0.0], color: background_color },
+                ])
+            ]);
+        }
+    }
+}
+
 impl<'a> Stream for RenderStream<'a> {
     type Item = render::RenderAction;
 
@@ -338,6 +376,7 @@ impl<'a> Stream for RenderStream<'a> {
         } else if let Some(final_actions) = self.final_stack.take() {
             // There are no more drawing actions, but we have a set of final post-render instructions to execute
             self.pending_stack = final_actions;
+            self.render_background();
             return Poll::Ready(self.pending_stack.pop());
         } else {
             // No further actions if the result was empty

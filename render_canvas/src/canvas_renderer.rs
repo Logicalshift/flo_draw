@@ -903,7 +903,7 @@ impl CanvasRenderer {
         }
 
         // When finished, render the MSAA buffer to the main framebuffer
-        let mut finalize        = if rendering_suspended {
+        let finalize            = if rendering_suspended {
             vec![]
         } else {
             vec![
@@ -915,47 +915,24 @@ impl CanvasRenderer {
             ]
         };
 
-        // If there's a background colour, then the finalize step should draw it (the OpenGL renderer has issues blitting alpha blended multisampled textures, so this hides that the 'clear' step above doesn't work there)
-        let render::Rgba8([br, bg, bb, ba]) = background_color;
-
-        if ba > 0 {
-            let background_color = [br, bg, bb, ba];
-            let background_vertex_buffer = match self.background_vertex_buffer {
-                Some(buffer_id) => buffer_id,
-                None            => {
-                    // Allocate the buffer
-                    let buffer_id                   = self.core.sync(|core| core.allocate_vertex_buffer());
-                    let buffer_id                   = render::VertexBufferId(buffer_id);
-                    self.background_vertex_buffer   = Some(buffer_id);
-                    buffer_id
-                }
-            };
-
-            finalize.extend(vec![
-                render::RenderAction::DrawTriangles(background_vertex_buffer, 0..6),
-                render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }),
-                render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
-                render::RenderAction::SetTransform(render::Matrix::identity()),
-
-                // Generate a full-screen quad
-                render::RenderAction::CreateVertex2DBuffer(background_vertex_buffer, vec![
-                    render::Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: background_color },
-                    render::Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: background_color },
-                    render::Vertex2D { pos: [1.0, -1.0],    tex_coord: [0.0, 0.0], color: background_color },
-
-                    render::Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: background_color },
-                    render::Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: background_color },
-                    render::Vertex2D { pos: [-1.0, 1.0],    tex_coord: [0.0, 0.0], color: background_color },
-                ])
-            ]);
-        }
+        // The render stream needs a vertex buffer to render the background to, so make sure that's allocated
+        let background_vertex_buffer = match self.background_vertex_buffer {
+            Some(buffer_id) => buffer_id,
+            None            => {
+                // Allocate the buffer
+                let buffer_id                   = self.core.sync(|core| core.allocate_vertex_buffer());
+                let buffer_id                   = render::VertexBufferId(buffer_id);
+                self.background_vertex_buffer   = Some(buffer_id);
+                buffer_id
+            }
+        };
 
         // Start processing the drawing instructions
         let core                = Arc::clone(&self.core);
         let processing          = self.process_drawing(drawing);
 
         // Return a stream of results from processing the drawing
-        RenderStream::new(core, rendering_suspended, processing, viewport_transform, initialise, finalize)
+        RenderStream::new(core, rendering_suspended, processing, viewport_transform, background_vertex_buffer, initialise, finalize)
     }
 }
 
