@@ -910,7 +910,8 @@ impl CanvasRenderer {
                 render::RenderAction::DrawFrameBuffer(RenderTargetId(0), 0, 0),
                 render::RenderAction::Clear(background_color),
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
-                render::RenderAction::RenderToFrameBuffer
+                render::RenderAction::RenderToFrameBuffer,
+                render::RenderAction::ShowFrameBuffer
             ]
         };
 
