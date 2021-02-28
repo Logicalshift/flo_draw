@@ -876,7 +876,7 @@ impl CanvasRenderer {
         let viewport_transform  = self.viewport_transform;
         let viewport_matrix     = transform_to_matrix(&self.viewport_transform);
         let mut initialise      = if rendering_suspended {
-            vec![render::RenderAction::SelectRenderTarget(RenderTargetId(0))]
+            vec![]
         } else { 
             vec![
                 render::RenderAction::SetTransform(viewport_matrix),
