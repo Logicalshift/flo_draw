@@ -220,10 +220,11 @@ impl Canvas {
         self.core.sync(move |core| {
             let mut graphics_context = CanvasGraphicsContext {
                 core:       core,
-                pending:    vec![]
+                pending:    vec![Draw::StartFrame]
             };
 
             action(&mut graphics_context);
+            graphics_context.pending.push(Draw::ShowFrame);
         })
     }
 
