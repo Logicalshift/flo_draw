@@ -94,9 +94,16 @@ impl CanvasCore {
         let new_drawing = old_drawing.into_iter()
             .filter(|drawing| {
                 match drawing {
-                    &(_, Draw::ClearCanvas(_))      => true,
-                    &(_, Draw::LayerBlend(_, _))    => true,
-                    &(layer, _)                     => layer != layer_id
+                    // Don't filter operations that affect the canvas state as a whole
+                    (_, Draw::ClearCanvas(_))                           => true,
+                    (_, Draw::LayerBlend(_, _))                         => true,
+                    (_, Draw::StartFrame)                               => true,
+                    (_, Draw::ShowFrame)                                => true,
+                    (_, Draw::Font(_, FontOp::UseFontDefinition(_)))    => true,
+                    (_, Draw::Font(_, FontOp::FontSize(_)))             => true,
+
+                    // Don't filter anything that doesn't affect the cleared layer
+                    (layer, _)                                          => *layer != layer_id
                 }
             })
             .collect();
