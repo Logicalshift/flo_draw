@@ -141,8 +141,22 @@ impl CanvasFontLineLayout {
         self.layout.iter_mut()
             .for_each(|action| {
                 match action {
-                    LayoutAction::Glyph(pos)    => { pos.location.0 += x_offset; pos.location.1 += y_offset; }
-                    _                           => { }
+                    LayoutAction::Glyph(pos)                                        => { 
+                        pos.location.0 += x_offset;
+                        pos.location.1 += y_offset;
+                    }
+
+                    LayoutAction::Draw(Draw::Font(_, FontOp::DrawGlyphs(glyphs)))   => {
+                        // Assume that these were generated during a 'continue' call and not added by 'draw'
+                        // (or at least, if they were added by 'draw', assume they want to be aligned with everything else)
+                        glyphs.iter_mut()
+                            .for_each(|pos| {
+                                pos.location.0 += x_offset;
+                                pos.location.1 += y_offset;
+                            })
+                    }
+
+                    _                                                               => { }
                 }
             });
     }
