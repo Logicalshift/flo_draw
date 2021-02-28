@@ -309,13 +309,15 @@ impl CanvasRenderer {
 
                 match draw {
                     StartFrame => {
-                        self.core.desync(|core| core.frame_starts += 1);
+                        self.core.desync(|core| {
+                            core.frame_starts += 1;
+                        });
                     }
 
                     ShowFrame => {
                         self.core.desync(|core| {
                             if core.frame_starts > 0 { 
-                                core.frame_starts -= 1
+                                core.frame_starts -= 1;
                             }
                         });
                     }
@@ -667,9 +669,6 @@ impl CanvasRenderer {
                             // Release the existing layers
                             let mut old_layers = vec![];
                             mem::swap(&mut core.layers, &mut old_layers);
-
-                            // Reset the frame start count (ClearCanvas resets the canvas state entirely)
-                            core.frame_starts       = 0;
 
                             // Set the background colour for when we render
                             core.background_color   = Self::render_color(background);
