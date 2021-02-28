@@ -216,7 +216,10 @@ impl CanvasFontLineLayout {
     ///
     /// `last_font_id` should be the ID of the font that the glyphs that have been rendered so far should be rendered in
     ///
-    pub fn continue_with_new_font(self, last_font_id: FontId, new_font: &Arc<CanvasFontFace>, new_em_size: f32) -> CanvasFontLineLayout {
+    pub fn continue_with_new_font(mut self, last_font_id: FontId, new_font: &Arc<CanvasFontFace>, new_em_size: f32) -> CanvasFontLineLayout {
+        // Layout the pending text before continuing
+        self.layout_pending();
+
         // Finish the current layout by generating the drawing actions, and remember the state
         let x_off           = self.x_off;
         let y_off           = self.y_off;
