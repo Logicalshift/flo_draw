@@ -39,6 +39,12 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                     yield_value(Draw::Font(font_id, FontOp::UseFontDefinition(font_defn))).await;
                 }
 
+                Draw::Font(font_id, FontOp::FontSize(new_size)) => {
+                    font_size.insert(font_id, new_size);
+
+                    yield_value(Draw::Font(font_id, FontOp::FontSize(new_size)));
+                }
+
                 Draw::BeginLineLayout(x, y, align)   => {
                     // If we're laying out text already, this discards that layout
                     current_line    = None;
