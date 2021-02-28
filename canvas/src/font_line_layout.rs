@@ -84,6 +84,13 @@ impl CanvasFontLineLayout {
     }
 
     ///
+    /// The font that is currently being laid out
+    ///
+    pub fn font(&self) -> Arc<CanvasFontFace> {
+        Arc::clone(&self.font)
+    }
+
+    ///
     /// Update the rendering between the glyphs
     ///
     pub fn draw<DrawIter: IntoIterator<Item=Draw>>(&mut self, drawing: DrawIter) {

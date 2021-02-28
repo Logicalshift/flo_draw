@@ -31,6 +31,10 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
         while let Some(draw) = draw_stream.next().await {
             match draw {
                 Draw::Font(font_id, FontOp::UseFontDefinition(font_defn)) => {
+                    // Defining new fonts interrupts any existing text layout
+                    current_line = None;
+                    current_font = None;
+
                     // Store this font definition
                     font_map.insert(font_id, Arc::clone(&font_defn));
                     font_size.insert(font_id, 12.0);
@@ -40,6 +44,16 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                 }
 
                 Draw::Font(font_id, FontOp::FontSize(new_size)) => {
+                    // If we're changing the size of the active font, restart the layout with the new size
+                    if current_font == Some(font_id) {
+                        current_line = current_line
+                            .map(|line: CanvasFontLineLayout| {
+                                let font = line.font();
+                                line.continue_with_new_font(font_id, &font, new_size)
+                            });
+                    }
+
+                    // Set up the new size
                     font_size.insert(font_id, new_size);
 
                     yield_value(Draw::Font(font_id, FontOp::FontSize(new_size))).await;
