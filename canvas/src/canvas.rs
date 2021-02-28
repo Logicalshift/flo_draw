@@ -414,9 +414,16 @@ impl CanvasStream {
     fn send_drawing<DrawIter: Iterator<Item=Draw>> (&self, drawing: DrawIter, clear_pending: bool) -> bool {
         let mut core = self.core.lock().unwrap();
 
-        // Clear out any pending commands if they're hidden by a clear
+        // Clear out any pending commands if they're hidden by a clear (except frame commands, which we need to add up)
         if clear_pending {
-            core.queue.clear();
+            core.queue.retain(|action| {
+                match action {
+                    Draw::StartFrame    |
+                    Draw::ShowFrame     |
+                    Draw::ResetFrame    => true,
+                    _                   => false
+                }
+            });
         }
 
         // Push the drawing commands
