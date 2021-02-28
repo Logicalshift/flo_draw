@@ -134,7 +134,7 @@ impl CanvasFontLineLayout {
         let x_offset = match align {
             TextAlignment::Left     => x,
             TextAlignment::Right    => x - max_x,
-            TextAlignment::Center   => (max_x+min_x)/2.0 + x
+            TextAlignment::Center   => x - (max_x+min_x)/2.0
         };
 
         // Move all of the glyph positions
