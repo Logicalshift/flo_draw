@@ -117,19 +117,17 @@ impl CanvasFontFace {
     }
 }
 
+///
+/// Measures some text in this font
+///
 #[cfg(feature = "outline-fonts")]
-impl CanvasFontFace {
-    ///
-    /// Measures some text in this font
-    ///
-    pub fn measure(&self, text: &str, em_size: f32) -> TextLayoutMetrics {
-        // Create a layout for the text
-        let mut layout = CanvasFontLineLayout::from_font_face(self, em_size);
+pub fn measure_text(font: &Arc<CanvasFontFace>, text: &str, em_size: f32) -> TextLayoutMetrics {
+    // Create a layout for the text
+    let mut layout = CanvasFontLineLayout::new(font, em_size);
 
-        // Layout the text and return the measurements
-        layout.layout_text(text);
-        layout.measure()
-    }
+    // Layout the text and return the measurements
+    layout.layout_text(text);
+    layout.measure()
 }
 
 

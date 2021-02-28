@@ -14,7 +14,7 @@ pub fn main() {
         // Create a window
         let canvas      = create_canvas_window("Hello");
 
-        let hello_size  = lato.measure("Hello, World", 100.0);
+        let hello_size  = measure_text(&lato, "Hello, World", 100.0);
         let (min, max)  = hello_size.inner_bounds;
 
         let x_pos       = (1000.0 - (max.x()-min.x()))/2.0;
