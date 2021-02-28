@@ -130,7 +130,7 @@ impl CanvasCore {
                     self.current_layer              = LayerId(0);
                     clear_pending                   = true;
 
-                    new_drawing                     = vec![];
+                    new_drawing                     = vec![Draw::StartFrame];
 
                     // Start the new drawing with the 'clear' command
                     self.drawing_since_last_clear.push((LayerId(0), draw.clone()));
