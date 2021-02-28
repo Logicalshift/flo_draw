@@ -138,7 +138,7 @@ pub enum Draw {
     /// commit anything to the visible frame buffer until 'ShowFrame' is hit. If 'StartFrame' is nested,
     /// then the frame won't be displayed until 'ShowFrame' has been requested at least that many times.
     ///
-    /// 'ClearCanvas' will clear the 'StartFrame' state as well (use layers and ClearLayer to avoid this).
+    /// The frame state persists across a 'ClearCanvas'
     StartFrame,
 
     /// Displays any requested queued after 'StartFrame'
