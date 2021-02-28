@@ -104,6 +104,25 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                     yield_value(Draw::FillColor(fill_color)).await;
                 },
 
+                Draw::DrawText(font_id, text, x, y) => {
+                    if let (Some(font), Some(font_size)) = (font_map.get(&font_id), font_size.get(&font_id)) {
+                        // This is just a straightforward immediate layout of the text as glyphs
+                        let mut layout = CanvasFontLineLayout::new(font, *font_size);
+
+                        // Lay out the text
+                        layout.layout_text(&text);
+
+                        // Align it at the requested position
+                        layout.align(x, y, TextAlignment::Left);
+
+                        // Convert to glyph drawing instructions, and send those on to the next stage
+                        let drawing = layout.to_drawing(font_id);
+                        for draw in drawing {
+                            yield_value(draw).await;
+                        }
+                    }
+                }
+
                 Draw::ClearCanvas(_) => {
                     // Clear state
                     font_map        = HashMap::new();
