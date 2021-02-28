@@ -26,12 +26,9 @@ enum LayoutAction {
 ///
 /// This includes optional drawing operations in between glyphs to allow for 
 ///
-pub struct CanvasFontLineLayout<'a> {
-    /// Shaper
-    shaper: allsorts::Font<CanvasTableProvider<'a>>,
-
-    /// The TTF font
-    font: &'a ttf_parser::Face<'a>,
+pub struct CanvasFontLineLayout {
+    /// The font that this layout is for
+    font: Arc<CanvasFontFace>,
 
     /// Metrics for the text we've laid out
     metrics: TextLayoutMetrics,
@@ -55,18 +52,11 @@ pub struct CanvasFontLineLayout<'a> {
     layout: Vec<LayoutAction>
 }
 
-impl<'a> CanvasFontLineLayout<'a> {
+impl CanvasFontLineLayout {
     ///
     /// Creates a new line layout.
     ///
-    pub fn new(font: &'a Arc<CanvasFontFace>, em_size: f32) -> CanvasFontLineLayout<'a> {
-        Self::from_font_face(&* font, em_size)
-    }
-
-    ///
-    /// Creates a new line layout.
-    ///
-    pub (crate) fn from_font_face(font: &'a CanvasFontFace, em_size: f32) -> CanvasFontLineLayout<'a> {
+    pub fn new(font: &Arc<CanvasFontFace>, em_size: f32) -> CanvasFontLineLayout {
         // Gather font info
         let ttf_font            = font.ttf_font();
         let units_per_em        = ttf_font.units_per_em().unwrap_or(16385) as f32;
@@ -82,8 +72,7 @@ impl<'a> CanvasFontLineLayout<'a> {
         };
 
         CanvasFontLineLayout {
-            shaper:         font.allsorts_font(),
-            font:           ttf_font,
+            font:           Arc::clone(font),
             units_per_em:   units_per_em,
             metrics:        initial_metrics,
             x_off:          0.0,
@@ -92,6 +81,13 @@ impl<'a> CanvasFontLineLayout<'a> {
             pending:        String::new(),
             layout:         vec![]
         }
+    }
+
+    ///
+    /// Creates a new line layout.
+    ///
+    pub (crate) fn from_font_face(font: &CanvasFontFace, em_size: f32) -> CanvasFontLineLayout {
+        unimplemented!()
     }
 
     ///
@@ -206,7 +202,7 @@ impl<'a> CanvasFontLineLayout<'a> {
     ///
     /// `last_font_id` should be the ID of the font that the glyphs that have been rendered so far should be rendered in
     ///
-    pub fn continue_with_new_font<'b>(self, last_font_id: FontId, new_font: &'b Arc<CanvasFontFace>, new_em_size: f32) -> CanvasFontLineLayout<'b> {
+    pub fn continue_with_new_font(self, last_font_id: FontId, new_font: &Arc<CanvasFontFace>, new_em_size: f32) -> CanvasFontLineLayout {
         // Finish the current layout by generating the drawing actions, and remember the state
         let x_off           = self.x_off;
         let y_off           = self.y_off;
@@ -234,22 +230,24 @@ impl<'a> CanvasFontLineLayout<'a> {
         if self.pending.len() == 0 { return; }
 
         // Take the pending characters to be processed
-        let pending = mem::take(&mut self.pending);
+        let pending         = mem::take(&mut self.pending);
 
         // Shape the pending text
-        let glyphs      = self.shaper.map_glyphs(&pending, MatchingPresentation::NotRequired);
-        let shape       = self.shaper.shape(glyphs, tag::LATN, Some(tag::DFLT), &gsub::Features::Mask(gsub::GsubFeatureMask::default()), true).ok()
+        let ttf_font        = self.font.ttf_font();
+        let mut shaper      = self.font.allsorts_font();
+        let glyphs          = shaper.map_glyphs(&pending, MatchingPresentation::NotRequired);
+        let shape           = shaper.shape(glyphs, tag::LATN, Some(tag::DFLT), &gsub::Features::Mask(gsub::GsubFeatureMask::default()), true).ok()
             .unwrap_or_else(|| vec![]);
 
         // The scale factor is used to convert between font units and screen units
-        let scale_factor = self.em_size / self.units_per_em;
+        let scale_factor    = self.em_size / self.units_per_em;
 
         // Generate the glyph positions
         for glyph in shape {
             // Fetch information about this glyph
             let glyph_index     = ttf_parser::GlyphId(glyph.glyph.glyph_index as _);
-            let advance_x       = self.font.glyph_hor_advance(glyph_index);
-            let advance_y       = self.font.glyph_ver_advance(glyph_index);
+            let advance_x       = ttf_font.glyph_hor_advance(glyph_index);
+            let advance_y       = ttf_font.glyph_ver_advance(glyph_index);
             let advance_x       = if let Some(advance) = advance_x { advance } else { 0 };
             let advance_y       = if let Some(advance) = advance_y { advance } else { 0 };
 
