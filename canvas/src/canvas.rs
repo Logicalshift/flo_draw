@@ -547,12 +547,15 @@ mod test {
 
         // Check we can get the results via the stream
         executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::StartFrame));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
             assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
             assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
             assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::ShowFrame));
 
             // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
             assert!(stream.next().await == None);
@@ -575,12 +578,15 @@ mod test {
 
         // Check we can get the results via the stream
         executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::StartFrame));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
             assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
             assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
             assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::ShowFrame));
         });
     }
 
@@ -608,6 +614,7 @@ mod test {
         let mut stream  = canvas.stream();
 
         executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
@@ -648,6 +655,7 @@ mod test {
 
         executor::block_on(async
         {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
@@ -681,6 +689,7 @@ mod test {
         let mut stream  = canvas.stream();
 
         executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
@@ -718,11 +727,15 @@ mod test {
 
         executor::block_on(async {
             // Check we can get the results via the stream
+            assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::StartFrame));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
 
+            assert!(stream2.next().await == Some(Draw::ResetFrame));
             assert!(stream2.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+            assert!(stream2.next().await == Some(Draw::StartFrame));
             assert!(stream2.next().await == Some(Draw::NewPath));
             assert!(stream2.next().await == Some(Draw::Move(0.0, 0.0)));
 
@@ -735,6 +748,9 @@ mod test {
             assert!(stream2.next().await == Some(Draw::Line(0.0, 10.0)));
 
             // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
+            assert!(stream.next().await == Some(Draw::ShowFrame));
+            assert!(stream2.next().await == Some(Draw::ShowFrame));
+
             assert!(stream.next().await == None);
             assert!(stream2.next().await == None);
         });
@@ -769,15 +785,22 @@ mod test {
         // TODO: if the canvas fails to notify, this will block forever :-/
         executor::block_on(async {
             // Check we can get the results via the stream
+            assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::StartFrame));
             assert!(stream.next().await == Some(Draw::NewPath));
 
             // Give the thread some time to clear the canvas
             sleep(Duration::from_millis(120));
 
+            // Should immediately stop the old frame and start a new one
+            assert!(stream.next().await == Some(Draw::ShowFrame));
+            assert!(stream.next().await == Some(Draw::StartFrame));
+
             // Commands we sent before the flush are gone
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::Move(200.0, 200.0)));
+            assert!(stream.next().await == Some(Draw::ShowFrame));
 
             // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
             assert!(stream.next().await == None);
@@ -808,6 +831,7 @@ mod test {
         let mut stream  = canvas.stream();
 
         executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
             assert!(stream.next().await == Some(Draw::NewPath));
@@ -845,6 +869,7 @@ mod test {
         let mut stream  = canvas.stream();
 
         executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(20.0, 20.0)));
