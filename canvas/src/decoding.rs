@@ -1364,6 +1364,21 @@ mod test {
     }
 
     #[test]
+    fn decode_start_frame() {
+        check_round_trip_single(Draw::StartFrame);
+    }
+
+    #[test]
+    fn decode_show_frame() {
+        check_round_trip_single(Draw::ShowFrame);
+    }
+
+    #[test]
+    fn decode_reset_frame() {
+        check_round_trip_single(Draw::ResetFrame);
+    }
+
+    #[test]
     fn decode_new_path() {
         check_round_trip_single(Draw::NewPath);
     }
@@ -1598,6 +1613,42 @@ mod test {
     #[test]
     fn decode_font_size() {
         check_round_trip_single(Draw::Font(FontId(42), FontOp::FontSize(32.0)));
+    }
+
+    #[test]
+    fn decode_begin_line_layout() {
+        check_round_trip_single(Draw::BeginLineLayout(1.0, 2.0, TextAlignment::Center));
+    }
+
+    #[test]
+    fn decode_perform_layout() {
+        check_round_trip_single(Draw::DrawLaidOutText);
+    }
+
+    #[test]
+    fn decode_layout_text() {
+        check_round_trip_single(Draw::Font(FontId(42), FontOp::LayoutText("Test".to_string())));
+    }
+
+    #[test]
+    fn decode_draw_glyphs() {
+        check_round_trip_single(Draw::Font(FontId(42), FontOp::DrawGlyphs(vec![
+            GlyphPosition {
+                id: GlyphId(20),
+                location: (2.0, 3.0),
+                em_size: 18.0
+            },
+            GlyphPosition {
+                id: GlyphId(25),
+                location: (5.0, 3.0),
+                em_size: 18.0
+            },
+            GlyphPosition {
+                id: GlyphId(700),
+                location: (9.0, 3.0),
+                em_size: 18.0
+            },
+        ])));
     }
 
     #[test]
