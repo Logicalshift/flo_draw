@@ -297,7 +297,8 @@ enum DecoderState {
     FontOp(DecodeFontId),                                   // 'f' (id, op)
     FontOpSize(FontId, String),                             // 'f<id>S' (size)
     FontOpData(FontId),                                     // 'f<id>d'
-    FontOpTtf(FontId, DecodeBytes),                         // 'f<id>dT (bytes)'
+    FontOpTtf(FontId, DecodeBytes),                         // 'f<id>dT' (bytes)
+    FontOpLayoutText(FontId, DecodeString),                 // 'f<id>L' (string)
 
     TextureOp(DecodeTextureId),                             // 'B<id>' (id, op)
     TextureOpCreate(TextureId, String),                     // 'B<id>N' (w, h, format)
@@ -412,6 +413,7 @@ impl CanvasDecoder {
             FontOpSize(font_id, size)                           => Self::decode_font_op_size(next_chr, font_id, size)?,
             FontOpData(font_id)                                 => Self::decode_font_op_data(next_chr, font_id)?,
             FontOpTtf(font_id, bytes)                           => Self::decode_font_data_ttf(next_chr, font_id, bytes)?,
+            FontOpLayoutText(font_id, string)                   => Self::decode_font_op_layout(next_chr, font_id, string)?,
 
             TextureOp(texture_id)                               => Self::decode_texture_op(next_chr, texture_id)?,
             TextureOpCreate(texture_id, param)                  => Self::decode_texture_create(next_chr, texture_id, param)?,
@@ -1117,6 +1119,7 @@ impl CanvasDecoder {
         match chr {
             'd' => Ok((DecoderState::FontOpData(font_id), None)),
             'S' => Ok((DecoderState::FontOpSize(font_id, String::new()), None)),
+            'L' => Ok((DecoderState::FontOpLayoutText(font_id, DecodeString::new()), None)),
 
             _   => Err(DecoderError::InvalidCharacter(chr))
         }
@@ -1163,6 +1166,20 @@ impl CanvasDecoder {
             Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::UseFontDefinition(font)))))
         } else {
             Ok((DecoderState::FontOpTtf(font_id, bytes), None))
+        }
+    }
+
+    ///
+    /// Decides a text layout instruction
+    ///
+    fn decode_font_op_layout(chr: char, font_id: FontId, string: DecodeString) -> Result<(DecoderState, Option<Draw>), DecoderError>{
+        let string = string.decode(chr)?;
+
+        if string.ready() {
+            let string = string.to_string()?;
+            Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::LayoutText(string)))))
+        } else {
+            Ok((DecoderState::FontOpLayoutText(font_id, string), None))
         }
     }
 
