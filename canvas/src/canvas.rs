@@ -881,4 +881,34 @@ mod test {
             assert!(stream.next().await == Some(Draw::Fill));
         });
     }
+
+    #[test]
+    fn font_definitions_survive_clear_layer() {
+        let canvas  = Canvas::new();
+        let lato    = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-regular.ttf"));
+
+        canvas.draw(|gc| {
+            gc.layer(LayerId(1));
+
+            gc.define_font_data(FontId(1), lato.clone());
+            gc.set_font_size(FontId(1), 12.0);
+            gc.draw_text(FontId(1), "Test".to_string(), 100.0, 100.0);
+
+            gc.clear_layer();
+            gc.fill();
+        });
+
+        let mut stream = canvas.stream();
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+
+            assert!(match stream.next().await { Some(Draw::Font(FontId(1), FontOp::UseFontDefinition(_))) => true, _ => false });
+            assert!(stream.next().await == Some(Draw::Font(FontId(1), FontOp::FontSize(12.0))));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
+    }
 }
