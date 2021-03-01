@@ -474,6 +474,10 @@ impl CanvasDecoder {
             'B'     => Ok((DecoderState::NewLayerBlend(PartialResult::MatchMore(String::new()), String::new()), None)),
             's'     => Ok((DecoderState::NewSprite(String::new()), None)),
 
+            'F'     => Ok((DecoderState::None, Some(Draw::StartFrame))),
+            'f'     => Ok((DecoderState::None, Some(Draw::ShowFrame))),
+            'G'     => Ok((DecoderState::None, Some(Draw::ResetFrame))),
+
             _       => Err(DecoderError::InvalidCharacter(next_chr))
         }
     }
