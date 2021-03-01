@@ -292,6 +292,7 @@ enum DecoderState {
 
     FontDrawing,                                            // 't'
     FontDrawText(DecodeFontId, DecodeString, String),       // 'tT' (font_id, string, x, y)
+    FontBeginLayout(String),                                // 'tl' (x, y, align)
 
     FontOp(DecodeFontId),                                   // 'f' (id, op)
     FontOpSize(FontId, String),                             // 'f<id>S' (size)
@@ -405,6 +406,7 @@ impl CanvasDecoder {
 
             FontDrawing                                         => Self::decode_font_drawing(next_chr)?,
             FontDrawText(font_id, string_decode, coords)        => Self::decode_font_draw_text(next_chr, font_id, string_decode, coords)?,
+            FontBeginLayout(param)                              => Self::decode_font_begin_layout(next_chr, param)?,
 
             FontOp(font_id)                                     => Self::decode_font_op(next_chr, font_id)?,
             FontOpSize(font_id, size)                           => Self::decode_font_op_size(next_chr, font_id, size)?,
@@ -1021,6 +1023,8 @@ impl CanvasDecoder {
     #[inline] fn decode_font_drawing(chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         match chr {
             'T' => Ok((DecoderState::FontDrawText(PartialResult::new(), DecodeString::new(), String::new()), None)),
+            'R' => Ok((DecoderState::None, Some(Draw::DrawLaidOutText))),
+            'l' => Ok((DecoderState::FontBeginLayout(String::new()), None)),
             _   => Err(DecoderError::InvalidCharacter(chr))
         }
     }
@@ -1058,6 +1062,36 @@ impl CanvasDecoder {
                 Ok((DecoderState::None, Some(Draw::DrawText(font_id, string.to_string()?, x, y))))
             }
         }
+    }
+
+    ///
+    /// Decodes the 'begin layout' instruction
+    ///
+    fn decode_font_begin_layout(chr: char, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Push the character
+        let mut param = param;
+        param.push(chr);
+
+        // 2x f32 + 1 character
+        if param.len() < 13 {
+            return Ok((DecoderState::FontBeginLayout(param), None));
+        }
+
+        // Decode
+        let mut chrs    = param.chars();
+
+        let x           = Self::decode_f32(&mut chrs)?;
+        let y           = Self::decode_f32(&mut chrs)?;
+
+        let align       = match chrs.next() {
+            Some('l')   => Ok(TextAlignment::Left),
+            Some('r')   => Ok(TextAlignment::Right),
+            Some('c')   => Ok(TextAlignment::Center),
+            Some(other) => Err(DecoderError::InvalidCharacter(other)),
+            None        => Err(DecoderError::NotReady)
+        }?;
+
+        Ok((DecoderState::None, Some(Draw::BeginLineLayout(x, y, align))))
     }
 
     ///
