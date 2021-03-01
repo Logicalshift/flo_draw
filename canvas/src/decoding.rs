@@ -47,6 +47,14 @@ struct DecodeString {
 }
 
 ///
+/// Represents the state of an operation decoding a list of glyph positions
+///
+struct DecodeGlyphPositions {
+    length: PartialResult<u64>,
+    glyphs: PartialResult<Vec<GlyphPosition>>
+}
+
+///
 /// Represents the state of an operation decoding a set of bytes
 ///
 struct DecodeBytes {
@@ -238,6 +246,97 @@ impl DecodeBytes {
     }
 }
 
+impl DecodeGlyphPositions {
+    ///
+    /// Creates a new string decoder that has matched 0 characters
+    ///
+    fn new() -> DecodeGlyphPositions {
+        DecodeGlyphPositions {
+            length: PartialResult::new(),
+            glyphs: PartialResult::new()
+        }
+    }
+
+    ///
+    /// Indicates if this string decoder is ready or not
+    ///
+    #[inline] fn ready(&self) -> bool {
+        match (&self.length, &self.glyphs) {
+            (PartialResult::FullMatch(_), PartialResult::FullMatch(_))  => true,
+            _                                                           => false
+        }
+    }
+
+    ///
+    /// Returns the string matched by this decoder (once it's ready)
+    ///
+    #[inline] fn to_glyphs(self) -> Result<Vec<GlyphPosition>, DecoderError> {
+        match self.glyphs {
+            PartialResult::FullMatch(glyphs)    => Ok(glyphs),
+            PartialResult::MatchMore(_)         => Err(DecoderError::NotReady)
+        }
+    }
+
+    ///
+    /// Decodes a single character and returns the new state of the decoder
+    ///
+    fn decode(mut self, chr: char) -> Result<DecodeGlyphPositions, DecoderError> {
+        // Decode or fetch the length of the string
+        let length = match self.length {
+            PartialResult::MatchMore(so_far)    => {
+                self.length = CanvasDecoder::decode_compact_id(chr, so_far)?;
+
+                if let &PartialResult::FullMatch(0) = &self.length {
+                    self.glyphs = PartialResult::FullMatch(vec![]);
+                }
+                return Ok(self);
+            }
+
+            PartialResult::FullMatch(length)    => {
+                self.length = PartialResult::FullMatch(length);
+                length as usize
+            }
+        };
+
+        // Try to decode the rest of the string
+        match self.glyphs {
+            PartialResult::FullMatch(glyphs)    => {
+                // Nothing to do
+                self.glyphs = PartialResult::FullMatch(glyphs);
+            }
+
+            PartialResult::MatchMore(mut string)    => {
+                string.push(chr);
+
+                if string.len() >= length * 24 {
+                    let mut chrs    = string.chars();
+                    let mut glyphs  = vec![];
+
+                    // Each glyph consists of a glyph ID, an x and y coord and a em_size
+                    for _ in 0..length {
+                        let id      = CanvasDecoder::decode_u32(&mut chrs)?;
+                        let x       = CanvasDecoder::decode_f32(&mut chrs)?;
+                        let y       = CanvasDecoder::decode_f32(&mut chrs)?;
+                        let em_size = CanvasDecoder::decode_f32(&mut chrs)?;
+
+                        glyphs.push(GlyphPosition {
+                            id:         GlyphId(id),
+                            location:   (x, y),
+                            em_size:    em_size
+                        });
+                    }
+
+                    self.glyphs = PartialResult::FullMatch(glyphs);
+                } else {
+                    self.glyphs = PartialResult::MatchMore(string);
+                }
+            }
+        }
+
+        Ok(self)
+    }
+}
+
 ///
 /// The possible states for a decoder to be in after accepting some characters from the source
 ///
@@ -299,6 +398,7 @@ enum DecoderState {
     FontOpData(FontId),                                     // 'f<id>d'
     FontOpTtf(FontId, DecodeBytes),                         // 'f<id>dT' (bytes)
     FontOpLayoutText(FontId, DecodeString),                 // 'f<id>L' (string)
+    FontOpDrawGlyphs(FontId, DecodeGlyphPositions),         // 'f<id>G' (glyph positions)
 
     TextureOp(DecodeTextureId),                             // 'B<id>' (id, op)
     TextureOpCreate(TextureId, String),                     // 'B<id>N' (w, h, format)
@@ -414,6 +514,7 @@ impl CanvasDecoder {
             FontOpData(font_id)                                 => Self::decode_font_op_data(next_chr, font_id)?,
             FontOpTtf(font_id, bytes)                           => Self::decode_font_data_ttf(next_chr, font_id, bytes)?,
             FontOpLayoutText(font_id, string)                   => Self::decode_font_op_layout(next_chr, font_id, string)?,
+            FontOpDrawGlyphs(font_id, glyphs)                   => Self::decode_font_op_glyphs(next_chr, font_id, glyphs)?,
 
             TextureOp(texture_id)                               => Self::decode_texture_op(next_chr, texture_id)?,
             TextureOpCreate(texture_id, param)                  => Self::decode_texture_create(next_chr, texture_id, param)?,
@@ -1120,6 +1221,7 @@ impl CanvasDecoder {
             'd' => Ok((DecoderState::FontOpData(font_id), None)),
             'S' => Ok((DecoderState::FontOpSize(font_id, String::new()), None)),
             'L' => Ok((DecoderState::FontOpLayoutText(font_id, DecodeString::new()), None)),
+            'G' => Ok((DecoderState::FontOpDrawGlyphs(font_id, DecodeGlyphPositions::new()), None)),
 
             _   => Err(DecoderError::InvalidCharacter(chr))
         }
@@ -1180,6 +1282,20 @@ impl CanvasDecoder {
             Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::LayoutText(string)))))
         } else {
             Ok((DecoderState::FontOpLayoutText(font_id, string), None))
+        }
+    }
+
+    ///
+    /// Decides a text layout instruction
+    ///
+    fn decode_font_op_glyphs(chr: char, font_id: FontId, glyphs: DecodeGlyphPositions) -> Result<(DecoderState, Option<Draw>), DecoderError>{
+        let glyphs = glyphs.decode(chr)?;
+
+        if glyphs.ready() {
+            let glyphs = glyphs.to_glyphs()?;
+            Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::DrawGlyphs(glyphs)))))
+        } else {
+            Ok((DecoderState::FontOpDrawGlyphs(font_id, glyphs), None))
         }
     }
 
