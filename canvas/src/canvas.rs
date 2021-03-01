@@ -17,15 +17,22 @@ use futures::task;
 use futures::task::{Poll, Waker};
 use futures::{Stream};
 
+/// Used to represent the layer or sprite that a drawing operation is for
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum LayerOrSpriteId {
+    Layer(LayerId),
+    Sprite(SpriteId)
+}
+
 ///
 /// The core structure used to store details of a canvas
 ///
 struct CanvasCore {
     /// What was drawn since the last clear command was sent to this canvas (and the layer that it's on)
-    drawing_since_last_clear: Vec<(LayerId, Draw)>,
+    drawing_since_last_clear: Vec<(LayerOrSpriteId, Draw)>,
 
     /// The current layer that we're drawing on
-    current_layer: LayerId,
+    current_layer: LayerOrSpriteId,
 
     // Tasks to notify next time we add to the canvas
     pending_streams: Vec<Arc<CanvasStream>>,
@@ -86,7 +93,7 @@ impl CanvasCore {
     ///
     /// (Except for ClearCanvas)
     ///
-    fn clear_layer(&mut self, layer_id: LayerId) {
+    fn clear_layer(&mut self, layer_id: LayerOrSpriteId) {
         // Take the old drawing from this object
         let mut old_drawing = vec![];
         mem::swap(&mut self.drawing_since_last_clear, &mut old_drawing);
@@ -191,14 +198,14 @@ impl CanvasCore {
             match &draw {
                 Draw::ClearCanvas(_) => {
                     // Clearing the canvas empties the command list and updates the clear count
-                    self.drawing_since_last_clear   = vec![(LayerId(0), Draw::ResetFrame)];
-                    self.current_layer              = LayerId(0);
+                    self.drawing_since_last_clear   = vec![(LayerOrSpriteId::Layer(LayerId(0)), Draw::ResetFrame)];
+                    self.current_layer              = LayerOrSpriteId::Layer(LayerId(0));
                     clear_pending                   = true;
 
                     new_drawing                     = vec![Draw::StartFrame];
 
                     // Start the new drawing with the 'clear' command
-                    self.drawing_since_last_clear.push((LayerId(0), draw.clone()));
+                    self.drawing_since_last_clear.push((LayerOrSpriteId::Layer(LayerId(0)), draw.clone()));
                 },
 
                 Draw::Restore => {
@@ -221,15 +228,43 @@ impl CanvasCore {
                 },
 
                 Draw::Layer(new_layer) => {
-                    self.current_layer = *new_layer;
-                    self.drawing_since_last_clear.push((*new_layer, draw.clone()));
+                    let new_layer       = LayerOrSpriteId::Layer(*new_layer);
+                    self.current_layer  = new_layer;
+                    self.drawing_since_last_clear.push((new_layer, draw.clone()));
+                },
+
+                Draw::Sprite(new_sprite) => {
+                    let new_sprite      = LayerOrSpriteId::Sprite(*new_sprite);
+                    self.current_layer  = new_sprite;
+                    self.drawing_since_last_clear.push((new_sprite, draw.clone()));
                 },
 
                 Draw::ClearLayer => {
                     // Remove all of the commands for the current layer, replacing them with just a switch to this layer
                     let current_layer = self.current_layer;
-                    self.clear_layer(current_layer);
-                    self.drawing_since_last_clear.push((current_layer, Draw::Layer(current_layer)));
+
+                    match current_layer {
+                        LayerOrSpriteId::Layer(layer_id) => {
+                            self.clear_layer(current_layer);
+                            self.drawing_since_last_clear.push((current_layer, Draw::Layer(layer_id)));
+                        }
+
+                        _ => { }
+                    }
+                },
+
+                Draw::ClearSprite => {
+                    // Remove all of the commands for the current layer, replacing them with just a switch to this layer
+                    let current_layer = self.current_layer;
+
+                    match current_layer {
+                        LayerOrSpriteId::Sprite(sprite_id) => {
+                            self.clear_layer(current_layer);
+                            self.drawing_since_last_clear.push((current_layer, Draw::Sprite(sprite_id)));
+                        }
+
+                        _ => { }
+                    }
                 },
 
                 Draw::ShowFrame => {
@@ -290,10 +325,10 @@ impl Canvas {
         // A canvas is initially just a clear command
         let core = CanvasCore {
             drawing_since_last_clear:   vec![ 
-                (LayerId(0), Draw::ResetFrame),
-                (LayerId(0), Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)))
+                (LayerOrSpriteId::Layer(LayerId(0)), Draw::ResetFrame),
+                (LayerOrSpriteId::Layer(LayerId(0)), Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)))
             ],
-            current_layer:              LayerId(0),
+            current_layer:              LayerOrSpriteId::Layer(LayerId(0)),
             pending_streams:            vec![ ]
         };
 
@@ -943,6 +978,58 @@ mod test {
             assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
+    }
+
+    #[test]
+    fn clear_layer_does_not_clear_sprites() {
+        let canvas      = Canvas::new();
+
+        // Draw using a graphics context
+        canvas.draw(|gc| {
+            gc.new_path();
+            gc.move_to(20.0, 20.0);
+
+            gc.stroke();
+
+            gc.layer(LayerId(1));
+            gc.new_path();
+            gc.move_to(0.0, 0.0);
+            gc.line_to(10.0, 0.0);
+            gc.line_to(10.0, 10.0);
+            gc.line_to(0.0, 10.0);
+
+            gc.sprite(SpriteId(1));
+            gc.clear_sprite();
+
+            gc.new_path();
+            gc.move_to(10.0, 10.0);
+            gc.fill();
+
+            gc.layer(LayerId(1));
+            gc.clear_layer();
+
+            gc.fill();
+        });
+
+        // Only the commands after clear_layer should be present
+        let mut stream  = canvas.stream();
+        println!("{:?}", canvas.get_drawing());
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(20.0, 20.0)));
+            assert!(stream.next().await == Some(Draw::Stroke));
+
+            assert!(stream.next().await == Some(Draw::Sprite(SpriteId(1))));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Fill));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
             assert!(stream.next().await == Some(Draw::Fill));
         });
     }
