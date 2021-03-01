@@ -911,4 +911,73 @@ mod test {
             assert!(stream.next().await == Some(Draw::Fill));
         });
     }
+
+    #[test]
+    fn show_start_frames_cancel_out() {
+        let canvas  = Canvas::new();
+
+        canvas.draw(|gc| {
+            gc.start_frame();
+            gc.new_path();
+            gc.start_frame();
+            gc.move_to(20.0, 20.0);
+
+            gc.start_frame();
+            gc.stroke();
+
+            gc.start_frame();
+            gc.layer(LayerId(1));
+            gc.start_frame();
+            gc.new_path();
+            gc.start_frame();
+            gc.move_to(0.0, 0.0);
+            gc.start_frame();
+            gc.line_to(10.0, 0.0);
+            gc.start_frame();
+            gc.line_to(10.0, 10.0);
+            gc.start_frame();
+            gc.line_to(0.0, 10.0);
+
+            gc.start_frame();
+            gc.clear_layer();
+
+            gc.start_frame();
+            gc.new_path();
+            gc.start_frame();
+            gc.move_to(10.0, 10.0);
+            gc.start_frame();
+            gc.fill();
+
+            // Cancel all but one of the start frames
+            gc.show_frame();
+            gc.show_frame();
+            gc.show_frame();
+            gc.show_frame();
+            gc.show_frame();
+            gc.show_frame();
+            gc.show_frame();
+            gc.show_frame();
+            gc.show_frame();
+            gc.show_frame();
+            gc.show_frame();
+            gc.show_frame();
+        });
+
+        let mut stream = canvas.stream();
+
+        // Only the one uncanceled start_frame should be in the canvas
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(20.0, 20.0)));
+            assert!(stream.next().await == Some(Draw::Stroke));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
+    }
 }
