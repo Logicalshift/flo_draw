@@ -7,6 +7,7 @@ use super::font_face::*;
 use super::transform2d::*;
 
 use std::collections::vec_deque::*;
+use std::collections::{HashMap, HashSet};
 use std::sync::*;
 use std::mem;
 use std::pin::*;
@@ -111,6 +112,70 @@ impl CanvasCore {
 
         // This becomes the new drawing for this layer
         self.drawing_since_last_clear = new_drawing;
+
+        self.remove_unused_resources();
+    }
+
+    ///
+    /// Iterates through the drawing since last clear and removes any resource operations that
+    /// are replaced before they are used
+    ///
+    /// For example, if a font is declared and then redeclared with no usages, this will remove
+    /// it from the drawing
+    ///
+    fn remove_unused_resources(&mut self) {
+        let mut font_declarations       = HashMap::new();
+        let mut font_size_declarations  = HashMap::new();
+        let mut unused_indexes          = HashSet::new();
+
+        // Find the indexes of the unused font operations
+        for (idx, drawing) in self.drawing_since_last_clear.iter().enumerate() {
+            match drawing {
+                (_, Draw::Font(font_id, FontOp::UseFontDefinition(_))) => {
+                    // If the font has an unused declaration, remove it from the list
+                    if let Some(last_idx) = font_declarations.get(&font_id) {
+                        unused_indexes.insert(*last_idx);
+                    }
+
+                    // This becomes the new last definition of this font
+                    font_declarations.insert(font_id, idx);
+                },
+
+                (_, Draw::Font(font_id, FontOp::FontSize(_))) => {
+                    // If the font has an unused declaration, remove it from the list
+                    if let Some(last_idx) = font_size_declarations.get(&font_id) {
+                        unused_indexes.insert(*last_idx);
+                    }
+
+                    // This becomes the new last definition of this font's size
+                    font_size_declarations.insert(font_id, idx);
+                }
+
+                (_, Draw::Font(font_id, _)) => {
+                    // Other fontops count as using the font
+                    font_declarations.remove(font_id);
+                    font_size_declarations.remove(font_id);
+                }
+
+                (_, Draw::DrawText(font_id, _, _, _)) => {
+                    // As does drawing text with the font
+                    font_declarations.remove(font_id);
+                    font_size_declarations.remove(font_id);
+                }
+
+                _ => {}
+            }
+        }
+
+        if unused_indexes.len() > 0 {
+            // Remove any unused drawing item by filtering the drawing
+            let drawing                     = mem::take(&mut self.drawing_since_last_clear);
+            self.drawing_since_last_clear   = drawing.into_iter()
+                .enumerate()
+                .filter(|(idx, _)| !unused_indexes.contains(idx))
+                .map(|(_, item)| item)
+                .collect();
+        }
     }
 
     ///
@@ -905,6 +970,76 @@ mod test {
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
 
             assert!(match stream.next().await { Some(Draw::Font(FontId(1), FontOp::UseFontDefinition(_))) => true, _ => false });
+            assert!(stream.next().await == Some(Draw::Font(FontId(1), FontOp::FontSize(12.0))));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
+    }
+
+    #[test]
+    fn only_one_font_definition_survives_clear_layer() {
+        let canvas  = Canvas::new();
+        let lato    = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-regular.ttf"));
+
+        canvas.draw(|gc| {
+            gc.layer(LayerId(1));
+
+            gc.define_font_data(FontId(1), lato.clone());
+            gc.define_font_data(FontId(1), lato.clone());
+            gc.define_font_data(FontId(2), lato.clone());
+            gc.define_font_data(FontId(1), lato.clone());
+            gc.set_font_size(FontId(1), 12.0);
+            gc.draw_text(FontId(1), "Test".to_string(), 100.0, 100.0);
+
+            gc.clear_layer();
+            gc.fill();
+        });
+
+        let mut stream = canvas.stream();
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+
+            assert!(match stream.next().await { Some(Draw::Font(FontId(2), FontOp::UseFontDefinition(_))) => true, _ => false });
+            assert!(match stream.next().await { Some(Draw::Font(FontId(1), FontOp::UseFontDefinition(_))) => true, _ => false });
+            assert!(stream.next().await == Some(Draw::Font(FontId(1), FontOp::FontSize(12.0))));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
+    }
+
+    #[test]
+    fn only_one_font_size_survives_clear_layer() {
+        let canvas  = Canvas::new();
+        let lato    = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-regular.ttf"));
+
+        canvas.draw(|gc| {
+            gc.layer(LayerId(1));
+
+            gc.define_font_data(FontId(1), lato.clone());
+            gc.set_font_size(FontId(1), 16.0);
+            gc.set_font_size(FontId(1), 15.0);
+            gc.set_font_size(FontId(2), 18.0);
+            gc.set_font_size(FontId(1), 14.0);
+            gc.set_font_size(FontId(1), 13.0);
+            gc.set_font_size(FontId(1), 12.0);
+            gc.draw_text(FontId(1), "Test".to_string(), 100.0, 100.0);
+
+            gc.clear_layer();
+            gc.fill();
+        });
+
+        let mut stream = canvas.stream();
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+
+            assert!(match stream.next().await { Some(Draw::Font(FontId(1), FontOp::UseFontDefinition(_))) => true, _ => false });
+            assert!(stream.next().await == Some(Draw::Font(FontId(2), FontOp::FontSize(18.0))));
             assert!(stream.next().await == Some(Draw::Font(FontId(1), FontOp::FontSize(12.0))));
 
             assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
