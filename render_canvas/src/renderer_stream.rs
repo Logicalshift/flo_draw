@@ -89,8 +89,8 @@ impl RenderStreamState {
     ///
     fn new() -> RenderStreamState {
         RenderStreamState {
-            render_target:  None,
-            blend_mode:     None,
+            render_target:  Some(render::RenderTargetId(0)),
+            blend_mode:     Some(render::BlendMode::DestinationOver),
             shader:         None,
             transform:      None
         }
