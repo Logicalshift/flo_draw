@@ -11,6 +11,7 @@ use crate::action::*;
 use crate::buffer::*;
 
 use std::ptr;
+use std::sync::*;
 use std::ops::{Range};
 
 ///
@@ -117,6 +118,12 @@ impl GlRenderer {
                 DrawFrameBuffer(render_id, x, y)                                        => { self.draw_frame_buffer(render_id, x, y); }
                 ShowFrameBuffer                                                         => { /* This doesn't double-buffer so nothing to do */ }
                 CreateTextureBgra(texture_id, width, height)                            => { self.create_bgra_texture(texture_id, width, height); }
+                CreateTextureMono(texture_id, width, height)                            => { self.create_mono_texture(texture_id, width, height); }
+                Create1DTextureBgra(texture_id, width)                                  => { self.create_1d_bgra_texture(texture_id, width); }
+                Create1DTextureMono(texture_id, width)                                  => { self.create_1d_mono_texture(texture_id, width); }
+                WriteTextureData(texture_id, (x1, y1), (x2, y2), data)                  => { self.write_texture_data_2d(texture_id, (x1, y1), (x2, y2), &*data); }
+                WriteTexture1D(texture_id, x1, x2, data)                                => { self.write_texture_data_1d(texture_id, x1, x2, &*data); }
+                CreateMipMaps(texture_id)                                               => { self.create_mipmaps(texture_id); }
                 FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
                 Clear(color)                                                            => { self.clear(color); }
                 UseShader(shader_type)                                                  => { self.use_shader(shader_type); }
@@ -287,6 +294,52 @@ impl GlRenderer {
 
         // Store the texture
         self.textures[texture_id] = Some(new_texture);
+    }
+    
+    ///
+    ///
+    ///
+    fn create_mono_texture(&mut self, texture_id: TextureId, width: usize, height: usize) {
+        unimplemented!()
+    }
+    
+    ///
+    /// Creates a 1 dimensional BGRA texture
+    ///
+    /// (This is useful for things like describing gradiant fill patterns)
+    ///
+    fn create_1d_bgra_texture(&mut self, texture_id: TextureId, width: usize) {
+        unimplemented!()
+    }
+    
+    ///
+    /// Creates a 1 dimensional mono texture
+    ///
+    /// (This is useful for things like describing dash patterns)
+    ///
+    fn create_1d_mono_texture(&mut self, texture_id: TextureId, width: usize) {
+        unimplemented!()
+    }
+    
+    ///
+    /// Writes out byte data to a region in a 2D texture
+    ///
+    fn write_texture_data_2d(&mut self, texture_id: TextureId, (x1, y1): (usize, usize), (x2, y2): (usize, usize), data: &[u8]) {
+        unimplemented!()
+    }
+    
+    ///
+    /// Writes out byte data to a region in a 1D texture
+    ///
+    fn write_texture_data_1d(&mut self, texture_id: TextureId, x1: usize, x2: usize, data: &[u8]) {
+        unimplemented!()
+    }
+    
+    ///
+    /// Generates mip-maps for a texture to prepare it for rendering
+    ///
+    fn create_mipmaps(&mut self, texture_id: TextureId) {
+        unimplemented!()
     }
 
     ///
