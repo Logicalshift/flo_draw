@@ -5,7 +5,7 @@ use flo_curves::geo::*;
 use std::sync::*;
 
 ///
-/// Erases '
+/// Erases 'Hello, World' from a rectangle to allow the background to show through
 ///
 pub fn main() {
     with_2d_graphics(|| {
