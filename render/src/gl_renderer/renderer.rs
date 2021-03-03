@@ -368,15 +368,27 @@ impl GlRenderer {
     ///
     /// Writes out byte data to a region in a 2D texture
     ///
-    fn write_texture_data_2d(&mut self, texture_id: TextureId, (x1, y1): (usize, usize), (x2, y2): (usize, usize), data: &[u8]) {
-        unimplemented!()
+    fn write_texture_data_2d(&mut self, TextureId(texture_id): TextureId, (x1, y1): (usize, usize), (x2, y2): (usize, usize), data: &[u8]) {
+        if let Some(Some(texture)) = self.textures.get_mut(texture_id) {
+            if texture.is_mono() {
+                texture.set_data_mono(x1, y1, x2-x1, y2-y1, data);
+            } else {
+                texture.set_data_bgra(x1, y1, x2-x1, y2-y1, data);
+            }
+        }
     }
     
     ///
     /// Writes out byte data to a region in a 1D texture
     ///
-    fn write_texture_data_1d(&mut self, texture_id: TextureId, x1: usize, x2: usize, data: &[u8]) {
-        unimplemented!()
+    fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: &[u8]) {
+        if let Some(Some(texture)) = self.textures.get_mut(texture_id) {
+            if texture.is_mono() {
+                texture.set_data_mono_1d(x1, x2-x1, data);
+            } else {
+                texture.set_data_bgra_1d(x1, x2-x1, data);
+            }
+        }
     }
     
     ///

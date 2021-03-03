@@ -17,7 +17,9 @@ struct TextureRef {
 pub struct Texture {
     texture: Rc<TextureRef>,
 
-    texture_target: gl::types::GLuint
+    texture_target: gl::types::GLuint,
+
+    texture_format: gl::types::GLuint
 }
 
 impl Texture {
@@ -31,7 +33,8 @@ impl Texture {
 
             Texture {
                 texture:        Rc::new(TextureRef { texture_id: new_texture }),
-                texture_target: gl::TEXTURE_2D
+                texture_target: gl::TEXTURE_2D,
+                texture_format: gl::RGBA
             }
         }
     }
@@ -43,6 +46,7 @@ impl Texture {
         unsafe {
             let texture_id      = self.texture.texture_id;
             self.texture_target = gl::TEXTURE_2D;
+            self.texture_format = gl::RGBA;
 
             gl::BindTexture(gl::TEXTURE_2D, texture_id);
 
@@ -62,6 +66,7 @@ impl Texture {
         unsafe {
             let texture_id      = self.texture.texture_id;
             self.texture_target = gl::TEXTURE_2D_MULTISAMPLE;
+            self.texture_format = gl::RGBA;
 
             // Clamp the number of samples to the maximum supported by the driver
             let mut max_samples = 1;
@@ -84,6 +89,7 @@ impl Texture {
         unsafe {
             let texture_id      = self.texture.texture_id;
             self.texture_target = gl::TEXTURE_2D;
+            self.texture_format = gl::RED;
 
             gl::BindTexture(gl::TEXTURE_2D, texture_id);
 
@@ -103,6 +109,7 @@ impl Texture {
         unsafe {
             let texture_id      = self.texture.texture_id;
             self.texture_target = gl::TEXTURE_2D_MULTISAMPLE;
+            self.texture_format = gl::RED;
 
             // Clamp the number of samples to the maximum supported by the driver
             let mut max_samples = 1;
@@ -125,6 +132,7 @@ impl Texture {
         unsafe {
             let texture_id      = self.texture.texture_id;
             self.texture_target = gl::TEXTURE_1D;
+            self.texture_format = gl::RGBA;
 
             gl::BindTexture(gl::TEXTURE_1D, texture_id);
 
@@ -144,6 +152,7 @@ impl Texture {
         unsafe {
             let texture_id      = self.texture.texture_id;
             self.texture_target = gl::TEXTURE_1D;
+            self.texture_format = gl::RED;
 
             gl::BindTexture(gl::TEXTURE_1D, texture_id);
 
@@ -166,6 +175,69 @@ impl Texture {
 
             panic_on_gl_error("Generate texture mip map");
         }
+    }
+
+    ///
+    /// Sets 8-bit BGRA pixel data for a texture
+    ///
+    pub fn set_data_bgra(&mut self, x: usize, y: usize, width: usize, height: usize, pixels: &[u8]) {
+        if pixels.len() != (width * height * 4) {
+            panic!("set_data_bgra called with incorrect sized pixel array")
+        }
+
+        unsafe {
+            gl::BindTexture(self.texture_target, self.texture.texture_id);
+            gl::TexSubImage2D(gl::TEXTURE_2D, 0, x as _, y as _, width as _, height as _, gl::BGRA, gl::UNSIGNED_INT_8_8_8_8, pixels.as_ptr() as _);
+        }
+    }
+
+    ///
+    /// Sets 8-bit mono pixel data for a texture
+    ///
+    pub fn set_data_mono(&mut self, x: usize, y: usize, width: usize, height: usize, pixels: &[u8]) {
+        if pixels.len() != width * height {
+            panic!("set_data_mono called with incorrect sized pixel array")
+        }
+
+        unsafe {
+            gl::BindTexture(self.texture_target, self.texture.texture_id);
+            gl::TexSubImage2D(gl::TEXTURE_2D, 0, x as _, y as _, width as _, height as _, gl::RED, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
+        }
+    }
+
+    ///
+    /// Sets 8-bit BGRA pixel data for a texture
+    ///
+    pub fn set_data_bgra_1d(&mut self, x: usize, width: usize, pixels: &[u8]) {
+        if pixels.len() != width * 4 {
+            panic!("set_data_bgra_1d called with incorrect sized pixel array")
+        }
+
+        unsafe {
+            gl::BindTexture(self.texture_target, self.texture.texture_id);
+            gl::TexSubImage1D(gl::TEXTURE_1D, 0, x as _, width as _, gl::BGRA, gl::UNSIGNED_INT_8_8_8_8, pixels.as_ptr() as _);
+        }
+    }
+
+    ///
+    /// Sets 8-bit mono pixel data for a texture
+    ///
+    pub fn set_data_mono_1d(&mut self, x: usize, width: usize, pixels: &[u8]) {
+        if pixels.len() != width {
+            panic!("set_data_mono_1d called with incorrect sized pixel array")
+        }
+
+        unsafe {
+            gl::BindTexture(self.texture_target, self.texture.texture_id);
+            gl::TexSubImage1D(gl::TEXTURE_1D, 0, x as _, width as _, gl::RED, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
+        }
+    }
+
+    ///
+    /// True if this is a monochrome texture
+    ///
+    pub fn is_mono(&self) -> bool {
+        self.texture_format == gl::RED
     }
 }
 
