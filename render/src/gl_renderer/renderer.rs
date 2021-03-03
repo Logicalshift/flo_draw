@@ -11,7 +11,6 @@ use crate::action::*;
 use crate::buffer::*;
 
 use std::ptr;
-use std::sync::*;
 use std::ops::{Range};
 
 ///
@@ -297,10 +296,25 @@ impl GlRenderer {
     }
     
     ///
+    /// Creates a new monochrome texture
     ///
-    ///
-    fn create_mono_texture(&mut self, texture_id: TextureId, width: usize, height: usize) {
-        unimplemented!()
+    fn create_mono_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
+        // Extend the textures array as needed
+        if texture_id >= self.textures.len() {
+            self.textures.extend((self.textures.len()..(texture_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        // Free any existing texture
+        self.textures[texture_id] = None;
+
+        // Create a new texture
+        let mut new_texture = Texture::new();
+        new_texture.create_monochrome(width as u16, height as u16);
+
+        // Store the texture
+        self.textures[texture_id] = Some(new_texture);
     }
     
     ///
@@ -308,8 +322,23 @@ impl GlRenderer {
     ///
     /// (This is useful for things like describing gradiant fill patterns)
     ///
-    fn create_1d_bgra_texture(&mut self, texture_id: TextureId, width: usize) {
-        unimplemented!()
+    fn create_1d_bgra_texture(&mut self, TextureId(texture_id): TextureId, width: usize) {
+        // Extend the textures array as needed
+        if texture_id >= self.textures.len() {
+            self.textures.extend((self.textures.len()..(texture_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        // Free any existing texture
+        self.textures[texture_id] = None;
+
+        // Create a new texture
+        let mut new_texture = Texture::new();
+        new_texture.create_empty_1d(width as u16);
+
+        // Store the texture
+        self.textures[texture_id] = Some(new_texture);
     }
     
     ///
@@ -317,8 +346,23 @@ impl GlRenderer {
     ///
     /// (This is useful for things like describing dash patterns)
     ///
-    fn create_1d_mono_texture(&mut self, texture_id: TextureId, width: usize) {
-        unimplemented!()
+    fn create_1d_mono_texture(&mut self, TextureId(texture_id): TextureId, width: usize) {
+        // Extend the textures array as needed
+        if texture_id >= self.textures.len() {
+            self.textures.extend((self.textures.len()..(texture_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        // Free any existing texture
+        self.textures[texture_id] = None;
+
+        // Create a new texture
+        let mut new_texture = Texture::new();
+        new_texture.create_monochrome_1d(width as u16);
+
+        // Store the texture
+        self.textures[texture_id] = Some(new_texture);
     }
     
     ///
@@ -338,8 +382,11 @@ impl GlRenderer {
     ///
     /// Generates mip-maps for a texture to prepare it for rendering
     ///
-    fn create_mipmaps(&mut self, texture_id: TextureId) {
-        unimplemented!()
+    fn create_mipmaps(&mut self, TextureId(texture_id): TextureId) {
+        if texture_id < self.textures.len() {
+            // Mip-map the texture if it exists in this renderer
+            self.textures[texture_id].as_mut().map(|texture| texture.generate_mipmaps());
+        }
     }
 
     ///
