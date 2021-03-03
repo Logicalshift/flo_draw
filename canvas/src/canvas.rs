@@ -1037,7 +1037,7 @@ mod test {
     #[test]
     fn font_definitions_survive_clear_layer() {
         let canvas  = Canvas::new();
-        let lato    = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-regular.ttf"));
+        let lato    = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
 
         canvas.draw(|gc| {
             gc.layer(LayerId(1));
@@ -1067,7 +1067,7 @@ mod test {
     #[test]
     fn only_one_font_definition_survives_clear_layer() {
         let canvas  = Canvas::new();
-        let lato    = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-regular.ttf"));
+        let lato    = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
 
         canvas.draw(|gc| {
             gc.layer(LayerId(1));
@@ -1101,7 +1101,7 @@ mod test {
     #[test]
     fn only_one_font_size_survives_clear_layer() {
         let canvas  = Canvas::new();
-        let lato    = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-regular.ttf"));
+        let lato    = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
 
         canvas.draw(|gc| {
             gc.layer(LayerId(1));
