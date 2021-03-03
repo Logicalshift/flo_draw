@@ -29,10 +29,11 @@ void main() {
     }
 
     eraseColor /= 4.0;
+    eraseColor = 1.0-eraseColor;
 
-    f_Color[0] *= 1.0-eraseColor;
-    f_Color[1] *= 1.0-eraseColor;
-    f_Color[2] *= 1.0-eraseColor;
-    f_Color[3] *= 1.0-eraseColor;
+    f_Color[0] *= eraseColor;
+    f_Color[1] *= eraseColor;
+    f_Color[2] *= eraseColor;
+    f_Color[3] *= eraseColor;
 #endif
 }
