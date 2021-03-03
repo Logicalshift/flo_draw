@@ -7,7 +7,7 @@ use std::rc::*;
 use std::ops::{Deref};
 
 struct TextureRef {
-    texture_id: gl::types::GLuint
+    texture_id: gl::types::GLuint,
 }
 
 ///
@@ -15,7 +15,9 @@ struct TextureRef {
 ///
 #[derive(Clone)]
 pub struct Texture {
-    texture: Rc<TextureRef>
+    texture: Rc<TextureRef>,
+
+    texture_target: gl::types::GLuint
 }
 
 impl Texture {
@@ -28,7 +30,8 @@ impl Texture {
             gl::GenTextures(1, &mut new_texture);
 
             Texture {
-                texture: Rc::new(TextureRef { texture_id: new_texture })
+                texture:        Rc::new(TextureRef { texture_id: new_texture }),
+                texture_target: gl::TEXTURE_2D
             }
         }
     }
@@ -38,7 +41,8 @@ impl Texture {
     ///
     pub fn create_empty(&mut self, width: u16, height: u16) {
         unsafe {
-            let texture_id = self.texture.texture_id;
+            let texture_id      = self.texture.texture_id;
+            self.texture_target = gl::TEXTURE_2D;
 
             gl::BindTexture(gl::TEXTURE_2D, texture_id);
 
@@ -56,7 +60,8 @@ impl Texture {
     ///
     pub fn create_empty_multisampled(&mut self, width: u16, height: u16, samples: usize) {
         unsafe {
-            let texture_id = self.texture.texture_id;
+            let texture_id      = self.texture.texture_id;
+            self.texture_target = gl::TEXTURE_2D_MULTISAMPLE;
 
             // Clamp the number of samples to the maximum supported by the driver
             let mut max_samples = 1;
@@ -77,7 +82,8 @@ impl Texture {
     ///
     pub fn create_monochrome(&mut self, width: u16, height: u16) {
         unsafe {
-            let texture_id = self.texture.texture_id;
+            let texture_id      = self.texture.texture_id;
+            self.texture_target = gl::TEXTURE_2D;
 
             gl::BindTexture(gl::TEXTURE_2D, texture_id);
 
@@ -95,7 +101,8 @@ impl Texture {
     ///
     pub fn create_monochrome_multisampled(&mut self, width: u16, height: u16, samples: usize) {
         unsafe {
-            let texture_id = self.texture.texture_id;
+            let texture_id      = self.texture.texture_id;
+            self.texture_target = gl::TEXTURE_2D_MULTISAMPLE;
 
             // Clamp the number of samples to the maximum supported by the driver
             let mut max_samples = 1;
@@ -108,6 +115,56 @@ impl Texture {
             gl::TexImage2DMultisample(gl::TEXTURE_2D_MULTISAMPLE, samples, gl::RED, width as gl::types::GLsizei, height as gl::types::GLsizei, gl::FALSE);
 
             panic_on_gl_error("Create monochrome multisampled texture");
+        }
+    }
+
+    ///
+    /// Associates an empty image with this texture
+    ///
+    pub fn create_empty_1d(&mut self, width: u16) {
+        unsafe {
+            let texture_id      = self.texture.texture_id;
+            self.texture_target = gl::TEXTURE_1D;
+
+            gl::BindTexture(gl::TEXTURE_1D, texture_id);
+
+            gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+            gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+
+            gl::TexImage1D(gl::TEXTURE_1D, 0, gl::RGBA as i32, width as gl::types::GLsizei, 0, gl::RGBA, gl::UNSIGNED_BYTE, ptr::null());
+
+            panic_on_gl_error("Create 1D texture");
+        }
+    }
+
+    ///
+    /// Associates an empty image with this texture
+    ///
+    pub fn create_monochrome_1d(&mut self, width: u16) {
+        unsafe {
+            let texture_id      = self.texture.texture_id;
+            self.texture_target = gl::TEXTURE_1D;
+
+            gl::BindTexture(gl::TEXTURE_1D, texture_id);
+
+            gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+            gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+
+            gl::TexImage1D(gl::TEXTURE_1D, 0, gl::RED as i32, width as gl::types::GLsizei, 0, gl::RED, gl::UNSIGNED_BYTE, ptr::null());
+
+            panic_on_gl_error("Create 1D mono texture");
+        }
+    }
+
+    ///
+    /// Generates mip-maps for this texture
+    ///
+    pub fn generate_mipmaps(&mut self) {
+        unsafe {
+            gl::BindTexture(self.texture_target, self.texture.texture_id);
+            gl::GenerateTextureMipmap(self.texture_target);
+
+            panic_on_gl_error("Generate texture mip map");
         }
     }
 }
