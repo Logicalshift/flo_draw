@@ -9,6 +9,7 @@ mod texture;
 mod render_target;
 mod shader_program;
 mod shader_uniforms;
+mod shader_collection;
 
 pub use self::renderer::*;
 
