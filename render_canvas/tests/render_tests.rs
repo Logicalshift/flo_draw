@@ -1,4 +1,5 @@
 use flo_render::*;
+use flo_render as render;
 use flo_render_canvas::*;
 use flo_canvas::*;
 
@@ -11,6 +12,9 @@ use futures::executor;
 async fn check_layer_preamble<S: Unpin+Stream<Item=RenderAction>>(stream: &mut S) {
     let select_render_target = stream.next().await;
     assert!(match select_render_target { Some(RenderAction::SelectRenderTarget(_)) => true, _ => false });
+
+    let set_blend_mode = stream.next().await;
+    assert!(match set_blend_mode { Some(RenderAction::BlendMode(render::BlendMode::DestinationOver)) => true, _ => false });
 
     let use_shader = stream.next().await;
     assert!(match use_shader { Some(RenderAction::UseShader(_)) => true, _ => false });
