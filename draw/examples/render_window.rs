@@ -21,7 +21,7 @@ pub fn main() {
             renderer.publish(vec![
                 RenderAction::Clear(Rgba8([128, 128, 128, 255])),
                 RenderAction::SetTransform(Matrix::identity()),
-                RenderAction::UseShader(ShaderType::Simple { erase_texture: None }),
+                RenderAction::UseShader(ShaderType::Simple { erase_texture: None, clip_texture: None }),
                 RenderAction::CreateVertex2DBuffer(VertexBufferId(0), vec![
                     Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: black },
                     Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: black },

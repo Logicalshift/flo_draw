@@ -107,7 +107,7 @@ mod test {
         let black           = [0, 0, 0, 255];
         renderer.render(vec![
             Clear(Rgba8([128, 128, 128, 255])),
-            UseShader(ShaderType::Simple { erase_texture: None }),
+            UseShader(ShaderType::Simple { erase_texture: None, clip_texture: None }),
             CreateVertex2DBuffer(VertexBufferId(0), vec![
                 Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: black },
                 Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: black },
@@ -164,7 +164,7 @@ mod test {
         renderer.render(vec![
             Clear(Rgba8([128, 128, 128, 255])),
             SetTransform(Matrix::identity()),
-            UseShader(ShaderType::Simple { erase_texture: None }),
+            UseShader(ShaderType::Simple { erase_texture: None, clip_texture: None }),
             CreateVertex2DBuffer(VertexBufferId(0), vec![
                 Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: black },
                 Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: black },
@@ -220,7 +220,7 @@ mod test {
         let black           = [1, 2, 3, 255];
         renderer.render(vec![
             Clear(Rgba8([128, 129, 130, 255])),
-            UseShader(ShaderType::Simple { erase_texture: None }),
+            UseShader(ShaderType::Simple { erase_texture: None, clip_texture: None }),
             CreateVertex2DBuffer(VertexBufferId(0), vec![
                 Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: black },
                 Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: black },

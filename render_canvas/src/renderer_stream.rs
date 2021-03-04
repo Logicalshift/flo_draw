@@ -152,7 +152,7 @@ impl RenderCore {
         render_state.transform      = Some(viewport_transform);
         render_state.blend_mode     = Some(render::BlendMode::DestinationOver);
         render_state.render_target  = Some(render::RenderTargetId(0));
-        render_state.shader         = Some(render::ShaderType::Simple { erase_texture: None });
+        render_state.shader         = Some(render::ShaderType::Simple { erase_texture: None, clip_texture: None });
 
         for render_idx in 0..layer.render_order.len() {
             match &layer.render_order[render_idx] {
@@ -222,13 +222,13 @@ impl RenderCore {
                     if new_blend_mode == &render::BlendMode::DestinationOut {
                         // The previous state should use the eraser texture that we're abount to generate
                         if old_state.render_target == Some(render::RenderTargetId(0)) {
-                            old_state.shader = Some(render::ShaderType::Simple { erase_texture: Some(render::TextureId(1)) });
+                            old_state.shader = Some(render::ShaderType::Simple { erase_texture: Some(render::TextureId(1)), clip_texture: None });
                         }
 
                         // Render to the eraser texture
                         render_state.blend_mode     = Some(render::BlendMode::AllChannelAlphaDestinationOver);
                         render_state.render_target  = Some(render::RenderTargetId(1));
-                        render_state.shader         = Some(render::ShaderType::Simple { erase_texture: None });
+                        render_state.shader         = Some(render::ShaderType::Simple { erase_texture: None, clip_texture: None });
 
                         // Flag that we're using the erase texture and it needs to be cleared for this layer
                         use_erase_texture       = true;
@@ -236,11 +236,11 @@ impl RenderCore {
                         // Render the main buffer
                         render_state.blend_mode     = Some(*new_blend_mode);
                         render_state.render_target  = Some(render::RenderTargetId(0));
-                        render_state.shader         = Some(render::ShaderType::Simple { erase_texture: None });
+                        render_state.shader         = Some(render::ShaderType::Simple { erase_texture: None, clip_texture: None });
 
                         // Use the eraser texture if one is specified
                         if use_erase_texture {
-                            render_state.shader     = Some(render::ShaderType::Simple { erase_texture: Some(render::TextureId(1)) });
+                            render_state.shader     = Some(render::ShaderType::Simple { erase_texture: Some(render::TextureId(1)), clip_texture: None });
                         }
                     }
 
@@ -285,7 +285,7 @@ impl<'a> RenderStream<'a> {
 
             self.pending_stack.extend(vec![
                 render::RenderAction::DrawTriangles(self.background_vertex_buffer, 0..6),
-                render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None }),
+                render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None, clip_texture: None }),
                 render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
                 render::RenderAction::SetTransform(render::Matrix::identity()),
 

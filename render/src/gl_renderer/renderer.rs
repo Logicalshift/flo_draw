@@ -42,7 +42,13 @@ pub struct GlRenderer {
     simple_shader: ShaderProgram<ShaderUniform>,
 
     /// The shader program that applies an erase buffer
-    simple_shader_with_erase: ShaderProgram<ShaderUniform>
+    simple_shader_with_erase: ShaderProgram<ShaderUniform>,
+
+    /// The shader program that applies an erase buffer
+    simple_shader_with_clip: ShaderProgram<ShaderUniform>,
+
+    /// The shader program that applies an erase buffer
+    simple_shader_with_clip_erase: ShaderProgram<ShaderUniform>
 }
 
 impl GlRenderer {
@@ -50,24 +56,34 @@ impl GlRenderer {
     /// Creates a new renderer that will render to the specified device and factory
     ///
     pub fn new() -> GlRenderer {
-        let simple_vertex_shader            = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), GlShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
-        let simple_fragment_shader          = Shader::compile(&(String::from("#version 330 core\n") + &String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap()), GlShaderType::Fragment, vec![]);
-        let simple_shader                   = ShaderProgram::from_shaders(vec![simple_vertex_shader, simple_fragment_shader]);
+        let simple_vertex_shader                = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), GlShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
+        let simple_fragment_shader              = Shader::compile(&(String::from("#version 330 core\n") + &String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap()), GlShaderType::Fragment, vec![]);
+        let simple_shader                       = ShaderProgram::from_shaders(vec![simple_vertex_shader, simple_fragment_shader]);
 
-        let simple_vertex_shader            = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), GlShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
-        let simple_erase_fragment_shader    = Shader::compile(&(String::from("#version 330 core\n#define ERASE_MASK\n") + &String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap()), GlShaderType::Fragment, vec![]);
-        let simple_shader_with_erase        = ShaderProgram::from_shaders(vec![simple_vertex_shader, simple_erase_fragment_shader]);
+        let simple_vertex_shader                = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), GlShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
+        let simple_erase_fragment_shader        = Shader::compile(&(String::from("#version 330 core\n#define ERASE_MASK\n") + &String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap()), GlShaderType::Fragment, vec![]);
+        let simple_shader_with_erase            = ShaderProgram::from_shaders(vec![simple_vertex_shader, simple_erase_fragment_shader]);
+
+        let simple_vertex_shader                = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), GlShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
+        let simple_clip_fragment_shader         = Shader::compile(&(String::from("#version 330 core\n#define CLIP_MASK\n") + &String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap()), GlShaderType::Fragment, vec![]);
+        let simple_shader_with_clip             = ShaderProgram::from_shaders(vec![simple_vertex_shader, simple_clip_fragment_shader]);
+
+        let simple_vertex_shader                = Shader::compile(&String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap(), GlShaderType::Vertex, vec!["a_Pos", "a_Color", "a_TexCoord"]);
+        let simple_clip_erase_fragment_shader   = Shader::compile(&(String::from("#version 330 core\n#define ERASE_MASK\n#define CLIP_MASK\n") + &String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap()), GlShaderType::Fragment, vec![]);
+        let simple_shader_with_clip_erase       = ShaderProgram::from_shaders(vec![simple_vertex_shader, simple_clip_erase_fragment_shader]);
 
         GlRenderer {
-            buffers:                    vec![],
-            index_buffers:              vec![],
-            textures:                   vec![],
-            default_render_target:      None,
-            active_shader:              None,
-            transform_matrix:           None,
-            render_targets:             vec![],
-            simple_shader:              simple_shader,
-            simple_shader_with_erase:   simple_shader_with_erase
+            buffers:                        vec![],
+            index_buffers:                  vec![],
+            textures:                       vec![],
+            default_render_target:          None,
+            active_shader:                  None,
+            transform_matrix:               None,
+            render_targets:                 vec![],
+            simple_shader:                  simple_shader,
+            simple_shader_with_erase:       simple_shader_with_erase,
+            simple_shader_with_clip:        simple_shader_with_clip,
+            simple_shader_with_clip_erase:  simple_shader_with_clip_erase
         }
     }
 
@@ -494,12 +510,19 @@ impl GlRenderer {
             self.active_shader = Some(shader_type);
 
             match shader_type {
-                Simple { erase_texture: None } => { gl::UseProgram(*self.simple_shader); }
+                Simple { erase_texture: None, clip_texture: None } => { gl::UseProgram(*self.simple_shader); }
 
-                Simple { erase_texture: Some(TextureId(texture_id)) } => { 
-                    gl::UseProgram(*self.simple_shader_with_erase);
+                Simple { erase_texture, clip_texture } => { 
+                    // Pick the program based on the requested textures
+                    match (erase_texture.is_some(), clip_texture.is_some()) {
+                        (false, false)  => gl::UseProgram(*self.simple_shader),
+                        (true, false)   => gl::UseProgram(*self.simple_shader_with_erase),
+                        (false, true)   => gl::UseProgram(*self.simple_shader_with_clip),
+                        (true, true)    => gl::UseProgram(*self.simple_shader_with_clip_erase),
+                    }
 
-                    if let Some(texture) = &self.textures[texture_id] {
+                    // Apply the textures
+                    if let Some(texture) = erase_texture.and_then(|TextureId(texture_id)| self.textures[texture_id].as_ref()) {
                         // Set the erase texture
                         gl::ActiveTexture(gl::TEXTURE0);
                         gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **texture);
@@ -510,6 +533,16 @@ impl GlRenderer {
                             });
                     }
 
+                    if let Some(texture) = clip_texture.and_then(|TextureId(texture_id)| self.textures[texture_id].as_ref()) {
+                        // Set the erase texture
+                        gl::ActiveTexture(gl::TEXTURE1);
+                        gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **texture);
+
+                        self.simple_shader_with_erase.uniform_location(ShaderUniform::ClipTexture, "t_ClipMask")
+                            .map(|clip_mask| {
+                                gl::Uniform1i(clip_mask, 1);
+                            });
+                    }
                 }
             }
 
@@ -578,10 +611,12 @@ impl GlRenderer {
             use self::ShaderType::*;
 
             let shader = match &self.active_shader {
-                Some(Simple { erase_texture: None })        => Some(&mut self.simple_shader),
-                Some(Simple { erase_texture: Some(_) })     => Some(&mut self.simple_shader_with_erase),
+                Some(Simple { erase_texture: None, clip_texture: None })        => Some(&mut self.simple_shader),
+                Some(Simple { erase_texture: Some(_), clip_texture: None })     => Some(&mut self.simple_shader_with_erase),
+                Some(Simple { erase_texture: None, clip_texture: Some(_) })     => Some(&mut self.simple_shader_with_clip),
+                Some(Simple { erase_texture: Some(_), clip_texture: Some(_) })  => Some(&mut self.simple_shader_with_clip_erase),
 
-                None                                        => None
+                None                                                            => None
             };
 
             self.transform_matrix.as_ref().and_then(|transform_matrix|

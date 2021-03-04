@@ -7,5 +7,8 @@ pub enum ShaderUniform {
     Transform,
     
     /// The texture bound to the 'erase' operation
-    EraseTexture
+    EraseTexture,
+
+    /// The texture bound to the 'clip' operation
+    ClipTexture
 }
