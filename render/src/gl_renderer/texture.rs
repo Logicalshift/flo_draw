@@ -187,7 +187,7 @@ impl Texture {
 
         unsafe {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
-            gl::TexSubImage2D(gl::TEXTURE_2D, 0, x as _, y as _, width as _, height as _, gl::BGRA, gl::UNSIGNED_INT_8_8_8_8, pixels.as_ptr() as _);
+            gl::TexSubImage2D(gl::TEXTURE_2D, 0, x as _, y as _, width as _, height as _, gl::BGRA, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
         }
     }
 
@@ -215,7 +215,7 @@ impl Texture {
 
         unsafe {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
-            gl::TexSubImage1D(gl::TEXTURE_1D, 0, x as _, width as _, gl::BGRA, gl::UNSIGNED_INT_8_8_8_8, pixels.as_ptr() as _);
+            gl::TexSubImage1D(gl::TEXTURE_1D, 0, x as _, width as _, gl::BGRA, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
         }
     }
 
