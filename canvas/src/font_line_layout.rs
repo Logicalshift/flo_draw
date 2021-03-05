@@ -110,6 +110,15 @@ impl CanvasFontLineLayout {
     }
 
     ///
+    /// Manually advance where the next glyph will be placed after the current position
+    ///
+    pub fn advance(&mut self, x_offset: f32, y_offset: f32) {
+        self.layout_pending();
+        self.x_off += x_offset;
+        self.y_off += y_offset;
+    }
+
+    ///
     /// Measures the text that's been laid out so far
     ///
     /// (Note that this will perform a layout so it's usually best to call before converting to drawing instructions or glyphs)
