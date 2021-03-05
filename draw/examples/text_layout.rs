@@ -35,14 +35,14 @@ pub fn main() {
             gc.draw_text_layout();
 
             // We can change fonts during a layout
-            gc.begin_line_layout(18.0, 900.0 - 20.0, TextAlignment::Left);
+            gc.begin_line_layout(18.0, 900.0 - 30.0, TextAlignment::Left);
             gc.layout_text(FontId(1), "We can change ".to_string());
             gc.layout_text(FontId(2), "fonts".to_string());
             gc.layout_text(FontId(1), " during layout ".to_string());
             gc.draw_text_layout();
 
             // We can change colours during a layout
-            gc.begin_line_layout(18.0, 900.0 - 40.0, TextAlignment::Left);
+            gc.begin_line_layout(18.0, 900.0 - 60.0, TextAlignment::Left);
             gc.layout_text(FontId(1), "Or we could change ".to_string());
             gc.fill_color(Color::Rgba(0.8, 0.6, 0.0, 1.0));
             gc.layout_text(FontId(1), "colours".to_string());
@@ -51,7 +51,7 @@ pub fn main() {
             gc.draw_text_layout();
 
             // We can change font sizes during a layout
-            gc.begin_line_layout(18.0, 900.0 - 80.0, TextAlignment::Left);
+            gc.begin_line_layout(18.0, 900.0 - 100.0, TextAlignment::Left);
             gc.layout_text(FontId(1), "It's also possible to alter ".to_string());
             gc.set_font_size(FontId(1), 36.0);
             gc.layout_text(FontId(1), "sizes".to_string());
