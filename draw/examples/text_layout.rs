@@ -75,6 +75,12 @@ pub fn main() {
             gc.begin_line_layout(1000.0-18.0, 80.0, TextAlignment::Right);
             gc.layout_text(FontId(1), "Right alignment is supported too".to_string());
             gc.draw_text_layout();
+
+            // Can perform fully manual layout, and annotate with other drawing
+            let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
+            text_layout.layout_text("Performing layout manually is also possible");
+            text_layout.align_transform(500.0, 400.0, TextAlignment::Center);
+            gc.draw_list(text_layout.to_drawing(FontId(1)));
         });
     });
 }
