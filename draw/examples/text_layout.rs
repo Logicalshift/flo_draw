@@ -1,5 +1,5 @@
 use flo_draw::*;
-use flo_canvas::*;
+use flo_draw::canvas::*;
 
 use std::sync::*;
 
@@ -80,6 +80,37 @@ pub fn main() {
             let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
             text_layout.layout_text("Performing layout manually is also possible");
             text_layout.align_transform(500.0, 400.0, TextAlignment::Center);
+            gc.draw_list(text_layout.to_drawing(FontId(1)));
+
+            // We can use the measure() and draw() functions to add annotations to the text as we generate the layout
+            let lato_metrics = lato.font_metrics(18.0).unwrap();
+            let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
+            
+            text_layout.layout_text("Manual layout allows ");
+
+            // 'measure()' interrupts the layout, so measuring half-way between 'f' and 'i' will force the layout to produce no ligature
+            let start_pos   = text_layout.measure();
+            text_layout.layout_text("custom");
+            let end_pos     = text_layout.measure();
+
+            // start_pos and end_pos show where the word 'custom' began and ended (as well as giving the overall bounding box)
+            // This is a fairly simple drawing that just renders an underline in a different colour (note that Vec<Draw> implements GraphicsContext already!)
+            let mut underline = vec![];
+            underline.new_path();
+            underline.move_to(start_pos.pos.x() as _, start_pos.pos.y() as f32 + lato_metrics.underline_position.unwrap().offset);
+            underline.line_to(end_pos.pos.x() as _, end_pos.pos.y() as f32 + lato_metrics.underline_position.unwrap().offset);
+            underline.stroke_color(Color::Rgba(0.8, 0.6, 0.0, 1.0));
+            underline.line_width(lato_metrics.underline_position.unwrap().thickness);
+            underline.stroke();
+
+            // Add our drawing to the text layout
+            text_layout.draw(underline);
+
+            // Finish up the text...
+            text_layout.layout_text(" drawing effects, such as this underline");
+
+            // ... and align it using align_transform so the underline is moved along with the text
+            text_layout.align_transform(500.0, 370.0, TextAlignment::Center);
             gc.draw_list(text_layout.to_drawing(FontId(1)));
         });
     });
