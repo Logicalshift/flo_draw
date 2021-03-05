@@ -283,7 +283,7 @@ pub enum Draw {
     /// Performs an operation on a font
     Font(FontId, FontOp),
 
-    /// Begins laying out text on a line
+    /// Begins laying out text on a line: the coordinates specify the baseline position
     BeginLineLayout(f32, f32, TextAlignment),
 
     /// Renders the text in the current layout
