@@ -38,7 +38,6 @@
 extern crate serde_derive;
 
 extern crate futures;
-extern crate flo_curves;
 extern crate desync;
 extern crate hsluv;
 
@@ -69,3 +68,6 @@ pub use self::transform2d::*;
 pub use self::conversion_streams::*;
 
 #[cfg(feature = "outline-fonts")] pub use self::font_line_layout::*;
+
+pub use flo_curves as curves;
+pub use flo_curves::geo::{Coordinate2D, Coord2};
