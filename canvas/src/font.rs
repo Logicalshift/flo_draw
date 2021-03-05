@@ -82,8 +82,8 @@ pub enum FontOp {
 ///
 #[derive(Copy, Clone, PartialEq)]
 pub struct FontLinePosition {
-    offset:     f32,
-    thickness:  f32
+    pub offset:     f32,
+    pub thickness:  f32
 }
 
 ///
@@ -92,22 +92,22 @@ pub struct FontLinePosition {
 #[derive(Copy, Clone, PartialEq)]
 pub struct FontMetrics {
     /// Size of an em relative to these metrics
-    pub em_size: f32,
+    pub em_size:            f32,
 
     /// The ascender size for the font
-    pub ascender: f32,
+    pub ascender:           f32,
 
     /// The descender size for the font
-    pub descender: f32,
+    pub descender:          f32,
 
     /// The height for the font
-    pub height: f32,
+    pub height:             f32,
 
     /// The line gap for the font
-    pub line_gap: f32,
+    pub line_gap:           f32,
 
     /// The capital height for the font, if specified
-    pub capital_height: Option<f32>,
+    pub capital_height:     Option<f32>,
 
     /// Offset from the baseline and suggested thickness for an underline (can be None if the font does not specify)
     pub underline_position: Option<FontLinePosition>,
@@ -120,19 +120,19 @@ impl FontMetrics {
     ///
     /// Returns the metrics adjusted to a new em size
     ///
-    pub fn with_size(mut self, em_size: f32) -> FontMetrics {
+    pub fn with_size(self, em_size: f32) -> FontMetrics {
         let scale_factor = em_size / self.em_size;
 
-        self.em_size            *= scale_factor;
-        self.ascender           *= scale_factor;
-        self.descender          *= scale_factor;
-        self.height             *= scale_factor;
-        self.line_gap           *= scale_factor;
-        self.capital_height     = self.capital_height.map(|height| height*scale_factor);
-        self.underline_position = self.underline_position.map(|mut pos| { pos.offset *= scale_factor; pos.thickness *= scale_factor; pos });
-        self.strikeout_position = self.strikeout_position.map(|mut pos| { pos.offset *= scale_factor; pos.thickness *= scale_factor; pos });
-
-        self
+        FontMetrics {
+            em_size:            self.em_size * scale_factor,
+            ascender:           self.ascender * scale_factor,
+            descender:          self.descender * scale_factor,
+            height:             self.height * scale_factor,
+            line_gap:           self.line_gap * scale_factor,
+            capital_height:     self.capital_height.map(|height| height*scale_factor),
+            underline_position: self.underline_position.map(|mut pos| { pos.offset *= scale_factor; pos.thickness *= scale_factor; pos }),
+            strikeout_position: self.strikeout_position.map(|mut pos| { pos.offset *= scale_factor; pos.thickness *= scale_factor; pos }),
+        }
     }
 }
 
