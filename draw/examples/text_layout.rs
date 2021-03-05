@@ -79,10 +79,13 @@ pub fn main() {
             // Can perform fully manual layout, and annotate with other drawing
             let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
             text_layout.layout_text("Performing layout manually is also possible");
+
+            // Calling 'align_transform' moves the text to its final position, and 'to_drawing' generates the drawing instructions for the layout (the layout needs to know the FontId to generate drawing instructions)
             text_layout.align_transform(500.0, 400.0, TextAlignment::Center);
             gc.draw_list(text_layout.to_drawing(FontId(1)));
 
             // We can use the measure() and draw() functions to add annotations to the text as we generate the layout
+            // font_metrics(em_size) gives some information about a particular font
             let lato_metrics = lato.font_metrics(18.0).unwrap();
             let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
             
@@ -111,6 +114,24 @@ pub fn main() {
 
             // ... and align it using align_transform so the underline is moved along with the text
             text_layout.align_transform(500.0, 370.0, TextAlignment::Center);
+            gc.draw_list(text_layout.to_drawing(FontId(1)));
+
+            // It's still possible to change fonts and colours while using a manual layout
+            let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
+            text_layout.layout_text("Changing ");
+            text_layout.draw(vec![Draw::FillColor(Color::Rgba(0.8, 0.6, 0.0, 1.0))]);
+            text_layout.layout_text("colour");
+            text_layout.draw(vec![Draw::FillColor(Color::Rgba(0.0, 0.0, 0.6, 1.0))]);
+            text_layout.layout_text(" and ");
+
+            // FontId 1 = lato, FontId 2 = lato bold (note we supply the old font ID and not the new one here!)
+            let mut text_layout = text_layout.continue_with_new_font(FontId(1), &lato_bold, 18.0);
+            text_layout.layout_text("font");
+            let mut text_layout = text_layout.continue_with_new_font(FontId(2), &lato, 18.0);
+            text_layout.layout_text(" is still possible with manual layouts");
+
+            // Calling 'align_transform' moves the text to its final position, and 'to_drawing' generates the drawing instructions for the layout (the layout needs to know the FontId to generate drawing instructions)
+            text_layout.align_transform(500.0, 340.0, TextAlignment::Center);
             gc.draw_list(text_layout.to_drawing(FontId(1)));
         });
     });
