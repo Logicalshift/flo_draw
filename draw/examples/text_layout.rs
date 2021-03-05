@@ -97,7 +97,7 @@ pub fn main() {
             let end_pos     = text_layout.measure();
 
             // start_pos and end_pos show where the word 'custom' began and ended (as well as giving the overall bounding box)
-            // This is a fairly simple drawing that just renders an underline in a different colour (note that Vec<Draw> implements GraphicsContext already!)
+            // This is a fairly simple drawing that just renders an underline in a different colour (note that Vec<Draw> implements GraphicsContext, so we can use it to buffer the drawing operations we want to perform)
             let mut underline = vec![];
             underline.new_path();
             underline.move_to(start_pos.pos.x() as _, start_pos.pos.y() as f32 + lato_metrics.underline_position.unwrap().offset);
@@ -106,7 +106,7 @@ pub fn main() {
             underline.line_width(lato_metrics.underline_position.unwrap().thickness);
             underline.stroke();
 
-            // Add our drawing to the text layout
+            // Add the underling drawing we constructed to the text layout
             text_layout.draw(underline);
 
             // Finish up the text...
