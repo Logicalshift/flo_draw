@@ -1,6 +1,7 @@
 use super::draw::*;
 use super::font::*;
 use super::font_face::*;
+use super::transform2d::*;
 
 use flo_curves::geo::*;
 
@@ -159,6 +160,36 @@ impl CanvasFontLineLayout {
                     _                                                               => { }
                 }
             });
+    }
+
+    ///
+    /// Aligns the glyphs according to a text alignment around a specific position, using a canvas transform
+    ///
+    /// This is useful if the text has been annotated with other drawings as it makes it possible to draw using
+    /// the values in the metrics returned by 'measure'
+    ///
+    /// Doesn't adjust the metrics, if you continue layout after this call, new glyphs will be
+    /// positioned at the current baseline position, so this is usually only useful before finishing
+    /// the text layout.
+    ///
+    pub fn align_transform(&mut self, x: f32, y: f32, align: TextAlignment) {
+        // Finish laying out any text that hasn't yet been laid out
+        self.layout_pending();
+
+        // We want to apply a constant offset to all of the glyphs: we can calculate this based on the inner bounds of the text
+        let (Coord2(min_x, _min_y), Coord2(max_x, _max_y))  = self.metrics.inner_bounds;
+        let (min_x, max_x)                                  = (min_x as f32, max_x as f32);
+
+        let y_offset = y;
+        let x_offset = match align {
+            TextAlignment::Left     => x,
+            TextAlignment::Right    => x - max_x,
+            TextAlignment::Center   => x - (max_x+min_x)/2.0
+        };
+
+        // Add transform instructions at the start of the drawing, then restore the previous state at the end
+        self.layout.splice(0..0, vec![LayoutAction::Draw(Draw::PushState), LayoutAction::Draw(Draw::MultiplyTransform(Transform2D::translate(x_offset, y_offset)))]);
+        self.layout.push(LayoutAction::Draw(Draw::PopState));
     }
 
     ///
