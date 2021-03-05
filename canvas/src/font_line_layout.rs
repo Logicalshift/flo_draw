@@ -14,6 +14,7 @@ use std::mem;
 use std::sync::*;
 
 /// Actions that can be performed in a layout
+#[derive(Clone)]
 enum LayoutAction {
     /// Render a glyph at a particular position
     Glyph(GlyphPosition),
@@ -27,6 +28,7 @@ enum LayoutAction {
 ///
 /// This includes optional drawing operations in between glyphs to allow for 
 ///
+#[derive(Clone)]
 pub struct CanvasFontLineLayout {
     /// The font that this layout is for
     font: Arc<CanvasFontFace>,
