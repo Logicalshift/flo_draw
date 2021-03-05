@@ -84,6 +84,9 @@ pub enum FontOp {
 pub struct TextLayoutMetrics {
     /// The bounding box of the text that was laid out - using the height of the font and the offsets of the glyphs
     pub inner_bounds: (Coord2, Coord2),
+
+    /// The point where the next glyph will be positioned
+    pub pos: Coord2
 }
 
 ///

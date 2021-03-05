@@ -69,7 +69,8 @@ impl CanvasFontLineLayout {
         let inner_bounds        = (Coord2(0.0, descent * scale_factor), Coord2(0.0, ascent * scale_factor));
 
         let initial_metrics     = TextLayoutMetrics {
-            inner_bounds: inner_bounds
+            inner_bounds:   inner_bounds,
+            pos:            Coord2(0.0, 0.0)
         };
 
         CanvasFontLineLayout {
@@ -113,6 +114,8 @@ impl CanvasFontLineLayout {
     ///
     pub fn measure(&mut self) -> TextLayoutMetrics {
         self.layout_pending();
+
+        self.metrics.pos = Coord2(self.x_off as _, self.y_off as _);
         self.metrics.clone()
     }
 
