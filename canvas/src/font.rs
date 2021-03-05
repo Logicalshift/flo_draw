@@ -139,7 +139,7 @@ impl FontMetrics {
 ///
 /// The layout metrics for a piece of text
 ///
-#[derive(Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct TextLayoutMetrics {
     /// The bounding box of the text that was laid out - using the height of the font and the offsets of the glyphs
     pub inner_bounds: (Coord2, Coord2),
