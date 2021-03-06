@@ -25,7 +25,9 @@ pub fn main() {
             gc.define_font_data(FontId(2), Arc::clone(&lato_bold));
             gc.set_font_size(FontId(1), 18.0);
             gc.set_font_size(FontId(2), 18.0);
+        });
 
+        canvas.draw(|gc| {
             // Draw some text with layout in these fonts
             gc.fill_color(Color::Rgba(0.0, 0.0, 0.6, 1.0));
 
@@ -33,14 +35,18 @@ pub fn main() {
             gc.begin_line_layout(18.0, 900.0, TextAlignment::Left);
             gc.layout_text(FontId(1), "Simple text layout".to_string());
             gc.draw_text_layout();
+        });
 
+        canvas.draw(|gc| {
             // We can change fonts during a layout
             gc.begin_line_layout(18.0, 900.0 - 30.0, TextAlignment::Left);
             gc.layout_text(FontId(1), "We can change ".to_string());
             gc.layout_text(FontId(2), "fonts".to_string());
             gc.layout_text(FontId(1), " during layout ".to_string());
             gc.draw_text_layout();
+        });
 
+        canvas.draw(|gc| {
             // We can change colours during a layout
             gc.begin_line_layout(18.0, 900.0 - 60.0, TextAlignment::Left);
             gc.layout_text(FontId(1), "Or we could change ".to_string());
@@ -49,7 +55,9 @@ pub fn main() {
             gc.fill_color(Color::Rgba(0.0, 0.0, 0.6, 1.0));
             gc.layout_text(FontId(1), " during layout ".to_string());
             gc.draw_text_layout();
+        });
 
+        canvas.draw(|gc| {
             // We can change font sizes during a layout
             gc.begin_line_layout(18.0, 900.0 - 100.0, TextAlignment::Left);
             gc.layout_text(FontId(1), "It's also possible to alter ".to_string());
@@ -58,7 +66,9 @@ pub fn main() {
             gc.set_font_size(FontId(1), 18.0);
             gc.layout_text(FontId(1), " during layout ".to_string());
             gc.draw_text_layout();
+        });
 
+        canvas.draw(|gc| {
             // Can align text with all the effects
             gc.begin_line_layout(500.0, 500.0, TextAlignment::Center);
             gc.layout_text(FontId(1), "Text layout demonstration, with changing".to_string());
@@ -75,7 +85,9 @@ pub fn main() {
             gc.begin_line_layout(1000.0-18.0, 80.0, TextAlignment::Right);
             gc.layout_text(FontId(1), "Right alignment is supported too".to_string());
             gc.draw_text_layout();
+        });
 
+        canvas.draw(|gc| {
             // Can perform fully manual layout, and annotate with other drawing
             let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
             text_layout.add_text("Performing layout manually is also possible");
@@ -83,7 +95,9 @@ pub fn main() {
             // Calling 'align_transform' moves the text to its final position, and 'to_drawing' generates the drawing instructions for the layout (the layout needs to know the FontId to generate drawing instructions)
             text_layout.align_transform(500.0, 400.0, TextAlignment::Center);
             gc.draw_list(text_layout.to_drawing(FontId(1)));
+        });
 
+        canvas.draw(|gc| {
             // We can use the measure() and draw() functions to add annotations to the text as we generate the layout
             // font_metrics(em_size) gives some information about a particular font
             let lato_metrics        = lato.font_metrics(18.0).unwrap();
@@ -130,7 +144,9 @@ pub fn main() {
             // ... and align it using align_transform so the underline is moved along with the text
             text_layout.align_transform(500.0, 370.0, TextAlignment::Center);
             gc.draw_list(text_layout.to_drawing(FontId(1)));
+        });
 
+        canvas.draw(|gc| {
             // It's still possible to change fonts and colours while using a manual layout
             let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
             text_layout.add_text("Changing ");
