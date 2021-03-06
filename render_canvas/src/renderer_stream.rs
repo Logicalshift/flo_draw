@@ -277,13 +277,26 @@ impl RenderCore {
                         }
                     }
 
-                    // Apply the old state for the preceding instrucitons
+                    // Apply the old state for the preceding instructions
                     render_layer_stack.extend(old_state.update_from_state(render_state));
                 },
 
                 DrawIndexed(vertex_buffer, index_buffer, num_items) => {
                     // Draw the triangles
                     render_layer_stack.push(render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items));
+                },
+
+                Clear(color) => {
+                    render_layer_stack.push(render::RenderAction::Clear(*color));
+                }
+
+                SetRenderTarget(target) => {
+                    // Select this render target in the state
+                    let old_state               = *render_state;
+                    render_state.render_target  = Some(*target);
+
+                    // Apply the old state for the preceding instructions
+                    render_layer_stack.extend(old_state.update_from_state(render_state));
                 }
             }
         }

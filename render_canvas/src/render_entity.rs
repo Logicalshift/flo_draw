@@ -26,5 +26,11 @@ pub enum RenderEntity {
     SetTransform(canvas::Transform2D),
 
     /// Sets the blend mode to use for the following rendering
-    SetBlendMode(render::BlendMode)
+    SetBlendMode(render::BlendMode),
+
+    /// Clears the current render target
+    Clear(render::Rgba8),
+
+    /// Sets the current render target
+    SetRenderTarget(render::RenderTargetId)
 }

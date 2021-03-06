@@ -76,6 +76,8 @@ impl RenderCore {
             SetTransform(_)                 => { }
             SetBlendMode(_)                 => { }
             RenderSprite(_, _)              => { }
+            Clear(_)                        => { }
+            SetRenderTarget(_)              => { }
 
             DrawIndexed(render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices) => {
                 // Each buffer is only used by one drawing operation, so we can always free them here
