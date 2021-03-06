@@ -86,8 +86,8 @@ pub fn main() {
 
             // We can use the measure() and draw() functions to add annotations to the text as we generate the layout
             // font_metrics(em_size) gives some information about a particular font
-            let lato_metrics = lato.font_metrics(18.0).unwrap();
-            let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
+            let lato_metrics        = lato.font_metrics(18.0).unwrap();
+            let mut text_layout     = CanvasFontLineLayout::new(&lato, 18.0);
             
             text_layout.add_text("Manual layout allows ");
 
@@ -101,6 +101,13 @@ pub fn main() {
             text_layout.new_path();
             text_layout.move_to(start_pos.pos.x() as _, start_pos.pos.y() as f32 + lato_metrics.underline_position.unwrap().offset);
             text_layout.line_to(end_pos.pos.x() as _, end_pos.pos.y() as f32 + lato_metrics.underline_position.unwrap().offset);
+            text_layout.stroke_color(Color::Rgba(0.8, 0.6, 0.0, 1.0));
+            text_layout.line_width(lato_metrics.underline_position.unwrap().thickness);
+            text_layout.stroke();
+
+            text_layout.new_path();
+            text_layout.move_to(start_pos.pos.x() as _, start_pos.pos.y() as f32 + lato_metrics.ascender);
+            text_layout.line_to(end_pos.pos.x() as _, end_pos.pos.y() as f32 + lato_metrics.ascender);
             text_layout.stroke_color(Color::Rgba(0.8, 0.6, 0.0, 1.0));
             text_layout.line_width(lato_metrics.underline_position.unwrap().thickness);
             text_layout.stroke();
