@@ -56,8 +56,14 @@ struct RenderStreamState {
     /// The blend mode to use
     blend_mode: Option<render::BlendMode>,
 
-    /// The shader to use
+    /// The shader to use (base type)
     shader: Option<render::ShaderType>,
+
+    /// The texture to use as the eraser mask (None for no eraser texture)
+    erase_mask: Option<render::TextureId>,
+
+    /// The texture to use for the clip mask (None for no clip mask)
+    clip_mask: Option<render::TextureId>,
 
     /// The transform to apply to the rendering instructions
     transform: Option<canvas::Transform2D>
@@ -92,6 +98,8 @@ impl RenderStreamState {
             render_target:  None,
             blend_mode:     None,
             shader:         None,
+            erase_mask:     None,
+            clip_mask:      None, 
             transform:      None
         }
     }
@@ -153,6 +161,8 @@ impl RenderCore {
         render_state.blend_mode     = Some(render::BlendMode::DestinationOver);
         render_state.render_target  = Some(render::RenderTargetId(0));
         render_state.shader         = Some(render::ShaderType::Simple { erase_texture: None, clip_texture: None });
+        render_state.erase_mask     = None;
+        render_state.clip_mask      = None;
 
         for render_idx in 0..layer.render_order.len() {
             match &layer.render_order[render_idx] {
