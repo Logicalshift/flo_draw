@@ -1,7 +1,6 @@
 use super::shader::*;
 use super::texture::*;
 use super::shader_program::*;
-use super::shader_uniforms::*;
 
 use gl;
 
