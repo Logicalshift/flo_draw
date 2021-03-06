@@ -151,9 +151,9 @@ pub fn main() {
             // It's still possible to change fonts and colours while using a manual layout
             let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
             text_layout.add_text("Changing ");
-            text_layout.draw(vec![Draw::FillColor(Color::Rgba(0.8, 0.6, 0.0, 1.0))]);
+            text_layout.fill_color(Color::Rgba(0.8, 0.6, 0.0, 1.0));
             text_layout.add_text("colour");
-            text_layout.draw(vec![Draw::FillColor(Color::Rgba(0.0, 0.0, 0.6, 1.0))]);
+            text_layout.fill_color(Color::Rgba(0.0, 0.0, 0.6, 1.0));
             text_layout.add_text(" and ");
 
             // FontId 1 = lato, FontId 2 = lato bold (note we supply the old font ID and not the new one here!)
