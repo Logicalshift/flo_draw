@@ -133,7 +133,7 @@ pub fn main() {
             text_layout.line_width(2.0);
             text_layout.stroke();
 
-            // Even possible to lay out text in text
+            // Even possible to lay out text in text ('layout_text' is from the graphics context, so we wind up performing recursive layout here)
             text_layout.begin_line_layout(mid_point.x() as _, mid_point.y() as f32-lato_metrics.underline_position.unwrap().offset - 30.0, TextAlignment::Center);
             text_layout.layout_text(FontId(1), "here".to_string());
             text_layout.draw_text_layout();
