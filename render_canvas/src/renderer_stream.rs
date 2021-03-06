@@ -142,6 +142,7 @@ impl RenderCore {
         let mut layer               = core.layer(layer_handle);
 
         render_state.transform      = Some(viewport_transform);
+        render_state.blend_mode     = Some(render::BlendMode::DestinationOver);
         render_state.render_target  = Some(render::RenderTargetId(0));
         render_state.shader         = Some(render::ShaderType::Simple { erase_texture: None });
 
