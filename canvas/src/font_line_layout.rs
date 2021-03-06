@@ -1,5 +1,8 @@
+use super::gc::*;
 use super::draw::*;
 use super::font::*;
+use super::color::*;
+use super::texture::*;
 use super::font_face::*;
 use super::transform2d::*;
 
@@ -346,4 +349,58 @@ impl CanvasFontLineLayout {
             self.metrics.inner_bounds = self.metrics.inner_bounds.union_bounds((Coord2(last_x as _, last_y as _), Coord2(self.x_off as _, self.y_off as _)));
         }
     }
+}
+
+impl GraphicsContext for CanvasFontLineLayout {
+    #[inline] fn start_frame(&mut self)                                                 { self.layout.push(LayoutAction::Draw(Draw::StartFrame)); }
+    #[inline] fn show_frame(&mut self)                                                  { self.layout.push(LayoutAction::Draw(Draw::ShowFrame)); }
+    #[inline] fn reset_frame(&mut self)                                                 { self.layout.push(LayoutAction::Draw(Draw::ResetFrame)); }
+    #[inline] fn new_path(&mut self)                                                    { self.layout.push(LayoutAction::Draw(Draw::NewPath)); }
+    #[inline] fn move_to(&mut self, x: f32, y: f32)                                     { self.layout.push(LayoutAction::Draw(Draw::Move(x, y))); }
+    #[inline] fn line_to(&mut self, x: f32, y: f32)                                     { self.layout.push(LayoutAction::Draw(Draw::Line(x, y))); }
+    #[inline] fn bezier_curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32) { self.layout.push(LayoutAction::Draw(Draw::BezierCurve((x1, y1), (x2, y2), (x3, y3)))); }
+    #[inline] fn close_path(&mut self)                                                  { self.layout.push(LayoutAction::Draw(Draw::ClosePath)); }
+    #[inline] fn fill(&mut self)                                                        { self.layout.push(LayoutAction::Draw(Draw::Fill)); }
+    #[inline] fn stroke(&mut self)                                                      { self.layout.push(LayoutAction::Draw(Draw::Stroke)); }
+    #[inline] fn line_width(&mut self, width: f32)                                      { self.layout.push(LayoutAction::Draw(Draw::LineWidth(width))); }
+    #[inline] fn line_width_pixels(&mut self, width: f32)                               { self.layout.push(LayoutAction::Draw(Draw::LineWidthPixels(width))); }
+    #[inline] fn line_join(&mut self, join: LineJoin)                                   { self.layout.push(LayoutAction::Draw(Draw::LineJoin(join))); }
+    #[inline] fn line_cap(&mut self, cap: LineCap)                                      { self.layout.push(LayoutAction::Draw(Draw::LineCap(cap))); }
+    #[inline] fn winding_rule(&mut self, rule: WindingRule)                             { self.layout.push(LayoutAction::Draw(Draw::WindingRule(rule))); }
+    #[inline] fn new_dash_pattern(&mut self)                                            { self.layout.push(LayoutAction::Draw(Draw::NewDashPattern)); }
+    #[inline] fn dash_length(&mut self, length: f32)                                    { self.layout.push(LayoutAction::Draw(Draw::DashLength(length))); }
+    #[inline] fn dash_offset(&mut self, offset: f32)                                    { self.layout.push(LayoutAction::Draw(Draw::DashOffset(offset))); }
+    #[inline] fn fill_color(&mut self, col: Color)                                      { self.layout.push(LayoutAction::Draw(Draw::FillColor(col))); }
+    #[inline] fn stroke_color(&mut self, col: Color)                                    { self.layout.push(LayoutAction::Draw(Draw::StrokeColor(col))); }
+    #[inline] fn blend_mode(&mut self, mode: BlendMode)                                 { self.layout.push(LayoutAction::Draw(Draw::BlendMode(mode))); }
+    #[inline] fn identity_transform(&mut self)                                          { self.layout.push(LayoutAction::Draw(Draw::IdentityTransform)); }
+    #[inline] fn canvas_height(&mut self, height: f32)                                  { self.layout.push(LayoutAction::Draw(Draw::CanvasHeight(height))); }
+    #[inline] fn center_region(&mut self, minx: f32, miny: f32, maxx: f32, maxy: f32)   { self.layout.push(LayoutAction::Draw(Draw::CenterRegion((minx, miny), (maxx, maxy)))); }
+    #[inline] fn transform(&mut self, transform: Transform2D)                           { self.layout.push(LayoutAction::Draw(Draw::MultiplyTransform(transform))); }
+    #[inline] fn unclip(&mut self)                                                      { self.layout.push(LayoutAction::Draw(Draw::Unclip)); }
+    #[inline] fn clip(&mut self)                                                        { self.layout.push(LayoutAction::Draw(Draw::Clip)); }
+    #[inline] fn store(&mut self)                                                       { self.layout.push(LayoutAction::Draw(Draw::Store)); }
+    #[inline] fn restore(&mut self)                                                     { self.layout.push(LayoutAction::Draw(Draw::Restore)); }
+    #[inline] fn free_stored_buffer(&mut self)                                          { self.layout.push(LayoutAction::Draw(Draw::FreeStoredBuffer)); }
+    #[inline] fn push_state(&mut self)                                                  { self.layout.push(LayoutAction::Draw(Draw::PushState)); }
+    #[inline] fn pop_state(&mut self)                                                   { self.layout.push(LayoutAction::Draw(Draw::PopState)); }
+    #[inline] fn clear_canvas(&mut self, color: Color)                                  { self.layout.push(LayoutAction::Draw(Draw::ClearCanvas(color))); }
+    #[inline] fn layer(&mut self, layer_id: LayerId)                                    { self.layout.push(LayoutAction::Draw(Draw::Layer(layer_id))); }
+    #[inline] fn layer_blend(&mut self, layer_id: LayerId, blend_mode: BlendMode)       { self.layout.push(LayoutAction::Draw(Draw::LayerBlend(layer_id, blend_mode))); }
+    #[inline] fn clear_layer(&mut self)                                                 { self.layout.push(LayoutAction::Draw(Draw::ClearLayer)); }
+    #[inline] fn sprite(&mut self, sprite_id: SpriteId)                                 { self.layout.push(LayoutAction::Draw(Draw::Sprite(sprite_id))); }
+    #[inline] fn clear_sprite(&mut self)                                                { self.layout.push(LayoutAction::Draw(Draw::ClearSprite)); }
+    #[inline] fn sprite_transform(&mut self, transform: SpriteTransform)                { self.layout.push(LayoutAction::Draw(Draw::SpriteTransform(transform))); }
+    #[inline] fn draw_sprite(&mut self, sprite_id: SpriteId)                            { self.layout.push(LayoutAction::Draw(Draw::DrawSprite(sprite_id))); }
+
+    #[inline] fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>)                                   { self.layout.push(LayoutAction::Draw(Draw::Font(font_id, FontOp::UseFontDefinition(font_data)))); }
+    #[inline] fn set_font_size(&mut self, font_id: FontId, size: f32)                                                           { self.layout.push(LayoutAction::Draw(Draw::Font(font_id, FontOp::FontSize(size)))); }
+    #[inline] fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)                          { self.layout.push(LayoutAction::Draw(Draw::DrawText(font_id, text, baseline_x, baseline_y))); }
+    #[inline] fn draw_glyphs(&mut self, font_id: FontId, glyphs: Vec<GlyphPosition>)                                            { self.layout.push(LayoutAction::Draw(Draw::Font(font_id, FontOp::DrawGlyphs(glyphs)))); }
+    #[inline] fn begin_line_layout(&mut self, x: f32, y: f32, align: TextAlignment)                                             { self.layout.push(LayoutAction::Draw(Draw::BeginLineLayout(x, y, align))); }
+    #[inline] fn layout_text(&mut self, font_id: FontId, text: String)                                                          { self.layout.push(LayoutAction::Draw(Draw::Font(font_id, FontOp::LayoutText(text)))); }
+    #[inline] fn draw_text_layout(&mut self)                                                                                    { self.layout.push(LayoutAction::Draw(Draw::DrawLaidOutText)); }
+
+    #[inline] fn create_texture(&mut self, texture_id: TextureId, w: u32, h: u32, format: TextureFormat)                        { self.layout.push(LayoutAction::Draw(Draw::Texture(texture_id, TextureOp::Create(w, h, format)))); }
+    #[inline] fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>)       { self.layout.push(LayoutAction::Draw(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes)))); }
 }
