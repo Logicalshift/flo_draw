@@ -1,6 +1,5 @@
 use flo_draw::*;
 use flo_canvas::*;
-use flo_curves::geo::*;
 
 use std::sync::*;
 
