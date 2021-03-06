@@ -78,7 +78,7 @@ pub fn main() {
 
             // Can perform fully manual layout, and annotate with other drawing
             let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
-            text_layout.layout_text("Performing layout manually is also possible");
+            text_layout.add_text("Performing layout manually is also possible");
 
             // Calling 'align_transform' moves the text to its final position, and 'to_drawing' generates the drawing instructions for the layout (the layout needs to know the FontId to generate drawing instructions)
             text_layout.align_transform(500.0, 400.0, TextAlignment::Center);
@@ -89,11 +89,11 @@ pub fn main() {
             let lato_metrics = lato.font_metrics(18.0).unwrap();
             let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
             
-            text_layout.layout_text("Manual layout allows ");
+            text_layout.add_text("Manual layout allows ");
 
             // 'measure()' interrupts the layout, so measuring half-way between 'f' and 'i' will force the layout to produce no ligature
             let start_pos   = text_layout.measure();
-            text_layout.layout_text("custom");
+            text_layout.add_text("custom");
             let end_pos     = text_layout.measure();
 
             // start_pos and end_pos show where the word 'custom' began and ended (as well as giving the overall bounding box)
@@ -112,8 +112,13 @@ pub fn main() {
             text_layout.line_width(2.0);
             text_layout.stroke();
 
+            // Even possible to lay out text in text
+            text_layout.begin_line_layout(mid_point.x() as _, mid_point.y() as f32-lato_metrics.underline_position.unwrap().offset - 30.0, TextAlignment::Center);
+            text_layout.layout_text(FontId(1), "here".to_string());
+            text_layout.draw_text_layout();
+
             // Finish up the text...
-            text_layout.layout_text(" drawing effects, such as this underline");
+            text_layout.add_text(" drawing effects, such as this underline");
 
             // ... and align it using align_transform so the underline is moved along with the text
             text_layout.align_transform(500.0, 370.0, TextAlignment::Center);
@@ -121,20 +126,20 @@ pub fn main() {
 
             // It's still possible to change fonts and colours while using a manual layout
             let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
-            text_layout.layout_text("Changing ");
+            text_layout.add_text("Changing ");
             text_layout.draw(vec![Draw::FillColor(Color::Rgba(0.8, 0.6, 0.0, 1.0))]);
-            text_layout.layout_text("colour");
+            text_layout.add_text("colour");
             text_layout.draw(vec![Draw::FillColor(Color::Rgba(0.0, 0.0, 0.6, 1.0))]);
-            text_layout.layout_text(" and ");
+            text_layout.add_text(" and ");
 
             // FontId 1 = lato, FontId 2 = lato bold (note we supply the old font ID and not the new one here!)
             let mut text_layout = text_layout.continue_with_new_font(FontId(1), &lato_bold, 18.0);
-            text_layout.layout_text("font");
+            text_layout.add_text("font");
             let mut text_layout = text_layout.continue_with_new_font(FontId(2), &lato, 18.0);
-            text_layout.layout_text(" is still possible with manual layouts");
+            text_layout.add_text(" is still possible with manual layouts");
 
             // Calling 'align_transform' moves the text to its final position, and 'to_drawing' generates the drawing instructions for the layout (the layout needs to know the FontId to generate drawing instructions)
-            text_layout.align_transform(500.0, 340.0, TextAlignment::Center);
+            text_layout.align_transform(500.0, 310.0, TextAlignment::Center);
             gc.draw_list(text_layout.to_drawing(FontId(1)));
         });
     });
