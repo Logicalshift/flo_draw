@@ -901,6 +901,12 @@ impl CanvasRenderer {
                 self.viewport_size.1 as usize,
                 RenderTargetType::MonochromeMultisampledTexture));
 
+            // And the 'clip mask' render surface (render target 2, texture 2)
+            initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(2), TextureId(2),
+                self.viewport_size.0 as usize,
+                self.viewport_size.1 as usize,
+                RenderTargetType::MonochromeMultisampledTexture));
+
             self.created_render_surface = true;
         }
 
