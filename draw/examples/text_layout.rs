@@ -105,6 +105,13 @@ pub fn main() {
             text_layout.line_width(lato_metrics.underline_position.unwrap().thickness);
             text_layout.stroke();
 
+            let mid_point = (start_pos.pos + end_pos.pos) * 0.5;
+            text_layout.move_to(mid_point.x() as _, mid_point.y() as f32 + lato_metrics.underline_position.unwrap().offset);
+            text_layout.line_to(mid_point.x() as _, mid_point.y() as f32 + lato_metrics.underline_position.unwrap().offset - 8.0);
+            text_layout.stroke_color(Color::Rgba(0.8, 0.6, 0.0, 1.0));
+            text_layout.line_width(2.0);
+            text_layout.stroke();
+
             // Finish up the text...
             text_layout.layout_text(" drawing effects, such as this underline");
 
