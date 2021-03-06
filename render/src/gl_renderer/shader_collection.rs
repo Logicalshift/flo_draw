@@ -66,7 +66,7 @@ where UniformAttribute: Hash+Eq {
     ///
     /// Uses the appropriate program for the specified textures
     ///
-    pub fn use_shader(&mut self, erase_uniform: UniformAttribute, clip_uniform: UniformAttribute, erase_texture: Option<&Texture>, clip_texture: Option<&Texture>) {
+    pub fn use_shader<'a>(&'a mut self, erase_uniform: UniformAttribute, clip_uniform: UniformAttribute, erase_texture: Option<&Texture>, clip_texture: Option<&Texture>) -> &'a mut ShaderProgram<UniformAttribute> {
         unsafe {
             // Pick the program based on the requested textures
             let program = match (erase_texture.is_some(), clip_texture.is_some()) {
@@ -99,6 +99,8 @@ where UniformAttribute: Hash+Eq {
                         gl::Uniform1i(clip_mask, 1);
                     });
             }
+
+            program
         }
     }
 }

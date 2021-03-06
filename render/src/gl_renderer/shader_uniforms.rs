@@ -10,5 +10,8 @@ pub enum ShaderUniform {
     EraseTexture,
 
     /// The texture bound to the 'clip' operation
-    ClipTexture
+    ClipTexture,
+
+    /// The texture used for the dash pattern
+    DashTexture
 }

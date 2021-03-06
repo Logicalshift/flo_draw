@@ -501,14 +501,28 @@ impl GlRenderer {
             }
 
             DashedLine { dash_texture, erase_texture, clip_texture } => {
-                let simple_shader           = &mut self.simple_shader;
+                // Set the basic clip/erase textures
+                let dash_shader             = &mut self.dashed_line_shader;
                 let textures                = &self.textures;
                 let TextureId(dash_texture) = dash_texture;
                 let dash_texture            = self.textures[dash_texture].as_ref();
                 let erase_texture           = erase_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let clip_texture            = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
 
-                simple_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, erase_texture, clip_texture);
+                let program                 = dash_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, erase_texture, clip_texture);
+
+                // Set the dash texture
+                if let Some(dash_texture) = dash_texture {
+                    unsafe {
+                        gl::ActiveTexture(gl::TEXTURE2);
+                        gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **dash_texture);
+
+                        program.uniform_location(ShaderUniform::DashTexture, "t_DashPattern")
+                            .map(|clip_mask| {
+                                gl::Uniform1i(clip_mask, 2);
+                            });
+                    }
+                }
             }
         }
 
@@ -581,10 +595,10 @@ impl GlRenderer {
                 Some(Simple { erase_texture: None, clip_texture: Some(_) })                         => Some(&mut self.simple_shader.clip),
                 Some(Simple { erase_texture: Some(_), clip_texture: Some(_) })                      => Some(&mut self.simple_shader.clip_erase),
 
-                Some(DashedLine { dash_texture: _, erase_texture: None, clip_texture: None })       => Some(&mut self.simple_shader.basic),
-                Some(DashedLine { dash_texture: _, erase_texture: Some(_), clip_texture: None })    => Some(&mut self.simple_shader.erase),
-                Some(DashedLine { dash_texture: _, erase_texture: None, clip_texture: Some(_) })    => Some(&mut self.simple_shader.clip),
-                Some(DashedLine { dash_texture: _, erase_texture: Some(_), clip_texture: Some(_) }) => Some(&mut self.simple_shader.clip_erase),
+                Some(DashedLine { dash_texture: _, erase_texture: None, clip_texture: None })       => Some(&mut self.dashed_line_shader.basic),
+                Some(DashedLine { dash_texture: _, erase_texture: Some(_), clip_texture: None })    => Some(&mut self.dashed_line_shader.erase),
+                Some(DashedLine { dash_texture: _, erase_texture: None, clip_texture: Some(_) })    => Some(&mut self.dashed_line_shader.clip),
+                Some(DashedLine { dash_texture: _, erase_texture: Some(_), clip_texture: Some(_) }) => Some(&mut self.dashed_line_shader.clip_erase),
 
                 None                                                                                => None
             };
