@@ -97,17 +97,13 @@ pub fn main() {
             let end_pos     = text_layout.measure();
 
             // start_pos and end_pos show where the word 'custom' began and ended (as well as giving the overall bounding box)
-            // This is a fairly simple drawing that just renders an underline in a different colour (note that Vec<Draw> implements GraphicsContext, so we can use it to buffer the drawing operations we want to perform)
-            let mut underline = vec![];
-            underline.new_path();
-            underline.move_to(start_pos.pos.x() as _, start_pos.pos.y() as f32 + lato_metrics.underline_position.unwrap().offset);
-            underline.line_to(end_pos.pos.x() as _, end_pos.pos.y() as f32 + lato_metrics.underline_position.unwrap().offset);
-            underline.stroke_color(Color::Rgba(0.8, 0.6, 0.0, 1.0));
-            underline.line_width(lato_metrics.underline_position.unwrap().thickness);
-            underline.stroke();
-
-            // Add the underling drawing we constructed to the text layout
-            text_layout.draw(underline);
+            // This is a fairly simple drawing that just renders an underline in a different colour (note that CanvasFontLineLayout implements GraphicsContext, so we can use it to buffer the drawing operations we want to perform)
+            text_layout.new_path();
+            text_layout.move_to(start_pos.pos.x() as _, start_pos.pos.y() as f32 + lato_metrics.underline_position.unwrap().offset);
+            text_layout.line_to(end_pos.pos.x() as _, end_pos.pos.y() as f32 + lato_metrics.underline_position.unwrap().offset);
+            text_layout.stroke_color(Color::Rgba(0.8, 0.6, 0.0, 1.0));
+            text_layout.line_width(lato_metrics.underline_position.unwrap().thickness);
+            text_layout.stroke();
 
             // Finish up the text...
             text_layout.layout_text(" drawing effects, such as this underline");
