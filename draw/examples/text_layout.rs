@@ -111,7 +111,8 @@ pub fn main() {
             let end_pos     = text_layout.measure();
 
             // start_pos and end_pos show where the word 'custom' began and ended (as well as giving the overall bounding box)
-            // This is a fairly simple drawing that just renders an underline in a different colour (note that CanvasFontLineLayout implements GraphicsContext, so we can use it to buffer the drawing operations we want to perform)
+            // CanvasFontLineLayout implements GraphicsContext, so we draw straight to the layout as we're constructing it
+            // `align_transform` later on will move our drawing with the text
             text_layout.new_path();
             text_layout.move_to(start_pos.pos.x() as _, start_pos.pos.y() as f32 + lato_metrics.underline_position.unwrap().offset);
             text_layout.line_to(end_pos.pos.x() as _, end_pos.pos.y() as f32 + lato_metrics.underline_position.unwrap().offset);
