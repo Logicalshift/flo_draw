@@ -93,7 +93,7 @@ where UniformAttribute: Hash+Eq {
             }
 
             if let Some(texture) = clip_texture {
-                // Set the erase texture
+                // Set the clip texture
                 gl::ActiveTexture(gl::TEXTURE2);
                 gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **texture);
 
