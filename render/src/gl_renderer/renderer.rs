@@ -486,36 +486,34 @@ impl GlRenderer {
     /// Enables a particular shader for future rendering operations
     ///
     fn use_shader(&mut self, shader_type: ShaderType) {
-        unsafe {
-            use self::ShaderType::*;
+        use self::ShaderType::*;
 
-            self.active_shader = Some(shader_type);
+        self.active_shader = Some(shader_type);
 
-            match shader_type {
-                Simple { erase_texture, clip_texture } => {
-                    let simple_shader   = &mut self.simple_shader;
-                    let textures        = &self.textures;
-                    let erase_texture   = erase_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
-                    let clip_texture    = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
+        match shader_type {
+            Simple { erase_texture, clip_texture } => {
+                let simple_shader   = &mut self.simple_shader;
+                let textures        = &self.textures;
+                let erase_texture   = erase_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
+                let clip_texture    = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
 
-                    simple_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, erase_texture, clip_texture);
-                }
-
-                DashedLine { dash_texture, erase_texture, clip_texture } => {
-                    let simple_shader           = &mut self.simple_shader;
-                    let textures                = &self.textures;
-                    let TextureId(dash_texture) = dash_texture;
-                    let dash_texture            = self.textures[dash_texture].as_ref();
-                    let erase_texture           = erase_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
-                    let clip_texture            = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
-
-                    simple_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, erase_texture, clip_texture);
-                }
+                simple_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, erase_texture, clip_texture);
             }
 
-            // Set the transform for the newly selected shader
-            self.update_shader_transform();
+            DashedLine { dash_texture, erase_texture, clip_texture } => {
+                let simple_shader           = &mut self.simple_shader;
+                let textures                = &self.textures;
+                let TextureId(dash_texture) = dash_texture;
+                let dash_texture            = self.textures[dash_texture].as_ref();
+                let erase_texture           = erase_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
+                let clip_texture            = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
+
+                simple_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, erase_texture, clip_texture);
+            }
         }
+
+        // Set the transform for the newly selected shader
+        self.update_shader_transform();
     }
 
     ///
