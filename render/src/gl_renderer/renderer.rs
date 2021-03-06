@@ -514,12 +514,12 @@ impl GlRenderer {
                 // Set the dash texture
                 if let Some(dash_texture) = dash_texture {
                     unsafe {
-                        gl::ActiveTexture(gl::TEXTURE2);
+                        gl::ActiveTexture(gl::TEXTURE0);
                         gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **dash_texture);
 
                         program.uniform_location(ShaderUniform::DashTexture, "t_DashPattern")
                             .map(|clip_mask| {
-                                gl::Uniform1i(clip_mask, 2);
+                                gl::Uniform1i(clip_mask, 0);
                             });
                     }
                 }

@@ -66,6 +66,9 @@ where UniformAttribute: Hash+Eq {
     ///
     /// Uses the appropriate program for the specified textures
     ///
+    /// Textures 1 and 2 are used for the erase and clip mask: texture 0 is intended as the shader input, but 3 and upwards can be used as
+    /// well, provided care is taken if we ever need more 'standard' variants
+    ///
     pub fn use_shader<'a>(&'a mut self, erase_uniform: UniformAttribute, clip_uniform: UniformAttribute, erase_texture: Option<&Texture>, clip_texture: Option<&Texture>) -> &'a mut ShaderProgram<UniformAttribute> {
         unsafe {
             // Pick the program based on the requested textures
@@ -80,23 +83,23 @@ where UniformAttribute: Hash+Eq {
             // Apply the textures
             if let Some(texture) = erase_texture {
                 // Set the erase texture
-                gl::ActiveTexture(gl::TEXTURE0);
+                gl::ActiveTexture(gl::TEXTURE1);
                 gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **texture);
 
                 program.uniform_location(erase_uniform, "t_EraseMask")
                     .map(|erase_mask| {
-                        gl::Uniform1i(erase_mask, 0);
+                        gl::Uniform1i(erase_mask, 1);
                     });
             }
 
             if let Some(texture) = clip_texture {
                 // Set the erase texture
-                gl::ActiveTexture(gl::TEXTURE1);
+                gl::ActiveTexture(gl::TEXTURE2);
                 gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **texture);
 
                 program.uniform_location(clip_uniform, "t_ClipMask")
                     .map(|clip_mask| {
-                        gl::Uniform1i(clip_mask, 1);
+                        gl::Uniform1i(clip_mask, 2);
                     });
             }
 
