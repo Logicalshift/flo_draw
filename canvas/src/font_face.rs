@@ -126,7 +126,7 @@ pub fn measure_text(font: &Arc<CanvasFontFace>, text: &str, em_size: f32) -> Tex
     let mut layout = CanvasFontLineLayout::new(font, em_size);
 
     // Layout the text and return the measurements
-    layout.layout_text(text);
+    layout.add_text(text);
     layout.measure()
 }
 

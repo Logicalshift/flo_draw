@@ -89,7 +89,7 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                     }
 
                     // Lay out the text
-                    current_line.as_mut().map(|line| line.layout_text(&text));
+                    current_line.as_mut().map(|line| line.add_text(&text));
                 }
 
                 Draw::DrawLaidOutText => {
@@ -124,7 +124,7 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                         let mut layout = CanvasFontLineLayout::new(font, *font_size);
 
                         // Lay out the text
-                        layout.layout_text(&text);
+                        layout.add_text(&text);
 
                         // Align it at the requested position
                         layout.align(x, y, TextAlignment::Left);

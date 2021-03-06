@@ -108,7 +108,7 @@ impl CanvasFontLineLayout {
     ///
     /// Adds some text to be laid out at the current offset
     ///
-    pub fn layout_text(&mut self, text: &str) {
+    pub fn add_text(&mut self, text: &str) {
         self.pending.extend(text.chars())
     }
 
