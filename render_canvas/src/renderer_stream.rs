@@ -14,6 +14,16 @@ use std::pin::*;
 use std::sync::*;
 
 ///
+/// Tri-state version of 'option' that supports 'Unknown' as well as None and Some
+///
+#[derive(Clone, Copy, PartialEq)]
+enum Maybe<T> {
+    Unknown,
+    None,
+    Some(T)
+}
+
+///
 /// Stream of rendering actions resulting from a draw instruction
 ///
 pub struct RenderStream<'a> {
@@ -56,14 +66,11 @@ struct RenderStreamState {
     /// The blend mode to use
     blend_mode: Option<render::BlendMode>,
 
-    /// The shader to use (base type)
-    shader: Option<render::ShaderType>,
-
     /// The texture to use as the eraser mask (None for no eraser texture)
-    erase_mask: Option<render::TextureId>,
+    erase_mask: Maybe<render::TextureId>,
 
     /// The texture to use for the clip mask (None for no clip mask)
-    clip_mask: Option<render::TextureId>,
+    clip_mask: Maybe<render::TextureId>,
 
     /// The transform to apply to the rendering instructions
     transform: Option<canvas::Transform2D>
@@ -89,6 +96,19 @@ impl<'a> RenderStream<'a> {
     }
 }
 
+impl<T> Maybe<T> {
+    ///
+    /// Converts to an optional value
+    ///
+    pub fn value(self) -> Option<Option<T>> {
+        match self {
+            Maybe::Unknown      => None,
+            Maybe::None         => Some(None),
+            Maybe::Some(val)    => Some(Some(val))
+        }
+    }
+}
+
 impl RenderStreamState {
     ///
     /// Creates a new render stream state
@@ -97,9 +117,8 @@ impl RenderStreamState {
         RenderStreamState {
             render_target:  None,
             blend_mode:     None,
-            shader:         None,
-            erase_mask:     None,
-            clip_mask:      None, 
+            erase_mask:     Maybe::Unknown,
+            clip_mask:      Maybe::Unknown, 
             transform:      None
         }
     }
@@ -116,8 +135,12 @@ impl RenderStreamState {
             }
         }
 
-        if let Some(shader) = self.shader {
-            if Some(shader) != from.shader || (self.render_target != from.render_target && self.render_target.is_some()) {
+        if let (Some(erase), Some(clip)) = (self.erase_mask.value(), self.clip_mask.value()) {
+            let mask_textures_changed = Some(erase) != from.erase_mask.value() || Some(clip) != from.clip_mask.value();
+            let render_target_changed = self.render_target != from.render_target && self.render_target.is_some();
+
+            if mask_textures_changed || render_target_changed {
+                let shader = render::ShaderType::Simple { erase_texture: erase, clip_texture: clip };
                 updates.push(render::RenderAction::UseShader(shader));
             }
         }
@@ -160,9 +183,8 @@ impl RenderCore {
         render_state.transform      = Some(viewport_transform);
         render_state.blend_mode     = Some(render::BlendMode::DestinationOver);
         render_state.render_target  = Some(render::RenderTargetId(0));
-        render_state.shader         = Some(render::ShaderType::Simple { erase_texture: None, clip_texture: None });
-        render_state.erase_mask     = None;
-        render_state.clip_mask      = None;
+        render_state.erase_mask     = Maybe::None;
+        render_state.clip_mask      = Maybe::None;
 
         for render_idx in 0..layer.render_order.len() {
             match &layer.render_order[render_idx] {
@@ -232,13 +254,13 @@ impl RenderCore {
                     if new_blend_mode == &render::BlendMode::DestinationOut {
                         // The previous state should use the eraser texture that we're abount to generate
                         if old_state.render_target == Some(render::RenderTargetId(0)) {
-                            old_state.shader = Some(render::ShaderType::Simple { erase_texture: Some(render::TextureId(1)), clip_texture: None });
+                            old_state.erase_mask = Maybe::Some(render::TextureId(1));
                         }
 
                         // Render to the eraser texture
                         render_state.blend_mode     = Some(render::BlendMode::AllChannelAlphaDestinationOver);
                         render_state.render_target  = Some(render::RenderTargetId(1));
-                        render_state.shader         = Some(render::ShaderType::Simple { erase_texture: None, clip_texture: None });
+                        render_state.erase_mask     = Maybe::None;
 
                         // Flag that we're using the erase texture and it needs to be cleared for this layer
                         use_erase_texture       = true;
@@ -246,11 +268,12 @@ impl RenderCore {
                         // Render the main buffer
                         render_state.blend_mode     = Some(*new_blend_mode);
                         render_state.render_target  = Some(render::RenderTargetId(0));
-                        render_state.shader         = Some(render::ShaderType::Simple { erase_texture: None, clip_texture: None });
 
                         // Use the eraser texture if one is specified
                         if use_erase_texture {
-                            render_state.shader     = Some(render::ShaderType::Simple { erase_texture: Some(render::TextureId(1)), clip_texture: None });
+                            render_state.erase_mask = Maybe::Some(render::TextureId(1));
+                        } else {
+                            render_state.erase_mask = Maybe::None;
                         }
                     }
 
