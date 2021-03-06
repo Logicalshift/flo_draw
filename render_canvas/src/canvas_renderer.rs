@@ -85,7 +85,9 @@ impl CanvasRenderer {
             background_color:       render::Rgba8([0, 0, 0, 0]),
             sprites:                HashMap::new(),
             unused_vertex_buffer:   0,
-            free_vertex_buffers:    vec![]
+            free_vertex_buffers:    vec![],
+            unused_texture_id:      16,
+            free_textures:          vec![]
         };
         let core = Arc::new(Desync::new(core));
 

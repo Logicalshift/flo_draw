@@ -44,7 +44,13 @@ pub struct RenderCore {
     pub unused_vertex_buffer: usize,
 
     /// Vertex buffers that were previously used but are now free
-    pub free_vertex_buffers: Vec<usize>
+    pub free_vertex_buffers: Vec<usize>,
+
+    /// The first unused texture ID
+    pub unused_texture_id: usize,
+
+    /// Textures that were previously used but are now free
+    pub free_textures: Vec<render::TextureId>
 }
 
 impl RenderCore {
@@ -125,6 +131,18 @@ impl RenderCore {
                 let buffer_id = self.unused_vertex_buffer;
                 self.unused_vertex_buffer += 1;
                 buffer_id
+            })
+    }
+
+    ///
+    /// Allocates a texture ID
+    ///
+    pub fn allocate_texture(&mut self) -> render::TextureId {
+        self.free_textures.pop()
+            .unwrap_or_else(|| {
+                let texture_id = self.unused_texture_id;
+                self.unused_texture_id += 1;
+                render::TextureId(texture_id)
             })
     }
 
