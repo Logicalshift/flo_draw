@@ -1,5 +1,9 @@
 use super::shader::*;
+use super::texture::*;
 use super::shader_program::*;
+use super::shader_uniforms::*;
+
+use gl;
 
 use std::hash::{Hash};
 
@@ -58,5 +62,44 @@ where UniformAttribute: Hash+Eq {
             program);
 
         Shader::compile(&program, shader_type, attributes.iter().map(|s| *s))
+    }
+
+    ///
+    /// Uses the appropriate program for the specified textures
+    ///
+    pub fn use_shader(&mut self, erase_uniform: UniformAttribute, clip_uniform: UniformAttribute, erase_texture: Option<&Texture>, clip_texture: Option<&Texture>) {
+        unsafe {
+            // Pick the program based on the requested textures
+            let program = match (erase_texture.is_some(), clip_texture.is_some()) {
+                (false, false)  => &mut self.basic,
+                (true, false)   => &mut self.erase,
+                (false, true)   => &mut self.clip,
+                (true, true)    => &mut self.clip_erase,
+            };
+            gl::UseProgram(**program);
+
+            // Apply the textures
+            if let Some(texture) = erase_texture {
+                // Set the erase texture
+                gl::ActiveTexture(gl::TEXTURE0);
+                gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **texture);
+
+                program.uniform_location(erase_uniform, "t_EraseMask")
+                    .map(|erase_mask| {
+                        gl::Uniform1i(erase_mask, 0);
+                    });
+            }
+
+            if let Some(texture) = clip_texture {
+                // Set the erase texture
+                gl::ActiveTexture(gl::TEXTURE1);
+                gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **texture);
+
+                program.uniform_location(clip_uniform, "t_ClipMask")
+                    .map(|clip_mask| {
+                        gl::Uniform1i(clip_mask, 1);
+                    });
+            }
+        }
     }
 }
