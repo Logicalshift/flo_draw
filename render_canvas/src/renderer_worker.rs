@@ -86,15 +86,15 @@ impl CanvasWorker {
 
         match job {
             Fill    { path, fill_rule, color, scale_factor, entity }    => self.fill(path, fill_rule, color, scale_factor, entity),
-            Clip    { path, fill_rule, color, scale_factor, entity }    => self.fill(path, fill_rule, color, scale_factor, entity),
+            Clip    { path, fill_rule, color, scale_factor, entity }    => self.clip(path, fill_rule, color, scale_factor, entity),
             Stroke  { path, stroke_options, scale_factor, entity }      => self.stroke(path, stroke_options, scale_factor, entity),
         }
     }
 
     ///
-    /// Fills the current path and returns the resulting render entity
+    /// Fills a path and returns the resulting render geometry
     ///
-    fn fill(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
+    fn fill_geometry(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64) -> VertexBuffers<render::Vertex2D, u16> {
         // Create the tessellator and geometry
         let mut tessellator     = tessellation::FillTessellator::new();
         let mut geometry        = VertexBuffers::new();
@@ -117,7 +117,25 @@ impl CanvasWorker {
             })).unwrap();
 
         // Result is a vertex buffer render entity
+        geometry
+    }
+
+    ///
+    /// Fills the current path and returns the resulting render entity
+    ///
+    fn fill(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
+        let geometry = self.fill_geometry(path, fill_rule, render::Rgba8(color), scale_factor);
+
         (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Draw))
+    }
+
+    ///
+    /// Fills the current path and returns the resulting render entity
+    ///
+    fn clip(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
+        let geometry = self.fill_geometry(path, fill_rule, render::Rgba8(color), scale_factor);
+
+        (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Clip))
     }
 
     ///
