@@ -133,32 +133,64 @@ impl RenderStreamState {
     ///
     fn update_from_state(&self, from: &RenderStreamState) -> Vec<render::RenderAction> {
         let mut updates = vec![];
+        let mut reset_render_target = false;
 
+        // If the clip buffers are different, make sure we reset the render target state (note that updates are run in reverse order!)
+        if let Some(clip_buffers) = &self.clip_buffers {
+            if Some(clip_buffers) != from.clip_buffers.as_ref() && clip_buffers.len() > 0 {
+                reset_render_target = true;
+            }
+        }
+
+        // Update the transform state
         if let Some(transform) = self.transform {
-            if Some(transform) != from.transform || (self.render_target != from.render_target && self.render_target.is_some()) {
+            if Some(transform) != from.transform || (self.render_target != from.render_target && self.render_target.is_some()) || reset_render_target {
                 updates.push(render::RenderAction::SetTransform(transform_to_matrix(&transform)));
             }
         }
 
+        // Update the shader we're using
         if let (Some(erase), Some(clip)) = (self.erase_mask.value(), self.clip_mask.value()) {
             let mask_textures_changed = Some(erase) != from.erase_mask.value() || Some(clip) != from.clip_mask.value();
             let render_target_changed = self.render_target != from.render_target && self.render_target.is_some();
 
-            if mask_textures_changed || render_target_changed {
+            if mask_textures_changed || render_target_changed || reset_render_target {
                 let shader = render::ShaderType::Simple { erase_texture: erase, clip_texture: clip };
                 updates.push(render::RenderAction::UseShader(shader));
             }
         }
 
+        // Set the blend mode
         if let Some(blend_mode) = self.blend_mode {
-            if Some(blend_mode) != from.blend_mode || (self.render_target != from.render_target && self.render_target.is_some()) {
+            if Some(blend_mode) != from.blend_mode || (self.render_target != from.render_target && self.render_target.is_some()) || reset_render_target {
                 updates.push(render::RenderAction::BlendMode(blend_mode));
             }
         }
 
+        // Choose the render target
         if let Some(render_target) = self.render_target {
-            if Some(render_target) != from.render_target {
+            if Some(render_target) != from.render_target || reset_render_target {
                 updates.push(render::RenderAction::SelectRenderTarget(render_target));
+            }
+        }
+
+        // Update the content of the clip mask render target
+        if let Some(clip_buffers) = &self.clip_buffers {
+            if Some(clip_buffers) != from.clip_buffers.as_ref() && clip_buffers.len() > 0 {
+                let render_clip_buffers = clip_buffers.iter()
+                    .rev()
+                    .map(|(vertices, indices, length)| render::RenderAction::DrawIndexedTriangles(*vertices, *indices, *length));
+
+                // Render the clip buffers once the state is set up (note: actions running in reverse!)
+                updates.extend(render_clip_buffers);
+
+                // Set up to render the clip buffers
+                updates.extend(vec![
+                    render::RenderAction::BlendMode(render::BlendMode::SourceOver),
+                    render::RenderAction::Clear(render::Rgba8([0,0,0,0])),
+                    render::RenderAction::UseShader(render::ShaderType::Simple { clip_texture: None, erase_texture: None }),
+                    render::RenderAction::SelectRenderTarget(CLIP_RENDER_TARGET)
+                ]);
             }
         }
 
