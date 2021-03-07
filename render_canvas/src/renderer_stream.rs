@@ -145,6 +145,53 @@ impl RenderStreamState {
     }
 
     ///
+    /// Generates the actions required to set a particular dash pattern
+    ///
+    fn generate_dash_pattern(&self, pattern: &[f32]) -> Vec<render::RenderAction> {
+        // Number of pixels in the dash pattern texture
+        const DASH_WIDTH: usize = 256;
+
+        // Total length determines how many bytes each dash uses
+        let total_length: f32   = pattern.iter().cloned().sum();
+        let pixel_length        = DASH_WIDTH as f32 / total_length;
+
+        // Do not generate a pattern for the case where the total length doesn't add up
+        if total_length <= 0.0 {
+            return vec![];
+        }
+
+        // Write the pixels for the dash pattern
+        let mut pixels      = vec![];
+        let mut pos         = 0.0;
+        let mut col         = 255u8;
+        let mut cur_pos     = pattern.iter();
+        let mut dash_end    = *cur_pos.next().unwrap_or(&total_length);
+
+        for _ in 0..DASH_WIDTH {
+            // Switch colours while we're over the end of the dash position
+            while dash_end < pos {
+                let next_dash_len = cur_pos.next().unwrap_or(&total_length);
+                col = if col == 0 { 255 } else { 0 };
+
+                dash_end += next_dash_len;
+            }
+
+            // Write this pixel
+            pixels.push(col);
+
+            // Update the position
+            pos += pixel_length;
+        }
+
+        // Generate the dash texture by clobbering any existing texture
+        vec![
+            render::RenderAction::Create1DTextureMono(DASH_TEXTURE, DASH_WIDTH),
+            render::RenderAction::WriteTexture1D(DASH_TEXTURE, 0, DASH_WIDTH, Arc::new(pixels)),
+            render::RenderAction::CreateMipMaps(DASH_TEXTURE)
+        ]
+    }
+
+    ///
     /// Returns the render actions needed to update from the specified state to this state (in reverse order, for replaying as a render stack)
     ///
     fn update_from_state(&self, from: &RenderStreamState) -> Vec<render::RenderAction> {
