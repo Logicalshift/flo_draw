@@ -71,9 +71,9 @@ pub fn main() {
         canvas.draw(|gc| {
             // Can align text with all the effects
             gc.begin_line_layout(500.0, 500.0, TextAlignment::Center);
-            gc.layout_text(FontId(1), "Text layout demonstration, with changing".to_string());
+            gc.layout_text(FontId(1), "Text layout demonstration, with changing ".to_string());
             gc.set_font_size(FontId(1), 36.0);
-            gc.layout_text(FontId(1), " sizes,".to_string());
+            gc.layout_text(FontId(1), "sizes,".to_string());
             gc.set_font_size(FontId(1), 18.0);
             gc.fill_color(Color::Rgba(0.8, 0.6, 0.0, 1.0));
             gc.layout_text(FontId(1), " colours,".to_string());
