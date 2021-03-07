@@ -78,6 +78,8 @@ impl RenderCore {
             RenderSprite(_, _)              => { }
             Clear(_)                        => { }
             SetRenderTarget(_)              => { }
+            EnableClipping                  => { }
+            DisableClipping                 => { }
 
             DrawIndexed(render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices) => {
                 // Each buffer is only used by one drawing operation, so we can always free them here

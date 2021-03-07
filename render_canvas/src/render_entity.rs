@@ -32,5 +32,11 @@ pub enum RenderEntity {
     Clear(render::Rgba8),
 
     /// Sets the current render target
-    SetRenderTarget(render::RenderTargetId)
+    SetRenderTarget(render::RenderTargetId),
+
+    /// Enables the clipping texture
+    EnableClipping,
+
+    /// Disables the clipping texture
+    DisableClipping
 }

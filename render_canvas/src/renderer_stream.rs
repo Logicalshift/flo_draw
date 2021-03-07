@@ -299,6 +299,24 @@ impl RenderCore {
                     // Apply the old state for the preceding instructions
                     render_layer_stack.extend(old_state.update_from_state(render_state));
                 }
+
+                EnableClipping => {
+                    // Select this render target in the state
+                    let old_state               = *render_state;
+                    render_state.clip_mask      = Maybe::Some(CLIP_RENDER_TEXTURE);
+
+                    // Apply the old state for the preceding instructions
+                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                }
+
+                DisableClipping => {
+                    // Select this render target in the state
+                    let old_state               = *render_state;
+                    render_state.clip_mask      = Maybe::None;
+
+                    // Apply the old state for the preceding instructions
+                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                }
             }
         }
 
