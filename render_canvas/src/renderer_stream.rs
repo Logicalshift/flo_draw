@@ -344,6 +344,10 @@ impl RenderCore {
                     // Apply the old state for the preceding instructions
                     render_layer_stack.extend(old_state.update_from_state(render_state));
                 }
+
+                SetDashPattern(dash_pattern) => {
+                    // TODO: update the render state with the new dash pattern (changes the shader we're using)
+                }
             }
         }
 

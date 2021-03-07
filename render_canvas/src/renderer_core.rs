@@ -75,6 +75,7 @@ impl RenderCore {
             VertexBuffer(_buffers, _)       => { }
             SetTransform(_)                 => { }
             SetBlendMode(_)                 => { }
+            SetDashPattern(_)               => { }
             RenderSprite(_, _)              => { }
             DisableClipping                 => { }
 

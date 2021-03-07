@@ -39,6 +39,9 @@ pub enum RenderEntity {
     /// Sets the blend mode to use for the following rendering
     SetBlendMode(render::BlendMode),
 
+    /// Sets the dash pattern to use for the following rendering
+    SetDashPattern(Vec<f32>),
+
     /// Use the specified vertex buffer to define a clipping mask
     EnableClipping(render::VertexBufferId, render::IndexBufferId, usize),
 
