@@ -498,6 +498,8 @@ impl GlRenderer {
                 let clip_texture    = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
 
                 simple_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, erase_texture, clip_texture);
+
+                panic_on_gl_error("Set simple shader");
             }
 
             DashedLine { dash_texture, erase_texture, clip_texture } => {
@@ -515,14 +517,16 @@ impl GlRenderer {
                 if let Some(dash_texture) = dash_texture {
                     unsafe {
                         gl::ActiveTexture(gl::TEXTURE0);
-                        gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **dash_texture);
+                        gl::BindTexture(gl::TEXTURE_1D, **dash_texture);
 
                         program.uniform_location(ShaderUniform::DashTexture, "t_DashPattern")
-                            .map(|clip_mask| {
-                                gl::Uniform1i(clip_mask, 0);
+                            .map(|dash_pattern| {
+                                gl::Uniform1i(dash_pattern, 0);
                             });
                     }
                 }
+
+                panic_on_gl_error("Set dash shader");
             }
         }
 
