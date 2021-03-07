@@ -5,9 +5,10 @@ use super::renderer_core::*;
 use super::renderer_layer::*;
 use super::renderer_worker::*;
 use super::renderer_stream::*;
+use super::resource_ids::*;
 
 use flo_render as render;
-use flo_render::{RenderTargetId, TextureId, RenderTargetType};
+use flo_render::{RenderTargetType};
 use flo_canvas as canvas;
 use flo_stream::*;
 
@@ -873,24 +874,24 @@ impl CanvasRenderer {
                 render::RenderAction::SetTransform(viewport_matrix),
                 render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])),
                 render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
-                render::RenderAction::SelectRenderTarget(RenderTargetId(0)),
+                render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
             ]
         };
 
         // Initialise the default render target
-        initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(0), TextureId(0), 
+        initialise.push(render::RenderAction::CreateRenderTarget(MAIN_RENDER_TARGET, MAIN_RENDER_TEXTURE, 
             self.viewport_size.0 as usize,
             self.viewport_size.1 as usize,
             RenderTargetType::Multisampled));
 
         // Also create the 'eraser' render surface (render target 1, texture 1)
-        initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(1), TextureId(1),
+        initialise.push(render::RenderAction::CreateRenderTarget(ERASE_RENDER_TARGET, ERASE_RENDER_TEXTURE,
             self.viewport_size.0 as usize,
             self.viewport_size.1 as usize,
             RenderTargetType::MonochromeMultisampledTexture));
 
         // And the 'clip mask' render surface (render target 2, texture 2)
-        initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(2), TextureId(2),
+        initialise.push(render::RenderAction::CreateRenderTarget(CLIP_RENDER_TARGET, CLIP_RENDER_TEXTURE,
             self.viewport_size.0 as usize,
             self.viewport_size.1 as usize,
             RenderTargetType::MonochromeMultisampledTexture));
@@ -900,15 +901,15 @@ impl CanvasRenderer {
             vec![]
         } else {
             vec![
-                render::RenderAction::FreeTexture(TextureId(2)),
-                render::RenderAction::FreeTexture(TextureId(1)),
-                render::RenderAction::FreeTexture(TextureId(0)),
-                render::RenderAction::FreeRenderTarget(RenderTargetId(2)),
-                render::RenderAction::FreeRenderTarget(RenderTargetId(1)),
-                render::RenderAction::FreeRenderTarget(RenderTargetId(0)),
+                render::RenderAction::FreeTexture(CLIP_RENDER_TEXTURE),
+                render::RenderAction::FreeTexture(ERASE_RENDER_TEXTURE),
+                render::RenderAction::FreeTexture(MAIN_RENDER_TEXTURE),
+                render::RenderAction::FreeRenderTarget(CLIP_RENDER_TARGET),
+                render::RenderAction::FreeRenderTarget(ERASE_RENDER_TARGET),
+                render::RenderAction::FreeRenderTarget(MAIN_RENDER_TARGET),
 
                 render::RenderAction::ShowFrameBuffer,
-                render::RenderAction::DrawFrameBuffer(RenderTargetId(0), 0, 0),
+                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, 0, 0),
                 render::RenderAction::Clear(background_color),
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
                 render::RenderAction::RenderToFrameBuffer,

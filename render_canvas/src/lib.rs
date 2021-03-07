@@ -1,3 +1,4 @@
+mod resource_ids;
 mod render_entity;
 mod layer_state;
 mod stroke_settings;
