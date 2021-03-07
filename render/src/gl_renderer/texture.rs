@@ -188,6 +188,8 @@ impl Texture {
         unsafe {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
             gl::TexSubImage2D(gl::TEXTURE_2D, 0, x as _, y as _, width as _, height as _, gl::BGRA, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
+
+            panic_on_gl_error("Set bgra data");
         }
     }
 
@@ -202,6 +204,8 @@ impl Texture {
         unsafe {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
             gl::TexSubImage2D(gl::TEXTURE_2D, 0, x as _, y as _, width as _, height as _, gl::RED, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
+
+            panic_on_gl_error("Set mono data");
         }
     }
 
@@ -216,6 +220,8 @@ impl Texture {
         unsafe {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
             gl::TexSubImage1D(gl::TEXTURE_1D, 0, x as _, width as _, gl::BGRA, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
+
+            panic_on_gl_error("Set bgra 1D data");
         }
     }
 
@@ -230,6 +236,8 @@ impl Texture {
         unsafe {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
             gl::TexSubImage1D(gl::TEXTURE_1D, 0, x as _, width as _, gl::RED, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
+
+            panic_on_gl_error("Set mono 1D data");
         }
     }
 
