@@ -4,6 +4,17 @@ use flo_render as render;
 use lyon::tessellation::{VertexBuffers};
 
 ///
+/// How a vertex buffer is intended to be used
+///
+pub enum VertexBufferIntent {
+    /// Will be drawn using DrawIndexed
+    Draw,
+
+    /// Will be rendered to the clipping area using EnableClipping
+    Clip
+}
+
+///
 /// Single rendering operation for a layer
 ///
 pub enum RenderEntity {
@@ -14,7 +25,7 @@ pub enum RenderEntity {
     Tessellating(usize),
 
     /// Tessellation waiting to be sent to the renderer
-    VertexBuffer(VertexBuffers<render::Vertex2D, u16>),
+    VertexBuffer(VertexBuffers<render::Vertex2D, u16>, VertexBufferIntent),
 
     /// Render a vertex buffer
     DrawIndexed(render::VertexBufferId, render::IndexBufferId, usize),

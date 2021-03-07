@@ -117,7 +117,7 @@ impl CanvasWorker {
             })).unwrap();
 
         // Result is a vertex buffer render entity
-        (entity, RenderEntity::VertexBuffer(geometry))
+        (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Draw))
     }
 
     ///
@@ -169,6 +169,6 @@ impl CanvasWorker {
             })).unwrap();
 
         // Result is a vertex buffer render entity
-        (entity, RenderEntity::VertexBuffer(geometry))
+        (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Draw))
     }
 }

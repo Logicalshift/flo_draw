@@ -204,7 +204,7 @@ impl RenderCore {
                     panic!("Tessellation is not complete (tried to render too early)");
                 },
 
-                VertexBuffer(_buffers) => {
+                VertexBuffer(_buffers, _) => {
                     // Should already have sent all the vertex buffers
                     panic!("Tessellation is not complete (found unexpected vertex buffer in layer)");
                 },

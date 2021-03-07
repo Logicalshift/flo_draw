@@ -72,7 +72,7 @@ impl RenderCore {
         match render_entity {
             Missing                         => { }
             Tessellating(_entity_id)        => { }
-            VertexBuffer(_buffers)          => { }
+            VertexBuffer(_buffers, _)       => { }
             SetTransform(_)                 => { }
             SetBlendMode(_)                 => { }
             RenderSprite(_, _)              => { }
@@ -161,12 +161,20 @@ impl RenderCore {
 
         // The action we just removed should be a vertex buffer action
         match vertex_action {
-            RenderEntity::VertexBuffer(vertices) => {
+            RenderEntity::VertexBuffer(vertices, intent) => {
                 // Allocate a buffer
                 let buffer_id = self.allocate_vertex_buffer();
 
                 // Draw these buffers as the action at this position
-                self.layer_definitions[layer_idx].render_order[render_index] = RenderEntity::DrawIndexed(render::VertexBufferId(buffer_id), render::IndexBufferId(buffer_id), vertices.indices.len());
+                match intent {
+                    VertexBufferIntent::Draw    => {
+                        self.layer_definitions[layer_idx].render_order[render_index] = RenderEntity::DrawIndexed(render::VertexBufferId(buffer_id), render::IndexBufferId(buffer_id), vertices.indices.len());
+                    }
+
+                    VertexBufferIntent::Clip    => {
+                        self.layer_definitions[layer_idx].render_order[render_index] = RenderEntity::EnableClipping(render::VertexBufferId(buffer_id), render::IndexBufferId(buffer_id), vertices.indices.len());
+                    }
+                }
 
                 // Send the vertices and indices to the rendering engine
                 vec![
@@ -191,7 +199,7 @@ impl RenderCore {
 
         for render_idx in 0..layer.render_order.len() {
             match &layer.render_order[render_idx] {
-                VertexBuffer(_buffers)                      => { 
+                VertexBuffer(_buffers, _)                   => { 
                     send_vertex_buffers.extend(self.send_layer_vertex_buffer(layer_handle, render_idx)); 
                     layer = self.layer(layer_handle);
                 },
