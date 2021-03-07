@@ -25,6 +25,15 @@ pub fn main() {
             gc.new_path();
             gc.rect(100.0, 100.0, 900.0, 900.0);
             gc.stroke();
+
+            gc.new_path();
+            gc.move_to(200.0, 200.0);
+            gc.line_to(800.0, 800.0);
+            gc.stroke();
+
+            gc.new_path();
+            gc.circle(300.0, 700.0, 100.0);
+            gc.stroke();
         });
     });
 }
