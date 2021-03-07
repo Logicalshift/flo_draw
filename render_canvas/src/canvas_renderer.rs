@@ -627,8 +627,8 @@ impl CanvasRenderer {
 
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
-                                // Create the canvas job (TODO: add a 'clip' job)
-                                CanvasJob::Fill { path, fill_rule, color, scale_factor, entity }
+                                // Create the canvas job
+                                CanvasJob::Clip { path, fill_rule, color, scale_factor, entity }
                             });
 
                             pending_jobs.push(job);

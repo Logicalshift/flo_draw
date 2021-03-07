@@ -31,7 +31,7 @@ pub struct LayerEntityRef {
 ///
 pub enum CanvasJob {
     ///
-    /// Tessellates a path by filling it
+    /// Tessellates a path by filling it, generating a 'Fill' instruction that covers the path's interior
     ///
     Fill { 
         path:           path::Path, 
@@ -41,9 +41,23 @@ pub enum CanvasJob {
         entity:         LayerEntityRef
     },
 
+    ///
+    /// Tesselates a path by filling its edge, generating a a 'Fill' instruction that draws the edges of the path as a stroke
+    ///
     Stroke {
         path:           path::Path,
         stroke_options: StrokeSettings,
+        scale_factor:   f64,
+        entity:         LayerEntityRef
+    },
+
+    ///
+    /// Tessellates a path by filling it, generating a 'EnableClipping' instruction that covers the path's interior
+    ///
+    Clip { 
+        path:           path::Path, 
+        color:          render::Rgba8,
+        fill_rule:      FillRule,
         scale_factor:   f64,
         entity:         LayerEntityRef
     }
@@ -72,7 +86,8 @@ impl CanvasWorker {
 
         match job {
             Fill    { path, fill_rule, color, scale_factor, entity }    => self.fill(path, fill_rule, color, scale_factor, entity),
-            Stroke  { path, stroke_options, scale_factor, entity }      => self.stroke(path, stroke_options, scale_factor, entity)
+            Clip    { path, fill_rule, color, scale_factor, entity }    => self.fill(path, fill_rule, color, scale_factor, entity),
+            Stroke  { path, stroke_options, scale_factor, entity }      => self.stroke(path, stroke_options, scale_factor, entity),
         }
     }
 
