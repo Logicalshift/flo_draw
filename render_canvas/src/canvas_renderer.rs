@@ -285,6 +285,9 @@ impl CanvasRenderer {
             // The last path that was generated
             let mut current_path    = None;
 
+            // The dash pattern that's currently applied
+            let mut dash_pattern    = vec![];
+
             // Create the default layer if one doesn't already exist
             core.sync(|core| {
                 if core.layers.len() == 0 {
@@ -384,6 +387,7 @@ impl CanvasRenderer {
                             let entity_id           = self.next_entity_id;
                             let viewport_height     = self.viewport_size.1;
                             let active_transform    = &self.active_transform;
+                            let dash_pattern        = &mut dash_pattern;
 
                             self.next_entity_id += 1;
 
@@ -392,6 +396,12 @@ impl CanvasRenderer {
 
                                 // Update the transformation matrix
                                 layer.update_transform(active_transform);
+
+                                // Ensure there's no dash pattern
+                                if *dash_pattern != vec![] {
+                                    layer.render_order.push(RenderEntity::SetDashPattern(vec![]));
+                                    *dash_pattern = vec![];
+                                }
 
                                 // Create the render entity in the tessellating state
                                 let scale_factor        = layer.state.tolerance_scale_factor(viewport_height);
@@ -433,6 +443,7 @@ impl CanvasRenderer {
                             let entity_id           = self.next_entity_id;
                             let viewport_height     = self.viewport_size.1;
                             let active_transform    = &self.active_transform;
+                            let dash_pattern        = &mut dash_pattern;
 
                             self.next_entity_id += 1;
 
@@ -441,6 +452,12 @@ impl CanvasRenderer {
 
                                 // Update the transformation matrix
                                 layer.update_transform(active_transform);
+
+                                // Apply the dash pattern, if it's different
+                                if *dash_pattern != layer.state.stroke_settings.dash_pattern {
+                                    layer.render_order.push(RenderEntity::SetDashPattern(layer.state.stroke_settings.dash_pattern.clone()));
+                                    *dash_pattern = layer.state.stroke_settings.dash_pattern.clone();
+                                }
 
                                 // Create the render entity in the tessellating state
                                 let scale_factor        = layer.state.tolerance_scale_factor(viewport_height);
