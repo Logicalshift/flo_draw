@@ -353,7 +353,7 @@ impl RenderCore {
                 }
 
                 DisableClipping => {
-                    // Select this render target in the state
+                    // Remove the clip mask from the state
                     let old_state               = render_state.clone();
                     render_state.clip_mask      = Maybe::None;
                     render_state.clip_buffers   = Some(vec![]);
@@ -363,7 +363,16 @@ impl RenderCore {
                 }
 
                 SetDashPattern(dash_pattern) => {
-                    // TODO: update the render state with the new dash pattern (changes the shader we're using)
+                    // Set the shader modifier to use the dash pattern (overriding any other shader modifier)
+                    let old_state               = render_state.clone();
+                    if dash_pattern.len() > 0 {
+                        render_state.shader_modifier = Some(ShaderModifier::DashPattern(dash_pattern.clone()));
+                    } else {
+                        render_state.shader_modifier = Some(ShaderModifier::Simple);
+                    }
+
+                    // Apply the old state for the preceding instructions
+                    render_layer_stack.extend(old_state.update_from_state(render_state));
                 }
             }
         }
