@@ -171,7 +171,7 @@ impl Texture {
     pub fn generate_mipmaps(&mut self) {
         unsafe {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
-            gl::GenerateTextureMipmap(self.texture_target);
+            gl::GenerateMipmap(self.texture_target);
 
             panic_on_gl_error("Generate texture mip map");
         }
