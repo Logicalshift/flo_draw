@@ -116,7 +116,6 @@ impl CanvasWorker {
                 }
             })).unwrap();
 
-        // Result is a vertex buffer render entity
         geometry
     }
 
@@ -162,9 +161,9 @@ impl CanvasWorker {
     }
 
     ///
-    /// Strokes a path and returns the resulting render entity
+    /// Generates the geometry for a stroke
     ///
-    fn stroke(&mut self, path: path::Path, stroke_options: StrokeSettings, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
+    fn stroke_geometry(&mut self, path: path::Path, stroke_options: StrokeSettings, scale_factor: f64) -> VertexBuffers<render::Vertex2D, u16> {
         // Create the tessellator and geometry
         let mut tessellator         = tessellation::StrokeTessellator::new();
         let mut geometry            = VertexBuffers::new();
@@ -186,7 +185,15 @@ impl CanvasWorker {
                 }
             })).unwrap();
 
-        // Result is a vertex buffer render entity
+        geometry
+    }
+
+    ///
+    /// Strokes a path and returns the resulting render entity
+    ///
+    fn stroke(&mut self, path: path::Path, stroke_options: StrokeSettings, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
+        let geometry = self.stroke_geometry(path, stroke_options, scale_factor);
+
         (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Draw))
     }
 }
