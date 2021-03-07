@@ -186,21 +186,20 @@ fn draw_twice() {
     })
 }
 
-/*
 #[test]
-fn clip_simple_circle() {
-    // Draw a simple circle
-    let mut clip_circle = vec![];
-    clip_circle.new_path();
-    clip_circle.circle(0.0,0.0, 100.0);
-    clip_circle.clip();
+fn clip_rect() {
+    // Draw a simple rectabgle
+    let mut clip_rect = vec![];
+    clip_rect.new_path();
+    clip_rect.rect(0.0,0.0, 100.0, 100.0);
+    clip_rect.clip();
 
     executor::block_on(async {
         // Create the renderer
         let mut renderer    = CanvasRenderer::new();
 
         // Get the upates for a drawing operation
-        let mut draw_stream = renderer.draw(clip_circle.into_iter());
+        let mut draw_stream = renderer.draw(clip_rect.into_iter());
 
         // Rendering starts at a 'clear', after some pre-rendering instructions, an 'upload vertex buffer', an 'upload index buffer' and a 'draw indexed'
         loop {
@@ -212,15 +211,36 @@ fn clip_simple_circle() {
             }
         }
 
-        // Read the next few instrcutions
-        let mut next_instructions = vec![];
-        for _ in 0..18 {
-            next_instructions.push(draw_stream.next().await.unwrap());
+        // Read the next few instructions
+        let mut rendering = vec![];
+        for _ in 0..19 {
+            rendering.push(draw_stream.next().await.unwrap());
         }
 
-        println!("{:?}", next_instructions);
+        println!("{:?}", rendering);
 
-        assert!(false);
+        // Should start by initialising the vertex buffers
+        use self::RenderAction::*;
+        assert!(match rendering[0] { SetTransform(_) => true, _ => false });
+        assert!(match rendering[1] { CreateVertex2DBuffer(_, _) => true, _ => false });
+        assert!(match rendering[2] { CreateIndexBuffer(_, _) => true, _ => false });
+
+        // Then set up to render to the clip texture (render target 2)
+        assert!(match rendering[3] { SelectRenderTarget(RenderTargetId(2)) => true, _ => false });
+        assert!(match rendering[4] { UseShader(render::ShaderType::Simple { clip_texture: None, erase_texture: None }) => true, _ => false });
+        assert!(match rendering[5] { Clear(Rgba8([0,0,0,255])) => true, _ => false });
+        assert!(match rendering[6] { BlendMode(render::BlendMode::AllChannelAlphaSourceOver) => true, _ => false });
+        assert!(match rendering[7] { SetTransform(_) => true, _ => false });
+
+        // Render the clipping texture
+        assert!(match rendering[8] { DrawIndexedTriangles(_, _, _) => true, _ => false });
+
+        // Finally, resets the state for rendering to the main view with a clipping region (texture ID 2 has the clip region in it)
+        assert!(match rendering[9] { SelectRenderTarget(RenderTargetId(0)) => true, _ => false });
+        assert!(match rendering[10] { BlendMode(render::BlendMode::DestinationOver) => true, _ => false });
+        assert!(match rendering[11] { UseShader(render::ShaderType::Simple { clip_texture: Some(render::TextureId(2)), erase_texture: None }) => true, _ => false });
+        assert!(match rendering[12] { SetTransform(_) => true, _ => false });
+
+        // Remaining instructions finish the render
     })
 }
-*/
