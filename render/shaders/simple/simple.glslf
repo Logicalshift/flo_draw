@@ -57,7 +57,6 @@ void main() {
     }
 
     clipColor /= 4.0;
-    clipColor = 1.0-clipColor;
 
     f_Color[0] *= clipColor;
     f_Color[1] *= clipColor;
