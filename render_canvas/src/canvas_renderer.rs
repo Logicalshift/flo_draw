@@ -888,33 +888,36 @@ impl CanvasRenderer {
             ]
         };
 
-        if !self.created_render_surface {
-            // If the MSAA render surface is missing, create it (it's always render target 0, texture 0)
-            initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(0), TextureId(0), 
-                self.viewport_size.0 as usize,
-                self.viewport_size.1 as usize,
-                RenderTargetType::Multisampled));
+        // Initialise the default render target
+        initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(0), TextureId(0), 
+            self.viewport_size.0 as usize,
+            self.viewport_size.1 as usize,
+            RenderTargetType::Multisampled));
 
-            // Also create the 'eraser' render surface (render target 1, texture 1)
-            initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(1), TextureId(1),
-                self.viewport_size.0 as usize,
-                self.viewport_size.1 as usize,
-                RenderTargetType::MonochromeMultisampledTexture));
+        // Also create the 'eraser' render surface (render target 1, texture 1)
+        initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(1), TextureId(1),
+            self.viewport_size.0 as usize,
+            self.viewport_size.1 as usize,
+            RenderTargetType::MonochromeMultisampledTexture));
 
-            // And the 'clip mask' render surface (render target 2, texture 2)
-            initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(2), TextureId(2),
-                self.viewport_size.0 as usize,
-                self.viewport_size.1 as usize,
-                RenderTargetType::MonochromeMultisampledTexture));
-
-            self.created_render_surface = true;
-        }
+        // And the 'clip mask' render surface (render target 2, texture 2)
+        initialise.push(render::RenderAction::CreateRenderTarget(RenderTargetId(2), TextureId(2),
+            self.viewport_size.0 as usize,
+            self.viewport_size.1 as usize,
+            RenderTargetType::MonochromeMultisampledTexture));
 
         // When finished, render the MSAA buffer to the main framebuffer
         let finalize            = if rendering_suspended {
             vec![]
         } else {
             vec![
+                render::RenderAction::FreeTexture(TextureId(2)),
+                render::RenderAction::FreeTexture(TextureId(1)),
+                render::RenderAction::FreeTexture(TextureId(0)),
+                render::RenderAction::FreeRenderTarget(RenderTargetId(2)),
+                render::RenderAction::FreeRenderTarget(RenderTargetId(1)),
+                render::RenderAction::FreeRenderTarget(RenderTargetId(0)),
+
                 render::RenderAction::ShowFrameBuffer,
                 render::RenderAction::DrawFrameBuffer(RenderTargetId(0), 0, 0),
                 render::RenderAction::Clear(background_color),
