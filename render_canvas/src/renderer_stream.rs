@@ -25,6 +25,18 @@ enum Maybe<T> {
 }
 
 ///
+/// Modifier to apply to the active shader
+///
+#[derive(Clone, PartialEq)]
+enum ShaderModifier {
+    /// The simple shader should be used
+    Simple,
+
+    /// Shader should use a dash pattern
+    DashPattern(Vec<f32>)
+}
+
+///
 /// Stream of rendering actions resulting from a draw instruction
 ///
 pub struct RenderStream<'a> {
@@ -73,6 +85,9 @@ struct RenderStreamState {
     /// The texture to use for the clip mask (None for no clip mask)
     clip_mask: Maybe<render::TextureId>,
 
+    /// The modifier to apply to the shader, if present
+    shader_modifier: Option<ShaderModifier>,
+
     /// The transform to apply to the rendering instructions
     transform: Option<canvas::Transform2D>,
 
@@ -119,12 +134,13 @@ impl RenderStreamState {
     ///
     fn new() -> RenderStreamState {
         RenderStreamState {
-            render_target:  None,
-            blend_mode:     None,
-            erase_mask:     Maybe::Unknown,
-            clip_mask:      Maybe::Unknown, 
-            transform:      None,
-            clip_buffers:   None
+            render_target:      None,
+            blend_mode:         None,
+            erase_mask:         Maybe::Unknown,
+            clip_mask:          Maybe::Unknown, 
+            shader_modifier:    None,
+            transform:          None,
+            clip_buffers:       None
         }
     }
 
@@ -213,17 +229,18 @@ impl RenderCore {
         let core = self;
 
         // Render the layer in reverse order (this is a stack, so operations are run in reverse order)
-        let mut render_layer_stack  = vec![];
-        let mut active_transform    = canvas::Transform2D::identity();
-        let mut use_erase_texture   = false;
-        let mut layer               = core.layer(layer_handle);
+        let mut render_layer_stack      = vec![];
+        let mut active_transform        = canvas::Transform2D::identity();
+        let mut use_erase_texture       = false;
+        let mut layer                   = core.layer(layer_handle);
 
-        render_state.transform      = Some(viewport_transform);
-        render_state.blend_mode     = Some(render::BlendMode::DestinationOver);
-        render_state.render_target  = Some(MAIN_RENDER_TARGET);
-        render_state.erase_mask     = Maybe::None;
-        render_state.clip_mask      = Maybe::None;
-        render_state.clip_buffers   = Some(vec![]);
+        render_state.transform          = Some(viewport_transform);
+        render_state.blend_mode         = Some(render::BlendMode::DestinationOver);
+        render_state.render_target      = Some(MAIN_RENDER_TARGET);
+        render_state.erase_mask         = Maybe::None;
+        render_state.clip_mask          = Maybe::None;
+        render_state.clip_buffers       = Some(vec![]);
+        render_state.shader_modifier    = Some(ShaderModifier::Simple);
 
         for render_idx in 0..layer.render_order.len() {
             match &layer.render_order[render_idx] {
