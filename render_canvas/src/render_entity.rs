@@ -28,15 +28,9 @@ pub enum RenderEntity {
     /// Sets the blend mode to use for the following rendering
     SetBlendMode(render::BlendMode),
 
-    /// Clears the current render target
-    Clear(render::Rgba8),
+    /// Use the specified vertex buffer to define a clipping mask
+    EnableClipping(render::VertexBufferId, render::IndexBufferId, usize),
 
-    /// Sets the current render target
-    SetRenderTarget(render::RenderTargetId),
-
-    /// Enables the clipping texture
-    EnableClipping,
-
-    /// Disables the clipping texture
+    /// Stop clipping
     DisableClipping
 }

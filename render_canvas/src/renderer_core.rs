@@ -76,12 +76,10 @@ impl RenderCore {
             SetTransform(_)                 => { }
             SetBlendMode(_)                 => { }
             RenderSprite(_, _)              => { }
-            Clear(_)                        => { }
-            SetRenderTarget(_)              => { }
-            EnableClipping                  => { }
             DisableClipping                 => { }
 
-            DrawIndexed(render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices) => {
+            EnableClipping(render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices)   |
+            DrawIndexed(render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices)      => {
                 // Each buffer is only used by one drawing operation, so we can always free them here
                 self.free_vertex_buffers.push(vertex_id);
                 if index_id != vertex_id {

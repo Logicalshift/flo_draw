@@ -185,3 +185,40 @@ fn draw_twice() {
         assert!(match draw_vertices { Some(RenderAction::DrawIndexedTriangles(_, _, _)) => true, _ => false });
     })
 }
+
+#[test]
+fn clip_simple_circle() {
+    // Draw a simple circle
+    let mut clip_circle = vec![];
+    clip_circle.new_path();
+    clip_circle.circle(0.0,0.0, 100.0);
+    clip_circle.clip();
+
+    executor::block_on(async {
+        // Create the renderer
+        let mut renderer    = CanvasRenderer::new();
+
+        // Get the upates for a drawing operation
+        let mut draw_stream = renderer.draw(clip_circle.into_iter());
+
+        // Rendering starts at a 'clear', after some pre-rendering instructions, an 'upload vertex buffer', an 'upload index buffer' and a 'draw indexed'
+        loop {
+            let next = draw_stream.next().await;
+            assert!(next.is_some());
+
+            if let Some(RenderAction::Clear(_)) = &next {
+                break;
+            }
+        }
+
+        // Read the next few instrcutions
+        let mut next_instructions = vec![];
+        for _ in 0..18 {
+            next_instructions.push(draw_stream.next().await.unwrap());
+        }
+
+        println!("{:?}", next_instructions);
+
+        assert!(false);
+    })
+}

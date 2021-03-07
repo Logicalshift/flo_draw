@@ -59,7 +59,7 @@ pub struct RenderStream<'a> {
 ///
 /// Represents the active state of the render stream
 ///
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct RenderStreamState {
     /// The render target
     render_target: Option<render::RenderTargetId>,
@@ -74,7 +74,10 @@ struct RenderStreamState {
     clip_mask: Maybe<render::TextureId>,
 
     /// The transform to apply to the rendering instructions
-    transform: Option<canvas::Transform2D>
+    transform: Option<canvas::Transform2D>,
+
+    /// The buffers to use to render the clipping region
+    clip_buffers: Option<Vec<(render::VertexBufferId, render::IndexBufferId, usize)>>
 }
 
 impl<'a> RenderStream<'a> {
@@ -120,7 +123,8 @@ impl RenderStreamState {
             blend_mode:     None,
             erase_mask:     Maybe::Unknown,
             clip_mask:      Maybe::Unknown, 
-            transform:      None
+            transform:      None,
+            clip_buffers:   None
         }
     }
 
@@ -186,6 +190,7 @@ impl RenderCore {
         render_state.render_target  = Some(MAIN_RENDER_TARGET);
         render_state.erase_mask     = Maybe::None;
         render_state.clip_mask      = Maybe::None;
+        render_state.clip_buffers   = Some(vec![]);
 
         for render_idx in 0..layer.render_order.len() {
             match &layer.render_order[render_idx] {
@@ -216,7 +221,7 @@ impl RenderCore {
                         let sprite_transform    = combined_transform * sprite_transform;
 
                         // The items from before the sprite should be rendered using the current state
-                        let old_state           = *render_state;
+                        let old_state           = render_state.clone();
 
                         // Render the layer associated with the sprite
                         let render_sprite       = core.render_layer(sprite_transform, sprite_layer, render_state);
@@ -243,14 +248,14 @@ impl RenderCore {
                     active_transform        = *new_transform;
 
                     // The preceding instructions should render according to the previous state
-                    let old_state           = *render_state;
+                    let old_state           = render_state.clone();
                     render_state.transform  = Some(&viewport_transform * &active_transform);
 
                     render_layer_stack.extend(old_state.update_from_state(render_state));
                 },
 
                 SetBlendMode(new_blend_mode) => {
-                    let mut old_state   = *render_state;
+                    let mut old_state   = render_state.clone();
 
                     if new_blend_mode == &render::BlendMode::DestinationOut {
                         // The previous state should use the eraser texture that we're abount to generate
@@ -287,23 +292,11 @@ impl RenderCore {
                     render_layer_stack.push(render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items));
                 },
 
-                Clear(color) => {
-                    render_layer_stack.push(render::RenderAction::Clear(*color));
-                }
-
-                SetRenderTarget(target) => {
-                    // Select this render target in the state
-                    let old_state               = *render_state;
-                    render_state.render_target  = Some(*target);
-
-                    // Apply the old state for the preceding instructions
-                    render_layer_stack.extend(old_state.update_from_state(render_state));
-                }
-
-                EnableClipping => {
-                    // Select this render target in the state
-                    let old_state               = *render_state;
+                EnableClipping(vertex_buffer, index_buffer, buffer_size) => {
+                    // The preceding instructions should render according to the previous state
+                    let old_state               = render_state.clone();
                     render_state.clip_mask      = Maybe::Some(CLIP_RENDER_TEXTURE);
+                    render_state.clip_buffers.get_or_insert_with(|| vec![]).push((*vertex_buffer, *index_buffer, *buffer_size));
 
                     // Apply the old state for the preceding instructions
                     render_layer_stack.extend(old_state.update_from_state(render_state));
@@ -311,8 +304,9 @@ impl RenderCore {
 
                 DisableClipping => {
                     // Select this render target in the state
-                    let old_state               = *render_state;
+                    let old_state               = render_state.clone();
                     render_state.clip_mask      = Maybe::None;
+                    render_state.clip_buffers   = Some(vec![]);
 
                     // Apply the old state for the preceding instructions
                     render_layer_stack.extend(old_state.update_from_state(render_state));

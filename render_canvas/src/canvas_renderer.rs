@@ -620,25 +620,14 @@ impl CanvasRenderer {
                                 let scale_factor        = layer.state.tolerance_scale_factor(viewport_height);
                                 let color               = render::Rgba8([255, 255, 255, 255]);
                                 let fill_rule           = layer.state.winding_rule;
-                                let entity_index        = layer.render_order.len() + 3;
+                                let entity_index        = layer.render_order.len();
 
                                 // Update the clipping path and enable clipping
-                                layer.render_order.extend(vec![
-                                    RenderEntity::SetRenderTarget(CLIP_RENDER_TARGET),
-                                    RenderEntity::Clear(render::Rgba8([0, 0, 0, 0])),
-                                    RenderEntity::SetBlendMode(render::BlendMode::SourceOver),
-
-                                    RenderEntity::Tessellating(entity_id),
-
-                                    // TODO: update blend mode/render target properly
-                                    RenderEntity::SetRenderTarget(MAIN_RENDER_TARGET),
-                                    RenderEntity::SetBlendMode(render::BlendMode::DestinationOver),
-                                    RenderEntity::EnableClipping
-                                ]);
+                                layer.render_order.push(RenderEntity::Tessellating(entity_id));
 
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
-                                // Create the canvas job
+                                // Create the canvas job (TODO: add a 'clip' job)
                                 CanvasJob::Fill { path, fill_rule, color, scale_factor, entity }
                             });
 
