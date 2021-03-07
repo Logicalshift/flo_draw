@@ -153,7 +153,7 @@ impl RenderStreamState {
 
         // Total length determines how many bytes each dash uses
         let total_length: f32   = pattern.iter().cloned().sum();
-        let pixel_length        = DASH_WIDTH as f32 / total_length;
+        let pixel_length        = total_length / DASH_WIDTH as f32;
 
         // Do not generate a pattern for the case where the total length doesn't add up
         if total_length <= 0.0 {
