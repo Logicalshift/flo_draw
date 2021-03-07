@@ -65,10 +65,7 @@ pub struct CanvasRenderer {
     viewport_origin: (f32, f32),
 
     /// The width and size of the viewport we're rendering to
-    viewport_size: (f32, f32),
-
-    /// True if the MSAA rendering surface has been created
-    created_render_surface: bool
+    viewport_size: (f32, f32)
 }
 
 impl CanvasRenderer {
@@ -122,7 +119,6 @@ impl CanvasRenderer {
             window_scale:               1.0,
             viewport_origin:            (0.0, 0.0),
             viewport_size:              (1.0, 1.0),
-            created_render_surface:     false
         }
     }
 
@@ -173,21 +169,14 @@ impl CanvasRenderer {
         self.viewport_transform         = viewport_transform;
         self.inverse_viewport_transform = inverse_viewport_transform;
 
-        if self.window_size != (window_width, window_height) {
-            self.window_size            = (window_width, window_height);
-            self.created_render_surface = false;
-        }
+        self.window_size                = (window_width, window_height);
 
         let viewport_width              = x.end-x.start;
         let viewport_height             = y.end-y.start;
 
         self.viewport_origin            = (x.start, y.start);
         self.window_scale               = scale;
-
-        if self.viewport_size != (viewport_width, viewport_height) {
-            self.viewport_size          = (viewport_width, viewport_height);
-            self.created_render_surface = false;
-        }
+        self.viewport_size              = (viewport_width, viewport_height);
     }
 
     ///
