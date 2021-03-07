@@ -280,6 +280,7 @@ impl CanvasRenderer {
 
             // The current path that is being built up
             let mut path_builder    = None;
+            let mut in_subpath      = false;
 
             // The last path that was generated
             let mut current_path    = None;
@@ -323,37 +324,56 @@ impl CanvasRenderer {
                     // Begins a new path
                     NewPath => {
                         current_path = None;
-                        path_builder = Some(path::Builder::new());
+                        in_subpath   = false;
+                        path_builder = Some(path::Path::builder());
                     }
 
                     // Move to a new point
                     Move(x, y) => {
-                        path_builder.get_or_insert_with(|| path::Builder::new())
-                            .move_to(point(x, y));
+                        if in_subpath {
+                            path_builder.as_mut().map(|builder| builder.end(false));
+                        }
+                        path_builder.get_or_insert_with(|| path::Path::builder())
+                            .begin(point(x, y));
+                        in_subpath = true;
                     }
 
                     // Line to point
                     Line(x, y) => {
-                        path_builder.get_or_insert_with(|| path::Builder::new())
-                            .line_to(point(x, y));
+                        if in_subpath {
+                            path_builder.get_or_insert_with(|| path::Path::builder())
+                                .line_to(point(x, y));
+                        } else {
+                            path_builder.get_or_insert_with(|| path::Path::builder())
+                                .begin(point(x, y));
+                            in_subpath = true;
+                        }
                     }
 
                     // Bezier curve to point
                     BezierCurve((px, py), (cp1x, cp1y), (cp2x, cp2y)) => {
-                        path_builder.get_or_insert_with(|| path::Builder::new())
-                            .cubic_bezier_to(point(cp1x, cp1y), point(cp2x, cp2y), point(px, py));
+                        if in_subpath {
+                            path_builder.get_or_insert_with(|| path::Path::builder())
+                                .cubic_bezier_to(point(cp1x, cp1y), point(cp2x, cp2y), point(px, py));
+                        } else {
+                            path_builder.get_or_insert_with(|| path::Path::builder())
+                                .begin(point(px, py));
+                            in_subpath = true;
+                        }
                     }
 
                     // Closes the current path
                     ClosePath => {
-                        path_builder.get_or_insert_with(|| path::Builder::new())
-                            .close();
+                        path_builder.get_or_insert_with(|| path::Path::builder())
+                            .end(true);
+                        in_subpath = false;
                     }
 
                     // Fill the current path
                     Fill => {
                         // Update the active path if the builder exists
-                        if let Some(path_builder) = path_builder.take() {
+                        if let Some(mut path_builder) = path_builder.take() {
+                            if in_subpath { path_builder.end(false); }
                             current_path = Some(path_builder.build());
                         }
 
@@ -401,7 +421,8 @@ impl CanvasRenderer {
                     // Draw a line around the current path
                     Stroke => {
                         // Update the active path if the builder exists
-                        if let Some(path_builder) = path_builder.take() {
+                        if let Some(mut path_builder) = path_builder.take() {
+                            if in_subpath { path_builder.end(false); }
                             current_path = Some(path_builder.build());
                         }
 
@@ -596,7 +617,8 @@ impl CanvasRenderer {
                     // Clip to the currently set path
                     Clip => {
                         // Update the active path if the builder exists
-                        if let Some(path_builder) = path_builder.take() {
+                        if let Some(mut path_builder) = path_builder.take() {
+                            if in_subpath { path_builder.end(false); }
                             current_path = Some(path_builder.build());
                         }
 

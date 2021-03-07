@@ -6,9 +6,8 @@ use flo_render as render;
 use flo_canvas as canvas;
 
 use lyon::path;
-use lyon::math::{Point};
 use lyon::tessellation;
-use lyon::tessellation::{VertexBuffers, BuffersBuilder, StrokeOptions, FillOptions, FillRule, FillAttributes, StrokeAttributes};
+use lyon::tessellation::{VertexBuffers, BuffersBuilder, StrokeVertex, StrokeOptions, FillVertex, FillOptions, FillRule};
 
 /// The minimum tolerance to use when rendering fills/strokes
 const MIN_TOLERANCE: f32 = 0.0001;
@@ -108,9 +107,9 @@ impl CanvasWorker {
 
         // Tessellate the current path
         tessellator.tessellate_path(&path, &fill_options,
-            &mut BuffersBuilder::new(&mut geometry, move |point: Point, _attr: FillAttributes| {
+            &mut BuffersBuilder::new(&mut geometry, move |vertex: FillVertex| {
                 render::Vertex2D {
-                    pos:        point.to_array(),
+                    pos:        vertex.position().to_array(),
                     tex_coord:  [0.0, 0.0],
                     color:      color
                 }
@@ -177,9 +176,9 @@ impl CanvasWorker {
 
         // Stroke the path
         tessellator.tessellate_path(&path, &stroke_options,
-            &mut BuffersBuilder::new(&mut geometry, move |point: Point, _attr: StrokeAttributes| {
+            &mut BuffersBuilder::new(&mut geometry, move |point: StrokeVertex| {
                 render::Vertex2D {
-                    pos:        point.to_array(),
+                    pos:        point.position().to_array(),
                     tex_coord:  [0.0, 0.0],
                     color:      color
                 }
