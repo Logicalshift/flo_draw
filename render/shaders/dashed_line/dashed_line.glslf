@@ -21,7 +21,7 @@ void main() {
     f_Color = IN.v_Color;
 
     // The dash alpha values are stored in the red component (and we use only the x-coord of the texture coordinates to read it)
-    float dash_alpha = texture(t_DashPattern, IN.v_TexCoord[0])[0];
+    float dash_alpha = texture(t_DashPattern, IN.v_TexCoord[0] / 20.0)[0];
 
     // Adjust the color
     f_Color[0] *= dash_alpha;
