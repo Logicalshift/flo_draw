@@ -213,13 +213,28 @@ impl RenderStreamState {
         }
 
         // Update the shader we're using
-        if let (Some(erase), Some(clip)) = (self.erase_mask.value(), self.clip_mask.value()) {
-            let mask_textures_changed = Some(erase) != from.erase_mask.value() || Some(clip) != from.clip_mask.value();
-            let render_target_changed = self.render_target != from.render_target && self.render_target.is_some();
+        if let (Some(erase), Some(clip), Some(modifier)) = (self.erase_mask.value(), self.clip_mask.value(), &self.shader_modifier) {
+            let mask_textures_changed   = Some(erase) != from.erase_mask.value() || Some(clip) != from.clip_mask.value();
+            let render_target_changed   = self.render_target != from.render_target && self.render_target.is_some();
+            let modifier_changed        = Some(modifier) != from.shader_modifier.as_ref();
 
-            if mask_textures_changed || render_target_changed || reset_render_target {
-                let shader = render::ShaderType::Simple { erase_texture: erase, clip_texture: clip };
+            if mask_textures_changed || render_target_changed || reset_render_target || modifier_changed {
+                // Pick the shader based on the modifier
+                let shader = match modifier {
+                    ShaderModifier::Simple          => render::ShaderType::Simple { erase_texture: erase, clip_texture: clip },
+                    ShaderModifier::DashPattern(_)  => render::ShaderType::DashedLine { dash_texture: DASH_TEXTURE, erase_texture: erase, clip_texture: clip }
+                };
+
+                // Add to the updates
                 updates.push(render::RenderAction::UseShader(shader));
+            }
+
+            // Generate the texture for the modifier if that's changed
+            if modifier_changed {
+                match modifier {
+                    ShaderModifier::Simple                          => { }
+                    ShaderModifier::DashPattern(new_dash_pattern)   => { updates.extend(self.generate_dash_pattern(new_dash_pattern).into_iter().rev()); }
+                }
             }
         }
 
