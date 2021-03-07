@@ -175,7 +175,7 @@ impl RenderStreamState {
         }
 
         // Update the content of the clip mask render target
-        if let Some(clip_buffers) = &self.clip_buffers {
+        if let (Some(clip_buffers), Some(transform)) = (&self.clip_buffers, self.transform) {
             if Some(clip_buffers) != from.clip_buffers.as_ref() && clip_buffers.len() > 0 {
                 let render_clip_buffers = clip_buffers.iter()
                     .rev()
@@ -186,8 +186,9 @@ impl RenderStreamState {
 
                 // Set up to render the clip buffers
                 updates.extend(vec![
-                    render::RenderAction::BlendMode(render::BlendMode::SourceOver),
-                    render::RenderAction::Clear(render::Rgba8([0,0,0,0])),
+                    render::RenderAction::SetTransform(transform_to_matrix(&transform)),
+                    render::RenderAction::BlendMode(render::BlendMode::AllChannelAlphaSourceOver),
+                    render::RenderAction::Clear(render::Rgba8([0,0,0,255])),
                     render::RenderAction::UseShader(render::ShaderType::Simple { clip_texture: None, erase_texture: None }),
                     render::RenderAction::SelectRenderTarget(CLIP_RENDER_TARGET)
                 ]);
