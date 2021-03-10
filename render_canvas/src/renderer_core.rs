@@ -34,6 +34,12 @@ pub struct RenderCore {
     /// The definition for the sprites
     pub sprites: HashMap<canvas::SpriteId, LayerHandle>,
 
+    /// The number of times each render texture is being used by the layers or by the canvas itself (0 = ready to free)
+    pub used_textures: HashMap<render::TextureId, usize>,
+
+    /// Maps canvas textures to render textures
+    pub canvas_textures: HashMap<canvas::TextureId, render::TextureId>,
+
     /// The actual layer definitions
     pub layer_definitions: Vec<Layer>,
 
