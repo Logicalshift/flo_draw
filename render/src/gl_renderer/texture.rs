@@ -269,7 +269,7 @@ impl Texture {
     pub fn make_copy(&self) -> Option<Texture> {
         unsafe {
             // Allocate a new texture for the copy
-            let mut copy            = Texture::new();
+            let copy                = Texture::new();
             let texture_id          = copy.texture.texture_id;
 
             // Fetch information on the existing texture
@@ -277,7 +277,7 @@ impl Texture {
             let width               = self.width;
             let height              = self.height;
 
-            // TODO: attach the existing texture to the read buffer
+            // Attach the existing texture to the read buffer
             let existing_texture    = RenderTarget::from_texture(self)?;
 
             // Generate the main texture image
@@ -321,9 +321,39 @@ impl Texture {
                     return None;
                 }
             }
-        }
 
-        unimplemented!()
+
+            // Find the currently bound frame buffer (so we can rebind it later on)
+            let mut old_frame_buffer = 0;
+            gl::GetIntegerv(gl::DRAW_FRAMEBUFFER_BINDING, &mut old_frame_buffer);
+            panic_on_gl_error("Get old framebuffer");
+
+            // Bind to the frame buffer
+            gl::BindFramebuffer(gl::FRAMEBUFFER, *existing_texture);
+            gl::ReadBuffer(gl::COLOR_ATTACHMENT0);
+            panic_on_gl_error("Bind new framebuffer");
+
+            // Copy the first subimage to the new texture from the old one
+            match self.texture_target {
+                gl::TEXTURE_1D => {
+                    gl::CopyTexImage1D(gl::TEXTURE_1D, 0, format, 0, 0, width, 0);
+                    panic_on_gl_error("Copy 1D");
+                }
+
+                gl::TEXTURE_2D => {
+                    gl::CopyTexImage2D(gl::TEXTURE_1D, 0, format, 0, 0, width, height, 0);
+                    panic_on_gl_error("Copy 2D");
+                }
+
+                _ => { /* Don't know how to copy */ }
+            }
+
+            // Bind back to the old framebuffer
+            gl::BindFramebuffer(gl::FRAMEBUFFER, old_frame_buffer as _);
+
+            // Return the copied texture
+            Some(copy)
+        }
     }
 
     ///
