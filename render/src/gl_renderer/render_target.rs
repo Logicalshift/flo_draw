@@ -34,8 +34,6 @@ impl RenderTarget {
     /// Creates a new OpenGL render target
     ///
     pub fn new(width: u16, height: u16, render_type: RenderTargetType) -> RenderTarget {
-        // Create the backing texture
-
         unsafe {
             // Find the currently bound frame buffer (so we can rebind it)
             let mut old_frame_buffer = 0;
