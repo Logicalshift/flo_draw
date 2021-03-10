@@ -110,6 +110,13 @@ pub enum RenderAction {
     CreateMipMaps(TextureId),
 
     ///
+    /// Copies a texture from a source ID to a target ID (replacing any existing texture at that ID)
+    ///
+    /// Mipmap levels are not copied by this operation, so would need to be regenerated
+    ///
+    CopyTexture(TextureId, TextureId),
+
+    ///
     /// Frees up an existing texture
     ///
     FreeTexture(TextureId),

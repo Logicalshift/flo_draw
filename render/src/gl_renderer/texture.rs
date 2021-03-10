@@ -242,6 +242,13 @@ impl Texture {
     }
 
     ///
+    /// Creates a copy of this texture, if possible
+    ///
+    pub fn make_copy(&self) -> Option<Texture> {
+        unimplemented!()
+    }
+
+    ///
     /// True if this is a monochrome texture
     ///
     pub fn is_mono(&self) -> bool {

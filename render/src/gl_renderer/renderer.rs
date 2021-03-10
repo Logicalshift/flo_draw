@@ -121,6 +121,7 @@ impl GlRenderer {
                 WriteTextureData(texture_id, (x1, y1), (x2, y2), data)                  => { self.write_texture_data_2d(texture_id, (x1, y1), (x2, y2), &*data); }
                 WriteTexture1D(texture_id, x1, x2, data)                                => { self.write_texture_data_1d(texture_id, x1, x2, &*data); }
                 CreateMipMaps(texture_id)                                               => { self.create_mipmaps(texture_id); }
+                CopyTexture(source, target)                                             => { self.copy_texture(source, target); }
                 FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
                 Clear(color)                                                            => { self.clear(color); }
                 UseShader(shader_type)                                                  => { self.use_shader(shader_type); }
@@ -398,6 +399,28 @@ impl GlRenderer {
             self.textures[texture_id].as_mut().map(|texture| texture.generate_mipmaps());
         }
     }
+
+    fn copy_texture(&mut self, TextureId(source_id): TextureId, TextureId(target_id): TextureId) {
+        // Extend the textures array as needed
+        if source_id >= self.textures.len() {
+            self.textures.extend((self.textures.len()..(source_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        if target_id >= self.textures.len() {
+            self.textures.extend((self.textures.len()..(target_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        // Free the target texture first
+        self.textures[target_id] = None;
+
+        if source_id < self.textures.len() {
+            // Ask the source to copy itself
+            self.textures[target_id] = self.textures[source_id].as_ref().and_then(|texture| texture.make_copy());
+        }
 
     ///
     /// Releases an existing render target
