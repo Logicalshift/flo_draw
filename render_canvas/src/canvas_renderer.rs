@@ -866,6 +866,38 @@ impl CanvasRenderer {
                         })
                     },
 
+                    // Creates or replaces a texture
+                    Texture(texture_id, canvas::TextureOp::Create(width, height, canvas::TextureFormat::Rgba)) => {
+                        core.sync(|core| {
+                            // Allocate a new renderer texture for this texture
+                            let render_texture = core.allocate_texture();
+
+                            // If the texture ID was previously in use, reduce the usage count
+                            if let Some(old_render_texture) = core.canvas_textures.get(&texture_id) {
+                                let old_render_texture = *old_render_texture;
+                                core.used_textures.get_mut(&old_render_texture)
+                                    .map(|usage_count| *usage_count -=1);
+                            }
+
+                            // Add this as a texture with a usage count of 1
+                            core.canvas_textures.insert(texture_id, render_texture);
+                            core.used_textures.insert(render_texture, 1);
+
+                            // TODO: Create a canvas job that will create this texture
+
+                        });
+                    }
+
+                    // Updates an existing texture
+                    Texture(texture_id, canvas::TextureOp::SetBytes(x, y, width, height, bytes)) => {
+                        core.sync(|core| {
+                            // Create a canvas renderer job that will write these bytes to the texture
+                            if let Some(render_texture) = core.canvas_textures.get(&texture_id) {
+                                // TODO: update the texture in a canvas job
+                            }
+                        });
+                    }
+
                     // Performs a font operation
                     Font(_, _) => {
                         // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
@@ -883,11 +915,6 @@ impl CanvasRenderer {
                     DrawLaidOutText => {
                         // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
                     },
-
-                    // Performs an operation on a texture
-                    Texture(_, _) => {
-                        todo!()
-                    }
                 }
             }
 
