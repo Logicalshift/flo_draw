@@ -421,6 +421,7 @@ impl GlRenderer {
             // Ask the source to copy itself
             self.textures[target_id] = self.textures[source_id].as_ref().and_then(|texture| texture.make_copy());
         }
+    }
 
     ///
     /// Releases an existing render target
