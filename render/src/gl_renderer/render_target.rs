@@ -41,7 +41,7 @@ impl RenderTarget {
             panic_on_gl_error("Get old framebuffer");
 
             // Create the frame buffer
-            let mut frame_buffer =0;
+            let mut frame_buffer = 0;
             gl::GenFramebuffers(1, &mut frame_buffer);
             gl::BindFramebuffer(gl::FRAMEBUFFER, frame_buffer);
             panic_on_gl_error("Bind new framebuffer");
@@ -123,7 +123,7 @@ impl RenderTarget {
             panic_on_gl_error("Create framebuffer");
 
             // Bind back to the original framebuffer
-            gl::BindFramebuffer(gl::FRAMEBUFFER, old_frame_buffer as u32);
+            gl::BindFramebuffer(gl::FRAMEBUFFER, old_frame_buffer as _);
 
             // Create the render target
             RenderTarget {
@@ -134,6 +134,59 @@ impl RenderTarget {
                 _render_type:       render_type,
                 drop_frame_buffer:  true
             }
+        }
+    }
+
+    ///
+    /// Creates a render target from an existing texture
+    ///
+    pub fn from_texture(texture: &Texture) -> Option<RenderTarget> {
+        unsafe {
+            // Clone the texture for later
+            let texture = texture.clone();
+            let width   = texture.width;
+            let height  = texture.height;
+
+            // Find the currently bound frame buffer (so we can rebind it)
+            let mut old_frame_buffer = 0;
+            gl::GetIntegerv(gl::DRAW_FRAMEBUFFER_BINDING, &mut old_frame_buffer);
+            panic_on_gl_error("Get old framebuffer");
+
+            // Create the frame buffer
+            let mut frame_buffer = 0;
+            gl::GenFramebuffers(1, &mut frame_buffer);
+            gl::BindFramebuffer(gl::FRAMEBUFFER, frame_buffer);
+            panic_on_gl_error("Bind new framebuffer");
+
+            // We're always using a texture and not a render buffer here
+            let render_buffer   = None;
+            let render_type     = RenderTargetType::Standard;
+
+            // Bind the texture to the frame buffer
+            match texture.texture_target {
+                gl::TEXTURE_1D => {
+                    gl::FramebufferTexture1D(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_1D, *texture, 0);
+                }
+
+                gl::TEXTURE_2D => {
+                    gl::FramebufferTexture2D(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D, *texture, 0);
+                }
+
+                _ => { return None }
+            }
+
+            // Bind back to the original framebuffer
+            gl::BindFramebuffer(gl::FRAMEBUFFER, old_frame_buffer as _);
+
+            // Generate the final render target
+            Some(RenderTarget {
+                frame_buffer:       frame_buffer,
+                texture:            Some(texture),
+                render_buffer:      render_buffer,
+                size:               (width as _, height as _),
+                _render_type:       render_type,
+                drop_frame_buffer:  true
+            })
         }
     }
 
