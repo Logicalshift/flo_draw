@@ -18,8 +18,9 @@ pub struct Texture {
     texture: Rc<TextureRef>,
 
     texture_target: gl::types::GLuint,
-
-    texture_format: gl::types::GLuint
+    texture_format: gl::types::GLuint,
+    width:          gl::types::GLsizei,
+    height:         gl::types::GLsizei,
 }
 
 impl Texture {
@@ -34,7 +35,9 @@ impl Texture {
             Texture {
                 texture:        Rc::new(TextureRef { texture_id: new_texture }),
                 texture_target: gl::TEXTURE_2D,
-                texture_format: gl::RGBA
+                texture_format: gl::RGBA,
+                width:          0,
+                height:         0
             }
         }
     }
@@ -47,13 +50,15 @@ impl Texture {
             let texture_id      = self.texture.texture_id;
             self.texture_target = gl::TEXTURE_2D;
             self.texture_format = gl::RGBA;
+            self.width          = width as _;
+            self.height         = height as _;
 
             gl::BindTexture(gl::TEXTURE_2D, texture_id);
 
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 
-            gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGBA as i32, width as gl::types::GLsizei, height as gl::types::GLsizei, 0, gl::RGBA, gl::UNSIGNED_BYTE, ptr::null());
+            gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGBA as _, width as _, height as _, 0, gl::RGBA, gl::UNSIGNED_BYTE, ptr::null());
 
             panic_on_gl_error("Create texture");
         }
@@ -67,6 +72,8 @@ impl Texture {
             let texture_id      = self.texture.texture_id;
             self.texture_target = gl::TEXTURE_2D_MULTISAMPLE;
             self.texture_format = gl::RGBA;
+            self.width          = width as _;
+            self.height         = height as _;
 
             // Clamp the number of samples to the maximum supported by the driver
             let mut max_samples = 1;
@@ -76,7 +83,7 @@ impl Texture {
             // Set up a MSAA texture
             gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, texture_id);
 
-            gl::TexImage2DMultisample(gl::TEXTURE_2D_MULTISAMPLE, samples, gl::RGBA, width as gl::types::GLsizei, height as gl::types::GLsizei, gl::FALSE);
+            gl::TexImage2DMultisample(gl::TEXTURE_2D_MULTISAMPLE, samples, gl::RGBA, width as _, height as _, gl::FALSE);
 
             panic_on_gl_error("Create multisampled texture");
         }
@@ -90,13 +97,15 @@ impl Texture {
             let texture_id      = self.texture.texture_id;
             self.texture_target = gl::TEXTURE_2D;
             self.texture_format = gl::RED;
+            self.width          = width as _;
+            self.height         = height as _;
 
             gl::BindTexture(gl::TEXTURE_2D, texture_id);
 
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 
-            gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RED as i32, width as gl::types::GLsizei, height as gl::types::GLsizei, 0, gl::RED, gl::UNSIGNED_BYTE, ptr::null());
+            gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RED as _, width as _, height as _, 0, gl::RED, gl::UNSIGNED_BYTE, ptr::null());
 
             panic_on_gl_error("Create monochrome texture");
         }
@@ -110,6 +119,8 @@ impl Texture {
             let texture_id      = self.texture.texture_id;
             self.texture_target = gl::TEXTURE_2D_MULTISAMPLE;
             self.texture_format = gl::RED;
+            self.width          = width as _;
+            self.height         = height as _;
 
             // Clamp the number of samples to the maximum supported by the driver
             let mut max_samples = 1;
@@ -119,7 +130,7 @@ impl Texture {
             // Set up a MSAA texture
             gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, texture_id);
 
-            gl::TexImage2DMultisample(gl::TEXTURE_2D_MULTISAMPLE, samples, gl::RED, width as gl::types::GLsizei, height as gl::types::GLsizei, gl::FALSE);
+            gl::TexImage2DMultisample(gl::TEXTURE_2D_MULTISAMPLE, samples, gl::RED, width as _, height as _, gl::FALSE);
 
             panic_on_gl_error("Create monochrome multisampled texture");
         }
@@ -133,13 +144,15 @@ impl Texture {
             let texture_id      = self.texture.texture_id;
             self.texture_target = gl::TEXTURE_1D;
             self.texture_format = gl::RGBA;
+            self.width          = width as _;
+            self.height         = 1;
 
             gl::BindTexture(gl::TEXTURE_1D, texture_id);
 
             gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
             gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 
-            gl::TexImage1D(gl::TEXTURE_1D, 0, gl::RGBA as i32, width as gl::types::GLsizei, 0, gl::RGBA, gl::UNSIGNED_BYTE, ptr::null());
+            gl::TexImage1D(gl::TEXTURE_1D, 0, gl::RGBA as _, width as _, 0, gl::RGBA, gl::UNSIGNED_BYTE, ptr::null());
 
             panic_on_gl_error("Create 1D texture");
         }
@@ -153,13 +166,15 @@ impl Texture {
             let texture_id      = self.texture.texture_id;
             self.texture_target = gl::TEXTURE_1D;
             self.texture_format = gl::RED;
+            self.width          = width as _;
+            self.height         = 1;
 
             gl::BindTexture(gl::TEXTURE_1D, texture_id);
 
             gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
             gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 
-            gl::TexImage1D(gl::TEXTURE_1D, 0, gl::RED as i32, width as gl::types::GLsizei, 0, gl::RED, gl::UNSIGNED_BYTE, ptr::null());
+            gl::TexImage1D(gl::TEXTURE_1D, 0, gl::RED as _, width as _, 0, gl::RED, gl::UNSIGNED_BYTE, ptr::null());
 
             panic_on_gl_error("Create 1D mono texture");
         }
@@ -245,6 +260,55 @@ impl Texture {
     /// Creates a copy of this texture, if possible
     ///
     pub fn make_copy(&self) -> Option<Texture> {
+        // Allocate a new texture for the copy
+        let mut copy    = Texture::new();
+        let texture_id  = copy.texture.texture_id;
+
+        // Fetch information on the existing texture
+        let format      = self.texture_format;
+        let width       = self.width;
+        let height      = self.height;
+
+        // TODO: attach the existing texture to the read buffer
+
+        // Generate the main texture image
+        match self.texture_target {
+            gl::TEXTURE_1D => {
+                gl::BindTexture(gl::TEXTURE_1D, texture_id);
+
+                gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+                gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+
+                gl::TexImage1D(gl::TEXTURE_1D, 0, format as _, width, 0, format, gl::UNSIGNED_BYTE, ptr::null());
+            }
+
+            gl::TEXTURE_2D => {
+                gl::BindTexture(gl::TEXTURE_2D, texture_id);
+
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+
+                gl::TexImage2D(gl::TEXTURE_2D, 0, format as _, width, height, 0, format, gl::UNSIGNED_BYTE, ptr::null());
+            }
+
+            gl::TEXTURE_2D_MULTISAMPLE => {
+                // Clamp the number of samples to the maximum supported by the driver
+                let mut max_samples = 1;
+                gl::GetIntegerv(gl::MAX_COLOR_TEXTURE_SAMPLES, &mut max_samples);
+                let samples = max_samples.min(samples as i32);
+
+                // Set up a MSAA texture
+                gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, texture_id);
+
+                gl::TexImage2DMultisample(gl::TEXTURE_2D_MULTISAMPLE, samples, gl::RGBA, width as _, height as _, gl::FALSE);
+            }
+
+            _ => { 
+                // Don't know how to copy this target type
+                return None;
+            }
+        }
+
         unimplemented!()
     }
 
