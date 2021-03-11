@@ -884,8 +884,8 @@ impl CanvasRenderer {
                             core.canvas_textures.insert(texture_id, render_texture);
                             core.used_textures.insert(render_texture, 1);
 
-                            // TODO: Create a canvas job that will create this texture
-
+                            // Create the texture in the setup actions
+                            core.setup_actions.push(render::RenderAction::CreateTextureBgra(render_texture, width as _, height as _));
                         });
                     }
 
@@ -894,7 +894,8 @@ impl CanvasRenderer {
                         core.sync(|core| {
                             // Create a canvas renderer job that will write these bytes to the texture
                             if let Some(render_texture) = core.canvas_textures.get(&texture_id) {
-                                // TODO: update the texture in a canvas job
+                                // Update the texture as a setup action
+                                core.setup_actions.push(render::RenderAction::WriteTextureData(*render_texture, (x as _, y as _), (width as _, height as _), bytes));
                             }
                         });
                     }
