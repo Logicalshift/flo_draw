@@ -25,6 +25,9 @@ pub struct RenderCore {
     /// Number of times that StartFrame has been specified without a corresponding ShowFrame
     pub frame_starts: usize,
 
+    /// One-time setup actions that are waiting to be rendered
+    pub setup_actions: Vec<render::RenderAction>,
+
     /// The definition for the layers
     pub layers: Vec<LayerHandle>,
 

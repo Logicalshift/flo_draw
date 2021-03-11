@@ -77,6 +77,7 @@ impl CanvasRenderer {
         // Create the shared core
         let core = RenderCore {
             frame_starts:           0,
+            setup_actions:          vec![],
             layers:                 vec![],
             free_layers:            vec![],
             layer_definitions:      vec![],
