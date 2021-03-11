@@ -512,7 +512,6 @@ impl<'a> Stream for RenderStream<'a> {
                 self.layer_id           = self.core.sync(|core| core.layers.len());
                 self.render_index       = 0;
             }
-
         }
 
         // We've generated all the vertex buffers: if frame rendering is suspended, stop here
