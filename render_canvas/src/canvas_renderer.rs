@@ -993,6 +993,9 @@ impl CanvasRenderer {
             ]
         };
 
+        // Perform any setup actions that might exist
+        self.core.sync(|core| initialise.extend(core.setup_actions.drain(..).rev()));
+
         // Initialise the default render target
         initialise.push(render::RenderAction::CreateRenderTarget(MAIN_RENDER_TARGET, MAIN_RENDER_TEXTURE, 
             self.viewport_size.0 as usize,
