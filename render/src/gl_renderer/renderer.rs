@@ -559,6 +559,45 @@ impl GlRenderer {
 
                 panic_on_gl_error("Set dash shader");
             }
+
+            Texture { texture, texture_transform, repeat, erase_texture, clip_texture } => {
+                let texture_shader      = &mut self.texture_shader;
+                let textures            = &self.textures;
+                let TextureId(texture)  = texture;
+                let texture             = self.textures[texture].as_ref();
+                let erase_texture       = erase_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
+                let clip_texture        = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
+                let texture_transform   = texture_transform.to_opengl_matrix();
+
+                let program             = texture_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, erase_texture, clip_texture);
+
+                // Set up the texture program
+                if let Some(texture) = texture {
+                    unsafe {
+                        // Bind the texture to texture 0
+                        gl::ActiveTexture(gl::TEXTURE0);
+                        gl::BindTexture(gl::TEXTURE_2D, **texture);
+
+                        if repeat {
+                            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as _);
+                            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as _);
+                        } else {
+                            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as _);
+                            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as _);
+                        }
+
+                        // Set in the program uniform
+                        program.uniform_location(ShaderUniform::Texture, "t_Texture")
+                            .map(|texture_uniform| {
+                                gl::Uniform1i(texture_uniform, 0);
+                            });
+                        program.uniform_location(ShaderUniform::TextureTransform, "texture_transform")
+                            .map(|transform_uniform| {
+                                gl::UniformMatrix4fv(transform_uniform, 1, gl::FALSE, texture_transform.as_ptr());
+                            });
+                    }
+                }
+            }
         }
 
         // Set the transform for the newly selected shader
@@ -634,6 +673,11 @@ impl GlRenderer {
                 Some(DashedLine { dash_texture: _, erase_texture: Some(_), clip_texture: None })    => Some(&mut self.dashed_line_shader.erase),
                 Some(DashedLine { dash_texture: _, erase_texture: None, clip_texture: Some(_) })    => Some(&mut self.dashed_line_shader.clip),
                 Some(DashedLine { dash_texture: _, erase_texture: Some(_), clip_texture: Some(_) }) => Some(&mut self.dashed_line_shader.clip_erase),
+
+                Some(Texture { erase_texture: None, clip_texture: None, .. })                       => Some(&mut self.texture_shader.basic),
+                Some(Texture { erase_texture: Some(_), clip_texture: None, .. })                    => Some(&mut self.texture_shader.erase),
+                Some(Texture { erase_texture: None, clip_texture: Some(_), .. })                    => Some(&mut self.texture_shader.clip),
+                Some(Texture { erase_texture: Some(_), clip_texture: Some(_), .. })                 => Some(&mut self.texture_shader.clip_erase),
 
                 None                                                                                => None
             };

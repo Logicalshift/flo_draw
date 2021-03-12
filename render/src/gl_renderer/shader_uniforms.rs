@@ -13,5 +13,11 @@ pub enum ShaderUniform {
     ClipTexture,
 
     /// The texture used for the dash pattern
-    DashTexture
+    DashTexture,
+
+    /// Texture used for picking the colour of a fragment
+    Texture,
+
+    /// The transform applied to the texture coordinates
+    TextureTransform
 }

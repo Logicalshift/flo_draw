@@ -1,8 +1,8 @@
-use super::identities::*;
-use super::render_target_type::*;
 use super::color::*;
+use super::identities::*;
 use super::blend_mode::*;
 use super::shader_type::*;
+use super::render_target_type::*;
 
 use crate::buffer::*;
 
