@@ -41,7 +41,10 @@ pub struct GlRenderer {
     simple_shader: ShaderCollection<ShaderUniform>,
 
     /// The 'dashed line' shader program
-    dashed_line_shader: ShaderCollection<ShaderUniform>
+    dashed_line_shader: ShaderCollection<ShaderUniform>,
+
+    /// The 'texture fill' shader program
+    texture_shader: ShaderCollection<ShaderUniform>
 }
 
 impl GlRenderer {
@@ -52,9 +55,12 @@ impl GlRenderer {
         let simple_vertex                       = String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap();
         let simple_fragment                     = String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap();
         let dashed_line_fragment                = String::from_utf8(include_bytes!["../../shaders/dashed_line/dashed_line.glslf"].to_vec()).unwrap();
+        let texture_vertex                      = String::from_utf8(include_bytes!["../../shaders/texture/texture.glslv"].to_vec()).unwrap();
+        let texture_fragment                    = String::from_utf8(include_bytes!["../../shaders/texture/texture.glslf"].to_vec()).unwrap();
 
         let simple_shader                       = ShaderCollection::new(&simple_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &simple_fragment, vec![]);
         let dashed_line_shader                  = ShaderCollection::new(&simple_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &dashed_line_fragment, vec![]);
+        let texture_shader                      = ShaderCollection::new(&texture_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &texture_fragment, vec![]);
 
         GlRenderer {
             buffers:                        vec![],
@@ -65,7 +71,8 @@ impl GlRenderer {
             transform_matrix:               None,
             render_targets:                 vec![],
             simple_shader:                  simple_shader,
-            dashed_line_shader:             dashed_line_shader
+            dashed_line_shader:             dashed_line_shader,
+            texture_shader:                 texture_shader
         }
     }
 
