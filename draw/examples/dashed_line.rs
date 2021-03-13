@@ -34,6 +34,10 @@ pub fn main() {
             gc.new_path();
             gc.circle(300.0, 700.0, 100.0);
             gc.stroke();
+
+            gc.new_path();
+            gc.circle(700.0, 300.0, 100.0);
+            gc.fill();
         });
     });
 }
