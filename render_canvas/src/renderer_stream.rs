@@ -535,15 +535,16 @@ impl<'a> Stream for RenderStream<'a> {
                 self.processing_future  = None;
                 self.layer_id           = self.core.sync(|core| core.layers.len());
                 self.render_index       = 0;
+
+                // Perform any setup actions that might exist or have been generated before proceeding
+                let setup_actions       = self.core.sync(|core| mem::take(&mut core.setup_actions));
+                
+                self.pending_stack.extend(setup_actions.into_iter().rev());
+
+                if let Some(next) = self.pending_stack.pop() {
+                    return Poll::Ready(Some(next));
+                }
             }
-        }
-
-        // Perform any setup actions that might exist
-        let setup_actions = self.core.sync(|core| mem::take(&mut core.setup_actions));
-        self.pending_stack.extend(setup_actions.into_iter().rev());
-
-        if let Some(next) = self.pending_stack.pop() {
-            return Poll::Ready(Some(next));
         }
 
         // We've generated all the vertex buffers: if frame rendering is suspended, stop here
