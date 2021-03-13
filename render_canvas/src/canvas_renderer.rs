@@ -403,7 +403,7 @@ impl CanvasRenderer {
 
                                 // Ensure there's no dash pattern
                                 if *dash_pattern != vec![] {
-                                    layer.render_order.push(RenderEntity::SetDashPattern(vec![]));
+                                    layer.render_order.push(RenderEntity::SetFlatColor);
                                     *dash_pattern = vec![];
                                 }
 
