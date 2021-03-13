@@ -33,12 +33,16 @@ pub fn main() {
             gc.create_texture(TextureId(0), flo_w as _, flo_h as _, TextureFormat::Rgba);
             gc.set_texture_bytes(TextureId(0), 0, 0, flo_w as _, flo_h as _, Arc::clone(&flo_data));
 
+            let ratio   = (flo_w as f32)/(flo_h as f32);
+            let height  = 1000.0 / ratio;
+            let y_pos   = (1000.0-height)/2.0;
+
             // Draw a rectangle...
             gc.new_path();
-            gc.rect(0.0, 0.0, 1000.0, 1000.0);
+            gc.rect(0.0, y_pos, 1000.0, height);
 
             // Fill with the texture we just loaded
-            gc.fill_texture(TextureId(0), 0.0, flo_h as _, flo_w as _, 0.0);
+            gc.fill_texture(TextureId(0), 0.0, y_pos+flo_h as f32, flo_w as _, y_pos);
             gc.fill();
         });
     });
