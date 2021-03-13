@@ -58,8 +58,8 @@ impl FillState {
         let b       = 0.0;
         let c       = -x1;
 
-        let d       = 1.0/(y2-y1);
-        let e       = 0.0;
+        let d       = 0.0;
+        let e       = 1.0/(y2-y1);
         let f       = -y1;
 
         let matrix  = render::Matrix([
