@@ -35,14 +35,10 @@ pub fn main() {
 
             // Draw a rectangle...
             gc.new_path();
-            gc.move_to(0.0, 0.0);
-            gc.line_to(1000.0, 0.0);
-            gc.line_to(1000.0, 1000.0);
-            gc.line_to(0.0, 1000.0);
-            gc.line_to(0.0, 0.0);
+            gc.rect(0.0, 0.0, 1000.0, 1000.0);
 
             // Fill with the texture we just loaded
-            gc.fill_texture(TextureId(0), 0.0, 0.0, flo_w as _, flo_h as _);
+            gc.fill_texture(TextureId(0), 0.0, flo_h as _, flo_w as _, 0.0);
             gc.fill();
         });
     });
