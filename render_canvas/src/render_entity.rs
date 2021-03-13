@@ -39,6 +39,9 @@ pub enum RenderEntity {
     /// Sets the blend mode to use for the following rendering
     SetBlendMode(render::BlendMode),
 
+    /// Use flat colour shading for the following rendering
+    SetFlatColor,
+
     /// Sets the dash pattern to use for the following rendering
     SetDashPattern(Vec<f32>),
 

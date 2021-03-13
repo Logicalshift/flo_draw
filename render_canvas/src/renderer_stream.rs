@@ -429,6 +429,15 @@ impl RenderCore {
                     render_layer_stack.extend(old_state.update_from_state(render_state));
                 }
 
+                SetFlatColor => {
+                    // Set the shader modifier to use the dash pattern (overriding any other shader modifier)
+                    let old_state                   = render_state.clone();
+                    render_state.shader_modifier    = Some(ShaderModifier::Simple);
+
+                    // Apply the old state for the preceding instructions
+                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                }
+
                 SetDashPattern(dash_pattern) => {
                     // Set the shader modifier to use the dash pattern (overriding any other shader modifier)
                     let old_state               = render_state.clone();
