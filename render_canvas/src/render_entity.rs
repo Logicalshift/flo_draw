@@ -42,6 +42,9 @@ pub enum RenderEntity {
     /// Sets the dash pattern to use for the following rendering
     SetDashPattern(Vec<f32>),
 
+    /// Sets the fill texture to use for the following rendering
+    SetFillTexture(render::TextureId, render::Matrix, bool),
+
     /// Use the specified vertex buffer to define a clipping mask
     EnableClipping(render::VertexBufferId, render::IndexBufferId, usize),
 

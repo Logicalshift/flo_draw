@@ -33,7 +33,10 @@ enum ShaderModifier {
     Simple,
 
     /// Shader should use a dash pattern
-    DashPattern(Vec<f32>)
+    DashPattern(Vec<f32>),
+
+    /// Shader should use a texture
+    Texture(render::TextureId, render::Matrix, bool)
 }
 
 ///
@@ -221,8 +224,9 @@ impl RenderStreamState {
             if mask_textures_changed || render_target_changed || reset_render_target || modifier_changed {
                 // Pick the shader based on the modifier
                 let shader = match modifier {
-                    ShaderModifier::Simple          => render::ShaderType::Simple { erase_texture: erase, clip_texture: clip },
-                    ShaderModifier::DashPattern(_)  => render::ShaderType::DashedLine { dash_texture: DASH_TEXTURE, erase_texture: erase, clip_texture: clip }
+                    ShaderModifier::Simple                              => render::ShaderType::Simple { erase_texture: erase, clip_texture: clip },
+                    ShaderModifier::DashPattern(_)                      => render::ShaderType::DashedLine { dash_texture: DASH_TEXTURE, erase_texture: erase, clip_texture: clip },
+                    ShaderModifier::Texture(texture_id, matrix, repeat) => render::ShaderType::Texture { texture: *texture_id, texture_transform: *matrix, repeat: *repeat, erase_texture: erase, clip_texture: clip }
                 };
 
                 // Add to the updates
@@ -234,6 +238,7 @@ impl RenderStreamState {
                 match modifier {
                     ShaderModifier::Simple                          => { }
                     ShaderModifier::DashPattern(new_dash_pattern)   => { updates.extend(self.generate_dash_pattern(new_dash_pattern).into_iter().rev()); }
+                    ShaderModifier::Texture(_, _, _)                => { }
                 }
             }
         }
@@ -432,6 +437,15 @@ impl RenderCore {
                     } else {
                         render_state.shader_modifier = Some(ShaderModifier::Simple);
                     }
+
+                    // Apply the old state for the preceding instructions
+                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                }
+
+                SetFillTexture(texture_id, matrix, repeat) => {
+                    // Set the shader modifier to use the fill texture (overriding any other shader modifier)
+                    let old_state               = render_state.clone();
+                    render_state.shader_modifier = Some(ShaderModifier::Texture(*texture_id, *matrix, *repeat));
 
                     // Apply the old state for the preceding instructions
                     render_layer_stack.extend(old_state.update_from_state(render_state));

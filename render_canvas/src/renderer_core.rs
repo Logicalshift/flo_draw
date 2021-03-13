@@ -88,6 +88,7 @@ impl RenderCore {
             SetDashPattern(_)               => { }
             RenderSprite(_, _)              => { }
             DisableClipping                 => { }
+            SetFillTexture(_, _, _)         => { }
 
             EnableClipping(render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices)   |
             DrawIndexed(render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices)      => {
