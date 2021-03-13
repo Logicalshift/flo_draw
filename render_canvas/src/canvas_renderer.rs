@@ -292,6 +292,9 @@ impl CanvasRenderer {
             // The dash pattern that's currently applied
             let mut dash_pattern    = vec![];
 
+            // The active fill state (shader that will be applied to active fills)
+            let mut fill_state      = FillState::None;
+
             // Create the default layer if one doesn't already exist
             core.sync(|core| {
                 if core.layers.len() == 0 {
@@ -392,6 +395,7 @@ impl CanvasRenderer {
                             let viewport_height     = self.viewport_size.1;
                             let active_transform    = &self.active_transform;
                             let dash_pattern        = &mut dash_pattern;
+                            let fill_state          = &mut fill_state;
 
                             self.next_entity_id += 1;
 
@@ -404,7 +408,8 @@ impl CanvasRenderer {
                                 // Ensure there's no dash pattern
                                 if *dash_pattern != vec![] {
                                     layer.render_order.push(RenderEntity::SetFlatColor);
-                                    *dash_pattern = vec![];
+                                    *dash_pattern   = vec![];
+                                    *fill_state     = FillState::None;
                                 }
 
                                 // Create the render entity in the tessellating state
@@ -448,6 +453,7 @@ impl CanvasRenderer {
                             let viewport_height     = self.viewport_size.1;
                             let active_transform    = &self.active_transform;
                             let dash_pattern        = &mut dash_pattern;
+                            let fill_state          = &mut fill_state;
 
                             self.next_entity_id += 1;
 
@@ -456,6 +462,9 @@ impl CanvasRenderer {
 
                                 // Update the transformation matrix
                                 layer.update_transform(active_transform);
+
+                                // TODO: Reset the fill state to 'flat colour' if needed
+                                *fill_state = FillState::None;
 
                                 // Apply the dash pattern, if it's different
                                 if *dash_pattern != layer.state.stroke_settings.dash_pattern {
