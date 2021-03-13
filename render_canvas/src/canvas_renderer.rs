@@ -405,14 +405,42 @@ impl CanvasRenderer {
                                 // Update the transformation matrix
                                 layer.update_transform(active_transform);
 
-                                // Ensure there's no dash pattern
-                                if *dash_pattern != vec![] {
+                                // If the shader state has changed, generate the operations needed to use that shader state
+                                if *fill_state != layer.state.fill_color {
+                                    // Update the fill state if it's different
+                                    match layer.state.fill_color {
+                                        FillState::None | FillState::Color(_) => { 
+                                            layer.render_order.push(RenderEntity::SetFlatColor);
+                                        }
+
+                                        FillState::Texture(texture_id, matrix, repeat) => {
+                                            // Finish/get the render texture
+                                            if let Some(render_texture) = core.texture_for_rendering(texture_id) {
+                                                // Increase the usage count for this texture
+                                                core.used_textures.get_mut(&render_texture)
+                                                    .map(|usage_count| *usage_count += 1);
+
+                                                // Add to the layer
+                                                core.layer(layer_id).render_order.push(RenderEntity::SetFillTexture(render_texture, matrix, repeat));
+                                            } else {
+                                                // Texture is not set up
+                                                core.layer(layer_id).render_order.push(RenderEntity::SetFlatColor);
+                                            }
+                                        }
+                                    }
+
+
+                                    *dash_pattern   = vec![];
+                                    *fill_state     = core.layer(layer_id).state.fill_color.clone();
+                                } else if *dash_pattern != vec![] {
+                                    // Ensure there's no dash pattern
                                     layer.render_order.push(RenderEntity::SetFlatColor);
                                     *dash_pattern   = vec![];
-                                    *fill_state     = FillState::None;
+                                    *fill_state     = layer.state.fill_color.clone();
                                 }
 
                                 // Create the render entity in the tessellating state
+                                let layer               = core.layer(layer_id);
                                 let scale_factor        = layer.state.tolerance_scale_factor(viewport_height);
                                 let color               = layer.state.fill_color.clone();
                                 let fill_rule           = layer.state.winding_rule;
@@ -463,7 +491,13 @@ impl CanvasRenderer {
                                 // Update the transformation matrix
                                 layer.update_transform(active_transform);
 
-                                // TODO: Reset the fill state to 'flat colour' if needed
+                                // Reset the fill state to 'flat colour' if needed
+                                match fill_state {
+                                    FillState::None     | 
+                                    FillState::Color(_) => { }
+                                    _                   => { layer.render_order.push(RenderEntity::SetFlatColor) }
+                                }
+
                                 *fill_state = FillState::None;
 
                                 // Apply the dash pattern, if it's different

@@ -259,6 +259,27 @@ impl RenderCore {
         send_vertex_buffers
     }
 
+    ///
+    /// Returns a render texture for a canvas texture
+    ///
+    pub fn texture_for_rendering(&mut self, texture_id: canvas::TextureId) -> Option<render::TextureId> {
+        // 'Ready' textures are set up for rendering: 'Loading' textures need to be finished to render
+        match self.canvas_textures.get(&texture_id)? {
+            RenderTexture::Ready(render_texture)    => Some(*render_texture),
+            RenderTexture::Loading(render_texture)  => {
+                let render_texture = *render_texture;
+
+                // Finish the texture
+                self.setup_actions.push(render::RenderAction::CreateMipMaps(render_texture));
+
+                // Mark as finished
+                self.canvas_textures.get_mut(&texture_id)
+                    .map(|texture| *texture = RenderTexture::Ready(render_texture));
+
+                Some(render_texture)
+            }
+        }
+    }
 
     ///
     /// Allocates a new layer handle to a blank layer
