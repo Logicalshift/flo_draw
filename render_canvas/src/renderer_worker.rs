@@ -1,3 +1,4 @@
+use super::fill_state::*;
 use super::render_entity::*;
 use super::renderer_core::*;
 use super::stroke_settings::*;
@@ -34,7 +35,7 @@ pub enum CanvasJob {
     ///
     Fill { 
         path:           path::Path, 
-        color:          render::Rgba8,
+        color:          FillState,
         fill_rule:      FillRule,
         scale_factor:   f64,
         entity:         LayerEntityRef
@@ -84,7 +85,7 @@ impl CanvasWorker {
         use self::CanvasJob::*;
 
         match job {
-            Fill    { path, fill_rule, color, scale_factor, entity }    => self.fill(path, fill_rule, color, scale_factor, entity),
+            Fill    { path, fill_rule, color, scale_factor, entity }    => self.fill(path, fill_rule, color.flat_color(), scale_factor, entity),
             Clip    { path, fill_rule, color, scale_factor, entity }    => self.clip(path, fill_rule, color, scale_factor, entity),
             Stroke  { path, stroke_options, scale_factor, entity }      => self.stroke(path, stroke_options, scale_factor, entity),
         }

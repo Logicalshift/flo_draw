@@ -1,3 +1,4 @@
+use super::fill_state::*;
 use super::layer_state::*;
 use super::render_entity::*;
 use super::stroke_settings::*;
@@ -235,7 +236,7 @@ impl CanvasRenderer {
             render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             state:              LayerState {
                 is_sprite:          false,
-                fill_color:         render::Rgba8([0, 0, 0, 255]),
+                fill_color:         FillState::Color(render::Rgba8([0, 0, 0, 255])),
                 winding_rule:       FillRule::NonZero,
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),
@@ -408,12 +409,12 @@ impl CanvasRenderer {
 
                                 // Create the render entity in the tessellating state
                                 let scale_factor        = layer.state.tolerance_scale_factor(viewport_height);
-                                let color               = layer.state.fill_color;
+                                let color               = layer.state.fill_color.clone();
                                 let fill_rule           = layer.state.winding_rule;
                                 let entity_index        = layer.render_order.len();
 
                                 // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
-                                let color               = if layer.state.blend_mode == canvas::BlendMode::DestinationOut { render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]]) } else { color };
+                                let color               = if layer.state.blend_mode == canvas::BlendMode::DestinationOut { color.all_channel_alpha() } else { color };
 
                                 layer.render_order.push(RenderEntity::Tessellating(entity_id));
 
@@ -539,7 +540,7 @@ impl CanvasRenderer {
 
                     // Set the fill color
                     FillColor(color) => {
-                        core.sync(|core| core.layer(self.current_layer).state.fill_color = Self::render_color(color));
+                        core.sync(|core| core.layer(self.current_layer).state.fill_color = FillState::Color(Self::render_color(color)));
                     }
 
                     // Set a fill texture

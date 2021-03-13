@@ -1,7 +1,7 @@
+use super::fill_state::*;
 use super::stroke_settings::*;
 
 use flo_canvas as canvas;
-use flo_render as render;
 
 use lyon::tessellation::{FillRule};
 
@@ -14,7 +14,7 @@ pub struct LayerState {
     pub is_sprite: bool,
 
     /// The current fill colour
-    pub fill_color: render::Rgba8,
+    pub fill_color: FillState,
 
     /// The fill rule to use
     pub winding_rule: FillRule,

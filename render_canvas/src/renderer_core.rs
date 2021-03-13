@@ -1,3 +1,4 @@
+use super::fill_state::*;
 use super::layer_state::*;
 use super::render_entity::*;
 use super::renderer_layer::*;
@@ -258,7 +259,7 @@ impl RenderCore {
             render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             state:              LayerState {
                 is_sprite:          false,
-                fill_color:         render::Rgba8([0, 0, 0, 255]),
+                fill_color:         FillState::Color(render::Rgba8([0, 0, 0, 255])),
                 winding_rule:       FillRule::NonZero,
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),
