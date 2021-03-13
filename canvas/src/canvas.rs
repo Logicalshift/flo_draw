@@ -421,39 +421,40 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
         self.pending.push(Draw::BezierCurve((x1, y1), (x2, y2), (x3, y3)));
     }
 
-    fn close_path(&mut self)                                    { self.pending.push(Draw::ClosePath); }
-    fn fill(&mut self)                                          { self.pending.push(Draw::Fill); }
-    fn stroke(&mut self)                                        { self.pending.push(Draw::Stroke); }
-    fn line_width(&mut self, width: f32)                        { self.pending.push(Draw::LineWidth(width)); }
-    fn line_width_pixels(&mut self, width: f32)                 { self.pending.push(Draw::LineWidthPixels(width)); }
-    fn line_join(&mut self, join: LineJoin)                     { self.pending.push(Draw::LineJoin(join)); }
-    fn line_cap(&mut self, cap: LineCap)                        { self.pending.push(Draw::LineCap(cap)); }
-    fn winding_rule(&mut self, rule: WindingRule)               { self.pending.push(Draw::WindingRule(rule)); }
-    fn new_dash_pattern(&mut self)                              { self.pending.push(Draw::NewDashPattern); }
-    fn dash_length(&mut self, length: f32)                      { self.pending.push(Draw::DashLength(length)); }
-    fn dash_offset(&mut self, offset: f32)                      { self.pending.push(Draw::DashOffset(offset)); }
-    fn fill_color(&mut self, col: Color)                        { self.pending.push(Draw::FillColor(col)); }
-    fn stroke_color(&mut self, col: Color)                      { self.pending.push(Draw::StrokeColor(col)); }
-    fn blend_mode(&mut self, mode: BlendMode)                   { self.pending.push(Draw::BlendMode(mode)); }
-    fn identity_transform(&mut self)                            { self.pending.push(Draw::IdentityTransform); }
-    fn canvas_height(&mut self, height: f32)                    { self.pending.push(Draw::CanvasHeight(height)); }
-    fn center_region(&mut self, minx: f32, miny: f32, maxx: f32, maxy: f32) { self.pending.push(Draw::CenterRegion((minx, miny), (maxx, maxy))); }
-    fn transform(&mut self, transform: Transform2D)             { self.pending.push(Draw::MultiplyTransform(transform)); }
-    fn unclip(&mut self)                                        { self.pending.push(Draw::Unclip); }
-    fn clip(&mut self)                                          { self.pending.push(Draw::Clip); }
-    fn store(&mut self)                                         { self.pending.push(Draw::Store); }
-    fn restore(&mut self)                                       { self.pending.push(Draw::Restore); }
-    fn free_stored_buffer(&mut self)                            { self.pending.push(Draw::FreeStoredBuffer); }
-    fn push_state(&mut self)                                    { self.pending.push(Draw::PushState); }
-    fn pop_state(&mut self)                                     { self.pending.push(Draw::PopState); }
-    fn clear_canvas(&mut self, color: Color)                    { self.pending.push(Draw::ClearCanvas(color)); }
-    fn layer(&mut self, layer_id: LayerId)                      { self.pending.push(Draw::Layer(layer_id)); }
-    fn layer_blend(&mut self, layer_id: LayerId, blend_mode: BlendMode) { self.pending.push(Draw::LayerBlend(layer_id, blend_mode)); }
-    fn clear_layer(&mut self)                                   { self.pending.push(Draw::ClearLayer); }
-    fn sprite(&mut self, sprite_id: SpriteId)                   { self.pending.push(Draw::Sprite(sprite_id)); }
-    fn clear_sprite(&mut self)                                  { self.pending.push(Draw::ClearSprite); }
-    fn sprite_transform(&mut self, transform: SpriteTransform)  { self.pending.push(Draw::SpriteTransform(transform)); }
-    fn draw_sprite(&mut self, sprite_id: SpriteId)              { self.pending.push(Draw::DrawSprite(sprite_id)); }
+    fn close_path(&mut self)                                                        { self.pending.push(Draw::ClosePath); }
+    fn fill(&mut self)                                                              { self.pending.push(Draw::Fill); }
+    fn stroke(&mut self)                                                            { self.pending.push(Draw::Stroke); }
+    fn line_width(&mut self, width: f32)                                            { self.pending.push(Draw::LineWidth(width)); }
+    fn line_width_pixels(&mut self, width: f32)                                     { self.pending.push(Draw::LineWidthPixels(width)); }
+    fn line_join(&mut self, join: LineJoin)                                         { self.pending.push(Draw::LineJoin(join)); }
+    fn line_cap(&mut self, cap: LineCap)                                            { self.pending.push(Draw::LineCap(cap)); }
+    fn winding_rule(&mut self, rule: WindingRule)                                   { self.pending.push(Draw::WindingRule(rule)); }
+    fn new_dash_pattern(&mut self)                                                  { self.pending.push(Draw::NewDashPattern); }
+    fn dash_length(&mut self, length: f32)                                          { self.pending.push(Draw::DashLength(length)); }
+    fn dash_offset(&mut self, offset: f32)                                          { self.pending.push(Draw::DashOffset(offset)); }
+    fn fill_color(&mut self, col: Color)                                            { self.pending.push(Draw::FillColor(col)); }
+    fn fill_texture(&mut self, t: TextureId, x1: f32, y1: f32, x2: f32, y2: f32)    { self.pending.push(Draw::FillTexture(t, (x1, y1), (x2, y2))); }
+    fn stroke_color(&mut self, col: Color)                                          { self.pending.push(Draw::StrokeColor(col)); }
+    fn blend_mode(&mut self, mode: BlendMode)                                       { self.pending.push(Draw::BlendMode(mode)); }
+    fn identity_transform(&mut self)                                                { self.pending.push(Draw::IdentityTransform); }
+    fn canvas_height(&mut self, height: f32)                                        { self.pending.push(Draw::CanvasHeight(height)); }
+    fn center_region(&mut self, minx: f32, miny: f32, maxx: f32, maxy: f32)         { self.pending.push(Draw::CenterRegion((minx, miny), (maxx, maxy))); }
+    fn transform(&mut self, transform: Transform2D)                                 { self.pending.push(Draw::MultiplyTransform(transform)); }
+    fn unclip(&mut self)                                                            { self.pending.push(Draw::Unclip); }
+    fn clip(&mut self)                                                              { self.pending.push(Draw::Clip); }
+    fn store(&mut self)                                                             { self.pending.push(Draw::Store); }
+    fn restore(&mut self)                                                           { self.pending.push(Draw::Restore); }
+    fn free_stored_buffer(&mut self)                                                { self.pending.push(Draw::FreeStoredBuffer); }
+    fn push_state(&mut self)                                                        { self.pending.push(Draw::PushState); }
+    fn pop_state(&mut self)                                                         { self.pending.push(Draw::PopState); }
+    fn clear_canvas(&mut self, color: Color)                                        { self.pending.push(Draw::ClearCanvas(color)); }
+    fn layer(&mut self, layer_id: LayerId)                                          { self.pending.push(Draw::Layer(layer_id)); }
+    fn layer_blend(&mut self, layer_id: LayerId, blend_mode: BlendMode)             { self.pending.push(Draw::LayerBlend(layer_id, blend_mode)); }
+    fn clear_layer(&mut self)                                                       { self.pending.push(Draw::ClearLayer); }
+    fn sprite(&mut self, sprite_id: SpriteId)                                       { self.pending.push(Draw::Sprite(sprite_id)); }
+    fn clear_sprite(&mut self)                                                      { self.pending.push(Draw::ClearSprite); }
+    fn sprite_transform(&mut self, transform: SpriteTransform)                      { self.pending.push(Draw::SpriteTransform(transform)); }
+    fn draw_sprite(&mut self, sprite_id: SpriteId)                                  { self.pending.push(Draw::DrawSprite(sprite_id)); }
 
     fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>)                             { self.pending.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
     fn set_font_size(&mut self, font_id: FontId, size: f32)                                                     { self.pending.push(Draw::Font(font_id, FontOp::FontSize(size))); }

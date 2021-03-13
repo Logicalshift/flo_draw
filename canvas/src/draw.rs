@@ -192,6 +192,9 @@ pub enum Draw {
     /// Set the fill color
     FillColor(Color),
 
+    /// Sets the fill to be a texture (coordinates are the lower-left and upper-right coordinates where the image should appear)
+    FillTexture(TextureId, (f32, f32), (f32, f32)),
+
     /// Set the line color
     StrokeColor(Color),
 

@@ -542,6 +542,11 @@ impl CanvasRenderer {
                         core.sync(|core| core.layer(self.current_layer).state.fill_color = Self::render_color(color));
                     }
 
+                    // Set a fill texture
+                    FillTexture(texture_id, (x1, y1), (x2, y2)) => {
+                        todo!()
+                    }
+
                     // Set the line color
                     StrokeColor(color) => {
                         core.sync(|core| core.layer(self.current_layer).state.stroke_settings.stroke_color = Self::render_color(color));

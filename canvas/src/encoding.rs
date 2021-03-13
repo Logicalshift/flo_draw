@@ -444,6 +444,7 @@ impl CanvasEncoding<String> for Draw {
             &DashOffset(offset)                         => ('D', 'o', offset).encode_canvas(append_to),
             &StrokeColor(col)                           => ('C', 's', col).encode_canvas(append_to),
             &FillColor(col)                             => ('C', 'f', col).encode_canvas(append_to),
+            &FillTexture(texture, (x1, y1), (x2, y2))   => ('C', 't', texture, (x1, y1), (x2, y2)).encode_canvas(append_to),
             &BlendMode(mode)                            => ('M', mode).encode_canvas(append_to),
             &IdentityTransform                          => ('T', 'i').encode_canvas(append_to),
             &CanvasHeight(height)                       => ('T', 'h', height).encode_canvas(append_to),
