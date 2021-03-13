@@ -341,7 +341,7 @@ impl Texture {
                 }
 
                 gl::TEXTURE_2D => {
-                    gl::CopyTexImage2D(gl::TEXTURE_1D, 0, format, 0, 0, width, height, 0);
+                    gl::CopyTexImage2D(gl::TEXTURE_2D, 0, format, 0, 0, width, height, 0);
                     panic_on_gl_error("Copy 2D");
                 }
 
