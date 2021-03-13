@@ -25,6 +25,7 @@ pub struct LayerHandle(u64);
 /// A 'loading' texture is one where we're still writing data, where a 'Ready' texture is one where we've
 /// generated the mipmap and are using it somewhere in the core
 ///
+#[derive(Clone, Copy)]
 pub enum RenderTexture {
     Loading(render::TextureId),
     Ready(render::TextureId)

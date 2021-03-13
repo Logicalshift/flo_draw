@@ -943,8 +943,31 @@ impl CanvasRenderer {
                         core.sync(|core| {
                             // Create a canvas renderer job that will write these bytes to the texture
                             if let Some(render_texture) = core.canvas_textures.get(&texture_id) {
-                                // Update the texture as a setup action
-                                core.setup_actions.push(render::RenderAction::WriteTextureData(render_texture.into(), (x as _, y as _), (width as _, height as _), bytes));
+                                let render_texture = *render_texture;
+
+                                // The texture is updated in a setup action
+                                match render_texture {
+                                    RenderTexture::Ready(render_texture)    => {
+                                        // Generate a copy of the texture and write to that instead ('Ready' textures are already rendered elsewhere)
+                                        let copy_texture_id = core.allocate_texture();
+
+                                        // Stop using the initial texture, and create a new copy that's 'Loading'
+                                        core.used_textures.get_mut(&render_texture).map(|usage_count| *usage_count -= 1);
+                                        core.used_textures.insert(copy_texture_id, 1);
+                                        core.canvas_textures.insert(texture_id, RenderTexture::Loading(copy_texture_id));
+
+                                        // Generate a copy
+                                        core.setup_actions.push(render::RenderAction::CopyTexture(render_texture, copy_texture_id));
+
+                                        // Update the data in the copy
+                                        core.setup_actions.push(render::RenderAction::WriteTextureData(copy_texture_id, (x as _, y as _), (width as _, height as _), bytes));
+                                    }
+
+                                    RenderTexture::Loading(render_texture)  => {
+                                        // Use the existing texture
+                                        core.setup_actions.push(render::RenderAction::WriteTextureData(render_texture, (x as _, y as _), (width as _, height as _), bytes));
+                                    }
+                                }
                             }
                         });
                     }
