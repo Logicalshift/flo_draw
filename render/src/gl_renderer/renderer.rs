@@ -555,6 +555,9 @@ impl GlRenderer {
                                 gl::Uniform1i(dash_pattern, 0);
                             });
                     }
+                } else {
+                    // Texture not found: revert to the simple shader
+                    self.simple_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, None, None);
                 }
 
                 panic_on_gl_error("Set dash shader");
@@ -596,7 +599,12 @@ impl GlRenderer {
                                 gl::UniformMatrix4fv(transform_uniform, 1, gl::FALSE, texture_transform.as_ptr());
                             });
                     }
+                } else {
+                    // Texture not found: revert to the simple shader
+                    self.simple_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, None, None);
                 }
+
+                panic_on_gl_error("Set texture shader");
             }
         }
 
