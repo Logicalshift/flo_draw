@@ -200,18 +200,18 @@ impl Texture {
     }
 
     ///
-    /// Sets 8-bit BGRA pixel data for a texture
+    /// Sets 8-bit RGBA pixel data for a texture
     ///
-    pub fn set_data_bgra(&mut self, x: usize, y: usize, width: usize, height: usize, pixels: &[u8]) {
+    pub fn set_data_rgba(&mut self, x: usize, y: usize, width: usize, height: usize, pixels: &[u8]) {
         if pixels.len() != (width * height * 4) {
             panic!("set_data_bgra called with incorrect sized pixel array")
         }
 
         unsafe {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
-            gl::TexSubImage2D(gl::TEXTURE_2D, 0, x as _, y as _, width as _, height as _, gl::BGRA, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
+            gl::TexSubImage2D(gl::TEXTURE_2D, 0, x as _, y as _, width as _, height as _, gl::RGBA, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
 
-            panic_on_gl_error("Set bgra data");
+            panic_on_gl_error("Set rgba data");
         }
     }
 
@@ -232,18 +232,18 @@ impl Texture {
     }
 
     ///
-    /// Sets 8-bit BGRA pixel data for a texture
+    /// Sets 8-bit RGBA pixel data for a texture
     ///
-    pub fn set_data_bgra_1d(&mut self, x: usize, width: usize, pixels: &[u8]) {
+    pub fn set_data_rgba_1d(&mut self, x: usize, width: usize, pixels: &[u8]) {
         if pixels.len() != width * 4 {
             panic!("set_data_bgra_1d called with incorrect sized pixel array")
         }
 
         unsafe {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
-            gl::TexSubImage1D(gl::TEXTURE_1D, 0, x as _, width as _, gl::BGRA, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
+            gl::TexSubImage1D(gl::TEXTURE_1D, 0, x as _, width as _, gl::RGBA, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
 
-            panic_on_gl_error("Set bgra 1D data");
+            panic_on_gl_error("Set rgba 1D data");
         }
     }
 

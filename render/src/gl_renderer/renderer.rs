@@ -379,7 +379,7 @@ impl GlRenderer {
             if texture.is_mono() {
                 texture.set_data_mono(x1, y1, x2-x1, y2-y1, data);
             } else {
-                texture.set_data_bgra(x1, y1, x2-x1, y2-y1, data);
+                texture.set_data_rgba(x1, y1, x2-x1, y2-y1, data);
             }
         }
     }
@@ -392,7 +392,7 @@ impl GlRenderer {
             if texture.is_mono() {
                 texture.set_data_mono_1d(x1, x2-x1, data);
             } else {
-                texture.set_data_bgra_1d(x1, x2-x1, data);
+                texture.set_data_rgba_1d(x1, x2-x1, data);
             }
         }
     }
