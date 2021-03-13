@@ -538,7 +538,10 @@ impl<'a> Stream for RenderStream<'a> {
 
                 // Perform any setup actions that might exist or have been generated before proceeding
                 let setup_actions       = self.core.sync(|core| mem::take(&mut core.setup_actions));
+                let release_textures    = self.core.sync(|core| core.free_unused_textures());
                 
+                // TODO: would be more memory efficient to release the textures first, but it's possible for the texture setup to create and never use a texture that is then released...
+                self.pending_stack.extend(release_textures);
                 self.pending_stack.extend(setup_actions.into_iter().rev());
 
                 if let Some(next) = self.pending_stack.pop() {

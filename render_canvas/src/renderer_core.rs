@@ -127,6 +127,33 @@ impl RenderCore {
     }
 
     ///
+    /// Finds any render textures that are not in use and marks them as freed
+    ///
+    pub fn free_unused_textures(&mut self) -> Vec<render::RenderAction> {
+        // Collect the list of unused textures
+        let unused_textures = self.used_textures.iter()
+            .filter(|(_texture_id, count)| **count <= 0)
+            .map(|(texture_id, _count)| *texture_id)
+            .collect::<Vec<_>>();
+
+        // Free them
+        let mut render_actions = vec![];
+
+        for free_texture_id in unused_textures.into_iter() {
+            // Remove from the 'used textures' hash
+            self.used_textures.remove(&free_texture_id);
+
+            // Add as a texture ID we can reallocate
+            self.free_textures.push(free_texture_id);
+
+            // Generate a 'free texture' action to release the graphics memory used by this texture
+            render_actions.push(render::RenderAction::FreeTexture(free_texture_id));
+        }
+
+        render_actions
+    }
+
+    ///
     /// Stores the result of a worker job in this core item
     ///
     pub fn store_job_result(&mut self, entity_ref: LayerEntityRef, render_entity: RenderEntity) {
