@@ -554,7 +554,7 @@ impl CanvasRenderer {
 
                     // Set a fill texture
                     FillTexture(texture_id, (x1, y1), (x2, y2)) => {
-                        todo!()
+                        core.sync(|core| core.layer(self.current_layer).state.fill_color = FillState::texture_fill(texture_id, x1, y1, x2, y2));
                     }
 
                     // Set the line color
