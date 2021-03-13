@@ -39,7 +39,7 @@ pub fn main() {
 
             // Draw a rectangle...
             gc.new_path();
-            gc.rect(0.0, y_pos, 1000.0, height);
+            gc.rect(0.0, y_pos, 1000.0, y_pos+height);
 
             // Fill with the texture we just loaded
             gc.fill_texture(TextureId(0), 0.0, y_pos+flo_h as f32, flo_w as _, y_pos);
