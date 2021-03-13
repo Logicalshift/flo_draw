@@ -56,11 +56,11 @@ impl FillState {
         // Generate a matrix that transforms x1, y1 to 0,0 and x2, y2 to 1,1
         let a       = 1.0/(x2-x1);
         let b       = 0.0;
-        let c       = -x1;
+        let c       = -x1 * a;
 
         let d       = 0.0;
         let e       = 1.0/(y2-y1);
-        let f       = -y1;
+        let f       = -y1 * e;
 
         let matrix  = render::Matrix([
             [a,   b,   0.0, c  ],
