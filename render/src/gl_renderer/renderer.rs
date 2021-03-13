@@ -564,7 +564,7 @@ impl GlRenderer {
                 let texture_shader      = &mut self.texture_shader;
                 let textures            = &self.textures;
                 let TextureId(texture)  = texture;
-                let texture             = self.textures[texture].as_ref();
+                let texture             = if texture < self.textures.len() { self.textures[texture].as_ref() } else { None };
                 let erase_texture       = erase_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let clip_texture        = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let texture_transform   = texture_transform.to_opengl_matrix();
