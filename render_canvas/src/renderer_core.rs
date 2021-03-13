@@ -20,6 +20,26 @@ use std::collections::{HashMap};
 pub struct LayerHandle(u64);
 
 ///
+/// Used to indicate the state of a texture
+///
+/// A 'loading' texture is one where we're still writing data, where a 'Ready' texture is one where we've
+/// generated the mipmap and are using it somewhere in the core
+///
+pub enum RenderTexture {
+    Loading(render::TextureId),
+    Ready(render::TextureId)
+}
+
+impl Into<render::TextureId> for &RenderTexture {
+    fn into(self) -> render::TextureId {
+        match self {
+            RenderTexture::Loading(texture_id)  => *texture_id,
+            RenderTexture::Ready(texture_id)    => *texture_id
+        }
+    }
+}
+
+///
 /// Parts of the renderer that are shared with the workers
 ///
 pub struct RenderCore {
@@ -42,7 +62,7 @@ pub struct RenderCore {
     pub used_textures: HashMap<render::TextureId, usize>,
 
     /// Maps canvas textures to render textures
-    pub canvas_textures: HashMap<canvas::TextureId, render::TextureId>,
+    pub canvas_textures: HashMap<canvas::TextureId, RenderTexture>,
 
     /// The actual layer definitions
     pub layer_definitions: Vec<Layer>,
@@ -80,15 +100,19 @@ impl RenderCore {
         use self::RenderEntity::*;
 
         match render_entity {
-            Missing                         => { }
-            Tessellating(_entity_id)        => { }
-            VertexBuffer(_buffers, _)       => { }
-            SetTransform(_)                 => { }
-            SetBlendMode(_)                 => { }
-            SetDashPattern(_)               => { }
-            RenderSprite(_, _)              => { }
-            DisableClipping                 => { }
-            SetFillTexture(_, _, _)         => { }
+            Missing                             => { }
+            Tessellating(_entity_id)            => { }
+            VertexBuffer(_buffers, _)           => { }
+            SetTransform(_)                     => { }
+            SetBlendMode(_)                     => { }
+            SetDashPattern(_)                   => { }
+            RenderSprite(_, _)                  => { }
+            DisableClipping                     => { }
+
+            SetFillTexture(texture_id, _, _)    => { 
+                self.used_textures.get_mut(&texture_id)
+                    .map(|usage_count| *usage_count -= 1);
+            }
 
             EnableClipping(render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices)   |
             DrawIndexed(render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices)      => {

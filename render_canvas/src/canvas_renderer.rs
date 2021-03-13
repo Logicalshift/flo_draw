@@ -881,13 +881,13 @@ impl CanvasRenderer {
 
                             // If the texture ID was previously in use, reduce the usage count
                             if let Some(old_render_texture) = core.canvas_textures.get(&texture_id) {
-                                let old_render_texture = *old_render_texture;
+                                let old_render_texture = old_render_texture.into();
                                 core.used_textures.get_mut(&old_render_texture)
                                     .map(|usage_count| *usage_count -=1);
                             }
 
                             // Add this as a texture with a usage count of 1
-                            core.canvas_textures.insert(texture_id, render_texture);
+                            core.canvas_textures.insert(texture_id, RenderTexture::Loading(render_texture));
                             core.used_textures.insert(render_texture, 1);
 
                             // Create the texture in the setup actions
@@ -901,7 +901,7 @@ impl CanvasRenderer {
                             // Create a canvas renderer job that will write these bytes to the texture
                             if let Some(render_texture) = core.canvas_textures.get(&texture_id) {
                                 // Update the texture as a setup action
-                                core.setup_actions.push(render::RenderAction::WriteTextureData(*render_texture, (x as _, y as _), (width as _, height as _), bytes));
+                                core.setup_actions.push(render::RenderAction::WriteTextureData(render_texture.into(), (x as _, y as _), (width as _, height as _), bytes));
                             }
                         });
                     }
