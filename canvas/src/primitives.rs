@@ -116,14 +116,6 @@ where Curve::Point: Coordinate2D {
 }
 
 ///
-/// Draws the specified bezier curve in a graphics context (assuming we're already at the start position)
-///
-pub fn gc_draw_bezier<Gc: GraphicsContext+?Sized, Curve: BezierCurve>(gc: &mut Gc, curve: &Curve)
-where Curve::Point: Coordinate2D {
-    gc.draw(Draw::from(curve))
-}
-
-///
 /// All graphics contexts provide graphics primitives
 ///
 impl<T> GraphicsPrimitives for T
