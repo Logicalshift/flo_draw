@@ -28,4 +28,4 @@ gl                  = "0.14"
 flo_curves          = "0.4"
 rand                = "0.8"
 futures-timer       = "3.0"
-png                 = "0.16"
+

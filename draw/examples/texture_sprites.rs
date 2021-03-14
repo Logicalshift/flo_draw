@@ -2,10 +2,9 @@ use flo_draw::*;
 use flo_draw::canvas::*;
 
 use rand::*;
-use png;
 
+use std::io;
 use std::thread;
-use std::sync::*;
 use std::time::{Duration};
 
 struct Ball {
@@ -64,24 +63,21 @@ pub fn main() {
     // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
     with_2d_graphics(|| {
         // Load a png file
-        let flo_bytes: &[u8]            = include_bytes!["flo_and_carrot.png"];
-        let flo_decoder                 = png::Decoder::new(flo_bytes);
-        let (flo_info, mut flo_reader)  = flo_decoder.read_info().unwrap();
-        let mut flo_data                = vec![0; flo_info.buffer_size()];
-        flo_reader.next_frame(&mut flo_data).unwrap();
-        let flo_data                    = Arc::new(flo_data);
-        let (flo_w, flo_h)              = (flo_info.width, flo_info.height);
+        let flo_bytes: &[u8] = include_bytes!["flo_and_carrot.png"];
 
         // Create a window with a canvas to draw on
         let canvas = create_canvas_window("Bouncing sprites");
 
         // Clear the canvas to set a background colour
+        let mut flo_w = 0;
+        let mut flo_h = 0;
         canvas.draw(|gc| {
             gc.clear_canvas(Color::Rgba(0.6, 0.7, 0.8, 1.0));
 
             // Set up the texture
-            gc.create_texture(TextureId(0), flo_w as _, flo_h as _, TextureFormat::Rgba);
-            gc.set_texture_bytes(TextureId(0), 0, 0, flo_w as _, flo_h as _, Arc::clone(&flo_data));
+            let (w, h) = gc.load_texture(TextureId(0), io::Cursor::new(flo_bytes)).unwrap();
+            flo_w = w;
+            flo_h = h;
         });
 
         // Declare a sprite with our PNG file in it

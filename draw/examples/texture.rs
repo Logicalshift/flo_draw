@@ -1,8 +1,7 @@
 use flo_draw::*;
 use flo_draw::canvas::*;
 
-use png;
-use std::sync::*;
+use std::io;
 
 ///
 /// Simple example that displays a canvas window and renders a triangle
@@ -11,13 +10,7 @@ pub fn main() {
     // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
     with_2d_graphics(|| {
         // Load a png file
-        let flo_bytes: &[u8]            = include_bytes!["flo_and_carrot.png"];
-        let flo_decoder                 = png::Decoder::new(flo_bytes);
-        let (flo_info, mut flo_reader)  = flo_decoder.read_info().unwrap();
-        let mut flo_data                = vec![0; flo_info.buffer_size()];
-        flo_reader.next_frame(&mut flo_data).unwrap();
-        let flo_data                    = Arc::new(flo_data);
-        let (flo_w, flo_h)              = (flo_info.width, flo_info.height);
+        let flo_bytes: &[u8] = include_bytes!["flo_and_carrot.png"];
 
         // Create a window
         let canvas = create_canvas_window("Flo with carrot");
@@ -30,8 +23,7 @@ pub fn main() {
             gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
             // Set up the texture
-            gc.create_texture(TextureId(0), flo_w as _, flo_h as _, TextureFormat::Rgba);
-            gc.set_texture_bytes(TextureId(0), 0, 0, flo_w as _, flo_h as _, Arc::clone(&flo_data));
+            let (flo_w, flo_h) = gc.load_texture(TextureId(0), io::Cursor::new(flo_bytes)).unwrap();
 
             let ratio   = (flo_w as f32)/(flo_h as f32);
             let height  = 1000.0 / ratio;
