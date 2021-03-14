@@ -75,7 +75,8 @@ pub trait GraphicsPrimitives : GraphicsContext {
     #[cfg(feature = "image-loading")]
     fn load_texture<TSrc: io::BufRead+io::Read+io::Seek>(&mut self, texture_id: TextureId, data: TSrc) -> Option<(usize, usize)> {
         // Load the image
-        let img         = ImageReader::new(data).decode().ok()?;
+        let img         = ImageReader::new(data).with_guessed_format().ok()?;
+        let img         = img.decode().ok()?;
 
         // Convert to 8-bit RGBA
         let img         = img.into_rgba8();
