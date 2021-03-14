@@ -50,6 +50,7 @@ mod texture;
 mod encoding;
 mod decoding;
 mod font_face;
+mod primitives;
 mod transform2d;
 mod conversion_streams;
 
@@ -64,6 +65,7 @@ pub use self::texture::*;
 pub use self::encoding::*;
 pub use self::decoding::*;
 pub use self::font_face::*;
+pub use self::primitives::*;
 pub use self::transform2d::*;
 pub use self::conversion_streams::*;
 

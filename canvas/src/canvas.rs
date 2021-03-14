@@ -612,6 +612,7 @@ impl Stream for FragileCanvasStream {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::primitives::*;
 
     use futures::prelude::*;
     use futures::executor;
