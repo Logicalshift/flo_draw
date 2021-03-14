@@ -1,5 +1,6 @@
 use super::draw::*;
 use super::context::*;
+use super::texture::*;
 
 use flo_curves::*;
 use flo_curves::arc;
@@ -7,6 +8,11 @@ use flo_curves::bezier::{BezierCurve};
 use flo_curves::bezier::path::{BezierPath};
 
 use std::iter;
+
+#[cfg(feature = "image-loading")] use image;
+#[cfg(feature = "image-loading")] use image::io::Reader as ImageReader;
+#[cfg(feature = "image-loading")] use std::io;
+#[cfg(feature = "image-loading")] use std::sync::*;
 
 ///
 /// GraphicsPrimitives adds new primitives that can be built directly from a graphics context
@@ -61,6 +67,28 @@ pub trait GraphicsPrimitives : GraphicsContext {
         for d in drawing.into_iter() {
             self.draw(d);
         }
+    }
+
+    ///
+    /// Loads an image from an IO stream into a texture, returning the size (or None if the image can't be read for any reason)
+    ///
+    #[cfg(feature = "image-loading")]
+    fn load_texture<TSrc: io::BufRead+io::Read+io::Seek>(&mut self, texture_id: TextureId, data: TSrc) -> Option<(usize, usize)> {
+        // Load the image
+        let img         = ImageReader::new(data).decode().ok()?;
+
+        // Convert to 8-bit RGBA
+        let img         = img.into_rgba8();
+        let width       = img.width();
+        let height      = img.height();
+
+        // Load the texture
+        let raw_pixels  = Arc::new(img.into_raw());
+        self.create_texture(texture_id, width, height, TextureFormat::Rgba);
+        self.set_texture_bytes(texture_id, 0, 0, width, height, raw_pixels);
+
+        // Result is the image size
+        Some((width as _, height as _))
     }
 }
 
