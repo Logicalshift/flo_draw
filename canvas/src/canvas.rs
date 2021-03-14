@@ -1,7 +1,7 @@
-use super::gc::*;
 use super::draw::*;
 use super::font::*;
 use super::color::*;
+use super::context::*;
 use super::texture::*;
 use super::font_face::*;
 use super::transform2d::*;
