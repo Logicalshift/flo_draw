@@ -75,6 +75,7 @@ pub fn main() {
             gc.clear_canvas(Color::Rgba(0.6, 0.7, 0.8, 1.0));
 
             // Set up the texture
+            gc.set_texture_fill_alpha(TextureId(0), 0.75);
             let (w, h) = gc.load_texture(TextureId(0), io::Cursor::new(flo_bytes)).unwrap();
             flo_w = w;
             flo_h = h;
@@ -90,7 +91,6 @@ pub fn main() {
             gc.new_path();
             gc.circle(0.0, 0.0, height/2.0);
             gc.fill_texture(TextureId(0), -64.0, height/2.0, 64.0, -height/2.0);
-            gc.set_texture_fill_alpha(TextureId(0), 0.75);
             gc.fill();
 
             gc.line_width(0.25);
