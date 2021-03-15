@@ -1961,6 +1961,7 @@ mod test {
             Draw::BezierCurve((1.0, 2.0), (3.0, 4.0), (5.0, 6.0)),
             Draw::ClosePath,
             Draw::Fill,
+            Draw::FillTexture(TextureId(42), (1.0, 2.0), (3.0, 4.0)),
             Draw::Stroke,
             Draw::LineWidth(23.0),
             Draw::LineWidthPixels(43.0),
@@ -1992,7 +1993,11 @@ mod test {
             Draw::ClearSprite,
             Draw::SpriteTransform(SpriteTransform::Translate(4.0, 5.0)),
             Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))),
-            Draw::DrawSprite(SpriteId(1300))
+            Draw::DrawSprite(SpriteId(1300)),
+            Draw::Texture(TextureId(42), TextureOp::Create(1024, 768, TextureFormat::Rgba)),
+            Draw::Texture(TextureId(43), TextureOp::Free),
+            Draw::Texture(TextureId(44), TextureOp::SetBytes(2, 3, 4, 5, Arc::new(vec![1,2,3,4,5]))),
+            Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.5)),
         ];
         let mut encoded = String::new();
         all.encode_canvas(&mut encoded);
