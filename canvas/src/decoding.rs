@@ -404,6 +404,7 @@ enum DecoderState {
     TextureOp(DecodeTextureId),                             // 'B<id>' (id, op)
     TextureOpCreate(TextureId, String),                     // 'B<id>N' (w, h, format)
     TextureOpSetBytes(TextureId, String, DecodeBytes),      // 'B<id>D' (x, y, w, h, bytes)
+    TextureOpFillTransparency(TextureId, String),           // 'B<id>t' (alpha)
 }
 
 ///
@@ -521,6 +522,7 @@ impl CanvasDecoder {
             TextureOp(texture_id)                               => Self::decode_texture_op(next_chr, texture_id)?,
             TextureOpCreate(texture_id, param)                  => Self::decode_texture_create(next_chr, texture_id, param)?,
             TextureOpSetBytes(texture_id, param, bytes)         => Self::decode_texture_set_bytes(next_chr, texture_id, param, bytes)?,
+            TextureOpFillTransparency(texture_id, param)        => Self::decode_texture_fill_transparency(next_chr, texture_id, param)?,
         };
 
         self.state = next_state;
@@ -1352,7 +1354,9 @@ impl CanvasDecoder {
         // The character following the texture ID determines what state we move on to
         match chr {
             'N' => Ok((DecoderState::TextureOpCreate(texture_id, String::new()), None)),
+            'X' => Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::Free)))),
             'D' => Ok((DecoderState::TextureOpSetBytes(texture_id, String::new(), DecodeBytes::new()), None)),
+            't' => Ok((DecoderState::TextureOpFillTransparency(texture_id, String::new()), None)),
 
             _   => Err(DecoderError::InvalidCharacter(chr))
         }
@@ -1409,6 +1413,25 @@ impl CanvasDecoder {
         let h           = Self::decode_u32(&mut chars)?;
 
         Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, Arc::new(bytes.to_bytes()?))))))
+    }
+
+    ///
+    /// Decodes a texture 'set fill transparency'
+    ///
+    fn decode_texture_fill_transparency(chr: char, texture_id: TextureId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        let mut param = param;
+        param.push(chr);
+
+        // 1 f32 for the alpha
+        if param.len() < 6 {
+            return Ok((DecoderState::TextureOpFillTransparency(texture_id, param), None));
+        }
+
+        // Decode
+        let mut chars   = param.chars();
+        let alpha       = Self::decode_f32(&mut chars)?;
+
+        Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha)))))
     }
 
     ///
