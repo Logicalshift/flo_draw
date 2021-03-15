@@ -111,7 +111,7 @@ impl RenderCore {
             RenderSprite(_, _)                  => { }
             DisableClipping                     => { }
 
-            SetFillTexture(texture_id, _, _)    => { 
+            SetFillTexture(texture_id, _, _, _) => { 
                 self.used_textures.get_mut(&texture_id)
                     .map(|usage_count| *usage_count -= 1);
             }
@@ -335,6 +335,7 @@ impl RenderCore {
             state:              LayerState {
                 is_sprite:          false,
                 fill_color:         FillState::Color(render::Rgba8([0, 0, 0, 255])),
+                texture_alpha:      1.0,
                 winding_rule:       FillRule::NonZero,
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),

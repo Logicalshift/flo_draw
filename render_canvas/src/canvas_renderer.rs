@@ -237,6 +237,7 @@ impl CanvasRenderer {
             state:              LayerState {
                 is_sprite:          false,
                 fill_color:         FillState::Color(render::Rgba8([0, 0, 0, 255])),
+                texture_alpha:      1.0,
                 winding_rule:       FillRule::NonZero,
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),
@@ -413,7 +414,7 @@ impl CanvasRenderer {
                                             layer.render_order.push(RenderEntity::SetFlatColor);
                                         }
 
-                                        FillState::Texture(texture_id, matrix, repeat) => {
+                                        FillState::Texture(texture_id, matrix, repeat, alpha) => {
                                             // Finish/get the render texture
                                             if let Some(render_texture) = core.texture_for_rendering(texture_id) {
                                                 // Increase the usage count for this texture
@@ -421,7 +422,7 @@ impl CanvasRenderer {
                                                     .map(|usage_count| *usage_count += 1);
 
                                                 // Add to the layer
-                                                core.layer(layer_id).render_order.push(RenderEntity::SetFillTexture(render_texture, matrix, repeat));
+                                                core.layer(layer_id).render_order.push(RenderEntity::SetFillTexture(render_texture, matrix, repeat, alpha));
                                             } else {
                                                 // Texture is not set up
                                                 core.layer(layer_id).render_order.push(RenderEntity::SetFlatColor);
@@ -588,7 +589,12 @@ impl CanvasRenderer {
 
                     // Set a fill texture
                     FillTexture(texture_id, (x1, y1), (x2, y2)) => {
-                        core.sync(|core| core.layer(self.current_layer).state.fill_color = FillState::texture_fill(texture_id, x1, y1, x2, y2));
+                        core.sync(|core| {
+                            let layer               = core.layer(self.current_layer);
+                            let alpha               = layer.state.texture_alpha;
+
+                            layer.state.fill_color  = FillState::texture_fill(texture_id, x1, y1, x2, y2, alpha)
+                        });
                     }
 
                     // Set the line color
@@ -987,7 +993,12 @@ impl CanvasRenderer {
                     }
 
                     Texture(texture_id, canvas::TextureOp::FillTransparency(alpha)) => {
-                        todo!()
+                        self.core.sync(|core| {
+                            let layer                   = core.layer(self.current_layer);
+
+                            layer.state.texture_alpha   = alpha;
+                            layer.state.fill_color      = layer.state.fill_color.with_texture_alpha(alpha);
+                        });
                     }
 
                     // Performs a font operation

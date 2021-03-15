@@ -452,10 +452,10 @@ impl RenderCore {
                     render_layer_stack.extend(old_state.update_from_state(render_state));
                 }
 
-                SetFillTexture(texture_id, matrix, repeat) => {
+                SetFillTexture(texture_id, matrix, repeat, alpha) => {
                     // Set the shader modifier to use the fill texture (overriding any other shader modifier)
                     let old_state               = render_state.clone();
-                    render_state.shader_modifier = Some(ShaderModifier::Texture(*texture_id, *matrix, *repeat, 1.0));
+                    render_state.shader_modifier = Some(ShaderModifier::Texture(*texture_id, *matrix, *repeat, *alpha));
 
                     // Apply the old state for the preceding instructions
                     render_layer_stack.extend(old_state.update_from_state(render_state));

@@ -19,7 +19,7 @@ pub enum FillState {
     ///
     /// Fill with a particular texture
     ///
-    Texture(canvas::TextureId, render::Matrix, bool)
+    Texture(canvas::TextureId, render::Matrix, bool, f32)
 }
 
 impl FillState {
@@ -28,9 +28,9 @@ impl FillState {
     ///
     pub fn all_channel_alpha(&self) -> Self {
         match self {
-            FillState::None             => FillState::None,
-            FillState::Color(color)     => FillState::Color(render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]])),
-            FillState::Texture(_, _, _) => self.clone()
+            FillState::None                 => FillState::None,
+            FillState::Color(color)         => FillState::Color(render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]])),
+            FillState::Texture(_, _, _, _)  => self.clone()
         }
     }
 
@@ -39,16 +39,16 @@ impl FillState {
     ///
     pub fn flat_color(&self) -> render::Rgba8 {
         match self {
-            FillState::None             => render::Rgba8([0, 0, 0, 255]),
-            FillState::Color(color)     => *color,
-            FillState::Texture(_, _, _) => render::Rgba8([0, 0, 0, 255])
+            FillState::None                 => render::Rgba8([0, 0, 0, 255]),
+            FillState::Color(color)         => *color,
+            FillState::Texture(_, _, _, _)  => render::Rgba8([0, 0, 0, 255])
         }
     }
 
     ///
     /// Creates a texture fill 
     ///
-    pub fn texture_fill(texture_id: canvas::TextureId, x1: f32, y1: f32, x2: f32, y2: f32) -> FillState {
+    pub fn texture_fill(texture_id: canvas::TextureId, x1: f32, y1: f32, x2: f32, y2: f32, alpha: f32) -> FillState {
         // Avoid division by zero
         let x2 = if x2 == x1 { x1 + 0.0000001 } else { x2 };
         let y2 = if y2 == y1 { y1 + 0.0000001 } else { y2 };
@@ -70,6 +70,17 @@ impl FillState {
         ]);
 
         // Create the fill-state for this matrix
-        FillState::Texture(texture_id, matrix, true)
+        FillState::Texture(texture_id, matrix, true, alpha)
+    }
+
+    ///
+    /// Updates the fill state with a new texture alpha
+    ///
+    pub fn with_texture_alpha(&self, new_alpha: f32) -> Self {
+        match self {
+            FillState::None                                     => self.clone(),
+            FillState::Color(_)                                 => self.clone(),
+            FillState::Texture(texture_id, matrix, repeat, _)   => FillState::Texture(*texture_id, *matrix, *repeat, new_alpha)
+        }
     }
 }
