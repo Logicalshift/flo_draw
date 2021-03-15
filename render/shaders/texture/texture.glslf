@@ -19,9 +19,6 @@ uniform sampler2DMS t_ClipMask;
 void main() {
     f_Color             = texture(t_Texture, IN.v_TexCoord);
 
-    f_Color[0]          *= texture_alpha;
-    f_Color[1]          *= texture_alpha;
-    f_Color[2]          *= texture_alpha;
     f_Color[3]          *= texture_alpha;
 
 #ifdef ERASE_MASK
