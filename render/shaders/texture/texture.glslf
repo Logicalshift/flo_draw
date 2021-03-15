@@ -6,6 +6,7 @@ in VS_OUTPUT {
 out vec4 f_Color;
 
 uniform sampler2D t_Texture;
+uniform float texture_alpha;
 
 #ifdef ERASE_MASK
 uniform sampler2DMS t_EraseMask;
@@ -17,6 +18,11 @@ uniform sampler2DMS t_ClipMask;
 
 void main() {
     f_Color             = texture(t_Texture, IN.v_TexCoord);
+
+    f_Color[0]          *= texture_alpha;
+    f_Color[1]          *= texture_alpha;
+    f_Color[2]          *= texture_alpha;
+    f_Color[3]          *= texture_alpha;
 
 #ifdef ERASE_MASK
     ivec2 eraseSize     = textureSize(t_EraseMask);

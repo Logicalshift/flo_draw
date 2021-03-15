@@ -563,7 +563,7 @@ impl GlRenderer {
                 panic_on_gl_error("Set dash shader");
             }
 
-            Texture { texture, texture_transform, repeat, erase_texture, clip_texture } => {
+            Texture { texture, texture_transform, repeat, alpha, erase_texture, clip_texture } => {
                 let texture_shader      = &mut self.texture_shader;
                 let textures            = &self.textures;
                 let TextureId(texture)  = texture;
@@ -600,6 +600,10 @@ impl GlRenderer {
                         program.uniform_location(ShaderUniform::TextureTransform, "texture_transform")
                             .map(|transform_uniform| {
                                 gl::UniformMatrix4fv(transform_uniform, 1, gl::FALSE, texture_transform.as_ptr());
+                            });
+                        program.uniform_location(ShaderUniform::TextureAlpha, "texture_alpha")
+                            .map(|alpha_uniform| {
+                                gl::Uniform1f(alpha_uniform, alpha);
                             });
                     }
                 } else {

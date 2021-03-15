@@ -19,5 +19,8 @@ pub enum ShaderUniform {
     Texture,
 
     /// The transform applied to the texture coordinates
-    TextureTransform
+    TextureTransform,
+
+    /// The alpha adjustment applied to the texture colour
+    TextureAlpha
 }
