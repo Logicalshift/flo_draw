@@ -939,7 +939,17 @@ impl CanvasRenderer {
                     }
 
                     Texture(texture_id, canvas::TextureOp::Free) => {
-                        todo!()
+                        core.sync(|core| {
+                            // If the texture ID was previously in use, reduce the usage count
+                            if let Some(old_render_texture) = core.canvas_textures.get(&texture_id) {
+                                let old_render_texture = old_render_texture.into();
+                                core.used_textures.get_mut(&old_render_texture)
+                                    .map(|usage_count| *usage_count -=1);
+                            }
+
+                            // Unmap the texture
+                            core.canvas_textures.remove(&texture_id);
+                        });
                     }
 
                     // Updates an existing texture
