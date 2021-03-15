@@ -74,6 +74,17 @@ impl FillState {
     }
 
     ///
+    /// Returns the ID of the texture used by this state
+    ///
+    pub fn texture_id(&self) -> Option<canvas::TextureId> {
+        match self {
+            FillState::None                         => None,
+            FillState::Color(_)                     => None,
+            FillState::Texture(texture_id, _, _, _) => Some(*texture_id)
+        }
+    }
+
+    ///
     /// Updates the fill state with a new texture alpha
     ///
     pub fn with_texture_alpha(&self, new_alpha: f32) -> Self {

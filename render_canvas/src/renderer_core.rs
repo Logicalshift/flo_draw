@@ -65,6 +65,9 @@ pub struct RenderCore {
     /// Maps canvas textures to render textures
     pub canvas_textures: HashMap<canvas::TextureId, RenderTexture>,
 
+    /// The alpha value to use for each texture, next time it's used
+    pub texture_alpha: HashMap<canvas::TextureId, f32>,
+
     /// The actual layer definitions
     pub layer_definitions: Vec<Layer>,
 
@@ -335,7 +338,6 @@ impl RenderCore {
             state:              LayerState {
                 is_sprite:          false,
                 fill_color:         FillState::Color(render::Rgba8([0, 0, 0, 255])),
-                texture_alpha:      1.0,
                 winding_rule:       FillRule::NonZero,
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),

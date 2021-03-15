@@ -86,6 +86,7 @@ impl CanvasRenderer {
             sprites:                HashMap::new(),
             used_textures:          HashMap::new(),
             canvas_textures:        HashMap::new(),
+            texture_alpha:          HashMap::new(),
             unused_vertex_buffer:   0,
             free_vertex_buffers:    vec![],
             unused_texture_id:      16,
@@ -237,7 +238,6 @@ impl CanvasRenderer {
             state:              LayerState {
                 is_sprite:          false,
                 fill_color:         FillState::Color(render::Rgba8([0, 0, 0, 255])),
-                texture_alpha:      1.0,
                 winding_rule:       FillRule::NonZero,
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),
@@ -590,8 +590,8 @@ impl CanvasRenderer {
                     // Set a fill texture
                     FillTexture(texture_id, (x1, y1), (x2, y2)) => {
                         core.sync(|core| {
+                            let alpha               = core.texture_alpha.get(&texture_id).cloned().unwrap_or(1.0);
                             let layer               = core.layer(self.current_layer);
-                            let alpha               = layer.state.texture_alpha;
 
                             layer.state.fill_color  = FillState::texture_fill(texture_id, x1, y1, x2, y2, alpha)
                         });
@@ -994,10 +994,12 @@ impl CanvasRenderer {
 
                     Texture(texture_id, canvas::TextureOp::FillTransparency(alpha)) => {
                         self.core.sync(|core| {
+                            core.texture_alpha.insert(texture_id, alpha);
                             let layer                   = core.layer(self.current_layer);
 
-                            layer.state.texture_alpha   = alpha;
-                            layer.state.fill_color      = layer.state.fill_color.with_texture_alpha(alpha);
+                            if layer.state.fill_color.texture_id() == Some(texture_id) {
+                                layer.state.fill_color  = layer.state.fill_color.with_texture_alpha(alpha);
+                            }
                         });
                     }
 

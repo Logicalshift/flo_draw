@@ -16,9 +16,6 @@ pub struct LayerState {
     /// The current fill colour
     pub fill_color: FillState,
 
-    /// The alpha value to use with textures
-    pub texture_alpha: f32,
-
     /// The fill rule to use
     pub winding_rule: FillRule,
 
