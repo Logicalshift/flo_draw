@@ -90,7 +90,12 @@ pub fn main() {
             gc.new_path();
             gc.circle(0.0, 0.0, height/2.0);
             gc.fill_texture(TextureId(0), -64.0, height/2.0, 64.0, -height/2.0);
+            gc.set_texture_fill_alpha(TextureId(0), 0.75);
             gc.fill();
+
+            gc.line_width(0.25);
+            gc.stroke_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+            gc.stroke();
         });
 
         // Generate some random balls
