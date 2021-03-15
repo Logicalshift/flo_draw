@@ -1872,8 +1872,18 @@ mod test {
     }
 
     #[test]
+    fn decode_free_texture() {
+        check_round_trip_single(Draw::Texture(TextureId(43), TextureOp::Free));
+    }
+
+    #[test]
     fn decode_texture_set_bytes() {
-        check_round_trip_single(Draw::Texture(TextureId(42), TextureOp::SetBytes(100, 200, 300, 400, Arc::new(vec![240, 230, 220, 210, 200, 190]))));
+        check_round_trip_single(Draw::Texture(TextureId(44), TextureOp::SetBytes(100, 200, 300, 400, Arc::new(vec![240, 230, 220, 210, 200, 190]))));
+    }
+
+    #[test]
+    fn decode_fill_transparency() {
+        check_round_trip_single(Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.75)));
     }
 
     #[test]

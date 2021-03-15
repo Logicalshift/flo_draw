@@ -279,7 +279,9 @@ impl<'a> CanvasEncoding<String> for &'a TextureOp {
 
         match self {
             Create(width, height, format)           => ('N', *width, *height, *format).encode_canvas(append_to), 
-            SetBytes(x, y, width, height, bytes)    => ('D', *x, *y, *width, *height, &**bytes).encode_canvas(append_to)
+            Free                                    => ('X').encode_canvas(append_to),
+            SetBytes(x, y, width, height, bytes)    => ('D', *x, *y, *width, *height, &**bytes).encode_canvas(append_to),
+            FillTransparency(alpha)                 => ('t', *alpha).encode_canvas(append_to),
         }
     }
 }

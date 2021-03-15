@@ -938,6 +938,10 @@ impl CanvasRenderer {
                         });
                     }
 
+                    Texture(texture_id, canvas::TextureOp::Free) => {
+                        todo!()
+                    }
+
                     // Updates an existing texture
                     Texture(texture_id, canvas::TextureOp::SetBytes(x, y, width, height, bytes)) => {
                         core.sync(|core| {
@@ -970,6 +974,10 @@ impl CanvasRenderer {
                                 }
                             }
                         });
+                    }
+
+                    Texture(texture_id, canvas::TextureOp::FillTransparency(alpha)) => {
+                        todo!()
                     }
 
                     // Performs a font operation

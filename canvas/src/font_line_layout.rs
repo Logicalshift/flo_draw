@@ -404,4 +404,6 @@ impl GraphicsContext for CanvasFontLineLayout {
 
     #[inline] fn create_texture(&mut self, texture_id: TextureId, w: u32, h: u32, format: TextureFormat)                        { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Texture(texture_id, TextureOp::Create(w, h, format)))); }
     #[inline] fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>)       { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes)))); }
+    #[inline] fn free_texture(&mut self, texture_id: TextureId)                                                                 { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Texture(texture_id, TextureOp::Free))); }
+    #[inline] fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32)                                           { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha)))); }
 }

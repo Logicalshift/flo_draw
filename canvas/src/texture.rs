@@ -17,6 +17,12 @@ pub enum TextureOp {
     /// Creates a new texture of the specified size and format (texture colour is set to clear)
     Create(u32, u32, TextureFormat),
 
+    /// Releases the memory used by this texture
+    Free,
+
     /// Sets a region of a texture (specified as minx, miny, width, height) to the specified bitmap
-    SetBytes(u32, u32, u32, u32, Arc<Vec<u8>>)
+    SetBytes(u32, u32, u32, u32, Arc<Vec<u8>>),
+
+    /// Sets the transparency to use when rendering a texture
+    FillTransparency(f32),
 }

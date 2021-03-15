@@ -466,6 +466,8 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
 
     fn create_texture(&mut self, texture_id: TextureId, w: u32, h: u32, format: TextureFormat)                  { self.pending.push(Draw::Texture(texture_id, TextureOp::Create(w, h, format))); }
     fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>) { self.pending.push(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))); }
+    fn free_texture(&mut self, texture_id: TextureId)                                                           { self.pending.push(Draw::Texture(texture_id, TextureOp::Free)); }
+    fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32)                                     { self.pending.push(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha))); }
 
     fn draw(&mut self, d: Draw)                                 { self.pending.push(d); }
 }

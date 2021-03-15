@@ -65,7 +65,9 @@ pub trait GraphicsContext {
     fn draw_text_layout(&mut self);
 
     fn create_texture(&mut self, texture_id: TextureId, width: u32, height: u32, format: TextureFormat);
+    fn free_texture(&mut self, texture_id: TextureId);
     fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, width: u32, height: u32, bytes: Arc<Vec<u8>>);
+    fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32);
 
     fn draw(&mut self, d: Draw) {
         use self::Draw::*;
@@ -121,7 +123,9 @@ pub trait GraphicsContext {
             BeginLineLayout(x, y, alignment)                                        => self.begin_line_layout(x, y, alignment),
             DrawLaidOutText                                                         => self.draw_text_layout(),
             Texture(texture_id, TextureOp::Create(width, height, format))           => self.create_texture(texture_id, width, height, format),
-            Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))             => self.set_texture_bytes(texture_id, x, y, w, h, bytes)
+            Texture(texture_id, TextureOp::Free)                                    => self.free_texture(texture_id),
+            Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))             => self.set_texture_bytes(texture_id, x, y, w, h, bytes),
+            Texture(texture_id, TextureOp::FillTransparency(alpha))                 => self.set_texture_fill_alpha(texture_id, alpha),
         }
     }
 }
@@ -183,7 +187,9 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn draw_text_layout(&mut self)                                                                                    { self.push(Draw::DrawLaidOutText); }
 
     #[inline] fn create_texture(&mut self, texture_id: TextureId, w: u32, h: u32, format: TextureFormat)                        { self.push(Draw::Texture(texture_id, TextureOp::Create(w, h, format))); }
+    #[inline] fn free_texture(&mut self, texture_id: TextureId)                                                                 { self.push(Draw::Texture(texture_id, TextureOp::Free)); }
     #[inline] fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>)       { self.push(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))); }
+    #[inline] fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32)                                           { self.push(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha))); }
 
     #[inline]
     fn draw(&mut self, d: Draw) {
