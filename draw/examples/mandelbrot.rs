@@ -43,8 +43,15 @@ pub fn main() {
         // Loop while there are events
         executor::block_on(async move {
             let mut events  = events;
-            while let Some(_evt) = events.next().await {
+            while let Some(evt) = events.next().await {
+                match evt {
+                    DrawEvent::Resize(new_width, new_height) => {
+                        width.set(new_width as _);
+                        height.set(new_height as _);
+                    }
 
+                    _ => { }
+                }
             }
         })
     })
@@ -147,6 +154,7 @@ fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: B
 
                             // Create the texture for this width and height
                             canvas.draw(|gc| {
+                                gc.layer(layer);
                                 gc.create_texture(texture, texture_w, texture_h, TextureFormat::Rgba);
                                 gc.set_texture_fill_alpha(texture, alpha.get());
                             });
