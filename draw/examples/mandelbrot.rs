@@ -4,6 +4,7 @@ use flo_draw::binding::*;
 
 use futures::prelude::*;
 use futures::executor;
+use futures::stream;
 use num_complex::*;
 
 use std::thread;
@@ -32,12 +33,20 @@ pub fn main() {
         let width       = bind(1024u32);
         let height      = bind(768u32);
         let crossfade   = bind(0.0);
-        let bounds      = bind((Complex::new(-1.0, -1.0), Complex::new(1.0, 1.0)));
+        let bounds      = bind((Complex::new(-2.5, -1.0), Complex::new(1.0, 1.0)));
 
         // Run some threads to display some different layers. We can write to layers independently on different threads
         show_title(&canvas, LayerId(100), crossfade.clone());
         show_stats(&canvas, LayerId(99), BindRef::from(&bounds), BindRef::from(&crossfade));
         show_mandelbrot(&canvas, LayerId(0), TextureId(100), BindRef::from(&width), BindRef::from(&height), BindRef::from(&bounds), BindRef::from(&crossfade));
+
+        // Loop while there are events
+        executor::block_on(async move {
+            let mut events  = events;
+            while let Some(_evt) = events.next().await {
+
+            }
+        })
     })
 }
 
@@ -104,4 +113,147 @@ fn show_stats(canvas: &Canvas, layer: LayerId, bounds: BindRef<(Complex<f64>, Co
 ///
 fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: BindRef<u32>, height: BindRef<u32>, bounds: BindRef<(Complex<f64>, Complex<f64>)>, crossfade: BindRef<f32>) {
     let canvas = canvas.clone();
+
+    thread::Builder::new()
+        .name("Mandelbrot thread".into())
+        .spawn(move || {
+            enum Event {
+                RenderBounds((u32, u32, (Complex<f64>, Complex<f64>))),
+                CrossFade(f32)
+            }
+
+            let alpha           = computed(move || f32::min(f32::max(crossfade.get()-1.0, 0.0),1.0));
+            let mut texture_w   = width.get();
+            let mut texture_h   = height.get();
+
+            // The render bounds are used to determine when we start to re-render the mandelbrot set
+            let render_bounds   = computed(move || (width.get(), height.get(), bounds.get()));
+
+            // Events either start rendering a new frame or changing the crossfade
+            let render_bounds   = follow(render_bounds).map(|bounds| Event::RenderBounds(bounds)).boxed();
+            let crossfade       = follow(alpha.clone()).map(|xfade| Event::CrossFade(xfade)).boxed();
+
+            let events          = stream::select_all(vec![render_bounds, crossfade]);
+
+            // Wait for events and render the mandelbrot set as they arrive
+            executor::block_on(async move {
+                let mut events = events;
+
+                while let Some(evt) = events.next().await {
+                    match evt {
+                        Event::RenderBounds((new_width, new_height, new_bounds)) => {
+                            texture_w = new_width;
+                            texture_h = new_height;
+
+                            // Create the texture for this width and height
+                            canvas.draw(|gc| {
+                                gc.create_texture(texture, texture_w, texture_h, TextureFormat::Rgba);
+                                gc.set_texture_fill_alpha(texture, alpha.get());
+                            });
+
+                            // Fill it in with the current bounds
+                            draw_mandelbrot(&canvas, texture, new_bounds, texture_w, texture_h);
+
+                            // Redraw the layer with the new texture
+                            canvas.draw(|gc| {
+                                gc.layer(layer);
+                                gc.clear_layer();
+                                gc.set_texture_fill_alpha(texture, alpha.get());
+
+                                gc.canvas_height(texture_h as _);
+                                gc.center_region(0.0, 0.0, texture_w as _, texture_h as _);
+
+                                gc.new_path();
+                                gc.rect(0.0, 0.0, texture_w as _, texture_h as _);
+                                gc.fill_texture(texture, 0.0, 0.0, texture_w as _, texture_h as _);
+                                gc.fill();
+                            });
+                        }
+
+                        Event::CrossFade(new_alpha) => {
+                            // Redraw the texture with the new alpha
+                            canvas.draw(|gc| {
+                                gc.layer(layer);
+                                gc.clear_layer();
+                                gc.set_texture_fill_alpha(texture, new_alpha);
+
+                                gc.canvas_height(texture_h as _);
+                                gc.center_region(0.0, 0.0, texture_w as _, texture_h as _);
+
+                                gc.new_path();
+                                gc.rect(0.0, 0.0, texture_w as _, texture_h as _);
+                                gc.fill_texture(texture, 0.0, 0.0, texture_w as _, texture_h as _);
+                                gc.fill();
+                            });
+                        }
+                    }
+                }
+            });
+        })
+        .unwrap();
+}
+
+///
+/// Draws the mandelbrot set within a specified set of bounds
+///
+fn draw_mandelbrot(canvas: &Canvas, texture: TextureId, (min, max): (Complex<f64>, Complex<f64>), width: u32, height: u32) {
+    // Create a vector for the pixels in the mandelbrot set
+    let mut pixels  = vec![0u8; (width*height*4) as usize];
+    let mut pos     = 0;
+
+    // Render each pixel in turn
+    for y in 0..height {
+        let y = y as f64;
+        let y = y / (height as f64);
+        let y = (max.im - min.im) * y + min.im;
+
+        for x in 0..width {
+            let x = x as f64;
+            let x = x / (width as f64);
+            let x = (max.re - min.re) * x + min.re;
+
+            let c               = Complex::new(x, y);
+            let cycles          = count_cycles(c, 1024);
+            let (r, g, b, a)    = color_for_cycles(cycles);
+
+            pixels[pos+0]       = r;
+            pixels[pos+1]       = g;
+            pixels[pos+2]       = b;
+            pixels[pos+3]       = a;
+
+            pos                 += 4;
+        }
+    }
+
+    // Draw to the texture
+    canvas.draw(move |gc| {
+        gc.create_texture(texture, width, height, TextureFormat::Rgba);
+        gc.set_texture_bytes(texture, 0, 0, width, height, Arc::new(pixels));
+    })
+}
+
+///
+/// Counts the number of cycles (up to a maximum count) at a particular pixel
+///
+#[inline]
+fn count_cycles(c: Complex<f64>, max_count: usize) -> usize {
+    let mut z       = Complex::new(0.0, 0.0);
+    let mut count   = 0;
+
+    while count < max_count && (z.re*z.re + z.im*z.im) < 2.0*2.0 {
+        z       = z*z + c;
+        count   = count + 1;
+    }
+
+    count
+}
+
+///
+/// Returns the colour to use for a particular number of cycles
+///
+#[inline]
+fn color_for_cycles(num_cycles: usize) -> (u8, u8, u8, u8) {
+    let col_val = (num_cycles%256) as u8;
+
+    (col_val, col_val, col_val, 255)
 }
