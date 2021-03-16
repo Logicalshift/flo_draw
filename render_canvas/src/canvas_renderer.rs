@@ -818,13 +818,21 @@ impl CanvasRenderer {
                             // Release the existing layers
                             let old_layers = mem::take(&mut core.layers);
 
-                            // Set the background colour for when we render
-                            core.background_color   = Self::render_color(background);
-
                             for layer_id in old_layers {
                                 let layer = core.release_layer_handle(layer_id);
                                 core.free_layer_entities(layer);
                             }
+
+                            // Release the sprites
+                            let old_sprites = mem::take(&mut core.sprites);
+
+                            for (_sprite_id, layer_id) in old_sprites {
+                                let layer = core.release_layer_handle(layer_id);
+                                core.free_layer_entities(layer);
+                            }
+
+                            // Set the background colour for when we start rendering
+                            core.background_color   = Self::render_color(background);
 
                             // Create a new default layer
                             let layer0 = Self::create_default_layer();
