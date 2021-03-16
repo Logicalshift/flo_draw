@@ -43,9 +43,10 @@ struct CanvasCore {
 /// render anything, but rather a way to describe how things should be drawn and pass those on to
 /// a renderer elsewhere.
 ///
+#[derive(Clone)]
 pub struct Canvas {
     /// The core is shared amongst the canvas streams as well as used by the canvas itself
-    core: Desync<CanvasCore>
+    core: Arc<Desync<CanvasCore>>
 }
 
 impl CanvasCore {
@@ -333,7 +334,7 @@ impl Canvas {
         };
 
         Canvas {
-            core: Desync::new(core)
+            core: Arc::new(Desync::new(core))
         }
     }
 
