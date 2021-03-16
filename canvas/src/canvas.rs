@@ -394,10 +394,13 @@ impl Canvas {
 
 impl Drop for Canvas {
     fn drop(&mut self) {
-        self.core.desync(|core| {
-            // Notify any streams that are using the canvas that it has gone away
-            core.pending_streams.iter_mut().for_each(|stream| stream.notify_dropped());
-        });
+        // The streams drop if this is the last canvas with this core
+        if Arc::strong_count(&self.core) == 1 {
+            self.core.desync(|core| {
+                // Notify any streams that are using the canvas that it has gone away
+                core.pending_streams.iter_mut().for_each(|stream| stream.notify_dropped());
+            });
+        }
     }
 }
 
