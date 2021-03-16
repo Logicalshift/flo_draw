@@ -807,9 +807,16 @@ impl CanvasRenderer {
                         //todo!("Stop any incoming tessellated data for this layer");
                         //todo!("Mark vertex buffers as freed");
                         core.sync(|core| {
+                            // Release the textures
+                            let old_textures = mem::take(&mut core.canvas_textures);
+
+                            for (_canvas_id, render_id) in old_textures.into_iter() {
+                                let render_id = (&render_id).into();
+                                core.used_textures.get_mut(&render_id).map(|usage_count| *usage_count -= 1);
+                            }
+
                             // Release the existing layers
-                            let mut old_layers = vec![];
-                            mem::swap(&mut core.layers, &mut old_layers);
+                            let old_layers = mem::take(&mut core.layers);
 
                             // Set the background colour for when we render
                             core.background_color   = Self::render_color(background);
