@@ -9,7 +9,7 @@ use num_complex::*;
 
 use std::thread;
 use std::sync::*;
-use std::time::{Duration};
+use std::time::{Instant, Duration};
 
 ///
 /// Renders the mandelbrot set, demonstrates how to render from multiple threads and communicate with bindings
@@ -160,7 +160,7 @@ fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: B
                             });
 
                             // Fill it in with the current bounds
-                            draw_mandelbrot(&canvas, texture, new_bounds, texture_w, texture_h);
+                            draw_mandelbrot(&canvas, layer, texture, new_bounds, texture_w, texture_h);
 
                             // Redraw the layer with the new texture
                             canvas.draw(|gc| {
@@ -204,10 +204,12 @@ fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: B
 ///
 /// Draws the mandelbrot set within a specified set of bounds
 ///
-fn draw_mandelbrot(canvas: &Canvas, texture: TextureId, (min, max): (Complex<f64>, Complex<f64>), width: u32, height: u32) {
+fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, max): (Complex<f64>, Complex<f64>), width: u32, height: u32) {
     // Create a vector for the pixels in the mandelbrot set
     let mut pixels  = vec![0u8; (width*height*4) as usize];
     let mut pos     = 0;
+
+    let mut start_time = Instant::now();
 
     // Render each pixel in turn
     for y in 0..height {
@@ -231,11 +233,31 @@ fn draw_mandelbrot(canvas: &Canvas, texture: TextureId, (min, max): (Complex<f64
 
             pos                 += 4;
         }
+
+        // Draw the story so far every 50ms
+        if Instant::now().duration_since(start_time) > Duration::from_millis(50) {
+            let intermediate_pixels = Arc::new(pixels.clone());
+            canvas.draw(move |gc| {
+                gc.layer(layer);
+                gc.clear_layer();
+                gc.create_texture(texture, width, height, TextureFormat::Rgba);
+                gc.set_texture_bytes(texture, 0, 0, width, height, intermediate_pixels);
+
+                gc.canvas_height(height as _);
+                gc.center_region(0.0, 0.0, width as _, height as _);
+
+                gc.new_path();
+                gc.rect(0.0, 0.0, width as _, height as _);
+                gc.fill_texture(texture, 0.0, 0.0, width as _, height as _);
+                gc.fill();
+            });
+
+            start_time = Instant::now();
+        }
     }
 
     // Draw to the texture
     canvas.draw(move |gc| {
-        gc.create_texture(texture, width, height, TextureFormat::Rgba);
         gc.set_texture_bytes(texture, 0, 0, width, height, Arc::new(pixels));
     })
 }
