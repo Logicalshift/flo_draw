@@ -258,6 +258,7 @@ fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, ma
 
     // Draw to the texture
     canvas.draw(move |gc| {
+        gc.create_texture(texture, width, height, TextureFormat::Rgba);
         gc.set_texture_bytes(texture, 0, 0, width, height, Arc::new(pixels));
     })
 }
