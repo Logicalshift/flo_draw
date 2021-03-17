@@ -103,6 +103,12 @@ fn show_title(canvas: &Canvas, layer: LayerId, crossfade: Binding<f32>) {
                 // Fade at 60fps
                 thread::sleep(Duration::from_nanos(1_000_000_000 / 60));
             }
+
+            // Blank the layer once done
+            canvas.draw(|gc| {
+                gc.layer(layer);
+                gc.clear_layer();
+            });
         })
         .unwrap();
 }
