@@ -223,7 +223,7 @@ fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, ma
             let x = (max.re - min.re) * x + min.re;
 
             let c               = Complex::new(x, y);
-            let cycles          = count_cycles(c, 1024);
+            let cycles          = count_cycles(c, 256);
             let (r, g, b, a)    = color_for_cycles(cycles);
 
             pixels[pos+0]       = r;
