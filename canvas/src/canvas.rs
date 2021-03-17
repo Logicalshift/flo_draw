@@ -111,6 +111,7 @@ impl CanvasCore {
                     (_, Draw::ResetFrame)                               => true,
                     (_, Draw::Font(_, FontOp::UseFontDefinition(_)))    => true,
                     (_, Draw::Font(_, FontOp::FontSize(_)))             => true,
+                    (_, Draw::Texture(_, _))                            => true,
 
                     // Don't filter anything that doesn't affect the cleared layer
                     (layer, _)                                          => *layer != layer_id
@@ -135,6 +136,8 @@ impl CanvasCore {
         let mut font_declarations       = HashMap::new();
         let mut font_size_declarations  = HashMap::new();
         let mut unused_indexes          = HashSet::new();
+
+        let mut texture_declarations    = HashMap::new();
 
         // Find the indexes of the unused font operations
         for (idx, drawing) in self.drawing_since_last_clear.iter().enumerate() {
@@ -169,6 +172,41 @@ impl CanvasCore {
                     // As does drawing text with the font
                     font_declarations.remove(font_id);
                     font_size_declarations.remove(font_id);
+                }
+
+                (_, Draw::Texture(texture_id, TextureOp::Create(_, _, _))) => {
+                    // Any unused texture definition goes into the unused list
+                    texture_declarations.remove(&texture_id)
+                        .map(|unused_declarations| unused_indexes.extend(unused_declarations));
+
+                    // Start of a new texture declaration
+                    texture_declarations.entry(texture_id)
+                        .or_insert_with(|| vec![])
+                        .push(idx);
+                }
+
+                (_, Draw::Texture(texture_id, TextureOp::SetBytes(_, _, _, _, _))) => {
+                    // Setting the texture bytes counts as part of a texture declaration
+                    texture_declarations.entry(texture_id)
+                        .or_insert_with(|| vec![])
+                        .push(idx);
+                }
+
+                (_, Draw::Texture(texture_id, TextureOp::FillTransparency(_))) => {
+                    texture_declarations.entry(texture_id)
+                        .or_insert_with(|| vec![])
+                        .push(idx);
+                }
+
+                (_, Draw::Texture(texture_id, TextureOp::Free)) => {
+                    // Any unused texture definition goes into the unused list
+                    texture_declarations.remove(&texture_id)
+                        .map(|unused_declarations| unused_indexes.extend(unused_declarations));
+                }
+
+                (_, Draw::FillTexture(texture_id, _, _)) => {
+                    // Counts as using the texture
+                    texture_declarations.remove(&texture_id);
                 }
 
                 _ => {}
