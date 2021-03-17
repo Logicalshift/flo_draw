@@ -52,6 +52,7 @@ mod decoding;
 mod font_face;
 mod primitives;
 mod transform2d;
+mod canvas_stream;
 mod conversion_streams;
 
 #[cfg(feature = "outline-fonts")] mod font_line_layout;
