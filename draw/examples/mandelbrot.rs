@@ -35,10 +35,13 @@ pub fn main() {
         let crossfade   = bind(0.0);
         let bounds      = bind((Complex::new(-2.5, -1.0), Complex::new(1.0, 1.0)));
 
+        // The update number is used to synchronise other updates and interrupt drawing the mandelbrot
+        let update_num  = bind(0u64);
+
         // Run some threads to display some different layers. We can write to layers independently on different threads
         show_title(&canvas, LayerId(100), crossfade.clone());
         show_stats(&canvas, LayerId(99), BindRef::from(&bounds), BindRef::from(&crossfade));
-        show_mandelbrot(&canvas, LayerId(0), TextureId(100), BindRef::from(&width), BindRef::from(&height), BindRef::from(&bounds), BindRef::from(&crossfade));
+        show_mandelbrot(&canvas, LayerId(0), TextureId(100), BindRef::from(&width), BindRef::from(&height), BindRef::from(&bounds), BindRef::from(&crossfade), BindRef::from(&update_num));
 
         // Loop while there are events
         executor::block_on(async move {
@@ -48,6 +51,7 @@ pub fn main() {
                     DrawEvent::Resize(new_width, new_height) => {
                         width.set(new_width as _);
                         height.set(new_height as _);
+                        update_num.set(update_num.get() + 1);
                     }
 
                     _ => { }
@@ -124,7 +128,7 @@ fn show_stats(canvas: &Canvas, layer: LayerId, bounds: BindRef<(Complex<f64>, Co
 ///
 /// Runs a thread that renders the mandelbrot set whenever the bindings change 
 ///
-fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: BindRef<u32>, height: BindRef<u32>, bounds: BindRef<(Complex<f64>, Complex<f64>)>, crossfade: BindRef<f32>) {
+fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: BindRef<u32>, height: BindRef<u32>, bounds: BindRef<(Complex<f64>, Complex<f64>)>, crossfade: BindRef<f32>, update_num: BindRef<u64>) {
     let canvas = canvas.clone();
 
     thread::Builder::new()
@@ -167,7 +171,7 @@ fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: B
                             });
 
                             // Fill it in with the current bounds
-                            draw_mandelbrot(&canvas, layer, texture, new_bounds, texture_w, texture_h, &alpha);
+                            draw_mandelbrot(&canvas, layer, texture, new_bounds, texture_w, texture_h, &alpha, &update_num);
 
                             // Redraw the layer with the new texture
                             canvas.draw(|gc| {
@@ -211,10 +215,11 @@ fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: B
 ///
 /// Draws the mandelbrot set within a specified set of bounds
 ///
-fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, max): (Complex<f64>, Complex<f64>), width: u32, height: u32, alpha: &BindRef<f32>) {
+fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, max): (Complex<f64>, Complex<f64>), width: u32, height: u32, alpha: &BindRef<f32>, update_num: &BindRef<u64>) {
     // Create a vector for the pixels in the mandelbrot set
     let mut pixels  = vec![0u8; (width*height*4) as usize];
     let mut pos     = 0;
+    let update      = update_num.get();
 
     let mut start_time = Instant::now();
 
@@ -239,6 +244,11 @@ fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, ma
             pixels[pos+3]       = a;
 
             pos                 += 4;
+        }
+
+        // Stop if there's an update to the state we're rendering
+        if update_num.get() != update {
+            return;
         }
 
         // Draw the story so far every 50ms
