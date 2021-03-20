@@ -18,6 +18,9 @@ use futures::task::{Poll, Context};
 use std::mem;
 use std::pin::*;
 use std::sync::*;
+use std::time::{Duration, Instant};
+
+const MAX_BATCH_TIME: Duration = Duration::from_nanos(1_000_000_000 / 60);
 
 ///
 /// Structure used to store the current state of the canvas renderer
@@ -333,6 +336,7 @@ where TStream: Unpin+Stream<Item=Draw> {
         let this_stream = &mut this.stream;
         let waiting     = &mut this.waiting;
         let frame_count = &mut this.frame_count;
+        let start_time  = Instant::now();
 
         match this_stream {
             None                =>  Poll::Ready(None), 
@@ -363,6 +367,10 @@ where TStream: Unpin+Stream<Item=Draw> {
 
                             if *frame_count == 0 {
                                 frame_offset = batch.len();
+
+                                if Instant::now().duration_since(start_time) >= MAX_BATCH_TIME {
+                                    break;
+                                }
                             }
                         }
 
