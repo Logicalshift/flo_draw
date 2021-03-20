@@ -136,6 +136,7 @@ fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: B
             }
 
             let alpha           = computed(move || f32::min(f32::max(crossfade.get()-1.0, 0.0),1.0));
+            let alpha           = BindRef::from(alpha);
             let mut texture_w   = width.get();
             let mut texture_h   = height.get();
 
@@ -166,7 +167,7 @@ fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: B
                             });
 
                             // Fill it in with the current bounds
-                            draw_mandelbrot(&canvas, layer, texture, new_bounds, texture_w, texture_h);
+                            draw_mandelbrot(&canvas, layer, texture, new_bounds, texture_w, texture_h, &alpha);
 
                             // Redraw the layer with the new texture
                             canvas.draw(|gc| {
@@ -210,7 +211,7 @@ fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: B
 ///
 /// Draws the mandelbrot set within a specified set of bounds
 ///
-fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, max): (Complex<f64>, Complex<f64>), width: u32, height: u32) {
+fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, max): (Complex<f64>, Complex<f64>), width: u32, height: u32, alpha: &BindRef<f32>) {
     // Create a vector for the pixels in the mandelbrot set
     let mut pixels  = vec![0u8; (width*height*4) as usize];
     let mut pos     = 0;
@@ -248,6 +249,7 @@ fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, ma
                 gc.clear_layer();
                 gc.create_texture(texture, width, height, TextureFormat::Rgba);
                 gc.set_texture_bytes(texture, 0, 0, width, height, intermediate_pixels);
+                gc.set_texture_fill_alpha(texture, alpha.get());
 
                 gc.canvas_height(height as _);
                 gc.center_region(0.0, 0.0, width as _, height as _);
