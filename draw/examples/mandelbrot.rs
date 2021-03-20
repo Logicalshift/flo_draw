@@ -49,9 +49,11 @@ pub fn main() {
             while let Some(evt) = events.next().await {
                 match evt {
                     DrawEvent::Resize(new_width, new_height) => {
-                        width.set(new_width as _);
-                        height.set(new_height as _);
-                        update_num.set(update_num.get() + 1);
+                        if width.get() != new_width as _ || height.get() != new_height as _ {
+                            width.set(new_width as _);
+                            height.set(new_height as _);
+                            update_num.set(update_num.get() + 1);
+                        }
                     }
 
                     _ => { }
