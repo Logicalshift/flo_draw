@@ -15,6 +15,7 @@ use ::desync::*;
 use futures::prelude::*;
 use futures::task::{Poll, Context};
 
+use std::mem;
 use std::pin::*;
 use std::sync::*;
 
@@ -85,7 +86,7 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
     let canvas_stream       = canvas.stream();
     let canvas_stream       = drawing_with_laid_out_text(canvas_stream);
     let canvas_stream       = drawing_with_text_as_paths(canvas_stream);
-    let canvas_stream       = BatchedStream { stream: Some(canvas_stream) };
+    let canvas_stream       = BatchedStream { stream: Some(canvas_stream), frame_count: 0, waiting: vec![] };
 
     // Create the events stream
     let events              = create_canvas_window_from_stream(canvas_stream, window_properties);
@@ -145,7 +146,7 @@ pub fn create_canvas_window_from_stream<'a, DrawStream: 'static+Send+Unpin+Strea
 
         // For the main event loop, we're always processing the window events, but alternate between reading from the canvas 
         // and waiting for the frame to render. We stop once there are no more events.
-        let render_events       = BatchedStream { stream: Some(render_events) };
+        let render_events       = render_events.ready_chunks(1000);
         let mut canvas_updates  = CanvasUpdateStream {
             draw_stream:            Some(canvas_stream),
             event_stream:           render_events,
@@ -312,28 +313,62 @@ SendFuture:             Send+Future<Output=()> {
 /// Stream that takes a canvas stream and batches as many draw requests as possible
 ///
 struct BatchedStream<TStream>
-where TStream: Stream {
+where TStream: Stream<Item=Draw> {
+    /// Items that have been fetched and are waiting to be send
+    waiting: Vec<TStream::Item>,
+
+    /// The number of times StartFrame has been called
+    frame_count: usize,
+
     // Stream of individual draw events
     stream: Option<TStream>
 }
 
 impl<TStream> Stream for BatchedStream<TStream>
-where TStream: Unpin+Stream {
+where TStream: Unpin+Stream<Item=Draw> {
     type Item = Vec<TStream::Item>;
 
-    fn poll_next(mut self: Pin<&mut Self>, context: &mut Context) -> Poll<Option<Vec<TStream::Item>>> {
-        match &mut self.stream {
+    fn poll_next(self: Pin<&mut Self>, context: &mut Context) -> Poll<Option<Vec<TStream::Item>>> {
+        let this        = self.get_mut();
+        let this_stream = &mut this.stream;
+        let waiting     = &mut this.waiting;
+        let frame_count = &mut this.frame_count;
+
+        match this_stream {
             None                =>  Poll::Ready(None), 
             Some(stream) => {
                 // Poll the canvas stream until there are no more items to fetch
-                let mut batch = vec![];
+                let mut batch           = mem::take(waiting);
+                let mut frame_offset    = 0;
 
                 loop {
                     // Fill up the batch
                     match stream.poll_next_unpin(context) {
                         Poll::Ready(None)       => {
-                            self.stream = None;
+                            *this_stream = None;
                             break;
+                        }
+
+                        Poll::Ready(Some(Draw::StartFrame)) => {
+                            *frame_count += 1;
+                            batch.push(Draw::StartFrame);
+                        }
+
+                        Poll::Ready(Some(Draw::ShowFrame)) => {
+                            if *frame_count > 0 {
+                                *frame_count -= 1;
+                            }
+
+                            batch.push(Draw::ShowFrame);
+
+                            if *frame_count == 0 {
+                                frame_offset = batch.len();
+                            }
+                        }
+
+                        Poll::Ready(Some(Draw::ClearCanvas(colour))) => {
+                            *frame_count = 0;
+                            batch.push(Draw::ClearCanvas(colour));
                         }
 
                         Poll::Ready(Some(draw)) => {
@@ -346,15 +381,27 @@ where TStream: Unpin+Stream {
                     }
                 }
 
-                if batch.len() == 0 && self.stream.is_none() {
+                if batch.len() == 0 && this_stream.is_none() {
                     // Stream finished with no more items
                     Poll::Ready(None)
-                } else if batch.len() == 0 && self.stream.is_some() {
+                } else if batch.len() == 0 && this_stream.is_some() {
                     // No items were fetched for this batch
                     Poll::Pending
                 } else {
                     // Batched up some drawing commands
-                    Poll::Ready(Some(batch))
+                    if *frame_count == 0 {
+                        // Not paused on a frame
+                        Poll::Ready(Some(batch))
+                    } else {
+                        // Draw everything up until the most recent 'ShowFrame'
+                        *waiting = batch.split_off(frame_offset);
+
+                        if batch.len() == 0 {
+                            Poll::Pending
+                        } else {
+                            Poll::Ready(Some(batch))
+                        }
+                    }
                 }
             }
         }
