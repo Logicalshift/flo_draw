@@ -806,6 +806,13 @@ impl CanvasRenderer {
                     ClearCanvas(background) => {
                         //todo!("Stop any incoming tessellated data for this layer");
                         //todo!("Mark vertex buffers as freed");
+
+                        fill_state      = FillState::None;
+                        dash_pattern    = vec![];
+                        current_path    = None;
+                        path_builder    = None;
+                        in_subpath      = false;
+
                         core.sync(|core| {
                             // Release the textures
                             let old_textures = mem::take(&mut core.canvas_textures);
@@ -873,6 +880,12 @@ impl CanvasRenderer {
 
                     // Clears the current layer
                     ClearLayer | ClearSprite => {
+                        fill_state      = FillState::None;
+                        dash_pattern    = vec![];
+                        current_path    = None;
+                        path_builder    = None;
+                        in_subpath      = false;
+
                         core.sync(|core| {
                             // Create a new layer
                             let mut layer               = Self::create_default_layer();

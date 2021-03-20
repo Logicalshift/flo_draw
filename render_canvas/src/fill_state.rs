@@ -4,7 +4,7 @@ use flo_render as render;
 ///
 /// The ways the next path can be filled
 ///
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum FillState {
     ///
     /// Unknown fill state
