@@ -172,21 +172,6 @@ fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: B
 
                             // Fill it in with the current bounds
                             draw_mandelbrot(&canvas, layer, texture, new_bounds, texture_w, texture_h, &alpha, &update_num);
-
-                            // Redraw the layer with the new texture
-                            canvas.draw(|gc| {
-                                gc.layer(layer);
-                                gc.clear_layer();
-                                gc.set_texture_fill_alpha(texture, alpha.get());
-
-                                gc.canvas_height(texture_h as _);
-                                gc.center_region(0.0, 0.0, texture_w as _, texture_h as _);
-
-                                gc.new_path();
-                                gc.rect(0.0, 0.0, texture_w as _, texture_h as _);
-                                gc.fill_texture(texture, 0.0, 0.0, texture_w as _, texture_h as _);
-                                gc.fill();
-                            });
                         }
 
                         Event::CrossFade(new_alpha) => {
@@ -278,7 +263,19 @@ fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, ma
     canvas.draw(move |gc| {
         gc.create_texture(texture, width, height, TextureFormat::Rgba);
         gc.set_texture_bytes(texture, 0, 0, width, height, Arc::new(pixels));
-    })
+
+        gc.layer(layer);
+        gc.clear_layer();
+        gc.set_texture_fill_alpha(texture, alpha.get());
+
+        gc.canvas_height(height as _);
+        gc.center_region(0.0, 0.0, width as _, height as _);
+
+        gc.new_path();
+        gc.rect(0.0, 0.0, width as _, height as _);
+        gc.fill_texture(texture, 0.0, 0.0, width as _, height as _);
+        gc.fill();
+    });
 }
 
 ///
