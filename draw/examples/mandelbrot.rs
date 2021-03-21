@@ -124,6 +124,47 @@ fn show_title(canvas: &Canvas, layer: LayerId, crossfade: Binding<f32>) {
 ///
 fn show_stats(canvas: &Canvas, layer: LayerId, bounds: BindRef<(Complex<f64>, Complex<f64>)>, crossfade: BindRef<f32>) {
     let canvas = canvas.clone();
+
+    thread::Builder::new()
+        .name("Stats thread".into())
+        .spawn(move || {
+            // Compute the value to display on the LHS of the display
+            let left_stats = computed(move || {
+                let bounds          = bounds.get();
+                let scale_factor_x  = 3.5/(bounds.1.re - bounds.0.re).abs();
+                let scale_factor_y  = 2.0/(bounds.1.im - bounds.0.im).abs();
+                let scale_factor    = f64::max(scale_factor_x, scale_factor_y);
+                let scale_factor    = scale_factor.round();
+
+                format!("Zoom: {}x", scale_factor)
+            });
+
+            // Run a loop to update and diplay the statistics for the mandelbrot set
+            executor::block_on(async move {
+                // Follow the stats as they change
+                let alpha       = computed(move || f32::max(f32::min(crossfade.get(), 1.0), 0.0));
+                let mut stats   = follow(computed(move || (left_stats.get(), alpha.get())));
+
+                while let Some((left_stats, alpha)) = stats.next().await {
+                    // Redraw the stats on the layer
+                    canvas.draw(|gc| {
+                        gc.layer(layer);
+                        gc.clear_layer();
+
+                        gc.canvas_height(1000.0);
+                        gc.center_region(0.0, 0.0, 1000.0, 1000.0);
+
+                        gc.fill_color(Color::Rgba(0.0, 0.6, 0.9, alpha * 0.9));
+                        gc.set_font_size(FontId(1), 24.0);
+
+                        gc.begin_line_layout(20.0, 900.0, TextAlignment::Left);
+                        gc.layout_text(FontId(1), format!("{}", left_stats));
+                        gc.draw_text_layout();
+                    });
+                }
+            });
+        })
+        .unwrap();
 }
 
 
