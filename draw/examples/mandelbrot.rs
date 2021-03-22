@@ -71,13 +71,13 @@ pub fn main() {
                             let y       = h-y;
 
                             gc.new_path();
-                            gc.rect(x - (w/4.0) + 2.0, y - (h/4.0) - 2.0, x + (w/4.0) + 2.0, y + w/4.0 - 2.0);
+                            gc.rect(x - (w/4.0) + 2.0, y - (h/4.0) - 2.0, x + (w/4.0) + 2.0, y + h/4.0 - 2.0);
                             gc.stroke_color(Color::Rgba(0.0, 0.0, 0.0, 0.6));
                             gc.line_width(4.0);
                             gc.stroke();
 
                             gc.new_path();
-                            gc.rect(x - (w/4.0), y - (h/4.0), x + (w/4.0), y + w/4.0);
+                            gc.rect(x - (w/4.0), y - (h/4.0), x + (w/4.0), y + h/4.0);
                             gc.stroke_color(Color::Rgba(0.0, 0.6, 0.0, 0.9));
                             gc.line_width(4.0);
                             gc.stroke();
