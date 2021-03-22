@@ -318,9 +318,11 @@ fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, ma
     let num_cycles = if scale_factor < 64.0 {
         256
     } else if scale_factor < 2048.0 {
-        512
-    } else {
         1024
+    } else if scale_factor < 8192.0 {
+        2048
+    } else {
+        4096
     };
 
     // Render each pixel in turn
