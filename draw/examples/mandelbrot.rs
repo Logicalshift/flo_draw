@@ -56,6 +56,64 @@ pub fn main() {
                         }
                     }
 
+                    DrawEvent::Pointer(PointerAction::Move, _, state) => {
+                        // Draw a rectangle around where the image will zoom in
+                        canvas.draw(|gc| {
+                            gc.layer(LayerId(1));
+                            gc.clear_layer();
+
+                            gc.canvas_height(height.get() as _);
+                            gc.center_region(0.0, 0.0, width.get() as _, height.get() as _);
+
+                            let (x, y)  = state.location_in_window;
+                            let (x, y)  = (x as f32, y as f32);
+                            let (w, h)  = (width.get() as f32, height.get() as f32);
+                            let y       = h-y;
+
+                            gc.new_path();
+                            gc.rect(x - (w/4.0) + 2.0, y - (h/4.0) - 2.0, x + (w/4.0) + 2.0, y + w/4.0 - 2.0);
+                            gc.stroke_color(Color::Rgba(0.0, 0.0, 0.0, 0.6));
+                            gc.line_width(4.0);
+                            gc.stroke();
+
+                            gc.new_path();
+                            gc.rect(x - (w/4.0), y - (h/4.0), x + (w/4.0), y + w/4.0);
+                            gc.stroke_color(Color::Rgba(0.0, 0.6, 0.0, 0.9));
+                            gc.line_width(4.0);
+                            gc.stroke();
+                        });
+                    }
+
+                    DrawEvent::Pointer(PointerAction::Leave, _, _) => {
+                        // Remove the highlight when the cursor leaves the window
+                        canvas.draw(|gc| {
+                            gc.layer(LayerId(1));
+                            gc.clear_layer();
+                        });
+                    }
+
+                    DrawEvent::Pointer(PointerAction::ButtonDown, _, state) => {
+                        // Zoom in at the point the user clicked
+                        let (x, y)      = state.location_in_window;
+                        let (x, y)      = (x as f64, y as f64);
+                        let (w, h)      = (width.get() as f64, height.get() as f64);
+                        let y           = h-y;
+
+                        // x and y as proportions within the min/max bounds
+                        let (x, y)      = (x / w, y/h);
+
+                        // x and y as coordinates within the space of the mandelbrot
+                        let (min, max)  = bounds.get();
+                        let x           = (max.re-min.re) * x + min.re;
+                        let y           = (max.im-min.im) * y + min.im;
+                        let off_x       = (max.re-min.re) / 4.0;
+                        let off_y       = (max.im-min.im) / 4.0;
+
+                        // Update the bounds
+                        bounds.set((Complex::new(x-off_x, y-off_y), Complex::new(x+off_x, y+off_y)));
+                        update_num.set(update_num.get() + 1);
+                    }
+
                     _ => { }
                 }
             }
