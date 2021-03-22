@@ -309,6 +309,20 @@ fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, ma
 
     let mut start_time = Instant::now();
 
+    // Work out how many iterations to perform
+    let scale_factor_x  = 3.5/(max.re - min.re).abs();
+    let scale_factor_y  = 2.0/(max.im - min.im).abs();
+    let scale_factor    = f64::max(scale_factor_x, scale_factor_y);
+    let scale_factor    = scale_factor.round();
+
+    let num_cycles = if scale_factor < 64.0 {
+        256
+    } else if scale_factor < 2048.0 {
+        512
+    } else {
+        1024
+    };
+
     // Render each pixel in turn
     for y in 0..height {
         let y = y as f64;
@@ -321,7 +335,7 @@ fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, ma
             let x = (max.re - min.re) * x + min.re;
 
             let c               = Complex::new(x, y);
-            let cycles          = count_cycles(c, 256);
+            let cycles          = count_cycles(c, num_cycles);
             let (r, g, b, a)    = color_for_cycles(cycles);
 
             pixels[pos+0]       = r;
