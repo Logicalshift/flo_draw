@@ -423,16 +423,17 @@ fn count_cycles(c: Complex<f64>, max_count: usize) -> usize {
 ///
 #[inline]
 fn color_for_cycles(num_cycles: usize) -> (u8, u8, u8, u8) {
-    let col_val = num_cycles%512;
-    let hue     = (num_cycles/512) % 8;
+    let col_val = num_cycles%64;
+    let hue     = (num_cycles/64) % 8;
 
-    let col_val = if col_val > 256 { 512 - col_val } else { col_val };
+    let col_val = if col_val > 32 { 64 - col_val } else { col_val };
+    let col_val = col_val * 8;
 
     let hue     = [
         (255, 255, 255),
         (196, 0, 0),
-        (128, 128, 0),
-        (0, 128, 0),
+        (128, 96, 0),
+        (48, 128, 0),
         (0, 196, 255),
         (0, 0, 255),
         (128, 0, 196),
