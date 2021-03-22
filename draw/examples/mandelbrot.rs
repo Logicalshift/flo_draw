@@ -212,6 +212,13 @@ fn show_stats(canvas: &Canvas, layer: LayerId, bounds: BindRef<(Complex<f64>, Co
                         gc.canvas_height(1000.0);
                         gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
+                        gc.fill_color(Color::Rgba(0.0, 0.0, 0.0, alpha * 0.7));
+                        gc.set_font_size(FontId(1), 24.0);
+
+                        gc.begin_line_layout(21.0, 899.0, TextAlignment::Left);
+                        gc.layout_text(FontId(1), format!("{}", left_stats));
+                        gc.draw_text_layout();
+
                         gc.fill_color(Color::Rgba(0.0, 0.6, 0.9, alpha * 0.9));
                         gc.set_font_size(FontId(1), 24.0);
 
