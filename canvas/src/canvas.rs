@@ -40,6 +40,12 @@ struct CanvasCore {
 /// render anything, but rather a way to describe how things should be drawn and pass those on to
 /// a renderer elsewhere.
 ///
+/// A canvas can be cloned and sent between threads, so it's possible for multiple sources to write
+/// to the same drawing target.
+///
+/// Canvases maintain a copy of enough of the drawing instructions sent to them to reproduce the
+/// rendering on a new render target. 
+///
 #[derive(Clone)]
 pub struct Canvas {
     /// The core is shared amongst the canvas streams as well as used by the canvas itself
