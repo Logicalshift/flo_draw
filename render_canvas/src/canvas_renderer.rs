@@ -953,15 +953,26 @@ impl CanvasRenderer {
                     // Creates or replaces a texture
                     Texture(texture_id, canvas::TextureOp::Create(width, height, canvas::TextureFormat::Rgba)) => {
                         core.sync(|core| {
-                            // Allocate a new renderer texture for this texture
-                            let render_texture = core.allocate_texture();
-
                             // If the texture ID was previously in use, reduce the usage count
-                            if let Some(old_render_texture) = core.canvas_textures.get(&texture_id) {
-                                let old_render_texture = old_render_texture.into();
-                                core.used_textures.get_mut(&old_render_texture)
-                                    .map(|usage_count| *usage_count -=1);
-                            }
+                            let render_texture = if let Some(old_render_texture) = core.canvas_textures.get(&texture_id) {
+                                let old_render_texture  = old_render_texture.into();
+                                let usage_count         = core.used_textures.get_mut(&old_render_texture);
+
+                                if usage_count == Some(&mut 1) {
+                                    // Leave the usage count as is and reallocate the existing texture
+                                    // The 1 usage is the rendered version of this texture
+                                    old_render_texture
+                                } else {
+                                    // Reduce the usage count
+                                    usage_count.map(|usage_count| *usage_count -=1);
+
+                                    // Allocate a new texture
+                                    core.allocate_texture()
+                                }
+                            } else {
+                                // Unused texture ID: allocate a new texture
+                                core.allocate_texture()
+                            };
 
                             // Add this as a texture with a usage count of 1
                             core.canvas_textures.insert(texture_id, RenderTexture::Loading(render_texture));
@@ -991,7 +1002,15 @@ impl CanvasRenderer {
                         core.sync(|core| {
                             // Create a canvas renderer job that will write these bytes to the texture
                             if let Some(render_texture) = core.canvas_textures.get(&texture_id) {
-                                let render_texture = *render_texture;
+                                let mut render_texture = *render_texture;
+
+                                // If the texture has one used count and is in a 'ready' state, switch it back to 'loading'
+                                if let RenderTexture::Ready(render_texture_id) = &render_texture {
+                                    if core.used_textures.get(render_texture_id) == Some(&1) {
+                                        core.canvas_textures.insert(texture_id, RenderTexture::Loading(*render_texture_id));
+                                        render_texture = RenderTexture::Loading(*render_texture_id);
+                                    }
+                                }
 
                                 // The texture is updated in a setup action
                                 match render_texture {
