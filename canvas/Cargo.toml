@@ -16,7 +16,7 @@ outline-fonts       = [ "allsorts", "ttf-parser", "flo_stream", "pathfinder_geom
 image-loading       = [ "image" ]
 
 [dependencies]
-flo_curves          = "0.4"
+flo_curves          = "0.5"
 flo_stream          = { version = "0.6", optional = true }
 
 futures             = "0.3"
