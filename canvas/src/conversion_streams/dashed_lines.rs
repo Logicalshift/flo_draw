@@ -220,6 +220,7 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
 
                         // Restore the original path
                         yield_value(NewPath).await;
+                        
                         for (start_point, curves) in current_path.iter() {
                             yield_value(Move(start_point.x() as _, start_point.y() as _)).await;
                             for (Coord2(cp1x, cp1y), Coord2(cp2x, cp2y), Coord2(x, y)) in curves {
