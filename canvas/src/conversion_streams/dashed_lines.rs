@@ -27,6 +27,25 @@ DashPattern:    Clone+Iterator<Item=f64> {
     // We alternate between drawing and not drawing dashes
     let mut draw_dash           = true;
 
+    // Apply the dash pattern offset
+    if pattern_offset > 0.0 {
+        let mut remaining_offset = pattern_offset;
+
+        while remaining_offset > 0.0 {
+            let dash_length     = remaining_length;
+
+            if dash_length > remaining_offset {
+                remaining_length -= remaining_offset;
+                break;
+            } else {
+                remaining_offset    -= dash_length;
+
+                remaining_length    = dash_pattern.next().unwrap();
+                draw_dash           = !draw_dash;
+            }
+        }
+    }
+
     // Generate dashed lines for each path segment
     let mut start_point         = path_in.start_point();
     let mut current_path_start  = start_point;
@@ -80,6 +99,11 @@ DashPattern:    Clone+Iterator<Item=f64> {
 
         // The start point of the next curve in this path is the end point of this one
         start_point = end_point;
+    }
+
+    // If there's any remaining parts of the current path, add them
+    if current_path_points.len() > 0 && draw_dash {
+        output_paths.push(PathOut::from_points(current_path_start, current_path_points));
     }
 
     output_paths
