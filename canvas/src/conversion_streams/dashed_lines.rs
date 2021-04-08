@@ -10,7 +10,7 @@ use std::iter;
 ///
 /// Converts a bezier path to a set of paths by a dash patter
 ///
-pub fn path_to_dashed_lines<PathIn, PathOut, DashPattern>(path_in: &PathIn, dash_pattern: DashPattern) -> Vec<PathOut> 
+pub fn path_to_dashed_lines<PathIn, PathOut, DashPattern>(path_in: &PathIn, dash_pattern: DashPattern, pattern_offset: f64) -> Vec<PathOut> 
 where
 PathIn:         BezierPath,
 PathOut:        BezierPathFactory<Point=PathIn::Point>,
@@ -99,6 +99,7 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
 
         // The dash pattern to apply to the current path
         let mut current_dash_pattern    = None;
+        let mut dash_pattern_offset     = 0.0;
 
         // Stack of stored changes for the paths and dash patterns
         let mut path_stack              = vec![];
@@ -113,6 +114,7 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
                     last_point              = Coord2(0.0, 0.0);
                     start_point             = Coord2(0.0, 0.0);
                     current_dash_pattern    = None;
+                    dash_pattern_offset     = 0.0;
                     path_stack              = vec![];
                     dash_pattern_stack      = vec![];
                 
@@ -171,7 +173,8 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
 
                 NewDashPattern => {
                     // Invalidate the dash pattern
-                    current_dash_pattern = None;
+                    current_dash_pattern    = None;
+                    dash_pattern_offset     = 0.0;
                 }
 
                 DashLength(length) => { 
@@ -182,7 +185,7 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
                 }
 
                 DashOffset(offset) => {
-                    // TODO
+                    dash_pattern_offset = offset;
                 }
 
                 PushState => {
@@ -207,7 +210,7 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
                         yield_value(NewPath).await;
 
                         for subpath in current_path.iter() {
-                            for (start_point, curves) in path_to_dashed_lines::<_, SimpleBezierPath, _>(subpath, dash_pattern.iter().map(|p| (*p) as f64)) {
+                            for (start_point, curves) in path_to_dashed_lines::<_, SimpleBezierPath, _>(subpath, dash_pattern.iter().map(|p| (*p) as f64), dash_pattern_offset as _) {
                                 yield_value(Move(start_point.x() as _, start_point.y() as _)).await;
                                 for (Coord2(cp1x, cp1y), Coord2(cp2x, cp2y), Coord2(x, y)) in curves {
                                     yield_value(BezierCurve((x as _, y as _), (cp1x as _, cp1y as _), (cp2x as _, cp2y as _))).await;
