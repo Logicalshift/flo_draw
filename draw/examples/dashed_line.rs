@@ -16,10 +16,10 @@ pub fn main() {
 
             gc.line_width(8.0);
             gc.new_dash_pattern();
-            gc.dash_length(4.0);
-            gc.dash_length(4.0);
-            gc.dash_length(2.0);
-            gc.dash_length(2.0);
+            gc.dash_length(20.0);
+            gc.dash_length(20.0);
+            gc.dash_length(10.0);
+            gc.dash_length(10.0);
             gc.stroke_color(Color::Rgba(0.0, 0.0, 0.6, 1.0));
 
             gc.new_path();
