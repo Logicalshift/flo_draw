@@ -92,9 +92,120 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
     generator_stream(move |yield_value| async move {
         let mut draw_stream = draw_stream;
 
+        // The current path that will be affected
+        let mut current_path            = vec![];
+        let mut last_point              = Coord2(0.0, 0.0);
+        let mut start_point             = Coord2(0.0, 0.0);
+
+        // The dash pattern to apply to the current path
+        let mut current_dash_pattern    = None;
+
+        // Stack of stored changes for the paths and dash patterns
+        let mut path_stack              = vec![];
+        let mut dash_pattern_stack      = vec![];
+
         while let Some(drawing) = draw_stream.next().await {
-            // Pass the drawing on
-            yield_value(drawing).await;
+            use self::Draw::*;
+
+            match drawing {
+                ClearCanvas(colour) => {
+                    current_path            = vec![];
+                    last_point              = Coord2(0.0, 0.0);
+                    start_point             = Coord2(0.0, 0.0);
+                    current_dash_pattern    = None;
+                    path_stack              = vec![];
+                    dash_pattern_stack      = vec![];
+                
+                    yield_value(ClearCanvas(colour)).await;
+                }
+
+                NewPath => {
+                    current_path    = vec![];
+                    last_point      = Coord2(0.0, 0.0);
+                    start_point     = Coord2(0.0, 0.0);
+
+                    yield_value(NewPath).await;
+                }
+
+                Move(x, y) => {
+                    current_path.push((Coord2(x as _, y as _), vec![]));
+
+                    last_point  = Coord2(x as _, y as _);
+                    start_point = Coord2(x as _, y as _);
+
+                    yield_value(Move(x, y)).await;
+                }
+
+                Line(x, y) => {
+                    let end_point   = Coord2(x as _, y as _);
+                    let cp1         = (end_point - last_point) * (1.0/3.0) + last_point;
+                    let cp2         = (end_point - last_point) * (2.0/3.0) + last_point;
+                    let line        = (cp1, cp2, end_point);
+
+                    current_path.last_mut().map(|path| path.1.push(line));
+
+                    last_point      = Coord2(x as _, y as _);
+
+                    yield_value(Line(x, y)).await;
+                }
+
+                BezierCurve((x, y), (cp1x, cp1y), (cp2x, cp2y)) => {
+                    let curve = (Coord2(cp1x as _, cp1y as _), Coord2(cp2x as _, cp2y as _), Coord2(x as _, y as _));
+                    current_path.last_mut().map(|path| path.1.push(curve));
+
+                    last_point      = Coord2(x as _, y as _);
+
+                    yield_value(BezierCurve((x, y), (cp1x, cp1y), (cp2x, cp2y))).await;
+                }
+
+                ClosePath => {
+                    let end_point   = start_point;
+                    let cp1         = (end_point - last_point) * (1.0/3.0) + last_point;
+                    let cp2         = (end_point - last_point) * (2.0/3.0) + last_point;
+                    let line        = (cp1, cp2, end_point);
+
+                    current_path.last_mut().map(|path| path.1.push(line));
+
+                    yield_value(ClosePath).await;
+                }
+
+                NewDashPattern => {
+                    // Invalidate the dash pattern
+                    current_dash_pattern = None;
+                }
+
+                DashLength(length) => { 
+                    // Update the dash pattern
+                    current_dash_pattern
+                        .get_or_insert_with(|| vec![])
+                        .push(length)
+                }
+
+                DashOffset(offset) => {
+                    // TODO
+                }
+
+                PushState => {
+                    // Store the current dash pattern and path on the stack
+                    path_stack.push(current_path.clone());
+                    dash_pattern_stack.push(current_dash_pattern.clone());
+
+                    yield_value(PushState).await;
+                }
+
+                PopState => {
+                    // Restore the previously stored dash pattern/path
+                    current_path            = path_stack.pop().unwrap_or_else(|| vec![]);
+                    current_dash_pattern    = dash_pattern_stack.pop().unwrap_or(None);
+
+                    yield_value(PopState).await;
+                }
+
+                drawing => {
+                    // Pass the drawing on
+                    yield_value(drawing).await;
+                }
+            }
         }
     })
 }
