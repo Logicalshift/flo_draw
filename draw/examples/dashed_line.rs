@@ -25,8 +25,8 @@ pub fn main() {
                 gc.new_dash_pattern();
                 gc.dash_offset(offset % 60.0);
                 gc.dash_length(20.0);
-                gc.dash_length(20.0);
                 gc.dash_length(10.0);
+                gc.dash_length(20.0);
                 gc.dash_length(10.0);
                 gc.stroke_color(Color::Rgba(0.0, 0.0, 0.6, 1.0));
 
