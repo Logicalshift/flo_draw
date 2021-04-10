@@ -98,7 +98,8 @@ DashPattern:    Clone+Iterator<Item=f64> {
         }
 
         // The start point of the next curve in this path is the end point of this one
-        start_point = end_point;
+        start_point     = end_point;
+        draw_dash       = !draw_dash;
     }
 
     // If there's any remaining parts of the current path, add them
