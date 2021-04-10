@@ -21,8 +21,8 @@ DashPattern:    Clone+Iterator<Item=f64> {
     // Cycle the dash pattern
     let mut dash_pattern        = dash_pattern.cycle();
 
-    // Fetch the first length
-    let mut remaining_length    = dash_pattern.next().unwrap();
+    // Initially there's no dash and no remaining length
+    let mut remaining_length    = 0.0;
 
     // We alternate between drawing and not drawing dashes
     let mut draw_dash           = true;
@@ -54,10 +54,9 @@ DashPattern:    Clone+Iterator<Item=f64> {
     for (cp1, cp2, end_point) in path_in.points() {
         // Create a curve for this section
         let curve                   = Curve::from_points(start_point, (cp1, cp2), end_point);
-
+        
         if remaining_length <= 0.0 {
-            remaining_length        = dash_pattern.next().unwrap();
-            draw_dash               = !draw_dash;
+            remaining_length = 0.1;
         }
 
         // Walk it, starting with the remaining length and then moving on according to the dash pattern
@@ -66,6 +65,9 @@ DashPattern:    Clone+Iterator<Item=f64> {
         let dash_pattern            = iter::once(remaining_length).chain(dash_pattern);
 
         for section in walk_curve_evenly(&curve, 1.0, 0.05).vary_by(dash_pattern) {
+            // Toggle if we show the dash or not
+            draw_dash                       = !draw_dash;
+
             // The copied dash pattern will get the expected length for this dash
             let next_length                 = dash_pattern_copy.next().unwrap();
 
@@ -81,7 +83,7 @@ DashPattern:    Clone+Iterator<Item=f64> {
             current_path_points.push((section_cp1, section_cp2, section_end_point));
 
             // If there's enough space for the whole dash, invert the 'draw_dash' state and add the current path to the result
-            if remaining_length < 0.1 {
+            if remaining_length < 0.01 {
                 // Add this dash to the output
                 if draw_dash {
                     output_paths.push(PathOut::from_points(current_path_start, current_path_points));
@@ -90,16 +92,11 @@ DashPattern:    Clone+Iterator<Item=f64> {
                 // Clear the current path
                 current_path_start  = section_end_point;
                 current_path_points = vec![];
-
-                // Reset for the next dash
-                remaining_length    = 0.0;
-                draw_dash           = !draw_dash;
             }
         }
 
         // The start point of the next curve in this path is the end point of this one
         start_point     = end_point;
-        draw_dash       = !draw_dash;
     }
 
     // If there's any remaining parts of the current path, add them
