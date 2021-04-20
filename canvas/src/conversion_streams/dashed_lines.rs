@@ -54,9 +54,10 @@ DashPattern:    Clone+Iterator<Item=f64> {
     for (cp1, cp2, end_point) in path_in.points() {
         // Create a curve for this section
         let curve                   = Curve::from_points(start_point, (cp1, cp2), end_point);
-        
+
         if remaining_length <= 0.0 {
-            remaining_length = 0.1;
+            remaining_length        = dash_pattern.next().unwrap();
+            draw_dash               = !draw_dash;
         }
 
         // Walk it, starting with the remaining length and then moving on according to the dash pattern
