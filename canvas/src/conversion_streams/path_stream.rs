@@ -12,6 +12,7 @@ use std::mem;
 ///
 /// Attributes used to render a bezier path
 ///
+#[derive(Copy, Clone, Debug)]
 pub enum PathAttribute {
     /// Path is drawn as a stroke with the specified width and colour
     Stroke(f32, Color),
@@ -161,6 +162,9 @@ BezierPath::Point:  Send+Coordinate2D {
 
                         yield_value((next_attributes, next_path)).await;
                     }
+
+                    current_attributes = vec![];
+                    current_components = vec![];
                 }
 
                 Draw::Move(x, y)                                => {
