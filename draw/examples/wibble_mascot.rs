@@ -12,6 +12,47 @@ use std::f64;
 use std::thread;
 use std::time::{Duration, Instant};
 
+fn test_walk<PathIn>(path: &PathIn, step_len: f64) -> Option<()>
+where
+PathIn:         BezierPath,
+PathIn::Point:  Coordinate2D {
+    // The initial point is derived from the first curve
+    let start_point         = path.start_point();
+    let mut path_points     = path.points();
+    let mut current_point   = path_points.next()?;
+    let mut current_curve   = Curve::from_points(start_point, (current_point.0, current_point.1), current_point.2);
+
+    // Process the remaining points to generate the new path
+    loop {
+        // Distort the current curve
+        let sections    = walk_curve_evenly(&current_curve, step_len, step_len / 4.0);
+
+        let mut last_point = current_curve.start_point();
+        for section in sections {
+            let next_point = section.end_point();
+
+            if last_point.distance_to(&next_point) > (step_len * 1.5) && section.original_curve_t_values().1 < 1.0 {
+                println!("Curve error: {}", (last_point.distance_to(&next_point)-step_len).abs());
+                println!("  Curve::from_points(Coord2({}, {}), (Coord2({}, {}), Coord2({}, {})), Coord2({}, {}))",
+                    current_curve.start_point().x(), current_curve.start_point().y(),
+                    current_curve.control_points().0.x(), current_curve.control_points().0.y(),
+                    current_curve.control_points().1.x(), current_curve.control_points().1.y(),
+                    current_curve.end_point().x(), current_curve.end_point().y(),
+                    );
+            }
+
+            last_point = next_point;
+        }
+
+        // Move to the next curve (stopping once we reach the end of the list of the points)
+        let next_start_point    = current_curve.end_point();
+        current_point           = if let Some(point) = path_points.next() { point } else { break; };
+        current_curve           = Curve::from_points(next_start_point, (current_point.0, current_point.1), current_point.2);
+    }
+
+    return Some(());
+}
+
 ///
 /// Demonstrates capturing the paths for a complicated rendering and distorting them with a ripple pattern
 ///
@@ -27,6 +68,14 @@ pub fn main() {
         let render_mascot   = stream::iter(mascot.into_iter());
         let mascot_paths    = drawing_to_attributed_paths::<SimpleBezierPath, _>(render_mascot);
         let mascot_paths    = executor::block_on(async move { mascot_paths.collect::<Vec<_>>().await });
+
+        // Debug: step around the mascot to find flaws in the walking algorithm
+        mascot_paths.iter()
+            .for_each(|(_attributes, path_set)| { 
+                path_set.iter().for_each(|p| {
+                    test_walk(p, 2.0); 
+                });
+            });
 
         // Draw the mascot with a moving distortion
         let start_time = Instant::now();
