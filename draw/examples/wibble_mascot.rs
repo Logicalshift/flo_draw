@@ -48,7 +48,7 @@ pub fn main() {
                         let offset_y    = (distance / (f64::consts::PI*4.0) + ripple).cos() * amplitude * 0.5;
 
                         Coord2(point.x() + offset_x, point.y() + offset_y)
-                    }, 1.0, 0.1).unwrap())
+                    }, 2.0, 1.0).unwrap())
                     .collect::<Vec<_>>()));
 
             // Render the current frame
