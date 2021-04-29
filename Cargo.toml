@@ -14,8 +14,6 @@ flo_render_canvas       = { path = "./render_canvas" }
 flo_render_gl_offscreen = { path = "./render_gl_offscreen" }
 flo_draw                = { path = "./draw" }
 
-flo_curves              = { git = "https://github.com/Logicalshift/flo_curves" }
-
 # allsorts is very slow when built for debug, so packages using flo_draw should consider optimising it even in debug builds
 [profile.dev.package.allsorts]
 opt-level = 2
