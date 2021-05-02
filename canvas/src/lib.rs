@@ -53,6 +53,7 @@ mod gradient;
 mod font_face;
 mod primitives;
 mod transform2d;
+mod draw_stream;
 mod canvas_stream;
 mod conversion_streams;
 
