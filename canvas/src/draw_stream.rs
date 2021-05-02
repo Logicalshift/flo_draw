@@ -5,6 +5,7 @@ use ::desync::*;
 use futures::prelude::*;
 use smallvec::*;
 
+use std::mem;
 use std::sync::*;
 use std::collections::{VecDeque, HashSet, HashMap};
 
@@ -81,6 +82,16 @@ impl DrawStreamCore {
                     }
                 }
             }
+        }
+
+        // Remove any resources in the to_remove set
+        if to_remove.len() > 0 {
+            let old_drawing         = mem::take(&mut self.pending_drawing);
+            self.pending_drawing    = old_drawing.into_iter()
+                .enumerate()
+                .filter(|(idx, _item)| !to_remove.contains(idx))
+                .map(|(_idx, item)| item)
+                .collect();
         }
     }
 
