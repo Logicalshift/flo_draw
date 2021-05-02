@@ -86,7 +86,9 @@ impl Draw {
     ///
     /// Returns the resource that this drawing instruction will change
     ///
-    /// The active resource is the sprite or the layer that is currently selected for drawing
+    /// The active resource is the sprite or the layer that is currently selected for drawing. If a resource is not active,
+    /// and is not part of the source resources for this instruction, then it overwrites any places it was used as a target
+    /// resource.
     ///
     #[inline]
     pub (crate) fn target_resource(&self, active_resource: &DrawResource) -> DrawResource {
