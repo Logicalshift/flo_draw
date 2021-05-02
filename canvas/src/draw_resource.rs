@@ -9,6 +9,7 @@ use smallvec::*;
 ///
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub (crate) enum DrawResource {
+    Frame,
     Canvas,
 
     Layer(LayerId),
@@ -70,6 +71,13 @@ impl Draw {
             DrawText(font_id, _, _, _)              => smallvec![DrawResource::Font(*font_id)],
             FillTexture(texture_id, _, _)           => smallvec![DrawResource::Texture(*texture_id)],
 
+            // Transforms use the 'canvas' resource (setting the height or the identity transform resets any previous transform)
+            IdentityTransform                       |
+            CanvasHeight(_)                         => smallvec![],
+
+            CenterRegion(_, _)                      |
+            MultiplyTransform(_)                    => smallvec![DrawResource::Canvas],
+
             // Most things just affect the active resource
             _                                       => smallvec![*active_resource]
         }
@@ -87,7 +95,8 @@ impl Draw {
         match self {
             StartFrame                  |
             ShowFrame                   |
-            ResetFrame                  |
+            ResetFrame                  => DrawResource::Frame,
+
             IdentityTransform           |
             CanvasHeight(_)             |
             CenterRegion(_, _)          |
