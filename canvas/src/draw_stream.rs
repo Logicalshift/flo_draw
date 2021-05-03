@@ -5,7 +5,6 @@ use ::desync::*;
 use futures::task;
 use futures::task::{Poll, Waker};
 use futures::prelude::*;
-use smallvec::*;
 
 use std::mem;
 use std::pin::*;
@@ -140,6 +139,32 @@ impl DrawStreamCore {
         // If we've processed a clear instruction, clear out any unused resources from the pending list
         if drawing_cleared {
             self.remove_unused_resources();
+        }
+    }
+
+    ///
+    /// Marks this core as closed
+    ///
+    pub fn close(&mut self) {
+        self.closed = true;
+    }
+
+    ///
+    /// Returns the waker for anything listening for changes to the stream
+    ///
+    pub fn take_waker(&mut self) -> Option<Waker> {
+        self.waiting_task.take()
+    }
+}
+
+impl DrawStream {
+    ///
+    /// Creates a draw stream that will read from the specified core
+    ///
+    pub (crate) fn with_core(core: &Arc<Desync<DrawStreamCore>>) -> DrawStream {
+        DrawStream {
+            core:   Arc::clone(core),
+            buffer: VecDeque::new()
         }
     }
 }
