@@ -2,10 +2,13 @@ use crate::draw::*;
 use crate::draw_resource::*;
 
 use ::desync::*;
+use futures::task;
+use futures::task::{Poll, Waker};
 use futures::prelude::*;
 use smallvec::*;
 
 use std::mem;
+use std::pin::*;
 use std::sync::*;
 use std::collections::{VecDeque, HashSet, HashMap};
 
@@ -14,18 +17,27 @@ use std::collections::{VecDeque, HashSet, HashMap};
 ///
 pub (crate) struct DrawStreamCore {
     /// The pending drawing instructions, and the resource that it affects
-    pending_drawing: VecDeque<(DrawResource, Draw)>,
+    pending_drawing: Vec<(DrawResource, Draw)>,
 
     /// The resource that the stream is currently drawing to
     target_resource: DrawResource,
+
+    /// Once the pending drawing has been cleared, the stream should be considered as 'closed'
+    closed: bool,
+
+    /// The waker for this core, if there is one
+    waiting_task: Option<Waker>
 }
 
 ///
 /// A draw stream relays `Draw` instructions from a source such as a `Canvas` or a `DrawContext` as a stream
 ///
 pub struct DrawStream {
-    /// The core of this draw stream
-    core: Arc<Desync<DrawStreamCore>>
+    /// The core of this draw stream (queues up pending drawing instructions)
+    core: Arc<Desync<DrawStreamCore>>,
+
+    /// Drawing instructions buffered from the core
+    buffer: VecDeque<Draw>
 }
 
 impl DrawStreamCore {
@@ -35,8 +47,10 @@ impl DrawStreamCore {
     pub fn new() -> DrawStreamCore {
         // No drawing instructions, and drawing to layer 0 by default
         DrawStreamCore {
-            pending_drawing: VecDeque::new(),
-            target_resource: DrawResource::Layer(LayerId(0))
+            pending_drawing:    vec![],
+            target_resource:    DrawResource::Layer(LayerId(0)),
+            closed:             false,
+            waiting_task:       None
         }
     }
 
@@ -111,7 +125,7 @@ impl DrawStreamCore {
                 Draw::ClearSprite       => { self.clear_resource(self.target_resource); drawing_cleared = true; },
 
                 Draw::ClearCanvas(_)    => { 
-                    self.pending_drawing = VecDeque::new();
+                    self.pending_drawing = vec![];
                     self.target_resource = DrawResource::Layer(LayerId(0));
                 },
 
@@ -120,12 +134,54 @@ impl DrawStreamCore {
 
             // Add to the pending drawing
             let drawing_target = draw.target_resource(&self.target_resource);
-            self.pending_drawing.push_back((drawing_target, draw));
+            self.pending_drawing.push((drawing_target, draw));
         }
 
         // If we've processed a clear instruction, clear out any unused resources from the pending list
         if drawing_cleared {
             self.remove_unused_resources();
+        }
+    }
+}
+
+impl Stream for DrawStream {
+    type Item = Draw;
+
+    fn poll_next(mut self: Pin<&mut Self>, context: &mut task::Context) -> Poll<Option<Draw>> {
+        // Read from the buffer if there are any items waiting
+        if self.buffer.len() > 0 {
+            // Read from the front of the buffer
+            Poll::Ready(self.buffer.pop_front())
+        } else {
+            // Attempt to load the buffer from the core. If it's still empty, create a notification
+            let (new_buffer, closed) = self.core.sync(|core| {
+                if core.pending_drawing.len() == 0 {
+                    // No drawing is waiting, so set the task and return an empty buffer (will be no items in the result)
+                    core.waiting_task = Some(context.waker().clone());
+
+                    (VecDeque::new(), core.closed)
+                } else {
+                    // Convert the buffer for reading (will always be at least one item in the result)
+                    let new_buffer = core.pending_drawing.drain(..)
+                        .map(|(_, draw)| draw)
+                        .collect();
+
+                    (new_buffer, core.closed)
+                }
+            });
+
+            self.buffer = new_buffer;
+
+            if self.buffer.len() > 0 {
+                // Read from the front of the buffer
+                Poll::Ready(self.buffer.pop_front())
+            } else if closed {
+                // No data to read and the core is marked as closed
+                Poll::Ready(None)
+            } else {
+                // No data to read and the waker is set
+                Poll::Pending
+            }
         }
     }
 }
