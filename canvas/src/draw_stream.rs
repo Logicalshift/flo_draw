@@ -120,8 +120,17 @@ impl DrawStreamCore {
                 Draw::Layer(layer_id)   => { self.target_resource = DrawResource::Layer(*layer_id); },
                 Draw::Sprite(sprite_id) => { self.target_resource = DrawResource::Sprite(*sprite_id); },
 
-                Draw::ClearLayer        => { self.clear_resource(self.target_resource); drawing_cleared = true; },
-                Draw::ClearSprite       => { self.clear_resource(self.target_resource); drawing_cleared = true; },
+                Draw::ClearLayer        |
+                Draw::ClearSprite       => { 
+                    self.clear_resource(self.target_resource); 
+                    drawing_cleared = true; 
+                    
+                    match self.target_resource {
+                        DrawResource::Layer(layer_id)   => self.pending_drawing.push((self.target_resource, Draw::Layer(layer_id))),
+                        DrawResource::Sprite(sprite_id) => self.pending_drawing.push((self.target_resource, Draw::Sprite(sprite_id))),
+                        _                               => unimplemented!()
+                    }
+                },
 
                 Draw::ClearCanvas(_)    => { 
                     self.pending_drawing = vec![];
