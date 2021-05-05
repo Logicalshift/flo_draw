@@ -17,6 +17,7 @@ pub (crate) enum DrawResource {
 
     Texture(TextureId),
     Font(FontId),
+    FontSize(FontId),
     
     StrokeLineWidth,
     StrokeLineCap,
@@ -43,6 +44,7 @@ impl Draw {
             // Things that overwrite/create a new value for a resource have no source
             Texture(_, TextureOp::Create(_, _, _))  => smallvec![],
             Font(_, FontOp::UseFontDefinition(_))   => smallvec![],
+            Font(_, FontOp::FontSize(_))            => smallvec![],
 
             LineWidth(_)                            |
             LineWidthPixels(_)                      |
@@ -95,35 +97,36 @@ impl Draw {
         use self::Draw::*;
 
         match self {
-            StartFrame                  |
-            ShowFrame                   |
-            ResetFrame                  => DrawResource::Frame,
+            StartFrame                          |
+            ShowFrame                           |
+            ResetFrame                          => DrawResource::Frame,
 
-            IdentityTransform           |
-            CanvasHeight(_)             |
-            CenterRegion(_, _)          |
-            MultiplyTransform(_)        => DrawResource::Canvas,
+            IdentityTransform                   |
+            CanvasHeight(_)                     |
+            CenterRegion(_, _)                  |
+            MultiplyTransform(_)                => DrawResource::Canvas,
 
-            LineWidth(_)                |
-            LineWidthPixels(_)          => DrawResource::StrokeLineWidth,
-            LineJoin(_)                 => DrawResource::StrokeLineJoin,
-            LineCap(_)                  => DrawResource::StrokeLineCap,
-            NewDashPattern              |
-            DashLength(_)               |
-            DashOffset(_)               => DrawResource::StrokeDash,
-            StrokeColor(_)              => DrawResource::StrokeColor,
+            LineWidth(_)                        |
+            LineWidthPixels(_)                  => DrawResource::StrokeLineWidth,
+            LineJoin(_)                         => DrawResource::StrokeLineJoin,
+            LineCap(_)                          => DrawResource::StrokeLineCap,
+            NewDashPattern                      |
+            DashLength(_)                       |
+            DashOffset(_)                       => DrawResource::StrokeDash,
+            StrokeColor(_)                      => DrawResource::StrokeColor,
 
-            WindingRule(_)              => DrawResource::FillWindingRule,
-            BlendMode(_)                => DrawResource::FillBlend,
-            FillColor(_)                |
-            FillTexture(_, _, _)        => DrawResource::FillColor,
+            WindingRule(_)                      => DrawResource::FillWindingRule,
+            BlendMode(_)                        => DrawResource::FillBlend,
+            FillColor(_)                        |
+            FillTexture(_, _, _)                => DrawResource::FillColor,
 
-            LayerBlend(layer_id, _)     => DrawResource::Layer(*layer_id),
-            Font(font_id, _)            => DrawResource::Font(*font_id),
-            Texture(texture_id, _)      => DrawResource::Texture(*texture_id),
+            LayerBlend(layer_id, _)             => DrawResource::Layer(*layer_id),
+            Font(font_id, FontOp::FontSize(_))  => DrawResource::FontSize(*font_id),
+            Font(font_id, _)                    => DrawResource::Font(*font_id),
+            Texture(texture_id, _)              => DrawResource::Texture(*texture_id),
 
             // By default, everything affects the active resource
-            _                           => *active_resource
+            _                                   => *active_resource
         }
     }
 }
