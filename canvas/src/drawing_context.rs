@@ -122,6 +122,133 @@ mod test {
     }
 
     #[test]
+    fn clear_layer_0_removes_commands() {
+        let (context, stream)   = DrawingContext::new();
+
+        // Draw using a graphics context
+        context.draw(|gc| {
+            gc.new_path();
+            gc.move_to(0.0, 0.0);
+            gc.line_to(10.0, 0.0);
+            gc.line_to(10.0, 10.0);
+            gc.line_to(0.0, 10.0);
+
+            gc.stroke();
+            gc.clear_layer();
+
+            gc.new_path();
+            gc.move_to(10.0, 10.0);
+            gc.fill();
+        });
+
+        // Only the commands after clear_layer should be present
+        let mut stream          = stream;
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
+    }
+
+    #[test]
+    fn clear_layer_only_removes_commands_for_the_current_layer() {
+        let (context, stream)   = DrawingContext::new();
+
+        // Draw using a graphics context
+        context.draw(|gc| {
+            gc.new_path();
+            gc.move_to(20.0, 20.0);
+
+            gc.stroke();
+
+            gc.layer(LayerId(1));
+            gc.new_path();
+            gc.move_to(0.0, 0.0);
+            gc.line_to(10.0, 0.0);
+            gc.line_to(10.0, 10.0);
+            gc.line_to(0.0, 10.0);
+
+            gc.clear_layer();
+
+            gc.new_path();
+            gc.move_to(10.0, 10.0);
+            gc.fill();
+        });
+
+        // Only the commands after clear_layer should be present
+        let mut stream          = stream;
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(20.0, 20.0)));
+            assert!(stream.next().await == Some(Draw::Stroke));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
+    }
+
+    #[test]
+    fn clear_layer_does_not_clear_sprites() {
+        let (context, stream)   = DrawingContext::new();
+
+        // Draw using a graphics context
+        context.draw(|gc| {
+            gc.new_path();
+            gc.move_to(20.0, 20.0);
+
+            gc.stroke();
+
+            gc.layer(LayerId(1));
+            gc.new_path();
+            gc.move_to(0.0, 0.0);
+            gc.line_to(10.0, 0.0);
+            gc.line_to(10.0, 10.0);
+            gc.line_to(0.0, 10.0);
+
+            gc.sprite(SpriteId(1));
+            gc.clear_sprite();
+
+            gc.new_path();
+            gc.move_to(10.0, 10.0);
+            gc.fill();
+
+            gc.layer(LayerId(1));
+            gc.clear_layer();
+
+            gc.fill();
+        });
+
+        // Only the commands after clear_layer should be present
+        let mut stream          = stream;
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(20.0, 20.0)));
+            assert!(stream.next().await == Some(Draw::Stroke));
+
+            assert!(stream.next().await == Some(Draw::Sprite(SpriteId(1))));
+            assert!(stream.next().await == Some(Draw::ClearSprite));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Fill));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
+    }
+
+    #[test]
     fn only_one_font_definition_survives_clear_layer() {
         let (context, stream)   = DrawingContext::new();
         let lato                = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
