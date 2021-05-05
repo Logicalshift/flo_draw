@@ -87,6 +87,7 @@ mod test {
 
     use std::thread::*;
     use std::time::*;
+    use std::mem;
 
     #[test]
     fn follow_drawing_context_stream() {
@@ -139,6 +140,7 @@ mod test {
             gc.fill();
         });
 
+        mem::drop(context);
         let mut stream = stream;
 
         executor::block_on(async {
@@ -174,6 +176,8 @@ mod test {
             gc.clear_layer();
             gc.fill();
         });
+
+        mem::drop(context);
 
         executor::block_on(async {
             let mut stream = stream;
