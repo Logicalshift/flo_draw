@@ -10,21 +10,21 @@ type DrawGraphicsContext = Vec<Draw>;
 ///
 /// A drawing context sends drawing instructions to a `DrawStream`
 ///
-/// `flo_draw` provides two structures for sending drawing instructions to other part of the application. `DrawingContext`
+/// `flo_draw` provides two structures for sending drawing instructions to other part of the application. `DrawingTarget`
 /// is used when the instructions do not need to be retained: eg, when rendering to a window or to an offscreen target.
 ///
 /// See `Canvas` for a structure that can store drawing instructions as well as send them to a target.
 ///
-pub struct DrawingContext {
+pub struct DrawingTarget {
     /// The stream core is where drawing instructions will be sent to
     stream_core: Arc<Desync<DrawStreamCore>>,
 }
 
-impl DrawingContext {
+impl DrawingTarget {
     ///
     /// Creates a new drawing context and a stream that can be used to read the instructions sent to it
     ///
-    pub fn new() -> (DrawingContext, DrawStream) {
+    pub fn new() -> (DrawingTarget, DrawStream) {
         // Create the core
         let core    = Arc::new(Desync::new(DrawStreamCore::new()));
         core.desync(|core| core.add_usage());
@@ -33,7 +33,7 @@ impl DrawingContext {
         let stream  = DrawStream::with_core(&core);
 
         // Create the context
-        let context = DrawingContext {
+        let context = DrawingTarget {
             stream_core: core
         };
 
@@ -78,17 +78,17 @@ impl DrawingContext {
 /// without interfering with each other, so it's possible to design renderers where the rendering
 /// instructions have multiple sources (see the mandelbrot example for an example of where this is used)
 ///
-impl Clone for DrawingContext {
-    fn clone(&self) -> DrawingContext {
+impl Clone for DrawingTarget {
+    fn clone(&self) -> DrawingTarget {
         let new_core = Arc::clone(&self.stream_core);
         new_core.desync(|core| core.add_usage());
-        DrawingContext {
+        DrawingTarget {
             stream_core: new_core
         }
     }
 }
 
-impl Drop for DrawingContext {
+impl Drop for DrawingTarget {
     fn drop(&mut self) {
         let waker = self.stream_core.sync(|core| { 
             if core.finish_usage() == 0 {
@@ -118,7 +118,7 @@ mod test {
 
     #[test]
     fn follow_drawing_context_stream() {
-        let (context, stream) = DrawingContext::new();
+        let (context, stream) = DrawingTarget::new();
 
         // Thread to draw some stuff to the canvas
         spawn(move || {
@@ -150,7 +150,7 @@ mod test {
 
     #[test]
     fn clear_layer_0_removes_commands() {
-        let (context, stream)   = DrawingContext::new();
+        let (context, stream)   = DrawingTarget::new();
 
         // Draw using a graphics context
         context.draw(|gc| {
@@ -183,7 +183,7 @@ mod test {
 
     #[test]
     fn clear_layer_only_removes_commands_for_the_current_layer() {
-        let (context, stream)   = DrawingContext::new();
+        let (context, stream)   = DrawingTarget::new();
 
         // Draw using a graphics context
         context.draw(|gc| {
@@ -225,7 +225,7 @@ mod test {
 
     #[test]
     fn clear_layer_does_not_clear_sprites() {
-        let (context, stream)   = DrawingContext::new();
+        let (context, stream)   = DrawingTarget::new();
 
         // Draw using a graphics context
         context.draw(|gc| {
@@ -277,7 +277,7 @@ mod test {
 
     #[test]
     fn only_one_font_definition_survives_clear_layer() {
-        let (context, stream)   = DrawingContext::new();
+        let (context, stream)   = DrawingTarget::new();
         let lato                = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
 
         context.draw(|gc| {
@@ -312,7 +312,7 @@ mod test {
 
     #[test]
     fn only_one_font_size_survives_clear_layer() {
-        let (context, stream)   = DrawingContext::new();
+        let (context, stream)   = DrawingTarget::new();
         let lato                = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
 
         context.draw(|gc| {

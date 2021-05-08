@@ -20,7 +20,7 @@ impl Ball {
     ///
     /// Generates a new ball
     ///
-    pub fn random(sprite_id: SpriteId, canvas: &DrawingContext) -> Ball {
+    pub fn random(sprite_id: SpriteId, canvas: &DrawingTarget) -> Ball {
         // Decide on how the ball is rendered
         let col     = Color::Hsluv(random::<f32>()*360.0, random::<f32>()*100.0, random::<f32>()*75.0 + 25.0, 1.0);
         let radius  = random::<f64>() * 16.0 + 16.0;
