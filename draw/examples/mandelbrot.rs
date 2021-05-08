@@ -124,7 +124,7 @@ pub fn main() {
 ///
 /// Runs a thread that shows the title 
 ///
-fn show_title(canvas: &Canvas, layer: LayerId, crossfade: Binding<f32>) {
+fn show_title(canvas: &DrawingContext, layer: LayerId, crossfade: Binding<f32>) {
     let canvas = canvas.clone();
 
     thread::Builder::new()
@@ -180,7 +180,7 @@ fn show_title(canvas: &Canvas, layer: LayerId, crossfade: Binding<f32>) {
 ///
 /// Runs a thread that displays some statistics for the current rendering
 ///
-fn show_stats(canvas: &Canvas, layer: LayerId, bounds: BindRef<(Complex<f64>, Complex<f64>)>, crossfade: BindRef<f32>) {
+fn show_stats(canvas: &DrawingContext, layer: LayerId, bounds: BindRef<(Complex<f64>, Complex<f64>)>, crossfade: BindRef<f32>) {
     let canvas = canvas.clone();
 
     thread::Builder::new()
@@ -236,7 +236,7 @@ fn show_stats(canvas: &Canvas, layer: LayerId, bounds: BindRef<(Complex<f64>, Co
 ///
 /// Runs a thread that renders the mandelbrot set whenever the bindings change 
 ///
-fn show_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, width: BindRef<u32>, height: BindRef<u32>, bounds: BindRef<(Complex<f64>, Complex<f64>)>, crossfade: BindRef<f32>, update_num: BindRef<u64>) {
+fn show_mandelbrot(canvas: &DrawingContext, layer: LayerId, texture: TextureId, width: BindRef<u32>, height: BindRef<u32>, bounds: BindRef<(Complex<f64>, Complex<f64>)>, crossfade: BindRef<f32>, update_num: BindRef<u64>) {
     let canvas = canvas.clone();
 
     thread::Builder::new()

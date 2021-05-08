@@ -63,7 +63,7 @@ impl RendererState {
 ///
 /// Creates a canvas that will render to a window
 ///
-pub fn create_canvas_window<'a, TProperties: 'a+FloWindowProperties>(window_properties: TProperties) -> Canvas {
+pub fn create_canvas_window<'a, TProperties: 'a+FloWindowProperties>(window_properties: TProperties) -> DrawingContext {
     let (canvas, _events) = create_canvas_window_with_events(window_properties);
 
     // Dropping the events will stop the window from blocking when they're not handled
@@ -73,11 +73,11 @@ pub fn create_canvas_window<'a, TProperties: 'a+FloWindowProperties>(window_prop
 ///
 /// Creates a canvas that will render to a window, along with a stream of events from that window
 ///
-pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>(window_properties: TProperties) -> (Canvas, impl Clone+Send+Stream<Item=DrawEvent>) {
+pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>(window_properties: TProperties) -> (DrawingContext, impl Clone+Send+Stream<Item=DrawEvent>) {
     let (width, height)     = window_properties.size().get();
 
     // Create the canvas
-    let canvas              = Canvas::new();
+    let (canvas, stream)    = DrawingContext::new();
     canvas.draw(|gc| {
         // Default window layout is 1:1 for the requested window size
         gc.clear_canvas(Color::Rgba(1.0, 1.0, 1.0, 1.0));
@@ -86,7 +86,7 @@ pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>
     });
 
     // Get the stream of drawing instructions (and gather them into batches)
-    let canvas_stream       = canvas.stream();
+    let canvas_stream       = stream;
     let canvas_stream       = drawing_without_dashed_lines(canvas_stream);
     let canvas_stream       = drawing_with_laid_out_text(canvas_stream);
     let canvas_stream       = drawing_with_text_as_paths(canvas_stream);
