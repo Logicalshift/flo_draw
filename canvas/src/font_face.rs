@@ -18,8 +18,10 @@ use std::sync::*;
 use std::borrow::{Cow};
 
 /// allsorts table provider implementation based on a unsafe (based on lifetime) pointer to a TTF parser face
+#[cfg(feature = "outline-fonts")]
 pub struct CanvasTableProvider<'a>(&'a ttf_parser::Face<'a>);
 
+#[cfg(feature = "outline-fonts")] 
 impl<'b> FontTableProvider for CanvasTableProvider<'b> {
     fn table_data<'a>(&'a self, tag: u32) -> Result<Option<Cow<'a, [u8]>>, ParseError> {
         let table_data = self.0.table_data(ttf_parser::Tag::from_bytes(&tag.to_be_bytes()));
@@ -69,7 +71,7 @@ impl CanvasFontFace {
     }
 
     #[cfg(not(feature = "outline-fonts"))]
-    fn from_pinned(data: Arc<Pin<Box<[u8]>>>) -> CanvasFontFace {
+    fn from_pinned(data: Arc<Pin<Box<[u8]>>>, font_index: u32) -> CanvasFontFace {
         // Generate the font face
         CanvasFontFace {
             data:       data,
