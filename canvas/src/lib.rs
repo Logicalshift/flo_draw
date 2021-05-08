@@ -56,7 +56,7 @@ mod transform2d;
 mod draw_stream;
 mod canvas_stream;
 mod draw_resource;
-mod drawing_context;
+mod drawing_target;
 mod conversion_streams;
 
 #[cfg(feature = "outline-fonts")] mod font_line_layout;
@@ -74,7 +74,7 @@ pub use self::font_face::*;
 pub use self::primitives::*;
 pub use self::transform2d::*;
 pub use self::draw_stream::*;
-pub use self::drawing_context::*;
+pub use self::drawing_target::*;
 pub use self::conversion_streams::*;
 
 #[cfg(feature = "outline-fonts")] pub use self::font_line_layout::*;
