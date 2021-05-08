@@ -21,6 +21,9 @@ pub (crate) struct DrawStreamCore {
     /// The resource that the stream is currently drawing to
     target_resource: DrawResource,
 
+    /// The number of writers that this stream core has
+    usage_count: usize,
+
     /// Once the pending drawing has been cleared, the stream should be considered as 'closed'
     closed: bool,
 
@@ -48,9 +51,28 @@ impl DrawStreamCore {
         DrawStreamCore {
             pending_drawing:    vec![],
             target_resource:    DrawResource::Layer(LayerId(0)),
+            usage_count:        0,
             closed:             false,
             waiting_task:       None
         }
+    }
+
+    ///
+    /// Increases the usage count of this core
+    ///
+    pub fn add_usage(&mut self) {
+        self.usage_count += 1;
+    }
+
+    ///
+    /// Decreases the usage count of this core and returns the new usage count
+    ///
+    pub fn finish_usage(&mut self) -> usize {
+        if self.usage_count > 0 {
+            self.usage_count -= 1;
+        }
+
+        self.usage_count
     }
 
     ///

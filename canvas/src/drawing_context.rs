@@ -10,8 +10,10 @@ type DrawGraphicsContext = Vec<Draw>;
 ///
 /// A drawing context sends drawing instructions to a `DrawStream`
 ///
-/// Unlike `Canvas` - which performs a similar function - `DrawingContext` does not keep the drawing instructions
-/// permanently in memory, it just forwards them as fast as possible to a drawing target.
+/// `flo_draw` provides two structures for sending drawing instructions to other part of the application. `DrawingContext`
+/// is used when the instructions do not need to be retained: eg, when rendering to a window or to an offscreen target.
+///
+/// See `Canvas` for a structure that can store drawing instructions as well as send them to a target.
 ///
 pub struct DrawingContext {
     /// The stream core is where drawing instructions will be sent to
@@ -25,6 +27,7 @@ impl DrawingContext {
     pub fn new() -> (DrawingContext, DrawStream) {
         // Create the core
         let core    = Arc::new(Desync::new(DrawStreamCore::new()));
+        core.desync(|core| core.add_usage());
 
         // Create the stream
         let stream  = DrawStream::with_core(&core);
@@ -68,9 +71,33 @@ impl DrawingContext {
     }
 }
 
+///
+/// A drawing context can be cloned in order to create multiple sources for a single drawing target.
+///
+/// This is particularly useful when combined with layers: multiple threads can draw to different layers
+/// without interfering with each other, so it's possible to design renderers where the rendering
+/// instructions have multiple sources (see the mandelbrot example for an example of where this is used)
+///
+impl Clone for DrawingContext {
+    fn clone(&self) -> DrawingContext {
+        let new_core = Arc::clone(&self.stream_core);
+        new_core.desync(|core| core.add_usage());
+        DrawingContext {
+            stream_core: new_core
+        }
+    }
+}
+
 impl Drop for DrawingContext {
     fn drop(&mut self) {
-        let waker = self.stream_core.sync(|core| { core.close(); core.take_waker() });
+        let waker = self.stream_core.sync(|core| { 
+            if core.finish_usage() == 0 {
+                core.close(); 
+                core.take_waker() 
+            } else {
+                None
+            }
+        });
         waker.map(|waker| waker.wake());
     }
 }

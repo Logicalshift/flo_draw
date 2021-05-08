@@ -308,7 +308,7 @@ fn show_mandelbrot(canvas: &DrawingContext, layer: LayerId, texture: TextureId, 
 ///
 /// Draws the mandelbrot set within a specified set of bounds
 ///
-fn draw_mandelbrot(canvas: &Canvas, layer: LayerId, texture: TextureId, (min, max): (Complex<f64>, Complex<f64>), width: u32, height: u32, alpha: &BindRef<f32>, update_num: &BindRef<u64>) {
+fn draw_mandelbrot(canvas: &DrawingContext, layer: LayerId, texture: TextureId, (min, max): (Complex<f64>, Complex<f64>), width: u32, height: u32, alpha: &BindRef<f32>, update_num: &BindRef<u64>) {
     // Create a vector for the pixels in the mandelbrot set
     let mut pixels  = vec![0u8; (width*height*4) as usize];
     let mut pos     = 0;
