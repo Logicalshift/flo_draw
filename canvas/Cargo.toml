@@ -12,12 +12,12 @@ description         = "Library for describing graphics context drawing actions w
 include             = [ "Cargo.toml", "src/**/*", "test_data/**/*", "README.md" ]
 
 [features]
-outline-fonts       = [ "allsorts", "ttf-parser", "flo_stream", "pathfinder_geometry" ]
+outline-fonts       = [ "allsorts", "ttf-parser", "pathfinder_geometry" ]
 image-loading       = [ "image" ]
 
 [dependencies]
 flo_curves          = "0.5"
-flo_stream          = { version = "0.6", optional = true }
+flo_stream          = "0.6"
 
 futures             = "0.3"
 desync              = "0.7"
