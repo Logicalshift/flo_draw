@@ -1,6 +1,5 @@
 use super::draw::*;
 use super::context::*;
-use super::texture::*;
 
 use flo_curves::*;
 use flo_curves::arc;
@@ -9,6 +8,7 @@ use flo_curves::bezier::path::{BezierPath};
 
 use std::iter;
 
+#[cfg(feature = "image-loading")] use super::texture::*;
 #[cfg(feature = "image-loading")] use image;
 #[cfg(feature = "image-loading")] use image::io::Reader as ImageReader;
 #[cfg(feature = "image-loading")] use std::io;

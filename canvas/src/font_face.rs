@@ -6,16 +6,17 @@
 #[cfg(feature = "outline-fonts")] use allsorts::tables::{FontTableProvider};
 #[cfg(feature = "outline-fonts")] use ttf_parser;
 
+#[cfg(feature = "outline-fonts")] use std::slice;
+#[cfg(feature = "outline-fonts")] use std::borrow::{Cow};
+
 use serde::de::{Deserialize, Deserializer, Visitor, SeqAccess, MapAccess};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use serde::de;
 
 use std::marker::{PhantomPinned};
 use std::fmt;
-use std::slice;
 use std::pin::*;
 use std::sync::*;
-use std::borrow::{Cow};
 
 /// allsorts table provider implementation based on a unsafe (based on lifetime) pointer to a TTF parser face
 #[cfg(feature = "outline-fonts")]
@@ -71,7 +72,7 @@ impl CanvasFontFace {
     }
 
     #[cfg(not(feature = "outline-fonts"))]
-    fn from_pinned(data: Arc<Pin<Box<[u8]>>>, font_index: u32) -> CanvasFontFace {
+    fn from_pinned(data: Arc<Pin<Box<[u8]>>>, _font_index: u32) -> CanvasFontFace {
         // Generate the font face
         CanvasFontFace {
             data:       data,
