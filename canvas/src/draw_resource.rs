@@ -38,7 +38,7 @@ impl Draw {
     /// The active resource is the sprite or the layer that is currently selected for drawing
     ///
     #[inline]
-    pub (crate) fn source_resource(&self, active_resource: &DrawResource) -> SmallVec<[DrawResource; 6]> {
+    pub (crate) fn source_resource(&self, active_resource: &DrawResource) -> SmallVec<[DrawResource; 7]> {
         use self::Draw::*;
 
         match self {
@@ -65,15 +65,17 @@ impl Draw {
             DashOffset(_)                           => smallvec![DrawResource::StrokeDash],
 
             // The fill and stroke operations depend on multiple resources, so their resource is 'special'
-            Fill                                    => smallvec![DrawResource::FillWindingRule, DrawResource::FillBlend, DrawResource::FillColor],
-            Stroke                                  => smallvec![DrawResource::StrokeLineWidth, DrawResource::StrokeLineCap, DrawResource::StrokeLineJoin, DrawResource::StrokeDash, DrawResource::StrokeColor, DrawResource::FillBlend],
+            Fill                                    => smallvec![DrawResource::CanvasTransform, DrawResource::FillWindingRule, DrawResource::FillBlend, DrawResource::FillColor],
+            Stroke                                  => smallvec![DrawResource::CanvasTransform, DrawResource::StrokeLineWidth, DrawResource::StrokeLineCap, DrawResource::StrokeLineJoin, DrawResource::StrokeDash, DrawResource::StrokeColor, DrawResource::FillBlend],
 
             // Texture and font operations generally alter the existing resource so they have a dependency
             Texture(texture_id, _)                  => smallvec![DrawResource::Texture(*texture_id)],
             Font(font_id, _)                        => smallvec![DrawResource::Font(*font_id)],
 
+            DrawSprite(sprite_id)                   => smallvec![DrawResource::CanvasTransform, DrawResource::Sprite(*sprite_id)],
+
             // DrawText and FillTexture use the corresponding resource
-            DrawText(font_id, _, _, _)              => smallvec![DrawResource::Font(*font_id)],
+            DrawText(font_id, _, _, _)              => smallvec![DrawResource::CanvasTransform, DrawResource::Font(*font_id), DrawResource::FontSize(*font_id)],
             FillTexture(texture_id, _, _)           => smallvec![DrawResource::Texture(*texture_id)],
 
             // Transforms use the 'canvas' resource (setting the height or the identity transform resets any previous transform)

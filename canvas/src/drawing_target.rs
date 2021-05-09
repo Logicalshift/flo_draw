@@ -232,6 +232,45 @@ mod test {
     }
 
     #[test]
+    fn canvas_transforms_are_used_by_drawing_actions() {
+        let (context, stream)   = DrawingTarget::new();
+
+        // Draw using a graphics context
+        context.draw(|gc| {
+            gc.layer(LayerId(0));
+            gc.canvas_height(1000.0);
+
+            gc.new_path();
+            gc.move_to(0.0, 0.0);
+            gc.stroke();
+
+            gc.layer(LayerId(1));
+            gc.canvas_height(2000.0);
+
+            gc.new_path();
+            gc.move_to(10.0, 10.0);
+            gc.fill();
+
+            gc.clear_layer();
+        });
+
+        // Only the commands after clear_layer should be present
+        let mut stream          = stream;
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
+            assert!(stream.next().await == Some(Draw::CanvasHeight(1000.0)));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Stroke));
+            assert!(stream.next().await == Some(Draw::CanvasHeight(2000.0)));
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
+        });
+    }
+
+    #[test]
     fn clear_layer_only_removes_commands_for_the_current_layer() {
         let (context, stream)   = DrawingTarget::new();
 
