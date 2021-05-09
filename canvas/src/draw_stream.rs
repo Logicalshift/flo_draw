@@ -76,6 +76,45 @@ impl DrawStreamCore {
     }
 
     ///
+    /// On restore, rewinds the canvas to before the last store operation
+    ///
+    pub fn rewind_to_last_store(&mut self) {
+        let mut last_store = None;
+
+        // Search backwards in the drawing commands for the last store command
+        let mut state_stack_depth = 0;
+
+        for draw_index in (0..self.pending_drawing.len()).rev() {
+            match self.pending_drawing[draw_index] {
+                // Commands that might cause the store/restore to not undo perfectly break the sequence
+                (_, Draw::Clip)         => break,
+                (_, Draw::Unclip)       => break,
+
+                // If the state stack has a pop for every push then we can remove these requests too
+                // TODO: this has a bug in that if the final event is a 'push' instead of a 'pop'
+                // then it will mistakenly believe the states can be removed
+                (_, Draw::PushState)    => { state_stack_depth += 1; },
+                (_, Draw::PopState)     => { state_stack_depth -= 1; },
+
+                // If we find no sequence breaks and a store, this is where we want to rewind to
+                (_, Draw::Store)        => {
+                    if state_stack_depth == 0 {
+                        last_store = Some(draw_index+1);
+                    }
+                    break;
+                },
+
+                _               => ()
+            };
+        }
+
+        // Remove everything up to the last store position
+        if let Some(last_store) = last_store {
+            self.pending_drawing.truncate(last_store);
+        }
+    }
+
+    ///
     /// Removes all references that change the specified resource
     ///
     pub fn clear_resource(&mut self, resource: DrawResource) {
