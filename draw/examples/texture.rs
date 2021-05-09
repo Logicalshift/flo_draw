@@ -13,7 +13,7 @@ pub fn main() {
         let flo_bytes: &[u8] = include_bytes!["flo_and_carrot.png"];
 
         // Create a window
-        let canvas = create_canvas_window("Flo with carrot");
+        let canvas = create_drawing_window("Flo with carrot");
 
         // Render a triangle to it
         canvas.draw(|gc| {

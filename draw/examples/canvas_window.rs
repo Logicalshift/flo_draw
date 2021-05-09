@@ -8,7 +8,7 @@ pub fn main() {
     // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
     with_2d_graphics(|| {
         // Create a window
-        let canvas = create_canvas_window("Canvas window");
+        let canvas = create_drawing_window("Canvas window");
 
         // Render a triangle to it
         canvas.draw(|gc| {

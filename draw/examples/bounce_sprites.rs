@@ -77,7 +77,7 @@ pub fn main() {
     // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
     with_2d_graphics(|| {
         // Create a window with a canvas to draw on
-        let canvas = create_canvas_window("Bouncing sprites");
+        let canvas = create_drawing_window("Bouncing sprites");
 
         // Clear the canvas to set a background colour
         canvas.draw(|gc| {

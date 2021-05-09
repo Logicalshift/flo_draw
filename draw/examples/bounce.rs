@@ -59,7 +59,7 @@ pub fn main() {
     // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
     with_2d_graphics(|| {
         // Create a window with a canvas to draw on
-        let canvas = create_canvas_window("Bouncing balls");
+        let canvas = create_drawing_window("Bouncing balls");
 
         // Generate some random balls
         let mut balls = (0..256).into_iter().map(|_| Ball::random()).collect::<Vec<_>>();

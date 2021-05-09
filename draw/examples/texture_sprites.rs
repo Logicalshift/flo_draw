@@ -66,7 +66,7 @@ pub fn main() {
         let flo_bytes: &[u8] = include_bytes!["flo_and_carrot.png"];
 
         // Create a window with a canvas to draw on
-        let canvas = create_canvas_window("Bouncing sprites");
+        let canvas = create_drawing_window("Bouncing sprites");
 
         // Clear the canvas to set a background colour
         let mut flo_w = 0;

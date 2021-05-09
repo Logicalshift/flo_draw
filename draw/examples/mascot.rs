@@ -10,7 +10,7 @@ pub fn main() {
         let mascot = decode_drawing(MASCOT.chars()).collect::<Result<Vec<Draw>, _>>().unwrap();
 
         // Render to a window
-        let canvas = create_canvas_window("Flo");
+        let canvas = create_drawing_window("Flo");
         canvas.draw(|gc| {
             gc.draw_list(mascot);
         });

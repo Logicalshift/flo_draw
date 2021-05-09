@@ -7,7 +7,7 @@ use flo_draw::canvas::*;
 pub fn main() {
     with_2d_graphics(|| {
         // Create a window
-        let canvas      = create_canvas_window("Clipping demonstration");
+        let canvas      = create_drawing_window("Clipping demonstration");
 
         // Clip a large path using a circular clipping path
         canvas.draw(|gc| {

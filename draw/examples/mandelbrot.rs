@@ -18,7 +18,7 @@ use std::time::{Instant, Duration};
 ///
 pub fn main() {
     with_2d_graphics(|| {
-        let (canvas, events)    = create_canvas_window_with_events("Mandelbrot set");
+        let (canvas, events)    = create_drawing_window_with_events("Mandelbrot set");
         let lato                = CanvasFontFace::from_slice(include_bytes!("Lato-Regular.ttf"));
         let lato_bold           = CanvasFontFace::from_slice(include_bytes!("Lato-Bold.ttf"));
 

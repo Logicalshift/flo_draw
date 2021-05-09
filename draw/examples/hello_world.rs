@@ -11,7 +11,7 @@ pub fn main() {
         let lato        = CanvasFontFace::from_slice(include_bytes!("Lato-Regular.ttf"));
 
         // Create a window
-        let canvas      = create_canvas_window("Hello");
+        let canvas      = create_drawing_window("Hello");
 
         let hello_size  = measure_text(&lato, "Hello, World", 100.0);
         let (min, max)  = hello_size.inner_bounds;

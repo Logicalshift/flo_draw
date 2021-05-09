@@ -29,8 +29,8 @@
 //! # Getting started
 //!
 //! Start your application by calling `with_2d_graphics(|| {})` with a function to perform whatever drawing operations you want. 
-//! In that function, `let canvas = create_canvas_window("Canvas window");` will create a window with a 2D graphics canvas that 
-//! you can draw on using `canvas.draw(|gc| { });`. Finally, `create_canvas_window_with_events()` is a way to create a graphics
+//! In that function, `let canvas = create_drawing_window("Canvas window");` will create a window with a 2D graphics canvas that 
+//! you can draw on using `canvas.draw(|gc| { });`. Finally, `create_drawing_window_with_events()` is a way to create a graphics
 //! window that supplies events allowing interactivity. 
 //!
 //! The documentation for [flo_canvas](canvas) shows what can be done in a drawing routine.

@@ -21,7 +21,7 @@ pub fn main() {
         let lato        = CanvasFontFace::from_slice(include_bytes!("Lato-Regular.ttf"));
 
         // Create a window
-        let canvas      = create_canvas_window("Wibble");
+        let canvas      = create_drawing_window("Wibble");
 
         // Measure the text
         let text_string = "Wibble";

@@ -12,10 +12,10 @@ use std::time::{Duration};
 pub fn main() {
     with_2d_graphics(|| {
         // Create the first window, with the mascot in it
-        let canvas = create_canvas_window("Mirror windows");
+        let canvas = create_drawing_window("Mirror windows");
 
         // Create a duplicate window from the same canvas (gluting creates windows on top of each other, annoyingly)
-        let _ = create_canvas_window_from_stream(canvas.stream().ready_chunks(10000), "Second window (might need to drag to see the other window)");
+        let _ = create_drawing_window_from_stream(canvas.stream().ready_chunks(10000), "Second window (might need to drag to see the other window)");
 
         // Draw to both windows at once
         let mut p = 0.0f32;

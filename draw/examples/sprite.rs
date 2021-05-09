@@ -7,7 +7,7 @@ use flo_canvas::*;
 pub fn main() {
     with_2d_graphics(|| {
         // Create a window
-        let canvas = create_canvas_window("Basic sprite rendering");
+        let canvas = create_drawing_window("Basic sprite rendering");
 
         // Sprites are a way to rapidly repeat a set of drawing instructions
         canvas.draw(|gc| {

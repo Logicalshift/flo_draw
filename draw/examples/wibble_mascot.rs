@@ -21,7 +21,7 @@ pub fn main() {
         let mascot      = decode_drawing(MASCOT.chars()).collect::<Result<Vec<Draw>, _>>().unwrap();
 
         // Create a window
-        let canvas      = create_canvas_window("Wibbling mascot");
+        let canvas      = create_drawing_window("Wibbling mascot");
 
         // Convert the mascot to a set of paths
         let render_mascot   = stream::iter(mascot.into_iter());

@@ -10,7 +10,7 @@ use std::time::{Duration};
 pub fn main() {
     with_2d_graphics(|| {
         // Create a window
-        let canvas      = create_canvas_window("Dashed line");
+        let canvas      = create_drawing_window("Dashed line");
 
         let mut offset = 0.0;
         loop {

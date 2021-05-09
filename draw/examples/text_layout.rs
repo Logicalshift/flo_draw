@@ -12,7 +12,7 @@ pub fn main() {
         let lato_bold   = CanvasFontFace::from_slice(include_bytes!("Lato-Bold.ttf"));
 
         // Create a window
-        let canvas      = create_canvas_window("Text layout example");
+        let canvas      = create_drawing_window("Text layout example");
 
         // Various text layout demonstrations
         canvas.draw(|gc| {

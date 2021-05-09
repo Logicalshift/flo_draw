@@ -19,7 +19,7 @@ pub fn main() {
     with_2d_graphics(|| {
         executor::block_on(async {
             // Set up
-            let (canvas, events) = create_canvas_window_with_events("Vectoroids");
+            let (canvas, events) = create_drawing_window_with_events("Vectoroids");
 
             // Create a tick generator
             let tick_stream = tick_stream();

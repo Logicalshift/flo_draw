@@ -18,7 +18,7 @@ pub fn main() {
         window_properties.title     = BindRef::from(title.clone());
 
         // Create a window with these properties
-        let canvas = create_canvas_window(window_properties);
+        let canvas = create_drawing_window(window_properties);
 
         // Render a triangle to it
         canvas.draw(|gc| {

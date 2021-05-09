@@ -7,7 +7,7 @@ use futures::executor;
 ///
 /// Demonstrates how to follow the mouse cursor around by tracking events
 ///
-/// `create_canvas_window_with_events` works like `create_canvas_window` except it will also return a stream of events
+/// `create_drawing_window_with_events` works like `create_drawing_window` except it will also return a stream of events
 /// for that window. We can track these by monitoring the stream in a futures block created with `executor::block_on`.
 ///
 /// In this case, we watch for pointer events and render a circle to track where the mouse is on a new layer. This 
@@ -21,7 +21,7 @@ pub fn main() {
     // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
     with_2d_graphics(|| {
         // Create a window and an event queue
-        let (canvas, events) = create_canvas_window_with_events("Mouse tracking");
+        let (canvas, events) = create_drawing_window_with_events("Mouse tracking");
 
         // Render the window background on layer 0 (just a triangle)
         canvas.draw(|gc| {
