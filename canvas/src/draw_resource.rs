@@ -70,7 +70,8 @@ impl Draw {
 
             // Texture and font operations generally alter the existing resource so they have a dependency
             Texture(texture_id, _)                  => smallvec![DrawResource::Texture(*texture_id)],
-            Font(font_id, _)                        => smallvec![DrawResource::Font(*font_id)],
+            Font(font_id, FontOp::LayoutText(_))    |
+            Font(font_id, FontOp::DrawGlyphs(_))    => smallvec![DrawResource::Font(*font_id), DrawResource::FontSize(*font_id), DrawResource::CanvasTransform, DrawResource::FillWindingRule, DrawResource::FillBlend, DrawResource::FillColor],
 
             DrawSprite(sprite_id)                   => smallvec![DrawResource::CanvasTransform, DrawResource::Sprite(*sprite_id)],
 
