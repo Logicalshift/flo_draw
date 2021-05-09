@@ -2,13 +2,14 @@ use crate::draw::*;
 use crate::draw_stream::*;
 
 use ::desync::*;
+use futures::prelude::*;
 
 use std::sync::*;
 
 type DrawGraphicsContext = Vec<Draw>;
 
 ///
-/// A drawing context sends drawing instructions to a `DrawStream`
+/// A drawing target sends drawing instructions to a `DrawStream`
 ///
 /// `flo_draw` provides two structures for sending drawing instructions to other part of the application. `DrawingTarget`
 /// is used when the instructions do not need to be retained: eg, when rendering to a window or to an offscreen target.
@@ -22,7 +23,7 @@ pub struct DrawingTarget {
 
 impl DrawingTarget {
     ///
-    /// Creates a new drawing context and a stream that can be used to read the instructions sent to it
+    /// Creates a new drawing target and a stream that can be used to read the instructions sent to it
     ///
     pub fn new() -> (DrawingTarget, DrawStream) {
         // Create the core
@@ -41,7 +42,7 @@ impl DrawingTarget {
     }
 
     ///
-    /// Sends some drawing instructions to this context
+    /// Sends some drawing instructions to this target
     ///
     pub fn write<Drawing: Send+IntoIterator<Item=Draw>>(&self, drawing: Drawing) {
         // Write the drawing instructions to the pending queue
@@ -55,7 +56,7 @@ impl DrawingTarget {
     }
 
     ///
-    /// Provides a way to draw on this context via a graphics context
+    /// Provides a way to draw on this target via a graphics context
     ///
     pub fn draw<FnAction>(&self, action: FnAction)
     where FnAction: Send+FnOnce(&mut DrawGraphicsContext) -> () {
@@ -68,6 +69,20 @@ impl DrawingTarget {
 
         // Send the actions to the core
         self.write(draw_actions);
+    }
+
+    ///
+    /// Sends the results of a future to this target
+    ///
+    pub fn receive<DrawStream: Unpin+Stream<Item=Draw>>(self, actions: DrawStream) -> impl Future {
+        async move {
+            let mut actions = actions.ready_chunks(1000);
+            let target      = self;
+
+            while let Some(drawing) = actions.next().await {
+                target.write(drawing);
+            }
+        }
     }
 }
 
@@ -109,7 +124,6 @@ mod test {
     use crate::context::*;
     use crate::font_face::*;
 
-    use futures::prelude::*;
     use futures::executor;
 
     use std::thread::*;
