@@ -61,23 +61,65 @@ impl RendererState {
 }
 
 ///
-/// Creates a canvas that will render to a window
+/// Creates a drawing target that will render to a window
 ///
 pub fn create_drawing_window<'a, TProperties: 'a+FloWindowProperties>(window_properties: TProperties) -> DrawingTarget {
-    let (canvas, _events) = create_drawing_window_with_events(window_properties);
+    let (target, _events) = create_drawing_window_with_events(window_properties);
+
+    // Dropping the events will stop the window from blocking when they're not handled
+    target
+}
+
+///
+/// Creates a drawing target that will render to a window, along with a stream of events from that window
+///
+pub fn create_drawing_window_with_events<'a, TProperties: 'a+FloWindowProperties>(window_properties: TProperties) -> (DrawingTarget, impl Clone+Send+Stream<Item=DrawEvent>) {
+    let (width, height)     = window_properties.size().get();
+
+    // Create the canvas
+    let (target, stream)    = DrawingTarget::new();
+    target.draw(|gc| {
+        // Default window layout is 1:1 for the requested window size
+        gc.clear_canvas(Color::Rgba(1.0, 1.0, 1.0, 1.0));
+        gc.canvas_height(height as _);
+        gc.center_region(0.0, 0.0, width as _, height as _);
+    });
+
+    // Get the stream of drawing instructions (and gather them into batches)
+    let target_stream       = stream;
+    let target_stream       = drawing_without_dashed_lines(target_stream);
+    let target_stream       = drawing_with_laid_out_text(target_stream);
+    let target_stream       = drawing_with_text_as_paths(target_stream);
+    let target_stream       = BatchedStream { stream: Some(target_stream), frame_count: 0, waiting: vec![] };
+
+    // Create the events stream
+    let events              = create_drawing_window_from_stream(target_stream, window_properties);
+
+    // Return the result
+    (target, events)
+}
+
+///
+/// Creates a canvas that will render to a window
+///
+/// Canvases differ from drawing targets in that they store the vector representation of what they're drawing, and
+/// can send their rendering to multiple targets if necessary
+///
+pub fn create_canvas_window<'a, TProperties: 'a+FloWindowProperties>(window_properties: TProperties) -> Canvas {
+    let (canvas, _events) = create_canvas_window_with_events(window_properties);
 
     // Dropping the events will stop the window from blocking when they're not handled
     canvas
 }
 
 ///
-/// Creates a canvas that will render to a window, along with a stream of events from that window
+/// Creates a drawing target that will render to a window, along with a stream of events from that window
 ///
-pub fn create_drawing_window_with_events<'a, TProperties: 'a+FloWindowProperties>(window_properties: TProperties) -> (DrawingTarget, impl Clone+Send+Stream<Item=DrawEvent>) {
+pub fn create_canvas_window_with_events<'a, TProperties: 'a+FloWindowProperties>(window_properties: TProperties) -> (Canvas, impl Clone+Send+Stream<Item=DrawEvent>) {
     let (width, height)     = window_properties.size().get();
 
     // Create the canvas
-    let (canvas, stream)    = DrawingTarget::new();
+    let canvas              = Canvas::new();
     canvas.draw(|gc| {
         // Default window layout is 1:1 for the requested window size
         gc.clear_canvas(Color::Rgba(1.0, 1.0, 1.0, 1.0));
@@ -86,7 +128,7 @@ pub fn create_drawing_window_with_events<'a, TProperties: 'a+FloWindowProperties
     });
 
     // Get the stream of drawing instructions (and gather them into batches)
-    let canvas_stream       = stream;
+    let canvas_stream       = canvas.stream();
     let canvas_stream       = drawing_without_dashed_lines(canvas_stream);
     let canvas_stream       = drawing_with_laid_out_text(canvas_stream);
     let canvas_stream       = drawing_with_text_as_paths(canvas_stream);
@@ -100,7 +142,7 @@ pub fn create_drawing_window_with_events<'a, TProperties: 'a+FloWindowProperties
 }
 
 ///
-/// Creates a canvas window that will render a stream of drawing instructions
+/// Creates a drawing window that will render a stream of drawing instructions
 ///
 pub fn create_drawing_window_from_stream<'a, DrawStream: 'static+Send+Unpin+Stream<Item=Vec<Draw>>, TProperties: 'a+FloWindowProperties>(canvas_stream: DrawStream, window_properties: TProperties) -> impl Clone+Send+Stream<Item=DrawEvent> {
     // Create a static copy of the window properties bindings
