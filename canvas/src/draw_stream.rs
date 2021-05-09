@@ -155,7 +155,7 @@ impl DrawStreamCore {
                 },
 
                 Draw::ClearCanvas(_)    => { 
-                    self.pending_drawing = vec![];
+                    self.pending_drawing.retain(|(tgt, _action)| tgt == &DrawResource::Frame);
                     self.target_resource = DrawResource::Layer(LayerId(0));
                 },
 
