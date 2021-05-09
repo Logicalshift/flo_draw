@@ -80,13 +80,23 @@ impl DrawStreamCore {
     ///
     pub fn clear_resource(&mut self, resource: DrawResource) {
         // The indexes that are unused
-        let mut unused_indexes  = HashSet::new();
+        let mut unused_indexes      = HashSet::new();
 
         // The indexes that we're tracking as unused
-        let mut maybe_unused    = vec![];
+        let mut maybe_unused        = vec![];
+
+        // The index where the resource was last selected
+        let mut last_selection_idx  = None;
 
         // Analyse the pending drawing for any place the resource is targeted, and for any place it's used
         for (idx, (target_resource, draw)) in self.pending_drawing.iter().enumerate() {
+            match draw {
+                Draw::Sprite(sprite_id) => { if resource == DrawResource::Sprite(*sprite_id)    { last_selection_idx = Some(idx); } },
+                Draw::Layer(layer_id)   => { if resource == DrawResource::Layer(*layer_id)      { last_selection_idx = Some(idx); } }
+
+                _ => {}
+            }
+
             if target_resource == &resource {
                 // If this re-declares this resource, then none of the 'maybe unused' indexes are actually unused
                 if draw.source_resource(target_resource).len() == 0 {
@@ -96,7 +106,8 @@ impl DrawStreamCore {
                 // Add to the maybe unused list
                 maybe_unused.push(idx);
             } else if draw.uses_resource(&resource) {
-                // If the resource is used, then these indexes should not be cleared
+                // If the resource is used, then these indexes and the last selection index should not be cleared
+                last_selection_idx.take().map(|idx| unused_indexes.remove(&idx));
                 maybe_unused = vec![];
             }
         }
