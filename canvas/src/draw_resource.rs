@@ -11,6 +11,7 @@ use smallvec::*;
 pub (crate) enum DrawResource {
     Frame,
     Canvas,
+    CanvasTransform,
 
     Layer(LayerId),
     Sprite(SpriteId),
@@ -80,7 +81,7 @@ impl Draw {
             CanvasHeight(_)                         => smallvec![],
 
             CenterRegion(_, _)                      |
-            MultiplyTransform(_)                    => smallvec![DrawResource::Canvas],
+            MultiplyTransform(_)                    => smallvec![DrawResource::CanvasTransform],
 
             // Most things just affect the active resource
             _                                       => smallvec![*active_resource]
@@ -103,11 +104,11 @@ impl Draw {
             ShowFrame                           |
             ResetFrame                          => DrawResource::Frame,
 
-            ClearCanvas(_)                      |
+            ClearCanvas(_)                      => DrawResource::Canvas,
             IdentityTransform                   |
             CanvasHeight(_)                     |
             CenterRegion(_, _)                  |
-            MultiplyTransform(_)                => DrawResource::Canvas,
+            MultiplyTransform(_)                => DrawResource::CanvasTransform,
 
             LineWidth(_)                        |
             LineWidthPixels(_)                  => DrawResource::StrokeLineWidth,
