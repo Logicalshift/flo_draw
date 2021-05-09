@@ -79,7 +79,40 @@ impl DrawStreamCore {
     /// Removes all references that change the specified resource
     ///
     pub fn clear_resource(&mut self, resource: DrawResource) {
-        self.pending_drawing.retain(|(drawing_resource, _)| drawing_resource != &resource);
+        // The indexes that are unused
+        let mut unused_indexes  = HashSet::new();
+
+        // The indexes that we're tracking as unused
+        let mut maybe_unused    = vec![];
+
+        // Analyse the pending drawing for any place the resource is targeted, and for any place it's used
+        for (idx, (target_resource, draw)) in self.pending_drawing.iter().enumerate() {
+            if target_resource == &resource {
+                // If this re-declares this resource, then none of the 'maybe unused' indexes are actually unused
+                if draw.source_resource(target_resource).len() == 0 {
+                    unused_indexes.extend(maybe_unused.drain(..));
+                }
+
+                // Add to the maybe unused list
+                maybe_unused.push(idx);
+            } else if draw.uses_resource(&resource) {
+                // If the resource is used, then these indexes should not be cleared
+                maybe_unused = vec![];
+            }
+        }
+
+        // Anything that hasn't been used yet won't be used
+        unused_indexes.extend(maybe_unused);
+
+        // Remove any item in the unused index list
+        if unused_indexes.len() > 0 {
+            let old_drawing         = mem::take(&mut self.pending_drawing);
+            self.pending_drawing    = old_drawing.into_iter()
+                .enumerate()
+                .filter(|(idx, _item)| !unused_indexes.contains(idx))
+                .map(|(_idx, item)| item)
+                .collect();
+        }
     }
 
     ///
@@ -144,7 +177,7 @@ impl DrawStreamCore {
 
                 Draw::ClearLayer        |
                 Draw::ClearSprite       => { 
-                    self.clear_resource(self.target_resource); 
+                    self.clear_resource(self.target_resource);
                     drawing_cleared = true; 
                     
                     match self.target_resource {
