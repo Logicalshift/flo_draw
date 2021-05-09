@@ -121,6 +121,7 @@ impl Drop for DrawingTarget {
 mod test {
     use super::*;
     use crate::font::*;
+    use crate::color::*;
     use crate::context::*;
     use crate::font_face::*;
 
@@ -187,6 +188,41 @@ mod test {
 
         executor::block_on(async {
             assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
+    }
+
+    #[test]
+    fn clear_layer_0_leaves_clear_canvas() {
+        let (context, stream)   = DrawingTarget::new();
+
+        // Draw using a graphics context
+        context.draw(|gc| {
+            gc.clear_canvas(Color::Rgba(0.0, 0.0, 0.0, 0.0));
+            gc.new_path();
+            gc.move_to(0.0, 0.0);
+            gc.line_to(10.0, 0.0);
+            gc.line_to(10.0, 10.0);
+            gc.line_to(0.0, 10.0);
+
+            gc.stroke();
+            gc.clear_layer();
+
+            gc.new_path();
+            gc.move_to(10.0, 10.0);
+            gc.fill();
+        });
+
+        // Only the commands after clear_layer should be present
+        let mut stream          = stream;
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
             assert!(stream.next().await == Some(Draw::ClearLayer));
             assert!(stream.next().await == Some(Draw::NewPath));
