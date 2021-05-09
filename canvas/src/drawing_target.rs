@@ -436,4 +436,91 @@ mod test {
             assert!(stream.next().await == Some(Draw::Fill));
         });
     }
+
+    #[test]
+    fn sprite_definition_cleared_if_not_in_use() {
+        let (context, stream)   = DrawingTarget::new();
+
+        context.draw(|gc| {
+            gc.sprite(SpriteId(0));
+            gc.clear_sprite();
+
+            gc.new_path();
+            gc.fill();
+
+            gc.sprite(SpriteId(0));
+            gc.clear_sprite();
+
+            gc.new_path();
+            gc.fill();
+
+            gc.layer(LayerId(0));
+            gc.draw_sprite(SpriteId(0));
+        });
+
+        mem::drop(context);
+
+        executor::block_on(async {
+            let mut stream = stream;
+
+            assert!(stream.next().await == Some(Draw::StartFrame));
+
+            assert!(stream.next().await == Some(Draw::Sprite(SpriteId(0))));
+            assert!(stream.next().await == Some(Draw::ClearSprite));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Fill));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
+            assert!(stream.next().await == Some(Draw::DrawSprite(SpriteId(0))));
+        });
+    }
+
+    #[test]
+    fn sprite_definition_survives_if_in_use() {
+        let (context, stream)   = DrawingTarget::new();
+
+        context.draw(|gc| {
+            gc.sprite(SpriteId(0));
+            gc.clear_sprite();
+
+            gc.new_path();
+            gc.fill();
+
+            gc.layer(LayerId(0));
+            gc.draw_sprite(SpriteId(0));
+
+            gc.sprite(SpriteId(0));
+            gc.clear_sprite();
+
+            gc.new_path();
+            gc.fill();
+
+            gc.layer(LayerId(0));
+            gc.draw_sprite(SpriteId(0));
+        });
+
+        mem::drop(context);
+
+        executor::block_on(async {
+            let mut stream = stream;
+
+            assert!(stream.next().await == Some(Draw::StartFrame));
+
+            assert!(stream.next().await == Some(Draw::Sprite(SpriteId(0))));
+            assert!(stream.next().await == Some(Draw::ClearSprite));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Fill));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
+            assert!(stream.next().await == Some(Draw::DrawSprite(SpriteId(0))));
+
+            assert!(stream.next().await == Some(Draw::Sprite(SpriteId(0))));
+            assert!(stream.next().await == Some(Draw::ClearSprite));
+            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Fill));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
+            assert!(stream.next().await == Some(Draw::DrawSprite(SpriteId(0))));
+        });
+    }
 }
