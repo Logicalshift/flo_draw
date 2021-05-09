@@ -42,6 +42,8 @@ impl Draw {
 
         match self {
             // Things that overwrite/create a new value for a resource have no source
+            ClearCanvas(_)                          => smallvec![],
+
             Texture(_, TextureOp::Create(_, _, _))  => smallvec![],
             Font(_, FontOp::UseFontDefinition(_))   => smallvec![],
             Font(_, FontOp::FontSize(_))            => smallvec![],
@@ -101,6 +103,7 @@ impl Draw {
             ShowFrame                           |
             ResetFrame                          => DrawResource::Frame,
 
+            ClearCanvas(_)                      |
             IdentityTransform                   |
             CanvasHeight(_)                     |
             CenterRegion(_, _)                  |
