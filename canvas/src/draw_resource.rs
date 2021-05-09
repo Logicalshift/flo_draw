@@ -33,17 +33,60 @@ pub (crate) enum DrawResource {
 
 impl Draw {
     ///
+    /// Returns true if the draw step uses the specified resource in addition to the active target resource
+    ///
+    #[inline]
+    pub (crate) fn uses_resource(&self, resource: &DrawResource) -> bool {
+        use self::Draw::*;
+
+        match self {
+            DashLength(_)                           |
+            DashOffset(_)                           => resource == &DrawResource::StrokeDash,
+
+            // The fill and stroke operations depend on multiple resources, so their resource is 'special'
+            Fill                                    => match resource { DrawResource::CanvasTransform | DrawResource::FillWindingRule | DrawResource::FillBlend | DrawResource::FillColor => true, _ => false },
+            Stroke                                  => match resource { DrawResource::CanvasTransform | DrawResource::StrokeLineWidth | DrawResource::StrokeLineCap | DrawResource::StrokeLineJoin | DrawResource::StrokeDash | DrawResource::StrokeColor | DrawResource::FillBlend => true, _ => false },
+
+            // Texture and font operations generally alter the existing resource so they have a dependency
+            Texture(texture_id, _)                  => resource == &DrawResource::Texture(*texture_id),
+            Font(font_id, FontOp::LayoutText(_))    |
+            Font(font_id, FontOp::DrawGlyphs(_))    => match resource { 
+                DrawResource::Font(resource_font_id) | DrawResource::FontSize(resource_font_id) => font_id == resource_font_id,
+                DrawResource::CanvasTransform | DrawResource::FillWindingRule | DrawResource::FillBlend | DrawResource::FillColor => true,
+                _ => false
+            },
+
+            DrawSprite(sprite_id)                   => resource == &DrawResource::CanvasTransform || resource == &DrawResource::Sprite(*sprite_id),
+
+            // DrawText and FillTexture use the corresponding resource
+            DrawText(font_id, _, _, _)              => match resource {
+                DrawResource::Font(resource_font_id) | DrawResource::FontSize(resource_font_id) => font_id == resource_font_id,
+                DrawResource::CanvasTransform => true,
+                _ => false 
+            },
+            FillTexture(texture_id, _, _)           => resource == &DrawResource::Texture(*texture_id),
+
+            // Transforms use the 'canvas' resource (setting the height or the identity transform resets any previous transform)
+            CenterRegion(_, _)                      |
+            MultiplyTransform(_)                    => resource == &DrawResource::CanvasTransform,
+
+            _                                       => false
+        }
+    }
+
+    ///
     /// Returns the resource that this drawing instruction requires to operate
     ///
     /// The active resource is the sprite or the layer that is currently selected for drawing
     ///
     #[inline]
-    pub (crate) fn source_resource(&self, active_resource: &DrawResource) -> SmallVec<[DrawResource; 7]> {
+    pub (crate) fn source_resource(&self, active_resource: &DrawResource) -> SmallVec<[DrawResource; 8]> {
         use self::Draw::*;
 
         match self {
             // Things that overwrite/create a new value for a resource have no source
             ClearCanvas(_)                          => smallvec![],
+            ClearSprite                             => smallvec![],
 
             Texture(_, TextureOp::Create(_, _, _))  => smallvec![],
             Font(_, FontOp::UseFontDefinition(_))   => smallvec![],
@@ -65,18 +108,18 @@ impl Draw {
             DashOffset(_)                           => smallvec![DrawResource::StrokeDash],
 
             // The fill and stroke operations depend on multiple resources, so their resource is 'special'
-            Fill                                    => smallvec![DrawResource::CanvasTransform, DrawResource::FillWindingRule, DrawResource::FillBlend, DrawResource::FillColor],
-            Stroke                                  => smallvec![DrawResource::CanvasTransform, DrawResource::StrokeLineWidth, DrawResource::StrokeLineCap, DrawResource::StrokeLineJoin, DrawResource::StrokeDash, DrawResource::StrokeColor, DrawResource::FillBlend],
+            Fill                                    => smallvec![*active_resource, DrawResource::CanvasTransform, DrawResource::FillWindingRule, DrawResource::FillBlend, DrawResource::FillColor],
+            Stroke                                  => smallvec![*active_resource, DrawResource::CanvasTransform, DrawResource::StrokeLineWidth, DrawResource::StrokeLineCap, DrawResource::StrokeLineJoin, DrawResource::StrokeDash, DrawResource::StrokeColor, DrawResource::FillBlend],
 
             // Texture and font operations generally alter the existing resource so they have a dependency
             Texture(texture_id, _)                  => smallvec![DrawResource::Texture(*texture_id)],
             Font(font_id, FontOp::LayoutText(_))    |
-            Font(font_id, FontOp::DrawGlyphs(_))    => smallvec![DrawResource::Font(*font_id), DrawResource::FontSize(*font_id), DrawResource::CanvasTransform, DrawResource::FillWindingRule, DrawResource::FillBlend, DrawResource::FillColor],
+            Font(font_id, FontOp::DrawGlyphs(_))    => smallvec![*active_resource, DrawResource::Font(*font_id), DrawResource::FontSize(*font_id), DrawResource::CanvasTransform, DrawResource::FillWindingRule, DrawResource::FillBlend, DrawResource::FillColor],
 
             DrawSprite(sprite_id)                   => smallvec![DrawResource::CanvasTransform, DrawResource::Sprite(*sprite_id)],
 
             // DrawText and FillTexture use the corresponding resource
-            DrawText(font_id, _, _, _)              => smallvec![DrawResource::CanvasTransform, DrawResource::Font(*font_id), DrawResource::FontSize(*font_id)],
+            DrawText(font_id, _, _, _)              => smallvec![*active_resource, DrawResource::CanvasTransform, DrawResource::Font(*font_id), DrawResource::FontSize(*font_id)],
             FillTexture(texture_id, _, _)           => smallvec![DrawResource::Texture(*texture_id)],
 
             // Transforms use the 'canvas' resource (setting the height or the identity transform resets any previous transform)
