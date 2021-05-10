@@ -13,6 +13,7 @@ use std::mem;
 
 use desync::{Desync};
 use futures::{Stream};
+use futures::task::{Waker};
 
 ///
 /// The core of the canvas data structure
@@ -31,7 +32,7 @@ impl CanvasCore {
     ///
     /// Writes to the canvas core
     ///
-    pub fn write(&mut self, actions: Vec<Draw>) {
+    pub fn write(&mut self, actions: Vec<Draw>) -> Vec<Waker> {
         // Write to the main core
         self.main_core.write(actions.iter().cloned());
 
@@ -62,10 +63,8 @@ impl CanvasCore {
                 .collect();
         }
 
-        // Notify the wakers
-        wakers.into_iter()
-            .flatten()
-            .for_each(|waker| waker.wake());
+        // Return the wakers
+        wakers.into_iter().flatten().collect()
     }
 }
 
@@ -109,7 +108,8 @@ impl Canvas {
     pub fn write(&self, to_draw: Vec<Draw>) {
         // Only draw if there are any drawing commands
         if to_draw.len() != 0 {
-            self.core.desync(move |core| core.write(to_draw));
+            let wakers = self.core.sync(move |core| core.write(to_draw));
+            wakers.into_iter().for_each(|waker| waker.wake());
         }
     }
 
@@ -144,6 +144,9 @@ impl Canvas {
 
             // Store the stream in the core so future notifications get sent there
             core.streams.push(Arc::downgrade(&add_stream));
+
+            // Wake the stream if it's not awake
+            add_stream.sync(|stream| stream.take_waker().map(|waker| waker.wake()));
         });
 
         // Return the new stream
@@ -263,7 +266,8 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
 
 impl<'a> Drop for CanvasGraphicsContext<'a> {
     fn drop(&mut self) {
-        self.core.write(mem::take(&mut self.pending));
+        let wakers = self.core.write(mem::take(&mut self.pending));
+        wakers.into_iter().for_each(|waker| waker.wake());
     }
 }
 
