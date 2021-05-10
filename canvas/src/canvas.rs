@@ -607,6 +607,7 @@ mod test {
             assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
             assert!(stream.next().await == Some(Draw::Fill));
@@ -649,6 +650,7 @@ mod test {
             assert!(stream.next().await == Some(Draw::Stroke));
 
             assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
             assert!(stream.next().await == Some(Draw::Fill));
@@ -698,11 +700,13 @@ mod test {
             assert!(stream.next().await == Some(Draw::Stroke));
 
             assert!(stream.next().await == Some(Draw::Sprite(SpriteId(1))));
+            assert!(stream.next().await == Some(Draw::ClearSprite));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
             assert!(stream.next().await == Some(Draw::Fill));
 
             assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
             assert!(stream.next().await == Some(Draw::Fill));
         });
     }
@@ -733,6 +737,7 @@ mod test {
             assert!(stream.next().await == Some(Draw::Font(FontId(1), FontOp::FontSize(12.0))));
 
             assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
             assert!(stream.next().await == Some(Draw::Fill));
         });
     }
@@ -767,6 +772,7 @@ mod test {
             assert!(stream.next().await == Some(Draw::Font(FontId(1), FontOp::FontSize(12.0))));
 
             assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
             assert!(stream.next().await == Some(Draw::Fill));
         });
     }
@@ -803,6 +809,7 @@ mod test {
             assert!(stream.next().await == Some(Draw::Font(FontId(1), FontOp::FontSize(12.0))));
 
             assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
             assert!(stream.next().await == Some(Draw::Fill));
         });
     }
