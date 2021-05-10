@@ -269,6 +269,15 @@ impl DrawStreamCore {
     pub fn take_waker(&mut self) -> Option<Waker> {
         self.waiting_task.take()
     }
+
+    ///
+    /// Returns the pending drawing operations in this core
+    ///
+    pub fn get_pending_drawing<'a>(&'a self) -> impl 'a+Iterator<Item=Draw> {
+        self.pending_drawing.iter()
+            .map(|(_, drawing)| drawing)
+            .cloned()
+    }
 }
 
 impl DrawStream {

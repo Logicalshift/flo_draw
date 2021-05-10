@@ -1,38 +1,72 @@
-use super::draw::*;
-use super::font::*;
-use super::color::*;
-use super::context::*;
-use super::texture::*;
-use super::font_face::*;
-use super::transform2d::*;
-use super::canvas_stream::*;
+use crate::draw::*;
+use crate::font::*;
+use crate::color::*;
+use crate::context::*;
+use crate::texture::*;
+use crate::font_face::*;
+use crate::transform2d::*;
+use crate::draw_stream::*;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashSet};
 use std::sync::*;
 use std::mem;
 
 use desync::{Desync};
 use futures::{Stream};
 
-/// Used to represent the layer or sprite that a drawing operation is for
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum LayerOrSpriteId {
-    Layer(LayerId),
-    Sprite(SpriteId)
-}
-
 ///
-/// The core structure used to store details of a canvas
+/// The core of the canvas data structure
 ///
 struct CanvasCore {
-    /// What was drawn since the last clear command was sent to this canvas (and the layer that it's on)
-    drawing_since_last_clear: Vec<(LayerOrSpriteId, Draw)>,
+    /// The main core contains the drawing instructions in this canvas: while DrawStreamCore is usually used for streaming
+    /// it can also be used to store the actions long-term (where the features that strip out unused actions and resources
+    /// are particularly useful)
+    main_core: DrawStreamCore,
 
-    /// The current layer that we're drawing on
-    current_layer: LayerOrSpriteId,
+    /// Each stream created from the canvas has its own core (weak so we don't track the stream after it's been dropped)
+    streams: Vec<Weak<Desync<DrawStreamCore>>>
+}
 
-    // Tasks to notify next time we add to the canvas
-    pending_streams: Vec<Arc<CanvasStream>>,
+impl CanvasCore {
+    ///
+    /// Writes to the canvas core
+    ///
+    pub fn write(&mut self, actions: Vec<Draw>) {
+        // Write to the main core
+        self.main_core.write(actions.iter().cloned());
+
+        // Write to each of the streams
+        let mut remove_idx  = vec![];
+        let mut wakers      = vec![];
+
+        for (idx, stream) in self.streams.iter().enumerate() {
+            if let Some(stream) = stream.upgrade() {
+                wakers.push(stream.sync(|stream| {
+                    stream.write(actions.iter().cloned());
+                    stream.take_waker()
+                }));
+            } else {
+                remove_idx.push(idx);
+            }
+        }
+
+        // Tidy any streams that are no longer listening
+        if remove_idx.len() > 0 {
+            let remove_idx  = remove_idx.into_iter().collect::<HashSet<_>>();
+            let old_streams = mem::take(&mut self.streams);
+
+            self.streams    = old_streams.into_iter()
+                .enumerate()
+                .filter(|(idx, _item)| !remove_idx.contains(idx))
+                .map(|(_idx, item)| item)
+                .collect();
+        }
+
+        // Notify the wakers
+        wakers.into_iter()
+            .flatten()
+            .for_each(|waker| waker.wake());
+    }
 }
 
 ///
@@ -46,317 +80,9 @@ struct CanvasCore {
 /// Canvases maintain a copy of enough of the drawing instructions sent to them to reproduce the
 /// rendering on a new render target. 
 ///
-#[derive(Clone)]
 pub struct Canvas {
-    /// The core is shared amongst the canvas streams as well as used by the canvas itself
+    /// The canvas represents its own data using a draw stream core that's never used to generate a stream
     core: Arc<Desync<CanvasCore>>
-}
-
-impl CanvasCore {
-    ///
-    /// On restore, rewinds the canvas to before the last store operation
-    ///
-    fn rewind_to_last_store(&mut self) {
-        let mut last_store = None;
-
-        // Search backwards in the drawing commands for the last store command
-        let mut state_stack_depth = 0;
-
-        for draw_index in (0..self.drawing_since_last_clear.len()).rev() {
-            match self.drawing_since_last_clear[draw_index] {
-                // Commands that might cause the store/restore to not undo perfectly break the sequence
-                (_, Draw::Clip)         => break,
-                (_, Draw::Unclip)       => break,
-
-                // If the state stack has a pop for every push then we can remove these requests too
-                // TODO: this has a bug in that if the final event is a 'push' instead of a 'pop'
-                // then it will mistakenly believe the states can be removed
-                (_, Draw::PushState)    => { state_stack_depth += 1; },
-                (_, Draw::PopState)     => { state_stack_depth -= 1; },
-
-                // If we find no sequence breaks and a store, this is where we want to rewind to
-                (_, Draw::Store)        => {
-                    if state_stack_depth == 0 {
-                        last_store = Some(draw_index+1);
-                    }
-                    break;
-                },
-
-                _               => ()
-            };
-        }
-
-        // Remove everything up to the last store position
-        if let Some(last_store) = last_store {
-            self.drawing_since_last_clear.truncate(last_store);
-        }
-    }
-
-    ///
-    /// Removes all of the drawing for the specified layer
-    ///
-    /// (Except for ClearCanvas)
-    ///
-    fn clear_layer(&mut self, layer_id: LayerOrSpriteId) {
-        // Take the old drawing from this object
-        let mut old_drawing = vec![];
-        mem::swap(&mut self.drawing_since_last_clear, &mut old_drawing);
-
-        // Create a new drawing by filtering all of the actions for the current layer
-        let new_drawing = old_drawing.into_iter()
-            .filter(|drawing| {
-                match drawing {
-                    // Don't filter operations that affect the canvas state as a whole
-                    (_, Draw::ClearCanvas(_))                           => true,
-                    (_, Draw::LayerBlend(_, _))                         => true,
-                    (_, Draw::StartFrame)                               => true,
-                    (_, Draw::ShowFrame)                                => true,
-                    (_, Draw::ResetFrame)                               => true,
-                    (_, Draw::Font(_, FontOp::UseFontDefinition(_)))    => true,
-                    (_, Draw::Font(_, FontOp::FontSize(_)))             => true,
-                    (_, Draw::Texture(_, _))                            => true,
-
-                    // Don't filter anything that doesn't affect the cleared layer
-                    (layer, _)                                          => *layer != layer_id
-                }
-            })
-            .collect();
-
-        // This becomes the new drawing for this layer
-        self.drawing_since_last_clear = new_drawing;
-
-        self.remove_unused_resources();
-    }
-
-    ///
-    /// Iterates through the drawing since last clear and removes any resource operations that
-    /// are replaced before they are used
-    ///
-    /// For example, if a font is declared and then redeclared with no usages, this will remove
-    /// it from the drawing
-    ///
-    fn remove_unused_resources(&mut self) {
-        let mut font_declarations       = HashMap::new();
-        let mut font_size_declarations  = HashMap::new();
-        let mut unused_indexes          = HashSet::new();
-
-        let mut texture_declarations    = HashMap::new();
-
-        // Find the indexes of the unused font operations
-        for (idx, drawing) in self.drawing_since_last_clear.iter().enumerate() {
-            match drawing {
-                (_, Draw::Font(font_id, FontOp::UseFontDefinition(_))) => {
-                    // If the font has an unused declaration, remove it from the list
-                    if let Some(last_idx) = font_declarations.get(&font_id) {
-                        unused_indexes.insert(*last_idx);
-                    }
-
-                    // This becomes the new last definition of this font
-                    font_declarations.insert(font_id, idx);
-                },
-
-                (_, Draw::Font(font_id, FontOp::FontSize(_))) => {
-                    // If the font has an unused declaration, remove it from the list
-                    if let Some(last_idx) = font_size_declarations.get(&font_id) {
-                        unused_indexes.insert(*last_idx);
-                    }
-
-                    // This becomes the new last definition of this font's size
-                    font_size_declarations.insert(font_id, idx);
-                }
-
-                (_, Draw::Font(font_id, _)) => {
-                    // Other fontops count as using the font
-                    font_declarations.remove(font_id);
-                    font_size_declarations.remove(font_id);
-                }
-
-                (_, Draw::DrawText(font_id, _, _, _)) => {
-                    // As does drawing text with the font
-                    font_declarations.remove(font_id);
-                    font_size_declarations.remove(font_id);
-                }
-
-                (_, Draw::Texture(texture_id, TextureOp::Create(_, _, _))) => {
-                    // Any unused texture definition goes into the unused list
-                    texture_declarations.remove(&texture_id)
-                        .map(|unused_declarations| unused_indexes.extend(unused_declarations));
-
-                    // Start of a new texture declaration
-                    texture_declarations.entry(texture_id)
-                        .or_insert_with(|| vec![])
-                        .push(idx);
-                }
-
-                (_, Draw::Texture(texture_id, TextureOp::SetBytes(_, _, _, _, _))) => {
-                    // Setting the texture bytes counts as part of a texture declaration
-                    texture_declarations.entry(texture_id)
-                        .or_insert_with(|| vec![])
-                        .push(idx);
-                }
-
-                (_, Draw::Texture(texture_id, TextureOp::FillTransparency(_))) => {
-                    texture_declarations.entry(texture_id)
-                        .or_insert_with(|| vec![])
-                        .push(idx);
-                }
-
-                (_, Draw::Texture(texture_id, TextureOp::Free)) => {
-                    // Any unused texture definition goes into the unused list
-                    texture_declarations.remove(&texture_id)
-                        .map(|unused_declarations| unused_indexes.extend(unused_declarations));
-                }
-
-                (_, Draw::FillTexture(texture_id, _, _)) => {
-                    // Counts as using the texture
-                    texture_declarations.remove(&texture_id);
-                }
-
-                _ => {}
-            }
-        }
-
-        if unused_indexes.len() > 0 {
-            // Remove any unused drawing item by filtering the drawing
-            let drawing                     = mem::take(&mut self.drawing_since_last_clear);
-            self.drawing_since_last_clear   = drawing.into_iter()
-                .enumerate()
-                .filter(|(idx, _)| !unused_indexes.contains(idx))
-                .map(|(_, item)| item)
-                .collect();
-        }
-    }
-
-    ///
-    /// Writes some drawing commands to this core
-    ///
-    fn write(&mut self, to_draw: Vec<Draw>) {
-        // Build up the list of new drawing commands. new_drawing are the commands sent to the streams, and we build up a representation of the layer in drawing_since_last_clear
-        let mut new_drawing     = vec![Draw::StartFrame];
-        let mut clear_pending   = false;
-
-        // Process the drawing commands
-        to_draw.into_iter().for_each(|draw| {
-            match &draw {
-                Draw::ClearCanvas(_) => {
-                    // Clearing the canvas empties the command list and updates the clear count
-                    self.drawing_since_last_clear   = vec![(LayerOrSpriteId::Layer(LayerId(0)), Draw::ResetFrame)];
-                    self.current_layer              = LayerOrSpriteId::Layer(LayerId(0));
-                    clear_pending                   = true;
-
-                    new_drawing                     = vec![Draw::StartFrame];
-
-                    // Start the new drawing with the 'clear' command
-                    self.drawing_since_last_clear.push((LayerOrSpriteId::Layer(LayerId(0)), draw.clone()));
-                },
-
-                Draw::Restore => {
-                    // Have to push the restore in case it can't be cleared
-                    self.drawing_since_last_clear.push((self.current_layer, draw.clone()));
-
-                    // On a 'restore' command we clear out everything since the 'store' if we can (so we don't build a backlog)
-                    self.rewind_to_last_store();
-                },
-
-                Draw::FreeStoredBuffer => {
-                    // If the last operation was a store, pop it
-                    if let Some(&(_, Draw::Store)) = self.drawing_since_last_clear.last() {
-                        // Store and immediate free = just free
-                        self.drawing_since_last_clear.pop();
-                    } else {
-                        // Something else: the free becomes part of the drawing log (this is often inefficient)
-                        self.drawing_since_last_clear.push((self.current_layer, draw.clone()));
-                    }
-                },
-
-                Draw::Layer(new_layer) => {
-                    let new_layer       = LayerOrSpriteId::Layer(*new_layer);
-                    self.current_layer  = new_layer;
-                    self.drawing_since_last_clear.push((new_layer, draw.clone()));
-                },
-
-                Draw::Sprite(new_sprite) => {
-                    let new_sprite      = LayerOrSpriteId::Sprite(*new_sprite);
-                    self.current_layer  = new_sprite;
-                    self.drawing_since_last_clear.push((new_sprite, draw.clone()));
-                },
-
-                Draw::ClearLayer => {
-                    // Remove all of the commands for the current layer, replacing them with just a switch to this layer
-                    let current_layer = self.current_layer;
-
-                    match current_layer {
-                        LayerOrSpriteId::Layer(layer_id) => {
-                            self.clear_layer(current_layer);
-                            self.drawing_since_last_clear.push((current_layer, Draw::Layer(layer_id)));
-                        }
-
-                        _ => { }
-                    }
-                },
-
-                Draw::ClearSprite => {
-                    // Remove all of the commands for the current layer, replacing them with just a switch to this layer
-                    let current_layer = self.current_layer;
-
-                    match current_layer {
-                        LayerOrSpriteId::Sprite(sprite_id) => {
-                            self.clear_layer(current_layer);
-                            self.drawing_since_last_clear.push((current_layer, Draw::Sprite(sprite_id)));
-                        }
-
-                        _ => { }
-                    }
-                },
-
-                Draw::ShowFrame => {
-                    // Search for a 'StartFrame' instruction in the existing drawing and remove it
-                    for idx in (0..self.drawing_since_last_clear.len()).into_iter().rev() {
-                        if let (_, Draw::StartFrame) = &self.drawing_since_last_clear[idx] {
-                            self.drawing_since_last_clear.remove(idx);
-                            break;
-                        }
-                    }
-                },
-
-                Draw::ResetFrame => {
-                    // Remove any frame instructions in the current drawing
-                    self.drawing_since_last_clear.retain(|item| {
-                        match item {
-                            (_, Draw::StartFrame)   => false,
-                            (_, Draw::ShowFrame)    => false,
-                            _                       => true
-                        }
-                    });
-                },
-
-                // Default is to add to the current drawing
-                _ => self.drawing_since_last_clear.push((self.current_layer, draw.clone()))
-            }
-
-            // Send everything to the streams
-            new_drawing.push(draw);
-        });
-
-        // Send the new drawing commands to the streams
-        let mut to_remove = vec![];
-
-        // All these commands should be rendered as a single frame
-        new_drawing.push(Draw::ShowFrame);
-
-        for stream_index in 0..self.pending_streams.len() {
-            // Send commands to this stream
-            if !self.pending_streams[stream_index].send_drawing(new_drawing.iter().map(|draw| draw.clone()), clear_pending) {
-                // If it returns false then the stream has been dropped and we should remove it from this object
-                to_remove.push(stream_index);
-            }
-        }
-
-        // Remove streams (in reverse order so the indexes don't get messed up)
-        for remove_index in to_remove.into_iter().rev() {
-            self.pending_streams.remove(remove_index);
-        }
-    }
 }
 
 impl Canvas {
@@ -365,14 +91,12 @@ impl Canvas {
     ///
     pub fn new() -> Canvas {
         // A canvas is initially just a clear command
-        let core = CanvasCore {
-            drawing_since_last_clear:   vec![ 
-                (LayerOrSpriteId::Layer(LayerId(0)), Draw::ResetFrame),
-                (LayerOrSpriteId::Layer(LayerId(0)), Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)))
-            ],
-            current_layer:              LayerOrSpriteId::Layer(LayerId(0)),
-            pending_streams:            vec![ ]
+        let mut core = CanvasCore {
+            main_core:  DrawStreamCore::new(),
+            streams:    vec![]
         };
+
+        core.main_core.add_usage();
 
         Canvas {
             core: Arc::new(Desync::new(core))
@@ -409,39 +133,59 @@ impl Canvas {
     ///
     pub fn stream(&self) -> impl Stream<Item=Draw>+Send {
         // Create a new canvas stream
-        let new_stream = Arc::new(CanvasStream::new());
+        let new_core    = Arc::new(Desync::new(DrawStreamCore::new()));
+        let new_stream  = DrawStream::with_core(&new_core);
 
         // Register it and send the current set of pending commands to it
-        let add_stream = Arc::clone(&new_stream);
-        self.core.sync(move |core| {
+        let add_stream = Arc::clone(&new_core);
+        self.core.desync(move |core| {
             // Send the data we've received since the last clear
-            add_stream.send_drawing(core.drawing_since_last_clear.iter().map(|(_, draw)| draw.clone()), true);
+            add_stream.sync(|stream| stream.write(core.main_core.get_pending_drawing()));
 
             // Store the stream in the core so future notifications get sent there
-            core.pending_streams.push(add_stream);
+            core.streams.push(Arc::downgrade(&add_stream));
         });
 
         // Return the new stream
-        Box::new(FragileCanvasStream::new(new_stream))
+        new_stream
     }
 
     ///
     /// Retrieves the list of drawing actions in this canvas
     ///
     pub fn get_drawing(&self) -> Vec<Draw> {
-        self.core.sync(|core| core.drawing_since_last_clear.iter().map(|(_, draw)| draw.clone()).collect())
+        self.core.sync(|core| core.main_core.get_pending_drawing().collect())
+    }
+}
+
+impl Clone for Canvas {
+    fn clone(&self) -> Canvas {
+        self.core.desync(|core| core.main_core.add_usage());
+
+        Canvas {
+            core: self.core.clone()
+        }
     }
 }
 
 impl Drop for Canvas {
     fn drop(&mut self) {
         // The streams drop if this is the last canvas with this core
-        if Arc::strong_count(&self.core) == 1 {
-            self.core.desync(|core| {
-                // Notify any streams that are using the canvas that it has gone away
-                core.pending_streams.iter_mut().for_each(|stream| stream.notify_dropped());
-            });
-        }
+        self.core.sync(|core| {
+            if core.main_core.finish_usage() == 0 {
+                // Close all the streams and then wake them up
+                core.streams.drain(..)
+                    .map(|stream| {
+                        if let Some(stream) = stream.upgrade() {
+                            stream.sync(|stream| { stream.close(); stream.take_waker() })
+                        } else {
+                            None
+                        }
+                    })
+                    .flatten()
+                    .for_each(|waker| waker.wake());
+            }
+        });
     }
 }
 
