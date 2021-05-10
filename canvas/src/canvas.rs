@@ -100,7 +100,6 @@ impl Canvas {
 
         core.main_core.add_usage();
         core.main_core.write(vec![
-            Draw::ResetFrame,
             Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))
         ].into_iter());
 
@@ -147,7 +146,10 @@ impl Canvas {
         let add_stream = Arc::clone(&new_core);
         self.core.desync(move |core| {
             // Send the data we've received since the last clear
-            add_stream.sync(|stream| stream.write(core.main_core.get_pending_drawing()));
+            add_stream.sync(|stream| {
+                stream.write(iter::once(Draw::ResetFrame));
+                stream.write(core.main_core.get_pending_drawing())
+            });
 
             // Store the stream in the core so future notifications get sent there
             core.streams.push(Arc::downgrade(&add_stream));
