@@ -96,6 +96,10 @@ impl Canvas {
         };
 
         core.main_core.add_usage();
+        core.main_core.write(vec![
+            Draw::ResetFrame,
+            Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))
+        ].into_iter());
 
         Canvas {
             core: Arc::new(Desync::new(core))
