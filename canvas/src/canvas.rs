@@ -10,6 +10,7 @@ use crate::draw_stream::*;
 use std::collections::{HashSet};
 use std::sync::*;
 use std::mem;
+use std::iter;
 
 use desync::{Desync};
 use futures::{Stream};
@@ -43,7 +44,9 @@ impl CanvasCore {
         for (idx, stream) in self.streams.iter().enumerate() {
             if let Some(stream) = stream.upgrade() {
                 wakers.push(stream.sync(|stream| {
+                    stream.write(iter::once(Draw::StartFrame));
                     stream.write(actions.iter().cloned());
+                    stream.write(iter::once(Draw::ShowFrame));
                     stream.take_waker()
                 }));
             } else {
