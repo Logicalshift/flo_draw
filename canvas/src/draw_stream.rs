@@ -89,6 +89,8 @@ impl DrawStreamCore {
                 // Commands that might cause the store/restore to not undo perfectly break the sequence
                 (_, Draw::Clip)         => break,
                 (_, Draw::Unclip)       => break,
+                (_, Draw::StartFrame)   |
+                (_, Draw::ShowFrame)    => break,
 
                 // If the state stack has a pop for every push then we can remove these requests too
                 // TODO: this has a bug in that if the final event is a 'push' instead of a 'pop'
