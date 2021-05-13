@@ -403,7 +403,7 @@ mod test {
     }
 
     #[test]
-    fn free_store_rewinds_canvas_further() {
+    fn free_stored_buffer_after_restore() {
         let canvas      = Canvas::new();
 
         // Draw using a graphics context
@@ -436,6 +436,7 @@ mod test {
             assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
             assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
 
+            assert!(stream.next().await == Some(Draw::FreeStoredBuffer));
             assert!(stream.next().await == Some(Draw::Stroke));
         })
     }
