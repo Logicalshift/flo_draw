@@ -460,6 +460,7 @@ mod test {
 
         // Only the commands before the 'store' should be present
         let mut stream  = canvas.stream();
+        mem::drop(canvas);
 
         executor::block_on(async {
             assert!(stream.next().await == Some(Draw::ResetFrame));

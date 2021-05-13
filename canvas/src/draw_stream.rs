@@ -87,8 +87,8 @@ impl DrawStreamCore {
         for draw_index in (0..self.pending_drawing.len()).rev() {
             match self.pending_drawing[draw_index] {
                 // Commands that might cause the store/restore to not undo perfectly break the sequence
-                (_, Draw::Clip)         => break,
-                (_, Draw::Unclip)       => break,
+                (_, Draw::Clip)         |
+                (_, Draw::Unclip)       |
                 (_, Draw::StartFrame)   |
                 (_, Draw::ShowFrame)    => break,
 
@@ -247,9 +247,23 @@ impl DrawStreamCore {
                 _                       => { }
             }
 
-            // Add to the pending drawing
-            let drawing_target = draw.target_resource(&self.target_resource);
-            self.pending_drawing.push((drawing_target, draw));
+            match &draw {
+                Draw::Restore => {
+                    // Add the 'restore' operation in case we can't rewind anything
+                    let drawing_target = draw.target_resource(&self.target_resource);
+                    self.pending_drawing.push((drawing_target, draw));
+
+                    // Rewind if the action is a 'restore' action
+                    self.rewind_to_last_store();
+                    drawing_cleared = true;
+                }
+
+                _ => {
+                    // Add everything else to the pending drawing
+                    let drawing_target = draw.target_resource(&self.target_resource);
+                    self.pending_drawing.push((drawing_target, draw));
+                }
+            }
         }
 
         // If we've processed a clear instruction, clear out any unused resources from the pending list
