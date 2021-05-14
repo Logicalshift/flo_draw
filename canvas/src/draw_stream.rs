@@ -256,6 +256,16 @@ impl DrawStreamCore {
                     // Rewind if the action is a 'restore' action
                     self.rewind_to_last_store();
                     drawing_cleared = true;
+                },
+
+                Draw::FreeStoredBuffer => {
+                    // If we free a stored buffer immediately after a store, then both operations
+                    if let Some((_, Draw::Store)) = self.pending_drawing.last() {
+                        self.pending_drawing.pop();
+                    } else {
+                        let drawing_target = draw.target_resource(&self.target_resource);
+                        self.pending_drawing.push((drawing_target, draw));
+                    }
                 }
 
                 _ => {

@@ -436,7 +436,6 @@ mod test {
             assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
             assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
 
-            assert!(stream.next().await == Some(Draw::FreeStoredBuffer));
             assert!(stream.next().await == Some(Draw::Stroke));
         })
     }
