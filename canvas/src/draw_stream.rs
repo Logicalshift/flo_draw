@@ -126,6 +126,10 @@ impl DrawStreamCore {
         // The stack of active 'show frame' instructions
         let mut frame_stack         = vec![];
 
+        // Whether or not the pending drawing should be rewritten in a 'start frame/show frame' pair and if it should start by resetting the frame
+        let mut show_frame          = false;
+        let mut reset_frame         = false;
+
         // Trace the pending drawings for frame operations
         for (idx, (_resource, draw)) in self.pending_drawing.iter().enumerate() {
             match draw {
@@ -133,12 +137,17 @@ impl DrawStreamCore {
                 Draw::ShowFrame     => {
                     // Remove the corresponding 'start frame' instruction
                     if let Some(start_frame_idx) = frame_stack.pop() {
+                        show_frame = true;
+
                         indexes_to_remove.push(start_frame_idx);
                         indexes_to_remove.push(idx);
                     }
                 }
 
                 Draw::ResetFrame    => {
+                    // We move the 'reset frame' request to the start of the stack
+                    reset_frame = true;
+
                     // Remove all frame instructions up to this point
                     indexes_to_remove.extend(frame_stack.drain(..));
                     indexes_to_remove.push(idx);
@@ -157,6 +166,16 @@ impl DrawStreamCore {
                 .filter(|(idx, _item)| !indexes_to_remove.contains(idx))
                 .map(|(_idx, item)| item)
                 .collect();
+
+            // If any frame instructions were used, wrap the whole set of instructions in a frame (reset frames move to the start)
+            if show_frame {
+                self.pending_drawing.insert(0, (DrawResource::Frame, Draw::StartFrame));
+                self.pending_drawing.push((DrawResource::Frame, Draw::ShowFrame));
+            }
+
+            if reset_frame {
+                self.pending_drawing.insert(0, (DrawResource::Frame, Draw::ResetFrame));
+            }
         }
     }
 
