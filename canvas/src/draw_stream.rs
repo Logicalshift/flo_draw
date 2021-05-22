@@ -145,22 +145,25 @@ impl DrawStreamCore {
                 }
 
                 Draw::ResetFrame    => {
-                    // An initial 'reset frame' is ignored
-                    if idx > 0 {
-                        // We move the 'reset frame' request to the start of the stack
-                        reset_frame = true;
-        
-                        // Remove all frame instructions up to this point
-                        indexes_to_remove.extend(frame_stack.drain(..));
-                        indexes_to_remove.push(idx);
-                    }
+                    // We move the 'reset frame' request to the start of the stack
+                    reset_frame = true;
+    
+                    // Remove all frame instructions up to this point
+                    indexes_to_remove.extend(frame_stack.drain(..));
+                    indexes_to_remove.push(idx);
                 }
 
                 _                   => { }
             }
         }
 
-        let already_balanced = if reset_frame { vec![1, self.pending_drawing.len()-1] } else { vec![0, self.pending_drawing.len()-1] };
+        // Some patterns are 'already balanced' and don't require us to rewrite the whole list of drawing instructions
+        let already_balanced = match (show_frame, reset_frame) {
+            (false, false)  => vec![],
+            (false, true)   => vec![0],
+            (true, false)   => vec![0, self.pending_drawing.len()-1],
+            (true, true)    => vec![0, 1, self.pending_drawing.len()-1]
+        };
 
         if indexes_to_remove == already_balanced {
             // If there's just a 'start frame' and a 'show frame' at the end, then there's nothing to do
