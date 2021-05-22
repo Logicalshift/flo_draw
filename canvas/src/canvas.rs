@@ -561,6 +561,7 @@ mod test {
 
             // Should immediately stop the old frame and start a new one
             assert!(stream.next().await == Some(Draw::ResetFrame));
+            assert!(stream.next().await == Some(Draw::StartFrame));
 
             // Commands we sent before the flush are gone
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 1.0))));
