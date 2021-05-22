@@ -811,6 +811,8 @@ mod test {
         let canvas  = Canvas::new();
 
         canvas.draw(|gc| {
+            gc.clear_canvas(Color::Rgba(0.0, 0.0, 0.0, 0.0));
+
             gc.start_frame();
             gc.new_path();
             gc.start_frame();
@@ -862,16 +864,20 @@ mod test {
         // Only the one uncanceled start_frame should be in the canvas
         executor::block_on(async {
             assert!(stream.next().await == Some(Draw::ResetFrame));
-            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(20.0, 20.0)));
             assert!(stream.next().await == Some(Draw::Stroke));
 
             assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
             assert!(stream.next().await == Some(Draw::Fill));
+
+            assert!(stream.next().await == Some(Draw::ShowFrame));
         });
     }
 }
