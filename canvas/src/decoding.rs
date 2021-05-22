@@ -1,4 +1,5 @@
 use super::draw::*;
+use super::path::*;
 use super::font::*;
 use super::color::*;
 use super::texture::*;
@@ -548,7 +549,7 @@ impl CanvasDecoder {
             'W' => Ok((DecoderState::WindingRule, None)),
 
             // Single character commands
-            '.' => Ok((DecoderState::None, Some(Draw::ClosePath))),
+            '.' => Ok((DecoderState::None, Some(Draw::Path(PathOp::ClosePath)))),
             'F' => Ok((DecoderState::None, Some(Draw::Fill))),
             'S' => Ok((DecoderState::None, Some(Draw::Stroke))),
             'P' => Ok((DecoderState::None, Some(Draw::PushState))),
@@ -573,7 +574,7 @@ impl CanvasDecoder {
     #[inline] fn decode_new(next_chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         // Matched 'N' so far
         match next_chr {
-            'p'     => Ok((DecoderState::None, Some(Draw::NewPath))),
+            'p'     => Ok((DecoderState::None, Some(Draw::Path(PathOp::NewPath)))),
             'A'     => Ok((DecoderState::ClearCanvas(String::new()), None)),
             'C'     => Ok((DecoderState::None, Some(Draw::ClearLayer))),
 
@@ -687,7 +688,7 @@ impl CanvasDecoder {
             let x           = Self::decode_f32(&mut param)?;
             let y           = Self::decode_f32(&mut param)?;
 
-            Ok((DecoderState::None, Some(Draw::Move(x, y))))
+            Ok((DecoderState::None, Some(Draw::Path(PathOp::Move(x, y)))))
         }
     }
 
@@ -702,7 +703,7 @@ impl CanvasDecoder {
             let x           = Self::decode_f32(&mut param)?;
             let y           = Self::decode_f32(&mut param)?;
 
-            Ok((DecoderState::None, Some(Draw::Line(x, y))))
+            Ok((DecoderState::None, Some(Draw::Path(PathOp::Line(x, y)))))
         }
     }
 
@@ -716,12 +717,12 @@ impl CanvasDecoder {
             let mut param   = param.chars();
             let x1          = Self::decode_f32(&mut param)?;
             let y1          = Self::decode_f32(&mut param)?;
-            let x2          = Self::decode_f32(&mut param)?;
-            let y2          = Self::decode_f32(&mut param)?;
-            let x3          = Self::decode_f32(&mut param)?;
-            let y3          = Self::decode_f32(&mut param)?;
+            let cp1x        = Self::decode_f32(&mut param)?;
+            let cp1y        = Self::decode_f32(&mut param)?;
+            let cp2x        = Self::decode_f32(&mut param)?;
+            let cp2y        = Self::decode_f32(&mut param)?;
 
-            Ok((DecoderState::None, Some(Draw::BezierCurve((x1, y1), (x2, y2), (x3, y3)))))
+            Ok((DecoderState::None, Some(Draw::Path(PathOp::BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x1, y1))))))
         }
     }
 
@@ -1608,27 +1609,27 @@ mod test {
 
     #[test]
     fn decode_new_path() {
-        check_round_trip_single(Draw::NewPath);
+        check_round_trip_single(Draw::Path(PathOp::NewPath));
     }
 
     #[test]
     fn decode_move() {
-        check_round_trip_single(Draw::Move(10.0, 15.0));
+        check_round_trip_single(Draw::Path(PathOp::Move(10.0, 15.0)));
     }
 
     #[test]
     fn decode_line() {
-        check_round_trip_single(Draw::Line(20.0, 42.0));
+        check_round_trip_single(Draw::Path(PathOp::Line(20.0, 42.0)));
     }
 
     #[test]
     fn decode_bezier_curve() {
-        check_round_trip_single(Draw::BezierCurve((1.0, 2.0), (3.0, 4.0), (5.0, 6.0)));
+        check_round_trip_single(Draw::Path(PathOp::BezierCurve(((1.0, 2.0), (3.0, 4.0)), (5.0, 6.0))));
     }
 
     #[test]
     fn decode_close_path() {
-        check_round_trip_single(Draw::ClosePath);
+        check_round_trip_single(Draw::Path(PathOp::ClosePath));
     }
 
     #[test]
@@ -1826,7 +1827,7 @@ mod test {
         assert!(decoder.decode('\n') == Ok(None));
         assert!(decoder.decode('\n') == Ok(None));
         assert!(decoder.decode('N') == Ok(None));
-        assert!(decoder.decode('p') == Ok(Some(Draw::NewPath)));
+        assert!(decoder.decode('p') == Ok(Some(Draw::Path(PathOp::NewPath))));
     }
 
     #[test]
@@ -1912,11 +1913,11 @@ mod test {
     #[test]
     fn decode_all_iter() {
         check_round_trip(vec![
-            Draw::NewPath,
-            Draw::Move(10.0, 15.0),
-            Draw::Line(20.0, 42.0),
-            Draw::BezierCurve((1.0, 2.0), (3.0, 4.0), (5.0, 6.0)),
-            Draw::ClosePath,
+            Draw::Path(PathOp::NewPath),
+            Draw::Path(PathOp::Move(10.0, 15.0)),
+            Draw::Path(PathOp::Line(20.0, 42.0)),
+            Draw::Path(PathOp::BezierCurve(((1.0, 2.0), (3.0, 4.0)), (5.0, 6.0))),
+            Draw::Path(PathOp::ClosePath),
             Draw::Fill,
             Draw::Stroke,
             Draw::LineWidth(23.0),
@@ -1943,7 +1944,7 @@ mod test {
             Draw::ClearCanvas(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
             Draw::Layer(LayerId(21)),
             Draw::ClearLayer,
-            Draw::NewPath,
+            Draw::Path(PathOp::NewPath),
             Draw::Sprite(SpriteId(1000)),
             Draw::ClearSprite,
             Draw::SpriteTransform(SpriteTransform::Translate(4.0, 5.0)),
@@ -1955,11 +1956,11 @@ mod test {
     #[test]
     fn decode_all_stream() {
         let all = vec![
-            Draw::NewPath,
-            Draw::Move(10.0, 15.0),
-            Draw::Line(20.0, 42.0),
-            Draw::BezierCurve((1.0, 2.0), (3.0, 4.0), (5.0, 6.0)),
-            Draw::ClosePath,
+            Draw::Path(PathOp::NewPath),
+            Draw::Path(PathOp::Move(10.0, 15.0)),
+            Draw::Path(PathOp::Line(20.0, 42.0)),
+            Draw::Path(PathOp::BezierCurve(((1.0, 2.0), (3.0, 4.0)), (5.0, 6.0))),
+            Draw::Path(PathOp::ClosePath),
             Draw::Fill,
             Draw::FillTexture(TextureId(42), (1.0, 2.0), (3.0, 4.0)),
             Draw::Stroke,
@@ -1988,7 +1989,7 @@ mod test {
             Draw::ClearCanvas(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
             Draw::Layer(LayerId(21)),
             Draw::ClearLayer,
-            Draw::NewPath,
+            Draw::Path(PathOp::NewPath),
             Draw::Sprite(SpriteId(1000)),
             Draw::ClearSprite,
             Draw::SpriteTransform(SpriteTransform::Translate(4.0, 5.0)),

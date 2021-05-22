@@ -1,4 +1,5 @@
 use crate::draw::*;
+use crate::path::*;
 use crate::color::*;
 
 use flo_stream::*;
@@ -39,6 +40,8 @@ InStream:           'static+Send+Unpin+Stream<Item=Draw>,
 BezierPath:         'static+Send+BezierPathFactory,
 BezierPath::Point:  Send+Coordinate2D {
     generator_stream(move |yield_value| async move {
+        use self::PathOp::*;
+
         // The path that is currently being created by the path builder (or 'None' if no path has been generated yet)
         let mut current_path: Option<BezierPathBuilder<_>>  = None;
         let mut current_components                          = vec![];
@@ -49,7 +52,7 @@ BezierPath::Point:  Send+Coordinate2D {
 
         while let Some(draw) = draw_stream.next().await {
             match draw {
-                Draw::NewPath                                   => { 
+                Draw::Path(NewPath)                                             => { 
                     // Add the last path to the list of path components
                     if let Some(path) = current_path.take() {
                         current_components.push(path.build());
@@ -64,7 +67,7 @@ BezierPath::Point:  Send+Coordinate2D {
                     }
                 }
 
-                Draw::Move(x, y)                                => {
+                Draw::Path(Move(x, y))                                          => {
                     // Finish the current path if there is one
                     if let Some(path) = current_path.take() {
                         current_components.push(path.build());
@@ -75,24 +78,24 @@ BezierPath::Point:  Send+Coordinate2D {
                     start_point  = Some(BezierPath::Point::from_components(&[x as _, y as _]));
                 }
 
-                Draw::Line(x, y)                                => {
+                Draw::Path(Line(x, y))                                          => {
                     // Add the line to the current path
                     current_path = current_path.map(|current_path| {
                         current_path.line_to(BezierPath::Point::from_components(&[x as _, y as _]))
                     });
                 }
 
-                Draw::BezierCurve((x1, y1), (x2, y2), (x3, y3)) => {
+                Draw::Path(BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x1, y1))) => {
                     // Add the curve to the current path
                     current_path = current_path.map(|current_path| {
                         current_path.curve_to(
-                            (BezierPath::Point::from_components(&[x2 as _, y2 as _]), BezierPath::Point::from_components(&[x3 as _, y3 as _])),
+                            (BezierPath::Point::from_components(&[cp1x as _, cp1y as _]), BezierPath::Point::from_components(&[cp2x as _, cp2y as _])),
                             BezierPath::Point::from_components(&[x1 as _, y1 as _])
                         )
                     });
                 }
 
-                Draw::ClosePath                                 => {
+                Draw::Path(ClosePath)                                           => {
                     if let Some(start_point) = &start_point {
                         current_path = current_path.map(|current_path| {
                             current_path.line_to(start_point.clone())
@@ -131,6 +134,8 @@ InStream:           'static+Send+Unpin+Stream<Item=Draw>,
 BezierPath:         'static+Send+BezierPathFactory,
 BezierPath::Point:  Send+Coordinate2D {
     generator_stream(move |yield_value| async move {
+        use self::PathOp::*;
+
         // The path that is currently being created by the path builder (or 'None' if no path has been generated yet)
         let mut current_path: Option<BezierPathBuilder<_>>  = None;
         let mut current_components                          = vec![];
@@ -149,7 +154,7 @@ BezierPath::Point:  Send+Coordinate2D {
 
         while let Some(draw) = draw_stream.next().await {
             match draw {
-                Draw::NewPath                                   => { 
+                Draw::Path(NewPath)                                             => { 
                     // Add the last path to the list of path components
                     if let Some(path) = current_path.take() {
                         current_components.push(path.build());
@@ -167,7 +172,7 @@ BezierPath::Point:  Send+Coordinate2D {
                     current_components = vec![];
                 }
 
-                Draw::Move(x, y)                                => {
+                Draw::Path(Move(x, y))                                          => {
                     // Finish the current path if there is one
                     if let Some(path) = current_path.take() {
                         current_components.push(path.build());
@@ -178,24 +183,24 @@ BezierPath::Point:  Send+Coordinate2D {
                     start_point  = Some(BezierPath::Point::from_components(&[x as _, y as _]));
                 }
 
-                Draw::Line(x, y)                                => {
+                Draw::Path(Line(x, y))                                          => {
                     // Add the line to the current path
                     current_path = current_path.map(|current_path| {
                         current_path.line_to(BezierPath::Point::from_components(&[x as _, y as _]))
                     });
                 }
 
-                Draw::BezierCurve((x1, y1), (x2, y2), (x3, y3)) => {
+                Draw::Path(BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x1, y1))) => {
                     // Add the curve to the current path
                     current_path = current_path.map(|current_path| {
                         current_path.curve_to(
-                            (BezierPath::Point::from_components(&[x2 as _, y2 as _]), BezierPath::Point::from_components(&[x3 as _, y3 as _])),
+                            (BezierPath::Point::from_components(&[cp1x as _, cp1y as _]), BezierPath::Point::from_components(&[cp2x as _, cp2y as _])),
                             BezierPath::Point::from_components(&[x1 as _, y1 as _])
                         )
                     });
                 }
 
-                Draw::ClosePath                                 => {
+                Draw::Path(ClosePath)                                           => {
                     if let Some(start_point) = &start_point {
                         current_path = current_path.map(|current_path| {
                             current_path.line_to(start_point.clone())
@@ -203,29 +208,29 @@ BezierPath::Point:  Send+Coordinate2D {
                     }
                 }
 
-                Draw::FillColor(new_fill_color)                 => {
+                Draw::FillColor(new_fill_color)                                 => {
                     fill_color = new_fill_color;
                 }
 
-                Draw::StrokeColor(new_stroke_color)             => {
+                Draw::StrokeColor(new_stroke_color)                             => {
                     stroke_color = new_stroke_color;
                 }
 
-                Draw::LineWidth(new_line_width)                 => {
+                Draw::LineWidth(new_line_width)                                 => {
                     line_width_pixels   = None;
                     line_width          = Some(new_line_width);
                 }
 
-                Draw::LineWidthPixels(new_line_width)           => {
+                Draw::LineWidthPixels(new_line_width)                           => {
                     line_width_pixels   = Some(new_line_width);
                     line_width          = None;
                 }
 
-                Draw::PushState                                 => {
+                Draw::PushState                                                 => {
                     state_stack.push((fill_color, stroke_color, line_width, line_width_pixels));
                 }
 
-                Draw::PopState                                  => {
+                Draw::PopState                                                  => {
                     if let Some((new_fill_color, new_stroke_color, new_line_width, new_line_width_pixels)) = state_stack.pop() {
                         fill_color          = new_fill_color;
                         stroke_color        = new_stroke_color;
@@ -234,11 +239,11 @@ BezierPath::Point:  Send+Coordinate2D {
                     }
                 }
 
-                Draw::Fill                                      => {
+                Draw::Fill                                                      => {
                     current_attributes.push(PathAttribute::Fill(fill_color));
                 }
 
-                Draw::Stroke                                    => {
+                Draw::Stroke                                                    => {
                     if let Some(line_width) = line_width {
                         current_attributes.push(PathAttribute::Stroke(line_width, stroke_color));
                     }
@@ -248,7 +253,7 @@ BezierPath::Point:  Send+Coordinate2D {
                 }
 
                 // Ignore other instructions
-                _ => { }
+                _                                                               => { }
             }
         }
 
@@ -278,12 +283,12 @@ mod test {
         executor::block_on(async {
             // Describe a square
             let square          = vec![
-                Draw::NewPath,
-                Draw::Move(0.0, 0.0), 
-                Draw::Line(100.0, 0.0), 
-                Draw::Line(100.0, 100.0), 
-                Draw::Line(0.0, 100.0), 
-                Draw::ClosePath
+                Draw::Path(PathOp::NewPath),
+                Draw::Path(PathOp::Move(0.0, 0.0)), 
+                Draw::Path(PathOp::Line(100.0, 0.0)), 
+                Draw::Path(PathOp::Line(100.0, 100.0)), 
+                Draw::Path(PathOp::Line(0.0, 100.0)), 
+                Draw::Path(PathOp::ClosePath)
             ];
 
             // Stream it through drawing_to_paths

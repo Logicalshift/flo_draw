@@ -6,6 +6,7 @@ use super::transform2d::*;
 use super::texture::*;
 use super::color::*;
 use super::font::*;
+use super::path::*;
 
 ///
 /// Possible way to join lines
@@ -147,20 +148,8 @@ pub enum Draw {
     /// Resets the frame count back to 0 (for when regenerating the state of a canvas)
     ResetFrame,
 
-    /// Begins a new path
-    NewPath,
-
-    /// Move to a new point
-    Move(f32, f32),
-
-    /// Line to point
-    Line(f32, f32),
-
-    /// Bezier curve to point
-    BezierCurve((f32, f32), (f32, f32), (f32, f32)),
-
-    /// Closes the current path
-    ClosePath,
+    /// Performs an operation on the currently defined path
+    Path(PathOp),
 
     /// Fill the current path
     Fill,

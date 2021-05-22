@@ -1,4 +1,5 @@
 use super::draw::*;
+use super::path::*;
 use super::font::*;
 use super::color::*;
 use super::texture::*;
@@ -71,49 +72,50 @@ pub trait GraphicsContext {
 
     fn draw(&mut self, d: Draw) {
         use self::Draw::*;
+        use self::PathOp::*;
 
         match d {
-            StartFrame                                  => self.start_frame(),
-            ShowFrame                                   => self.show_frame(),
-            ResetFrame                                  => self.reset_frame(),
-            NewPath                                     => self.new_path(),
-            Move(x, y)                                  => self.move_to(x, y),
-            Line(x, y)                                  => self.line_to(x, y),
-            BezierCurve((x1, y1), (x2, y2), (x3, y3))   => self.bezier_curve_to(x1, y1, x2, y2, x3, y3),
-            ClosePath                                   => self.close_path(),
-            Fill                                        => self.fill(),
-            Stroke                                      => self.stroke(),
-            LineWidth(width)                            => self.line_width(width),
-            LineWidthPixels(width)                      => self.line_width_pixels(width),
-            LineJoin(join)                              => self.line_join(join),
-            LineCap(cap)                                => self.line_cap(cap),
-            WindingRule(rule)                           => self.winding_rule(rule),
-            NewDashPattern                              => self.new_dash_pattern(),
-            DashLength(dash_length)                     => self.dash_length(dash_length),
-            DashOffset(dash_offset)                     => self.dash_offset(dash_offset),
-            FillColor(col)                              => self.fill_color(col),
-            FillTexture(texture, (x1, y1), (x2, y2))    => self.fill_texture(texture, x1, y1, x2, y2),
-            StrokeColor(col)                            => self.stroke_color(col),
-            BlendMode(blendmode)                        => self.blend_mode(blendmode),
-            IdentityTransform                           => self.identity_transform(),
-            CanvasHeight(height)                        => self.canvas_height(height),
-            CenterRegion((minx, miny), (maxx, maxy))    => self.center_region(minx, miny, maxx, maxy),
-            MultiplyTransform(transform)                => self.transform(transform),
-            Unclip                                      => self.unclip(),
-            Clip                                        => self.clip(),
-            Store                                       => self.store(),
-            Restore                                     => self.restore(),
-            FreeStoredBuffer                            => self.free_stored_buffer(),
-            PushState                                   => self.push_state(),
-            PopState                                    => self.pop_state(),
-            ClearCanvas(color)                          => self.clear_canvas(color),
-            Layer(layer_id)                             => self.layer(layer_id),
-            LayerBlend(layer_id, blend_mode)            => self.layer_blend(layer_id, blend_mode),
-            ClearLayer                                  => self.clear_layer(),
-            Sprite(sprite_id)                           => self.sprite(sprite_id),
-            ClearSprite                                 => self.clear_sprite(),
-            SpriteTransform(transform)                  => self.sprite_transform(transform),
-            DrawSprite(sprite_id)                       => self.draw_sprite(sprite_id),
+            StartFrame                                                  => self.start_frame(),
+            ShowFrame                                                   => self.show_frame(),
+            ResetFrame                                                  => self.reset_frame(),
+            Path(NewPath)                                               => self.new_path(),
+            Path(Move(x, y))                                            => self.move_to(x, y),
+            Path(Line(x, y) )                                           => self.line_to(x, y),
+            Path(BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x1, y1)))   => self.bezier_curve_to(x1, y1, cp1x, cp1y, cp2x, cp2y),
+            Path(ClosePath)                                             => self.close_path(),
+            Fill                                                        => self.fill(),
+            Stroke                                                      => self.stroke(),
+            LineWidth(width)                                            => self.line_width(width),
+            LineWidthPixels(width)                                      => self.line_width_pixels(width),
+            LineJoin(join)                                              => self.line_join(join),
+            LineCap(cap)                                                => self.line_cap(cap),
+            WindingRule(rule)                                           => self.winding_rule(rule),
+            NewDashPattern                                              => self.new_dash_pattern(),
+            DashLength(dash_length)                                     => self.dash_length(dash_length),
+            DashOffset(dash_offset)                                     => self.dash_offset(dash_offset),
+            FillColor(col)                                              => self.fill_color(col),
+            FillTexture(texture, (x1, y1), (x2, y2))                    => self.fill_texture(texture, x1, y1, x2, y2),
+            StrokeColor(col)                                            => self.stroke_color(col),
+            BlendMode(blendmode)                                        => self.blend_mode(blendmode),
+            IdentityTransform                                           => self.identity_transform(),
+            CanvasHeight(height)                                        => self.canvas_height(height),
+            CenterRegion((minx, miny), (maxx, maxy))                    => self.center_region(minx, miny, maxx, maxy),
+            MultiplyTransform(transform)                                => self.transform(transform),
+            Unclip                                                      => self.unclip(),
+            Clip                                                        => self.clip(),
+            Store                                                       => self.store(),
+            Restore                                                     => self.restore(),
+            FreeStoredBuffer                                            => self.free_stored_buffer(),
+            PushState                                                   => self.push_state(),
+            PopState                                                    => self.pop_state(),
+            ClearCanvas(color)                                          => self.clear_canvas(color),
+            Layer(layer_id)                                             => self.layer(layer_id),
+            LayerBlend(layer_id, blend_mode)                            => self.layer_blend(layer_id, blend_mode),
+            ClearLayer                                                  => self.clear_layer(),
+            Sprite(sprite_id)                                           => self.sprite(sprite_id),
+            ClearSprite                                                 => self.clear_sprite(),
+            SpriteTransform(transform)                                  => self.sprite_transform(transform),
+            DrawSprite(sprite_id)                                       => self.draw_sprite(sprite_id),
 
             Font(font_id, FontOp::UseFontDefinition(font_data))                     => self.define_font_data(font_id, font_data),
             Font(font_id, FontOp::FontSize(font_size))                              => self.set_font_size(font_id, font_size),
@@ -137,13 +139,13 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn start_frame(&mut self)                                                     { self.push(Draw::StartFrame); }
     #[inline] fn show_frame(&mut self)                                                      { self.push(Draw::ShowFrame); }
     #[inline] fn reset_frame(&mut self)                                                     { self.push(Draw::ResetFrame); }
-    #[inline] fn new_path(&mut self)                                                        { self.push(Draw::NewPath); }
-    #[inline] fn move_to(&mut self, x: f32, y: f32)                                         { self.push(Draw::Move(x, y)); }
-    #[inline] fn line_to(&mut self, x: f32, y: f32)                                         { self.push(Draw::Line(x, y)); }
-    #[inline] fn bezier_curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32) { 
-        self.push(Draw::BezierCurve((x1, y1), (x2, y2), (x3, y3))); 
+    #[inline] fn new_path(&mut self)                                                        { self.push(Draw::Path(PathOp::NewPath)); }
+    #[inline] fn move_to(&mut self, x: f32, y: f32)                                         { self.push(Draw::Path(PathOp::Move(x, y))); }
+    #[inline] fn line_to(&mut self, x: f32, y: f32)                                         { self.push(Draw::Path(PathOp::Line(x, y))); }
+    #[inline] fn bezier_curve_to(&mut self, x1: f32, y1: f32, cp1x: f32, cp1y: f32, cp2x: f32, cp2y: f32) { 
+        self.push(Draw::Path(PathOp::BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x1, y1)))); 
     }
-    #[inline] fn close_path(&mut self)                                                      { self.push(Draw::ClosePath); }
+    #[inline] fn close_path(&mut self)                                                      { self.push(Draw::Path(PathOp::ClosePath)); }
     #[inline] fn fill(&mut self)                                                            { self.push(Draw::Fill); }
     #[inline] fn stroke(&mut self)                                                          { self.push(Draw::Stroke); }
     #[inline] fn line_width(&mut self, width: f32)                                          { self.push(Draw::LineWidth(width)); }

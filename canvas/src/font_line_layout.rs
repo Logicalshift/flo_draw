@@ -1,4 +1,5 @@
 use super::draw::*;
+use super::path::*;
 use super::font::*;
 use super::color::*;
 use super::context::*;
@@ -355,11 +356,11 @@ impl GraphicsContext for CanvasFontLineLayout {
     #[inline] fn start_frame(&mut self)                                                     { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::StartFrame)); }
     #[inline] fn show_frame(&mut self)                                                      { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::ShowFrame)); }
     #[inline] fn reset_frame(&mut self)                                                     { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::ResetFrame)); }
-    #[inline] fn new_path(&mut self)                                                        { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::NewPath)); }
-    #[inline] fn move_to(&mut self, x: f32, y: f32)                                         { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Move(x, y))); }
-    #[inline] fn line_to(&mut self, x: f32, y: f32)                                         { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Line(x, y))); }
-    #[inline] fn bezier_curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32) { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::BezierCurve((x1, y1), (x2, y2), (x3, y3)))); }
-    #[inline] fn close_path(&mut self)                                                      { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::ClosePath)); }
+    #[inline] fn new_path(&mut self)                                                        { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Path(PathOp::NewPath))); }
+    #[inline] fn move_to(&mut self, x: f32, y: f32)                                         { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Path(PathOp::Move(x, y)))); }
+    #[inline] fn line_to(&mut self, x: f32, y: f32)                                         { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Path(PathOp::Line(x, y)))); }
+    #[inline] fn bezier_curve_to(&mut self, x1: f32, y1: f32, cp1x: f32, cp1y: f32, cp2x: f32, cp2y: f32) { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Path(PathOp::BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x1, y1))))); }
+    #[inline] fn close_path(&mut self)                                                      { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Path(PathOp::ClosePath))); }
     #[inline] fn fill(&mut self)                                                            { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Fill)); }
     #[inline] fn stroke(&mut self)                                                          { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Stroke)); }
     #[inline] fn line_width(&mut self, width: f32)                                          { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::LineWidth(width))); }

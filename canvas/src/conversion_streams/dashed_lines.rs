@@ -1,4 +1,5 @@
 use crate::draw::*;
+use crate::path::*;
 
 use flo_curves::bezier::*;
 use flo_curves::bezier::path::*;
@@ -130,6 +131,7 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
 
         while let Some(drawing) = draw_stream.next().await {
             use self::Draw::*;
+            use self::PathOp::*;
 
             match drawing {
                 ClearCanvas(colour) => {
@@ -144,24 +146,24 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
                     yield_value(ClearCanvas(colour)).await;
                 }
 
-                NewPath => {
+                Path(NewPath) => {
                     current_path    = vec![];
                     last_point      = Coord2(0.0, 0.0);
                     start_point     = Coord2(0.0, 0.0);
 
-                    yield_value(NewPath).await;
+                    yield_value(Path(NewPath)).await;
                 }
 
-                Move(x, y) => {
+                Path(Move(x, y)) => {
                     current_path.push((Coord2(x as _, y as _), vec![]));
 
                     last_point  = Coord2(x as _, y as _);
                     start_point = Coord2(x as _, y as _);
 
-                    yield_value(Move(x, y)).await;
+                    yield_value(Path(Move(x, y))).await;
                 }
 
-                Line(x, y) => {
+                Path(Line(x, y)) => {
                     let end_point   = Coord2(x as _, y as _);
                     let cp1         = (end_point - last_point) * (1.0/3.0) + last_point;
                     let cp2         = (end_point - last_point) * (2.0/3.0) + last_point;
@@ -171,19 +173,19 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
 
                     last_point      = Coord2(x as _, y as _);
 
-                    yield_value(Line(x, y)).await;
+                    yield_value(Path(Line(x, y))).await;
                 }
 
-                BezierCurve((x, y), (cp1x, cp1y), (cp2x, cp2y)) => {
+                Path(BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x, y))) => {
                     let curve = (Coord2(cp1x as _, cp1y as _), Coord2(cp2x as _, cp2y as _), Coord2(x as _, y as _));
                     current_path.last_mut().map(|path| path.1.push(curve));
 
                     last_point      = Coord2(x as _, y as _);
 
-                    yield_value(BezierCurve((x, y), (cp1x, cp1y), (cp2x, cp2y))).await;
+                    yield_value(Path(BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x, y)))).await;
                 }
 
-                ClosePath => {
+                Path(ClosePath) => {
                     let end_point   = start_point;
                     let cp1         = (end_point - last_point) * (1.0/3.0) + last_point;
                     let cp2         = (end_point - last_point) * (2.0/3.0) + last_point;
@@ -191,7 +193,7 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
 
                     current_path.last_mut().map(|path| path.1.push(line));
 
-                    yield_value(ClosePath).await;
+                    yield_value(Path(ClosePath)).await;
                 }
 
                 NewDashPattern => {
@@ -230,13 +232,13 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
                 Stroke => {
                     if let Some(dash_pattern) = &current_dash_pattern {
                         // Create a dash path and pass it through as a new path
-                        yield_value(NewPath).await;
+                        yield_value(Path(NewPath)).await;
 
                         for subpath in current_path.iter() {
                             for (start_point, curves) in path_to_dashed_lines::<_, SimpleBezierPath, _>(subpath, dash_pattern.iter().map(|p| (*p) as f64), dash_pattern_offset as _) {
-                                yield_value(Move(start_point.x() as _, start_point.y() as _)).await;
+                                yield_value(Path(Move(start_point.x() as _, start_point.y() as _))).await;
                                 for (Coord2(cp1x, cp1y), Coord2(cp2x, cp2y), Coord2(x, y)) in curves {
-                                    yield_value(BezierCurve((x as _, y as _), (cp1x as _, cp1y as _), (cp2x as _, cp2y as _))).await;
+                                    yield_value(Path(BezierCurve(((cp1x as _, cp1y as _), (cp2x as _, cp2y as _)), (x as _, y as _)))).await;
                                 }
                             }
                         }
@@ -245,12 +247,12 @@ pub fn drawing_without_dashed_lines<InStream: 'static+Send+Unpin+Stream<Item=Dra
                         yield_value(Stroke).await;
 
                         // Restore the original path
-                        yield_value(NewPath).await;
+                        yield_value(Path(NewPath)).await;
 
                         for (start_point, curves) in current_path.iter() {
-                            yield_value(Move(start_point.x() as _, start_point.y() as _)).await;
+                            yield_value(Path(Move(start_point.x() as _, start_point.y() as _))).await;
                             for (Coord2(cp1x, cp1y), Coord2(cp2x, cp2y), Coord2(x, y)) in curves {
-                                yield_value(BezierCurve((*x as _, *y as _), (*cp1x as _, *cp1y as _), (*cp2x as _, *cp2y as _))).await;
+                                yield_value(Path(BezierCurve(((*cp1x as _, *cp1y as _), (*cp2x as _, *cp2y as _)), (*x as _, *y as _)))).await;
                             }
                         }
                     } else {
@@ -278,12 +280,12 @@ mod test {
     #[test]
     fn pass_through_normal_path() {
         let input_drawing = vec![
-            Draw::NewPath,
-            Draw::Move(10.0, 10.0),
-            Draw::Line(10.0, 100.0),
-            Draw::Line(100.0, 100.0),
-            Draw::Line(100.0, 10.0),
-            Draw::ClosePath
+            Draw::Path(PathOp::NewPath),
+            Draw::Path(PathOp::Move(10.0, 10.0)),
+            Draw::Path(PathOp::Line(10.0, 100.0)),
+            Draw::Path(PathOp::Line(100.0, 100.0)),
+            Draw::Path(PathOp::Line(100.0, 10.0)),
+            Draw::Path(PathOp::ClosePath)
         ];
 
         executor::block_on(async move {
@@ -291,12 +293,12 @@ mod test {
             let output_drawing          = without_dashed_lines.collect::<Vec<_>>().await;
 
             assert!(output_drawing == vec![
-                Draw::NewPath,
-                Draw::Move(10.0, 10.0),
-                Draw::Line(10.0, 100.0),
-                Draw::Line(100.0, 100.0),
-                Draw::Line(100.0, 10.0),
-                Draw::ClosePath
+                Draw::Path(PathOp::NewPath),
+                Draw::Path(PathOp::Move(10.0, 10.0)),
+                Draw::Path(PathOp::Line(10.0, 100.0)),
+                Draw::Path(PathOp::Line(100.0, 100.0)),
+                Draw::Path(PathOp::Line(100.0, 10.0)),
+                Draw::Path(PathOp::ClosePath)
             ]);
         });
     }
@@ -308,9 +310,9 @@ mod test {
             Draw::DashLength(5.0),
             Draw::DashLength(5.0),
 
-            Draw::NewPath,
-            Draw::Move(10.0, 10.0),
-            Draw::Line(10.0, 100.0),
+            Draw::Path(PathOp::NewPath),
+            Draw::Path(PathOp::Move(10.0, 10.0)),
+            Draw::Path(PathOp::Line(10.0, 100.0)),
             Draw::Stroke
         ];
 
@@ -319,32 +321,32 @@ mod test {
             let output_drawing          = without_dashed_lines.collect::<Vec<_>>().await;
 
             assert!(output_drawing == vec![
-                Draw::NewPath, 
-                Draw::Move(10.0, 10.0), 
-                Draw::Line(10.0, 100.0), 
-                Draw::NewPath, 
-                Draw::Move(10.0, 10.0), 
-                Draw::BezierCurve((10.0, 15.0), (10.0, 11.666667), (10.0, 13.333333)), 
-                Draw::Move(10.0, 20.0), 
-                Draw::BezierCurve((10.0, 25.0), (10.0, 21.666666), (10.0, 23.333334)), 
-                Draw::Move(10.0, 30.0), 
-                Draw::BezierCurve((10.0, 35.0), (10.0, 31.666666), (10.0, 33.333332)), 
-                Draw::Move(10.0, 40.0), 
-                Draw::BezierCurve((10.0, 45.0), (10.0, 41.666668), (10.0, 43.333332)), 
-                Draw::Move(10.0, 50.0), 
-                Draw::BezierCurve((10.0, 55.0), (10.0, 51.666668), (10.0, 53.333332)), 
-                Draw::Move(10.0, 60.0), 
-                Draw::BezierCurve((10.0, 65.0), (10.0, 61.666668), (10.0, 63.333332)), 
-                Draw::Move(10.0, 70.0), 
-                Draw::BezierCurve((10.0, 75.0), (10.0, 71.666664), (10.0, 73.333336)), 
-                Draw::Move(10.0, 80.0), 
-                Draw::BezierCurve((10.0, 85.0), (10.0, 81.666664), (10.0, 83.333336)), 
-                Draw::Move(10.0, 90.0), 
-                Draw::BezierCurve((10.0, 95.0), (10.0, 91.666664), (10.0, 93.333336)), 
+                Draw::Path(PathOp::NewPath), 
+                Draw::Path(PathOp::Move(10.0, 10.0)), 
+                Draw::Path(PathOp::Line(10.0, 100.0)), 
+                Draw::Path(PathOp::NewPath), 
+                Draw::Path(PathOp::Move(10.0, 10.0)), 
+                Draw::Path(PathOp::BezierCurve(((10.0, 11.666667), (10.0, 13.333333)), (10.0, 15.0))), 
+                Draw::Path(PathOp::Move(10.0, 20.0)), 
+                Draw::Path(PathOp::BezierCurve(((10.0, 21.666666), (10.0, 23.333334)), (10.0, 25.0))), 
+                Draw::Path(PathOp::Move(10.0, 30.0)), 
+                Draw::Path(PathOp::BezierCurve(((10.0, 31.666666), (10.0, 33.333332)), (10.0, 35.0))), 
+                Draw::Path(PathOp::Move(10.0, 40.0)), 
+                Draw::Path(PathOp::BezierCurve(((10.0, 41.666668), (10.0, 43.333332)), (10.0, 45.0))), 
+                Draw::Path(PathOp::Move(10.0, 50.0)), 
+                Draw::Path(PathOp::BezierCurve(((10.0, 51.666668), (10.0, 53.333332)), (10.0, 55.0))), 
+                Draw::Path(PathOp::Move(10.0, 60.0)), 
+                Draw::Path(PathOp::BezierCurve(((10.0, 61.666668), (10.0, 63.333332)), (10.0, 65.0))), 
+                Draw::Path(PathOp::Move(10.0, 70.0)), 
+                Draw::Path(PathOp::BezierCurve(((10.0, 71.666664), (10.0, 73.333336)), (10.0, 75.0))), 
+                Draw::Path(PathOp::Move(10.0, 80.0)), 
+                Draw::Path(PathOp::BezierCurve(((10.0, 81.666664), (10.0, 83.333336)), (10.0, 85.0))), 
+                Draw::Path(PathOp::Move(10.0, 90.0)), 
+                Draw::Path(PathOp::BezierCurve(((10.0, 91.666664), (10.0, 93.333336)), (10.0, 95.0))), 
                 Draw::Stroke, 
-                Draw::NewPath, 
-                Draw::Move(10.0, 10.0), 
-                Draw::BezierCurve((10.0, 100.0), (10.0, 40.0), (10.0, 70.0))
+                Draw::Path(PathOp::NewPath), 
+                Draw::Path(PathOp::Move(10.0, 10.0)), 
+                Draw::Path(PathOp::BezierCurve(((10.0, 40.0), (10.0, 70.0)), (10.0, 100.0)))
             ]);
         });
     }

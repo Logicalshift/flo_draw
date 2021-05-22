@@ -1,4 +1,5 @@
 use crate::draw::*;
+use crate::path::*;
 use crate::font::*;
 
 use flo_stream::*;
@@ -25,7 +26,7 @@ impl<'a> ttf_parser::OutlineBuilder for FontOutliner<'a> {
 
         self.last   = (x, y);
 
-        self.drawing.push(Draw::Move(self.x_pos + x, self.y_pos + y));
+        self.drawing.push(Draw::Path(PathOp::Move(self.x_pos + x, self.y_pos + y)));
     }
 
     fn line_to(&mut self, x: f32, y: f32) {
@@ -33,7 +34,7 @@ impl<'a> ttf_parser::OutlineBuilder for FontOutliner<'a> {
 
         self.last   = (x, y);
 
-        self.drawing.push(Draw::Line(self.x_pos + x, self.y_pos + y));
+        self.drawing.push(Draw::Path(PathOp::Line(self.x_pos + x, self.y_pos + y)));
     }
 
     fn quad_to(&mut self, cp_x1: f32, cp_y1: f32, to_x: f32, to_y:f32) {
@@ -50,10 +51,11 @@ impl<'a> ttf_parser::OutlineBuilder for FontOutliner<'a> {
         let (x2, y2)    = (x0q + (2.0/3.0) * (x2q-x0q), y0q + (2.0/3.0) * (y2q-y0q));
         let (x3, y3)    = (x1q + (2.0/3.0) * (x2q-x1q), y1q + (2.0/3.0) * (y2q-y1q));
 
-        self.drawing.push(Draw::BezierCurve(
+        self.drawing.push(Draw::Path(PathOp::BezierCurve(
+            ((self.x_pos + x2, self.y_pos + y2), 
+             (self.x_pos + x3, self.y_pos + y3)),
             (self.x_pos + x1q, self.y_pos + y1q), 
-            (self.x_pos + x2, self.y_pos + y2), 
-            (self.x_pos + x3, self.y_pos + y3)));
+        )));
     }
 
     fn curve_to(&mut self, cp_x1: f32, cp_y1: f32, cp_x2: f32, cp_y2: f32, to_x: f32, to_y: f32) {
@@ -67,14 +69,15 @@ impl<'a> ttf_parser::OutlineBuilder for FontOutliner<'a> {
 
         self.last       = (x1, y1);
 
-        self.drawing.push(Draw::BezierCurve(
+        self.drawing.push(Draw::Path(PathOp::BezierCurve(
+            ((self.x_pos + x2, self.y_pos + y2), 
+             (self.x_pos + x3, self.y_pos + y3)),
             (self.x_pos + x1, self.y_pos + y1), 
-            (self.x_pos + x2, self.y_pos + y2), 
-            (self.x_pos + x3, self.y_pos + y3)));
+        )));
     }
 
     fn close(&mut self) {
-        self.drawing.push(Draw::ClosePath);
+        self.drawing.push(Draw::Path(PathOp::ClosePath));
     }
 }
 
@@ -114,7 +117,7 @@ pub fn drawing_with_text_as_paths<InStream: 'static+Send+Unpin+Stream<Item=Draw>
 
                         for glyph in glyphs {
                             // Start rendering this glyph
-                            yield_value(Draw::NewPath).await;
+                            yield_value(Draw::Path(PathOp::NewPath)).await;
 
                             let GlyphId(glyph_id)   = glyph.id;
                             let glyph_id            = ttf_parser::GlyphId(glyph_id as _);

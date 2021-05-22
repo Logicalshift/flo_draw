@@ -1,4 +1,5 @@
 use super::draw::*;
+use super::path::*;
 use super::context::*;
 
 use flo_curves::*;
@@ -98,14 +99,15 @@ pub trait GraphicsPrimitives : GraphicsContext {
 ///
 pub fn draw_rect(x1: f32, y1: f32, x2: f32, y2: f32) -> Vec<Draw> {
     use self::Draw::*;
+    use self::PathOp::*;
 
     vec![
-        Move(x1, y1),
-        Line(x1, y2),
-        Line(x2, y2),
-        Line(x2, y1),
-        Line(x1, y1),
-        ClosePath
+        Path(Move(x1, y1)),
+        Path(Line(x1, y2)),
+        Path(Line(x2, y2)),
+        Path(Line(x2, y1)),
+        Path(Line(x1, y1)),
+        Path(ClosePath)
     ]
 }
 
@@ -114,6 +116,7 @@ pub fn draw_rect(x1: f32, y1: f32, x2: f32, y2: f32) -> Vec<Draw> {
 ///
 pub fn draw_circle(center_x: f32, center_y: f32, radius: f32) -> Vec<Draw> {
     use self::Draw::*;
+    use self::PathOp::*;
 
     // Generate the circle and turn it into bezier curves
     let circle                          = arc::Circle::new(Coord2(center_x as f64, center_y as f64), radius as f64);
@@ -124,9 +127,9 @@ pub fn draw_circle(center_x: f32, center_y: f32, radius: f32) -> Vec<Draw> {
     let curves  = curves.into_iter().map(|curve| Draw::from(&curve));
 
     // Complete the path
-    let path    = iter::once(Move(start_point.x() as f32, start_point.y() as f32))
+    let path    = iter::once(Path(Move(start_point.x() as f32, start_point.y() as f32)))
         .chain(curves)
-        .chain(iter::once(ClosePath));
+        .chain(iter::once(Path(ClosePath)));
 
     path.collect()
 }
@@ -137,10 +140,10 @@ where Curve::Point: Coordinate2D {
         let end         = curve.end_point();
         let (cp1, cp2)  = curve.control_points();
 
-        Draw::BezierCurve(
-            (end.x() as f32, end.y() as f32),
-            (cp1.x() as f32, cp1.y() as f32),
-            (cp2.x() as f32, cp2.y() as f32))
+        Draw::Path(PathOp::BezierCurve(
+            ((cp1.x() as f32, cp1.y() as f32),
+            (cp2.x() as f32, cp2.y() as f32)),
+            (end.x() as f32, end.y() as f32)))
     }
 }
 

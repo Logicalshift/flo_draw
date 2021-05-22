@@ -1,4 +1,5 @@
 use super::draw::*;
+use super::path::*;
 use super::font::*;
 use super::color::*;
 use super::texture::*;
@@ -424,16 +425,17 @@ impl<'a> CanvasEncoding<String> for &'a Vec<GlyphPosition> {
 impl CanvasEncoding<String> for Draw {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::Draw::*;
+        use self::PathOp::*;
 
         match self {
             &StartFrame                                 => ('N', 'F').encode_canvas(append_to),
             &ShowFrame                                  => ('N', 'f').encode_canvas(append_to),
             &ResetFrame                                 => ('N', 'G').encode_canvas(append_to),
-            &NewPath                                    => ('N', 'p').encode_canvas(append_to),
-            &Move(x, y)                                 => ('m', x, y).encode_canvas(append_to),
-            &Line(x, y)                                 => ('l', x, y).encode_canvas(append_to),
-            &BezierCurve(p1, p2, p3)                    => ('c', p1, p2, p3).encode_canvas(append_to),
-            &ClosePath                                  => ('.').encode_canvas(append_to),
+            &Path(NewPath)                              => ('N', 'p').encode_canvas(append_to),
+            &Path(Move(x, y))                           => ('m', x, y).encode_canvas(append_to),
+            &Path(Line(x, y))                           => ('l', x, y).encode_canvas(append_to),
+            &Path(BezierCurve((cp1, cp2), p))           => ('c', p, cp1, cp2).encode_canvas(append_to),
+            &Path(ClosePath)                            => ('.').encode_canvas(append_to),
             &Fill                                       => 'F'.encode_canvas(append_to),
             &Stroke                                     => 'S'.encode_canvas(append_to),
             &LineWidth(width)                           => ('L', 'w', width).encode_canvas(append_to),
@@ -513,15 +515,15 @@ mod test {
     }
 
     #[test]
-    fn encode_newpath() { assert!(&encode_draw(Draw::NewPath) == "Np") }
+    fn encode_newpath() { assert!(&encode_draw(Draw::Path(PathOp::NewPath)) == "Np") }
     #[test]
-    fn encode_move() { assert!(&encode_draw(Draw::Move(20.0, 20.0)) == "mAAAoBBAAAoBB") }
+    fn encode_move() { assert!(&encode_draw(Draw::Path(PathOp::Move(20.0, 20.0))) == "mAAAoBBAAAoBB") }
     #[test]
-    fn encode_line() { assert!(&encode_draw(Draw::Line(20.0, 20.0)) == "lAAAoBBAAAoBB") }
+    fn encode_line() { assert!(&encode_draw(Draw::Path(PathOp::Line(20.0, 20.0))) == "lAAAoBBAAAoBB") }
     #[test]
-    fn encode_bezier() { assert!(&encode_draw(Draw::BezierCurve((20.0, 20.0), (20.0, 20.0), (20.0, 20.0))) == "cAAAoBBAAAoBBAAAoBBAAAoBBAAAoBBAAAoBB") }
+    fn encode_bezier() { assert!(&encode_draw(Draw::Path(PathOp::BezierCurve(((20.0, 20.0), (20.0, 20.0)), (20.0, 20.0)))) == "cAAAoBBAAAoBBAAAoBBAAAoBBAAAoBBAAAoBB") }
     #[test]
-    fn encode_close_path() { assert!(&encode_draw(Draw::ClosePath) == ".") }
+    fn encode_close_path() { assert!(&encode_draw(Draw::Path(PathOp::ClosePath)) == ".") }
     #[test]
     fn encode_fill() { assert!(&encode_draw(Draw::Fill) == "F") }
     #[test]

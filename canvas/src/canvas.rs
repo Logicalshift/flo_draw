@@ -1,4 +1,5 @@
 use crate::draw::*;
+use crate::path::*;
 use crate::font::*;
 use crate::color::*;
 use crate::context::*;
@@ -214,15 +215,15 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn show_frame(&mut self)                        { self.pending.push(Draw::ShowFrame); }
     fn reset_frame(&mut self)                       { self.pending.push(Draw::ResetFrame); }
 
-    fn new_path(&mut self)                          { self.pending.push(Draw::NewPath); }
-    fn move_to(&mut self, x: f32, y: f32)           { self.pending.push(Draw::Move(x, y)); }
-    fn line_to(&mut self, x: f32, y: f32)           { self.pending.push(Draw::Line(x, y)); }
+    fn new_path(&mut self)                          { self.pending.push(Draw::Path(PathOp::NewPath)); }
+    fn move_to(&mut self, x: f32, y: f32)           { self.pending.push(Draw::Path(PathOp::Move(x, y))); }
+    fn line_to(&mut self, x: f32, y: f32)           { self.pending.push(Draw::Path(PathOp::Line(x, y))); }
 
-    fn bezier_curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32) {
-        self.pending.push(Draw::BezierCurve((x1, y1), (x2, y2), (x3, y3)));
+    fn bezier_curve_to(&mut self, x1: f32, y1: f32, cp1x: f32, cp1y: f32, cp2x: f32, cp2y: f32) {
+        self.pending.push(Draw::Path(PathOp::BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x1, y1))));
     }
 
-    fn close_path(&mut self)                                                        { self.pending.push(Draw::ClosePath); }
+    fn close_path(&mut self)                                                        { self.pending.push(Draw::Path(PathOp::ClosePath)); }
     fn fill(&mut self)                                                              { self.pending.push(Draw::Fill); }
     fn stroke(&mut self)                                                            { self.pending.push(Draw::Stroke); }
     fn line_width(&mut self, width: f32)                                            { self.pending.push(Draw::LineWidth(width)); }
@@ -295,7 +296,7 @@ mod test {
     fn can_draw_to_canvas() {
         let canvas = Canvas::new();
 
-        canvas.write(vec![Draw::NewPath]);
+        canvas.write(vec![Draw::Path(PathOp::NewPath)]);
     }
 
     #[test]
@@ -308,11 +309,11 @@ mod test {
             sleep(Duration::from_millis(50));
 
             canvas.write(vec![
-                Draw::NewPath,
-                Draw::Move(0.0, 0.0),
-                Draw::Line(10.0, 0.0),
-                Draw::Line(10.0, 10.0),
-                Draw::Line(0.0, 10.0)
+                Draw::Path(PathOp::NewPath),
+                Draw::Path(PathOp::Move(0.0, 0.0)),
+                Draw::Path(PathOp::Line(10.0, 0.0)),
+                Draw::Path(PathOp::Line(10.0, 10.0)),
+                Draw::Path(PathOp::Line(0.0, 10.0))
             ]);
         });
 
@@ -323,11 +324,11 @@ mod test {
             assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::StartFrame));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
-            assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
-            assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
-            assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 10.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(0.0, 10.0))));
             assert!(stream.next().await == Some(Draw::ShowFrame));
 
             // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
@@ -354,11 +355,11 @@ mod test {
             assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::StartFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
-            assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
-            assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
-            assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 10.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(0.0, 10.0))));
             assert!(stream.next().await == Some(Draw::ShowFrame));
         });
     }
@@ -389,11 +390,11 @@ mod test {
         executor::block_on(async {
             assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
-            assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
-            assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
-            assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 10.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(0.0, 10.0))));
 
             // 'Store' is still present as we can restore the same thing repeatedly
             assert!(stream.next().await == Some(Draw::Store));
@@ -430,11 +431,11 @@ mod test {
         {
             assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
-            assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
-            assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
-            assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 10.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(0.0, 10.0))));
 
             assert!(stream.next().await == Some(Draw::Stroke));
         })
@@ -465,15 +466,15 @@ mod test {
         executor::block_on(async {
             assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
-            assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
-            assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
-            assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 10.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(0.0, 10.0))));
 
             assert!(stream.next().await == Some(Draw::Store));
             assert!(stream.next().await == Some(Draw::Clip));
-            assert!(stream.next().await == Some(Draw::NewPath));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
             assert!(stream.next().await == Some(Draw::Restore));
         })
     }
@@ -489,11 +490,11 @@ mod test {
             sleep(Duration::from_millis(50));
 
             canvas.write(vec![
-                Draw::NewPath,
-                Draw::Move(0.0, 0.0),
-                Draw::Line(10.0, 0.0),
-                Draw::Line(10.0, 10.0),
-                Draw::Line(0.0, 10.0)
+                Draw::Path(PathOp::NewPath),
+                Draw::Path(PathOp::Move(0.0, 0.0)),
+                Draw::Path(PathOp::Line(10.0, 0.0)),
+                Draw::Path(PathOp::Line(10.0, 10.0)),
+                Draw::Path(PathOp::Line(0.0, 10.0))
             ]);
         });
 
@@ -504,22 +505,22 @@ mod test {
             assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::StartFrame));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(0.0, 0.0))));
 
             assert!(stream2.next().await == Some(Draw::ResetFrame));
             assert!(stream2.next().await == Some(Draw::StartFrame));
             assert!(stream2.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
-            assert!(stream2.next().await == Some(Draw::NewPath));
-            assert!(stream2.next().await == Some(Draw::Move(0.0, 0.0)));
+            assert!(stream2.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream2.next().await == Some(Draw::Path(PathOp::Move(0.0, 0.0))));
 
-            assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
-            assert!(stream.next().await == Some(Draw::Line(10.0, 10.0)));
-            assert!(stream.next().await == Some(Draw::Line(0.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 10.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(0.0, 10.0))));
 
-            assert!(stream2.next().await == Some(Draw::Line(10.0, 0.0)));
-            assert!(stream2.next().await == Some(Draw::Line(10.0, 10.0)));
-            assert!(stream2.next().await == Some(Draw::Line(0.0, 10.0)));
+            assert!(stream2.next().await == Some(Draw::Path(PathOp::Line(10.0, 0.0))));
+            assert!(stream2.next().await == Some(Draw::Path(PathOp::Line(10.0, 10.0))));
+            assert!(stream2.next().await == Some(Draw::Path(PathOp::Line(0.0, 10.0))));
 
             // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
             assert!(stream.next().await == Some(Draw::ShowFrame));
@@ -538,11 +539,11 @@ mod test {
         // Thread to draw some stuff to the canvas
         spawn(move || {
             canvas.write(vec![
-                Draw::NewPath,
-                Draw::Move(0.0, 0.0),
-                Draw::Line(10.0, 0.0),
-                Draw::Line(10.0, 10.0),
-                Draw::Line(0.0, 10.0)
+                Draw::Path(PathOp::NewPath),
+                Draw::Path(PathOp::Move(0.0, 0.0)),
+                Draw::Path(PathOp::Line(10.0, 0.0)),
+                Draw::Path(PathOp::Line(10.0, 10.0)),
+                Draw::Path(PathOp::Line(0.0, 10.0))
             ]);
 
             // Enough time that we read the first few commands
@@ -550,7 +551,7 @@ mod test {
 
             canvas.write(vec![
                 Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
-                Draw::Move(200.0, 200.0),
+                Draw::Path(PathOp::Move(200.0, 200.0)),
             ]);
         });
 
@@ -565,7 +566,7 @@ mod test {
 
             // Commands we sent before the flush are gone
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 1.0))));
-            assert!(stream.next().await == Some(Draw::Move(200.0, 200.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(200.0, 200.0))));
             assert!(stream.next().await == Some(Draw::ShowFrame));
 
             // When the thread goes away, it'll drop the canvas, so we should get the 'None' request here too
@@ -601,8 +602,8 @@ mod test {
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
             assert!(stream.next().await == Some(Draw::ClearLayer));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(10.0, 10.0))));
             assert!(stream.next().await == Some(Draw::Fill));
         });
     }
@@ -638,14 +639,14 @@ mod test {
         executor::block_on(async {
             assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(20.0, 20.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(20.0, 20.0))));
             assert!(stream.next().await == Some(Draw::Stroke));
 
             assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
             assert!(stream.next().await == Some(Draw::ClearLayer));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(10.0, 10.0))));
             assert!(stream.next().await == Some(Draw::Fill));
         });
     }
@@ -688,14 +689,14 @@ mod test {
         executor::block_on(async {
             assert!(stream.next().await == Some(Draw::ResetFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(20.0, 20.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(20.0, 20.0))));
             assert!(stream.next().await == Some(Draw::Stroke));
 
             assert!(stream.next().await == Some(Draw::Sprite(SpriteId(1))));
             assert!(stream.next().await == Some(Draw::ClearSprite));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(10.0, 10.0))));
             assert!(stream.next().await == Some(Draw::Fill));
 
             assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
@@ -868,14 +869,14 @@ mod test {
             assert!(stream.next().await == Some(Draw::StartFrame));
             assert!(stream.next().await == Some(Draw::StartFrame));
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(20.0, 20.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(20.0, 20.0))));
             assert!(stream.next().await == Some(Draw::Stroke));
 
             assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
             assert!(stream.next().await == Some(Draw::ClearLayer));
-            assert!(stream.next().await == Some(Draw::NewPath));
-            assert!(stream.next().await == Some(Draw::Move(10.0, 10.0)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(10.0, 10.0))));
             assert!(stream.next().await == Some(Draw::Fill));
 
             assert!(stream.next().await == Some(Draw::ShowFrame));

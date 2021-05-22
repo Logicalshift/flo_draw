@@ -42,6 +42,7 @@ extern crate desync;
 extern crate hsluv;
 
 mod draw;
+mod path;
 mod font;
 mod color;
 mod canvas;
@@ -61,6 +62,7 @@ mod conversion_streams;
 #[cfg(feature = "outline-fonts")] mod font_line_layout;
 
 pub use self::draw::*;
+pub use self::path::*;
 pub use self::font::*;
 pub use self::color::*;
 pub use self::canvas::*;

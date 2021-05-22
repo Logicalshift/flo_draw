@@ -309,6 +309,7 @@ impl CanvasRenderer {
             // Iterate through the drawing instructions
             for draw in drawing {
                 use canvas::Draw::*;
+                use canvas::PathOp::*;
                 use math::point;
 
                 match draw {
@@ -333,14 +334,14 @@ impl CanvasRenderer {
                     }
 
                     // Begins a new path
-                    NewPath => {
+                    Path(NewPath) => {
                         current_path = None;
                         in_subpath   = false;
                         path_builder = Some(path::Path::builder());
                     }
 
                     // Move to a new point
-                    Move(x, y) => {
+                    Path(Move(x, y)) => {
                         if in_subpath {
                             path_builder.as_mut().map(|builder| builder.end(false));
                         }
@@ -350,7 +351,7 @@ impl CanvasRenderer {
                     }
 
                     // Line to point
-                    Line(x, y) => {
+                    Path(Line(x, y)) => {
                         if in_subpath {
                             path_builder.get_or_insert_with(|| path::Path::builder())
                                 .line_to(point(x, y));
@@ -362,7 +363,7 @@ impl CanvasRenderer {
                     }
 
                     // Bezier curve to point
-                    BezierCurve((px, py), (cp1x, cp1y), (cp2x, cp2y)) => {
+                    Path(BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (px, py))) => {
                         if in_subpath {
                             path_builder.get_or_insert_with(|| path::Path::builder())
                                 .cubic_bezier_to(point(cp1x, cp1y), point(cp2x, cp2y), point(px, py));
@@ -374,7 +375,7 @@ impl CanvasRenderer {
                     }
 
                     // Closes the current path
-                    ClosePath => {
+                    Path(ClosePath) => {
                         path_builder.get_or_insert_with(|| path::Path::builder())
                             .end(true);
                         in_subpath = false;
