@@ -283,6 +283,7 @@ impl DrawStreamCore {
     ///
     pub fn write<DrawIter: Iterator<Item=Draw>>(&mut self, drawing: DrawIter) {
         let mut drawing_cleared = false;
+        let mut balance_frames  = false;
 
         for draw in drawing {
             // Process the drawing instruction
@@ -331,6 +332,12 @@ impl DrawStreamCore {
                     }
                 }
 
+                Draw::ShowFrame         |
+                Draw::ResetFrame        => {
+                    balance_frames = true;
+                    self.pending_drawing.push((DrawResource::Frame, draw));
+                }
+
                 _ => {
                     // Add everything else to the pending drawing
                     let drawing_target = draw.target_resource(&self.target_resource);
@@ -342,6 +349,10 @@ impl DrawStreamCore {
         // If we've processed a clear instruction, clear out any unused resources from the pending list
         if drawing_cleared {
             self.remove_unused_resources();
+        }
+
+        if balance_frames {
+            self.balance_show_frames();
         }
     }
 

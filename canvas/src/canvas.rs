@@ -352,8 +352,8 @@ mod test {
         // Check we can get the results via the stream
         executor::block_on(async {
             assert!(stream.next().await == Some(Draw::ResetFrame));
-            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::NewPath));
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
             assert!(stream.next().await == Some(Draw::Line(10.0, 0.0)));
