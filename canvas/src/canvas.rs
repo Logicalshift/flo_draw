@@ -508,8 +508,8 @@ mod test {
             assert!(stream.next().await == Some(Draw::Move(0.0, 0.0)));
 
             assert!(stream2.next().await == Some(Draw::ResetFrame));
-            assert!(stream2.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream2.next().await == Some(Draw::StartFrame));
+            assert!(stream2.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream2.next().await == Some(Draw::NewPath));
             assert!(stream2.next().await == Some(Draw::Move(0.0, 0.0)));
 
