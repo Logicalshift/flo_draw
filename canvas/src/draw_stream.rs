@@ -160,8 +160,12 @@ impl DrawStreamCore {
             }
         }
 
-        // Rewrite the pending queue if there was anything to remove
-        if indexes_to_remove.len() > 0 {
+        let already_balanced = if reset_frame { vec![1, self.pending_drawing.len()-1] } else { vec![0, self.pending_drawing.len()-1] };
+
+        if indexes_to_remove == already_balanced {
+            // If there's just a 'start frame' and a 'show frame' at the end, then there's nothing to do
+        } else if indexes_to_remove.len() > 0 {
+            // Rewrite the pending queue if there was anything to remove
             let indexes_to_remove   = indexes_to_remove.into_iter().collect::<HashSet<_>>();
             let old_drawing         = mem::take(&mut self.pending_drawing);
             self.pending_drawing    = old_drawing.into_iter()
