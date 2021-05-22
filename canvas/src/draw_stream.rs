@@ -145,12 +145,15 @@ impl DrawStreamCore {
                 }
 
                 Draw::ResetFrame    => {
-                    // We move the 'reset frame' request to the start of the stack
-                    reset_frame = true;
-
-                    // Remove all frame instructions up to this point
-                    indexes_to_remove.extend(frame_stack.drain(..));
-                    indexes_to_remove.push(idx);
+                    // An initial 'reset frame' is ignored
+                    if idx > 0 {
+                        // We move the 'reset frame' request to the start of the stack
+                        reset_frame = true;
+        
+                        // Remove all frame instructions up to this point
+                        indexes_to_remove.extend(frame_stack.drain(..));
+                        indexes_to_remove.push(idx);
+                    }
                 }
 
                 _                   => { }
