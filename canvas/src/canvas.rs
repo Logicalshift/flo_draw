@@ -537,8 +537,6 @@ mod test {
 
         // Thread to draw some stuff to the canvas
         spawn(move || {
-            sleep(Duration::from_millis(50));
-
             canvas.write(vec![
                 Draw::NewPath,
                 Draw::Move(0.0, 0.0),
@@ -551,28 +549,21 @@ mod test {
             sleep(Duration::from_millis(100));
 
             canvas.write(vec![
-                Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)),
+                Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
                 Draw::Move(200.0, 200.0),
             ]);
         });
 
         // TODO: if the canvas fails to notify, this will block forever :-/
         executor::block_on(async {
-            // Check we can get the results via the stream
-            assert!(stream.next().await == Some(Draw::ResetFrame));
-            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
-            assert!(stream.next().await == Some(Draw::StartFrame));
-            assert!(stream.next().await == Some(Draw::NewPath));
-
             // Give the thread some time to clear the canvas
-            sleep(Duration::from_millis(120));
+            sleep(Duration::from_millis(200));
 
             // Should immediately stop the old frame and start a new one
-            assert!(stream.next().await == Some(Draw::ShowFrame));
-            assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::ResetFrame));
 
             // Commands we sent before the flush are gone
-            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 1.0))));
             assert!(stream.next().await == Some(Draw::Move(200.0, 200.0)));
             assert!(stream.next().await == Some(Draw::ShowFrame));
 
