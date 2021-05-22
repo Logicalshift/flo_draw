@@ -117,6 +117,50 @@ impl DrawStreamCore {
     }
 
     ///
+    /// Removes any 'start frame' that's matched by a 'show frame' or a 'reset frame'
+    ///
+    pub fn balance_show_frames(&mut self) {
+        // The indexes of instructions that cancel each other out
+        let mut indexes_to_remove   = vec![];
+
+        // The stack of active 'show frame' instructions
+        let mut frame_stack         = vec![];
+
+        // Trace the pending drawings for frame operations
+        for (idx, (_resource, draw)) in self.pending_drawing.iter().enumerate() {
+            match draw {
+                Draw::StartFrame    => frame_stack.push(idx),
+                Draw::ShowFrame     => {
+                    // Remove the corresponding 'start frame' instruction
+                    if let Some(start_frame_idx) = frame_stack.pop() {
+                        indexes_to_remove.push(start_frame_idx);
+                        indexes_to_remove.push(idx);
+                    }
+                }
+
+                Draw::ResetFrame    => {
+                    // Remove all frame instructions up to this point
+                    indexes_to_remove.extend(frame_stack.drain(..));
+                    indexes_to_remove.push(idx);
+                }
+
+                _                   => { }
+            }
+        }
+
+        // Rewrite the pending queue if there was anything to remove
+        if indexes_to_remove.len() > 0 {
+            let indexes_to_remove   = indexes_to_remove.into_iter().collect::<HashSet<_>>();
+            let old_drawing         = mem::take(&mut self.pending_drawing);
+            self.pending_drawing    = old_drawing.into_iter()
+                .enumerate()
+                .filter(|(idx, _item)| !indexes_to_remove.contains(idx))
+                .map(|(_idx, item)| item)
+                .collect();
+        }
+    }
+
+    ///
     /// Removes all references that change the specified resource
     ///
     pub fn clear_resource(&mut self, resource: DrawResource) {
