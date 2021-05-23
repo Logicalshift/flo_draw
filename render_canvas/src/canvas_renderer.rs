@@ -1068,6 +1068,10 @@ impl CanvasRenderer {
                     DrawLaidOutText => {
                         // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
                     },
+
+                    Gradient(_, _) => {
+                        // Not supported yet
+                    }
                 }
             }
 
