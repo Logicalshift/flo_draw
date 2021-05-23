@@ -1,10 +1,11 @@
-use super::draw::*;
-use super::path::*;
-use super::font::*;
-use super::color::*;
-use super::texture::*;
-use super::font_face::*;
-use super::transform2d::*;
+use crate::draw::*;
+use crate::path::*;
+use crate::font::*;
+use crate::color::*;
+use crate::texture::*;
+use crate::gradient::*;
+use crate::font_face::*;
+use crate::transform2d::*;
 
 use futures::*;
 use futures::stream;
@@ -1911,6 +1912,21 @@ mod test {
     }
 
     #[test]
+    fn decode_gradient_new() {
+        check_round_trip_single(Draw::Gradient(GradientId(42), GradientOp::New(Color::Rgba(0.1, 0.2, 0.3, 0.4))));
+    }
+
+    #[test]
+    fn decode_gradient_direction() {
+        check_round_trip_single(Draw::Gradient(GradientId(43), GradientOp::Direction((1.0, 2.0), (3.0, 4.0))));
+    }
+
+    #[test]
+    fn decode_gradient_add_stop() {
+        check_round_trip_single(Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Hsluv(0.1, 0.2, 0.3, 0.4))));
+    }
+
+    #[test]
     fn decode_all_iter() {
         check_round_trip(vec![
             Draw::Path(PathOp::NewPath),
@@ -1949,7 +1965,11 @@ mod test {
             Draw::ClearSprite,
             Draw::SpriteTransform(SpriteTransform::Translate(4.0, 5.0)),
             Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))),
-            Draw::DrawSprite(SpriteId(1300))
+            Draw::DrawSprite(SpriteId(1300)),
+
+            Draw::Gradient(GradientId(42), GradientOp::New(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
+            Draw::Gradient(GradientId(43), GradientOp::Direction((1.0, 2.0), (3.0, 4.0))),
+            Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Hsluv(0.1, 0.2, 0.3, 0.4))),
         ]);
     }
 
@@ -1999,6 +2019,10 @@ mod test {
             Draw::Texture(TextureId(43), TextureOp::Free),
             Draw::Texture(TextureId(44), TextureOp::SetBytes(2, 3, 4, 5, Arc::new(vec![1,2,3,4,5]))),
             Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.5)),
+
+            Draw::Gradient(GradientId(42), GradientOp::New(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
+            Draw::Gradient(GradientId(43), GradientOp::Direction((1.0, 2.0), (3.0, 4.0))),
+            Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Hsluv(0.1, 0.2, 0.3, 0.4))),
         ];
         let mut encoded = String::new();
         all.encode_canvas(&mut encoded);
