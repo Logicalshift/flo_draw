@@ -1511,12 +1511,56 @@ impl CanvasDecoder {
         }
     }
 
-    fn decode_gradient_direction(chr: char, gradient_id: GradientId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        Err(DecoderError::NotReady)
+    ///
+    /// Decodes the GradientOp::Direction instruction
+    ///
+    fn decode_gradient_direction(next_chr: char, gradient_id: GradientId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Parameter is 4 coordinates
+        let mut param = param;
+
+        if param.len() < 23 {
+            param.push(next_chr);
+            Ok((DecoderState::GradientOpDirection(gradient_id, param), None))
+        } else {
+            param.push(next_chr);
+
+            let mut param   = param.chars();
+            let x1          = Self::decode_f32(&mut param)?;
+            let y1          = Self::decode_f32(&mut param)?;
+            let x2          = Self::decode_f32(&mut param)?;
+            let y2          = Self::decode_f32(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::Gradient(gradient_id, GradientOp::Direction((x1, y1), (x2, y2))))))
+        }
     }
 
-    fn decode_gradient_add_stop(chr: char, gradient_id: GradientId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        Err(DecoderError::NotReady)
+    ///
+    /// Decodes the GradientOp::AddStop instruction
+    ///
+    fn decode_gradient_add_stop(next_chr: char, gradient_id: GradientId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Parameter is a position followed by a colour
+        let mut param = param;
+
+        if param.len() < 30 {
+            param.push(next_chr);
+            Ok((DecoderState::GradientOpAddStop(gradient_id, param), None))
+        } else {
+            param.push(next_chr);
+
+            let mut param   = param.chars();
+            let pos         = Self::decode_f32(&mut param)?;
+            let col_type    = param.next();
+            let r           = Self::decode_f32(&mut param)?;
+            let g           = Self::decode_f32(&mut param)?;
+            let b           = Self::decode_f32(&mut param)?;
+            let a           = Self::decode_f32(&mut param)?;
+
+            if col_type != Some('R') {
+                Err(DecoderError::UnknownColorType)?;
+            }
+
+            Ok((DecoderState::None, Some(Draw::Gradient(gradient_id, GradientOp::AddStop(pos, Color::Rgba(r, g, b, a))))))
+        }
     }
 
     ///
@@ -2105,7 +2149,7 @@ mod test {
 
             Draw::Gradient(GradientId(42), GradientOp::New(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
             Draw::Gradient(GradientId(43), GradientOp::Direction((1.0, 2.0), (3.0, 4.0))),
-            Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Hsluv(0.1, 0.2, 0.3, 0.4))),
+            Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),
         ];
         let mut encoded = String::new();
         all.encode_canvas(&mut encoded);
