@@ -67,6 +67,7 @@ struct DecodeBytes {
 type DecodeLayerId      = PartialResult<LayerId>;
 type DecodeFontId       = PartialResult<FontId>;
 type DecodeTextureId    = PartialResult<TextureId>;
+type DecodeGradientId   = PartialResult<GradientId>;
 
 impl DecodeString {
     ///
@@ -407,6 +408,11 @@ enum DecoderState {
     TextureOpCreate(TextureId, String),                     // 'B<id>N' (w, h, format)
     TextureOpSetBytes(TextureId, String, DecodeBytes),      // 'B<id>D' (x, y, w, h, bytes)
     TextureOpFillTransparency(TextureId, String),           // 'B<id>t' (alpha)
+
+    GradientOp(DecodeGradientId),                           // 'G' (id, op)
+    GradientOpNew(GradientId, String),                      // 'G<id>N' (r, g, b, a)
+    GradientOpDirection(GradientId, String),                // 'G<id>D' (x1, y1, x2, y2)
+    GradientOpAddStop(GradientId, String),                  // 'G<id>S' (pos, r, g, b, a)
 }
 
 ///
@@ -525,6 +531,11 @@ impl CanvasDecoder {
             TextureOpCreate(texture_id, param)                  => Self::decode_texture_create(next_chr, texture_id, param)?,
             TextureOpSetBytes(texture_id, param, bytes)         => Self::decode_texture_set_bytes(next_chr, texture_id, param, bytes)?,
             TextureOpFillTransparency(texture_id, param)        => Self::decode_texture_fill_transparency(next_chr, texture_id, param)?,
+
+            GradientOp(gradient_id)                             => Self::decode_gradient_op(next_chr, gradient_id)?,     
+            GradientOpNew(gradient_id, param)                   => Self::decode_gradient_new(next_chr, gradient_id, param)?,
+            GradientOpDirection(gradient_id, param)             => Self::decode_gradient_direction(next_chr, gradient_id, param)?,
+            GradientOpAddStop(gradient_id, param)               => Self::decode_gradient_add_stop(next_chr, gradient_id, param)?,
         };
 
         self.state = next_state;
@@ -566,6 +577,8 @@ impl CanvasDecoder {
             'f' => Ok((DecoderState::FontOp(PartialResult::MatchMore(String::new())), None)),
 
             'B' => Ok((DecoderState::TextureOp(PartialResult::new()), None)),
+
+            'G' => Ok((DecoderState::GradientOp(PartialResult::new()), None)),
 
             // Other characters are not accepted
             _   => Err(DecoderError::InvalidCharacter(next_chr))
@@ -1159,6 +1172,14 @@ impl CanvasDecoder {
     }
 
     ///
+    /// Consumes characters until we have a gradient ID
+    ///
+    fn decode_gradient_id(next_chr: char, param: String) -> Result<PartialResult<GradientId>, DecoderError> {
+        Self::decode_compact_id(next_chr, param)
+            .map(|id| id.map(|id| GradientId(id)))
+    }
+
+    ///
     /// Decodes a font drawing command
     ///
     #[inline] fn decode_font_drawing(chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
@@ -1434,6 +1455,44 @@ impl CanvasDecoder {
         let alpha       = Self::decode_f32(&mut chars)?;
 
         Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha)))))
+    }
+
+    ///
+    /// Decodes a gradient ID and determines which gradient operation is being performed on it
+    ///
+    fn decode_gradient_op(chr: char, gradient_id: DecodeGradientId) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        use PartialResult::*;
+
+        // Decode the texture ID first
+        let gradient_id = match gradient_id {
+            MatchMore(gradient_id) => { 
+                let gradient_id = Self::decode_gradient_id(chr, gradient_id)?;
+                return Ok((DecoderState::GradientOp(gradient_id), None));
+            }
+
+            FullMatch(gradient_id) => gradient_id
+        };
+
+        // The gradient op is indicated by the next character
+        match chr {
+            'N' => Ok((DecoderState::GradientOpNew(gradient_id, String::new()), None)),
+            'D' => Ok((DecoderState::GradientOpDirection(gradient_id, String::new()), None)),
+            'S' => Ok((DecoderState::GradientOpAddStop(gradient_id, String::new()), None)),
+
+            _   => Err(DecoderError::InvalidCharacter(chr))
+        }
+    }
+
+    fn decode_gradient_new(chr: char, gradient_id: GradientId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        Err(DecoderError::NotReady)
+    }
+
+    fn decode_gradient_direction(chr: char, gradient_id: GradientId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        Err(DecoderError::NotReady)
+    }
+
+    fn decode_gradient_add_stop(chr: char, gradient_id: GradientId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        Err(DecoderError::NotReady)
     }
 
     ///
@@ -1923,7 +1982,7 @@ mod test {
 
     #[test]
     fn decode_gradient_add_stop() {
-        check_round_trip_single(Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Hsluv(0.1, 0.2, 0.3, 0.4))));
+        check_round_trip_single(Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))));
     }
 
     #[test]
@@ -1969,7 +2028,7 @@ mod test {
 
             Draw::Gradient(GradientId(42), GradientOp::New(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
             Draw::Gradient(GradientId(43), GradientOp::Direction((1.0, 2.0), (3.0, 4.0))),
-            Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Hsluv(0.1, 0.2, 0.3, 0.4))),
+            Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),
         ]);
     }
 
