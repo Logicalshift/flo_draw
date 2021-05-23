@@ -237,6 +237,7 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn dash_offset(&mut self, offset: f32)                                          { self.pending.push(Draw::DashOffset(offset)); }
     fn fill_color(&mut self, col: Color)                                            { self.pending.push(Draw::FillColor(col)); }
     fn fill_texture(&mut self, t: TextureId, x1: f32, y1: f32, x2: f32, y2: f32)    { self.pending.push(Draw::FillTexture(t, (x1, y1), (x2, y2))); }
+    fn fill_gradient(&mut self, g: GradientId, x1: f32, y1: f32, x2: f32, y2: f32)  { self.pending.push(Draw::FillGradient(g, (x1, y1), (x2, y2))); }
     fn stroke_color(&mut self, col: Color)                                          { self.pending.push(Draw::StrokeColor(col)); }
     fn blend_mode(&mut self, mode: BlendMode)                                       { self.pending.push(Draw::BlendMode(mode)); }
     fn identity_transform(&mut self)                                                { self.pending.push(Draw::IdentityTransform); }
@@ -273,7 +274,6 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32)                                     { self.pending.push(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha))); }
 
     fn new_gradient(&mut self, gradient_id: GradientId, initial_color: Color)                                   { self.pending.push(Draw::Gradient(gradient_id, GradientOp::New(initial_color))); }
-    fn gradient_direction(&mut self, gradient_id: GradientId, x1: f32, y1: f32, x2: f32, y2: f32)               { self.pending.push(Draw::Gradient(gradient_id, GradientOp::Direction((x1, y1), (x2, y2)))); }
     fn gradient_stop(&mut self, gradient_id: GradientId, pos: f32, color: Color)                                { self.pending.push(Draw::Gradient(gradient_id, GradientOp::AddStop(pos, color))); }
 
     fn draw(&mut self, d: Draw)                                 { self.pending.push(d); }
@@ -896,7 +896,6 @@ mod test {
             gc.layer(LayerId(1));
 
             gc.new_gradient(GradientId(2), Color::Rgba(0.0, 0.1, 0.2, 0.3));
-            gc.gradient_direction(GradientId(2), 20.0, 30.0, 40.0, 50.0);
             gc.gradient_stop(GradientId(2), 0.5, Color::Rgba(0.4, 0.5, 0.6, 1.0));
             gc.gradient_stop(GradientId(2), 1.0, Color::Rgba(0.7, 0.8, 0.9, 1.0));
 
@@ -911,7 +910,6 @@ mod test {
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
 
             assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::New(Color::Rgba(0.0, 0.1, 0.2, 0.3)))));
-            assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::Direction((20.0, 30.0), (40.0, 50.0)))));
             assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::AddStop(0.5, Color::Rgba(0.4, 0.5, 0.6, 1.0)))));
             assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::AddStop(1.0, Color::Rgba(0.7, 0.8, 0.9, 1.0)))));
 
@@ -929,12 +927,10 @@ mod test {
             gc.layer(LayerId(1));
 
             gc.new_gradient(GradientId(2), Color::Rgba(0.0, 0.1, 0.2, 0.3));
-            gc.gradient_direction(GradientId(2), 20.0, 30.0, 40.0, 50.0);
             gc.gradient_stop(GradientId(2), 0.5, Color::Rgba(0.4, 0.5, 0.6, 1.0));
             gc.gradient_stop(GradientId(2), 1.0, Color::Rgba(0.7, 0.8, 0.9, 1.0));
 
             gc.new_gradient(GradientId(2), Color::Rgba(0.0, 0.1, 0.2, 0.3));
-            gc.gradient_direction(GradientId(2), 20.0, 30.0, 40.0, 50.0);
             gc.gradient_stop(GradientId(2), 0.5, Color::Rgba(0.4, 0.5, 0.6, 1.0));
             gc.gradient_stop(GradientId(2), 1.0, Color::Rgba(0.7, 0.8, 0.9, 1.0));
 
@@ -949,7 +945,6 @@ mod test {
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
 
             assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::New(Color::Rgba(0.0, 0.1, 0.2, 0.3)))));
-            assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::Direction((20.0, 30.0), (40.0, 50.0)))));
             assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::AddStop(0.5, Color::Rgba(0.4, 0.5, 0.6, 1.0)))));
             assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::AddStop(1.0, Color::Rgba(0.7, 0.8, 0.9, 1.0)))));
 

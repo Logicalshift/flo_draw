@@ -598,6 +598,11 @@ impl CanvasRenderer {
                         });
                     }
 
+                    // Set a fill gradient
+                    FillGradient(_gradient_id, (_x1, _y1), (_x2, _y2)) => {
+                        todo!()
+                    }
+
                     // Set the line color
                     StrokeColor(color) => {
                         core.sync(|core| core.layer(self.current_layer).state.stroke_settings.stroke_color = Self::render_color(color));

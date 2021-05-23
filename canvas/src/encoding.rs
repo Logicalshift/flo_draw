@@ -302,7 +302,6 @@ impl<'a> CanvasEncoding<String> for &'a GradientOp {
 
         match self {
             New(color)          => ('N', *color).encode_canvas(append_to),
-            Direction(src, tgt) => ('D', *src, *tgt).encode_canvas(append_to),
             AddStop(pos, color) => ('S', *pos, *color).encode_canvas(append_to)
         }
     }
@@ -470,6 +469,7 @@ impl CanvasEncoding<String> for Draw {
             &StrokeColor(col)                           => ('C', 's', col).encode_canvas(append_to),
             &FillColor(col)                             => ('C', 'f', col).encode_canvas(append_to),
             &FillTexture(texture, (x1, y1), (x2, y2))   => ('C', 't', texture, (x1, y1), (x2, y2)).encode_canvas(append_to),
+            &FillGradient(gradient, (x1, y1), (x2, y2)) => ('C', 'g', gradient, (x1, y1), (x2, y2)).encode_canvas(append_to),
             &BlendMode(mode)                            => ('M', mode).encode_canvas(append_to),
             &IdentityTransform                          => ('T', 'i').encode_canvas(append_to),
             &CanvasHeight(height)                       => ('T', 'h', height).encode_canvas(append_to),

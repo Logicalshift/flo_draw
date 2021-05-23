@@ -51,6 +51,7 @@ impl Draw {
 
             // Texture and font operations generally alter the existing resource so they have a dependency
             Texture(texture_id, _)                  => resource == &DrawResource::Texture(*texture_id),
+            Gradient(gradient_id, _)                => resource == &DrawResource::Gradient(*gradient_id),
             Font(font_id, FontOp::LayoutText(_))    |
             Font(font_id, FontOp::DrawGlyphs(_))    => match resource { 
                 DrawResource::Font(resource_font_id) | DrawResource::FontSize(resource_font_id) => font_id == resource_font_id,
@@ -67,6 +68,7 @@ impl Draw {
                 _ => false 
             },
             FillTexture(texture_id, _, _)           => resource == &DrawResource::Texture(*texture_id),
+            FillGradient(gradient_id, _, _)         => resource == &DrawResource::Gradient(*gradient_id),
 
             // Transforms use the 'canvas' resource (setting the height or the identity transform resets any previous transform)
             CenterRegion(_, _)                      |
@@ -124,6 +126,7 @@ impl Draw {
             // DrawText and FillTexture use the corresponding resource
             DrawText(font_id, _, _, _)              => smallvec![*active_resource, DrawResource::CanvasTransform, DrawResource::Font(*font_id), DrawResource::FontSize(*font_id)],
             FillTexture(texture_id, _, _)           => smallvec![DrawResource::Texture(*texture_id)],
+            FillGradient(gradient_id, _, _)         => smallvec![DrawResource::Gradient(*gradient_id)],
 
             // Transforms use the 'canvas' resource (setting the height or the identity transform resets any previous transform)
             IdentityTransform                       |
@@ -173,6 +176,7 @@ impl Draw {
             WindingRule(_)                      => DrawResource::FillWindingRule,
             BlendMode(_)                        => DrawResource::FillBlend,
             FillColor(_)                        |
+            FillGradient(_, _, _)               |
             FillTexture(_, _, _)                => DrawResource::FillColor,
 
             LayerBlend(layer_id, _)             => DrawResource::Layer(*layer_id),

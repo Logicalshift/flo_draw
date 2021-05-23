@@ -411,7 +411,6 @@ enum DecoderState {
 
     GradientOp(DecodeGradientId),                           // 'G' (id, op)
     GradientOpNew(GradientId, String),                      // 'G<id>N' (r, g, b, a)
-    GradientOpDirection(GradientId, String),                // 'G<id>D' (x1, y1, x2, y2)
     GradientOpAddStop(GradientId, String),                  // 'G<id>S' (pos, r, g, b, a)
 }
 
@@ -534,7 +533,6 @@ impl CanvasDecoder {
 
             GradientOp(gradient_id)                             => Self::decode_gradient_op(next_chr, gradient_id)?,     
             GradientOpNew(gradient_id, param)                   => Self::decode_gradient_new(next_chr, gradient_id, param)?,
-            GradientOpDirection(gradient_id, param)             => Self::decode_gradient_direction(next_chr, gradient_id, param)?,
             GradientOpAddStop(gradient_id, param)               => Self::decode_gradient_add_stop(next_chr, gradient_id, param)?,
         };
 
@@ -1476,7 +1474,6 @@ impl CanvasDecoder {
         // The gradient op is indicated by the next character
         match chr {
             'N' => Ok((DecoderState::GradientOpNew(gradient_id, String::new()), None)),
-            'D' => Ok((DecoderState::GradientOpDirection(gradient_id, String::new()), None)),
             'S' => Ok((DecoderState::GradientOpAddStop(gradient_id, String::new()), None)),
 
             _   => Err(DecoderError::InvalidCharacter(chr))
@@ -1508,29 +1505,6 @@ impl CanvasDecoder {
             }
 
             Ok((DecoderState::None, Some(Draw::Gradient(gradient_id, GradientOp::New(Color::Rgba(r, g, b, a))))))
-        }
-    }
-
-    ///
-    /// Decodes the GradientOp::Direction instruction
-    ///
-    fn decode_gradient_direction(next_chr: char, gradient_id: GradientId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        // Parameter is 4 coordinates
-        let mut param = param;
-
-        if param.len() < 23 {
-            param.push(next_chr);
-            Ok((DecoderState::GradientOpDirection(gradient_id, param), None))
-        } else {
-            param.push(next_chr);
-
-            let mut param   = param.chars();
-            let x1          = Self::decode_f32(&mut param)?;
-            let y1          = Self::decode_f32(&mut param)?;
-            let x2          = Self::decode_f32(&mut param)?;
-            let y2          = Self::decode_f32(&mut param)?;
-
-            Ok((DecoderState::None, Some(Draw::Gradient(gradient_id, GradientOp::Direction((x1, y1), (x2, y2))))))
         }
     }
 
@@ -2044,11 +2018,6 @@ mod test {
     }
 
     #[test]
-    fn decode_gradient_direction() {
-        check_round_trip_single(Draw::Gradient(GradientId(43), GradientOp::Direction((1.0, 2.0), (3.0, 4.0))));
-    }
-
-    #[test]
     fn decode_gradient_add_stop() {
         check_round_trip_single(Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))));
     }
@@ -2095,7 +2064,6 @@ mod test {
             Draw::DrawSprite(SpriteId(1300)),
 
             Draw::Gradient(GradientId(42), GradientOp::New(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
-            Draw::Gradient(GradientId(43), GradientOp::Direction((1.0, 2.0), (3.0, 4.0))),
             Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),
         ]);
     }
@@ -2148,7 +2116,6 @@ mod test {
             Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.5)),
 
             Draw::Gradient(GradientId(42), GradientOp::New(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
-            Draw::Gradient(GradientId(43), GradientOp::Direction((1.0, 2.0), (3.0, 4.0))),
             Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),
         ];
         let mut encoded = String::new();
