@@ -347,51 +347,52 @@ enum DecoderState {
     None,
     Error,
 
-    New,                                    // 'N'
-    LineStyle,                              // 'L'
-    Dash,                                   // 'D'
-    Color,                                  // 'C'
-    Sprite,                                 // 's'
-    Transform,                              // 'T'
-    State,                                  // 'Z'
+    New,                                        // 'N'
+    LineStyle,                                  // 'L'
+    Dash,                                       // 'D'
+    Color,                                      // 'C'
+    Sprite,                                     // 's'
+    Transform,                                  // 'T'
+    State,                                      // 'Z'
 
-    ClearCanvas(String),                    // 'NA' (r, g, b, a)
+    ClearCanvas(String),                        // 'NA' (r, g, b, a)
 
-    Move(String),                           // m (x, y)
-    Line(String),                           // l (x, y)
-    BezierCurve(String),                    // c (x, y, x, y, x, y)
+    Move(String),                               // m (x, y)
+    Line(String),                               // l (x, y)
+    BezierCurve(String),                        // c (x, y, x, y, x, y)
 
-    LineStyleWidth(String),                 // 'Lw' (w)
-    LineStyleWidthPixels(String),           // 'Lp' (w)
-    LineStyleJoin(String),                  // 'Lj' (j)
-    LineStyleCap(String),                   // 'Lc' (c)
-    WindingRule,                            // 'W' (r)
+    LineStyleWidth(String),                     // 'Lw' (w)
+    LineStyleWidthPixels(String),               // 'Lp' (w)
+    LineStyleJoin(String),                      // 'Lj' (j)
+    LineStyleCap(String),                       // 'Lc' (c)
+    WindingRule,                                // 'W' (r)
 
-    DashLength(String),                     // 'Dl' (len)
-    DashOffset(String),                     // 'Do' (offset)
+    DashLength(String),                         // 'Dl' (len)
+    DashOffset(String),                         // 'Do' (offset)
 
-    ColorStroke(String),                    // 'Cs' (r, g, b, a)
-    ColorFill(String),                      // 'Cf' (r, g, b, a)
-    ColorTexture(DecodeTextureId, String),  // 'Ct' (texture_id, x1, y1, x2, y2)
+    ColorStroke(String),                        // 'Cs' (r, g, b, a)
+    ColorFill(String),                          // 'Cf' (r, g, b, a)
+    ColorTexture(DecodeTextureId, String),      // 'Ct' (texture_id, x1, y1, x2, y2)
+    ColorGradient(DecodeGradientId, String),    // 'Cg' (gradient_id, x1, y1, x2, y2)
 
-    BlendMode(String),                      // 'M' (mode)
+    BlendMode(String),                          // 'M' (mode)
 
-    TransformHeight(String),                // 'Th' (h)
-    TransformCenter(String),                // 'Tc' (min, max)
-    TransformMultiply(String),              // 'Tm' (transform)
+    TransformHeight(String),                    // 'Th' (h)
+    TransformCenter(String),                    // 'Tc' (min, max)
+    TransformMultiply(String),                  // 'Tm' (transform)
 
-    NewLayerU32(String),                    // 'Nl' (id)
-    NewLayerBlendU32(String),               // 'Nb' (id, mode)
-    NewLayer(String),                       // 'NL' (id)
-    NewLayerBlend(DecodeLayerId, String),   // 'NB' (id, mode)
+    NewLayerU32(String),                        // 'Nl' (id)
+    NewLayerBlendU32(String),                   // 'Nb' (id, mode)
+    NewLayer(String),                           // 'NL' (id)
+    NewLayerBlend(DecodeLayerId, String),       // 'NB' (id, mode)
 
-    NewSprite(String),                      // 'Ns' (id)
-    SpriteDraw(String),                     // 'sD' (id)
-    SpriteTransform,                        // 'sT' (transform)
-    SpriteTransformTranslate(String),       // 'sTt' (x, y)
-    SpriteTransformScale(String),           // 'sTs' (x, y)
-    SpriteTransformRotate(String),          // 'sTr' (degrees)
-    SpriteTransformTransform(String),       // 'sTT' (transform)
+    NewSprite(String),                          // 'Ns' (id)
+    SpriteDraw(String),                         // 'sD' (id)
+    SpriteTransform,                            // 'sT' (transform)
+    SpriteTransformTranslate(String),           // 'sTt' (x, y)
+    SpriteTransformScale(String),               // 'sTs' (x, y)
+    SpriteTransformRotate(String),              // 'sTr' (degrees)
+    SpriteTransformTransform(String),           // 'sTT' (transform)
 
     FontDrawing,                                            // 't'
     FontDrawText(DecodeFontId, DecodeString, String),       // 'tT' (font_id, string, x, y)
@@ -495,6 +496,7 @@ impl CanvasDecoder {
             ColorStroke(param)              => Self::decode_color_stroke(next_chr, param)?,
             ColorFill(param)                => Self::decode_color_fill(next_chr, param)?,
             ColorTexture(id, param)         => Self::decode_color_texture(next_chr, id, param)?,
+            ColorGradient(id, param)        => Self::decode_color_gradient(next_chr, id, param)?,
 
             BlendMode(param)                => Self::decode_blend_mode(next_chr, param)?,
 
@@ -634,6 +636,7 @@ impl CanvasDecoder {
             's'     => Ok((DecoderState::ColorStroke(String::new()), None)),
             'f'     => Ok((DecoderState::ColorFill(String::new()), None)),
             't'     => Ok((DecoderState::ColorTexture(DecodeTextureId::new(), String::new()), None)),
+            'g'     => Ok((DecoderState::ColorGradient(DecodeGradientId::new(), String::new()), None)),
 
             _       => Err(DecoderError::InvalidCharacter(next_chr))
         }
@@ -888,6 +891,37 @@ impl CanvasDecoder {
             let y2          = Self::decode_f32(&mut param)?;
 
             Ok((DecoderState::None, Some(Draw::FillTexture(texture_id, (x1, y1), (x2, y2)))))
+        }
+    }
+
+    #[inline] fn decode_color_gradient(next_chr: char, gradient_id: DecodeGradientId, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        use self::PartialResult::*;
+
+        // Decode the texture ID first
+        let gradient_id = match gradient_id {
+            MatchMore(gradient_id) => { 
+                let gradient_id = Self::decode_gradient_id(next_chr, gradient_id)?;
+                return Ok((DecoderState::ColorGradient(gradient_id, param), None));
+            }
+
+            FullMatch(gradient_id) => gradient_id
+        };
+
+        // There are 4 coordinates following the texture ID (at 6 bytes each)
+        param.push(next_chr);
+
+        if param.len() < 24 {
+            // More characters required
+            Ok((DecoderState::ColorGradient(FullMatch(gradient_id), param), None))
+        } else {
+            // Decode the coordinates
+            let mut param   = param.chars();
+            let x1          = Self::decode_f32(&mut param)?;
+            let y1          = Self::decode_f32(&mut param)?;
+            let x2          = Self::decode_f32(&mut param)?;
+            let y2          = Self::decode_f32(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::FillGradient(gradient_id, (x1, y1), (x2, y2)))))
         }
     }
 
@@ -2023,6 +2057,11 @@ mod test {
     }
 
     #[test]
+    fn decode_gradient_fill() {
+        check_round_trip_single(Draw::FillGradient(GradientId(24), (42.0, 43.0), (44.0, 45.0)));
+    }
+
+    #[test]
     fn decode_all_iter() {
         check_round_trip(vec![
             Draw::Path(PathOp::NewPath),
@@ -2042,6 +2081,8 @@ mod test {
             Draw::DashOffset(13.0),
             Draw::StrokeColor(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
             Draw::FillColor(Color::Rgba(0.2, 0.3, 0.4, 0.5)),
+            Draw::FillTexture(TextureId(23), (42.0, 43.0), (44.0, 45.0)),
+            Draw::FillGradient(GradientId(24), (42.0, 43.0), (44.0, 45.0)),
             Draw::BlendMode(BlendMode::Lighten),
             Draw::IdentityTransform,
             Draw::CanvasHeight(81.0),
@@ -2090,6 +2131,7 @@ mod test {
             Draw::StrokeColor(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
             Draw::FillColor(Color::Rgba(0.2, 0.3, 0.4, 0.5)),
             Draw::FillTexture(TextureId(23), (42.0, 43.0), (44.0, 45.0)),
+            Draw::FillGradient(GradientId(24), (42.0, 43.0), (44.0, 45.0)),
             Draw::BlendMode(BlendMode::Lighten),
             Draw::IdentityTransform,
             Draw::CanvasHeight(81.0),
