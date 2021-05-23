@@ -1,10 +1,11 @@
-use super::draw::*;
-use super::path::*;
-use super::font::*;
-use super::color::*;
-use super::texture::*;
-use super::font_face::*;
-use super::transform2d::*;
+use crate::draw::*;
+use crate::path::*;
+use crate::font::*;
+use crate::color::*;
+use crate::texture::*;
+use crate::gradient::*;
+use crate::font_face::*;
+use crate::transform2d::*;
 
 use std::sync::*;
 
@@ -70,6 +71,10 @@ pub trait GraphicsContext {
     fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, width: u32, height: u32, bytes: Arc<Vec<u8>>);
     fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32);
 
+    fn new_gradient(&mut self, gradient_id: GradientId, initial_color: Color);
+    fn gradient_direction(&mut self, gradient_id: GradientId, x1: f32, y1: f32, x2: f32, y2: f32);
+    fn gradient_stop(&mut self, gradient_id: GradientId, pos: f32, color: Color);
+
     fn draw(&mut self, d: Draw) {
         use self::Draw::*;
         use self::PathOp::*;
@@ -124,10 +129,15 @@ pub trait GraphicsContext {
             DrawText(font_id, string, x, y)                                         => self.draw_text(font_id, string, x, y),
             BeginLineLayout(x, y, alignment)                                        => self.begin_line_layout(x, y, alignment),
             DrawLaidOutText                                                         => self.draw_text_layout(),
+            
             Texture(texture_id, TextureOp::Create(width, height, format))           => self.create_texture(texture_id, width, height, format),
             Texture(texture_id, TextureOp::Free)                                    => self.free_texture(texture_id),
             Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))             => self.set_texture_bytes(texture_id, x, y, w, h, bytes),
             Texture(texture_id, TextureOp::FillTransparency(alpha))                 => self.set_texture_fill_alpha(texture_id, alpha),
+
+            Gradient(gradient_id, GradientOp::New(initial_color))                   => self.new_gradient(gradient_id, initial_color),
+            Gradient(gradient_id, GradientOp::Direction((x1, y1), (x2, y2)))        => self.gradient_direction(gradient_id, x1, y1, x2, y2),
+            Gradient(gradient_id, GradientOp::AddStop(pos, color))                  => self.gradient_stop(gradient_id, pos, color)
         }
     }
 }
@@ -192,6 +202,10 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn free_texture(&mut self, texture_id: TextureId)                                                                 { self.push(Draw::Texture(texture_id, TextureOp::Free)); }
     #[inline] fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>)       { self.push(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))); }
     #[inline] fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32)                                           { self.push(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha))); }
+
+    #[inline] fn new_gradient(&mut self, gradient_id: GradientId, initial_color: Color)                                         { self.push(Draw::Gradient(gradient_id, GradientOp::New(initial_color))); }
+    #[inline] fn gradient_direction(&mut self, gradient_id: GradientId, x1: f32, y1: f32, x2: f32, y2: f32)                     { self.push(Draw::Gradient(gradient_id, GradientOp::Direction((x1, y1), (x2, y2)))); }
+    #[inline] fn gradient_stop(&mut self, gradient_id: GradientId, pos: f32, color: Color)                                      { self.push(Draw::Gradient(gradient_id, GradientOp::AddStop(pos, color))); }
 
     #[inline]
     fn draw(&mut self, d: Draw) {

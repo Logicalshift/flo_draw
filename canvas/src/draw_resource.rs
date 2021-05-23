@@ -1,6 +1,7 @@
 use crate::draw::*;
 use crate::font::*;
 use crate::texture::*;
+use crate::gradient::*;
 
 use smallvec::*;
 
@@ -17,6 +18,7 @@ pub (crate) enum DrawResource {
     Sprite(SpriteId),
 
     Texture(TextureId),
+    Gradient(GradientId),
     Font(FontId),
     FontSize(FontId),
     
@@ -89,6 +91,7 @@ impl Draw {
             ClearSprite                             => smallvec![],
 
             Texture(_, TextureOp::Create(_, _, _))  => smallvec![],
+            Gradient(_, GradientOp::New(_))         => smallvec![],
             Font(_, FontOp::UseFontDefinition(_))   => smallvec![],
             Font(_, FontOp::FontSize(_))            => smallvec![],
 
@@ -128,6 +131,8 @@ impl Draw {
 
             CenterRegion(_, _)                      |
             MultiplyTransform(_)                    => smallvec![DrawResource::CanvasTransform],
+
+            Gradient(gradient_id, _)                => smallvec![DrawResource::Gradient(*gradient_id)],
 
             // Most things just affect the active resource
             _                                       => smallvec![*active_resource]
@@ -174,6 +179,8 @@ impl Draw {
             Font(font_id, FontOp::FontSize(_))  => DrawResource::FontSize(*font_id),
             Font(font_id, _)                    => DrawResource::Font(*font_id),
             Texture(texture_id, _)              => DrawResource::Texture(*texture_id),
+
+            Gradient(gradient_id, _)            => DrawResource::Gradient(*gradient_id),
 
             // By default, everything affects the active resource
             _                                   => *active_resource

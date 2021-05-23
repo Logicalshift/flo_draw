@@ -1,11 +1,12 @@
-use super::draw::*;
-use super::path::*;
-use super::font::*;
-use super::color::*;
-use super::context::*;
-use super::texture::*;
-use super::font_face::*;
-use super::transform2d::*;
+use crate::draw::*;
+use crate::path::*;
+use crate::font::*;
+use crate::color::*;
+use crate::context::*;
+use crate::texture::*;
+use crate::gradient::*;
+use crate::font_face::*;
+use crate::transform2d::*;
 
 use flo_curves::geo::*;
 
@@ -407,4 +408,8 @@ impl GraphicsContext for CanvasFontLineLayout {
     #[inline] fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>)       { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes)))); }
     #[inline] fn free_texture(&mut self, texture_id: TextureId)                                                                 { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Texture(texture_id, TextureOp::Free))); }
     #[inline] fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32)                                           { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha)))); }
+
+    #[inline] fn new_gradient(&mut self, gradient_id: GradientId, initial_color: Color)                                         { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Gradient(gradient_id, GradientOp::New(initial_color)))); }
+    #[inline] fn gradient_direction(&mut self, gradient_id: GradientId, x1: f32, y1: f32, x2: f32, y2: f32)                     { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Gradient(gradient_id, GradientOp::Direction((x1, y1), (x2, y2))))); }
+    #[inline] fn gradient_stop(&mut self, gradient_id: GradientId, pos: f32, color: Color)                                      { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Gradient(gradient_id, GradientOp::AddStop(pos, color)))); }
 }

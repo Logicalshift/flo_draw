@@ -2,11 +2,12 @@
 //! Actions that can be performed to draw on a canvas
 //!
 
-use super::transform2d::*;
-use super::texture::*;
-use super::color::*;
-use super::font::*;
-use super::path::*;
+use crate::transform2d::*;
+use crate::gradient::*;
+use crate::texture::*;
+use crate::color::*;
+use crate::font::*;
+use crate::path::*;
 
 ///
 /// Possible way to join lines
@@ -283,4 +284,7 @@ pub enum Draw {
 
     /// Draws a string using a font with a baseline starting at the specified position
     DrawText(FontId, String, f32, f32),
+
+    /// Updates a gradient definition
+    Gradient(GradientId, GradientOp),
 }

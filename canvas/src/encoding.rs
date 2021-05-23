@@ -1,9 +1,10 @@
-use super::draw::*;
-use super::path::*;
-use super::font::*;
-use super::color::*;
-use super::texture::*;
-use super::transform2d::*;
+use crate::draw::*;
+use crate::path::*;
+use crate::font::*;
+use crate::color::*;
+use crate::texture::*;
+use crate::gradient::*;
+use crate::transform2d::*;
 
 ///
 /// Trait implemented by objects that can be encoded into a canvas
@@ -250,6 +251,14 @@ impl CanvasEncoding<String> for FontId {
     }
 }
 
+impl CanvasEncoding<String> for GradientId {
+    #[inline]
+    fn encode_canvas(&self, append_to: &mut String) {
+        let GradientId(gradient_id) = self;
+        encode_compact_u64(gradient_id, append_to)
+    }
+}
+
 impl CanvasEncoding<String> for SpriteTransform {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::SpriteTransform::*;
@@ -283,6 +292,18 @@ impl<'a> CanvasEncoding<String> for &'a TextureOp {
             Free                                    => ('X').encode_canvas(append_to),
             SetBytes(x, y, width, height, bytes)    => ('D', *x, *y, *width, *height, &**bytes).encode_canvas(append_to),
             FillTransparency(alpha)                 => ('t', *alpha).encode_canvas(append_to),
+        }
+    }
+}
+
+impl<'a> CanvasEncoding<String> for &'a GradientOp {
+    fn encode_canvas(&self, append_to: &mut String) {
+        use self::GradientOp::*;
+
+        match self {
+            New(color)          => ('N', *color).encode_canvas(append_to),
+            Direction(src, tgt) => ('D', *src, *tgt).encode_canvas(append_to),
+            AddStop(pos, color) => ('S', *pos, *color).encode_canvas(append_to)
         }
     }
 }
@@ -473,7 +494,8 @@ impl CanvasEncoding<String> for Draw {
             &Font(font_id, ref op)                      => ('f', font_id, op).encode_canvas(append_to),
             &DrawText(font_id, ref string, x, y)        => ('t', 'T', font_id, string, x, y).encode_canvas(append_to),
             &BeginLineLayout(x, y, align)               => ('t', 'l', x, y, align).encode_canvas(append_to),
-            &DrawLaidOutText                            => ('t', 'R').encode_canvas(append_to)
+            &DrawLaidOutText                            => ('t', 'R').encode_canvas(append_to),
+            &Gradient(gradient_id, ref gradient_op)     => ('G', gradient_id, gradient_op).encode_canvas(append_to)
         }
     }
 }
