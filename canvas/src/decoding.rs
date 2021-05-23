@@ -1483,8 +1483,32 @@ impl CanvasDecoder {
         }
     }
 
-    fn decode_gradient_new(chr: char, gradient_id: GradientId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        Err(DecoderError::NotReady)
+    ///
+    /// Decodes the GradientOp::New instruction
+    ///
+    fn decode_gradient_new(next_chr: char, gradient_id: GradientId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Parameter is the initial colour
+        let mut param = param;
+
+        if param.len() < 24 {
+            param.push(next_chr);
+            Ok((DecoderState::GradientOpNew(gradient_id, param), None))
+        } else {
+            param.push(next_chr);
+
+            let mut param   = param.chars();
+            let col_type    = param.next();
+            let r           = Self::decode_f32(&mut param)?;
+            let g           = Self::decode_f32(&mut param)?;
+            let b           = Self::decode_f32(&mut param)?;
+            let a           = Self::decode_f32(&mut param)?;
+
+            if col_type != Some('R') {
+                Err(DecoderError::UnknownColorType)?;
+            }
+
+            Ok((DecoderState::None, Some(Draw::Gradient(gradient_id, GradientOp::New(Color::Rgba(r, g, b, a))))))
+        }
     }
 
     fn decode_gradient_direction(chr: char, gradient_id: GradientId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
