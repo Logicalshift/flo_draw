@@ -953,4 +953,87 @@ mod test {
             assert!(stream.next().await == Some(Draw::Fill));
         });
     }
+
+    #[test]
+    fn only_one_gradient_definition_survives_clear_other_layer() {
+        let canvas  = Canvas::new();
+
+        canvas.draw(|gc| {
+            gc.layer(LayerId(0));
+
+            gc.new_gradient(GradientId(2), Color::Rgba(0.0, 0.1, 0.2, 0.3));
+            gc.gradient_stop(GradientId(2), 0.5, Color::Rgba(0.4, 0.5, 0.6, 1.0));
+            gc.gradient_stop(GradientId(2), 1.0, Color::Rgba(0.7, 0.8, 0.9, 1.0));
+
+            gc.new_gradient(GradientId(2), Color::Rgba(0.0, 0.1, 0.2, 0.3));
+            gc.gradient_stop(GradientId(2), 0.5, Color::Rgba(0.4, 0.5, 0.6, 1.0));
+            gc.gradient_stop(GradientId(2), 1.0, Color::Rgba(0.7, 0.8, 0.9, 1.0));
+
+            gc.layer(LayerId(1));
+            gc.clear_layer();
+            gc.fill();
+        });
+
+        let mut stream = canvas.stream();
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
+            assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::New(Color::Rgba(0.0, 0.1, 0.2, 0.3)))));
+            assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::AddStop(0.5, Color::Rgba(0.4, 0.5, 0.6, 1.0)))));
+            assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::AddStop(1.0, Color::Rgba(0.7, 0.8, 0.9, 1.0)))));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
+    }
+
+    #[test]
+    fn used_gradient_survives_clear_other_layer() {
+        let canvas  = Canvas::new();
+
+        canvas.draw(|gc| {
+            gc.layer(LayerId(0));
+
+            gc.new_gradient(GradientId(2), Color::Rgba(0.0, 0.1, 0.2, 0.3));
+            gc.gradient_stop(GradientId(2), 0.5, Color::Rgba(0.4, 0.5, 0.6, 1.0));
+            gc.gradient_stop(GradientId(2), 1.0, Color::Rgba(0.7, 0.8, 0.9, 1.0));
+
+            gc.fill_gradient(GradientId(2), 0.0, 1.0, 2.0, 3.0);
+
+            gc.new_gradient(GradientId(2), Color::Rgba(0.0, 0.1, 0.2, 0.3));
+            gc.gradient_stop(GradientId(2), 0.5, Color::Rgba(0.4, 0.5, 0.6, 1.0));
+            gc.gradient_stop(GradientId(2), 1.0, Color::Rgba(0.7, 0.8, 0.9, 1.0));
+
+            gc.layer(LayerId(1));
+            gc.clear_layer();
+            gc.fill();
+        });
+
+        let mut stream = canvas.stream();
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
+
+            assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::New(Color::Rgba(0.0, 0.1, 0.2, 0.3)))));
+            assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::AddStop(0.5, Color::Rgba(0.4, 0.5, 0.6, 1.0)))));
+            assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::AddStop(1.0, Color::Rgba(0.7, 0.8, 0.9, 1.0)))));
+
+            assert!(stream.next().await == Some(Draw::FillGradient(GradientId(2), (0.0, 1.0), (2.0, 3.0))));
+
+            assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::New(Color::Rgba(0.0, 0.1, 0.2, 0.3)))));
+            assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::AddStop(0.5, Color::Rgba(0.4, 0.5, 0.6, 1.0)))));
+            assert!(stream.next().await == Some(Draw::Gradient(GradientId(2), GradientOp::AddStop(1.0, Color::Rgba(0.7, 0.8, 0.9, 1.0)))));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
+    }
 }
