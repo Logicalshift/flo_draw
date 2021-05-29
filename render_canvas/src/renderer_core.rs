@@ -11,6 +11,7 @@ use flo_render as render;
 use lyon::tessellation::{FillRule};
 
 use std::mem;
+use std::sync::*;
 use std::collections::{HashMap};
 
 ///
@@ -325,6 +326,37 @@ impl RenderCore {
                     .map(|texture| *texture = RenderTexture::Ready(render_texture));
 
                 Some(render_texture)
+            }
+        }
+    }
+
+    ///
+    /// Returns a (1D) render texture for a canvas gradient
+    ///
+    pub fn gradient_for_rendering(&mut self, gradient_id: canvas::GradientId) -> Option<render::TextureId> {
+        match self.canvas_gradients.get(&gradient_id)? {
+            RenderGradient::Ready(gradient_texture, _)  => Some(*gradient_texture),
+            RenderGradient::Defined(definition)         => {
+                // Define a new texture
+                let definition  = definition.clone();
+                let texture_id  = self.allocate_texture();
+
+                // Get the bytes for this gradient
+                let bytes       = canvas::gradient_scale::<_, 256>(definition.clone());
+                let bytes       = bytes.iter().flatten().cloned().collect::<Vec<_>>();
+
+                // Define as a 1D texture
+                self.setup_actions.extend(vec![
+                    render::RenderAction::Create1DTextureBgra(texture_id, 256),
+                    render::RenderAction::WriteTexture1D(texture_id, 0, 256, Arc::new(bytes)),
+                    render::RenderAction::CreateMipMaps(texture_id)
+                ]);
+
+                // Update the texture to 'ready'
+                self.canvas_gradients.insert(gradient_id, RenderGradient::Ready(texture_id, definition));
+
+                // The new texture is the one that will be used for rendering
+                Some(texture_id)
             }
         }
     }
