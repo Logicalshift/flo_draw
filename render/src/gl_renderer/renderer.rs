@@ -44,7 +44,10 @@ pub struct GlRenderer {
     dashed_line_shader: ShaderCollection<ShaderUniform>,
 
     /// The 'texture fill' shader program
-    texture_shader: ShaderCollection<ShaderUniform>
+    texture_shader: ShaderCollection<ShaderUniform>,
+
+    /// The 'linear gradient' shader program
+    gradient_shader: ShaderCollection<ShaderUniform>
 }
 
 impl GlRenderer {
@@ -57,10 +60,13 @@ impl GlRenderer {
         let dashed_line_fragment                = String::from_utf8(include_bytes!["../../shaders/dashed_line/dashed_line.glslf"].to_vec()).unwrap();
         let texture_vertex                      = String::from_utf8(include_bytes!["../../shaders/texture/texture.glslv"].to_vec()).unwrap();
         let texture_fragment                    = String::from_utf8(include_bytes!["../../shaders/texture/texture.glslf"].to_vec()).unwrap();
+        let gradient_vertex                     = String::from_utf8(include_bytes!["../../shaders/texture/gradient.glslv"].to_vec()).unwrap();
+        let gradient_fragment                   = String::from_utf8(include_bytes!["../../shaders/texture/gradient.glslf"].to_vec()).unwrap();
 
         let simple_shader                       = ShaderCollection::new(&simple_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &simple_fragment, vec![]);
         let dashed_line_shader                  = ShaderCollection::new(&simple_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &dashed_line_fragment, vec![]);
         let texture_shader                      = ShaderCollection::new(&texture_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &texture_fragment, vec![]);
+        let gradient_shader                     = ShaderCollection::new(&gradient_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &gradient_fragment, vec![]);
 
         GlRenderer {
             buffers:                        vec![],
@@ -72,7 +78,8 @@ impl GlRenderer {
             render_targets:                 vec![],
             simple_shader:                  simple_shader,
             dashed_line_shader:             dashed_line_shader,
-            texture_shader:                 texture_shader
+            texture_shader:                 texture_shader,
+            gradient_shader:                gradient_shader
         }
     }
 
