@@ -48,6 +48,9 @@ pub enum RenderEntity {
     /// Sets the fill texture to use for the following rendering
     SetFillTexture(render::TextureId, render::Matrix, bool, f32),
 
+    /// Sets the gradient texture to use for the following rendering
+    SetFillGradient(render::TextureId, render::Matrix, bool, f32),
+
     /// Use the specified vertex buffer to define a clipping mask
     EnableClipping(render::VertexBufferId, render::IndexBufferId, usize),
 

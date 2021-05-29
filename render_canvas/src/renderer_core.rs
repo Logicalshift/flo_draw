@@ -116,17 +116,22 @@ impl RenderCore {
         use self::RenderEntity::*;
 
         match render_entity {
-            Missing                             => { }
-            Tessellating(_entity_id)            => { }
-            VertexBuffer(_buffers, _)           => { }
-            SetTransform(_)                     => { }
-            SetBlendMode(_)                     => { }
-            SetFlatColor                        => { }
-            SetDashPattern(_)                   => { }
-            RenderSprite(_, _)                  => { }
-            DisableClipping                     => { }
+            Missing                                 => { }
+            Tessellating(_entity_id)                => { }
+            VertexBuffer(_buffers, _)               => { }
+            SetTransform(_)                         => { }
+            SetBlendMode(_)                         => { }
+            SetFlatColor                            => { }
+            SetDashPattern(_)                       => { }
+            RenderSprite(_, _)                      => { }
+            DisableClipping                         => { }
 
-            SetFillTexture(texture_id, _, _, _) => { 
+            SetFillTexture(texture_id, _, _, _)     => { 
+                self.used_textures.get_mut(&texture_id)
+                    .map(|usage_count| *usage_count -= 1);
+            }
+
+            SetFillGradient(texture_id, _, _, _)    => { 
                 self.used_textures.get_mut(&texture_id)
                     .map(|usage_count| *usage_count -= 1);
             }

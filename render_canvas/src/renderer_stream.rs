@@ -37,7 +37,10 @@ enum ShaderModifier {
     DashPattern(Vec<f32>),
 
     /// Shader should use a texture
-    Texture(render::TextureId, render::Matrix, bool, f32)
+    Texture(render::TextureId, render::Matrix, bool, f32),
+
+    /// Shader should use a gradient
+    Gradient(render::TextureId, render::Matrix, bool, f32),
 }
 
 ///
@@ -227,7 +230,8 @@ impl RenderStreamState {
                 let shader = match modifier {
                     ShaderModifier::Simple                                      => render::ShaderType::Simple { erase_texture: erase, clip_texture: clip },
                     ShaderModifier::DashPattern(_)                              => render::ShaderType::DashedLine { dash_texture: DASH_TEXTURE, erase_texture: erase, clip_texture: clip },
-                    ShaderModifier::Texture(texture_id, matrix, repeat, alpha)  => render::ShaderType::Texture { texture: *texture_id, texture_transform: *matrix, repeat: *repeat, alpha: *alpha, erase_texture: erase, clip_texture: clip }
+                    ShaderModifier::Texture(texture_id, matrix, repeat, alpha)  => render::ShaderType::Texture { texture: *texture_id, texture_transform: *matrix, repeat: *repeat, alpha: *alpha, erase_texture: erase, clip_texture: clip },
+                    ShaderModifier::Gradient(texture_id, matrix, repeat, alpha) => render::ShaderType::LinearGradient { texture: *texture_id, texture_transform: *matrix, repeat: *repeat, alpha: *alpha, erase_texture: erase, clip_texture: clip }
                 };
 
                 // Add to the updates
@@ -240,6 +244,7 @@ impl RenderStreamState {
                     ShaderModifier::Simple                          => { }
                     ShaderModifier::DashPattern(new_dash_pattern)   => { updates.extend(self.generate_dash_pattern(new_dash_pattern).into_iter().rev()); }
                     ShaderModifier::Texture(_, _, _, _)             => { }
+                    ShaderModifier::Gradient(_, _, _, _)            => { }
                 }
             }
         }
@@ -456,6 +461,15 @@ impl RenderCore {
                     // Set the shader modifier to use the fill texture (overriding any other shader modifier)
                     let old_state               = render_state.clone();
                     render_state.shader_modifier = Some(ShaderModifier::Texture(*texture_id, *matrix, *repeat, *alpha));
+
+                    // Apply the old state for the preceding instructions
+                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                }
+
+                SetFillGradient(texture_id, matrix, repeat, alpha) => {
+                    // Set the shader modifier to use the gradient texture (overriding any other shader modifier)
+                    let old_state                   = render_state.clone();
+                    render_state.shader_modifier    = Some(ShaderModifier::Gradient(*texture_id, *matrix, *repeat, *alpha));
 
                     // Apply the old state for the preceding instructions
                     render_layer_stack.extend(old_state.update_from_state(render_state));
