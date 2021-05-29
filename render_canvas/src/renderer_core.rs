@@ -31,6 +31,15 @@ pub enum RenderTexture {
     Ready(render::TextureId)
 }
 
+///
+/// Ued to indicate the state of a gradient: these are loaded as 1-dimensional textures when they are used
+///
+#[derive(Clone)]
+pub enum RenderGradient {
+    Defined(Vec<canvas::GradientOp>),
+    Ready(render::TextureId, Vec<canvas::GradientOp>)
+}
+
 impl Into<render::TextureId> for &RenderTexture {
     fn into(self) -> render::TextureId {
         match self {
@@ -64,6 +73,9 @@ pub struct RenderCore {
 
     /// Maps canvas textures to render textures
     pub canvas_textures: HashMap<canvas::TextureId, RenderTexture>,
+
+    /// Maps canvas gradients to render gradients
+    pub canvas_gradients: HashMap<canvas::GradientId, RenderGradient>,
 
     /// The alpha value to use for each texture, next time it's used
     pub texture_alpha: HashMap<canvas::TextureId, f32>,

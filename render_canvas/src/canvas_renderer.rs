@@ -86,6 +86,7 @@ impl CanvasRenderer {
             sprites:                HashMap::new(),
             used_textures:          HashMap::new(),
             canvas_textures:        HashMap::new(),
+            canvas_gradients:       HashMap::new(),
             texture_alpha:          HashMap::new(),
             unused_vertex_buffer:   0,
             free_vertex_buffers:    vec![],
@@ -409,7 +410,7 @@ impl CanvasRenderer {
 
                                 // If the shader state has changed, generate the operations needed to use that shader state
                                 if *fill_state != layer.state.fill_color {
-                                    // Update the fill state if it's different
+                                    // Update the active fill state to match that of the layer
                                     match layer.state.fill_color {
                                         FillState::None | FillState::Color(_) => { 
                                             layer.render_order.push(RenderEntity::SetFlatColor);
@@ -1073,9 +1074,35 @@ impl CanvasRenderer {
                     DrawLaidOutText => {
                         // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
                     },
+                    
+                    Gradient(gradient_id, canvas::GradientOp::New(initial_colour)) => {
+                        // Start the gradient definition from scratch
+                        self.core.sync(move |core| {
+                            core.canvas_gradients.insert(gradient_id, RenderGradient::Defined(vec![canvas::GradientOp::New(initial_colour)]));
+                        });
+                    }
 
-                    Gradient(_, _) => {
-                        // Not supported yet
+                    Gradient(gradient_id, canvas::GradientOp::AddStop(pos, stop_colour)) => {
+                        // Continue an existing gradient definition
+                        self.core.sync(move |core| {
+                            use canvas::GradientOp::AddStop;
+
+                            match core.canvas_gradients.get_mut(&gradient_id) {
+                                Some(RenderGradient::Defined(defn)) => {
+                                    // Gradient has not yet been mapped to a texture
+                                    defn.push(AddStop(pos, stop_colour))
+                                }
+
+                                Some(RenderGradient::Ready(_, defn)) => {
+                                    // Gradient has been mapped to a texture (continue defining it as a new texture)
+                                    let mut defn = defn.clone();
+                                    defn.push(AddStop(pos, stop_colour));
+                                    core.canvas_gradients.insert(gradient_id, RenderGradient::Defined(defn));
+                                }
+
+                                None => { }
+                            }
+                        });
                     }
                 }
             }
