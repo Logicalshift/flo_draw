@@ -341,6 +341,9 @@ impl RenderCore {
                 let definition  = definition.clone();
                 let texture_id  = self.allocate_texture();
 
+                // Starts at a usage count of 0
+                self.used_textures.insert(texture_id, 0);
+
                 // Get the bytes for this gradient
                 let bytes       = canvas::gradient_scale::<_, 256>(definition.clone());
                 let bytes       = bytes.iter().flatten().cloned().collect::<Vec<_>>();

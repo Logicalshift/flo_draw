@@ -430,6 +430,21 @@ impl CanvasRenderer {
                                                 core.layer(layer_id).render_order.push(RenderEntity::SetFlatColor);
                                             }
                                         }
+
+                                        FillState::LinearGradient(gradient_id, matrix, repeat, alpha) => {
+                                            // Finish/get the texture for the gradient
+                                            if let Some(gradient_texture) = core.gradient_for_rendering(gradient_id) {
+                                                // Increase the usage count for the texture
+                                                core.used_textures.get_mut(&gradient_texture)
+                                                    .map(|usage_count| *usage_count += 1);
+
+                                                // Add to the layer
+                                                core.layer(layer_id).render_order.push(RenderEntity::SetFillGradient(gradient_texture, matrix, repeat, alpha));
+                                            } else {
+                                                // Gradient is not set up
+                                                core.layer(layer_id).render_order.push(RenderEntity::SetFlatColor);
+                                            }
+                                        }
                                     }
 
 
