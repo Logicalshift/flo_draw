@@ -1,8 +1,6 @@
 use flo_draw::*;
 use flo_canvas::*;
 
-use std::sync::*;
-
 ///
 /// Displays a circle with a linear gradient fill
 ///
