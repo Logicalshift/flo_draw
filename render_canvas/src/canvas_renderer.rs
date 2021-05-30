@@ -615,8 +615,12 @@ impl CanvasRenderer {
                     }
 
                     // Set a fill gradient
-                    FillGradient(_gradient_id, (_x1, _y1), (_x2, _y2)) => {
-                        todo!()
+                    FillGradient(gradient_id, (x1, y1), (x2, y2)) => {
+                        core.sync(|core| {
+                            let layer               = core.layer(self.current_layer);
+
+                            layer.state.fill_color  = FillState::linear_gradient_fill(gradient_id, x1, y1, x2, y2);
+                        });
                     }
 
                     // Set the line color

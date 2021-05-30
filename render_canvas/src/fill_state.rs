@@ -81,6 +81,34 @@ impl FillState {
     }
 
     ///
+    /// Creates a linear gradient fill
+    ///
+    pub fn linear_gradient_fill(gradient_id: canvas::GradientId, x1: f32, y1: f32, x2: f32, y2: f32) -> FillState {
+        // Avoid division by zero
+        let x2 = if x2 == x1 { x1 + 0.0000001 } else { x2 };
+        let y2 = if y2 == y1 { y1 + 0.0000001 } else { y2 };
+
+        // Generate a matrix that transforms x1, y1 to 0,0 and x2, y2 to 1,1
+        let a       = 1.0/(x2-x1);
+        let b       = 0.0;
+        let c       = -x1 * a;
+
+        let d       = 0.0;
+        let e       = 1.0/(y2-y1);
+        let f       = -y1 * e;
+
+        let matrix  = render::Matrix([
+            [a,   b,   0.0, c  ],
+            [d,   e,   0.0, f  ],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0]
+        ]);
+
+        // Create the fill-state for this matrix
+        FillState::LinearGradient(gradient_id, matrix, true, 1.0)
+    }
+
+    ///
     /// Returns the ID of the texture used by this state
     ///
     pub fn texture_id(&self) -> Option<canvas::TextureId> {
