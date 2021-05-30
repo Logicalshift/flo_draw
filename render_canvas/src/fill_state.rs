@@ -111,7 +111,7 @@ impl FillState {
         ]);
 
         // Create the fill-state for this matrix
-        FillState::LinearGradient(gradient_id, matrix, true, 1.0)
+        FillState::LinearGradient(gradient_id, matrix, false, 1.0)
     }
 
     ///
