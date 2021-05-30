@@ -88,13 +88,19 @@ impl FillState {
         let x2 = if x2 == x1 { x1 + 0.0000001 } else { x2 };
         let y2 = if y2 == y1 { y1 + 0.0000001 } else { y2 };
 
-        // Generate a matrix that transforms x1, y1 to 0,0 and x2, y2 to 1,1
-        let a       = 1.0/(x2-x1);
-        let b       = 0.0;
-        let c       = -x1 * a;
+        let x       = x2-x1;
+        let y       = y2-y1;
+        let x_sq    = x*x;
+        let y_sq    = y*y;
 
-        let d       = 0.0;
-        let e       = 1.0/(y2-y1);
+        // Generate a matrix that transforms x1, y1 to 0,0 and x2, y2 to 1,0
+        let a       = x/(x_sq-y_sq);
+        let b       = -y/(x_sq-y_sq);
+
+        let d       = b;
+        let e       = a;
+
+        let c       = -x1 * a;
         let f       = -y1 * e;
 
         let matrix  = render::Matrix([
