@@ -88,21 +88,24 @@ impl FillState {
         let x2 = if x2 == x1 { x1 + 0.0000001 } else { x2 };
         let y2 = if y2 == y1 { y1 + 0.0000001 } else { y2 };
 
-        let x       = x2-x1;
-        let y       = y2-y1;
-        let x_sq    = x*x;
-        let y_sq    = y*y;
+        let dx      = x2-x1;
+        let dy      = y2-y1;
 
-        // Generate a matrix that transforms x1, y1 to 0,0 and x2, y2 to 1,0
-        let a       = x/(x_sq-y_sq);
-        let b       = -y/(x_sq-y_sq);
+        let theta   = f32::atan2(dy, dx);
+        let scale   = 1.0/f32::sqrt(dx*dx + dy*dy);
 
-        let d       = b;
-        let e       = a;
+        let cos     = f32::cos(-theta);
+        let sin     = f32::sin(-theta);
 
-        let c       = -(x1 * a + y1 * b);
-        let f       = -(x1 * d + y1 * e);
+        let a       = cos * scale;
+        let b       = -sin * scale;
+        let d       = sin * scale;
+        let e       = cos * scale;
 
+        let c       = -x1 * a - y1 * b;
+        let f       = -x1 * d - y1 * e;
+
+        // Assemble into a matrix
         let matrix  = render::Matrix([
             [a,   b,   0.0, c  ],
             [d,   e,   0.0, f  ],
