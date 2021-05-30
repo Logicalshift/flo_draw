@@ -100,8 +100,8 @@ impl FillState {
         let d       = b;
         let e       = a;
 
-        let c       = -x1 * a;
-        let f       = -y1 * e;
+        let c       = -(x1 * a + y1 * b);
+        let f       = -(x1 * d + y1 * e);
 
         let matrix  = render::Matrix([
             [a,   b,   0.0, c  ],
