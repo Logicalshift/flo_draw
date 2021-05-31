@@ -75,30 +75,34 @@ pub fn gradient_scale<GradientIter: IntoIterator<Item=GradientOp>, const N: usiz
         [components_to_bytes(stops[0].1); N]
     } else {
         // Fill the scale using the stops
-        let min_pos             = stops[0].0;
-        let max_pos             = stops[stops.len()-1].0;
+        let min_pos             = stops[0].0 as f64;
+        let max_pos             = stops[stops.len()-1].0 as f64;
 
         debug_assert!(max_pos > min_pos);
 
-        let distance_per_step   = (max_pos - min_pos) / ((N-1) as f32);
+        let distance_per_step   = (max_pos - min_pos) / ((N-1) as f64);
         let final_color         = components_to_bytes(stops[stops.len()-1].1);
-        let mut pos             = min_pos;
         let mut idx             = 0;
         let mut stop_iter       = stops.into_iter().tuple_windows();
         let mut current_stop    = stop_iter.next().unwrap();
 
-        while pos < max_pos {
+        while idx < (N-1) {
+            let pos             = ((idx as f64) * distance_per_step) + min_pos;
+
             // Get the current position
             let ((start_pos, (r1, g1, b1, a1)), (end_pos, (r2, g2, b2, a2))) = &current_stop;
 
+            let start_pos       = *start_pos as f64;
+            let end_pos         = *end_pos as f64;
+
             // Move to the next stop if the current position is already past the end
-            if pos >= *end_pos {
+            if pos >= end_pos {
                 current_stop = stop_iter.next().unwrap();
                 continue;
             }
 
             // Blend the colour between the end position and the start position
-            let ratio           = (pos-start_pos)/(end_pos-start_pos);
+            let ratio           = ((pos-start_pos)/(end_pos-start_pos)) as f32;
             let (r, g, b, a)    = (
                 (r2-r1)*ratio + r1,
                 (g2-g1)*ratio + g1,
@@ -110,14 +114,12 @@ pub fn gradient_scale<GradientIter: IntoIterator<Item=GradientOp>, const N: usiz
             scale[idx]  = components_to_bytes((r, g, b, a));
 
             // Move to the next position before continuing
-            pos         += distance_per_step;
             idx         += 1;
         }
 
         debug_assert!(idx == N-1);
         scale[idx] = final_color;
 
-        // Result is the scale we generated
         scale
     }
 }
@@ -150,6 +152,17 @@ mod test {
         assert!(scale[12] == [204, 204, 204, 204]);
         assert!(scale[13] == [221, 221, 221, 221]);
         assert!(scale[14] == [238, 238, 238, 238]);
+    }
+
+    #[test]
+    fn generate_basic_gradient_scale_1024() {
+        let scale = gradient_scale::<_, 1024>(vec![
+            GradientOp::New(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
+            GradientOp::AddStop(1.0, Color::Rgba(1.0, 1.0, 1.0, 1.0))
+        ]);
+
+        assert!(scale[0]  == [0, 0, 0, 0]);
+        assert!(scale[1023] == [255, 255, 255, 255]);
     }
 
     #[test]
