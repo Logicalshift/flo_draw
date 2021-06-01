@@ -7,7 +7,7 @@ use flo_canvas::*;
 pub fn main() {
     with_2d_graphics(|| {
         // Create a window
-        let canvas      = create_drawing_window("Gradient");
+        let canvas      = create_drawing_window("Circle");
 
         // Draw a circle
         canvas.draw(|gc| {
