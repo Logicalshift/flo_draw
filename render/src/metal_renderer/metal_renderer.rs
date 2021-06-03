@@ -11,6 +11,7 @@ use flo_canvas;
 
 use metal;
 
+use std::sync::*;
 use std::ops::{Range};
 use std::collections::{HashMap};
 
@@ -225,6 +226,13 @@ impl MetalRenderer {
                 DrawFrameBuffer(render_id, x, y)                                        => { self.draw_frame_buffer(render_id, x, y, &mut render_state); }
                 ShowFrameBuffer                                                         => { /* This doesn't double-buffer so nothing to do */ }
                 CreateTextureBgra(texture_id, width, height)                            => { self.create_bgra_texture(texture_id, width, height); }
+                CreateTextureMono(texture_id, width, height)                            => { self.create_mono_texture(texture_id, width, height); }
+                Create1DTextureBgra(texture_id, width)                                  => { self.create_bgra_1d_texture(texture_id, width); }
+                Create1DTextureMono(texture_id, width)                                  => { self.create_mono_1d_texture(texture_id, width); }
+                WriteTextureData(texture_id, (x1, y1), (x2, y2), data)                  => { self.write_texture_data_2d(texture_id, x1, y1, x2, y2, data); }
+                WriteTexture1D(texture_id, x1, x2, data)                                => { self.write_texture_data_1d(texture_id, x1, x2, data); }
+                CreateMipMaps(texture_id)                                               => { self.create_mipmaps(texture_id); }
+                CopyTexture(src_texture, tgt_texture)                                   => { self.copy_texture(src_texture, tgt_texture); }
                 FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
                 Clear(color)                                                            => { self.clear(color, &mut render_state); }
                 UseShader(shader_type)                                                  => { self.use_shader(shader_type, &mut render_state); }
@@ -469,6 +477,34 @@ impl MetalRenderer {
 
     fn create_bgra_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
 
+    }
+
+    fn create_mono_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
+
+    }
+
+    fn create_bgra_1d_texture(&mut self, TextureId(texture_id): TextureId, width: usize) {
+
+    }
+
+    fn create_mono_1d_texture(&mut self, TextureId(texture_id): TextureId, width: usize) {
+
+    }
+
+    fn write_texture_data_2d(&mut self, TextureId(texture_id): TextureId, x1: usize, y1: usize, x2: usize, y2: usize, data: Arc<Vec<u8>>) {
+
+    }
+
+    fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: Arc<Vec<u8>>) {
+        
+    }
+
+    fn create_mipmaps(&mut self, TextureId(texture_id): TextureId) {
+
+    }
+
+    fn copy_texture(&mut self, TextureId(src_texture): TextureId, TextureId(tgt_texture): TextureId) {
+        
     }
 
     ///
