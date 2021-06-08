@@ -1,0 +1,15 @@
+[package]
+name            = "wasm_canvas_test"
+version         = "0.1.0"
+authors         = ["Andrew Hunter <andrew@logicalshift.co.uk>"]
+edition         = "2018"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[lib]
+crate-type      = ["cdylib", "rlib"]
+
+[dependencies]
+flo_canvas      = "0.3"
+wasm-bindgen    = "0.2"

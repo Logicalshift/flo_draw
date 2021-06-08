@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "wasm_canvas_test"
+]
+
+[patch.crates-io]
+flo_canvas              = { path = "../canvas" }
+
+# allsorts is very slow when built for debug, so packages using flo_draw should consider optimising it even in debug builds
+[profile.dev.package.allsorts]
+opt-level = 2
