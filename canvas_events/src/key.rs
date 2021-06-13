@@ -115,7 +115,6 @@ pub enum Key {
     KeyNumpadDecimal,
 }
 
-
 impl From<&VirtualKeyCode> for Key {
     fn from(glutin_key: &VirtualKeyCode) -> Key {
         match glutin_key {

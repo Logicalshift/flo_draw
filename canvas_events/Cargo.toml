@@ -1,0 +1,13 @@
+[package]
+name                = "flo_canvas_events"
+version             = "0.3.0"
+authors             = ["Andrew Hunter"]
+license             = "Apache-2.0"
+edition             = "2018"
+readme              = "README.md"
+repository          = "https://github.com/Logicalshift/flo_draw"
+description         = "User input events for a flo_draw canvas"
+categories          = [ "graphics", "rendering", "gui" ]
+
+[dependencies]
+flo_canvas          = "0.3"
