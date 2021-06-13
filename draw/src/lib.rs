@@ -54,12 +54,12 @@ pub use flo_binding as binding;
 pub use flo_render::{initialize_offscreen_rendering};
 pub use flo_render_canvas::{render_canvas_offscreen};
 
-mod events;
 mod render_window;
 mod glutin_thread;
 mod glutin_window;
 mod drawing_window;
 mod glutin_runtime;
+mod event_conversion;
 mod window_properties;
 mod glutin_thread_event;
 

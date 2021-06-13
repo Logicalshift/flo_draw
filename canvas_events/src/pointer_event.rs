@@ -3,7 +3,7 @@
 /// multiple pointer devices)
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct PointerId(pub (crate) u64);
+pub struct PointerId(pub u64);
 
 ///
 /// The button on a mouse or other device
@@ -89,19 +89,6 @@ impl PointerState {
             tilt:               None,
             rotation:           None,
             flow_rate:          None
-        }
-    }
-}
-
-impl From<&glutin::event::MouseButton> for Button {
-    fn from(mouse_button: &glutin::event::MouseButton) -> Button {
-        use glutin::event::MouseButton;
-
-        match mouse_button {
-            MouseButton::Left           => Button::Left,
-            MouseButton::Middle         => Button::Middle,
-            MouseButton::Right          => Button::Right,
-            MouseButton::Other(other)   => Button::Other(*other as _)
         }
     }
 }
