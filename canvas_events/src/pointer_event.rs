@@ -80,7 +80,7 @@ impl PointerState {
     ///
     /// Creates a pointer state in the default state
     ///
-    pub (crate) fn new() -> PointerState {
+    pub fn new() -> PointerState {
         PointerState {
             location_in_window: (0.0, 0.0),
             location_in_canvas: None,

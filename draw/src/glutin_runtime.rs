@@ -1,6 +1,7 @@
 use super::events::*;
 use super::glutin_window::*;
 use super::glutin_thread::*;
+use super::event_conversion::*;
 use super::window_properties::*;
 use super::glutin_thread_event::*;
 
@@ -147,7 +148,7 @@ impl GlutinRuntime {
             // Keyboard events
             KeyboardInput { device_id: _, input, is_synthetic: _, }         => {
                 // Convert the keycode
-                let key = input.virtual_keycode.map(|keycode| Key::from(&keycode));
+                let key = input.virtual_keycode.map(|keycode| key_from_glutin(&keycode));
                 let key = if key == Some(Key::Unknown) { None } else { key };
 
                 // TODO: for modifier keys, generate keydown/up using the modifier state
@@ -203,7 +204,7 @@ impl GlutinRuntime {
                 // TODO: for modifier keys, generate keydown/up using the modifier state
 
                 // Update the pointe state
-                let button                          = Button::from(&button);
+                let button                          = button_from_glutin(&button);
                 let action                          = match state {
                     ElementState::Pressed => {
                         if !pointer_state.buttons.contains(&button) {
