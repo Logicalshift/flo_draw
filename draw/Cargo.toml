@@ -13,6 +13,7 @@ include             = [ "Cargo.toml", "src/**/*", "examples/**/*", "GUIDE.md", "
 
 [dependencies]
 flo_canvas          = { version = "0.3", features = [ "outline-fonts", "image-loading" ] }
+flo_canvas_events   = { version = "0.3" }
 flo_render          = { version = "0.3", features = [ "opengl" ] }
 flo_render_canvas   = "0.3"
 flo_stream          = "0.6"

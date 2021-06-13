@@ -47,6 +47,7 @@
 #[macro_use] extern crate lazy_static;
 
 pub use flo_canvas as canvas;
+pub use flo_canvas_events as events;
 pub use flo_render_canvas as render_canvas;
 pub use flo_binding as binding;
 

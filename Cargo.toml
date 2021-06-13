@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "canvas", 
+    "canvas_events",
     "render", 
     "render_canvas",
     "render_gl_offscreen",
@@ -9,6 +10,7 @@ members = [
 
 [patch.crates-io]
 flo_canvas              = { path = "./canvas" }
+flo_canvas_events       = { path = "./canvas_events" }
 flo_render              = { path = "./render" }
 flo_render_canvas       = { path = "./render_canvas" }
 flo_render_gl_offscreen = { path = "./render_gl_offscreen" }
