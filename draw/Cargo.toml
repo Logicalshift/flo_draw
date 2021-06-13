@@ -14,19 +14,18 @@ include             = [ "Cargo.toml", "src/**/*", "examples/**/*", "GUIDE.md", "
 [dependencies]
 flo_canvas          = { version = "0.3", features = [ "outline-fonts", "image-loading" ] }
 flo_canvas_events   = { version = "0.3" }
-flo_render          = { version = "0.3", features = [ "opengl" ] }
-flo_render_canvas   = "0.3"
-flo_stream          = "0.6"
-flo_binding         = "2.0"
-desync              = "0.7"
-
-glutin              = "0.26.0"
-lazy_static         = "1.2"
-futures             = "0.3"
-gl                  = "0.14"
 
 [dev-dependencies]
 flo_curves          = "0.5"
+flo_stream          = "0.6"
+flo_render          = "0.3"
+flo_render_canvas   = "0.3"
+flo_binding         = "2.0"
+desync              = "0.7"
+futures             = "0.3"
 rand                = "0.8"
 futures-timer       = "3.0"
 num-complex         = "0.4"
+
+[target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "dragonfly", target_os = "netbsd", target_os = "openbsd", target_os = "macos", target_os = "ios", target_os = "android", target_os = "windows", target_os = "emscripten"))'.dependencies]
+flo_draw_glutin     = "0.3"
