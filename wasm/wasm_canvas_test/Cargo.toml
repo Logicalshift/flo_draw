@@ -5,14 +5,15 @@ authors         = ["Andrew Hunter <andrew@logicalshift.co.uk>"]
 edition         = "2018"
 
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = false
+wasm-opt        = false
 
 [lib]
 crate-type      = ["cdylib", "rlib"]
 
 [profile.release]
-opt-level = "s"
+opt-level       = "s"
 
 [dependencies]
 flo_canvas      = "0.3"
+# flo_draw        = "0.3"
 wasm-bindgen    = "0.2"
