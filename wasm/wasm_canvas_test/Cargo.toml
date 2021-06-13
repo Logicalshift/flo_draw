@@ -10,6 +10,9 @@ wasm-opt = false
 [lib]
 crate-type      = ["cdylib", "rlib"]
 
+[profile.release]
+opt-level = "s"
+
 [dependencies]
 flo_canvas      = "0.3"
 wasm-bindgen    = "0.2"
