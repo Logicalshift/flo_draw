@@ -10,10 +10,10 @@ pub fn main() {
     // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
     with_2d_graphics(|| {
         // Load a png file
-        let flo_bytes: &[u8] = include_bytes!["flo_and_carrot.png"];
+        let flo_bytes: &[u8] = include_bytes!["flo_drawing_on_window.png"];
 
         // Create a window
-        let canvas = create_drawing_window("Flo with carrot");
+        let canvas = create_drawing_window("Flo drawing on a window");
 
         // Render a triangle to it
         canvas.draw(|gc| {
@@ -34,7 +34,7 @@ pub fn main() {
             gc.rect(0.0, y_pos, 1000.0, y_pos+height);
 
             // Fill with the texture we just loaded
-            gc.fill_texture(TextureId(0), 0.0, y_pos+flo_h as f32, flo_w as _, y_pos);
+            gc.fill_texture(TextureId(0), 0.0, y_pos+height as f32, 1000.0, y_pos);
             gc.fill();
         });
     });
