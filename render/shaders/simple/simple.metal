@@ -4,10 +4,9 @@
 #import "rasterizer.metal"
 
 vertex RasterizerData simple_vertex(
-    uint        vertex_id [[ vertex_id ]],
-    constant    matrix_float4x4 *transform      [[ buffer(VertexInputIndexMatrix )]],
-    constant    MetalVertex2D   *vertices       [[ buffer(VertexInputIndexVertices) ]]) {
-    
+      uint        vertex_id [[ vertex_id ]],
+      constant    matrix_float4x4 *transform      [[ buffer(VertexInputIndexMatrix )]],
+      constant    MetalVertex2D   *vertices       [[ buffer(VertexInputIndexVertices) ]]) {
     uchar4 byte_color   = vertices[vertex_id].color;
     float4 color        = float4(byte_color[0], byte_color[1], byte_color[2], byte_color[3]);
     color[0]            /= 255.0;
