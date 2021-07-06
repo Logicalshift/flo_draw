@@ -1,7 +1,6 @@
 #include <metal_stdlib>
 
 #import "./bindings/metal_vertex2d.h"
-#import "../simple/rasterizer.metal"
 
 typedef struct {
     float4 v_Position [[position]];
@@ -24,4 +23,14 @@ vertex GradientData gradient_vertex(
     data.v_PaperCoord   = paper_coord;
 
     return data;
+}
+
+fragment float4 gradient_fragment(
+      GradientData                in [[stage_in]],
+      metal::texture1d<half>      texture [[ texture(FragmentIndexTexture) ]]) {
+    constexpr metal::sampler texture_sampler (metal::mag_filter::linear, metal::min_filter::linear);
+
+    const half4 color_sample = texture.sample(texture_sampler, in.v_TexCoord);
+
+    return float4(color_sample);
 }
