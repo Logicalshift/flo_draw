@@ -66,7 +66,7 @@ fn compile_metal() {
     // Compile the shaders
     println!("cargo:rerun-if-changed=shaders");
     compile_metal_shader("shaders/simple/simple.metal", "simple.air");
-    compile_metal_shader("shaders/simple/texture_fragment.metal", "texture_fragment.air");
+    compile_metal_shader("shaders/texture/texture_fragment.metal", "texture_fragment.air");
     compile_metal_shader("shaders/simple/eraser.metal", "eraser.air");
     link_metal_shaders(vec!["simple.air", "texture_fragment.air", "eraser.air"], "flo.metallib");
 

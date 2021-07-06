@@ -1,7 +1,7 @@
 #include <metal_stdlib>
 
 #import "./bindings/metal_vertex2d.h"
-#import "rasterizer.metal"
+#import "../simple/rasterizer.metal"
 
 fragment float4 texture_fragment(
       RasterizerData              in [[stage_in]],
