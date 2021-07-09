@@ -67,9 +67,10 @@ fn compile_metal() {
     println!("cargo:rerun-if-changed=shaders");
     compile_metal_shader("shaders/simple/simple.metal", "simple.air");
     compile_metal_shader("shaders/simple/eraser.metal", "eraser.air");
-    compile_metal_shader("shaders/texture/gradient_fragment.metal", "gradient.air");
+    compile_metal_shader("shaders/simple/clip_mask.metal", "clip_mask.air");
+    compile_metal_shader("shaders/texture/gradient_fragment.metal", "gradient_fragment.air");
     compile_metal_shader("shaders/texture/texture_fragment.metal", "texture_fragment.air");
-    link_metal_shaders(vec!["simple.air", "texture_fragment.air", "eraser.air"], "flo.metallib");
+    link_metal_shaders(vec!["simple.air", "texture_fragment.air", "gradient_fragment.air", "eraser.air", "clip_mask.air"], "flo.metallib");
 
     // Generate .rs files from the binding headers
     println!("cargo:rerun-if-changed=bindings");
