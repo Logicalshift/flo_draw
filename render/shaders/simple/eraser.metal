@@ -1,6 +1,5 @@
 #include <metal_stdlib>
 
-#import "./bindings/metal_vertex2d.h"
 #import "rasterizer.metal"
 
 float4 apply_eraser(
