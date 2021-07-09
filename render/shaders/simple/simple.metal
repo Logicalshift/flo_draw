@@ -32,3 +32,10 @@ fragment float4 simple_fragment(
       RasterizerData in [[stage_in]]) {
     return in.v_Color;
 }
+
+fragment float4 simple_eraser_multisample_fragment(
+      RasterizerData            in [[stage_in]],
+      metal::texture2d_ms<half> eraser_texture [[ texture(FragmentIndexEraseTexture) ]]) {
+    float4 color = apply_eraser(in.v_Color, in.v_PaperCoord, eraser_texture);
+    return color;
+}
