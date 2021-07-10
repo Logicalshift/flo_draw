@@ -538,9 +538,10 @@ impl MetalRenderer {
     ///
     fn use_shader(&mut self, shader_type: ShaderType, state: &mut RenderState) {
         // Reset the current shader state
-        state.fill_texture  = None;
-        state.erase_texture = None;
-        state.clip_texture  = None;
+        state.pipeline_config.vertex_shader = String::from("simple_vertex");
+        state.fill_texture                  = None;
+        state.erase_texture                 = None;
+        state.clip_texture                  = None;
 
         // Update the state according to the shader type
         match shader_type {
@@ -594,23 +595,27 @@ impl MetalRenderer {
             }
 
             ShaderType::LinearGradient { texture: TextureId(gradient_texture), texture_transform, repeat, alpha, erase_texture: None, clip_texture: None } => { 
+                state.pipeline_config.vertex_shader     = String::from("gradient_vertex");
                 state.pipeline_config.fragment_shader   = String::from("gradient_fragment");
                 state.fill_texture                      = self.textures[gradient_texture].clone();
             }
 
             ShaderType::LinearGradient { texture: TextureId(gradient_texture), texture_transform, repeat, alpha, erase_texture: Some(TextureId(erase_texture)), clip_texture: None } => {
+                state.pipeline_config.vertex_shader     = String::from("gradient_vertex");
                 state.pipeline_config.fragment_shader   = String::from("gradient_eraser_multisample_fragment");
                 state.fill_texture                      = self.textures[gradient_texture].clone();
                 state.erase_texture                     = self.textures[erase_texture].clone();
             }
 
             ShaderType::LinearGradient { texture: TextureId(gradient_texture), texture_transform, repeat, alpha, erase_texture: None, clip_texture: Some(TextureId(clip_texture)) } => { 
+                state.pipeline_config.vertex_shader     = String::from("gradient_vertex");
                 state.pipeline_config.fragment_shader   = String::from("gradient_clip_mask_multisample_fragment");
                 state.fill_texture                      = self.textures[gradient_texture].clone();
                 state.clip_texture                      = self.textures[clip_texture].clone();
             }
 
             ShaderType::LinearGradient { texture: TextureId(gradient_texture), texture_transform, repeat, alpha, erase_texture: Some(TextureId(erase_texture)), clip_texture: Some(TextureId(clip_texture)) } => {
+                state.pipeline_config.vertex_shader     = String::from("gradient_vertex");
                 state.pipeline_config.fragment_shader   = String::from("gradient_eraser_clip_mask_multisample_fragment");
                 state.fill_texture                      = self.textures[gradient_texture].clone();
                 state.erase_texture                     = self.textures[erase_texture].clone();
