@@ -50,7 +50,7 @@ fragment float4 gradient_eraser_multisample_fragment(
     return color;
 }
 
-fragment float4 gradient_eraser_clip_mask_multisample_fragment(
+fragment float4 gradient_clip_mask_multisample_fragment(
       GradientData                in [[stage_in]],
       metal::texture1d<half>      texture [[ texture(FragmentIndexTexture) ]],
       metal::texture2d_ms<half>   clip_mask_texture [[ texture(FragmentIndexClipMaskTexture) ]]) {
@@ -63,7 +63,7 @@ fragment float4 gradient_eraser_clip_mask_multisample_fragment(
     return color;
 }
 
-fragment float4 gradient_eraser_eraser_clip_mask_multisample_fragment(
+fragment float4 gradient_eraser_clip_mask_multisample_fragment(
       GradientData                in [[stage_in]],
       metal::texture1d<half>      texture [[ texture(FragmentIndexTexture) ]],
       metal::texture2d_ms<half>   eraser_texture [[ texture(FragmentIndexEraseTexture) ]],
