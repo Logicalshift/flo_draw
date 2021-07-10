@@ -60,6 +60,9 @@ struct RenderState<'a> {
     /// The texture used in the eraser slot
     erase_texture: Option<metal::Texture>,
 
+    /// The texture used in the clipping slot
+    clip_texture: Option<metal::Texture>,
+
     /// Buffer containing the current transformation matrix
     matrix: MatrixBuffer,
 
@@ -199,6 +202,7 @@ impl MetalRenderer {
             main_texture:           target_texture.clone(),
             target_texture:         target_texture.clone(),
             erase_texture:          None,
+            clip_texture:           None,
             matrix:                 matrix,
             pipeline_config:        pipeline_config,
             pipeline_state:         pipeline_state,
@@ -531,6 +535,7 @@ impl MetalRenderer {
     fn use_shader(&mut self, shader_type: ShaderType, state: &mut RenderState) {
         // Reset the current shader state
         state.erase_texture = None;
+        state.clip_texture  = None;
 
         // Update the state according to the shader type
         match shader_type {
@@ -543,54 +548,60 @@ impl MetalRenderer {
                 state.pipeline_config.fragment_shader   = String::from("simple_fragment") 
             }
 
-            ShaderType::Simple { erase_texture: Some(TextureId(texture_id)), clip_texture: None } => {
+            ShaderType::Simple { erase_texture: Some(TextureId(erase_texture)), clip_texture: None } => {
                 state.pipeline_config.fragment_shader   = String::from("simple_eraser_multisample_fragment");
-                state.erase_texture                     = self.textures[texture_id].clone();
+                state.erase_texture                     = self.textures[erase_texture].clone();
             }
 
-            ShaderType::Simple { erase_texture: None, clip_texture: Some(clip_texture) } => { 
-                state.pipeline_config.fragment_shader   = String::from("simple_fragment") 
+            ShaderType::Simple { erase_texture: None, clip_texture: Some(TextureId(clip_texture)) } => { 
+                state.pipeline_config.fragment_shader   = String::from("simple_fragment");
+                state.clip_texture                      = self.textures[clip_texture].clone();
             }
 
-            ShaderType::Simple { erase_texture: Some(TextureId(texture_id)), clip_texture: Some(clip_texture) } => {
+            ShaderType::Simple { erase_texture: Some(TextureId(erase_texture)), clip_texture: Some(TextureId(clip_texture)) } => {
                 state.pipeline_config.fragment_shader   = String::from("simple_eraser_multisample_fragment");
-                state.erase_texture                     = self.textures[texture_id].clone();
+                state.erase_texture                     = self.textures[erase_texture].clone();
+                state.clip_texture                      = self.textures[clip_texture].clone();
             }
 
             ShaderType::Texture { texture, texture_transform, repeat, alpha, erase_texture: None, clip_texture: None } => { 
-                state.pipeline_config.fragment_shader   = String::from("simple_fragment") 
+                state.pipeline_config.fragment_shader   = String::from("simple_fragment");
             }
 
-            ShaderType::Texture { texture, texture_transform, repeat, alpha, erase_texture: Some(TextureId(texture_id)), clip_texture: None } => {
+            ShaderType::Texture { texture, texture_transform, repeat, alpha, erase_texture: Some(TextureId(erase_texture)), clip_texture: None } => {
                 state.pipeline_config.fragment_shader   = String::from("simple_eraser_multisample_fragment");
-                state.erase_texture                     = self.textures[texture_id].clone();
+                state.erase_texture                     = self.textures[erase_texture].clone();
             }
 
-            ShaderType::Texture { texture, texture_transform, repeat, alpha, erase_texture: None, clip_texture: Some(clip_texture) } => { 
-                state.pipeline_config.fragment_shader   = String::from("simple_fragment") 
+            ShaderType::Texture { texture, texture_transform, repeat, alpha, erase_texture: None, clip_texture: Some(TextureId(clip_texture)) } => { 
+                state.pipeline_config.fragment_shader   = String::from("simple_fragment");
+                state.clip_texture                      = self.textures[clip_texture].clone();
             }
 
-            ShaderType::Texture { texture, texture_transform, repeat, alpha, erase_texture: Some(TextureId(texture_id)), clip_texture: Some(clip_texture) } => {
+            ShaderType::Texture { texture, texture_transform, repeat, alpha, erase_texture: Some(TextureId(erase_texture)), clip_texture: Some(TextureId(clip_texture)) } => {
                 state.pipeline_config.fragment_shader   = String::from("simple_eraser_multisample_fragment");
-                state.erase_texture                     = self.textures[texture_id].clone();
+                state.erase_texture                     = self.textures[erase_texture].clone();
+                state.clip_texture                      = self.textures[clip_texture].clone();
             }
 
             ShaderType::LinearGradient { texture, texture_transform, repeat, alpha, erase_texture: None, clip_texture: None } => { 
                 state.pipeline_config.fragment_shader   = String::from("simple_fragment") 
             }
 
-            ShaderType::LinearGradient { texture, texture_transform, repeat, alpha, erase_texture: Some(TextureId(texture_id)), clip_texture: None } => {
+            ShaderType::LinearGradient { texture, texture_transform, repeat, alpha, erase_texture: Some(TextureId(erase_texture)), clip_texture: None } => {
                 state.pipeline_config.fragment_shader   = String::from("simple_eraser_multisample_fragment");
-                state.erase_texture                     = self.textures[texture_id].clone();
+                state.erase_texture                     = self.textures[erase_texture].clone();
             }
 
-            ShaderType::LinearGradient { texture, texture_transform, repeat, alpha, erase_texture: None, clip_texture: Some(clip_texture) } => { 
-                state.pipeline_config.fragment_shader   = String::from("simple_fragment") 
+            ShaderType::LinearGradient { texture, texture_transform, repeat, alpha, erase_texture: None, clip_texture: Some(TextureId(clip_texture)) } => { 
+                state.pipeline_config.fragment_shader   = String::from("simple_fragment") ;
+                state.clip_texture                      = self.textures[clip_texture].clone();
             }
 
-            ShaderType::LinearGradient { texture, texture_transform, repeat, alpha, erase_texture: Some(TextureId(texture_id)), clip_texture: Some(clip_texture) } => {
+            ShaderType::LinearGradient { texture, texture_transform, repeat, alpha, erase_texture: Some(TextureId(erase_texture)), clip_texture: Some(TextureId(clip_texture)) } => {
                 state.pipeline_config.fragment_shader   = String::from("simple_eraser_multisample_fragment");
-                state.erase_texture                     = self.textures[texture_id].clone();
+                state.erase_texture                     = self.textures[erase_texture].clone();
+                state.clip_texture                      = self.textures[clip_texture].clone();
             }
         }
 
