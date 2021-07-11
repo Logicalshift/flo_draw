@@ -12,9 +12,10 @@ typedef struct {
 vertex GradientData gradient_vertex(
       uint        vertex_id [[ vertex_id ]],
       constant    matrix_float4x4 *transform      [[ buffer(VertexInputIndexMatrix )]],
-      constant    MetalVertex2D   *vertices       [[ buffer(VertexInputIndexVertices) ]]) {
+      constant    MetalVertex2D   *vertices       [[ buffer(VertexInputIndexVertices) ]],
+      constant    matrix_float4x4 *texture_transform  [[ buffer(VertexTextureMatrix) ]]) {
     float4 position     = float4(vertices[vertex_id].pos[0], vertices[vertex_id].pos[1], 0.0, 1.0) * *transform;
-    float2 tex_coord    = vertices[vertex_id].tex_coord;
+    float4 tex_coord    = float4(vertices[vertex_id].pos[0], vertices[vertex_id].pos[1], 0.0, 1.0) * *texture_transform;
     float2 paper_coord  = float2((position[0]+1.0)/2.0, 1.0-((position[1]+1.0)/2.0));
 
     GradientData data;

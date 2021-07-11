@@ -6,7 +6,10 @@ typedef enum VertexInputIndex {
     VertexInputIndexMatrix      = 0,
 
     /// The vertices to render
-    VertexInputIndexVertices    = 1
+    VertexInputIndexVertices    = 1,
+
+    /// The texture transformation matrix
+    VertexTextureMatrix         = 2
 } VertexInputIndex;
 
 ///

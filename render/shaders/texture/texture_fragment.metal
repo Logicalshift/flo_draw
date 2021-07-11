@@ -3,6 +3,32 @@
 #import "./bindings/metal_vertex2d.h"
 #import "../simple/rasterizer.metal"
 
+vertex RasterizerData texture_vertex(
+      uint        vertex_id [[ vertex_id ]],
+      constant    matrix_float4x4 *transform          [[ buffer(VertexInputIndexMatrix )]],
+      constant    MetalVertex2D   *vertices           [[ buffer(VertexInputIndexVertices) ]],
+      constant    matrix_float4x4 *texture_transform  [[ buffer(VertexTextureMatrix) ]]) {
+    uchar4 byte_color   = vertices[vertex_id].color;
+    float4 color        = float4(byte_color[0], byte_color[1], byte_color[2], byte_color[3]);
+    color[0]            /= 255.0;
+    color[1]            /= 255.0;
+    color[2]            /= 255.0;
+    color[3]            /= 255.0;
+
+    float4 position     = float4(vertices[vertex_id].pos[0], vertices[vertex_id].pos[1], 0.0, 1.0) * *transform;
+    float4 tex_coord    = float4(vertices[vertex_id].pos[0], vertices[vertex_id].pos[1], 0.0, 1.0) * *texture_transform;
+    float2 paper_coord  = float2((position[0]+1.0)/2.0, 1.0-((position[1]+1.0)/2.0));
+
+    RasterizerData data;
+
+    data.v_Position     = position;
+    data.v_Color        = color;
+    data.v_TexCoord     = float2(tex_coord[0], tex_coord[1]);
+    data.v_PaperCoord   = paper_coord;
+
+    return data;
+}
+
 fragment float4 texture_fragment(
       RasterizerData              in [[stage_in]],
       metal::texture2d<half>      texture [[ texture(FragmentIndexTexture) ]]) {
