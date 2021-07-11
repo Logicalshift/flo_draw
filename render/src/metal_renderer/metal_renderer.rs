@@ -583,7 +583,36 @@ impl MetalRenderer {
     }
 
     fn write_texture_data_2d(&mut self, TextureId(texture_id): TextureId, x1: usize, y1: usize, x2: usize, y2: usize, data: Arc<Vec<u8>>) {
+        // Sanity check
+        if x2<x1 { return; }
+        if y2<y1 { return; }
+
+        // Load the texture
         let texture         = if texture_id < self.textures.len() { self.textures[texture_id].as_ref() } else { None };
+        let texture         = if let Some(texture) = texture { texture } else { return; };
+
+        // Work out the region that will be written
+        let region          = metal::MTLRegion {
+            origin: metal::MTLOrigin    { x: x1 as _, y: y1 as _, z: 0 },
+            size:   metal::MTLSize      { width: (x2-x1) as _, height: (y2-y1) as _, depth: 1 }
+        };
+
+        // Check that the bytes are the right size (need to know the texture pixel format)
+        let bytes_per_pixel = match texture.pixel_format() {
+            metal::MTLPixelFormat::R8Unorm      => 1,
+            metal::MTLPixelFormat::BGRA8Unorm   => 4,
+            _                                   => todo!("Unsupported texture pixel format")
+        };
+
+        let expected_size = (x2-x1)*(y2-y1)*bytes_per_pixel;
+        if data.len() < expected_size {
+            return;
+        }
+
+        // Write the bytes to the texture
+        unsafe {
+            texture.replace_region(region, 0, data.as_ptr() as _, (bytes_per_pixel * (x2-x1)) as _ );
+        }
     }
 
     fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: Arc<Vec<u8>>) {
