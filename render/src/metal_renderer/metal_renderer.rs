@@ -594,6 +594,7 @@ impl MetalRenderer {
             }
 
             ShaderType::Texture { texture: TextureId(fill_texture), texture_transform, repeat, alpha, erase_texture: None, clip_texture: None } => { 
+                state.pipeline_config.vertex_shader     = String::from("texture_vertex");
                 state.pipeline_config.fragment_shader   = String::from("texture_fragment");
                 state.texture_transform                 = Some(MatrixBuffer::from_matrix(&self.device, texture_transform));
                 state.texture_alpha                     = Some(alpha as _);
@@ -602,6 +603,7 @@ impl MetalRenderer {
             }
 
             ShaderType::Texture { texture: TextureId(fill_texture), texture_transform, repeat, alpha, erase_texture: Some(TextureId(erase_texture)), clip_texture: None } => {
+                state.pipeline_config.vertex_shader     = String::from("texture_vertex");
                 state.pipeline_config.fragment_shader   = String::from("texture_eraser_multisample_fragment");
                 state.texture_transform                 = Some(MatrixBuffer::from_matrix(&self.device, texture_transform));
                 state.texture_alpha                     = Some(alpha as _);
@@ -611,6 +613,7 @@ impl MetalRenderer {
             }
 
             ShaderType::Texture { texture: TextureId(fill_texture), texture_transform, repeat, alpha, erase_texture: None, clip_texture: Some(TextureId(clip_texture)) } => { 
+                state.pipeline_config.vertex_shader     = String::from("texture_vertex");
                 state.pipeline_config.fragment_shader   = String::from("texture_clip_mask_multisample_fragment");
                 state.texture_transform                 = Some(MatrixBuffer::from_matrix(&self.device, texture_transform));
                 state.texture_alpha                     = Some(alpha as _);
@@ -620,6 +623,7 @@ impl MetalRenderer {
             }
 
             ShaderType::Texture { texture: TextureId(fill_texture), texture_transform, repeat, alpha, erase_texture: Some(TextureId(erase_texture)), clip_texture: Some(TextureId(clip_texture)) } => {
+                state.pipeline_config.vertex_shader     = String::from("texture_vertex");
                 state.pipeline_config.fragment_shader   = String::from("texture_eraser_clip_mask_multisample_fragment");
                 state.texture_transform                 = Some(MatrixBuffer::from_matrix(&self.device, texture_transform));
                 state.texture_alpha                     = Some(alpha as _);
