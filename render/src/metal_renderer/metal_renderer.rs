@@ -200,11 +200,9 @@ impl MetalRenderer {
         }
 
         if let Some(texture_alpha) = &state.texture_alpha {
-            unsafe {
-                let alpha = *texture_alpha as f32;
-                let alpha = alpha.to_ne_bytes();
-                state.command_encoder.set_fragment_bytes(FragmentInputIndex_FragmentAlpha as u64, 4, alpha.as_ptr() as _);
-            }
+            let alpha = *texture_alpha as f32;
+            let alpha = alpha.to_ne_bytes();
+            state.command_encoder.set_fragment_bytes(FragmentInputIndex_FragmentAlpha as u64, 4, alpha.as_ptr() as _);
         }
     }
 
@@ -625,9 +623,7 @@ impl MetalRenderer {
         }
 
         // Write the bytes to the texture
-        unsafe {
-            texture.replace_region(region, 0, data.as_ptr() as _, (bytes_per_pixel * (x2-x1)) as _ );
-        }
+        texture.replace_region(region, 0, data.as_ptr() as _, (bytes_per_pixel * (x2-x1)) as _ );
     }
 
     ///
@@ -660,9 +656,7 @@ impl MetalRenderer {
         }
 
         // Write the bytes to the texture
-        unsafe {
-            texture.replace_region(region, 0, data.as_ptr() as _, (bytes_per_pixel * (x2-x1)) as _ );
-        }
+        texture.replace_region(region, 0, data.as_ptr() as _, (bytes_per_pixel * (x2-x1)) as _ );
     }
 
     ///
