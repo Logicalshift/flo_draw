@@ -505,28 +505,109 @@ impl MetalRenderer {
         }
     }
 
-    fn create_bgra_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
+    ///
+    /// Stores a texture with the specified texture ID
+    ///
+    #[inline] fn store_texture(&mut self, texture_id: usize, texture: metal::Texture) {
+        while self.textures.len() <= texture_id {
+            self.textures.push(None);
+        }
 
+        self.textures[texture_id] = Some(texture);
+    }
+
+    fn create_bgra_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
+        // Create the texture descriptor
+        let texture_descriptor  = metal::TextureDescriptor::new();
+
+        texture_descriptor.set_texture_type(metal::MTLTextureType::D2);
+        texture_descriptor.set_width(width as u64);
+        texture_descriptor.set_height(height as u64);
+        texture_descriptor.set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
+        texture_descriptor.set_usage(metal::MTLTextureUsage::ShaderRead);
+
+        // Turn into a texture
+        let texture             = self.device.new_texture(&texture_descriptor);
+
+        // Store in the textures
+        self.store_texture(texture_id, texture);
     }
 
     fn create_mono_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
+        // Create the texture descriptor
+        let texture_descriptor  = metal::TextureDescriptor::new();
 
+        texture_descriptor.set_texture_type(metal::MTLTextureType::D2);
+        texture_descriptor.set_width(width as u64);
+        texture_descriptor.set_height(height as u64);
+        texture_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
+        texture_descriptor.set_usage(metal::MTLTextureUsage::ShaderRead);
+
+        // Turn into a texture
+        let texture             = self.device.new_texture(&texture_descriptor);
+
+        // Store in the textures
+        self.store_texture(texture_id, texture);
     }
 
     fn create_bgra_1d_texture(&mut self, TextureId(texture_id): TextureId, width: usize) {
+        // Create the texture descriptor
+        let texture_descriptor  = metal::TextureDescriptor::new();
 
+        texture_descriptor.set_texture_type(metal::MTLTextureType::D1);
+        texture_descriptor.set_width(width as u64);
+        texture_descriptor.set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
+        texture_descriptor.set_usage(metal::MTLTextureUsage::ShaderRead);
+
+        // Turn into a texture
+        let texture             = self.device.new_texture(&texture_descriptor);
+
+        // Store in the textures
+        self.store_texture(texture_id, texture);
     }
 
     fn create_mono_1d_texture(&mut self, TextureId(texture_id): TextureId, width: usize) {
+        // Create the texture descriptor
+        let texture_descriptor  = metal::TextureDescriptor::new();
 
+        texture_descriptor.set_texture_type(metal::MTLTextureType::D1);
+        texture_descriptor.set_width(width as u64);
+        texture_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
+        texture_descriptor.set_usage(metal::MTLTextureUsage::ShaderRead);
+
+        // Turn into a texture
+        let texture             = self.device.new_texture(&texture_descriptor);
+
+        // Store in the textures
+        self.store_texture(texture_id, texture);
     }
 
     fn write_texture_data_2d(&mut self, TextureId(texture_id): TextureId, x1: usize, y1: usize, x2: usize, y2: usize, data: Arc<Vec<u8>>) {
-
+        let texture         = if texture_id < self.textures.len() { self.textures[texture_id].as_ref() } else { None };
     }
 
     fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: Arc<Vec<u8>>) {
-        
+        // Load the texture
+        let texture         = if texture_id < self.textures.len() { self.textures[texture_id].as_ref() } else { None };
+        let texture         = if let Some(texture) = texture { texture } else { return; };
+
+        // Work out the region that will be written
+        let region          = metal::MTLRegion {
+            origin: metal::MTLOrigin    { x: x1 as _, y: 0, z: 0 },
+            size:   metal::MTLSize      { width: (x2-x1) as _, height: 1, depth: 1 }
+        };
+
+        // TODO: check that the bytes are the right size (need to know the texture pixel format)
+        let bytes_per_pixel = match texture.pixel_format() {
+            metal::MTLPixelFormat::R8Unorm      => 1,
+            metal::MTLPixelFormat::BGRA8Unorm   => 4,
+            _                                   => todo!("Unsupported texture pixel format")
+        };
+
+        // Write the bytes to the texture
+        unsafe {
+            texture.replace_region(region, 0, data.as_ptr() as _, (bytes_per_pixel * (x2-x1)) as _ );
+        }
     }
 
     fn create_mipmaps(&mut self, TextureId(texture_id): TextureId) {
