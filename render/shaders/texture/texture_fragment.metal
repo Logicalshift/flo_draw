@@ -31,7 +31,7 @@ fragment float4 texture_fragment(
     const half4 color_sample  = texture.sample(texture_sampler, in.v_TexCoord);
 
     float4 color              = float4(color_sample);
-    color[4]                  *= *texture_alpha;
+    color[3]                  *= *texture_alpha;
 
     return color;
 }
@@ -56,6 +56,7 @@ fragment float4 texture_multisample_fragment(
 
 fragment float4 texture_eraser_multisample_fragment(
       RasterizerData              in [[stage_in]],
+      constant float              *texture_alpha [[ buffer(FragmentAlpha) ]],
       metal::texture2d<half>      texture [[ texture(FragmentIndexTexture) ]],
       metal::texture2d_ms<half>   eraser_texture [[ texture(FragmentIndexEraseTexture) ]]) {
     // Color from the texture
@@ -64,12 +65,14 @@ fragment float4 texture_eraser_multisample_fragment(
 
     // Apply the eraser
     float4 color                = apply_eraser(static_cast<float4>(color_sample), in.v_PaperCoord, eraser_texture);
+    color[3]                    *= *texture_alpha;
 
     return color;
 }
 
 fragment float4 texture_clip_mask_multisample_fragment(
       RasterizerData              in [[stage_in]],
+      constant float              *texture_alpha [[ buffer(FragmentAlpha) ]],
       metal::texture2d<half>      texture [[ texture(FragmentIndexTexture) ]],
       metal::texture2d_ms<half>   clip_mask_texture [[ texture(FragmentIndexClipMaskTexture) ]]) {
     // Color from the texture
@@ -77,12 +80,14 @@ fragment float4 texture_clip_mask_multisample_fragment(
     const half4 color_sample    = texture.sample(texture_sampler, in.v_TexCoord);
 
     // Apply the clip mask
-    float4 color = apply_clip_mask(static_cast<float4>(color_sample), in.v_PaperCoord, clip_mask_texture);
+    float4 color  = apply_clip_mask(static_cast<float4>(color_sample), in.v_PaperCoord, clip_mask_texture);
+    color[3]      *= *texture_alpha;
     return color;
 }
 
 fragment float4 texture_eraser_clip_mask_multisample_fragment(
       RasterizerData              in [[stage_in]],
+      constant float              *texture_alpha [[ buffer(FragmentAlpha) ]],
       metal::texture2d<half>      texture [[ texture(FragmentIndexTexture) ]],
       metal::texture2d_ms<half>   eraser_texture [[ texture(FragmentIndexEraseTexture) ]],
       metal::texture2d_ms<half>   clip_mask_texture [[ texture(FragmentIndexClipMaskTexture) ]]) {
@@ -91,7 +96,8 @@ fragment float4 texture_eraser_clip_mask_multisample_fragment(
     const half4 color_sample    = texture.sample(texture_sampler, in.v_TexCoord);
 
     // Apply the eraser and clip mask
-    float4 color = apply_eraser(static_cast<float4>(color_sample), in.v_PaperCoord, eraser_texture);
-    color = apply_clip_mask(color, in.v_PaperCoord, clip_mask_texture);
+    float4 color  = apply_eraser(static_cast<float4>(color_sample), in.v_PaperCoord, eraser_texture);
+    color         = apply_clip_mask(color, in.v_PaperCoord, clip_mask_texture);
+    color[3]      *= *texture_alpha;
     return color;
 }
