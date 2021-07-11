@@ -166,6 +166,13 @@ impl MetalRenderer {
     }
 
     ///
+    /// Creates a blitting command encoder
+    ///
+    fn get_blit_command_encoder<'a>(&mut self, command_buffer: &'a metal::CommandBufferRef) -> &'a metal::BlitCommandEncoderRef {
+        command_buffer.new_blit_command_encoder()
+    }
+
+    ///
     /// Creates a command encoder for rendering to the specified texture, after clearing it
     ///
     fn get_command_encoder_with_clear<'a>(&mut self, command_buffer: &'a metal::CommandBufferRef, render_target: &metal::Texture, clear_color: Rgba8) -> &'a metal::RenderCommandEncoderRef {
@@ -259,7 +266,7 @@ impl MetalRenderer {
                 Create1DTextureMono(texture_id, width)                                  => { self.create_mono_1d_texture(texture_id, width); }
                 WriteTextureData(texture_id, (x1, y1), (x2, y2), data)                  => { self.write_texture_data_2d(texture_id, x1, y1, x2, y2, data); }
                 WriteTexture1D(texture_id, x1, x2, data)                                => { self.write_texture_data_1d(texture_id, x1, x2, data); }
-                CreateMipMaps(texture_id)                                               => { self.create_mipmaps(texture_id); }
+                CreateMipMaps(texture_id)                                               => { self.create_mipmaps(texture_id, &mut render_state); }
                 CopyTexture(src_texture, tgt_texture)                                   => { self.copy_texture(src_texture, tgt_texture); }
                 FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
                 Clear(color)                                                            => { self.clear(color, &mut render_state); }
@@ -666,8 +673,10 @@ impl MetalRenderer {
         let texture         = if texture_id < self.textures.len() { self.textures[texture_id].as_ref() } else { None };
         let texture         = if let Some(texture) = texture { texture } else { return; };
 
-        // TODO: need a blit command encoder
-        // state.command_encoder.generate_mipmaps(texture);
+        // Need a blit command encoder
+        let blit_encoder = self.get_blit_command_encoder(state.command_buffer);
+        // blit_encoder.generate_mipmaps(texture); // TODO: needs updated version of the metal crate
+        blit_encoder.end_encoding();
     }
 
     ///
