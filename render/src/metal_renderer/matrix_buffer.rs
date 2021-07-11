@@ -2,7 +2,6 @@ use super::bindings::*;
 use crate::buffer::*;
 
 use metal;
-use cocoa::foundation::{NSRange};
 
 use std::ptr;
 use std::mem;
@@ -51,7 +50,7 @@ impl MatrixBuffer {
         }
 
         // Tell the buffer its been modified
-        self.buffer.did_modify_range(NSRange::new(0, mem::size_of::<matrix_float4x4>() as u64));
+        self.buffer.did_modify_range(metal::NSRange::new(0, mem::size_of::<matrix_float4x4>() as u64));
     }
 }
 
