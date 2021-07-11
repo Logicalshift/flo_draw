@@ -24,12 +24,16 @@ vertex RasterizerData texture_vertex(
 
 fragment float4 texture_fragment(
       RasterizerData              in [[stage_in]],
+      constant float              *texture_alpha [[ buffer(FragmentAlpha) ]],
       metal::texture2d<half>      texture [[ texture(FragmentIndexTexture) ]]) {
     constexpr metal::sampler texture_sampler (metal::mag_filter::linear, metal::min_filter::linear);
 
-    const half4 color_sample = texture.sample(texture_sampler, in.v_TexCoord);
+    const half4 color_sample  = texture.sample(texture_sampler, in.v_TexCoord);
 
-    return float4(color_sample);
+    float4 color              = float4(color_sample);
+    color[4]                  *= *texture_alpha;
+
+    return color;
 }
 
 fragment float4 texture_multisample_fragment(

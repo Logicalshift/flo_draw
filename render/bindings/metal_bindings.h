@@ -23,5 +23,8 @@ typedef enum FragmentInputIndex {
     FragmentIndexEraseTexture       = 1,
 
     /// The clip mask texture to apply to the rendering
-    FragmentIndexClipMaskTexture    = 2
+    FragmentIndexClipMaskTexture    = 2,
+
+    /// The alpha value to use for the fragment
+    FragmentAlpha                   = 3
 } FragmentInputIndex;
