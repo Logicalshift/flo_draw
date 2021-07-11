@@ -186,6 +186,8 @@ impl MetalRenderer {
         // Set the constant buffers
         state.command_encoder.set_vertex_buffer(VertexInputIndex_VertexInputIndexMatrix as u64, Some(&state.matrix), 0);
         state.command_encoder.set_fragment_texture(FragmentInputIndex_FragmentIndexEraseTexture as u64, state.erase_texture.as_ref().map::<&metal::TextureRef, _>(|t| t));
+        state.command_encoder.set_fragment_texture(FragmentInputIndex_FragmentIndexClipMaskTexture as u64, state.clip_texture.as_ref().map::<&metal::TextureRef, _>(|t| t));
+        state.command_encoder.set_fragment_texture(FragmentInputIndex_FragmentIndexTexture as u64, state.fill_texture.as_ref().map::<&metal::TextureRef, _>(|t| t));
     }
 
     ///
