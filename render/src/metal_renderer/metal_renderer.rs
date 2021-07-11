@@ -673,10 +673,17 @@ impl MetalRenderer {
         let texture         = if texture_id < self.textures.len() { self.textures[texture_id].as_ref() } else { None };
         let texture         = if let Some(texture) = texture { texture } else { return; };
 
+        // Will need to recycle the command encoder
+        state.command_encoder.end_encoding();
+
         // Need a blit command encoder
-        let blit_encoder = self.get_blit_command_encoder(state.command_buffer);
+        let blit_encoder    = self.get_blit_command_encoder(state.command_buffer);
         blit_encoder.generate_mipmaps(texture);
         blit_encoder.end_encoding();
+
+        // Generate a new command encoder
+        state.command_encoder = self.get_command_encoder(state.command_buffer, &state.target_texture);
+        self.setup_command_encoder(state);
     }
 
     ///
