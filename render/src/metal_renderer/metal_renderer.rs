@@ -168,7 +168,7 @@ impl MetalRenderer {
     ///
     /// Creates a blitting command encoder
     ///
-    fn get_blit_command_encoder<'a>(&mut self, command_buffer: &'a metal::CommandBufferRef) -> &'a metal::BlitCommandEncoderRef {
+    fn get_blit_command_encoder<'a>(&self, command_buffer: &'a metal::CommandBufferRef) -> &'a metal::BlitCommandEncoderRef {
         command_buffer.new_blit_command_encoder()
     }
 
@@ -675,7 +675,7 @@ impl MetalRenderer {
 
         // Need a blit command encoder
         let blit_encoder = self.get_blit_command_encoder(state.command_buffer);
-        // blit_encoder.generate_mipmaps(texture); // TODO: needs updated version of the metal crate
+        blit_encoder.generate_mipmaps(texture);
         blit_encoder.end_encoding();
     }
 
