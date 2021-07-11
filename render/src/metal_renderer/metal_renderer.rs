@@ -533,6 +533,7 @@ impl MetalRenderer {
         texture_descriptor.set_height(height as u64);
         texture_descriptor.set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
         texture_descriptor.set_usage(metal::MTLTextureUsage::ShaderRead);
+        texture_descriptor.set_mipmap_level_count_for_size(metal::MTLSize { width: width as _, height: height as _, depth: 1 });
 
         // Turn into a texture
         let texture             = self.device.new_texture(&texture_descriptor);
@@ -553,6 +554,7 @@ impl MetalRenderer {
         texture_descriptor.set_height(height as u64);
         texture_descriptor.set_pixel_format(metal::MTLPixelFormat::R8Unorm);
         texture_descriptor.set_usage(metal::MTLTextureUsage::ShaderRead);
+        texture_descriptor.set_mipmap_level_count_for_size(metal::MTLSize { width: width as _, height: height as _, depth: 1 });
 
         // Turn into a texture
         let texture             = self.device.new_texture(&texture_descriptor);
@@ -673,10 +675,13 @@ impl MetalRenderer {
         let texture         = if texture_id < self.textures.len() { self.textures[texture_id].as_ref() } else { None };
         let texture         = if let Some(texture) = texture { texture } else { return; };
 
+        // Must be mipmap levels defined for the texture
+        if texture.mipmap_level_count() <= 1 { return; }
+
         // Will need to recycle the command encoder
         state.command_encoder.end_encoding();
 
-        // Need a blit command encoder
+        // Use a blit encoder to generate the mipmaps
         let blit_encoder    = self.get_blit_command_encoder(state.command_buffer);
         blit_encoder.generate_mipmaps(texture);
         blit_encoder.end_encoding();
