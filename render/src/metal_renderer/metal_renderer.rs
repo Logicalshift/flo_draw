@@ -516,6 +516,9 @@ impl MetalRenderer {
         self.textures[texture_id] = Some(texture);
     }
 
+    ///
+    /// Creates a BGRA formatted 2D texture
+    ///
     fn create_bgra_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
         // Create the texture descriptor
         let texture_descriptor  = metal::TextureDescriptor::new();
@@ -533,6 +536,9 @@ impl MetalRenderer {
         self.store_texture(texture_id, texture);
     }
 
+    ///
+    /// Creates a monochrome 2D texture
+    ///
     fn create_mono_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
         // Create the texture descriptor
         let texture_descriptor  = metal::TextureDescriptor::new();
@@ -550,6 +556,9 @@ impl MetalRenderer {
         self.store_texture(texture_id, texture);
     }
 
+    ///
+    /// Creates a BGRA formatted 1D texture
+    ///
     fn create_bgra_1d_texture(&mut self, TextureId(texture_id): TextureId, width: usize) {
         // Create the texture descriptor
         let texture_descriptor  = metal::TextureDescriptor::new();
@@ -566,6 +575,9 @@ impl MetalRenderer {
         self.store_texture(texture_id, texture);
     }
 
+    ///
+    /// Creates a monochrome 1D texture
+    ///
     fn create_mono_1d_texture(&mut self, TextureId(texture_id): TextureId, width: usize) {
         // Create the texture descriptor
         let texture_descriptor  = metal::TextureDescriptor::new();
@@ -582,6 +594,9 @@ impl MetalRenderer {
         self.store_texture(texture_id, texture);
     }
 
+    ///
+    /// Writes texture data to a 2D texture
+    ///
     fn write_texture_data_2d(&mut self, TextureId(texture_id): TextureId, x1: usize, y1: usize, x2: usize, y2: usize, data: Arc<Vec<u8>>) {
         // Sanity check
         if x2<x1 { return; }
@@ -615,6 +630,9 @@ impl MetalRenderer {
         }
     }
 
+    ///
+    /// Writes texture data to a 1D texture
+    ///
     fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: Arc<Vec<u8>>) {
         // Sanity check
         if x2<x1 { return; }
@@ -647,10 +665,16 @@ impl MetalRenderer {
         }
     }
 
+    ///
+    /// Creates the mipmaps for a particular texture
+    ///
     fn create_mipmaps(&mut self, TextureId(texture_id): TextureId) {
 
     }
 
+    ///
+    /// Generates a copy of an existing texture
+    ///
     fn copy_texture(&mut self, TextureId(src_texture): TextureId, TextureId(tgt_texture): TextureId) {
         
     }
