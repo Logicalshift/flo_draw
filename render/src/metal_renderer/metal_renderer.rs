@@ -194,6 +194,18 @@ impl MetalRenderer {
         state.command_encoder.set_fragment_texture(FragmentInputIndex_FragmentIndexEraseTexture as u64, state.erase_texture.as_ref().map::<&metal::TextureRef, _>(|t| t));
         state.command_encoder.set_fragment_texture(FragmentInputIndex_FragmentIndexClipMaskTexture as u64, state.clip_texture.as_ref().map::<&metal::TextureRef, _>(|t| t));
         state.command_encoder.set_fragment_texture(FragmentInputIndex_FragmentIndexTexture as u64, state.fill_texture.as_ref().map::<&metal::TextureRef, _>(|t| t));
+
+        if let Some(texture_matrix) = &state.texture_transform {
+            state.command_encoder.set_vertex_buffer(VertexInputIndex_VertexTextureMatrix as u64, Some(texture_matrix), 0);
+        }
+
+        if let Some(texture_alpha) = &state.texture_alpha {
+            unsafe {
+                let alpha = *texture_alpha as f32;
+                let alpha = alpha.to_ne_bytes();
+                state.command_encoder.set_fragment_bytes(FragmentInputIndex_FragmentAlpha as u64, 4, alpha.as_ptr() as _);
+            }
+        }
     }
 
     ///
@@ -419,11 +431,11 @@ impl MetalRenderer {
     ///
     fn select_main_frame_buffer(&mut self, state: &mut RenderState) {
         // Reset the state to point at the main texture
-        state.target_texture = state.main_texture.clone();
+        state.target_texture    = state.main_texture.clone();
 
         // Create a command encoder that will use this texture
         state.command_encoder.end_encoding();
-        state.command_encoder = self.get_command_encoder(state.command_buffer, &state.target_texture);
+        state.command_encoder   = self.get_command_encoder(state.command_buffer, &state.target_texture);
 
         state.pipeline_config.update_for_texture(&state.target_texture);
         state.pipeline_state    = self.get_pipeline_state(&state.pipeline_config);
