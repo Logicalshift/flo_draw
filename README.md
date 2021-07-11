@@ -85,3 +85,5 @@ See the examples folder in the `draw` and `render_canvas` subdirectories for som
 # Version 0.3
 
 This is version 0.3 of `flo_draw`.
+
+![Flo drawing on a window](./images/flo_drawing_on_window_small.png)
