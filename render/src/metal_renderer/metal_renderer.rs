@@ -662,15 +662,19 @@ impl MetalRenderer {
     ///
     /// Creates the mipmaps for a particular texture
     ///
-    fn create_mipmaps(&mut self, TextureId(texture_id): TextureId) {
+    fn create_mipmaps(&mut self, TextureId(texture_id): TextureId, state: &mut RenderState) {
+        let texture         = if texture_id < self.textures.len() { self.textures[texture_id].as_ref() } else { None };
+        let texture         = if let Some(texture) = texture { texture } else { return; };
 
+        // TODO: need a blit command encoder
+        // state.command_encoder.generate_mipmaps(texture);
     }
 
     ///
     /// Generates a copy of an existing texture
     ///
     fn copy_texture(&mut self, TextureId(src_texture): TextureId, TextureId(tgt_texture): TextureId) {
-        
+        // TODO: need a blit command encoder   
     }
 
     ///
