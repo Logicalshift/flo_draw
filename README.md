@@ -62,15 +62,25 @@ pub fn main() {
 
 # Examples
 
-See the examples folder in the `draw` and `render_canvas` subdirectories for some more things that can be done with the library.
+See the [examples](draw/examples/) folder in the `draw` and `render_canvas` subdirectories for some more things that can be done with the library.
 
 ![Screenshot](./images/bounce.png)
 
 * `cargo run --example canvas_window` - displays a basic window
+* `cargo run --example hello_world` - traditional
 * `cargo run --example bounce_sprites` - animates some bouncing balls
 * `cargo run --example follow_mouse` - demonstrates event handling by tracking the mouse around
 * `cargo run --example vectoroids` - more involved example of event handling with an incomplete game (arrow keys to move, space to fire)
 * `cargo run --example png_triangle` - renders a triangle to a png file
+* `cargo run --example mandelbrot` - an interactive mandelbrot set program
+* `cargo run --example wibble` - render text to vectors and distort it in real time
+* `cargo run --example mascot` - render FlowBetween's mascot from some pre-encoded vector instructions
+* `cargo run --example texture` - bitmap rendering
+* `cargo run --example texture_sprites` - bouncing balls with bitmap images
+* `cargo run --example gradient` - gradient rendering
+* `cargo run --example mascot_shadow` - reprocess the mascot rendering to add some extra shading
+* `cargo run --example wibble_mascot` - reprocess the mascot rendering to make it wobble
+* `cargo run --example text_layout` - some effects that can be acheived with the text layout engine
 
 # Companion crates
 
