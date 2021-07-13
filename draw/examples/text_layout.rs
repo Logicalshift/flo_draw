@@ -4,7 +4,8 @@ use flo_draw::canvas::*;
 use std::sync::*;
 
 ///
-/// Displays 'Hello, World' in a window
+/// Example that displays various effects that can be achieved via 
+/// flo_canvas's text layout functions
 ///
 pub fn main() {
     with_2d_graphics(|| {
