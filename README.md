@@ -83,7 +83,7 @@ See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` su
 * [`cargo run --example text_layout`](./draw/examples/text_layout.rs) - some effects that can be acheived with the text layout engine
 
 ![Wibble](./images/wibble.png) ![Mandelbrot](./images/mandelbrot.png)
-![Gradient](./images/gradient.png)
+![Gradient](./images/gradient.png) ![Text layout](./images/textlayout.png)
 
 # Companion crates
 
