@@ -71,7 +71,7 @@ See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` su
 * [`cargo run --example bounce_sprites`](./draw/examples/bounce_sprites.rs) - animates some bouncing balls
 * [`cargo run --example follow_mouse`](./draw/examples/follow_mouse.rs) - demonstrates event handling by tracking the mouse around
 * [`cargo run --example vectoroids`](./draw/examples/vectoroids.rs) - more involved example of event handling with an incomplete game (arrow keys to move, space to fire)
-* [`cargo run --example png_triangle`](./draw/examples/png_triangle.rs) - renders a triangle to a png file
+* [`cargo run --example png_triangle`](./render_canvas/examples/png_triangle.rs) - renders a triangle to a png file
 * [`cargo run --example mandelbrot`](./draw/examples/mandelbrot.rs) - an interactive mandelbrot set program
 * [`cargo run --example wibble`](./draw/examples/wibble.rs) - render text to vectors and distort it in real time
 * [`cargo run --example mascot`](./draw/examples/mascot.rs) - render FlowBetween's mascot from some pre-encoded vector instructions
