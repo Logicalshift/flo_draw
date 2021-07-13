@@ -62,7 +62,7 @@ pub fn main() {
 
 # Examples
 
-See the [examples](draw/examples/) folder in the `draw` and `render_canvas` subdirectories for some more things that can be done with the library.
+See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` subdirectories for some more things that can be done with the library.
 
 ![Screenshot](./images/bounce.png)
 
@@ -81,6 +81,9 @@ See the [examples](draw/examples/) folder in the `draw` and `render_canvas` subd
 * `cargo run --example mascot_shadow` - reprocess the mascot rendering to add some extra shading
 * `cargo run --example wibble_mascot` - reprocess the mascot rendering to make it wobble
 * `cargo run --example text_layout` - some effects that can be acheived with the text layout engine
+
+![Wibble](./images/wibble.png) ![Mandelbrot](./images/mandelbrot.png)
+![Gradient](./images/gradient.png)
 
 # Companion crates
 
