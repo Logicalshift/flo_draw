@@ -267,7 +267,7 @@ impl MetalRenderer {
                 WriteTextureData(texture_id, (x1, y1), (x2, y2), data)                  => { self.write_texture_data_2d(texture_id, x1, y1, x2, y2, data); }
                 WriteTexture1D(texture_id, x1, x2, data)                                => { self.write_texture_data_1d(texture_id, x1, x2, data); }
                 CreateMipMaps(texture_id)                                               => { self.create_mipmaps(texture_id, &mut render_state); }
-                CopyTexture(src_texture, tgt_texture)                                   => { self.copy_texture(src_texture, tgt_texture); }
+                CopyTexture(src_texture, tgt_texture)                                   => { self.copy_texture(src_texture, tgt_texture, &mut render_state); }
                 FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
                 Clear(color)                                                            => { self.clear(color, &mut render_state); }
                 UseShader(shader_type)                                                  => { self.use_shader(shader_type, &mut render_state); }
@@ -694,8 +694,54 @@ impl MetalRenderer {
     ///
     /// Generates a copy of an existing texture
     ///
-    fn copy_texture(&mut self, TextureId(src_texture): TextureId, TextureId(tgt_texture): TextureId) {
-        // TODO: need a blit command encoder   
+    fn copy_texture(&mut self, TextureId(src_texture_id): TextureId, TextureId(tgt_texture_id): TextureId, state: &mut RenderState) {
+        // Degenerate cases
+        if src_texture_id == tgt_texture_id { return; }
+
+        // Free the target texture if it exists
+        while self.textures.len() <= tgt_texture_id {
+            self.textures.push(None);
+        }
+        self.textures[tgt_texture_id]   = None;
+
+        // Fetch the source texture
+        let src_texture = if src_texture_id < self.textures.len() { self.textures[src_texture_id].as_ref() } else { None };
+        let src_texture = if let Some(src_texture) = src_texture { src_texture } else { return; };
+
+        // Create a target texture from the source texture
+        let texture_descriptor          = metal::TextureDescriptor::new();
+        let texture_type                = src_texture.texture_type();
+        let width                       = src_texture.width();
+        let height                      = src_texture.height();
+
+        texture_descriptor.set_texture_type(texture_type);
+        texture_descriptor.set_width(width);
+        texture_descriptor.set_pixel_format(src_texture.pixel_format());
+        texture_descriptor.set_usage(metal::MTLTextureUsage::ShaderRead);
+
+        if texture_type == metal::MTLTextureType::D2 {
+            texture_descriptor.set_height(height);
+            texture_descriptor.set_mipmap_level_count_for_size(metal::MTLSize { width: width as _, height: height as _, depth: 1 });
+        }
+
+        // Create the texture from the descriptor
+        let tgt_texture                 = self.device.new_texture(&texture_descriptor);
+
+        // Copy the texture using a blit encoder
+        state.command_encoder.end_encoding();
+
+        // Use a blit encoder to generate the mipmaps
+        let blit_encoder                = self.get_blit_command_encoder(state.command_buffer);
+        blit_encoder.copy_from_texture(&src_texture, 0, 0, metal::MTLOrigin { x: 0, y: 0, z: 0 }, metal::MTLSize { width, height, depth: 1 },
+            &tgt_texture, 0, 0, metal::MTLOrigin { x: 0, y: 0, z: 0 });
+        blit_encoder.end_encoding();
+
+        // Generate a new command encoder
+        state.command_encoder = self.get_command_encoder(state.command_buffer, &state.target_texture);
+        self.setup_command_encoder(state);
+
+        // Store the target texture
+        self.store_texture(tgt_texture_id, tgt_texture);
     }
 
     ///
