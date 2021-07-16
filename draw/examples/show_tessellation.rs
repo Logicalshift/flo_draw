@@ -1,6 +1,6 @@
 use flo_draw::*;
+use flo_draw::canvas::*;
 use flo_draw::render_canvas::*;
-use flo_canvas::*;
 use ::desync::*;
 
 use futures::prelude::*;
@@ -22,7 +22,11 @@ use std::collections::{HashMap};
 /// specific to any particular API at this point, so they can be used to implement rendering 
 /// on APIs or libraries that aren't explicitly supported by `flo_render` or to interoperate
 /// with other rendering systems such as that which might be present in a game engine or a
-/// UI layer.
+/// UI layer. Note that there's no need to set up callbacks or implement traits in order to
+/// retrieve this part of the state of the renderer.
+///
+/// It's possible to create a window that renders the GPU instructions directly by calling
+/// `create_render_window`.
 ///
 pub fn main() {
     with_2d_graphics(|| {
@@ -35,7 +39,7 @@ pub fn main() {
         let renderer                = CanvasRenderer::new();
         let renderer                = Arc::new(Desync::new(renderer));
 
-        // Configure it to a viewport of 1024x768
+        // Configure it to a viewport of 768x768 (want 'square pixels' so the rendering isn't squashed later on)
         renderer.desync(|renderer| { 
             renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
         });
@@ -50,7 +54,7 @@ pub fn main() {
             }.boxed()
         }).map(|as_vectors| stream::iter(as_vectors)).flatten();
 
-        // Draw a circle: this forms the example that we display to the user
+        // Draw a circle that will get sent to the renderer we just set up (rather than directly to the window)
         canvas.draw(|gc| {
             // Set up the canvas
             gc.canvas_height(1000.0);
@@ -78,7 +82,8 @@ pub fn main() {
             let mut index_buffers   = HashMap::new();
 
             while let Some(gpu_instruction) = gpu_instructions.next().await {
-                match gpu_instruction {
+                // Render the tessellation to the tesselator window
+                match &gpu_instruction {
                     RenderAction::SetTransform(Matrix(t)) => {
                         // Set an approximate equivalent of the transform the 'draw' instruction generated
                         tessellation_window.draw(|gc| {
@@ -94,12 +99,12 @@ pub fn main() {
 
                     RenderAction::CreateVertex2DBuffer(buffer_id, vertices) => {
                         // Store the vertex buffer: we can render it when we get the corresponding index buffer
-                        vertex_buffers.insert(buffer_id, vertices);
+                        vertex_buffers.insert(*buffer_id, vertices.clone());
                     }
 
                     RenderAction::CreateIndexBuffer(buffer_id, indicies) => { 
                         // Store the index buffer for when we receive the rendering instruction
-                        index_buffers.insert(buffer_id, indicies);
+                        index_buffers.insert(*buffer_id, indicies.clone());
                     }
 
                     RenderAction::DrawIndexedTriangles(vertex_buffer_id, index_buffer_id, num_vertices) => {
@@ -119,7 +124,7 @@ pub fn main() {
                                 let p2: &Vertex2D   = &vertices[i2 as usize];
                                 let p3: &Vertex2D   = &vertices[i3 as usize];
 
-                                let colour  = Color::Rgba(p1.color[0] as f32/255.0, p1.color[1] as f32/255.0, p1.color[2] as f32/255.0, p1.color[3] as f32/255.0);
+                                let colour          = Color::Rgba(p1.color[0] as f32/255.0, p1.color[1] as f32/255.0, p1.color[2] as f32/255.0, p1.color[3] as f32/255.0);
 
                                 // Render as lines
                                 gc.new_path();
