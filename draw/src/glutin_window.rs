@@ -49,7 +49,8 @@ pub (super) async fn send_actions_to_window<RenderStream: Unpin+Stream<Item=Vec<
         title_stream:       follow(window_properties.title),
         size:               follow(window_properties.size),
         fullscreen:         follow(window_properties.fullscreen),
-        has_decorations:    follow(window_properties.has_decorations)
+        has_decorations:    follow(window_properties.has_decorations),
+        mouse_pointer:      follow(window_properties.mouse_pointer)
     };
 
     while let Some(next_action) = window_actions.next().await {
@@ -132,6 +133,14 @@ pub (super) async fn send_actions_to_window<RenderStream: Unpin+Stream<Item=Vec<
             WindowUpdate::SetHasDecorations(decorations) => {
                 window.context.as_ref().map(|ctxt| ctxt.window().set_decorations(decorations));
             }
+
+            WindowUpdate::SetMousePointer(MousePointer::None) => {
+                window.context.as_ref().map(|ctxt| ctxt.window().set_cursor_visible(false));
+            }
+
+            WindowUpdate::SetMousePointer(MousePointer::SystemDefault) => {
+                window.context.as_ref().map(|ctxt| ctxt.window().set_cursor_visible(true));
+            }
         }
     }
 
@@ -146,27 +155,30 @@ enum WindowUpdate {
     SetTitle(String),
     SetSize((u64, u64)),
     SetFullscreen(bool),
-    SetHasDecorations(bool)
+    SetHasDecorations(bool),
+    SetMousePointer(MousePointer)
 }
 
 ///
 /// Stream that merges the streams from the window properties and the renderer into a single stream
 ///
-struct WindowUpdateStream<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream> {
+struct WindowUpdateStream<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> {
     render_stream:      TRenderStream,
     title_stream:       TTitleStream,
     size:               TSizeStream,
     fullscreen:         TFullscreenStream,
-    has_decorations:    TDecorationStream
+    has_decorations:    TDecorationStream,
+    mouse_pointer:      TMousePointerStream
 }
 
-impl<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream> Stream for WindowUpdateStream<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream>
+impl<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> Stream for WindowUpdateStream<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream>
 where
-TRenderStream:      Unpin+Stream<Item=Vec<RenderAction>>,
-TTitleStream:       Unpin+Stream<Item=String>,
-TSizeStream:        Unpin+Stream<Item=(u64, u64)>,
-TFullscreenStream:  Unpin+Stream<Item=bool>,
-TDecorationStream:  Unpin+Stream<Item=bool> {
+TRenderStream:          Unpin+Stream<Item=Vec<RenderAction>>,
+TTitleStream:           Unpin+Stream<Item=String>,
+TSizeStream:            Unpin+Stream<Item=(u64, u64)>,
+TFullscreenStream:      Unpin+Stream<Item=bool>,
+TDecorationStream:      Unpin+Stream<Item=bool>,
+TMousePointerStream:    Unpin+Stream<Item=MousePointer> {
     type Item = WindowUpdate;
 
     fn poll_next(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -200,6 +212,12 @@ TDecorationStream:  Unpin+Stream<Item=bool> {
 
         match self.has_decorations.poll_next_unpin(context) {
             Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::SetHasDecorations(item))); }
+            Poll::Ready(None)       => { return Poll::Ready(None); }
+            Poll::Pending           => { }
+        }
+
+        match self.mouse_pointer.poll_next_unpin(context) {
+            Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::SetMousePointer(item))); }
             Poll::Ready(None)       => { return Poll::Ready(None); }
             Poll::Pending           => { }
         }
