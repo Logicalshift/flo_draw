@@ -18,9 +18,12 @@ use std::time::{Instant, Duration};
 ///
 pub fn main() {
     with_2d_graphics(|| {
-        let (canvas, events)    = create_drawing_window_with_events("Mandelbrot set");
-        let lato                = CanvasFontFace::from_slice(include_bytes!("Lato-Regular.ttf"));
-        let lato_bold           = CanvasFontFace::from_slice(include_bytes!("Lato-Bold.ttf"));
+        let mut window_properties       = WindowProperties::from(&"Mandelbrot set");
+        window_properties.mouse_pointer = BindRef::from(bind(MousePointer::None));
+        let (canvas, events)            = create_drawing_window_with_events(window_properties);
+
+        let lato                        = CanvasFontFace::from_slice(include_bytes!("Lato-Regular.ttf"));
+        let lato_bold                   = CanvasFontFace::from_slice(include_bytes!("Lato-Bold.ttf"));
 
         // Initialise the canvas
         canvas.draw(|gc| {
