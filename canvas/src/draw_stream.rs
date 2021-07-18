@@ -241,6 +241,55 @@ impl DrawStreamCore {
     }
 
     ///
+    /// Removes any PushState/PopState operation that performs no drawing (ie, just sets up state and throws it away)
+    ///
+    pub fn remove_unused_state_stack_ops(&mut self) {
+        // A stack of push states which have no drawing operations (cleared on any drawing operation)
+        let mut push_state_stack    = vec![];
+
+        // The indexes that we should remove
+        let mut to_remove           = HashSet::new();
+
+        for (idx, (_tgt_resource, draw)) in self.pending_drawing.iter().enumerate() {
+            match draw {
+                Draw::PushState => {
+                    // This pushes a state onto the stack
+                    push_state_stack.push(idx);
+                }
+
+                Draw::PopState => {
+                    // If there's a 'unaffected' state on top of the push state stack, then clear all the indexes
+                    // The stack is cleared when the state is used, so the pop will return None in that case
+                    if let Some(initial_idx) = push_state_stack.pop() {
+                        for remove_idx in initial_idx..=idx {
+                            to_remove.insert(remove_idx);
+                        }
+                    }
+                }
+
+                draw => {
+                    // Clear the state stack so nothing will be removed if the operation uses the state that's present there
+                    if !draw.is_state_stack_resource() {
+                        if push_state_stack.len() > 0 {
+                            push_state_stack = vec![];
+                        }
+                    }
+                }
+            }
+        }
+
+        // Remove anything in the to_remove hashset
+        if to_remove.len() > 0 {
+            let old_drawing         = mem::take(&mut self.pending_drawing);
+            self.pending_drawing    = old_drawing.into_iter()
+                .enumerate()
+                .filter(|(idx, _item)| !to_remove.contains(idx))
+                .map(|(_idx, item)| item)
+                .collect();
+        }
+    }
+
+    ///
     /// Removes any resource in this stream that's declared but not used
     ///
     pub fn remove_unused_resources(&mut self) {
@@ -294,6 +343,7 @@ impl DrawStreamCore {
     pub fn write<DrawIter: Iterator<Item=Draw>>(&mut self, drawing: DrawIter) {
         let mut drawing_cleared = false;
         let mut balance_frames  = false;
+        let mut has_stack_ops   = false;
 
         for draw in drawing {
             // Process the drawing instruction
@@ -317,6 +367,10 @@ impl DrawStreamCore {
                     self.pending_drawing.retain(|(tgt, _action)| tgt == &DrawResource::Frame);
                     self.target_resource = DrawResource::Layer(LayerId(0));
                 },
+
+                Draw::PopState          => {
+                    has_stack_ops = true;
+                }
 
                 _                       => { }
             }
@@ -359,6 +413,10 @@ impl DrawStreamCore {
         // If we've processed a clear instruction, clear out any unused resources from the pending list
         if drawing_cleared {
             self.remove_unused_resources();
+        }
+
+        if drawing_cleared && has_stack_ops {
+            self.remove_unused_state_stack_ops();
         }
 
         if balance_frames {
