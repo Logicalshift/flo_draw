@@ -711,6 +711,67 @@ mod test {
     }
 
     #[test]
+    fn clear_layer_removes_pushed_transforms() {
+        let canvas      = Canvas::new();
+
+        // Draw using a graphics context
+        canvas.draw(|gc| {
+            gc.layer(LayerId(1));
+
+            gc.transform(Transform2D::identity());
+
+            gc.push_state();
+            gc.transform(Transform2D::scale(10.0, 10.0));
+            gc.pop_state();
+
+            gc.clear_layer();
+        });
+
+        // Only the commands after clear_layer should be present
+        let mut stream  = canvas.stream();
+        println!("{:?}", canvas.get_drawing());
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::MultiplyTransform(Transform2D::identity())));
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
+        });
+    }
+
+    #[test]
+    fn pushed_transforms_kept_in_order() {
+        let canvas      = Canvas::new();
+
+        // Draw using a graphics context
+        canvas.draw(|gc| {
+            gc.layer(LayerId(1));
+
+            gc.transform(Transform2D::identity());
+
+            gc.push_state();
+            gc.transform(Transform2D::scale(10.0, 10.0));
+
+            gc.clear_layer();
+        });
+
+        // Only the commands after clear_layer should be present
+        let mut stream  = canvas.stream();
+        println!("{:?}", canvas.get_drawing());
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::MultiplyTransform(Transform2D::identity())));
+            assert!(stream.next().await == Some(Draw::PushState));
+            assert!(stream.next().await == Some(Draw::MultiplyTransform(Transform2D::scale(10.0, 10.0))));
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
+        });
+    }
+
+    #[test]
     fn font_definitions_survive_clear_layer() {
         let canvas  = Canvas::new();
         let lato    = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
