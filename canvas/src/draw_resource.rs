@@ -196,4 +196,37 @@ impl Draw {
             _                                   => *active_resource
         }
     }
+
+    ///
+    /// Returns true if this instruction affects a resource stored on the state stack (ie, will be replaced by
+    /// a PopState instruction)
+    ///
+    #[inline]
+    pub (crate) fn is_state_stack_resource(&self) -> bool {
+        use self::Draw::*;
+
+        match self {
+            IdentityTransform                   |
+            CanvasHeight(_)                     |
+            CenterRegion(_, _)                  |
+            MultiplyTransform(_)                |
+
+            LineWidth(_)                        |
+            LineWidthPixels(_)                  |
+            LineJoin(_)                         |
+            LineCap(_)                          |
+            NewDashPattern                      |
+            DashLength(_)                       |
+            DashOffset(_)                       |
+            StrokeColor(_)                      |
+
+            WindingRule(_)                      |
+            BlendMode(_)                        |
+            FillColor(_)                        |
+            FillGradient(_, _, _)               |
+            FillTexture(_, _, _)                => true,
+
+            _                                   => false
+        }
+    }
 }
