@@ -7,6 +7,7 @@ use futures::prelude::*;
 use futures::stream;
 use futures::executor;
 
+use std::mem;
 use std::sync::*;
 use std::collections::{HashMap};
 
@@ -71,6 +72,9 @@ pub fn main() {
             gc.stroke_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
             gc.stroke();
         });
+
+        // Dropping the canvas closes the stream so the list of drawing instructions ends
+        mem::drop(canvas);
 
         // Create a window to render on
         let tessellation_window     = create_drawing_window("Circle Tessellation");
