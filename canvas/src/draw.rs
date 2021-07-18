@@ -234,10 +234,15 @@ pub enum Draw {
     /// Restore will no longer be valid for the current layer
     FreeStoredBuffer,
 
-    /// Push the current state of the canvas (line settings, stored image, current path - all state)
+    /// Push the current state of the canvas
     PushState,
 
     /// Restore a state previously pushed
+    ///
+    /// This will restore the line width (and the other stroke settings), stroke colour, current path, fill colour,
+    /// winding rule, sprite settings and blend settings.
+    ///
+    /// The currently selected layer is not affected by this operation.
     PopState,
 
     /// Clears the canvas entirely to a background colour, and removes any stored resources (layers, sprites, fonts, textures)
