@@ -31,6 +31,8 @@ pub (crate) enum DrawResource {
     FillWindingRule,
     FillBlend,
     FillColor,
+
+    StateStack
 }
 
 impl Draw {
@@ -137,6 +139,8 @@ impl Draw {
 
             Gradient(gradient_id, _)                => smallvec![DrawResource::Gradient(*gradient_id)],
 
+            PopState | PushState                    => smallvec![DrawResource::StateStack],
+
             // Most things just affect the active resource
             _                                       => smallvec![*active_resource]
         }
@@ -185,6 +189,8 @@ impl Draw {
             Texture(texture_id, _)              => DrawResource::Texture(*texture_id),
 
             Gradient(gradient_id, _)            => DrawResource::Gradient(*gradient_id),
+
+            PopState | PushState                => DrawResource::StateStack,
 
             // By default, everything affects the active resource
             _                                   => *active_resource
