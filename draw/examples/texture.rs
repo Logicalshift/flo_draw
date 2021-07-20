@@ -15,7 +15,7 @@ pub fn main() {
         // Create a window
         let canvas = create_drawing_window("Flo drawing on a window");
 
-        // Render a triangle to it
+        // Render the png to the window
         canvas.draw(|gc| {
             // Clear the canvas and set up the coordinates
             gc.clear_canvas(Color::Rgba(1.0, 1.0, 1.0, 1.0));
