@@ -1,5 +1,25 @@
 # flo_draw
 
+If you want to render some 2D graphics in Rust to screen *right now* without having to deal with the usual palaver involved with setting up 
+a graphics context in a UI framework, [`flo_draw`](https://crates.io/crates/flo_draw) is the crate you need.
+
+`flo_draw` also comes with a powerful set of 2D graphics libraries and has a flexible stream-based API that can make light work of many
+tasks that other libraries can make a meal of.
+
+## Motivation
+
+[![Screenshot](./draw/images/beeb.png)](https://bbcmic.ro/#%7B%22v%22%3A1%2C%22program%22%3A%22MODE%200%5CnMOVE%20128%2C%20128%5CnMOVE%201280-128%2C%20128%5CnPLOT%2085%2C%201280%2F2%2C%201024-128%5CnA%24%20%3D%20GET%24%22%7D)
+
+While building [FlowBetween](https://github.com/logicalshift/FlowBetween/), I found I needed a few when it came to rendering graphics:
+a platform-agnostic API and a way to render bitmap files that's not tied to any one platform. When debugging it, I found another thing
+I really wanted was a simple way to just throw up a window and start drawing graphics in it. This used to be quite simple in the 1980s
+(as demonstated in the screenshot) but the rise of the GUI and 3D accelleration has made rendering graphics increasingly difficult.
+
+`flo_draw` takes the 2D graphics crates created for FlowBetween and adds an API to take all of the hassle out of the task of making
+them work.
+
+## About the libraries
+
 This is a set of libraries that provide a 2D rendering framework for Rust. It provides on and off-screen rendering and
 an abstraction API. You might want to read the [guide](draw/GUIDE.md) for some in-depth discussion of what can be achieved
 with the libraries in this repository.
@@ -15,20 +35,18 @@ There are some other implementations of the `flo_canvas` protocol that are not y
 
 # Why use these crates?
 
-The main reason to use `flo_draw` or the offscreen renderer in `flo_render_canvas` is that they provide a very straightforward API: the
-setup needed to start drawing graphics to a window or a byte buffer is almost nonexistent. In spite of this they are also very flexible,
-capable of being used to create fully interactive applications which can run on any system supported by glutin and OpenGL 3.3.
+Apart from the main 'party-piece' trick of popping up a window to render 2D graphics whenever it's needed, `flo_draw` and its companion
+crates have a number of other tricks up their sleeves:
 
-The rendering system is very flexible and easily ported to a different target, so if you outgrow the glutin-based windowing system and
-want to integrate your algorithms into another application, the architecture supplied by `flo_canvas` and `flo_render` makes it easy to
-intercept the underlying rendering operations and integrate them into any other system. Additional renderers are already available in
-FlowBetween to render `flo_canvas` instructions to HTML canvases, OS X Quartz render contexts and to Cairo. `flo_render` has native support
-for both OpenGL 3.3 and Metal.
-
-The 2D graphics model used here has a few interesting features that are not present in many other rendering libraries. In particular, 
-there is a layer system which is very useful for simplifying the design of interactive graphics applications by reducing the amount of
-work involved in a redraw, and it's possible to both draw and erase shapes. With the hardware renderers in `flo_render`, the number of
-layers is effectively unlimited. There's also a 'sprite' system, which makes it possible to easily re-render complicated shapes.
+* Fully interactive: handle mouse and keyboard events to create graphical demonstrates
+* Flexible but straightforward text layout engine (which can render text to vectors if required)
+* Draw to bitmaps as well as to the screen
+* OpenGL accelerated 2D graphics
+* Stream-based API allows for easily composing effects on top of existing rendering instructions
+* Layers provide a way to partially update previously rendered graphics
+* Sprites provide a way to quickly re-render complex objects
+* Rendering from multiple threads (especially easy if each thread has its own layer)
+* Stream-based API allows easy redirection of the rendering instructions to the graphics API of your choice (both 2D APIs and GPU APIs)
 
 # Getting started
 
@@ -100,5 +118,13 @@ See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` su
 # Version 0.3
 
 This is version 0.3 of `flo_draw`.
+
+Future versions will incorporate more rendering targets. FlowBetween has Quartz, Cairo and HTML canvas targets so those are very likely, and
+some sort of non-accelerated version of the offscreen renderer is also a likely addition. Version 0.4 will likely add some more pipes for
+drawing streams: for example, a stream to simplify the rendering instructions so they match up to more conventional 2D graphics libraries
+more closely.
+
+There are a few known issues with 0.3: layer blend modes don't work with the GPU renderers (this needs a change of approach so will be fixed
+in 0.4). Dashed lines don't work too well either in this version.
 
 ![Flo drawing on a window](./images/flo_drawing_on_window_small.png)
