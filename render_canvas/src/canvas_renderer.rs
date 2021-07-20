@@ -629,6 +629,7 @@ impl CanvasRenderer {
                         core.sync(|core| {
                             let layer               = core.layer(self.current_layer);
 
+                            let transform           = transform.invert().unwrap_or_else(|| canvas::Transform2D::identity());
                             layer.state.fill_color  = layer.state.fill_color.transform(&transform);
                         });
                     }

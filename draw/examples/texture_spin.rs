@@ -55,10 +55,10 @@ pub fn main() {
                 // Fill with the texture we just loaded
                 gc.fill_texture(TextureId(0), 0.0, y_pos+height as f32, 1000.0, y_pos);
 
-                gc.fill_transform(Transform2D::translate(mid_x, mid_y));
-                gc.fill_transform(Transform2D::rotate_degrees(angle));
-                gc.fill_transform(Transform2D::scale(3.0, 3.0));
                 gc.fill_transform(Transform2D::translate(-mid_x, -mid_y));
+                gc.fill_transform(Transform2D::rotate_degrees(angle));
+                gc.fill_transform(Transform2D::scale(1.0/3.0, 1.0/3.0));
+                gc.fill_transform(Transform2D::translate(mid_x, mid_y));
                 gc.fill();
             });
 
