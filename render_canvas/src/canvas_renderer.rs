@@ -1,3 +1,4 @@
+use super::matrix::*;
 use super::fill_state::*;
 use super::layer_state::*;
 use super::render_entity::*;
@@ -620,6 +621,15 @@ impl CanvasRenderer {
                             let layer               = core.layer(self.current_layer);
 
                             layer.state.fill_color  = FillState::linear_gradient_fill(gradient_id, x1, y1, x2, y2);
+                        });
+                    }
+
+                    // Transforms the existing fill
+                    FillTransform(transform) => {
+                        core.sync(|core| {
+                            let layer               = core.layer(self.current_layer);
+
+                            layer.state.fill_color  = layer.state.fill_color.transform(&transform);
                         });
                     }
 

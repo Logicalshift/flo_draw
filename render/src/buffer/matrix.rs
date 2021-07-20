@@ -18,6 +18,26 @@ impl Matrix {
     }
 
     ///
+    /// Multiplies this matrix with another one
+    ///
+    pub fn multiply(self, b: Matrix) -> Matrix {
+        let Matrix(a)   = self;
+        let Matrix(b)   = b;
+
+        let mut res     = [[0.0; 4]; 4];
+
+        for row in 0..4 {
+            for col in 0..4 {
+                for pos in 0..4 {
+                    res[col][row] += a[row][pos] * b[pos][col];
+                }
+            }
+        }
+
+        Matrix(res)
+    }
+
+    ///
     /// Converts this matrix to an OpenGL matrix
     ///
     pub fn to_opengl_matrix(&self) -> [f32; 16] {

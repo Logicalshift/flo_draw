@@ -1,3 +1,5 @@
+use super::matrix::*;
+
 use flo_canvas as canvas;
 use flo_render as render;
 
@@ -138,6 +140,20 @@ impl FillState {
             FillState::Color(_)                                 => self.clone(),
             FillState::Texture(texture_id, matrix, repeat, _)   => FillState::Texture(*texture_id, *matrix, *repeat, new_alpha),
             FillState::LinearGradient(_, _, _, _)               => self.clone()
+        }
+    }
+
+    ///
+    /// Updates the fill state with a transformed matrix
+    ///
+    pub fn transform(&self, transform_matrix: &canvas::Transform2D) -> Self {
+        let transform_matrix = transform_to_matrix(&transform_matrix);
+
+        match self {
+            FillState::None                                                 => self.clone(),
+            FillState::Color(_)                                             => self.clone(),
+            FillState::Texture(texture_id, matrix, repeat, alpha)           => FillState::Texture(*texture_id, transform_matrix.multiply(*matrix), *repeat, *alpha),
+            FillState::LinearGradient(texture_id, matrix, repeat, alpha)    => FillState::LinearGradient(*texture_id, transform_matrix.multiply(*matrix), *repeat, *alpha)
         }
     }
 }
