@@ -60,6 +60,17 @@ pub fn main() {
                 gc.fill_transform(Transform2D::scale(1.0/3.0, 1.0/3.0));
                 gc.fill_transform(Transform2D::translate(mid_x, mid_y));
                 gc.fill();
+
+                // Draw another couple of circles to demonstrate that it's the texture that's spinning and not the whole canvas
+                gc.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+
+                gc.new_path();
+                gc.circle(mid_x - height/2.5, mid_y - height/2.5, 32.0);
+                gc.fill();
+
+                gc.new_path();
+                gc.circle(mid_x + height/2.5, mid_y + height/2.5, 32.0);
+                gc.fill();
             });
 
             // Wait for the next frame
