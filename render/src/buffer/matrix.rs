@@ -29,7 +29,7 @@ impl Matrix {
         for row in 0..4 {
             for col in 0..4 {
                 for pos in 0..4 {
-                    res[col][row] += a[row][pos] * b[pos][col];
+                    res[row][col] += a[row][pos] * b[pos][col];
                 }
             }
         }
