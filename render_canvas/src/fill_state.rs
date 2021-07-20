@@ -152,8 +152,8 @@ impl FillState {
         match self {
             FillState::None                                                 => self.clone(),
             FillState::Color(_)                                             => self.clone(),
-            FillState::Texture(texture_id, matrix, repeat, alpha)           => FillState::Texture(*texture_id, transform_matrix.multiply(*matrix), *repeat, *alpha),
-            FillState::LinearGradient(texture_id, matrix, repeat, alpha)    => FillState::LinearGradient(*texture_id, transform_matrix.multiply(*matrix), *repeat, *alpha)
+            FillState::Texture(texture_id, matrix, repeat, alpha)           => FillState::Texture(*texture_id, (*matrix).multiply(transform_matrix), *repeat, *alpha),
+            FillState::LinearGradient(texture_id, matrix, repeat, alpha)    => FillState::LinearGradient(*texture_id, (*matrix).multiply(transform_matrix), *repeat, *alpha)
         }
     }
 }
