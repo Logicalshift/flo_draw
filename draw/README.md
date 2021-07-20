@@ -65,10 +65,23 @@ pub fn main() {
 
 For more information, you may be interested in the [guide](GUIDE.md), or the [examples](examples).
 
-`flo_draw` provides an independent implementation of the rendering system used by FlowBetween, a
-project to develop a vector animation editor. It was created to assist in debugging: often it's
-much easier to draw a diagram, but until now it's been quite involved to write a program to tell
-a computer to do that.
+* [`cargo run --example canvas_window`](./examples/canvas_window.rs) - displays a basic window
+* [`cargo run --example hello_world`](./examples/hello_world.rs) - traditional
+* [`cargo run --example bounce_sprites`](./examples/bounce_sprites.rs) - animates some bouncing balls
+* [`cargo run --example follow_mouse`](./examples/follow_mouse.rs) - demonstrates event handling by tracking the mouse around
+* [`cargo run --example vectoroids`](./examples/vectoroids.rs) - more involved example of event handling with an incomplete game (arrow keys to move, space to fire)
+* [`cargo run --example png_triangle`](./render_canvas/examples/png_triangle.rs) - renders a triangle to a png file
+* [`cargo run --example mandelbrot`](./examples/mandelbrot.rs) - an interactive mandelbrot set program
+* [`cargo run --example wibble`](./examples/wibble.rs) - render text to vectors and distort it in real time
+* [`cargo run --example mascot`](./examples/mascot.rs) - render FlowBetween's mascot from some pre-encoded vector instructions
+* [`cargo run --example texture`](./examples/texture.rs) - bitmap rendering
+* [`cargo run --example texture_sprites`](./examples/texture_sprites.rs) - bouncing balls with bitmap images
+* [`cargo run --example texture_spin`](./examples/texture_spin.rs) - bitmap rendering with an animated transformation applied
+* [`cargo run --example gradient`](./examples/gradient.rs) - gradient rendering
+* [`cargo run --example mascot_shadow`](./examples/mascot_shadow.rs) - reprocess the mascot rendering to add some extra shading
+* [`cargo run --example wibble_mascot`](./examples/wibble_mascot.rs) - reprocess the mascot rendering to make it wobble
+* [`cargo run --example text_layout`](./examples/text_layout.rs) - some effects that can be acheived with the text layout engine
+* [`cargo run --example show_tessellation`](./examples/show_tessellation.rs) - demonstrates how 2D graphics are tessellated for display using a GPU (and how to perform this manually and intercept the results)
 
 ## --
 
