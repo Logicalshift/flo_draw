@@ -6,7 +6,7 @@ use std::thread;
 use std::time::{Duration};
 
 ///
-/// Simple example that displays a canvas window and renders a triangle
+/// Simple example that displays a canvas window and renders a spinning image from a png file
 ///
 pub fn main() {
     // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
@@ -15,7 +15,7 @@ pub fn main() {
         let flo_bytes: &[u8] = include_bytes!["flo_drawing_on_window.png"];
 
         // Create a window
-        let canvas = create_drawing_window("Flo drawing on a window");
+        let canvas = create_drawing_window("Flo trying not to get too dizzy");
 
         // Load the texture into it
         let mut flo_w = 0;
@@ -48,7 +48,7 @@ pub fn main() {
                 let mid_x = 500.0;
                 let mid_y = y_pos+(height/2.0);
 
-                // Draw a rectangle...
+                // Draw a circle...
                 gc.new_path();
                 gc.circle(mid_x, mid_y, height/2.0);
 

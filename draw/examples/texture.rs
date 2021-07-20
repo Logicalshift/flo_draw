@@ -4,7 +4,7 @@ use flo_draw::canvas::*;
 use std::io;
 
 ///
-/// Simple example that displays a canvas window and renders a triangle
+/// Simple example that displays a canvas window and renders an image from a png file
 ///
 pub fn main() {
     // 'with_2d_graphics' is used to support operating systems that can't run event loops anywhere other than the main thread
