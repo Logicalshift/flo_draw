@@ -82,6 +82,7 @@ For more information, you may be interested in the [guide](GUIDE.md), or the [ex
 * [`cargo run --example wibble_mascot`](./examples/wibble_mascot.rs) - reprocess the mascot rendering to make it wobble
 * [`cargo run --example text_layout`](./examples/text_layout.rs) - some effects that can be acheived with the text layout engine
 * [`cargo run --example show_tessellation`](./examples/show_tessellation.rs) - demonstrates how 2D graphics are tessellated for display using a GPU (and how to perform this manually and intercept the results)
+* [`cargo run --example show_text_tessellation`](./examples/show_text_tessellation.rs) - tessellating text rendered from a font
 
 ## --
 

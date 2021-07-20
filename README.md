@@ -101,6 +101,7 @@ See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` su
 * [`cargo run --example wibble_mascot`](./draw/examples/wibble_mascot.rs) - reprocess the mascot rendering to make it wobble
 * [`cargo run --example text_layout`](./draw/examples/text_layout.rs) - some effects that can be acheived with the text layout engine
 * [`cargo run --example show_tessellation`](./draw/examples/show_tessellation.rs) - demonstrates how 2D graphics are tessellated for display using a GPU (and how to perform this manually and intercept the results)
+* [`cargo run --example show_text_tessellation`](./draw/examples/show_text_tessellation.rs) - tessellating text rendered from a font
 
 ![Wibble](./images/wibble.png) ![Mandelbrot](./images/mandelbrot.png)
 ![Gradient](./images/gradient.png) ![Text layout](./images/textlayout.png)
