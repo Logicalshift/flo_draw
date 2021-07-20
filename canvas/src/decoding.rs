@@ -374,6 +374,7 @@ enum DecoderState {
     ColorFill(String),                          // 'Cf' (r, g, b, a)
     ColorTexture(DecodeTextureId, String),      // 'Ct' (texture_id, x1, y1, x2, y2)
     ColorGradient(DecodeGradientId, String),    // 'Cg' (gradient_id, x1, y1, x2, y2)
+    ColorTransform(String),                     // 'CT' (transform)
 
     BlendMode(String),                          // 'M' (mode)
 
@@ -497,6 +498,7 @@ impl CanvasDecoder {
             ColorFill(param)                => Self::decode_color_fill(next_chr, param)?,
             ColorTexture(id, param)         => Self::decode_color_texture(next_chr, id, param)?,
             ColorGradient(id, param)        => Self::decode_color_gradient(next_chr, id, param)?,
+            ColorTransform(param)           => Self::decode_color_transform(next_chr, param)?,
 
             BlendMode(param)                => Self::decode_blend_mode(next_chr, param)?,
 
@@ -637,6 +639,7 @@ impl CanvasDecoder {
             'f'     => Ok((DecoderState::ColorFill(String::new()), None)),
             't'     => Ok((DecoderState::ColorTexture(DecodeTextureId::new(), String::new()), None)),
             'g'     => Ok((DecoderState::ColorGradient(DecodeGradientId::new(), String::new()), None)),
+            'T'     => Ok((DecoderState::ColorTransform(String::new()), None)),
 
             _       => Err(DecoderError::InvalidCharacter(next_chr))
         }
@@ -922,6 +925,25 @@ impl CanvasDecoder {
             let y2          = Self::decode_f32(&mut param)?;
 
             Ok((DecoderState::None, Some(Draw::FillGradient(gradient_id, (x1, y1), (x2, y2)))))
+        }
+    }
+
+    #[inline] fn decode_color_transform(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 53 {
+            param.push(next_chr);
+            Ok((DecoderState::ColorTransform(param), None))
+        } else {
+            param.push(next_chr);
+            let mut param = param.chars();
+
+            let mut matrix = [0.0; 9];
+            for entry in 0..9 {
+                matrix[entry] = Self::decode_f32(&mut param)?;
+            }
+
+            let transform = Transform2D([[matrix[0], matrix[1], matrix[2]], [matrix[3], matrix[4], matrix[5]], [matrix[6], matrix[7], matrix[8]]]);
+
+            Ok((DecoderState::None, Some(Draw::FillTransform(transform))))
         }
     }
 
@@ -2062,6 +2084,11 @@ mod test {
     }
 
     #[test]
+    fn decide_fill_transform() {
+        check_round_trip_single(Draw::FillTransform(Transform2D::identity()));
+    }
+
+    #[test]
     fn decode_all_iter() {
         check_round_trip(vec![
             Draw::Path(PathOp::NewPath),
@@ -2083,6 +2110,7 @@ mod test {
             Draw::FillColor(Color::Rgba(0.2, 0.3, 0.4, 0.5)),
             Draw::FillTexture(TextureId(23), (42.0, 43.0), (44.0, 45.0)),
             Draw::FillGradient(GradientId(24), (42.0, 43.0), (44.0, 45.0)),
+            Draw::FillTransform(Transform2D::identity()),
             Draw::BlendMode(BlendMode::Lighten),
             Draw::IdentityTransform,
             Draw::CanvasHeight(81.0),
@@ -2132,6 +2160,7 @@ mod test {
             Draw::FillColor(Color::Rgba(0.2, 0.3, 0.4, 0.5)),
             Draw::FillTexture(TextureId(23), (42.0, 43.0), (44.0, 45.0)),
             Draw::FillGradient(GradientId(24), (42.0, 43.0), (44.0, 45.0)),
+            Draw::FillTransform(Transform2D::identity()),
             Draw::BlendMode(BlendMode::Lighten),
             Draw::IdentityTransform,
             Draw::CanvasHeight(81.0),

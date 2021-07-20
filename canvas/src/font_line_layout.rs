@@ -375,6 +375,7 @@ impl GraphicsContext for CanvasFontLineLayout {
     #[inline] fn fill_color(&mut self, col: Color)                                              { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::FillColor(col))); }
     #[inline] fn fill_texture(&mut self, t: TextureId, x1: f32, y1: f32, x2: f32, y2: f32)      { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::FillTexture(t, (x1, y1), (x2, y2)))); }
     #[inline] fn fill_gradient(&mut self, g: GradientId, x1: f32, y1: f32, x2: f32, y2: f32)    { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::FillGradient(g, (x1, y1), (x2, y2)))); }
+    #[inline] fn fill_transform(&mut self, transform: Transform2D)                              { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::FillTransform(transform))); }
     #[inline] fn stroke_color(&mut self, col: Color)                                            { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::StrokeColor(col))); }
     #[inline] fn blend_mode(&mut self, mode: BlendMode)                                         { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::BlendMode(mode))); }
     #[inline] fn identity_transform(&mut self)                                                  { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::IdentityTransform)); }

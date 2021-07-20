@@ -129,6 +129,7 @@ impl Draw {
             DrawText(font_id, _, _, _)              => smallvec![*active_resource, DrawResource::CanvasTransform, DrawResource::Font(*font_id), DrawResource::FontSize(*font_id)],
             FillTexture(texture_id, _, _)           => smallvec![DrawResource::Texture(*texture_id)],
             FillGradient(gradient_id, _, _)         => smallvec![DrawResource::Gradient(*gradient_id)],
+            FillTransform(_)                        => smallvec![DrawResource::FillColor],
 
             // Transforms use the 'canvas' resource (setting the height or the identity transform resets any previous transform)
             IdentityTransform                       |
@@ -181,7 +182,8 @@ impl Draw {
             BlendMode(_)                        => DrawResource::FillBlend,
             FillColor(_)                        |
             FillGradient(_, _, _)               |
-            FillTexture(_, _, _)                => DrawResource::FillColor,
+            FillTexture(_, _, _)                |
+            FillTransform(_)                    => DrawResource::FillColor,
 
             LayerBlend(layer_id, _)             => DrawResource::Layer(*layer_id),
             Font(font_id, FontOp::FontSize(_))  => DrawResource::FontSize(*font_id),
@@ -224,7 +226,8 @@ impl Draw {
             BlendMode(_)                        |
             FillColor(_)                        |
             FillGradient(_, _, _)               |
-            FillTexture(_, _, _)                => true,
+            FillTexture(_, _, _)                |
+            FillTransform(_)                    => true,
 
             _                                   => false
         }

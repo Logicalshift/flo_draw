@@ -238,6 +238,7 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn fill_color(&mut self, col: Color)                                            { self.pending.push(Draw::FillColor(col)); }
     fn fill_texture(&mut self, t: TextureId, x1: f32, y1: f32, x2: f32, y2: f32)    { self.pending.push(Draw::FillTexture(t, (x1, y1), (x2, y2))); }
     fn fill_gradient(&mut self, g: GradientId, x1: f32, y1: f32, x2: f32, y2: f32)  { self.pending.push(Draw::FillGradient(g, (x1, y1), (x2, y2))); }
+    fn fill_transform(&mut self, transform: Transform2D)                            { self.pending.push(Draw::FillTransform(transform)); }
     fn stroke_color(&mut self, col: Color)                                          { self.pending.push(Draw::StrokeColor(col)); }
     fn blend_mode(&mut self, mode: BlendMode)                                       { self.pending.push(Draw::BlendMode(mode)); }
     fn identity_transform(&mut self)                                                { self.pending.push(Draw::IdentityTransform); }

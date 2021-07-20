@@ -188,6 +188,9 @@ pub enum Draw {
     /// Sets the fill to be a gradient (coordinates are the start and end of the gradient)
     FillGradient(GradientId, (f32, f32), (f32, f32)),
 
+    /// For a gradient or texture fill, apply a transformation matrix
+    FillTransform(Transform2D),
+
     /// Set the line color
     StrokeColor(Color),
 

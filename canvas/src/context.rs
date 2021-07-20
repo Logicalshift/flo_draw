@@ -35,6 +35,7 @@ pub trait GraphicsContext {
     fn fill_color(&mut self, col: Color);
     fn fill_texture(&mut self, texture_id: TextureId, x: f32, y: f32, width: f32, height: f32);
     fn fill_gradient(&mut self, gradient_id: GradientId, x1: f32, y1: f32, x2: f32, y2: f32);
+    fn fill_transform(&mut self, transform: Transform2D);
     fn stroke_color(&mut self, col: Color);
     fn blend_mode(&mut self, mode: BlendMode);
     fn identity_transform(&mut self);
@@ -101,6 +102,7 @@ pub trait GraphicsContext {
             FillColor(col)                                              => self.fill_color(col),
             FillTexture(texture, (x1, y1), (x2, y2))                    => self.fill_texture(texture, x1, y1, x2, y2),
             FillGradient(gradient, (x1, y1), (x2, y2))                  => self.fill_gradient(gradient, x1, y1, x2, y2),
+            FillTransform(transform)                                    => self.fill_transform(transform),
             StrokeColor(col)                                            => self.stroke_color(col),
             BlendMode(blendmode)                                        => self.blend_mode(blendmode),
             IdentityTransform                                           => self.identity_transform(),
@@ -169,6 +171,7 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn fill_color(&mut self, col: Color)                                              { self.push(Draw::FillColor(col)); }
     #[inline] fn fill_texture(&mut self, t: TextureId, x1: f32, y1: f32, x2: f32, y2: f32)      { self.push(Draw::FillTexture(t, (x1, y1), (x2, y2))); }
     #[inline] fn fill_gradient(&mut self, g: GradientId, x1: f32, y1: f32, x2: f32, y2: f32)    { self.push(Draw::FillGradient(g, (x1, y1), (x2, y2))); }
+    #[inline] fn fill_transform(&mut self, transform: Transform2D)                              { self.push(Draw::FillTransform(transform)); }
     #[inline] fn stroke_color(&mut self, col: Color)                                            { self.push(Draw::StrokeColor(col)); }
     #[inline] fn blend_mode(&mut self, mode: BlendMode)                                         { self.push(Draw::BlendMode(mode)); }
     #[inline] fn identity_transform(&mut self)                                                  { self.push(Draw::IdentityTransform); }
