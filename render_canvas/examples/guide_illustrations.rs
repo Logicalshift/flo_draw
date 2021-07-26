@@ -72,10 +72,140 @@ pub fn section_badge<TDrawFn: FnOnce(&mut Vec<Draw>) -> ()>(filename: &str, back
     png_writer.write_image_data(&image).unwrap();
 }
 
-pub fn main() {
-    section_badge("test.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+fn section_graphics_primitives() {
+    section_badge("draw/guide_images/s_graphics_primitives.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
         gc.new_path();
         gc.rect(-20.0, -20.0, 20.0, 20.0);
         gc.fill();
     });
+}
+
+fn section_transforms() {
+    section_badge("draw/guide_images/s_transforms.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_layers() {
+    section_badge("draw/guide_images/s_layers.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_sprites() {
+    section_badge("draw/guide_images/s_sprites.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_textures() {
+    section_badge("draw/guide_images/s_textures.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_gradients() {
+    section_badge("draw/guide_images/s_gradients.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_text_rendering() {
+    section_badge("draw/guide_images/s_text_rendering.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_text_layout() {
+    section_badge("draw/guide_images/s_text_layout.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_animation() {
+    section_badge("draw/guide_images/s_animation.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_offscreen() {
+    section_badge("draw/guide_images/s_offscreen.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_event_handling() {
+    section_badge("draw/guide_images/s_event_handling.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_window_properties() {
+    section_badge("draw/guide_images/s_window_properties.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_draw_streaming() {
+    section_badge("draw/guide_images/s_draw_streaming.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_raw_render_streaming() {
+    section_badge("draw/guide_images/s_raw_render_streaming.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+fn section_encoding_decoding() {
+    section_badge("draw/guide_images/s_encoding_decoding.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_path();
+        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.fill();
+    });
+}
+
+pub fn main() {
+    section_graphics_primitives();
+    section_transforms();
+    section_layers();
+    section_sprites();
+    section_textures();
+    section_gradients();
+    section_text_rendering();
+    section_text_layout();
+    section_animation();
+    section_offscreen();
+    section_event_handling();
+    section_window_properties();
+    section_draw_streaming();
+    section_raw_render_streaming();
+    section_encoding_decoding();
 }
