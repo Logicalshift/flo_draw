@@ -3,7 +3,7 @@
 //!
 
 use flo_canvas::*;
-use flo_render_canvas::*;
+use flo_render_canvas::{render_canvas_offscreen, initialize_offscreen_rendering};
 
 use futures::prelude::*;
 use futures::stream;
@@ -12,8 +12,9 @@ use futures::executor;
 use png::*;
 
 use std::io::*;
-use std::path::*;
 use std::fs::*;
+use std::path::*;
+use std::sync::*;
 
 /// Size of the badge icons in pixels
 const BADGE_SIZE: usize = 100;
@@ -225,9 +226,51 @@ fn section_sprites() {
 }
 
 fn section_textures() {
-    section_badge("draw/guide_images/s_textures.png", Color::Rgba(0.2, 0.2, 0.2, 0.8), |gc| {
+    // Define a texture as a character array (1-bit bitmap)
+    let (w, h)          = (16, 16);
+    let texture_defn    = "\
+        #.#.#.#.#.#.#.#.\
+        .#.#.#.#.#.#.#.#\
+        #.#.#.#.#.#.#.#.\
+        .#.#.#.#.#.#.#.#\
+        #.#.#.#.#.#.#.#.\
+        .#.#.#.#.#.#.#.#\
+        #.#.#.#.#.#.#.#.\
+        .#.#.#.#.#.#.#.#\
+        #.#.#.#.#.#.#.#.\
+        .#.#.#.#.#.#.#.#\
+        #.#.#.#.#.#.#.#.\
+        .#.#.#.#.#.#.#.#\
+        #.#.#.#.#.#.#.#.\
+        .#.#.#.#.#.#.#.#\
+        #.#.#.#.#.#.#.#.\
+        .#.#.#.#.#.#.#.#\
+        ";
+
+    // Map to RGBA data
+    let texture_data = texture_defn
+        .chars()
+        .map(|c| {
+            match c {
+                '.' => Some([0u8,0u8,0u8,0u8]),
+                '#' => Some([255u8,255u8,200u8,200u8]),
+                _   => None
+            }
+        })
+        .flatten()
+        .flatten()
+        .collect::<Vec<_>>();
+    assert!(texture_data.len() == (w*h*4));
+    let texture_data = Arc::new(texture_data);
+
+    section_badge("draw/guide_images/s_textures.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        // Load the texture
+        gc.create_texture(TextureId(0), w as _, h as _, TextureFormat::Rgba);
+        gc.set_texture_bytes(TextureId(0), 0, 0, w as _, h as _, Arc::clone(&texture_data));
+
         gc.new_path();
-        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.rect(-32.0, -32.0, 32.0, 32.0);
+        gc.fill_texture(TextureId(0), -32.0, -32.0, 32.0, 32.0);
         gc.fill();
     });
 }
