@@ -66,7 +66,11 @@ pub fn section_badge<TDrawFn: FnOnce(&mut Vec<Draw>) -> ()>(filename: &str, back
     // Render to a bitmap
     let image = executor::block_on(async move {
         let mut context     = initialize_offscreen_rendering().unwrap();
-        render_canvas_offscreen(&mut context, BADGE_SIZE, BADGE_SIZE, 1.0, stream::iter(preamble).chain(stream::iter(rendering))).await
+        let canvas_stream   = stream::iter(preamble).chain(stream::iter(rendering));
+        let canvas_stream   = drawing_with_laid_out_text(canvas_stream);
+        let canvas_stream   = drawing_with_text_as_paths(canvas_stream);
+
+        render_canvas_offscreen(&mut context, BADGE_SIZE, BADGE_SIZE, 1.0, canvas_stream).await
     });
 
     // Save to a png file
@@ -297,18 +301,67 @@ fn section_gradients() {
 }
 
 fn section_text_rendering() {
-    section_badge("draw/guide_images/s_text_rendering.png", Color::Rgba(0.2, 0.2, 0.2, 0.8), |gc| {
-        gc.new_path();
-        gc.rect(-20.0, -20.0, 20.0, 20.0);
-        gc.fill();
+    section_badge("draw/guide_images/s_text_rendering.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.transform(Transform2D::scale(1.0, -1.0));
+        gc.define_font_data(FontId(0), Arc::clone(&LATO));
+
+        gc.fill_color(Color::Rgba(0.8, 0.6, 0.1, 1.0));
+        gc.set_font_size(FontId(0), 60.0);
+        gc.begin_line_layout(0.0, -19.0, TextAlignment::Center);
+        gc.layout_text(FontId(0), "Aa".to_string());
+        gc.draw_text_layout();
     });
 }
 
 fn section_text_layout() {
-    section_badge("draw/guide_images/s_text_layout.png", Color::Rgba(0.2, 0.2, 0.2, 0.8), |gc| {
-        gc.new_path();
-        gc.rect(-20.0, -20.0, 20.0, 20.0);
-        gc.fill();
+    section_badge("draw/guide_images/s_text_layout.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.transform(Transform2D::scale(1.0, -1.0));
+        gc.define_font_data(FontId(0), Arc::clone(&LATO));
+
+        let metrics             = LATO.font_metrics(50.0).unwrap();
+        let mut line_layout     = CanvasFontLineLayout::new(&LATO, 50.0);
+
+        let initial_point       = line_layout.measure();
+
+        line_layout.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.8));
+        line_layout.add_text("A");
+        let mid_point           = line_layout.measure();
+        line_layout.add_text("a");
+
+        let end_point           = line_layout.measure();
+
+        line_layout.stroke_color(Color::Rgba(0.8, 0.6, 0.1, 1.0));
+
+        line_layout.move_to(initial_point.pos.x() as _, initial_point.pos.y() as _);
+        line_layout.line_to(end_point.pos.x() as _, end_point.pos.y() as _);
+        line_layout.stroke();
+
+        line_layout.move_to(initial_point.pos.x() as _, initial_point.pos.y() as f32 + metrics.descender);
+        line_layout.line_to(end_point.pos.x() as _, end_point.pos.y() as f32 + metrics.descender);
+        line_layout.stroke();
+
+        line_layout.move_to(initial_point.pos.x() as _, initial_point.pos.y() as f32 + metrics.ascender);
+        line_layout.line_to(end_point.pos.x() as _, end_point.pos.y() as f32 + metrics.ascender);
+        line_layout.stroke();
+
+        line_layout.move_to(initial_point.pos.x() as _, initial_point.pos.y() as f32 + metrics.capital_height.unwrap());
+        line_layout.line_to(end_point.pos.x() as _, end_point.pos.y() as f32 + metrics.capital_height.unwrap());
+        line_layout.stroke();
+
+        line_layout.move_to(initial_point.pos.x() as _, initial_point.pos.y() as f32 + metrics.descender);
+        line_layout.line_to(initial_point.pos.x() as _, initial_point.pos.x() as f32 + metrics.ascender);
+        line_layout.stroke();
+
+        line_layout.move_to(mid_point.pos.x() as _, initial_point.pos.y() as f32 + metrics.descender);
+        line_layout.line_to(mid_point.pos.x() as _, initial_point.pos.x() as f32 + metrics.ascender);
+        line_layout.stroke();
+
+        line_layout.move_to(end_point.pos.x() as _, initial_point.pos.y() as f32 + metrics.descender);
+        line_layout.line_to(end_point.pos.x() as _, initial_point.pos.x() as f32 + metrics.ascender);
+        line_layout.stroke();
+
+        line_layout.align_transform(0.0, -20.0, TextAlignment::Center);
+        gc.draw_list(line_layout.to_drawing(FontId(0)));
     });
 }
 
