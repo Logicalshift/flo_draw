@@ -2,6 +2,8 @@
 //! Renders the illustrations used in the guide to `flo_draw`
 //!
 
+#[macro_use] extern crate lazy_static;
+
 use flo_canvas::*;
 use flo_render_canvas::{render_canvas_offscreen, initialize_offscreen_rendering};
 
@@ -18,6 +20,10 @@ use std::sync::*;
 
 /// Size of the badge icons in pixels
 const BADGE_SIZE: usize = 100;
+
+lazy_static! {
+    static ref LATO: Arc<CanvasFontFace> = CanvasFontFace::from_slice(include_bytes!("Lato-Regular.ttf"));
+}
 
 ///
 /// Draws a section badge
