@@ -73,7 +73,7 @@ pub trait GraphicsContext {
     fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, width: u32, height: u32, bytes: Arc<Vec<u8>>);
     fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32);
 
-    fn new_gradient(&mut self, gradient_id: GradientId, initial_color: Color);
+    fn create_gradient(&mut self, gradient_id: GradientId, initial_color: Color);
     fn gradient_stop(&mut self, gradient_id: GradientId, pos: f32, color: Color);
 
     fn draw(&mut self, d: Draw) {
@@ -138,7 +138,7 @@ pub trait GraphicsContext {
             Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))             => self.set_texture_bytes(texture_id, x, y, w, h, bytes),
             Texture(texture_id, TextureOp::FillTransparency(alpha))                 => self.set_texture_fill_alpha(texture_id, alpha),
 
-            Gradient(gradient_id, GradientOp::New(initial_color))                   => self.new_gradient(gradient_id, initial_color),
+            Gradient(gradient_id, GradientOp::Create(initial_color))                => self.create_gradient(gradient_id, initial_color),
             Gradient(gradient_id, GradientOp::AddStop(pos, color))                  => self.gradient_stop(gradient_id, pos, color)
         }
     }
@@ -207,7 +207,7 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>)       { self.push(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))); }
     #[inline] fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32)                                           { self.push(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha))); }
 
-    #[inline] fn new_gradient(&mut self, gradient_id: GradientId, initial_color: Color)                                         { self.push(Draw::Gradient(gradient_id, GradientOp::New(initial_color))); }
+    #[inline] fn create_gradient(&mut self, gradient_id: GradientId, initial_color: Color)                                      { self.push(Draw::Gradient(gradient_id, GradientOp::Create(initial_color))); }
     #[inline] fn gradient_stop(&mut self, gradient_id: GradientId, pos: f32, color: Color)                                      { self.push(Draw::Gradient(gradient_id, GradientOp::AddStop(pos, color))); }
 
     #[inline]

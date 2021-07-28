@@ -95,7 +95,7 @@ impl Draw {
             ClearSprite                             => smallvec![],
 
             Texture(_, TextureOp::Create(_, _, _))  => smallvec![],
-            Gradient(_, GradientOp::New(_))         => smallvec![],
+            Gradient(_, GradientOp::Create(_))      => smallvec![],
             Font(_, FontOp::UseFontDefinition(_))   => smallvec![],
             Font(_, FontOp::FontSize(_))            => smallvec![],
 

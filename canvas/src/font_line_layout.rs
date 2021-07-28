@@ -411,6 +411,6 @@ impl GraphicsContext for CanvasFontLineLayout {
     #[inline] fn free_texture(&mut self, texture_id: TextureId)                                                                 { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Texture(texture_id, TextureOp::Free))); }
     #[inline] fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32)                                           { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha)))); }
 
-    #[inline] fn new_gradient(&mut self, gradient_id: GradientId, initial_color: Color)                                         { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Gradient(gradient_id, GradientOp::New(initial_color)))); }
+    #[inline] fn create_gradient(&mut self, gradient_id: GradientId, initial_color: Color)                                      { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Gradient(gradient_id, GradientOp::Create(initial_color)))); }
     #[inline] fn gradient_stop(&mut self, gradient_id: GradientId, pos: f32, color: Color)                                      { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Gradient(gradient_id, GradientOp::AddStop(pos, color)))); }
 }

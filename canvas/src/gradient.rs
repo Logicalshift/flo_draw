@@ -16,7 +16,7 @@ pub struct GradientId(pub u64);
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum GradientOp {
     /// Clears the gradient and starts a new one with the given initial colour
-    New(Color),
+    Create(Color),
 
     /// Adds a new gradient stop of the specified colour
     AddStop(f32, Color)
@@ -59,7 +59,7 @@ pub fn gradient_scale<GradientIter: IntoIterator<Item=GradientOp>, const N: usiz
     // Create a list of colour stops by position
     let mut stops = description.into_iter()
         .map(|op| match op {
-            GradientOp::New(col)            => (0.0, col.to_rgba_components()),
+            GradientOp::Create(col)         => (0.0, col.to_rgba_components()),
             GradientOp::AddStop(pos, col)   => (pos, col.to_rgba_components())
         })
         .collect::<Vec<_>>();
@@ -131,7 +131,7 @@ mod test {
     #[test]
     fn generate_basic_gradient_scale() {
         let scale = gradient_scale::<_, 16>(vec![
-            GradientOp::New(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
+            GradientOp::Create(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
             GradientOp::AddStop(1.0, Color::Rgba(1.0, 1.0, 1.0, 1.0))
         ]);
 
@@ -157,7 +157,7 @@ mod test {
     #[test]
     fn generate_basic_gradient_scale_1024() {
         let scale = gradient_scale::<_, 1024>(vec![
-            GradientOp::New(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
+            GradientOp::Create(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
             GradientOp::AddStop(1.0, Color::Rgba(1.0, 1.0, 1.0, 1.0))
         ]);
 
@@ -168,7 +168,7 @@ mod test {
     #[test]
     fn scale_basic_red() {
         let scale = gradient_scale::<_, 16>(vec![
-            GradientOp::New(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
+            GradientOp::Create(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
             GradientOp::AddStop(1.0, Color::Rgba(1.0, 0.0, 0.0, 0.0))
         ]);
 
@@ -194,7 +194,7 @@ mod test {
     #[test]
     fn scale_basic_green() {
         let scale = gradient_scale::<_, 16>(vec![
-            GradientOp::New(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
+            GradientOp::Create(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
             GradientOp::AddStop(1.0, Color::Rgba(0.0, 1.0, 0.0, 0.0))
         ]);
 
@@ -220,7 +220,7 @@ mod test {
     #[test]
     fn scale_basic_blue() {
         let scale = gradient_scale::<_, 16>(vec![
-            GradientOp::New(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
+            GradientOp::Create(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
             GradientOp::AddStop(1.0, Color::Rgba(0.0, 0.0, 1.0, 0.0))
         ]);
 
@@ -246,7 +246,7 @@ mod test {
     #[test]
     fn scale_basic_alpha() {
         let scale = gradient_scale::<_, 16>(vec![
-            GradientOp::New(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
+            GradientOp::Create(Color::Rgba(0.0, 0.0, 0.0, 0.0)), 
             GradientOp::AddStop(1.0, Color::Rgba(0.0, 0.0, 0.0, 1.0))
         ]);
 
@@ -272,7 +272,7 @@ mod test {
     #[test]
     fn generate_two_stop_scale() {
         let scale = gradient_scale::<_, 17>(vec![
-            GradientOp::New(Color::Rgba(0.0, 0.0, 0.0, 1.0)), 
+            GradientOp::Create(Color::Rgba(0.0, 0.0, 0.0, 1.0)), 
             GradientOp::AddStop(0.5, Color::Rgba(1.0, 1.0, 1.0, 1.0)),
             GradientOp::AddStop(1.0, Color::Rgba(0.0, 0.0, 0.0, 1.0))
         ]);

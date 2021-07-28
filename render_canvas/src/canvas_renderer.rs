@@ -1105,10 +1105,10 @@ impl CanvasRenderer {
                         // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
                     },
                     
-                    Gradient(gradient_id, canvas::GradientOp::New(initial_colour)) => {
+                    Gradient(gradient_id, canvas::GradientOp::Create(initial_colour)) => {
                         // Start the gradient definition from scratch
                         self.core.sync(move |core| {
-                            core.canvas_gradients.insert(gradient_id, RenderGradient::Defined(vec![canvas::GradientOp::New(initial_colour)]));
+                            core.canvas_gradients.insert(gradient_id, RenderGradient::Defined(vec![canvas::GradientOp::Create(initial_colour)]));
                         });
                     }
 

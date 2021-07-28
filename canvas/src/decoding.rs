@@ -1537,7 +1537,7 @@ impl CanvasDecoder {
     }
 
     ///
-    /// Decodes the GradientOp::New instruction
+    /// Decodes the GradientOp::Create instruction
     ///
     fn decode_gradient_new(next_chr: char, gradient_id: GradientId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         // Parameter is the initial colour
@@ -1560,7 +1560,7 @@ impl CanvasDecoder {
                 Err(DecoderError::UnknownColorType)?;
             }
 
-            Ok((DecoderState::None, Some(Draw::Gradient(gradient_id, GradientOp::New(Color::Rgba(r, g, b, a))))))
+            Ok((DecoderState::None, Some(Draw::Gradient(gradient_id, GradientOp::Create(Color::Rgba(r, g, b, a))))))
         }
     }
 
@@ -2070,7 +2070,7 @@ mod test {
 
     #[test]
     fn decode_gradient_new() {
-        check_round_trip_single(Draw::Gradient(GradientId(42), GradientOp::New(Color::Rgba(0.1, 0.2, 0.3, 0.4))));
+        check_round_trip_single(Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))));
     }
 
     #[test]
@@ -2132,7 +2132,7 @@ mod test {
             Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))),
             Draw::DrawSprite(SpriteId(1300)),
 
-            Draw::Gradient(GradientId(42), GradientOp::New(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
+            Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
             Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),
         ]);
     }
@@ -2186,7 +2186,7 @@ mod test {
             Draw::Texture(TextureId(44), TextureOp::SetBytes(2, 3, 4, 5, Arc::new(vec![1,2,3,4,5]))),
             Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.5)),
 
-            Draw::Gradient(GradientId(42), GradientOp::New(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
+            Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
             Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),
         ];
         let mut encoded = String::new();

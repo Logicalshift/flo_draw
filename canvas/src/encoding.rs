@@ -301,7 +301,7 @@ impl<'a> CanvasEncoding<String> for &'a GradientOp {
         use self::GradientOp::*;
 
         match self {
-            New(color)          => ('N', *color).encode_canvas(append_to),
+            Create(color)       => ('N', *color).encode_canvas(append_to),
             AddStop(pos, color) => ('S', *pos, *color).encode_canvas(append_to)
         }
     }

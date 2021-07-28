@@ -25,7 +25,7 @@ pub fn main() {
                 gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
                 // Set up a gradient
-                gc.new_gradient(GradientId(1), Color::Rgba(0.8, 0.0, 0.0, 1.0));
+                gc.create_gradient(GradientId(1), Color::Rgba(0.8, 0.0, 0.0, 1.0));
                 gc.gradient_stop(GradientId(1), 0.33, Color::Rgba(0.3, 0.8, 0.0, 1.0));
                 gc.gradient_stop(GradientId(1), 0.66, Color::Rgba(0.0, 0.3, 0.8, 1.0));
                 gc.gradient_stop(GradientId(1), 1.0, Color::Rgba(0.6, 0.3, 0.9, 1.0));

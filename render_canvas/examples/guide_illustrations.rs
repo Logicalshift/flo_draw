@@ -39,7 +39,7 @@ pub fn section_badge<TDrawFn: FnOnce(&mut Vec<Draw>) -> ()>(filename: &str, back
     preamble.circle(0.0, 0.0, 49.0);
     preamble.clip();
 
-    preamble.new_gradient(GradientId(0), Color::Hsluv(h1, s1, l1, a1));
+    preamble.create_gradient(GradientId(0), Color::Hsluv(h1, s1, l1, a1));
     preamble.gradient_stop(GradientId(0), 0.5, background_color);
     preamble.gradient_stop(GradientId(0), 1.0, Color::Hsluv(h2, s2, l2, a2));
 
@@ -277,7 +277,7 @@ fn section_textures() {
 
 fn section_gradients() {
     section_badge("draw/guide_images/s_gradients.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
-        gc.new_gradient(GradientId(0), Color::Rgba(0.9, 0.4, 0.1, 1.0));
+        gc.create_gradient(GradientId(0), Color::Rgba(0.9, 0.4, 0.1, 1.0));
         gc.gradient_stop(GradientId(0), 0.5, Color::Rgba(0.9, 0.9, 0.1, 1.0));
         gc.gradient_stop(GradientId(0), 1.0, Color::Rgba(0.4, 0.9, 0.4, 1.0));
         gc.gradient_stop(GradientId(0), 1.5, Color::Rgba(0.4, 0.9, 0.9, 1.0));
