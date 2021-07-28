@@ -276,9 +276,16 @@ fn section_textures() {
 }
 
 fn section_gradients() {
-    section_badge("draw/guide_images/s_gradients.png", Color::Rgba(0.2, 0.2, 0.2, 0.8), |gc| {
+    section_badge("draw/guide_images/s_gradients.png", Color::Rgba(0.1, 0.5, 1.0, 0.8), |gc| {
+        gc.new_gradient(GradientId(0), Color::Rgba(0.9, 0.4, 0.1, 1.0));
+        gc.gradient_stop(GradientId(0), 0.5, Color::Rgba(0.9, 0.9, 0.1, 1.0));
+        gc.gradient_stop(GradientId(0), 1.0, Color::Rgba(0.4, 0.9, 0.4, 1.0));
+        gc.gradient_stop(GradientId(0), 1.5, Color::Rgba(0.4, 0.9, 0.9, 1.0));
+        gc.gradient_stop(GradientId(0), 1.5, Color::Rgba(0.1, 0.4, 0.9, 1.0));
+
         gc.new_path();
-        gc.rect(-20.0, -20.0, 20.0, 20.0);
+        gc.circle(0.0, 0.0, 40.0);
+        gc.fill_gradient(GradientId(0), -32.0, -32.0, 32.0, 32.0);
         gc.fill();
     });
 }
