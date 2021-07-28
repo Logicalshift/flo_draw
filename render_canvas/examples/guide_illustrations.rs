@@ -305,7 +305,7 @@ fn section_text_rendering() {
         gc.transform(Transform2D::scale(1.0, -1.0));
         gc.define_font_data(FontId(0), Arc::clone(&LATO));
 
-        gc.fill_color(Color::Rgba(0.8, 0.6, 0.1, 1.0));
+        gc.fill_color(Color::Rgba(0.7, 0.6, 0.2, 1.0));
         gc.set_font_size(FontId(0), 60.0);
         gc.begin_line_layout(0.0, -19.0, TextAlignment::Center);
         gc.layout_text(FontId(0), "Aa".to_string());
@@ -323,14 +323,14 @@ fn section_text_layout() {
 
         let initial_point       = line_layout.measure();
 
-        line_layout.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.8));
+        line_layout.fill_color(Color::Rgba(0.8, 0.8, 0.8, 0.8));
         line_layout.add_text("A");
         let mid_point           = line_layout.measure();
         line_layout.add_text("a");
 
         let end_point           = line_layout.measure();
 
-        line_layout.stroke_color(Color::Rgba(0.8, 0.6, 0.1, 1.0));
+        line_layout.stroke_color(Color::Rgba(0.7, 0.6, 0.2, 1.0));
 
         line_layout.move_to(initial_point.pos.x() as _, initial_point.pos.y() as _);
         line_layout.line_to(end_point.pos.x() as _, end_point.pos.y() as _);
