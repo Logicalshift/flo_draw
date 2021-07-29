@@ -84,7 +84,7 @@ These are the crates:
 
 What makes rendering code written for `flo_draw` portable is that it’s written to interact only with the `flo_canvas` crate. This crate only lists what graphics operations are possible and deals with sending them elsewhere, so moving the code to a different UI framework is just a matter of changing what that ‘elsewhere’ is.
 
-## Graphics primitives
+## ![](./guide_images/s_graphics_primitives.png "Graphics primitives") Graphics primitives
 
 The basic graphics primitive is the path. There’s one active path at a time, which is built up by sending a series of instructions. A path can be rendered by calling the `fill()` or `stroke()` instructions. 
 
@@ -120,11 +120,11 @@ The basic stroke properties are:
 - `dash_pattern` - defines a ‘dashed’ texture to render the line with
 - `blend_mode(mode)` - how the line should be blended with the rest of the canvas
 
-## Setting the canvas coordinates and transforms
+## ![](guide_images/s_transforms.png "Transforms") Setting the canvas coordinates and transforms
 
 One of the things that is often painful when setting up a rendering context is getting the coordinate system set up correctly.
 
-## Layers
+## ![](guide_images/s_layers.png "Layers") Layers
 
 The canvas used by `flo_draw` is split into a number of layers. `LayerId(0)` is rendered at the bottom, with the other layers being rendered on top.
 
@@ -156,7 +156,7 @@ canvas.draw(|gc| {
 });
 ```
 
-## Sprites
+## ![](guide_images/s_sprites.png "Sprites") Sprites
 
 Sprites are a way to repeatedly render a series of instructions. For GPU-based rendering targets, they are also pre-calculated so they can render complex shapes more quickly if necessary. Sprites are conventionally just bitmaps but in `flo_draw` they can be any set of rendering instructions.
 
@@ -174,7 +174,7 @@ Sprites are very similar to layers: the main difference is that they can be rend
 
 Sprites are cleared along with everything else when `clear_canvas()` is called but they will survive `clear_layer()`, so when used for re-rendering or animations, they are best combined with layers.
 
-## Textures
+## ![](guide_images/s_textures.png "Textures") Textures
 
 It’s possible to use a bitmap graphic instead of a solid color to fill shapes. The first step to doing this is to load the bitmap texture into the drawing.
 
@@ -203,7 +203,7 @@ canvas.draw(|gc| {
 });
 ```
 
-## Gradients
+## ![](guide_images/s_gradients.png "Gradients") Gradients
 
 Gradients are another alternative to solid colour fills. As with textures, they are defined with an ID then chosen with a `fill_gradient` call.
 
@@ -223,7 +223,7 @@ canvas.draw(|gc| {
 });
 ```
 
-## Text rendering
+## ![](guide_images/s_text_rendering.png "Text rendering") Text rendering
 
 `flo_canvas` comes with a set of instructions for basic text rendering and layout, and a formatting library for more advanced layout.
 
@@ -258,7 +258,7 @@ canvas.draw(|gc| {
 });
 ```
 
-## Performing text layout
+## ![](guide_images/s_text_layout.png "Text layout") Performing text layout
 
 One problem with using `measure_text()` is that it must perform almost all of the steps to lay out the text in order to calculate its metrics, but these same steps are needed to render the text, so this is inefficient. To avoid this problem, there is a `draw_glyphs(FontId(2), glyph_positions)` call that allows rendering  text that has been laid out ahead of time. Laying out text in advance makes it easier to find the positions of line breaks and add effects like strikeout and underlines.
 
