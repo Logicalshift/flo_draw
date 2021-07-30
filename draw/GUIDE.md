@@ -120,9 +120,51 @@ The basic stroke properties are:
 - `dash_pattern` - defines a ‘dashed’ texture to render the line with
 - `blend_mode(mode)` - how the line should be blended with the rest of the canvas
 
+```rust
+canvas.draw(|gc| {
+    gc.fill_color(Color::Rgba(0.2, 0.2, 0.2, 0.8));
+    gc.stroke_color(Color::Rgba(0.2, 0.2, 0.2, 0.8));
+
+    gc.line_width(3.0);
+
+    gc.new_path();
+    gc.move_to(-32.0, 28.0);
+    gc.line_to(-14.0, 0.0);
+    gc.line_to(4.0, 28.0);
+    gc.close_path();
+
+    gc.stroke();
+
+    gc.new_path();
+    gc.circle(14.0, -16.0, 18.0);
+    gc.fill();
+
+    gc.stroke_color(Color::Rgba(0.4, 0.4, 0.4, 0.9));
+    gc.new_path();
+    gc.rect(-16.0, -16.0, 16.0, 16.0);
+    gc.stroke();
+});
+```
+
 ## ![](guide_images/s_transforms.png "Transforms") Setting the canvas coordinates and transforms
 
-One of the things that is often painful when setting up a rendering context is getting the coordinate system set up correctly.
+By default, `flo_draw` will set up a canvas that is 1024x768 units (scaled to fill the window). The height is fixed as 768 units but the width will vary with the window size.
+
+The coordinate system can be changed using the transform functions. The simplest of these are just used to define the coordinate system of the main window.`identity_transform()` will reset it to the default coordinates, which are a y value between -1 and 1 and an x value scaled to the window (so that the coordinate `0,0` is at the center of the window). This is also the default coordinate scheme for off-screen contexts. `canvas_height(height)` will set the distance from the top to the bottom of the window, once again with `0,0` at the center - so `canvas_height(768.0)`  will define a coordinate system that goes from -384 at the bottom to 384 at the top. Negative values passed to `canvas_height()` will flip the coordinate scheme.
+
+The central region can be set using `center_region(x1, y1, x2, y2)`.  This call will pan the canvas such that the specified region is centered in the window. This is typically paired with `canvas_height` to specify a bottom-left coordinate: for example `gc.canvas_height(768.0); gc.center_region(0.0, 0.0, 1024.0, 768.0);` to define the default coordinate scheme.
+
+Finally, the `transform()` call can be used with a `Transform2D` structure to apply arbitrary transformations to the coordinate scheme. `Transform2D` represents a 3x3 matrix, and has a number of convenience methods for initialising it. `Transform2D::identity()` will generate the identity matrix. `Transform2D::translate(dx, dy)` will translate by the specified offset. `Transform2D::scale(sx, sy)` will scale the coordinates. `Transform2D::rotate(radians)` and `Transform2D::rotate_degrees(degrees)` will rotate the coordinates. 
+
+Transformations are stored and restored using `push_state()` and `pop_state()` so it’s possible to use `transform()` temporarily to change how some rendering instructions appear.
+
+```rust
+canvas.draw(|gc| {
+    gc.canvas_height(1000.0);
+    gc.center_region(0.0, 0.0, 1000.0, 1000.0);
+    gc.transform(Transform2D::rotate_degrees(30));
+});
+```
 
 ## ![](guide_images/s_layers.png "Layers") Layers
 
@@ -273,6 +315,8 @@ The way a new font or font size is selected is by calling `let mut line_layout =
 Once a line of text is ready to render, the `line_layout.align_transform(baseline_x, baseline_y, TextAlignment::Left)` call will arrange it so that it’s aligned at a particular position. The completed text can be sent to the graphics context using the `draw_list()` function with the result of the `to_drawing` function: `gc.draw_list(line_layout.to_drawing(last_font_id))` - note that once again the font ID for the canvas is not set until the layout is being finalized.
 
 During layout, the bounding box of the text can be obtained using `line_layout.measure()`. Layout starts from `(0.0, 0.0)` so this will provide the width and the height of the bounding box rather than the final coordinates after the text has been aligned. This can be used during layout to calculate where to put annotations or to decide whether or not to insert a line break.
+
+The `measure()` call only returns information about the text layout. Fonts have some additional metrics, such as their height or where underlines should be drawn. These can be retrieved from the `CanvasFontFace` structure using the `font_metrics(em_size)` call. The metrics returned by this call are scaled according to the size that’s passed in so they can be used directly when laying out text of that size. The returned structure includes values such as the `ascender` and `descender` (how far the font extends above or below the baseline).
 
 An in-progress line layout can be cloned: this is useful if speculative layout is required: for example to add a word to the layout and then measure it to see if it is too long to fit on the line.
 
