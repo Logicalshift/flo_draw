@@ -358,3 +358,7 @@ canvas.draw(|gc| {
 ## Encoding and streaming canvas operations elsewhere
 
 ## Using flo\_canvas to interface with other rendering libraries
+
+## 
+
+![](images/mascot.png "Mascot")
