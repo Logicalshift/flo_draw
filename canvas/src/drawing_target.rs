@@ -233,6 +233,45 @@ mod test {
     }
 
     #[test]
+    fn clear_all_layers_leaves_state() {
+        let (context, stream)   = DrawingTarget::new();
+
+        // Draw using a graphics context
+        context.draw(|gc| {
+            gc.clear_canvas(Color::Rgba(0.0, 0.0, 0.0, 0.0));
+
+            gc.layer(LayerId(2));
+
+            gc.new_path();
+            gc.move_to(0.0, 0.0);
+            gc.line_to(10.0, 0.0);
+            gc.line_to(10.0, 10.0);
+            gc.line_to(0.0, 10.0);
+
+            gc.stroke();
+            gc.clear_layer();
+
+            gc.new_path();
+            gc.move_to(10.0, 10.0);
+            gc.fill_color(Color::Rgba(0.1, 0.2, 0.3, 0.4));
+            gc.fill();
+
+            gc.clear_all_layers();
+        });
+
+        // Only the commands after clear_layer should be present
+        let mut stream          = stream;
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::FillColor(Color::Rgba(0.1, 0.2, 0.3, 0.4))));
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(2))));
+            assert!(stream.next().await == Some(Draw::ShowFrame));
+        });
+    }
+
+    #[test]
     fn canvas_transforms_are_used_by_drawing_actions() {
         let (context, stream)   = DrawingTarget::new();
 

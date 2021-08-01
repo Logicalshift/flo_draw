@@ -338,6 +338,30 @@ impl DrawStreamCore {
     }
 
     ///
+    /// Removes any commands from the stream that have a source or target of a layer
+    ///
+    fn remove_all_layer_commands(&mut self) {
+        let mut to_remove           = HashSet::new();
+
+        // Queue up any instruction that targets a layer for removal
+        for (idx, (target_resource, _draw)) in self.pending_drawing.iter().enumerate() {
+            if let DrawResource::Layer(_) = target_resource {
+                to_remove.insert(idx);
+            }
+        }
+
+        // Remove any resources in the to_remove set
+        if to_remove.len() > 0 {
+            let old_drawing         = mem::take(&mut self.pending_drawing);
+            self.pending_drawing    = old_drawing.into_iter()
+                .enumerate()
+                .filter(|(idx, _item)| !to_remove.contains(idx))
+                .map(|(_idx, item)| item)
+                .collect();
+        }
+    }
+
+    ///
     /// Writes a stream of instructions to this drawing stream
     ///
     pub fn write<DrawIter: Iterator<Item=Draw>>(&mut self, drawing: DrawIter) {
@@ -368,6 +392,11 @@ impl DrawStreamCore {
                     self.target_resource = DrawResource::Layer(LayerId(0));
                 },
 
+                Draw::ClearAllLayers    => {
+                    self.remove_all_layer_commands();
+                    drawing_cleared = true;
+                }
+
                 Draw::PopState          => {
                     has_stack_ops = true;
                 }
@@ -375,6 +404,7 @@ impl DrawStreamCore {
                 _                       => { }
             }
 
+            // Append the drawing instruction to the pending drawing
             match &draw {
                 Draw::Restore => {
                     // Add the 'restore' operation in case we can't rewind anything
