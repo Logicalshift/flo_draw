@@ -340,13 +340,18 @@ impl DrawStreamCore {
     ///
     /// Removes any commands from the stream that have a source or target of a layer
     ///
-    fn remove_all_layer_commands(&mut self) {
+    fn clear_all_layers(&mut self) {
         let mut to_remove           = HashSet::new();
+        let mut last_layer          = None;
 
         // Queue up any instruction that targets a layer for removal
-        for (idx, (target_resource, _draw)) in self.pending_drawing.iter().enumerate() {
+        for (idx, (target_resource, draw)) in self.pending_drawing.iter().enumerate() {
             if let DrawResource::Layer(_) = target_resource {
                 to_remove.insert(idx);
+            }
+
+            if let Draw::Layer(target_layer) = draw {
+                last_layer = Some(*target_layer);
             }
         }
 
@@ -358,6 +363,11 @@ impl DrawStreamCore {
                 .filter(|(idx, _item)| !to_remove.contains(idx))
                 .map(|(_idx, item)| item)
                 .collect();
+        }
+
+        // Re-select the target layer if there is one
+        if let Some(last_layer) = last_layer {
+            self.pending_drawing.push((DrawResource::Layer(last_layer), Draw::Layer(last_layer)));
         }
     }
 
@@ -393,7 +403,7 @@ impl DrawStreamCore {
                 },
 
                 Draw::ClearAllLayers    => {
-                    self.remove_all_layer_commands();
+                    self.clear_all_layers();
                     drawing_cleared = true;
                 }
 
