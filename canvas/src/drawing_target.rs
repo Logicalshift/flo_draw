@@ -267,6 +267,7 @@ mod test {
             assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
             assert!(stream.next().await == Some(Draw::FillColor(Color::Rgba(0.1, 0.2, 0.3, 0.4))));
             assert!(stream.next().await == Some(Draw::Layer(LayerId(2))));
+            assert!(stream.next().await == Some(Draw::ClearAllLayers));
             assert!(stream.next().await == Some(Draw::ShowFrame));
         });
     }

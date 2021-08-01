@@ -167,7 +167,6 @@ impl Draw {
             ShowFrame                           |
             ResetFrame                          => DrawResource::Frame,
 
-            ClearAllLayers                      |
             ClearCanvas(_)                      => DrawResource::Canvas,
             IdentityTransform                   |
             CanvasHeight(_)                     |
