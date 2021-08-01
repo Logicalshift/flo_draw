@@ -15,18 +15,21 @@ pub fn path_to_dashed_lines<PathIn, PathOut, DashPattern>(path_in: &PathIn, dash
 where
 PathIn:         BezierPath,
 PathOut:        BezierPathFactory<Point=PathIn::Point>,
-DashPattern:    Clone+Iterator<Item=f64> {
+DashPattern:    Iterator<Item=f64> {
     // Create the resulting set of paths (most will have just a single curve in them)
     let mut output_paths        = vec![];
 
     // Cycle the dash pattern
-    let mut dash_pattern        = dash_pattern.cycle();
+    let dash_pattern            = dash_pattern.collect::<Vec<_>>();
+    let dash_pattern            = if dash_pattern.len() == 0 { vec![1.0] } else { dash_pattern };
+    let mut dash_pos            = 0;
+    let max_dash_pos            = dash_pattern.len() - 1;
 
-    // Initially there's no dash and no remaining length
-    let mut remaining_length    = 0.0;
+    // Initial remaining length is that of the first dash in the pattern
+    let mut remaining_length    = dash_pattern[dash_pos];
 
     // We alternate between drawing and not drawing dashes
-    let mut draw_dash           = true;
+    let mut draw_dash           = false;
 
     // Apply the dash pattern offset
     if pattern_offset > 0.0 {
@@ -41,7 +44,8 @@ DashPattern:    Clone+Iterator<Item=f64> {
             } else {
                 remaining_offset    -= dash_length;
 
-                remaining_length    = dash_pattern.next().unwrap();
+                dash_pos            = if dash_pos >= max_dash_pos { 0 } else { dash_pos + 1 };
+                remaining_length    = dash_pattern[dash_pos];
                 draw_dash           = !draw_dash;
             }
         }
@@ -57,21 +61,18 @@ DashPattern:    Clone+Iterator<Item=f64> {
         let curve                   = Curve::from_points(start_point, (cp1, cp2), end_point);
 
         if remaining_length <= 0.0 {
-            remaining_length        = dash_pattern.next().unwrap();
+            dash_pos                = if dash_pos >= max_dash_pos { 0 } else { dash_pos + 1 };
+            remaining_length        = dash_pattern[dash_pos];
             draw_dash               = !draw_dash;
         }
 
         // Walk it, starting with the remaining length and then moving on according to the dash pattern
-        let dash_pattern            = &mut dash_pattern;
-        let mut dash_pattern_copy   = iter::once(remaining_length).chain(dash_pattern.clone());
-        let dash_pattern            = iter::once(remaining_length).chain(dash_pattern);
+        let mut next_length     = remaining_length;
+        let curve_dash_pattern  = iter::once(next_length).chain(dash_pattern.iter().cycle().skip(dash_pos+1).cloned());
 
-        for section in walk_curve_evenly(&curve, 1.0, 0.05).vary_by(dash_pattern) {
+        for section in walk_curve_evenly(&curve, 1.0, 0.05).vary_by(curve_dash_pattern) {
             // Toggle if we show the dash or not
             draw_dash                       = !draw_dash;
-
-            // The copied dash pattern will get the expected length for this dash
-            let next_length                 = dash_pattern_copy.next().unwrap();
 
             // walk_curve_evenly uses chord lengths (TODO: arc lengths would be better)
             let section_length              = chord_length(&section);
@@ -95,7 +96,15 @@ DashPattern:    Clone+Iterator<Item=f64> {
                 current_path_start  = section_end_point;
                 current_path_points = vec![];
             }
+
+            // Fetch the next length from the dash pattern
+            dash_pos                        = if dash_pos >= max_dash_pos { 0 } else { dash_pos + 1 };
+            next_length                     = dash_pattern[dash_pos];
         }
+
+        // Walk back a dash position (remaining_length is the distance left in this dash)
+        dash_pos    = if dash_pos == 0 { max_dash_pos } else { dash_pos-1 };
+        draw_dash   = !draw_dash;
 
         // The start point of the next curve in this path is the end point of this one
         start_point     = end_point;
