@@ -925,7 +925,7 @@ impl CanvasRenderer {
 
                         core.sync(|core| {
                             // Create a new layer
-                            let mut layer               = Self::create_default_layer();
+                            let mut layer   = Self::create_default_layer();
 
                             // Sprite layers act as if their transform is already set
                             if core.layer(self.current_layer).state.is_sprite {
@@ -940,6 +940,38 @@ impl CanvasRenderer {
                             core.free_layer_entities(layer);
                         });
                     },
+
+                    ClearAllLayers => {
+                        fill_state      = FillState::None;
+                        dash_pattern    = vec![];
+                        current_path    = None;
+                        path_builder    = None;
+                        in_subpath      = false;
+
+                        core.sync(|core| {
+                            let handles = core.layers.clone();
+
+                            for handle in handles.into_iter() {
+                                // Sprite layers are left alone
+                                if core.layer(self.current_layer).state.is_sprite {
+                                    continue;
+                                }
+
+                                // Create a new layer
+                                let mut layer   = Self::create_default_layer();
+
+                                // Swap into the layer list to replace the old one
+                                mem::swap(core.layer(handle), &mut layer);
+
+                                // Free the data for the current layer
+                                core.free_layer_entities(layer);
+                            }
+                        });
+                    }
+
+                    SwapLayers(layer1, layer2) => {
+                        todo!()
+                    }
 
                     // Selects a particular sprite for drawing
                     Sprite(sprite_id) => { 
