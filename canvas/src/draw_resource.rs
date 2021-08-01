@@ -174,6 +174,8 @@ impl Draw {
             CenterRegion(_, _)                  |
             MultiplyTransform(_)                => DrawResource::CanvasTransform,
 
+            Layer(layer_id)                     => DrawResource::Layer(*layer_id),
+
             LineWidth(_)                        |
             LineWidthPixels(_)                  => DrawResource::StrokeLineWidth,
             LineJoin(_)                         => DrawResource::StrokeLineJoin,
