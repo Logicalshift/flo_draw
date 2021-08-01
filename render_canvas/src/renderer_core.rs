@@ -18,7 +18,7 @@ use std::collections::{HashMap};
 /// Handle referencing a renderer layer
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct LayerHandle(u64);
+pub struct LayerHandle(pub u64);
 
 ///
 /// Used to indicate the state of a texture

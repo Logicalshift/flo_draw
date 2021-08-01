@@ -969,7 +969,27 @@ impl CanvasRenderer {
                         });
                     }
 
-                    SwapLayers(layer1, layer2) => {
+                    SwapLayers(canvas::LayerId(layer1), canvas::LayerId(layer2)) => {
+                        if layer1 != layer2 {
+                            core.sync(move |core| {
+                                // Create layers so we can swap with arbitrary layers
+                                let max_layer_id = u64::max(layer1, layer2) as usize;
+                                while core.layers.len() <= max_layer_id  {
+                                    let new_layer = Self::create_default_layer();
+                                    let new_layer = core.allocate_layer_handle(new_layer);
+                                    core.layers.push(new_layer);
+                                }
+
+                                // Swap the two layers in the core
+                                let LayerHandle(handle1) = core.layers[layer1 as usize];
+                                let LayerHandle(handle2) = core.layers[layer2 as usize];
+
+                                if handle1 != handle2 {
+                                    core.layer_definitions.swap(handle1 as usize, handle2 as usize);
+                                }
+                            });
+                        }
+
                         todo!()
                     }
 
