@@ -393,6 +393,8 @@ impl GraphicsContext for CanvasFontLineLayout {
     #[inline] fn layer(&mut self, layer_id: LayerId)                                            { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Layer(layer_id))); }
     #[inline] fn layer_blend(&mut self, layer_id: LayerId, blend_mode: BlendMode)               { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::LayerBlend(layer_id, blend_mode))); }
     #[inline] fn clear_layer(&mut self)                                                         { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::ClearLayer)); }
+    #[inline] fn clear_all_layers(&mut self)                                                    { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::ClearAllLayers)); }
+    #[inline] fn swap_layers(&mut self, layer1: LayerId, layer2: LayerId)                       { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::SwapLayers(layer1, layer2))); }
     #[inline] fn sprite(&mut self, sprite_id: SpriteId)                                         { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::Sprite(sprite_id))); }
     #[inline] fn clear_sprite(&mut self)                                                        { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::ClearSprite)); }
     #[inline] fn sprite_transform(&mut self, transform: SpriteTransform)                        { self.layout_pending(); self.layout.push(LayoutAction::Draw(Draw::SpriteTransform(transform))); }

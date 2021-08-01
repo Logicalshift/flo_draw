@@ -386,6 +386,7 @@ enum DecoderState {
     NewLayerBlendU32(String),                   // 'Nb' (id, mode)
     NewLayer(String),                           // 'NL' (id)
     NewLayerBlend(DecodeLayerId, String),       // 'NB' (id, mode)
+    SwapLayers(Option<LayerId>, String),        // 'NX' (layer1, layer2)
 
     NewSprite(String),                          // 'Ns' (id)
     SpriteDraw(String),                         // 'sD' (id)
@@ -510,6 +511,7 @@ impl CanvasDecoder {
             NewLayerBlendU32(param)         => Self::decode_new_layer_blend_u32(next_chr, param)?,
             NewLayer(param)                 => Self::decode_new_layer(next_chr, param)?,
             NewLayerBlend(layer, blend)     => Self::decode_new_layer_blend(next_chr, layer, blend)?,
+            SwapLayers(layer1, param)       => Self::decode_swap_layers(next_chr, layer1, param)?,
 
             NewSprite(param)                => Self::decode_new_sprite(next_chr, param)?,
             SpriteDraw(param)               => Self::decode_sprite_draw(next_chr, param)?,
@@ -592,12 +594,14 @@ impl CanvasDecoder {
         match next_chr {
             'p'     => Ok((DecoderState::None, Some(Draw::Path(PathOp::NewPath)))),
             'A'     => Ok((DecoderState::ClearCanvas(String::new()), None)),
+            'a'     => Ok((DecoderState::None, Some(Draw::ClearAllLayers))),
             'C'     => Ok((DecoderState::None, Some(Draw::ClearLayer))),
 
             'l'     => Ok((DecoderState::NewLayerU32(String::new()), None)),
             'b'     => Ok((DecoderState::NewLayerBlendU32(String::new()), None)),
             'L'     => Ok((DecoderState::NewLayer(String::new()), None)),
             'B'     => Ok((DecoderState::NewLayerBlend(PartialResult::MatchMore(String::new()), String::new()), None)),
+            'X'     => Ok((DecoderState::SwapLayers(None, String::new()), None)),
             's'     => Ok((DecoderState::NewSprite(String::new()), None)),
 
             'F'     => Ok((DecoderState::None, Some(Draw::StartFrame))),
@@ -1035,6 +1039,14 @@ impl CanvasDecoder {
         match Self::decode_layer_id(next_chr, param)? {
             PartialResult::FullMatch(layer_id)  => Ok((DecoderState::None, Some(Draw::Layer(layer_id)))),
             PartialResult::MatchMore(param)     => Ok((DecoderState::NewLayer(param), None))
+        }
+    }
+
+    #[inline] fn decode_swap_layers(next_chr: char, layer1: Option<LayerId>, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match (layer1, Self::decode_layer_id(next_chr, param)?) {
+            (None, PartialResult::FullMatch(layer_id))          => Ok((DecoderState::SwapLayers(Some(layer_id), String::new()), None)),
+            (Some(layer1), PartialResult::FullMatch(layer2))    => Ok((DecoderState::None, Some(Draw::SwapLayers(layer1, layer2)))),
+            (layer1, PartialResult::MatchMore(param))           => Ok((DecoderState::SwapLayers(layer1, param), None))
         }
     }
 
@@ -1930,6 +1942,15 @@ mod test {
         check_round_trip_single(Draw::ClearLayer);
     }
 
+    #[test]
+    fn decode_clear_all_layers() {
+        check_round_trip_single(Draw::ClearAllLayers);
+    }
+
+    #[test]
+    fn decode_swap_layers() {
+        check_round_trip_single(Draw::SwapLayers(LayerId(1), LayerId(2)));
+    }
 
     #[test]
     fn decode_sprite() {
@@ -1992,7 +2013,7 @@ mod test {
     fn error_on_bad_char() {
         let mut decoder = CanvasDecoder::new();
         assert!(decoder.decode('N') == Ok(None));
-        assert!(decoder.decode('X') == Err(DecoderError::InvalidCharacter('X')));
+        assert!(decoder.decode('x') == Err(DecoderError::InvalidCharacter('x')));
     }
 
     #[test]
@@ -2084,7 +2105,7 @@ mod test {
     }
 
     #[test]
-    fn decide_fill_transform() {
+    fn decode_fill_transform() {
         check_round_trip_single(Draw::FillTransform(Transform2D::identity()));
     }
 
@@ -2125,6 +2146,8 @@ mod test {
             Draw::ClearCanvas(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
             Draw::Layer(LayerId(21)),
             Draw::ClearLayer,
+            Draw::ClearAllLayers,
+            Draw::SwapLayers(LayerId(1), LayerId(2)),
             Draw::Path(PathOp::NewPath),
             Draw::Sprite(SpriteId(1000)),
             Draw::ClearSprite,
@@ -2175,6 +2198,8 @@ mod test {
             Draw::ClearCanvas(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
             Draw::Layer(LayerId(21)),
             Draw::ClearLayer,
+            Draw::ClearAllLayers,
+            Draw::SwapLayers(LayerId(1), LayerId(2)),
             Draw::Path(PathOp::NewPath),
             Draw::Sprite(SpriteId(1000)),
             Draw::ClearSprite,

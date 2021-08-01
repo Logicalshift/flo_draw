@@ -79,7 +79,7 @@ pub trait GraphicsContext {
     fn fill_color(&mut self, col: Color);
 
     /// Sets the texture to use for the next fill() operation
-    fn fill_texture(&mut self, texture_id: TextureId, x: f32, y: f32, width: f32, height: f32);
+    fn fill_texture(&mut self, texture_id: TextureId, x1: f32, y1: f32, x2: f32, y2: f32);
 
     /// Sets the gradient to use for the next fill() operation
     fn fill_gradient(&mut self, gradient_id: GradientId, x1: f32, y1: f32, x2: f32, y2: f32);
@@ -149,6 +149,13 @@ pub trait GraphicsContext {
 
     /// Clears the current layer
     fn clear_layer(&mut self);
+
+    /// Clears all of the layers (without resetting any other resources, as clear_canvas does)
+    fn clear_all_layers(&mut self);
+
+    /// Exchanges the contents of two layers in the drawing
+    fn swap_layers(&mut self, layer1: LayerId, layer2: LayerId);
+
 
 
     /// Selects a particular sprite for drawing
@@ -262,6 +269,8 @@ pub trait GraphicsContext {
             Layer(layer_id)                                             => self.layer(layer_id),
             LayerBlend(layer_id, blend_mode)                            => self.layer_blend(layer_id, blend_mode),
             ClearLayer                                                  => self.clear_layer(),
+            ClearAllLayers                                              => self.clear_all_layers(),
+            SwapLayers(layer1, layer2)                                  => self.swap_layers(layer1, layer2),
             Sprite(sprite_id)                                           => self.sprite(sprite_id),
             ClearSprite                                                 => self.clear_sprite(),
             SpriteTransform(transform)                                  => self.sprite_transform(transform),
@@ -331,6 +340,8 @@ impl GraphicsContext for Vec<Draw> {
     #[inline] fn layer(&mut self, layer_id: LayerId)                                            { self.push(Draw::Layer(layer_id)); }
     #[inline] fn layer_blend(&mut self, layer_id: LayerId, blend_mode: BlendMode)               { self.push(Draw::LayerBlend(layer_id, blend_mode)); }
     #[inline] fn clear_layer(&mut self)                                                         { self.push(Draw::ClearLayer); }
+    #[inline] fn clear_all_layers(&mut self)                                                    { self.push(Draw::ClearAllLayers); }
+    #[inline] fn swap_layers(&mut self, layer1: LayerId, layer2: LayerId)                       { self.push(Draw::SwapLayers(layer1, layer2)); }
     #[inline] fn sprite(&mut self, sprite_id: SpriteId)                                         { self.push(Draw::Sprite(sprite_id)); }
     #[inline] fn clear_sprite(&mut self)                                                        { self.push(Draw::ClearSprite); }
     #[inline] fn sprite_transform(&mut self, transform: SpriteTransform)                        { self.push(Draw::SpriteTransform(transform)); }

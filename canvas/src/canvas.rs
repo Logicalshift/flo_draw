@@ -256,6 +256,8 @@ impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
     fn layer(&mut self, layer_id: LayerId)                                          { self.pending.push(Draw::Layer(layer_id)); }
     fn layer_blend(&mut self, layer_id: LayerId, blend_mode: BlendMode)             { self.pending.push(Draw::LayerBlend(layer_id, blend_mode)); }
     fn clear_layer(&mut self)                                                       { self.pending.push(Draw::ClearLayer); }
+    fn clear_all_layers(&mut self)                                                  { self.pending.push(Draw::ClearAllLayers); }
+    fn swap_layers(&mut self, layer1: LayerId, layer2: LayerId)                     { self.pending.push(Draw::SwapLayers(layer1, layer2)); }
     fn sprite(&mut self, sprite_id: SpriteId)                                       { self.pending.push(Draw::Sprite(sprite_id)); }
     fn clear_sprite(&mut self)                                                      { self.pending.push(Draw::ClearSprite); }
     fn sprite_transform(&mut self, transform: SpriteTransform)                      { self.pending.push(Draw::SpriteTransform(transform)); }

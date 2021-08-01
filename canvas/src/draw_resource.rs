@@ -76,6 +76,8 @@ impl Draw {
             CenterRegion(_, _)                      |
             MultiplyTransform(_)                    => resource == &DrawResource::CanvasTransform,
 
+            SwapLayers(layer1, layer2)              => resource == &DrawResource::Layer(*layer1) || resource == &DrawResource::Layer(*layer2),
+
             _                                       => false
         }
     }
@@ -92,7 +94,9 @@ impl Draw {
         match self {
             // Things that overwrite/create a new value for a resource have no source
             ClearCanvas(_)                          => smallvec![],
+            ClearAllLayers                          => smallvec![],
             ClearSprite                             => smallvec![],
+            SwapLayers(layer1, layer2)              => smallvec![DrawResource::Layer(*layer1), DrawResource::Layer(*layer2)],
 
             Texture(_, TextureOp::Create(_, _, _))  => smallvec![],
             Gradient(_, GradientOp::Create(_))      => smallvec![],
@@ -163,6 +167,7 @@ impl Draw {
             ShowFrame                           |
             ResetFrame                          => DrawResource::Frame,
 
+            ClearAllLayers                      |
             ClearCanvas(_)                      => DrawResource::Canvas,
             IdentityTransform                   |
             CanvasHeight(_)                     |
@@ -185,6 +190,7 @@ impl Draw {
             FillTexture(_, _, _)                |
             FillTransform(_)                    => DrawResource::FillColor,
 
+            SwapLayers(layer1, _layer2)         => DrawResource::Layer(*layer1),
             LayerBlend(layer_id, _)             => DrawResource::Layer(*layer_id),
             Font(font_id, FontOp::FontSize(_))  => DrawResource::FontSize(*font_id),
             Font(font_id, _)                    => DrawResource::Font(*font_id),

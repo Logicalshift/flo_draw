@@ -487,6 +487,8 @@ impl CanvasEncoding<String> for Draw {
             &Layer(layer_id)                            => ('N', 'L', layer_id).encode_canvas(append_to),
             &LayerBlend(layer_id, blend_mode)           => ('N', 'B', layer_id, blend_mode).encode_canvas(append_to),
             &ClearLayer                                 => ('N', 'C').encode_canvas(append_to),
+            &ClearAllLayers                             => ('N', 'a').encode_canvas(append_to),
+            &SwapLayers(layer1, layer2)                 => ('N', 'X', layer1, layer2).encode_canvas(append_to),
             &Sprite(sprite_id)                          => ('N', 's', sprite_id).encode_canvas(append_to),
             &ClearSprite                                => ('s', 'C').encode_canvas(append_to),
             &SpriteTransform(sprite_transform)          => ('s', 'T', sprite_transform).encode_canvas(append_to),
@@ -597,6 +599,10 @@ mod test {
     fn encode_layer_blend() { assert!(&encode_draw(Draw::LayerBlend(LayerId(2), BlendMode::Screen)) == "NBCES") }
     #[test]
     fn encode_clearlayer() { assert!(&encode_draw(Draw::ClearLayer) == "NC") }
+    #[test]
+    fn encode_clear_all_layers() { assert!(&encode_draw(Draw::ClearAllLayers) == "Na"); }
+    #[test]
+    fn encode_swap_layers() { assert!(&encode_draw(Draw::SwapLayers(LayerId(1), LayerId(2))) == "NXBC"); }
     #[test]
     fn encode_nonzero_winding_rule() { assert!(&encode_draw(Draw::WindingRule(WindingRule::NonZero)) == "Wn") }
     #[test]

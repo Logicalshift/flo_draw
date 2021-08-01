@@ -262,6 +262,12 @@ pub enum Draw {
     /// Clears the current layer
     ClearLayer,
 
+    /// Clears all of the layers
+    ClearAllLayers,
+
+    /// Exchanges the ordering of two layers
+    SwapLayers(LayerId, LayerId),
+
     /// Selects a particular sprite for drawing
     ///
     /// Future drawing actions are sent to this sprite: use something like `Layer(0)` to start drawing
