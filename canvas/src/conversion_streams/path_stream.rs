@@ -1,6 +1,8 @@
 use crate::draw::*;
 use crate::path::*;
 use crate::color::*;
+use crate::gradient::*;
+use crate::transform2d::*;
 
 use flo_stream::*;
 use flo_curves::geo::*;
@@ -22,7 +24,13 @@ pub enum PathAttribute {
     StrokePixels(f32, Color),
 
     /// Path is filled with the specified colour
-    Fill(Color)
+    Fill(Color),
+
+    /// Path is filled with the specified texture
+    FillTexture(TextureId, (f32, f32), (f32, f32), Option<Transform2D>),
+
+    /// Path is filled with the specified gradient
+    FillGradient(GradientId, (f32, f32), (f32, f32), Option<Transform2D>)
 }
 
 ///
@@ -142,7 +150,7 @@ BezierPath::Point:  Send+Coordinate2D {
         let mut current_attributes                          = vec![];
         let mut start_point                                 = None;
 
-        let mut fill_color                                  = Color::Rgba(0.0, 0.0, 0.0, 1.0);
+        let mut fill_color                                  = PathAttribute::Fill(Color::Rgba(0.0, 0.0, 0.0, 1.0));
         let mut stroke_color                                = Color::Rgba(0.0, 0.0, 0.0, 1.0);
         let mut line_width                                  = None;
         let mut line_width_pixels                           = None;
@@ -209,7 +217,26 @@ BezierPath::Point:  Send+Coordinate2D {
                 }
 
                 Draw::FillColor(new_fill_color)                                 => {
-                    fill_color = new_fill_color;
+                    fill_color = PathAttribute::Fill(new_fill_color);
+                }
+
+                Draw::FillGradient(gradient, (x1, y1), (x2, y2))                => {
+                    fill_color = PathAttribute::FillGradient(gradient, (x1, y1), (x2, y2), None);
+                }
+
+                Draw::FillTexture(texture, (x1, y1), (x2, y2))                  => {
+                    fill_color = PathAttribute::FillTexture(texture, (x1, y1), (x2, y2), None);
+                }
+
+                Draw::FillTransform(transform)                                  => {
+                    fill_color = match fill_color {
+                        PathAttribute::FillGradient(gradient, coord1, coord2, None)                     => PathAttribute::FillGradient(gradient, coord1, coord2, Some(transform)),
+                        PathAttribute::FillTexture(texture, coord1, coord2, None)                       => PathAttribute::FillTexture(texture, coord1, coord2, Some(transform)),
+                        PathAttribute::FillGradient(gradient, coord1, coord2, Some(existing_transform)) => PathAttribute::FillGradient(gradient, coord1, coord2, Some(existing_transform * transform)),
+                        PathAttribute::FillTexture(texture, coord1, coord2, Some(existing_transform))   => PathAttribute::FillTexture(texture, coord1, coord2, Some(existing_transform * transform)),
+
+                        other_fill_color                                                                => other_fill_color
+                    };
                 }
 
                 Draw::StrokeColor(new_stroke_color)                             => {
@@ -240,7 +267,7 @@ BezierPath::Point:  Send+Coordinate2D {
                 }
 
                 Draw::Fill                                                      => {
-                    current_attributes.push(PathAttribute::Fill(fill_color));
+                    current_attributes.push(fill_color);
                 }
 
                 Draw::Stroke                                                    => {

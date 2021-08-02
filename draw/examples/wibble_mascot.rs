@@ -78,6 +78,18 @@ pub fn main() {
                                 gc.fill();
                             }
 
+                            PathAttribute::FillGradient(gradient, (x1, y1), (x2, y2), maybe_transform) => {
+                                gc.fill_gradient(*gradient, *x1, *y1, *x2, *y2);
+                                maybe_transform.map(|transform| gc.fill_transform(transform));
+                                gc.fill();
+                            }
+
+                            PathAttribute::FillTexture(texture, (x1, y1), (x2, y2), maybe_transform) => {
+                                gc.fill_texture(*texture, *x1, *y1, *x2, *y2);
+                                maybe_transform.map(|transform| gc.fill_transform(transform));
+                                gc.fill();
+                            }
+
                             PathAttribute::Stroke(width, color)     => {
                                 gc.line_width(*width);
                                 gc.stroke_color(*color);
