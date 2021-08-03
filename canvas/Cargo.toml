@@ -1,6 +1,6 @@
 [package]
 name                = "flo_canvas"
-version             = "0.3.0"
+version             = "0.3.1"
 authors             = ["Andrew Hunter"]
 license             = "Apache-2.0"
 edition             = "2018"
