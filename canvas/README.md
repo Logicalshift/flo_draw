@@ -1,5 +1,5 @@
 ```toml
-flo_canvas = "0.2"
+flo_canvas = "0.3"
 ```
 
 # flo_canvas
