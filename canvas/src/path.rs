@@ -3,7 +3,7 @@ use super::draw::*;
 ///
 /// Operations that define paths
 ///
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum PathOp {
     /// Begins a new path
     NewPath,
