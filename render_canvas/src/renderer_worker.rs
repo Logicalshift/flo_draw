@@ -176,6 +176,7 @@ impl CanvasWorker {
         stroke_options.tolerance    = f32::max(MIN_TOLERANCE, stroke_options.tolerance);
 
         // Stroke the path
+        // TODO: 'TooManyVertices'
         tessellator.tessellate_path(&path, &stroke_options,
             &mut BuffersBuilder::new(&mut geometry, move |point: StrokeVertex| {
                 let advancement = point.advancement();

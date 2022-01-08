@@ -1,6 +1,6 @@
 [package]
 name        = "flo_render_canvas"
-version     = "0.3.1"
+version     = "0.4.0"
 authors     = ["Andrew Hunter"]
 license     = "Apache-2.0"
 edition     = "2018"
@@ -11,8 +11,8 @@ categories  = [ "graphics", "rendering", "rendering::engine" ]
 include     = [ "Cargo.toml", "src/**/*", "svg/**/*" ]
 
 [dependencies]
-flo_render  = "0.3"
-flo_canvas  = "0.3"
+flo_render  = "0.4"
+flo_canvas  = "0.4"
 flo_stream  = "0.6"
 futures     = "0.3"
 desync      = "0.7"

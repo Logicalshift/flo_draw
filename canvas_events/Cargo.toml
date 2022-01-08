@@ -1,6 +1,6 @@
 [package]
 name                = "flo_canvas_events"
-version             = "0.3.1"
+version             = "0.4.0"
 authors             = ["Andrew Hunter"]
 license             = "Apache-2.0"
 edition             = "2018"
@@ -9,4 +9,4 @@ description         = "User input events for a flo_draw canvas"
 categories          = [ "graphics", "rendering", "gui" ]
 
 [dependencies]
-flo_canvas          = "0.3"
+flo_canvas          = "0.4"

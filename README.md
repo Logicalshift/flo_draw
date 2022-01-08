@@ -117,16 +117,15 @@ See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` su
 * `desync` provides a simpler way to write asynchronous code than traditional threads
 * `flo_binding` provides a way to convert between state changes and message streams, used in `flo_draw` to update the window configuration
 
-# Version 0.3
+# Version 0.4
 
-This is version 0.3 of `flo_draw`.
+This is version 0.4 of `flo_draw`.
 
 Future versions will incorporate more rendering targets. FlowBetween has Quartz, Cairo and HTML canvas targets so those are very likely, and
 some sort of non-accelerated version of the offscreen renderer is also a likely addition. Version 0.4 will likely add some more pipes for
 drawing streams: for example, a stream to simplify the rendering instructions so they match up to more conventional 2D graphics libraries
 more closely.
 
-There are a few known issues with 0.3: layer blend modes don't work with the GPU renderers (this needs a change of approach so will be fixed
-in 0.4). Dashed lines don't work too well either in this version.
+There are a few known issues with 0.4: dashed lines don't work too well either in this version.
 
 ![Flo drawing on a window](./images/flo_drawing_on_window_small.png)
