@@ -293,17 +293,13 @@ impl RenderCore {
     ///
     /// Generates the rendering actions for the layer with the specified handle
     ///
-    /// The render state passed in is the expected state after this rendering has completed, and is updated to be the expected state
-    /// before the rendering is completed. This slightly weird arrangement is because the rendering operations are returned as a stack:
-    /// ie, they'll run in reverse order.
-    ///
     fn render_layer(&mut self, viewport_transform: canvas::Transform2D, layer_handle: LayerHandle, render_state: &mut RenderStreamState) -> Vec<render::RenderAction> {
         use self::RenderEntity::*;
 
         let core = self;
 
         // Render the layer in reverse order (this is a stack, so operations are run in reverse order)
-        let mut render_layer_stack      = vec![];
+        let mut render_order            = vec![];
         let mut active_transform        = canvas::Transform2D::identity();
         let mut layer                   = core.layer(layer_handle);
 
@@ -334,7 +330,7 @@ impl RenderCore {
 
                 DrawIndexed(vertex_buffer, index_buffer, num_items) => {
                     // Draw the triangles
-                    render_layer_stack.push(render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items));
+                    render_order.push(render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items));
                 },
 
                 RenderSprite(sprite_id, sprite_transform) => { 
@@ -355,10 +351,10 @@ impl RenderCore {
                         let render_sprite       = core.render_layer(sprite_transform, sprite_layer, render_state);
 
                         // Render the sprite
-                        render_layer_stack.extend(render_sprite);
+                        render_order.extend(render_sprite);
 
                         // Restore the state back to the state before the sprite was rendered
-                        render_layer_stack.extend(old_state.update_from_state(&render_state));
+                        render_order.extend(old_state.update_from_state(&render_state));
 
                         // Following instructions are rendered using the state before the sprite
                         *render_state           = old_state;
@@ -376,7 +372,7 @@ impl RenderCore {
                     let old_state           = render_state.clone();
                     render_state.transform  = Some(&viewport_transform * &active_transform);
 
-                    render_layer_stack.extend(render_state.update_from_state(&old_state));
+                    render_order.extend(render_state.update_from_state(&old_state));
                 },
 
                 SetBlendMode(new_blend_mode) => {
@@ -388,7 +384,7 @@ impl RenderCore {
                     render_state.erase_mask     = Maybe::None;
 
                     // Update to the new state
-                    render_layer_stack.extend(render_state.update_from_state(&old_state));
+                    render_order.extend(render_state.update_from_state(&old_state));
                 },
 
                 EnableClipping(vertex_buffer, index_buffer, buffer_size) => {
@@ -398,7 +394,7 @@ impl RenderCore {
                     render_state.clip_buffers.get_or_insert_with(|| vec![]).push((*vertex_buffer, *index_buffer, *buffer_size));
 
                     // Update to the new state
-                    render_layer_stack.extend(render_state.update_from_state(&old_state));
+                    render_order.extend(render_state.update_from_state(&old_state));
                 }
 
                 DisableClipping => {
@@ -408,7 +404,7 @@ impl RenderCore {
                     render_state.clip_buffers   = Some(vec![]);
 
                     // Update to the new state
-                    render_layer_stack.extend(render_state.update_from_state(&old_state));
+                    render_order.extend(render_state.update_from_state(&old_state));
                 }
 
                 SetFlatColor => {
@@ -417,7 +413,7 @@ impl RenderCore {
                     render_state.shader_modifier    = Some(ShaderModifier::Simple);
 
                     // Update to the new state
-                    render_layer_stack.extend(render_state.update_from_state(&old_state));
+                    render_order.extend(render_state.update_from_state(&old_state));
                 }
 
                 SetDashPattern(dash_pattern) => {
@@ -430,7 +426,7 @@ impl RenderCore {
                     }
 
                     // Update to the new state
-                    render_layer_stack.extend(render_state.update_from_state(&old_state));
+                    render_order.extend(render_state.update_from_state(&old_state));
                 }
 
                 SetFillTexture(texture_id, matrix, repeat, alpha) => {
@@ -439,7 +435,7 @@ impl RenderCore {
                     render_state.shader_modifier = Some(ShaderModifier::Texture(*texture_id, *matrix, *repeat, *alpha));
 
                     // Update to the new state
-                    render_layer_stack.extend(render_state.update_from_state(&old_state));
+                    render_order.extend(render_state.update_from_state(&old_state));
                 }
 
                 SetFillGradient(texture_id, matrix, repeat, alpha) => {
@@ -448,13 +444,13 @@ impl RenderCore {
                     render_state.shader_modifier    = Some(ShaderModifier::Gradient(*texture_id, *matrix, *repeat, *alpha));
 
                     // Update to the new state
-                    render_layer_stack.extend(render_state.update_from_state(&old_state));
+                    render_order.extend(render_state.update_from_state(&old_state));
                 }
             }
         }
 
         // Generate a pending set of actions for the current layer
-        return render_layer_stack;
+        return render_order;
     }
 }
 
