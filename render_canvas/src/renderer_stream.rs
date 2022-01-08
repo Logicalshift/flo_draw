@@ -349,14 +349,11 @@ impl RenderCore {
                         // Render the layer associated with the sprite
                         let render_sprite       = core.render_layer(sprite_transform, sprite_layer, render_state);
 
-                        // Items before the sprite are rendered using the 'pre-sprite' rendering
-                        render_layer_stack.extend(old_state.update_from_state(render_state));
-
-                        // ... before that, the sprite is renderered
+                        // Render the sprite
                         render_layer_stack.extend(render_sprite);
 
-                        // ... using its render state
-                        render_layer_stack.extend(render_state.update_from_state(&old_state));
+                        // Restore the state back to the state before the sprite was rendered
+                        render_layer_stack.extend(old_state.update_from_state(&render_state));
 
                         // Following instructions are rendered using the state before the sprite
                         *render_state           = old_state;
@@ -370,11 +367,11 @@ impl RenderCore {
                     // The new transform will apply to all the following render instructions
                     active_transform        = *new_transform;
 
-                    // The preceding instructions should render according to the previous state
+                    // Update the state to a state with the new transformation applied
                     let old_state           = render_state.clone();
                     render_state.transform  = Some(&viewport_transform * &active_transform);
 
-                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                    render_layer_stack.extend(render_state.update_from_state(&old_state));
                 },
 
                 SetBlendMode(new_blend_mode) => {
@@ -385,8 +382,8 @@ impl RenderCore {
                     render_state.render_target  = Some(MAIN_RENDER_TARGET);
                     render_state.erase_mask     = Maybe::None;
 
-                    // Apply the old state for the preceding instructions
-                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                    // Update to the new state
+                    render_layer_stack.extend(render_state.update_from_state(&old_state));
                 },
 
                 DrawIndexed(vertex_buffer, index_buffer, num_items) => {
@@ -400,8 +397,8 @@ impl RenderCore {
                     render_state.clip_mask      = Maybe::Some(CLIP_RENDER_TEXTURE);
                     render_state.clip_buffers.get_or_insert_with(|| vec![]).push((*vertex_buffer, *index_buffer, *buffer_size));
 
-                    // Apply the old state for the preceding instructions
-                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                    // Update to the new state
+                    render_layer_stack.extend(render_state.update_from_state(&old_state));
                 }
 
                 DisableClipping => {
@@ -410,8 +407,8 @@ impl RenderCore {
                     render_state.clip_mask      = Maybe::None;
                     render_state.clip_buffers   = Some(vec![]);
 
-                    // Apply the old state for the preceding instructions
-                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                    // Update to the new state
+                    render_layer_stack.extend(render_state.update_from_state(&old_state));
                 }
 
                 SetFlatColor => {
@@ -419,8 +416,8 @@ impl RenderCore {
                     let old_state                   = render_state.clone();
                     render_state.shader_modifier    = Some(ShaderModifier::Simple);
 
-                    // Apply the old state for the preceding instructions
-                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                    // Update to the new state
+                    render_layer_stack.extend(render_state.update_from_state(&old_state));
                 }
 
                 SetDashPattern(dash_pattern) => {
@@ -432,8 +429,8 @@ impl RenderCore {
                         render_state.shader_modifier = Some(ShaderModifier::Simple);
                     }
 
-                    // Apply the old state for the preceding instructions
-                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                    // Update to the new state
+                    render_layer_stack.extend(render_state.update_from_state(&old_state));
                 }
 
                 SetFillTexture(texture_id, matrix, repeat, alpha) => {
@@ -441,8 +438,8 @@ impl RenderCore {
                     let old_state               = render_state.clone();
                     render_state.shader_modifier = Some(ShaderModifier::Texture(*texture_id, *matrix, *repeat, *alpha));
 
-                    // Apply the old state for the preceding instructions
-                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                    // Update to the new state
+                    render_layer_stack.extend(render_state.update_from_state(&old_state));
                 }
 
                 SetFillGradient(texture_id, matrix, repeat, alpha) => {
@@ -450,8 +447,8 @@ impl RenderCore {
                     let old_state                   = render_state.clone();
                     render_state.shader_modifier    = Some(ShaderModifier::Gradient(*texture_id, *matrix, *repeat, *alpha));
 
-                    // Apply the old state for the preceding instructions
-                    render_layer_stack.extend(old_state.update_from_state(render_state));
+                    // Update to the new state
+                    render_layer_stack.extend(render_state.update_from_state(&old_state));
                 }
             }
         }
