@@ -1271,12 +1271,6 @@ impl CanvasRenderer {
             self.viewport_size.1 as usize,
             RenderTargetType::Multisampled));
 
-        // Also create the 'eraser' render surface (render target 1, texture 1)
-        initialise.push(render::RenderAction::CreateRenderTarget(ERASE_RENDER_TARGET, ERASE_RENDER_TEXTURE,
-            self.viewport_size.0 as usize,
-            self.viewport_size.1 as usize,
-            RenderTargetType::MonochromeMultisampledTexture));
-
         // And the 'clip mask' render surface (render target 2, texture 2)
         initialise.push(render::RenderAction::CreateRenderTarget(CLIP_RENDER_TARGET, CLIP_RENDER_TEXTURE,
             self.viewport_size.0 as usize,
@@ -1289,10 +1283,8 @@ impl CanvasRenderer {
         } else {
             vec![
                 render::RenderAction::FreeTexture(CLIP_RENDER_TEXTURE),
-                render::RenderAction::FreeTexture(ERASE_RENDER_TEXTURE),
                 render::RenderAction::FreeTexture(MAIN_RENDER_TEXTURE),
                 render::RenderAction::FreeRenderTarget(CLIP_RENDER_TARGET),
-                render::RenderAction::FreeRenderTarget(ERASE_RENDER_TARGET),
                 render::RenderAction::FreeRenderTarget(MAIN_RENDER_TARGET),
 
                 render::RenderAction::ShowFrameBuffer,

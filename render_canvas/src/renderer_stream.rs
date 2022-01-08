@@ -305,7 +305,6 @@ impl RenderCore {
         // Render the layer in reverse order (this is a stack, so operations are run in reverse order)
         let mut render_layer_stack      = vec![];
         let mut active_transform        = canvas::Transform2D::identity();
-        let mut use_erase_texture       = false;
         let mut layer                   = core.layer(layer_handle);
 
         render_state.transform          = Some(viewport_transform);
@@ -379,33 +378,12 @@ impl RenderCore {
                 },
 
                 SetBlendMode(new_blend_mode) => {
-                    let mut old_state   = render_state.clone();
+                    let old_state               = render_state.clone();
 
-                    if new_blend_mode == &render::BlendMode::DestinationOut {
-                        // The previous state should use the eraser texture that we're abount to generate
-                        if old_state.render_target == Some(MAIN_RENDER_TARGET) {
-                            old_state.erase_mask = Maybe::Some(ERASE_RENDER_TEXTURE);
-                        }
-
-                        // Render to the eraser texture
-                        render_state.blend_mode     = Some(render::BlendMode::AllChannelAlphaDestinationOver);
-                        render_state.render_target  = Some(ERASE_RENDER_TARGET);
-                        render_state.erase_mask     = Maybe::None;
-
-                        // Flag that we're using the erase texture and it needs to be cleared for this layer
-                        use_erase_texture       = true;
-                    } else {
-                        // Render the main buffer
-                        render_state.blend_mode     = Some(*new_blend_mode);
-                        render_state.render_target  = Some(MAIN_RENDER_TARGET);
-
-                        // Use the eraser texture if one is specified
-                        if use_erase_texture {
-                            render_state.erase_mask = Maybe::Some(ERASE_RENDER_TEXTURE);
-                        } else {
-                            render_state.erase_mask = Maybe::None;
-                        }
-                    }
+                    // Render the main buffer
+                    render_state.blend_mode     = Some(*new_blend_mode);
+                    render_state.render_target  = Some(MAIN_RENDER_TARGET);
+                    render_state.erase_mask     = Maybe::None;
 
                     // Apply the old state for the preceding instructions
                     render_layer_stack.extend(old_state.update_from_state(render_state));
@@ -476,16 +454,6 @@ impl RenderCore {
                     render_layer_stack.extend(old_state.update_from_state(render_state));
                 }
             }
-        }
-
-        // Clear the erase mask if it's used on this layer
-        if use_erase_texture {
-            render_state.render_target.map(|render_target| {
-                render_layer_stack.push(render::RenderAction::SelectRenderTarget(render_target));
-            });
-
-            render_layer_stack.push(render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])));
-            render_layer_stack.push(render::RenderAction::SelectRenderTarget(ERASE_RENDER_TARGET));
         }
 
         // Generate a pending set of actions for the current layer
