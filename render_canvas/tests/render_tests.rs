@@ -11,15 +11,19 @@ use futures::executor;
 ///
 async fn check_layer_preamble<S: Unpin+Stream<Item=RenderAction>>(stream: &mut S) {
     let select_render_target = stream.next().await;
+    println!("{:?}", select_render_target);
     assert!(match select_render_target { Some(RenderAction::SelectRenderTarget(_)) => true, _ => false });
 
     let set_blend_mode = stream.next().await;
+    println!("{:?}", set_blend_mode);
     assert!(match set_blend_mode { Some(RenderAction::BlendMode(render::BlendMode::DestinationOver)) => true, _ => false });
 
     let use_shader = stream.next().await;
+    println!("{:?}", use_shader);
     assert!(match use_shader { Some(RenderAction::UseShader(_)) => true, _ => false });
 
     let set_transform = stream.next().await;
+    println!("{:?}", set_transform);
     assert!(match set_transform { Some(RenderAction::SetTransform(_)) => true, _ => false });
 }
 
@@ -48,14 +52,17 @@ fn fill_simple_circle() {
         }
 
         let set_transform   = draw_stream.next().await;
+        println!("{:?}", set_transform);
         assert!(set_transform.is_some());
         assert!(match set_transform { Some(RenderAction::SetTransform(_)) => true, _ => false });
 
         let upload_vertices = draw_stream.next().await;
+        println!("{:?}", upload_vertices);
         assert!(upload_vertices.is_some());
         assert!(match upload_vertices { Some(RenderAction::CreateVertex2DBuffer(_, _)) => true, _ => false });
 
         let upload_indices  = draw_stream.next().await;
+        println!("{:?}", upload_indices);
         assert!(upload_indices.is_some());
         assert!(match upload_indices { Some(RenderAction::CreateIndexBuffer(_, _)) => true, _ => false });
 
@@ -63,6 +70,7 @@ fn fill_simple_circle() {
         check_layer_preamble(&mut draw_stream).await;
 
         let draw_vertices   = draw_stream.next().await;
+        println!("{:?}", draw_vertices);
         assert!(draw_vertices.is_some());
         assert!(match draw_vertices { Some(RenderAction::DrawIndexedTriangles(_, _, _)) => true, _ => false });
 
