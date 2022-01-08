@@ -555,9 +555,11 @@ impl<'a> Stream for RenderStream<'a> {
                 let send_vertex_buffers = core.send_vertex_buffers(layer_handle);
                 let mut render_state    = RenderStreamState::new();
 
-                let mut render_layer    = core.render_layer(viewport_transform, layer_handle, &mut render_state);
+                let mut render_layer    = VecDeque::new();
+
                 render_layer.extend(send_vertex_buffers);
-                render_layer.extend(render_state.update_from_state(&RenderStreamState::new()));
+                render_layer.extend(core.render_layer(viewport_transform, layer_handle, &mut render_state));
+                render_layer.extend(RenderStreamState::new().update_from_state(&render_state));
 
                 Some(render_layer)
             })
