@@ -242,10 +242,10 @@ impl RenderStreamState {
             }
         }
 
-        // Update the transform state
-        if let Some(transform) = self.transform {
-            if Some(transform) != from.transform || (self.render_target != from.render_target && self.render_target.is_some()) || reset_render_target {
-                updates.push(render::RenderAction::SetTransform(transform_to_matrix(&transform)));
+        // Set the blend mode
+        if let Some(blend_mode) = self.blend_mode {
+            if Some(blend_mode) != from.blend_mode || (self.render_target != from.render_target && self.render_target.is_some()) || reset_render_target {
+                updates.push(render::RenderAction::BlendMode(blend_mode));
             }
         }
 
@@ -279,10 +279,10 @@ impl RenderStreamState {
             }
         }
 
-        // Set the blend mode
-        if let Some(blend_mode) = self.blend_mode {
-            if Some(blend_mode) != from.blend_mode || (self.render_target != from.render_target && self.render_target.is_some()) || reset_render_target {
-                updates.push(render::RenderAction::BlendMode(blend_mode));
+        // Update the transform state
+        if let Some(transform) = self.transform {
+            if Some(transform) != from.transform || (self.render_target != from.render_target && self.render_target.is_some()) || reset_render_target {
+                updates.push(render::RenderAction::SetTransform(transform_to_matrix(&transform)));
             }
         }
 
