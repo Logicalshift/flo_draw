@@ -1,12 +1,6 @@
 use crate::draw::*;
-use crate::path::*;
-use crate::font::*;
 use crate::color::*;
 use crate::context::*;
-use crate::texture::*;
-use crate::gradient::*;
-use crate::font_face::*;
-use crate::transform2d::*;
 use crate::draw_stream::*;
 
 use std::collections::{HashSet};
@@ -212,73 +206,6 @@ pub struct CanvasGraphicsContext<'a> {
 }
 
 impl<'a> GraphicsContext for CanvasGraphicsContext<'a> {
-    fn start_frame(&mut self)                       { self.pending.push(Draw::StartFrame); }
-    fn show_frame(&mut self)                        { self.pending.push(Draw::ShowFrame); }
-    fn reset_frame(&mut self)                       { self.pending.push(Draw::ResetFrame); }
-
-    fn new_path(&mut self)                          { self.pending.push(Draw::Path(PathOp::NewPath)); }
-    fn move_to(&mut self, x: f32, y: f32)           { self.pending.push(Draw::Path(PathOp::Move(x, y))); }
-    fn line_to(&mut self, x: f32, y: f32)           { self.pending.push(Draw::Path(PathOp::Line(x, y))); }
-
-    fn bezier_curve_to(&mut self, x1: f32, y1: f32, cp1x: f32, cp1y: f32, cp2x: f32, cp2y: f32) {
-        self.pending.push(Draw::Path(PathOp::BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x1, y1))));
-    }
-
-    fn close_path(&mut self)                                                        { self.pending.push(Draw::Path(PathOp::ClosePath)); }
-    fn fill(&mut self)                                                              { self.pending.push(Draw::Fill); }
-    fn stroke(&mut self)                                                            { self.pending.push(Draw::Stroke); }
-    fn line_width(&mut self, width: f32)                                            { self.pending.push(Draw::LineWidth(width)); }
-    fn line_width_pixels(&mut self, width: f32)                                     { self.pending.push(Draw::LineWidthPixels(width)); }
-    fn line_join(&mut self, join: LineJoin)                                         { self.pending.push(Draw::LineJoin(join)); }
-    fn line_cap(&mut self, cap: LineCap)                                            { self.pending.push(Draw::LineCap(cap)); }
-    fn winding_rule(&mut self, rule: WindingRule)                                   { self.pending.push(Draw::WindingRule(rule)); }
-    fn new_dash_pattern(&mut self)                                                  { self.pending.push(Draw::NewDashPattern); }
-    fn dash_length(&mut self, length: f32)                                          { self.pending.push(Draw::DashLength(length)); }
-    fn dash_offset(&mut self, offset: f32)                                          { self.pending.push(Draw::DashOffset(offset)); }
-    fn fill_color(&mut self, col: Color)                                            { self.pending.push(Draw::FillColor(col)); }
-    fn fill_texture(&mut self, t: TextureId, x1: f32, y1: f32, x2: f32, y2: f32)    { self.pending.push(Draw::FillTexture(t, (x1, y1), (x2, y2))); }
-    fn fill_gradient(&mut self, g: GradientId, x1: f32, y1: f32, x2: f32, y2: f32)  { self.pending.push(Draw::FillGradient(g, (x1, y1), (x2, y2))); }
-    fn fill_transform(&mut self, transform: Transform2D)                            { self.pending.push(Draw::FillTransform(transform)); }
-    fn stroke_color(&mut self, col: Color)                                          { self.pending.push(Draw::StrokeColor(col)); }
-    fn blend_mode(&mut self, mode: BlendMode)                                       { self.pending.push(Draw::BlendMode(mode)); }
-    fn identity_transform(&mut self)                                                { self.pending.push(Draw::IdentityTransform); }
-    fn canvas_height(&mut self, height: f32)                                        { self.pending.push(Draw::CanvasHeight(height)); }
-    fn center_region(&mut self, minx: f32, miny: f32, maxx: f32, maxy: f32)         { self.pending.push(Draw::CenterRegion((minx, miny), (maxx, maxy))); }
-    fn transform(&mut self, transform: Transform2D)                                 { self.pending.push(Draw::MultiplyTransform(transform)); }
-    fn unclip(&mut self)                                                            { self.pending.push(Draw::Unclip); }
-    fn clip(&mut self)                                                              { self.pending.push(Draw::Clip); }
-    fn store(&mut self)                                                             { self.pending.push(Draw::Store); }
-    fn restore(&mut self)                                                           { self.pending.push(Draw::Restore); }
-    fn free_stored_buffer(&mut self)                                                { self.pending.push(Draw::FreeStoredBuffer); }
-    fn push_state(&mut self)                                                        { self.pending.push(Draw::PushState); }
-    fn pop_state(&mut self)                                                         { self.pending.push(Draw::PopState); }
-    fn clear_canvas(&mut self, color: Color)                                        { self.pending.push(Draw::ClearCanvas(color)); }
-    fn layer(&mut self, layer_id: LayerId)                                          { self.pending.push(Draw::Layer(layer_id)); }
-    fn layer_blend(&mut self, layer_id: LayerId, blend_mode: BlendMode)             { self.pending.push(Draw::LayerBlend(layer_id, blend_mode)); }
-    fn clear_layer(&mut self)                                                       { self.pending.push(Draw::ClearLayer); }
-    fn clear_all_layers(&mut self)                                                  { self.pending.push(Draw::ClearAllLayers); }
-    fn swap_layers(&mut self, layer1: LayerId, layer2: LayerId)                     { self.pending.push(Draw::SwapLayers(layer1, layer2)); }
-    fn sprite(&mut self, sprite_id: SpriteId)                                       { self.pending.push(Draw::Sprite(sprite_id)); }
-    fn clear_sprite(&mut self)                                                      { self.pending.push(Draw::ClearSprite); }
-    fn sprite_transform(&mut self, transform: SpriteTransform)                      { self.pending.push(Draw::SpriteTransform(transform)); }
-    fn draw_sprite(&mut self, sprite_id: SpriteId)                                  { self.pending.push(Draw::DrawSprite(sprite_id)); }
-
-    fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>)                             { self.pending.push(Draw::Font(font_id, FontOp::UseFontDefinition(font_data))); }
-    fn set_font_size(&mut self, font_id: FontId, size: f32)                                                     { self.pending.push(Draw::Font(font_id, FontOp::FontSize(size))); }
-    fn draw_text(&mut self, font_id: FontId, text: String, baseline_x: f32, baseline_y: f32)                    { self.pending.push(Draw::DrawText(font_id, text, baseline_x, baseline_y)); }
-    fn draw_glyphs(&mut self, font_id: FontId, glyphs: Vec<GlyphPosition>)                                      { self.pending.push(Draw::Font(font_id, FontOp::DrawGlyphs(glyphs))); }
-    fn begin_line_layout(&mut self, x: f32, y: f32, align: TextAlignment)                                       { self.pending.push(Draw::BeginLineLayout(x, y, align)); }
-    fn layout_text(&mut self, font_id: FontId, text: String)                                                    { self.pending.push(Draw::Font(font_id, FontOp::LayoutText(text))); }
-    fn draw_text_layout(&mut self)                                                                              { self.pending.push(Draw::DrawLaidOutText); }
-
-    fn create_texture(&mut self, texture_id: TextureId, w: u32, h: u32, format: TextureFormat)                  { self.pending.push(Draw::Texture(texture_id, TextureOp::Create(w, h, format))); }
-    fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, w: u32, h: u32, bytes: Arc<Vec<u8>>) { self.pending.push(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))); }
-    fn free_texture(&mut self, texture_id: TextureId)                                                           { self.pending.push(Draw::Texture(texture_id, TextureOp::Free)); }
-    fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32)                                     { self.pending.push(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha))); }
-
-    fn create_gradient(&mut self, gradient_id: GradientId, initial_color: Color)                                { self.pending.push(Draw::Gradient(gradient_id, GradientOp::Create(initial_color))); }
-    fn gradient_stop(&mut self, gradient_id: GradientId, pos: f32, color: Color)                                { self.pending.push(Draw::Gradient(gradient_id, GradientOp::AddStop(pos, color))); }
-
     fn draw(&mut self, d: Draw)                                 { self.pending.push(d); }
 }
 
@@ -292,7 +219,12 @@ impl<'a> Drop for CanvasGraphicsContext<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::path::*;
+    use crate::font::*;
+    use crate::gradient::*;
+    use crate::font_face::*;
     use crate::primitives::*;
+    use crate::transform2d::*;
 
     use futures::prelude::*;
     use futures::executor;
