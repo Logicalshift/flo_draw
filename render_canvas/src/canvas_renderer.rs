@@ -181,6 +181,8 @@ impl CanvasRenderer {
 
         let viewport_width              = x.end-x.start;
         let viewport_height             = y.end-y.start;
+        let viewport_width              = if viewport_width < 1.0 { 1.0 } else { viewport_width };
+        let viewport_height             = if viewport_height < 1.0 { 1.0 } else { viewport_height };
 
         self.viewport_origin            = (x.start, y.start);
         self.window_scale               = scale;
