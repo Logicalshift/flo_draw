@@ -299,7 +299,7 @@ impl RenderCore {
 
         let core = self;
 
-        // Render the layer in reverse order (this is a stack, so operations are run in reverse order)
+        // Render the layer
         let mut render_order            = vec![];
         let mut active_transform        = canvas::Transform2D::identity();
         let mut layer                   = core.layer(layer_handle);
