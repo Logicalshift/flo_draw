@@ -1,5 +1,5 @@
 ```toml
-flo_draw = "0.3"
+flo_draw = "0.4"
 ```
 
 # flo_draw
