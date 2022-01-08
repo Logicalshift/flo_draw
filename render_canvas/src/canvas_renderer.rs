@@ -1284,6 +1284,7 @@ impl CanvasRenderer {
             vec![
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
+                render::RenderAction::SetTransform(render::Matrix::identity()),
                 render::RenderAction::Clear(background_color),
                 render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, 0, 0),
                 render::RenderAction::ShowFrameBuffer,
