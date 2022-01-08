@@ -234,7 +234,7 @@ fn clip_rect() {
         assert!(match rendering[2] { CreateIndexBuffer(_, _) => true, _ => false });
 
         // Then set up to render to the clip texture (render target 2)
-        assert!(match rendering[3] { SelectRenderTarget(RenderTargetId(2)) => true, _ => false });
+        assert!(match rendering[3] { SelectRenderTarget(RenderTargetId(1)) => true, _ => false });
         assert!(match rendering[4] { UseShader(render::ShaderType::Simple { clip_texture: None, erase_texture: None }) => true, _ => false });
         assert!(match rendering[5] { Clear(Rgba8([0,0,0,255])) => true, _ => false });
         assert!(match rendering[6] { BlendMode(render::BlendMode::AllChannelAlphaSourceOver) => true, _ => false });
@@ -245,7 +245,7 @@ fn clip_rect() {
 
         // Finally, resets the state for rendering to the main view with a clipping region (texture ID 2 has the clip region in it)
         assert!(match rendering[9] { SelectRenderTarget(RenderTargetId(0)) => true, _ => false });
-        assert!(match rendering[10] { BlendMode(render::BlendMode::DestinationOver) => true, _ => false });
+        assert!(match rendering[10] { BlendMode(render::BlendMode::SourceOver) => true, _ => false });
         assert!(match rendering[11] { UseShader(render::ShaderType::Simple { clip_texture: Some(render::TextureId(2)), erase_texture: None }) => true, _ => false });
         assert!(match rendering[12] { SetTransform(_) => true, _ => false });
 
