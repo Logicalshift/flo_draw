@@ -1259,7 +1259,7 @@ impl CanvasRenderer {
         } else { 
             vec![
                 render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
-                render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
+                render::RenderAction::BlendMode(render::BlendMode::SourceOver),
                 render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])),
                 render::RenderAction::SetTransform(viewport_matrix),
             ]

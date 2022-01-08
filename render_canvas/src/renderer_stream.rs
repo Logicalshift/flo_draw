@@ -305,7 +305,7 @@ impl RenderCore {
         let mut layer                   = core.layer(layer_handle);
 
         render_state.transform          = Some(viewport_transform);
-        render_state.blend_mode         = Some(render::BlendMode::DestinationOver);
+        render_state.blend_mode         = Some(render::BlendMode::SourceOver);
         render_state.render_target      = Some(MAIN_RENDER_TARGET);
         render_state.erase_mask         = Maybe::None;
         render_state.clip_mask          = Maybe::None;
