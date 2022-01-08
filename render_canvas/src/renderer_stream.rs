@@ -15,6 +15,7 @@ use futures::future::{BoxFuture};
 use std::mem;
 use std::pin::*;
 use std::sync::*;
+use std::collections::{VecDeque};
 
 ///
 /// Tri-state version of 'option' that supports 'Unknown' as well as None and Some
@@ -67,10 +68,10 @@ pub struct RenderStream<'a> {
     render_index: usize,
 
     /// Render actions waiting to be sent
-    pending_stack: Vec<render::RenderAction>,
+    pending: VecDeque<render::RenderAction>,
 
     /// The stack of operations to run when the rendering is complete (None if they've already been rendered)
-    final_stack: Option<Vec<render::RenderAction>>,
+    final_actions: Option<Vec<render::RenderAction>>,
 
     /// The transformation for the viewport
     viewport_transform: canvas::Transform2D
@@ -107,15 +108,15 @@ impl<'a> RenderStream<'a> {
     ///
     /// Creates a new render stream
     ///
-    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, frame_suspended: bool, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, background_vertex_buffer: render::VertexBufferId, initial_action_stack: Vec<render::RenderAction>, final_action_stack: Vec<render::RenderAction>) -> RenderStream<'a>
+    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, frame_suspended: bool, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, background_vertex_buffer: render::VertexBufferId, initial_actions: Vec<render::RenderAction>, final_actions: Vec<render::RenderAction>) -> RenderStream<'a>
     where   ProcessFuture: 'a+Send+Future<Output=()> {
         RenderStream {
             core:                       core,
             frame_suspended:            frame_suspended,
             background_vertex_buffer:   background_vertex_buffer,
             processing_future:          Some(processing_future.boxed()),
-            pending_stack:              initial_action_stack,
-            final_stack:                Some(final_action_stack),
+            pending:                    VecDeque::from(initial_actions),
+            final_actions:              Some(final_actions),
             viewport_transform:         viewport_transform,
             layer_id:                   0,
             render_index:               0
@@ -465,14 +466,9 @@ impl<'a> RenderStream<'a> {
         let render::Rgba8([br, bg, bb, ba]) = background_color;
 
         if ba > 0 {
-            let background_color = [br, bg, bb, ba];
-
-            self.pending_stack.extend(vec![
-                render::RenderAction::DrawTriangles(self.background_vertex_buffer, 0..6),
-                render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None, clip_texture: None }),
-                render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
-                render::RenderAction::SetTransform(render::Matrix::identity()),
-
+            // Create the actions to render the background colour
+            let background_color    = [br, bg, bb, ba];
+            let background_actions  = vec![
                 // Generate a full-screen quad
                 render::RenderAction::CreateVertex2DBuffer(self.background_vertex_buffer, vec![
                     render::Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: background_color },
@@ -482,8 +478,17 @@ impl<'a> RenderStream<'a> {
                     render::Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: background_color },
                     render::Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: background_color },
                     render::Vertex2D { pos: [-1.0, 1.0],    tex_coord: [0.0, 0.0], color: background_color },
-                ])
-            ]);
+                ]),
+
+                // Render the quad using the default blend mode
+                render::RenderAction::SetTransform(render::Matrix::identity()),
+                render::RenderAction::BlendMode(render::BlendMode::SourceOver),
+                render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None, clip_texture: None }),
+                render::RenderAction::DrawTriangles(self.background_vertex_buffer, 0..6),
+            ];
+
+            // Add to the end of the queue
+            self.pending.extend(background_actions);
         }
     }
 }
@@ -493,9 +498,8 @@ impl<'a> Stream for RenderStream<'a> {
 
     fn poll_next(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<render::RenderAction>> { 
         // Return the next pending action if there is one
-        if self.pending_stack.len() > 0 {
-            // Note that pending is a stack, so the items are returned in reverse
-            return Poll::Ready(self.pending_stack.pop());
+        if self.pending.len() > 0 {
+            return Poll::Ready(self.pending.pop_front());
         }
 
         // Poll the tessellation process if it's still running
@@ -516,10 +520,10 @@ impl<'a> Stream for RenderStream<'a> {
                 let (setup_actions, release_textures)   = self.core.sync(|core| (mem::take(&mut core.setup_actions), core.free_unused_textures()));
                 
                 // TODO: would be more memory efficient to release the textures first, but it's possible for the texture setup to create and never use a texture that is then released...
-                self.pending_stack.extend(release_textures);
-                self.pending_stack.extend(setup_actions.into_iter().rev());
+                self.pending.extend(setup_actions.into_iter());
+                self.pending.extend(release_textures);
 
-                if let Some(next) = self.pending_stack.pop() {
+                if let Some(next) = self.pending.pop_front() {
                     return Poll::Ready(Some(next));
                 }
             }
@@ -527,9 +531,9 @@ impl<'a> Stream for RenderStream<'a> {
 
         // We've generated all the vertex buffers: if frame rendering is suspended, stop here
         if self.frame_suspended {
-            if let Some(final_actions) = self.final_stack.take() {
-                self.pending_stack = final_actions;
-                return Poll::Ready(self.pending_stack.pop());
+            if let Some(final_actions) = self.final_actions.take() {
+                self.pending = final_actions.into();
+                return Poll::Ready(self.pending.pop_front());
             } else {
                 return Poll::Ready(None);
             }
@@ -547,14 +551,14 @@ impl<'a> Stream for RenderStream<'a> {
             layer_id -= 1;
 
             self.core.sync(|core| {
-                // Send any pending vertex buffers, then render the layer (note that the rendering is a stack, so the vertex buffers go on the end)
+                // Send any pending vertex buffers, then render the layer
                 let layer_handle        = core.layers[layer_id];
                 let send_vertex_buffers = core.send_vertex_buffers(layer_handle);
                 let mut render_state    = RenderStreamState::new();
 
                 let mut render_layer    = core.render_layer(viewport_transform, layer_handle, &mut render_state);
-                render_layer.extend(render_state.update_from_state(&RenderStreamState::new()));
                 render_layer.extend(send_vertex_buffers);
+                render_layer.extend(render_state.update_from_state(&RenderStreamState::new()));
 
                 Some(render_layer)
             })
@@ -565,14 +569,14 @@ impl<'a> Stream for RenderStream<'a> {
 
         // Add the result to the pending queue
         if let Some(result) = result {
-            // There are more actions to add to the pending stack
-            self.pending_stack = result;
-            return Poll::Ready(self.pending_stack.pop());
-        } else if let Some(final_actions) = self.final_stack.take() {
+            // There are more actions to add to the pending actions
+            self.pending = result.into();
+            return Poll::Ready(self.pending.pop_front());
+        } else if let Some(final_actions) = self.final_actions.take() {
             // There are no more drawing actions, but we have a set of final post-render instructions to execute
-            self.pending_stack = final_actions;
+            self.pending = final_actions.into();
             self.render_background();
-            return Poll::Ready(self.pending_stack.pop());
+            return Poll::Ready(self.pending.pop_front());
         } else {
             // No further actions if the result was empty
             return Poll::Ready(None);
