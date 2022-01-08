@@ -12,9 +12,6 @@ use std::sync::*;
 ///
 /// A graphics context provides the basic set of graphics actions that can be performed
 ///
-/// This trait contains default implementations for all of the operations that call `draw()` as well as an implementation of `draw()`
-/// that calls the default implementations. Inheritors should either implement 'draw' or implement all of the operations.
-///
 pub trait GraphicsContext {
     /// Suspends rendering to the display until the next 'ShowFrame'
     ///
@@ -268,74 +265,7 @@ pub trait GraphicsContext {
 
 
     /// Sends a single drawing instruction to this graphics context
-    fn draw(&mut self, d: Draw) {
-        use self::Draw::*;
-        use self::PathOp::*;
-
-        match d {
-            StartFrame                                                  => self.start_frame(),
-            ShowFrame                                                   => self.show_frame(),
-            ResetFrame                                                  => self.reset_frame(),
-            Path(NewPath)                                               => self.new_path(),
-            Path(Move(x, y))                                            => self.move_to(x, y),
-            Path(Line(x, y) )                                           => self.line_to(x, y),
-            Path(BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x1, y1)))   => self.bezier_curve_to(x1, y1, cp1x, cp1y, cp2x, cp2y),
-            Path(ClosePath)                                             => self.close_path(),
-            Fill                                                        => self.fill(),
-            Stroke                                                      => self.stroke(),
-            LineWidth(width)                                            => self.line_width(width),
-            LineWidthPixels(width)                                      => self.line_width_pixels(width),
-            LineJoin(join)                                              => self.line_join(join),
-            LineCap(cap)                                                => self.line_cap(cap),
-            WindingRule(rule)                                           => self.winding_rule(rule),
-            NewDashPattern                                              => self.new_dash_pattern(),
-            DashLength(dash_length)                                     => self.dash_length(dash_length),
-            DashOffset(dash_offset)                                     => self.dash_offset(dash_offset),
-            FillColor(col)                                              => self.fill_color(col),
-            FillTexture(texture, (x1, y1), (x2, y2))                    => self.fill_texture(texture, x1, y1, x2, y2),
-            FillGradient(gradient, (x1, y1), (x2, y2))                  => self.fill_gradient(gradient, x1, y1, x2, y2),
-            FillTransform(transform)                                    => self.fill_transform(transform),
-            StrokeColor(col)                                            => self.stroke_color(col),
-            BlendMode(blendmode)                                        => self.blend_mode(blendmode),
-            IdentityTransform                                           => self.identity_transform(),
-            CanvasHeight(height)                                        => self.canvas_height(height),
-            CenterRegion((minx, miny), (maxx, maxy))                    => self.center_region(minx, miny, maxx, maxy),
-            MultiplyTransform(transform)                                => self.transform(transform),
-            Unclip                                                      => self.unclip(),
-            Clip                                                        => self.clip(),
-            Store                                                       => self.store(),
-            Restore                                                     => self.restore(),
-            FreeStoredBuffer                                            => self.free_stored_buffer(),
-            PushState                                                   => self.push_state(),
-            PopState                                                    => self.pop_state(),
-            ClearCanvas(color)                                          => self.clear_canvas(color),
-            Layer(layer_id)                                             => self.layer(layer_id),
-            LayerBlend(layer_id, blend_mode)                            => self.layer_blend(layer_id, blend_mode),
-            ClearLayer                                                  => self.clear_layer(),
-            ClearAllLayers                                              => self.clear_all_layers(),
-            SwapLayers(layer1, layer2)                                  => self.swap_layers(layer1, layer2),
-            Sprite(sprite_id)                                           => self.sprite(sprite_id),
-            ClearSprite                                                 => self.clear_sprite(),
-            SpriteTransform(transform)                                  => self.sprite_transform(transform),
-            DrawSprite(sprite_id)                                       => self.draw_sprite(sprite_id),
-
-            Font(font_id, FontOp::UseFontDefinition(font_data))                     => self.define_font_data(font_id, font_data),
-            Font(font_id, FontOp::FontSize(font_size))                              => self.set_font_size(font_id, font_size),
-            Font(font_id, FontOp::LayoutText(text))                                 => self.layout_text(font_id, text),
-            Font(font_id, FontOp::DrawGlyphs(glyphs))                               => self.draw_glyphs(font_id, glyphs),
-            DrawText(font_id, string, x, y)                                         => self.draw_text(font_id, string, x, y),
-            BeginLineLayout(x, y, alignment)                                        => self.begin_line_layout(x, y, alignment),
-            DrawLaidOutText                                                         => self.draw_text_layout(),
-            
-            Texture(texture_id, TextureOp::Create(width, height, format))           => self.create_texture(texture_id, width, height, format),
-            Texture(texture_id, TextureOp::Free)                                    => self.free_texture(texture_id),
-            Texture(texture_id, TextureOp::SetBytes(x, y, w, h, bytes))             => self.set_texture_bytes(texture_id, x, y, w, h, bytes),
-            Texture(texture_id, TextureOp::FillTransparency(alpha))                 => self.set_texture_fill_alpha(texture_id, alpha),
-
-            Gradient(gradient_id, GradientOp::Create(initial_color))                => self.create_gradient(gradient_id, initial_color),
-            Gradient(gradient_id, GradientOp::AddStop(pos, color))                  => self.gradient_stop(gradient_id, pos, color)
-        }
-    }
+    fn draw(&mut self, d: Draw);
 }
 
 ///
