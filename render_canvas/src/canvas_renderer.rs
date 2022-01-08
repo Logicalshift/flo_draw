@@ -644,27 +644,7 @@ impl CanvasRenderer {
                     // Set how future renderings are blended with one another
                     BlendMode(blend_mode) => {
                         core.sync(|core| {
-                            use canvas::BlendMode::*;
                             core.layer(self.current_layer).state.blend_mode = blend_mode;
-
-                            let blend_mode = match blend_mode {
-                                SourceOver      => render::BlendMode::DestinationOver,
-                                DestinationOver => render::BlendMode::SourceOver,
-                                DestinationOut  => render::BlendMode::DestinationOut,
-
-                                // TODO: these blend modes aren't supported yet
-                                SourceIn        |
-                                SourceOut       |
-                                DestinationIn   |
-                                SourceAtop      |
-                                DestinationAtop |
-
-                                Multiply        |
-                                Screen          |
-                                Darken          |
-                                Lighten         => render::BlendMode::DestinationOver
-                            };
-
                             core.layer(self.current_layer).render_order.push(RenderEntity::SetBlendMode(blend_mode));
                         });
                     }
