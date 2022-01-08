@@ -303,6 +303,7 @@ impl RenderCore {
         let mut render_order            = vec![];
         let mut active_transform        = canvas::Transform2D::identity();
         let mut layer                   = core.layer(layer_handle);
+        let initial_state               = render_state.clone();
 
         render_state.transform          = Some(viewport_transform);
         render_state.blend_mode         = Some(render::BlendMode::SourceOver);
@@ -311,6 +312,9 @@ impl RenderCore {
         render_state.clip_mask          = Maybe::None;
         render_state.clip_buffers       = Some(vec![]);
         render_state.shader_modifier    = Some(ShaderModifier::Simple);
+
+        // Update to the new state for this layer
+        render_order.extend(render_state.update_from_state(&initial_state));
 
         for render_idx in 0..layer.render_order.len() {
             match &layer.render_order[render_idx] {
