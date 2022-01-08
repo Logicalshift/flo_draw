@@ -1258,21 +1258,21 @@ impl CanvasRenderer {
             vec![]
         } else { 
             vec![
-                render::RenderAction::SetTransform(viewport_matrix),
-                render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])),
-                render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
                 render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
+                render::RenderAction::BlendMode(render::BlendMode::DestinationOver),
+                render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])),
+                render::RenderAction::SetTransform(viewport_matrix),
             ]
         };
 
         // Initialise the default render target
-        initialise.push(render::RenderAction::CreateRenderTarget(MAIN_RENDER_TARGET, MAIN_RENDER_TEXTURE, 
+        initialise.insert(0, render::RenderAction::CreateRenderTarget(MAIN_RENDER_TARGET, MAIN_RENDER_TEXTURE, 
             self.viewport_size.0 as usize,
             self.viewport_size.1 as usize,
             RenderTargetType::Multisampled));
 
         // And the 'clip mask' render surface (render target 2, texture 2)
-        initialise.push(render::RenderAction::CreateRenderTarget(CLIP_RENDER_TARGET, CLIP_RENDER_TEXTURE,
+        initialise.insert(0, render::RenderAction::CreateRenderTarget(CLIP_RENDER_TARGET, CLIP_RENDER_TEXTURE,
             self.viewport_size.0 as usize,
             self.viewport_size.1 as usize,
             RenderTargetType::MonochromeMultisampledTexture));
@@ -1282,16 +1282,16 @@ impl CanvasRenderer {
             vec![]
         } else {
             vec![
-                render::RenderAction::FreeTexture(CLIP_RENDER_TEXTURE),
-                render::RenderAction::FreeTexture(MAIN_RENDER_TEXTURE),
-                render::RenderAction::FreeRenderTarget(CLIP_RENDER_TARGET),
-                render::RenderAction::FreeRenderTarget(MAIN_RENDER_TARGET),
-
-                render::RenderAction::ShowFrameBuffer,
-                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, 0, 0),
-                render::RenderAction::Clear(background_color),
-                render::RenderAction::BlendMode(render::BlendMode::SourceOver),
                 render::RenderAction::RenderToFrameBuffer,
+                render::RenderAction::BlendMode(render::BlendMode::SourceOver),
+                render::RenderAction::Clear(background_color),
+                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, 0, 0),
+                render::RenderAction::ShowFrameBuffer,
+
+                render::RenderAction::FreeRenderTarget(MAIN_RENDER_TARGET),
+                render::RenderAction::FreeRenderTarget(CLIP_RENDER_TARGET),
+                render::RenderAction::FreeTexture(MAIN_RENDER_TEXTURE),
+                render::RenderAction::FreeTexture(CLIP_RENDER_TEXTURE),
             ]
         };
 
