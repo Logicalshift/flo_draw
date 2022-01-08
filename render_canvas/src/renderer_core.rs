@@ -264,8 +264,8 @@ impl RenderCore {
 
                 // Send the vertices and indices to the rendering engine
                 vec![
-                    render::RenderAction::CreateIndexBuffer(render::IndexBufferId(buffer_id), vertices.indices),
                     render::RenderAction::CreateVertex2DBuffer(render::VertexBufferId(buffer_id), vertices.vertices),
+                    render::RenderAction::CreateIndexBuffer(render::IndexBufferId(buffer_id), vertices.indices),
                 ]
             }
 
