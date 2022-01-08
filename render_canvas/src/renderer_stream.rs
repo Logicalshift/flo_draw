@@ -70,7 +70,7 @@ pub struct RenderStream<'a> {
     /// Render actions waiting to be sent
     pending: VecDeque<render::RenderAction>,
 
-    /// The stack of operations to run when the rendering is complete (None if they've already been rendered)
+    /// The operations to run when the rendering is complete (None if they've already been rendered)
     final_actions: Option<Vec<render::RenderAction>>,
 
     /// The transformation for the viewport
@@ -201,16 +201,44 @@ impl RenderStreamState {
     }
 
     ///
-    /// Returns the render actions needed to update from the specified state to this state (in reverse order, for replaying as a render stack)
+    /// Returns the render actions needed to update from the specified state to this state
     ///
     fn update_from_state(&self, from: &RenderStreamState) -> Vec<render::RenderAction> {
         let mut updates = vec![];
         let mut reset_render_target = false;
 
-        // If the clip buffers are different, make sure we reset the render target state (note that updates are run in reverse order!)
+        // Update the content of the clip mask render target
+        if let (Some(clip_buffers), Some(transform)) = (&self.clip_buffers, self.transform) {
+            if Some(clip_buffers) != from.clip_buffers.as_ref() && clip_buffers.len() > 0 {
+                let render_clip_buffers = clip_buffers.iter()
+                    .rev()
+                    .map(|(vertices, indices, length)| render::RenderAction::DrawIndexedTriangles(*vertices, *indices, *length));
+
+                // Set up to render the clip buffers
+                updates.extend(vec![
+                    render::RenderAction::SelectRenderTarget(CLIP_RENDER_TARGET),
+                    render::RenderAction::UseShader(render::ShaderType::Simple { clip_texture: None, erase_texture: None }),
+                    render::RenderAction::Clear(render::Rgba8([0,0,0,255])),
+                    render::RenderAction::BlendMode(render::BlendMode::AllChannelAlphaSourceOver),
+                    render::RenderAction::SetTransform(transform_to_matrix(&transform)),
+                ]);
+
+                // Render the clip buffers once the state is set up
+                updates.extend(render_clip_buffers);
+            }
+        }
+
+        // If the clip buffers are different, make sure we reset the render target state
         if let Some(clip_buffers) = &self.clip_buffers {
             if Some(clip_buffers) != from.clip_buffers.as_ref() && clip_buffers.len() > 0 {
                 reset_render_target = true;
+            }
+        }
+
+        // Choose the render target
+        if let Some(render_target) = self.render_target {
+            if Some(render_target) != from.render_target || reset_render_target {
+                updates.push(render::RenderAction::SelectRenderTarget(render_target));
             }
         }
 
@@ -255,34 +283,6 @@ impl RenderStreamState {
         if let Some(blend_mode) = self.blend_mode {
             if Some(blend_mode) != from.blend_mode || (self.render_target != from.render_target && self.render_target.is_some()) || reset_render_target {
                 updates.push(render::RenderAction::BlendMode(blend_mode));
-            }
-        }
-
-        // Choose the render target
-        if let Some(render_target) = self.render_target {
-            if Some(render_target) != from.render_target || reset_render_target {
-                updates.push(render::RenderAction::SelectRenderTarget(render_target));
-            }
-        }
-
-        // Update the content of the clip mask render target
-        if let (Some(clip_buffers), Some(transform)) = (&self.clip_buffers, self.transform) {
-            if Some(clip_buffers) != from.clip_buffers.as_ref() && clip_buffers.len() > 0 {
-                let render_clip_buffers = clip_buffers.iter()
-                    .rev()
-                    .map(|(vertices, indices, length)| render::RenderAction::DrawIndexedTriangles(*vertices, *indices, *length));
-
-                // Render the clip buffers once the state is set up (note: actions running in reverse!)
-                updates.extend(render_clip_buffers);
-
-                // Set up to render the clip buffers
-                updates.extend(vec![
-                    render::RenderAction::SetTransform(transform_to_matrix(&transform)),
-                    render::RenderAction::BlendMode(render::BlendMode::AllChannelAlphaSourceOver),
-                    render::RenderAction::Clear(render::Rgba8([0,0,0,255])),
-                    render::RenderAction::UseShader(render::ShaderType::Simple { clip_texture: None, erase_texture: None }),
-                    render::RenderAction::SelectRenderTarget(CLIP_RENDER_TARGET)
-                ]);
             }
         }
 
