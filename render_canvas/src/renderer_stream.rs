@@ -332,6 +332,11 @@ impl RenderCore {
                     panic!("Tessellation is not complete (found unexpected vertex buffer in layer)");
                 },
 
+                DrawIndexed(vertex_buffer, index_buffer, num_items) => {
+                    // Draw the triangles
+                    render_layer_stack.push(render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items));
+                },
+
                 RenderSprite(sprite_id, sprite_transform) => { 
                     let sprite_id           = *sprite_id;
                     let sprite_transform    = *sprite_transform;
@@ -384,11 +389,6 @@ impl RenderCore {
 
                     // Update to the new state
                     render_layer_stack.extend(render_state.update_from_state(&old_state));
-                },
-
-                DrawIndexed(vertex_buffer, index_buffer, num_items) => {
-                    // Draw the triangles
-                    render_layer_stack.push(render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items));
                 },
 
                 EnableClipping(vertex_buffer, index_buffer, buffer_size) => {
