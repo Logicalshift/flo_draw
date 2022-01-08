@@ -16,7 +16,7 @@ async fn check_layer_preamble<S: Unpin+Stream<Item=RenderAction>>(stream: &mut S
 
     let set_blend_mode = stream.next().await;
     println!("{:?}", set_blend_mode);
-    assert!(match set_blend_mode { Some(RenderAction::BlendMode(render::BlendMode::DestinationOver)) => true, _ => false });
+    assert!(match set_blend_mode { Some(RenderAction::BlendMode(render::BlendMode::SourceOver)) => true, _ => false });
 
     let use_shader = stream.next().await;
     println!("{:?}", use_shader);
