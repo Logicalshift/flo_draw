@@ -511,7 +511,6 @@ impl<'a> Stream for RenderStream<'a> {
                 return Poll::Pending;
             } else {
                 // Finished processing the rendering: can send the actual rendering commands to the hardware layer
-                // Layers are rendered in reverse order
                 self.processing_future  = None;
                 self.layer_id           = self.core.sync(|core| core.layers.len());
                 self.render_index       = 0;
