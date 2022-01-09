@@ -301,7 +301,7 @@ impl RenderCore {
     fn render_layer(&mut self, viewport_transform: canvas::Transform2D, layer_handle: LayerHandle, render_state: &mut RenderStreamState) -> Vec<render::RenderAction> {
         use self::RenderEntity::*;
 
-        let core = self;
+        let core                        = self;
 
         // Render the layer
         let mut render_order            = vec![];
@@ -320,6 +320,7 @@ impl RenderCore {
 
         // Commit the layer to the render buffer if needed
         if layer.state.commit_before_rendering && !is_first_layer {
+            // TODO: use the appropriate blend mode for the underlying layer
             render_order.extend(vec![
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
@@ -468,6 +469,32 @@ impl RenderCore {
                     // Update to the new state
                     render_order.extend(render_state.update_from_state(&old_state));
                 }
+            }
+        }
+
+        // If the layer has 'commit after rendering' and the next layer does not have 'commit before rendering', then commit what we just rendered
+        if layer.state.commit_after_rendering {
+            let layer_index         = core.layers.iter().position(|layer| layer == &layer_handle);
+            let next_layer_index    = layer_index.and_then(|idx| if idx+1 < core.layers.len() { Some(idx+1) } else { None });
+
+            // The last layer will cause us to commit anyway, so we don't 'commit after rendering'
+            // TODO: ... unless the blend mode requires it as this will always commit 'source over'
+            let is_last_layer       = layer_index == Some(core.layers.len()-1);
+
+            // If the next layer has 'commit before rendering', then we don't need to commit here (we'll commit instead when the next layer starts rendering)
+            let next_layer_commits  = next_layer_index.map(|idx| core.layer(core.layers[idx]).state.commit_before_rendering);
+            let next_layer_commits  = next_layer_commits.unwrap_or(false);
+
+            if !is_last_layer && !next_layer_commits {
+                // TODO: blend mode for the layer as a whole
+                render_order.extend(vec![
+                    render::RenderAction::RenderToFrameBuffer,
+                    render::RenderAction::BlendMode(render::BlendMode::SourceOver),
+                    render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, 0, 0),
+
+                    render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
+                    render::RenderAction::Clear(render::Rgba8([0,0,0,0]))
+                ]);
             }
         }
 
