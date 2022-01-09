@@ -1263,7 +1263,6 @@ impl CanvasRenderer {
         let rendering_suspended = self.core.sync(|core| core.frame_starts > 0);
 
         // Set up the initial set of rendering actions
-        let background_color    = self.core.sync(|core| core.background_color);
         let viewport_transform  = self.viewport_transform;
         let viewport_matrix     = transform_to_matrix(&self.viewport_transform);
         let mut initialise      = if rendering_suspended {
@@ -1297,7 +1296,6 @@ impl CanvasRenderer {
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
                 render::RenderAction::SetTransform(render::Matrix::identity()),
-                render::RenderAction::Clear(background_color),
                 render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, 0, 0),
                 render::RenderAction::ShowFrameBuffer,
 

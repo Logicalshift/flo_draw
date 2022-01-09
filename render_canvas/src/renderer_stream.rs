@@ -317,6 +317,18 @@ impl RenderCore {
         render_state.clip_buffers       = Some(vec![]);
         render_state.shader_modifier    = Some(ShaderModifier::Simple);
 
+        // Commit the layer to the render buffer if needed
+        if layer.state.commit_before_rendering {
+            render_order.extend(vec![
+                render::RenderAction::RenderToFrameBuffer,
+                render::RenderAction::BlendMode(render::BlendMode::SourceOver),
+                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, 0, 0),
+
+                render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
+                render::RenderAction::Clear(render::Rgba8([0,0,0,0]))
+            ]);
+        }
+
         // Update to the new state for this layer
         render_order.extend(render_state.update_from_state(&initial_state));
 
