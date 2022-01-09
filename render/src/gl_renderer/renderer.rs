@@ -524,57 +524,56 @@ impl GlRenderer {
 
         self.render_targets[source_buffer].as_ref().map(|source_buffer| {
             unsafe {
-                // Activate the resolving program
-                gl::UseProgram(**shader);
+                if let Some(texture) = source_buffer.texture() {
+                    // Activate the resolving program
+                    gl::UseProgram(**shader);
 
-                // Set the texture for the render buffer
-                let texture = source_buffer.texture().unwrap();
+                    // Set the texture for the render buffer
+                    gl::ActiveTexture(gl::TEXTURE0);
+                    gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, *texture);
 
-                gl::ActiveTexture(gl::TEXTURE0);
-                gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, *texture);
+                    shader.uniform_location(MsaaAttribute::Texture, "t_SourceTexture")
+                        .map(|source_texture| {
+                            gl::Uniform1i(source_texture, 0);
+                        });
 
-                shader.uniform_location(MsaaAttribute::Texture, "t_SourceTexture")
-                    .map(|source_texture| {
-                        gl::Uniform1i(source_texture, 0);
-                    });
+                    // Create the vertices for the two triangles making up the screen
+                    let vertices            = vec![
+                        Vertex2D::with_pos(-1.0, -1.0), Vertex2D::with_pos( 1.0, -1.0), Vertex2D::with_pos(-1.0, 1.0),
+                        Vertex2D::with_pos( 1.0, -1.0), Vertex2D::with_pos(-1.0,  1.0), Vertex2D::with_pos( 1.0, 1.0),
+                    ];
+                    let mut buffer          = Buffer::new();
+                    let vertex_array        = VertexArray::new();
+                    buffer.static_draw(&vertices);
 
-                // Create the vertices for the two triangles making up the screen
-                let vertices            = vec![
-                    Vertex2D::with_pos(-1.0, -1.0), Vertex2D::with_pos( 1.0, -1.0), Vertex2D::with_pos(-1.0, 1.0),
-                    Vertex2D::with_pos( 1.0, -1.0), Vertex2D::with_pos(-1.0,  1.0), Vertex2D::with_pos( 1.0, 1.0),
-                ];
-                let mut buffer          = Buffer::new();
-                let vertex_array        = VertexArray::new();
-                buffer.static_draw(&vertices);
+                    // Bind a vertex array object to it
+                    gl::BindVertexArray(*vertex_array);
+                    gl::BindBuffer(gl::ARRAY_BUFFER, *buffer);
 
-                // Bind a vertex array object to it
-                gl::BindVertexArray(*vertex_array);
-                gl::BindBuffer(gl::ARRAY_BUFFER, *buffer);
+                    Vertex2D::define_attributes();
 
-                Vertex2D::define_attributes();
+                    // Clear the bindings
+                    gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+                    gl::BindVertexArray(0);
 
-                // Clear the bindings
-                gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-                gl::BindVertexArray(0);
+                    // Render a quad filling the screen
+                    gl::BindVertexArray(*vertex_array);
+                    gl::DrawArrays(gl::TRIANGLES, 0, 6);
 
-                // Render a quad filling the screen
-                gl::BindVertexArray(*vertex_array);
-                gl::DrawArrays(gl::TRIANGLES, 0, 6);
+                    gl::BindVertexArray(0);
 
-                gl::BindVertexArray(0);
+                    // TODO: finish up by resetting the shader
+                } else {
+                    // Blit the framebuffer if we're using a renderbuffer directly instead of a backing texture (won't blend)
+                    let (width, height) = source_buffer.get_size();
+                    let width           = width as i32;
+                    let height          = height as i32;
 
-                /*
-                // TODO: to get the background colour to show up properly, need to draw using the frame buffer texture
-                let (width, height) = source_buffer.get_size();
-                let width           = width as i32;
-                let height          = height as i32;
-
-                gl::BindFramebuffer(gl::READ_FRAMEBUFFER, **source_buffer);
-                gl::BlitFramebuffer(0, 0, width, height, x, y, x+width, y+height, gl::COLOR_BUFFER_BIT, gl::NEAREST);
-                */
+                    gl::BindFramebuffer(gl::READ_FRAMEBUFFER, **source_buffer);
+                    gl::BlitFramebuffer(0, 0, width, height, x, y, x+width, y+height, gl::COLOR_BUFFER_BIT, gl::NEAREST);
+                }
 
                 // Finish up by checking for errors
-                // TODO: also finish up by resetting the shader
                 panic_on_gl_error("Draw frame buffer");
             }
         });
