@@ -306,6 +306,7 @@ impl RenderCore {
         // Render the layer
         let mut render_order            = vec![];
         let mut active_transform        = canvas::Transform2D::identity();
+        let is_first_layer              = core.layers[0] == layer_handle;
         let mut layer                   = core.layer(layer_handle);
         let initial_state               = render_state.clone();
 
@@ -318,7 +319,7 @@ impl RenderCore {
         render_state.shader_modifier    = Some(ShaderModifier::Simple);
 
         // Commit the layer to the render buffer if needed
-        if layer.state.commit_before_rendering {
+        if layer.state.commit_before_rendering && !is_first_layer {
             render_order.extend(vec![
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
