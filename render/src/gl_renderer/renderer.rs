@@ -4,6 +4,7 @@ use super::shader::*;
 use super::texture::*;
 use super::vertex_array::*;
 use super::render_target::*;
+use super::shader_program::*;
 use super::shader_uniforms::*;
 use super::shader_collection::*;
 
@@ -12,6 +13,14 @@ use crate::buffer::*;
 
 use std::ptr;
 use std::ops::{Range};
+
+///
+/// Attributes for the MSAA shader program
+///
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+enum MsaaAttribute {
+    Texture
+}
 
 ///
 /// OpenGL action renderer
@@ -51,7 +60,7 @@ pub struct GlRenderer {
     gradient_shader: ShaderCollection<ShaderUniform>,
 
     /// Used when resolving the MSAA texture to the main canvas
-    msaa4_resolve_shader: Shader
+    msaa4_resolve_shader: ShaderProgram<MsaaAttribute>
 }
 
 impl GlRenderer {
@@ -66,6 +75,7 @@ impl GlRenderer {
         let texture_fragment                    = String::from_utf8(include_bytes!["../../shaders/texture/texture.glslf"].to_vec()).unwrap();
         let gradient_vertex                     = String::from_utf8(include_bytes!["../../shaders/texture/gradient.glslv"].to_vec()).unwrap();
         let gradient_fragment                   = String::from_utf8(include_bytes!["../../shaders/texture/gradient.glslf"].to_vec()).unwrap();
+        let msaa_vertex                         = String::from_utf8(include_bytes!["../../shaders/simple/resolve.glslv"].to_vec()).unwrap();
         let msaa4_resolve                       = String::from_utf8(include_bytes!["../../shaders/simple/multisample_resolve_4.glslf"].to_vec()).unwrap();
 
         let simple_shader                       = ShaderCollection::new(&simple_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &simple_fragment, vec![]);
@@ -73,7 +83,9 @@ impl GlRenderer {
         let texture_shader                      = ShaderCollection::new(&texture_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &texture_fragment, vec![]);
         let gradient_shader                     = ShaderCollection::new(&gradient_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &gradient_fragment, vec![]);
 
-        let msaa4_resolve_shader                = Shader::compile(&msaa4_resolve, GlShaderType::Fragment, vec![]);
+        let msaa4_resolve_fragment              = Shader::compile(&msaa4_resolve, GlShaderType::Fragment, vec![]);
+        let msaa4_resolve_vertex                = Shader::compile(&msaa_vertex, GlShaderType::Vertex, vec![]);
+        let msaa4_resolve_shader                = ShaderProgram::from_shaders(vec![msaa4_resolve_vertex, msaa4_resolve_fragment]);
 
         GlRenderer {
             buffers:                        vec![],
@@ -508,8 +520,52 @@ impl GlRenderer {
     /// Draws a frame buffer at a location
     ///
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, x: i32, y: i32) {
+        let shader = &mut self.msaa4_resolve_shader;
+
         self.render_targets[source_buffer].as_ref().map(|source_buffer| {
             unsafe {
+                // Activate the resolving program
+                gl::UseProgram(**shader);
+
+                // Set the texture for the render buffer
+                let texture = source_buffer.texture().unwrap();
+
+                gl::ActiveTexture(gl::TEXTURE0);
+                gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, *texture);
+
+                shader.uniform_location(MsaaAttribute::Texture, "t_SourceTexture")
+                    .map(|source_texture| {
+                        gl::Uniform1i(source_texture, 0);
+                    });
+
+                // Create the vertices for the two triangles making up the screen
+                let vertices            = vec![
+                    Vertex2D::with_pos(-1.0, -1.0), Vertex2D::with_pos( 1.0, -1.0), Vertex2D::with_pos(-1.0, 1.0),
+                    Vertex2D::with_pos( 1.0, -1.0), Vertex2D::with_pos(-1.0,  1.0), Vertex2D::with_pos( 1.0, 1.0),
+                ];
+                let mut buffer          = Buffer::new();
+                let vertex_array        = VertexArray::new();
+                buffer.static_draw(&vertices);
+
+                unsafe {
+                    // Bind a vertex array object to it
+                    gl::BindVertexArray(*vertex_array);
+                    gl::BindBuffer(gl::ARRAY_BUFFER, *buffer);
+
+                    Vertex2D::define_attributes();
+
+                    // Clear the bindings
+                    gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+                    gl::BindVertexArray(0);
+                }
+
+                // Render a quad filling the screen
+                gl::BindVertexArray(*vertex_array);
+                gl::DrawArrays(gl::TRIANGLES, 0, 6);
+
+                gl::BindVertexArray(0);
+
+                /*
                 // TODO: to get the background colour to show up properly, need to draw using the frame buffer texture
                 let (width, height) = source_buffer.get_size();
                 let width           = width as i32;
@@ -517,6 +573,11 @@ impl GlRenderer {
 
                 gl::BindFramebuffer(gl::READ_FRAMEBUFFER, **source_buffer);
                 gl::BlitFramebuffer(0, 0, width, height, x, y, x+width, y+height, gl::COLOR_BUFFER_BIT, gl::NEAREST);
+                */
+
+                // Finish up by checking for errors
+                // TODO: also finish up by resetting the shader
+                panic_on_gl_error("Draw frame buffer");
             }
         });
     }
