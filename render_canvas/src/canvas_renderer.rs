@@ -240,15 +240,17 @@ impl CanvasRenderer {
         Layer {
             render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             state:              LayerState {
-                is_sprite:          false,
-                fill_color:         FillState::Color(render::Rgba8([0, 0, 0, 255])),
-                winding_rule:       FillRule::NonZero,
-                stroke_settings:    StrokeSettings::new(),
-                current_matrix:     canvas::Transform2D::identity(),
-                sprite_matrix:      canvas::Transform2D::identity(),
-                scale_factor:       1.0,
-                blend_mode:         canvas::BlendMode::SourceOver,
-                restore_point:      None
+                is_sprite:                  false,
+                fill_color:                 FillState::Color(render::Rgba8([0, 0, 0, 255])),
+                winding_rule:               FillRule::NonZero,
+                stroke_settings:            StrokeSettings::new(),
+                current_matrix:             canvas::Transform2D::identity(),
+                sprite_matrix:              canvas::Transform2D::identity(),
+                scale_factor:               1.0,
+                blend_mode:                 canvas::BlendMode::SourceOver,
+                commit_before_rendering:    false,
+                commit_after_rendering:     false,
+                restore_point:              None
             },
             stored_states:      vec![]
         }
@@ -411,6 +413,11 @@ impl CanvasRenderer {
                                 // Update the transformation matrix
                                 layer.update_transform(active_transform);
 
+                                // Rendering in a blend mode other than source over sets the 'commit before rendering' flag for this layer
+                                if layer.state.blend_mode != canvas::BlendMode::SourceOver {
+                                    layer.state.commit_before_rendering = true;
+                                }
+
                                 // If the shader state has changed, generate the operations needed to use that shader state
                                 if *fill_state != layer.state.fill_color {
                                     // Update the active fill state to match that of the layer
@@ -508,6 +515,11 @@ impl CanvasRenderer {
 
                             let job         = core.sync(move |core| {
                                 let layer               = core.layer(layer_id);
+
+                                // Rendering in a blend mode other than source over sets the 'commit before rendering' flag for this layer
+                                if layer.state.blend_mode != canvas::BlendMode::SourceOver {
+                                    layer.state.commit_before_rendering = true;
+                                }
 
                                 // Update the transformation matrix
                                 layer.update_transform(active_transform);
