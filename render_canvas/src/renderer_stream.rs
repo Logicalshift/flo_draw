@@ -64,6 +64,9 @@ pub struct RenderStream<'a> {
     /// The current layer ID that we're processing
     layer_id: usize,
 
+    /// The total number of layers in the core
+    layer_count: usize,
+
     /// The render entity within the layer that we're processing
     render_index: usize,
 
@@ -119,6 +122,7 @@ impl<'a> RenderStream<'a> {
             final_actions:              Some(final_actions),
             viewport_transform:         viewport_transform,
             layer_id:                   0,
+            layer_count:                0,
             render_index:               0
         }
     }
@@ -517,7 +521,7 @@ impl<'a> Stream for RenderStream<'a> {
             } else {
                 // Finished processing the rendering: can send the actual rendering commands to the hardware layer
                 self.processing_future  = None;
-                self.layer_id           = self.core.sync(|core| core.layers.len());
+                self.layer_count        = self.core.sync(|core| core.layers.len());
                 self.render_index       = 0;
 
                 // Perform any setup actions that might exist or have been generated before proceeding
@@ -547,14 +551,11 @@ impl<'a> Stream for RenderStream<'a> {
         let mut layer_id        = self.layer_id;
         let viewport_transform  = self.viewport_transform;
 
-        let result              = if layer_id == 0 {
+        let result              = if layer_id >= self.layer_count {
             // Stop if we've processed all the layers
             None
         } else {
-            // Move to the previous layer
-            layer_id -= 1;
-
-            self.core.sync(|core| {
+            let result = self.core.sync(|core| {
                 // Send any pending vertex buffers, then render the layer
                 let layer_handle        = core.layers[layer_id];
                 let send_vertex_buffers = core.send_vertex_buffers(layer_handle);
@@ -567,7 +568,12 @@ impl<'a> Stream for RenderStream<'a> {
                 render_layer.extend(RenderStreamState::new().update_from_state(&render_state));
 
                 Some(render_layer)
-            })
+            });
+
+            // Advance the layer ID
+            layer_id += 1;
+
+            result
         };
 
         // Update the layer ID to continue iterating
