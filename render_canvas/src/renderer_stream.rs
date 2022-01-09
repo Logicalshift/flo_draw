@@ -530,6 +530,7 @@ impl<'a> Stream for RenderStream<'a> {
                 // TODO: would be more memory efficient to release the textures first, but it's possible for the texture setup to create and never use a texture that is then released...
                 self.pending.extend(setup_actions.into_iter());
                 self.pending.extend(release_textures);
+                self.render_background();
 
                 if let Some(next) = self.pending.pop_front() {
                     return Poll::Ready(Some(next));
@@ -586,7 +587,6 @@ impl<'a> Stream for RenderStream<'a> {
             return Poll::Ready(self.pending.pop_front());
         } else if let Some(final_actions) = self.final_actions.take() {
             // There are no more drawing actions, but we have a set of final post-render instructions to execute
-            self.render_background();
             self.pending.extend(final_actions);
             return Poll::Ready(self.pending.pop_front());
         } else {
