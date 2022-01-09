@@ -143,3 +143,40 @@ pub enum RenderAction {
     ///
     DrawIndexedTriangles(VertexBufferId, IndexBufferId, usize)
 }
+
+impl RenderAction {
+    ///
+    /// Provides a description of this action without the full details (similar to using the Debug trait, but won't show the full list of vertices)
+    ///
+    pub fn short_description(&self) -> String {
+        use self::RenderAction::*;
+
+        match self {
+            SetTransform(matrix)                                            => format!("SetTransform({:?})", matrix),
+            CreateVertex2DBuffer(buffer_id, vertices)                       => format!("CreateVertex2DBuffer({:?}, [{} vertices])", buffer_id, vertices.len()),
+            CreateIndexBuffer(buffer_id, indexes)                           => format!("CreateIndexBuffer({:?}, [{} indexes])", buffer_id, indexes.len()),
+            FreeVertexBuffer(buffer_id)                                     => format!("FreeVertexBuffer({:?})", buffer_id),
+            FreeIndexBuffer(buffer_id)                                      => format!("FreeIndexBuffer({:?})", buffer_id),
+            BlendMode(blend_mode)                                           => format!("BlendMode({:?})", blend_mode),
+            CreateRenderTarget(render_id, texture_id, w, h, target_type)    => format!("CreateRenderTarget({:?}, {:?}, {:?}, {:?}, {:?})", render_id, texture_id, w, h, target_type),
+            FreeRenderTarget(render_id)                                     => format!("FreeRenderTarget({:?})", render_id),
+            SelectRenderTarget(render_id)                                   => format!("SelectRenderTarget({:?})", render_id),
+            RenderToFrameBuffer                                             => format!("RenderToFrameBuffer"),
+            ShowFrameBuffer                                                 => format!("ShowFrameBuffer"),
+            DrawFrameBuffer(render_id, x, y)                                => format!("DrawFrameBuffer({:?}, {:?}, {:?})", render_id, x, y),
+            CreateTextureBgra(texture_id, w, h)                             => format!("CreateTextureBgra({:?}, {:?}, {:?})", texture_id, w, h),
+            CreateTextureMono(texture_id, w, h)                             => format!("CreateTextureMono({:?}, {:?}, {:?})", texture_id, w, h),
+            Create1DTextureBgra(texture_id, w)                              => format!("Create1DTextureBgra({:?}, {:?})", texture_id, w),
+            Create1DTextureMono(texture_id, w)                              => format!("Create1DTextureMono({:?}, {:?})", texture_id, w),
+            WriteTextureData(texture_id, (x, y), (w, h), bytes)             => format!("WriteTextureData({:?}, ({:?}, {:?}), ({:?}, {:?}), [{} bytes])", texture_id, x, y, w, h, bytes.len()),
+            WriteTexture1D(texture_id, x, w, bytes)                         => format!("WriteTexture1D({:?}, {:?}, {:?}, [{} bytes])", texture_id, x, w, bytes.len()),
+            CreateMipMaps(texture_id)                                       => format!("CreateMipMaps({:?})", texture_id),
+            CopyTexture(id1, id2)                                           => format!("CopyTexture({:?}, {:?})", id1, id2),
+            FreeTexture(texture_id)                                         => format!("FreeTexture({:?})", texture_id),
+            Clear(bg_col)                                                   => format!("Clear({:?})", bg_col),
+            UseShader(shader_type)                                          => format!("UseShader({:?})", shader_type),
+            DrawTriangles(buffer_id, range)                                 => format!("DrawTriangles({:?}, {:?})", buffer_id, range),
+            DrawIndexedTriangles(buffer_id, index_id, len)                  => format!("DrawIndexedTriangles({:?}, {:?}, {:?})", buffer_id, index_id, len),
+        }
+    }
+}
