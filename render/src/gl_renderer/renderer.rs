@@ -1,5 +1,6 @@
 use super::error::*;
 use super::buffer::*;
+use super::shader::*;
 use super::texture::*;
 use super::vertex_array::*;
 use super::render_target::*;
@@ -47,7 +48,10 @@ pub struct GlRenderer {
     texture_shader: ShaderCollection<ShaderUniform>,
 
     /// The 'linear gradient' shader program
-    gradient_shader: ShaderCollection<ShaderUniform>
+    gradient_shader: ShaderCollection<ShaderUniform>,
+
+    /// Used when resolving the MSAA texture to the main canvas
+    msaa4_resolve_shader: Shader
 }
 
 impl GlRenderer {
@@ -62,11 +66,14 @@ impl GlRenderer {
         let texture_fragment                    = String::from_utf8(include_bytes!["../../shaders/texture/texture.glslf"].to_vec()).unwrap();
         let gradient_vertex                     = String::from_utf8(include_bytes!["../../shaders/texture/gradient.glslv"].to_vec()).unwrap();
         let gradient_fragment                   = String::from_utf8(include_bytes!["../../shaders/texture/gradient.glslf"].to_vec()).unwrap();
+        let msaa4_resolve                       = String::from_utf8(include_bytes!["../../shaders/simple/multisample_resolve_4.glslf"].to_vec()).unwrap();
 
         let simple_shader                       = ShaderCollection::new(&simple_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &simple_fragment, vec![]);
         let dashed_line_shader                  = ShaderCollection::new(&simple_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &dashed_line_fragment, vec![]);
         let texture_shader                      = ShaderCollection::new(&texture_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &texture_fragment, vec![]);
         let gradient_shader                     = ShaderCollection::new(&gradient_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &gradient_fragment, vec![]);
+
+        let msaa4_resolve_shader                = Shader::compile(&msaa4_resolve, GlShaderType::Fragment, vec![]);
 
         GlRenderer {
             buffers:                        vec![],
@@ -79,7 +86,8 @@ impl GlRenderer {
             simple_shader:                  simple_shader,
             dashed_line_shader:             dashed_line_shader,
             texture_shader:                 texture_shader,
-            gradient_shader:                gradient_shader
+            gradient_shader:                gradient_shader,
+            msaa4_resolve_shader:           msaa4_resolve_shader,
         }
     }
 
