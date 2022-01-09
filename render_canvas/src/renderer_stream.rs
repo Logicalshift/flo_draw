@@ -579,8 +579,8 @@ impl<'a> Stream for RenderStream<'a> {
             return Poll::Ready(self.pending.pop_front());
         } else if let Some(final_actions) = self.final_actions.take() {
             // There are no more drawing actions, but we have a set of final post-render instructions to execute
-            self.pending = final_actions.into();
-            self.render_background();
+            //self.render_background();
+            self.pending.extend(final_actions);
             return Poll::Ready(self.pending.pop_front());
         } else {
             // No further actions if the result was empty
