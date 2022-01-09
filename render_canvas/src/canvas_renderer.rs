@@ -1269,7 +1269,7 @@ impl CanvasRenderer {
         initialise.insert(0, render::RenderAction::CreateRenderTarget(MAIN_RENDER_TARGET, MAIN_RENDER_TEXTURE, 
             self.viewport_size.0 as usize,
             self.viewport_size.1 as usize,
-            RenderTargetType::Multisampled));
+            RenderTargetType::MultisampledTexture));
 
         // And the 'clip mask' render surface (render target 2, texture 2)
         initialise.insert(0, render::RenderAction::CreateRenderTarget(CLIP_RENDER_TARGET, CLIP_RENDER_TEXTURE,
