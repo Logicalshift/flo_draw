@@ -547,17 +547,15 @@ impl GlRenderer {
                 let vertex_array        = VertexArray::new();
                 buffer.static_draw(&vertices);
 
-                unsafe {
-                    // Bind a vertex array object to it
-                    gl::BindVertexArray(*vertex_array);
-                    gl::BindBuffer(gl::ARRAY_BUFFER, *buffer);
+                // Bind a vertex array object to it
+                gl::BindVertexArray(*vertex_array);
+                gl::BindBuffer(gl::ARRAY_BUFFER, *buffer);
 
-                    Vertex2D::define_attributes();
+                Vertex2D::define_attributes();
 
-                    // Clear the bindings
-                    gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-                    gl::BindVertexArray(0);
-                }
+                // Clear the bindings
+                gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+                gl::BindVertexArray(0);
 
                 // Render a quad filling the screen
                 gl::BindVertexArray(*vertex_array);
