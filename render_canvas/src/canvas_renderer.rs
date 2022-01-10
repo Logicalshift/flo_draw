@@ -1082,7 +1082,7 @@ impl CanvasRenderer {
                             core.used_textures.insert(render_texture, 1);
 
                             // Create the texture in the setup actions
-                            core.setup_actions.push(render::RenderAction::CreateTextureBgra(render_texture, width as _, height as _));
+                            core.setup_actions.push(render::RenderAction::CreateTextureBgra(render_texture, render::Size2D(width as _, height as _)));
                         });
                     }
 
@@ -1130,12 +1130,12 @@ impl CanvasRenderer {
                                         core.setup_actions.push(render::RenderAction::CopyTexture(render_texture, copy_texture_id));
 
                                         // Update the data in the copy
-                                        core.setup_actions.push(render::RenderAction::WriteTextureData(copy_texture_id, (x as _, y as _), (width as _, height as _), bytes));
+                                        core.setup_actions.push(render::RenderAction::WriteTextureData(copy_texture_id, render::Position2D(x as _, y as _), render::Position2D((x+width) as _, (y+height) as _), bytes));
                                     }
 
                                     RenderTexture::Loading(render_texture)  => {
                                         // Use the existing texture
-                                        core.setup_actions.push(render::RenderAction::WriteTextureData(render_texture, (x as _, y as _), (width as _, height as _), bytes));
+                                        core.setup_actions.push(render::RenderAction::WriteTextureData(render_texture, render::Position2D(x as _, y as _), render::Position2D((x+width) as _, (y+height) as _), bytes));
                                     }
                                 }
                             }
@@ -1278,14 +1278,12 @@ impl CanvasRenderer {
 
         // Initialise the default render target
         initialise.insert(0, render::RenderAction::CreateRenderTarget(MAIN_RENDER_TARGET, MAIN_RENDER_TEXTURE, 
-            self.viewport_size.0 as usize,
-            self.viewport_size.1 as usize,
+            render::Size2D(self.viewport_size.0 as usize, self.viewport_size.1 as usize),
             RenderTargetType::MultisampledTexture));
 
         // And the 'clip mask' render surface (render target 2, texture 2)
         initialise.insert(0, render::RenderAction::CreateRenderTarget(CLIP_RENDER_TARGET, CLIP_RENDER_TEXTURE,
-            self.viewport_size.0 as usize,
-            self.viewport_size.1 as usize,
+            render::Size2D(self.viewport_size.0 as usize, self.viewport_size.1 as usize),
             RenderTargetType::MonochromeMultisampledTexture));
 
         // When finished, render the MSAA buffer to the main framebuffer

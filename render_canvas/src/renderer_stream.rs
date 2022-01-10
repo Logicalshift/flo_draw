@@ -194,8 +194,8 @@ impl RenderStreamState {
 
         // Generate the dash texture by clobbering any existing texture
         vec![
-            render::RenderAction::Create1DTextureMono(DASH_TEXTURE, DASH_WIDTH),
-            render::RenderAction::WriteTexture1D(DASH_TEXTURE, 0, DASH_WIDTH, Arc::new(pixels)),
+            render::RenderAction::Create1DTextureMono(DASH_TEXTURE, render::Size1D(DASH_WIDTH)),
+            render::RenderAction::WriteTexture1D(DASH_TEXTURE, render::Position1D(0), render::Position1D(DASH_WIDTH), Arc::new(pixels)),
             render::RenderAction::CreateMipMaps(DASH_TEXTURE)
         ]
     }

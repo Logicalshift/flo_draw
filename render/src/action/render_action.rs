@@ -16,6 +16,30 @@ use std::sync::*;
 pub struct Alpha(pub f64);
 
 ///
+/// Position in pixels in 1D space
+///
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct Position1D(pub usize);
+
+///
+/// Position in pixels in 2D space
+///
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct Position2D(pub usize, pub usize);
+
+///
+/// The size of something one-dimensional in pixels
+///
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct Size1D(pub usize);
+
+///
+/// The size of something two-dimensional in pixels
+///
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct Size2D(pub usize, pub usize);
+
+///
 /// Represents an action for a render target
 ///
 #[derive(Clone, PartialEq, Debug)]
@@ -53,7 +77,7 @@ pub enum RenderAction {
     ///
     /// Creates a new render target of the specified size, as the specified texture
     ///
-    CreateRenderTarget(RenderTargetId, TextureId, usize, usize, RenderTargetType),
+    CreateRenderTarget(RenderTargetId, TextureId, Size2D, RenderTargetType),
 
     ///
     /// Frees up an existing render target
@@ -83,32 +107,32 @@ pub enum RenderAction {
     ///
     /// Creates an 8-bit BGRA 2D texture of the specified size
     ///
-    CreateTextureBgra(TextureId, usize, usize),
+    CreateTextureBgra(TextureId, Size2D),
 
     ///
     /// Creates an 8-bit monochrome 2D texture of the specified size
     ///
-    CreateTextureMono(TextureId, usize, usize),
+    CreateTextureMono(TextureId, Size2D),
 
     ///
     /// Creates a 1 dimensional 8-bit BGRA texture of the specified size
     ///
-    Create1DTextureBgra(TextureId, usize),
+    Create1DTextureBgra(TextureId, Size1D),
 
     ///
     /// Creates a 1 dimensional 8-bit monochrome texture of the specified size
     ///
-    Create1DTextureMono(TextureId, usize),
+    Create1DTextureMono(TextureId, Size1D),
 
     ///
     /// Given a region in a 2D texture and a set of bytes to write, updates the texture with those bytes
     ///
-    WriteTextureData(TextureId, (usize, usize), (usize, usize), Arc<Vec<u8>>),
+    WriteTextureData(TextureId, Position2D, Position2D, Arc<Vec<u8>>),
 
     ///
     /// Given a region in a 1D texture and a set of bytes to write, updates the texture with those bytes
     ///
-    WriteTexture1D(TextureId, usize, usize, Arc<Vec<u8>>),
+    WriteTexture1D(TextureId, Position1D, Position1D, Arc<Vec<u8>>),
 
     ///
     /// Generates mip-maps for the specified texture ID
@@ -164,17 +188,17 @@ impl RenderAction {
             FreeVertexBuffer(buffer_id)                                     => format!("FreeVertexBuffer({:?})", buffer_id),
             FreeIndexBuffer(buffer_id)                                      => format!("FreeIndexBuffer({:?})", buffer_id),
             BlendMode(blend_mode)                                           => format!("BlendMode({:?})", blend_mode),
-            CreateRenderTarget(render_id, texture_id, w, h, target_type)    => format!("CreateRenderTarget({:?}, {:?}, {:?}, {:?}, {:?})", render_id, texture_id, w, h, target_type),
+            CreateRenderTarget(render_id, texture_id, size, target_type)    => format!("CreateRenderTarget({:?}, {:?}, {:?}, {:?})", render_id, texture_id, size, target_type),
             FreeRenderTarget(render_id)                                     => format!("FreeRenderTarget({:?})", render_id),
             SelectRenderTarget(render_id)                                   => format!("SelectRenderTarget({:?})", render_id),
             RenderToFrameBuffer                                             => format!("RenderToFrameBuffer"),
             ShowFrameBuffer                                                 => format!("ShowFrameBuffer"),
             DrawFrameBuffer(render_id, alpha)                               => format!("DrawFrameBuffer({:?}, {:?})", render_id, alpha),
-            CreateTextureBgra(texture_id, w, h)                             => format!("CreateTextureBgra({:?}, {:?}, {:?})", texture_id, w, h),
-            CreateTextureMono(texture_id, w, h)                             => format!("CreateTextureMono({:?}, {:?}, {:?})", texture_id, w, h),
+            CreateTextureBgra(texture_id, size)                             => format!("CreateTextureBgra({:?}, {:?})", texture_id, size),
+            CreateTextureMono(texture_id, size)                             => format!("CreateTextureMono({:?}, {:?})", texture_id, size),
             Create1DTextureBgra(texture_id, w)                              => format!("Create1DTextureBgra({:?}, {:?})", texture_id, w),
             Create1DTextureMono(texture_id, w)                              => format!("Create1DTextureMono({:?}, {:?})", texture_id, w),
-            WriteTextureData(texture_id, (x, y), (w, h), bytes)             => format!("WriteTextureData({:?}, ({:?}, {:?}), ({:?}, {:?}), [{} bytes])", texture_id, x, y, w, h, bytes.len()),
+            WriteTextureData(texture_id, pos, size, bytes)                  => format!("WriteTextureData({:?}, {:?}, {:?}, [{} bytes])", texture_id, pos, size, bytes.len()),
             WriteTexture1D(texture_id, x, w, bytes)                         => format!("WriteTexture1D({:?}, {:?}, {:?}, [{} bytes])", texture_id, x, w, bytes.len()),
             CreateMipMaps(texture_id)                                       => format!("CreateMipMaps({:?})", texture_id),
             CopyTexture(id1, id2)                                           => format!("CopyTexture({:?}, {:?})", id1, id2),

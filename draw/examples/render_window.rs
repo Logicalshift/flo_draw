@@ -18,8 +18,8 @@ pub fn main() {
 
             // Render the instructions generaated by the show_tessellation example
             renderer.publish(vec![
-                RenderAction::CreateRenderTarget(RenderTargetId(1), TextureId(1), 768, 768, RenderTargetType::MonochromeMultisampledTexture),
-                RenderAction::CreateRenderTarget(RenderTargetId(0), TextureId(0), 768, 768, RenderTargetType::Multisampled),
+                RenderAction::CreateRenderTarget(RenderTargetId(1), TextureId(1), Size2D(768, 768), RenderTargetType::MonochromeMultisampledTexture),
+                RenderAction::CreateRenderTarget(RenderTargetId(0), TextureId(0), Size2D(768, 768), RenderTargetType::Multisampled),
                 RenderAction::SelectRenderTarget(RenderTargetId(0)),
                 RenderAction::BlendMode(BlendMode::SourceOver),
                 RenderAction::Clear(Rgba8([0, 0, 0, 0])),
@@ -39,7 +39,7 @@ pub fn main() {
                 RenderAction::BlendMode(BlendMode::SourceOver),
                 RenderAction::SetTransform(Matrix([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]])),
                 RenderAction::Clear(Rgba8([255, 255, 255, 255])),
-                RenderAction::DrawFrameBuffer(RenderTargetId(0), 0, 0),
+                RenderAction::DrawFrameBuffer(RenderTargetId(0), Alpha(1.0)),
                 RenderAction::ShowFrameBuffer,
                 RenderAction::FreeRenderTarget(RenderTargetId(0)),
                 RenderAction::FreeRenderTarget(RenderTargetId(1)),

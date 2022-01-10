@@ -350,8 +350,8 @@ impl RenderCore {
 
                 // Define as a 1D texture
                 self.setup_actions.extend(vec![
-                    render::RenderAction::Create1DTextureBgra(texture_id, 256),
-                    render::RenderAction::WriteTexture1D(texture_id, 0, 256, Arc::new(bytes)),
+                    render::RenderAction::Create1DTextureBgra(texture_id, render::Size1D(256)),
+                    render::RenderAction::WriteTexture1D(texture_id, render::Position1D(0), render::Position1D(256), Arc::new(bytes)),
                     render::RenderAction::CreateMipMaps(texture_id)
                 ]);
 

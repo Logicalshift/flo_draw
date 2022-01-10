@@ -137,31 +137,31 @@ impl GlRenderer {
             use self::RenderAction::*;
 
             match action {
-                SetTransform(matrix)                                                    => { self.set_transform(matrix); }
-                CreateVertex2DBuffer(id, vertices)                                      => { self.create_vertex_buffer_2d(id, vertices); }
-                CreateIndexBuffer(id, indices)                                          => { self.create_index_buffer(id, indices); }
-                FreeVertexBuffer(id)                                                    => { self.free_vertex_buffer(id); }
-                FreeIndexBuffer(id)                                                     => { self.free_index_buffer(id); }
-                BlendMode(blend_mode)                                                   => { self.blend_mode(blend_mode); }
-                CreateRenderTarget(render_id, texture_id, width, height, render_type)   => { self.create_render_target(render_id, texture_id, width, height, render_type); }
-                FreeRenderTarget(render_id)                                             => { self.free_render_target(render_id); }
-                SelectRenderTarget(render_id)                                           => { self.select_render_target(render_id); }
-                RenderToFrameBuffer                                                     => { self.select_main_frame_buffer(); }
-                DrawFrameBuffer(render_id, Alpha(alpha))                                => { self.draw_frame_buffer(render_id, alpha); }
-                ShowFrameBuffer                                                         => { /* This doesn't double-buffer so nothing to do */ }
-                CreateTextureBgra(texture_id, width, height)                            => { self.create_bgra_texture(texture_id, width, height); }
-                CreateTextureMono(texture_id, width, height)                            => { self.create_mono_texture(texture_id, width, height); }
-                Create1DTextureBgra(texture_id, width)                                  => { self.create_1d_bgra_texture(texture_id, width); }
-                Create1DTextureMono(texture_id, width)                                  => { self.create_1d_mono_texture(texture_id, width); }
-                WriteTextureData(texture_id, (x1, y1), (x2, y2), data)                  => { self.write_texture_data_2d(texture_id, (x1, y1), (x2, y2), &*data); }
-                WriteTexture1D(texture_id, x1, x2, data)                                => { self.write_texture_data_1d(texture_id, x1, x2, &*data); }
-                CreateMipMaps(texture_id)                                               => { self.create_mipmaps(texture_id); }
-                CopyTexture(source, target)                                             => { self.copy_texture(source, target); }
-                FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
-                Clear(color)                                                            => { self.clear(color); }
-                UseShader(shader_type)                                                  => { self.use_shader(shader_type); }
-                DrawTriangles(buffer_id, buffer_range)                                  => { self.draw_triangles(buffer_id, buffer_range); }
-                DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)         => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices); }
+                SetTransform(matrix)                                                            => { self.set_transform(matrix); }
+                CreateVertex2DBuffer(id, vertices)                                              => { self.create_vertex_buffer_2d(id, vertices); }
+                CreateIndexBuffer(id, indices)                                                  => { self.create_index_buffer(id, indices); }
+                FreeVertexBuffer(id)                                                            => { self.free_vertex_buffer(id); }
+                FreeIndexBuffer(id)                                                             => { self.free_index_buffer(id); }
+                BlendMode(blend_mode)                                                           => { self.blend_mode(blend_mode); }
+                CreateRenderTarget(render_id, texture_id, Size2D(width, height), render_type)   => { self.create_render_target(render_id, texture_id, width, height, render_type); }
+                FreeRenderTarget(render_id)                                                     => { self.free_render_target(render_id); }
+                SelectRenderTarget(render_id)                                                   => { self.select_render_target(render_id); }
+                RenderToFrameBuffer                                                             => { self.select_main_frame_buffer(); }
+                DrawFrameBuffer(render_id, Alpha(alpha))                                        => { self.draw_frame_buffer(render_id, alpha); }
+                ShowFrameBuffer                                                                 => { /* This doesn't double-buffer so nothing to do */ }
+                CreateTextureBgra(texture_id, Size2D(width, height))                            => { self.create_bgra_texture(texture_id, width, height); }
+                CreateTextureMono(texture_id, Size2D(width, height))                            => { self.create_mono_texture(texture_id, width, height); }
+                Create1DTextureBgra(texture_id, Size1D(width))                                  => { self.create_1d_bgra_texture(texture_id, width); }
+                Create1DTextureMono(texture_id, Size1D(width))                                  => { self.create_1d_mono_texture(texture_id, width); }
+                WriteTextureData(texture_id, Position2D(x1, y1), Position2D(x2, y2), data)      => { self.write_texture_data_2d(texture_id, (x1, y1), (x2, y2), &*data); }
+                WriteTexture1D(texture_id, Position1D(x1), Position1D(x2), data)                => { self.write_texture_data_1d(texture_id, x1, x2, &*data); }
+                CreateMipMaps(texture_id)                                                       => { self.create_mipmaps(texture_id); }
+                CopyTexture(source, target)                                                     => { self.copy_texture(source, target); }
+                FreeTexture(texture_id)                                                         => { self.free_texture(texture_id); }
+                Clear(color)                                                                    => { self.clear(color); }
+                UseShader(shader_type)                                                          => { self.use_shader(shader_type); }
+                DrawTriangles(buffer_id, buffer_range)                                          => { self.draw_triangles(buffer_id, buffer_range); }
+                DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)                 => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices); }
             }
 
             panic_on_gl_error("Post-action");
