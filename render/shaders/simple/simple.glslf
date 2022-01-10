@@ -17,30 +17,6 @@ uniform sampler2DMS t_ClipMask;
 void main() {
     f_Color = IN.v_Color;
 
-#ifdef ERASE_MASK
-    ivec2 eraseSize     = textureSize(t_EraseMask);
-    
-    float width         = float(eraseSize[0]);
-    float height        = float(eraseSize[1]);
-    float x             = IN.v_PaperCoord[0] * width;
-    float y             = IN.v_PaperCoord[1] * height;
-
-    ivec2 pos           = ivec2(int(x), int(y));
-    float eraseColor    = 0.0;
-
-    for (int i=0; i<4; ++i) {
-        eraseColor += texelFetch(t_EraseMask, pos, i)[0];
-    }
-
-    eraseColor /= 4.0;
-    eraseColor = 1.0-eraseColor;
-
-    f_Color[0] *= eraseColor;
-    f_Color[1] *= eraseColor;
-    f_Color[2] *= eraseColor;
-    f_Color[3] *= eraseColor;
-#endif
-
 #ifdef CLIP_MASK
     ivec2 clipSize      = textureSize(t_ClipMask);
     
