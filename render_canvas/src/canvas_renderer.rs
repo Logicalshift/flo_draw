@@ -924,11 +924,24 @@ impl CanvasRenderer {
                     }
 
                     // Sets how a particular layer is blended with the underlying layer
-                    LayerBlend(_layer_id, _blend_mode) => {
-                        // TODO: this needs some more work: for some blending modes we probably need to render the layer off-screen
-                        // and the current 'reverse order' drawing makes drawing it in the right order tricky
+                    LayerBlend(canvas::LayerId(layer_id), blend_mode) => {
+                        core.sync(move |core| {
+                            let layer_id = layer_id as usize;
 
-                        //unimplemented!()
+                            if layer_id < core.layers.len() {
+                                // Fetch the layer
+                                let layer_handle    = core.layers[layer_id];
+                                let layer           = core.layer(layer_handle);
+
+                                // Update the blend mode and set the layer's 'commit' mode
+                                layer.blend_mode    = blend_mode;
+                                if blend_mode != canvas::BlendMode::SourceOver {
+                                    // Need to commit before to stop whatever is under the layer from having the blend mode applied to it, and after to apply the blend mode
+                                    layer.commit_before_rendering   = true;
+                                    layer.commit_after_rendering    = true;
+                                }
+                            }
+                        });
                     }
 
                     // Clears the current layer
