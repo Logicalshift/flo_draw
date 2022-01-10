@@ -51,12 +51,12 @@ pub fn main() {
         });
 
         // Update the canvas every 1/60th of a second
-        let mut blend = 0.0;
+        let mut blend: f64 = 0.0;
         loop {
             // Update the layer alpha blending
-            blend       += 1.0 / 30.0;
+            blend       += 1.0 / 60.0;
 
-            let blend1  = blend % 1.0;
+            let blend1  = (blend.cos() + 1.0) / 2.0;
             let blend2  = 1.0 - blend1;
 
             canvas.draw(|gc| {
