@@ -5,9 +5,6 @@
 pub enum ShaderUniform {
     /// The transformation matrix to use
     Transform,
-    
-    /// The texture bound to the 'erase' operation
-    EraseTexture,
 
     /// The texture bound to the 'clip' operation
     ClipTexture,

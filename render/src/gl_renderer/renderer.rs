@@ -595,27 +595,25 @@ impl GlRenderer {
         self.active_shader = Some(shader_type);
 
         match shader_type {
-            Simple { erase_texture, clip_texture } => {
+            Simple { clip_texture } => {
                 let simple_shader   = &mut self.simple_shader;
                 let textures        = &self.textures;
-                let erase_texture   = erase_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let clip_texture    = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
 
-                simple_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, erase_texture, clip_texture);
+                simple_shader.use_shader(ShaderUniform::ClipTexture, clip_texture);
 
                 panic_on_gl_error("Set simple shader");
             }
 
-            DashedLine { dash_texture, erase_texture, clip_texture } => {
+            DashedLine { dash_texture, clip_texture } => {
                 // Set the basic clip/erase textures
                 let dash_shader             = &mut self.dashed_line_shader;
                 let textures                = &self.textures;
                 let TextureId(dash_texture) = dash_texture;
                 let dash_texture            = self.textures[dash_texture].as_ref();
-                let erase_texture           = erase_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let clip_texture            = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
 
-                let program                 = dash_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, erase_texture, clip_texture);
+                let program                 = dash_shader.use_shader(ShaderUniform::ClipTexture, clip_texture);
 
                 // Set the dash texture
                 if let Some(dash_texture) = dash_texture {
@@ -630,22 +628,21 @@ impl GlRenderer {
                     }
                 } else {
                     // Texture not found: revert to the simple shader
-                    self.simple_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, None, None);
+                    self.simple_shader.use_shader(ShaderUniform::ClipTexture, None);
                 }
 
                 panic_on_gl_error("Set dash shader");
             }
 
-            Texture { texture, texture_transform, repeat, alpha, erase_texture, clip_texture } => {
+            Texture { texture, texture_transform, repeat, alpha, clip_texture } => {
                 let texture_shader      = &mut self.texture_shader;
                 let textures            = &self.textures;
                 let TextureId(texture)  = texture;
                 let texture             = if texture < self.textures.len() { self.textures[texture].as_ref() } else { None };
-                let erase_texture       = erase_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let clip_texture        = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let texture_transform   = texture_transform.to_opengl_matrix();
 
-                let program             = texture_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, erase_texture, clip_texture);
+                let program             = texture_shader.use_shader(ShaderUniform::ClipTexture, clip_texture);
 
                 // Set up the texture program
                 if let Some(texture) = texture {
@@ -681,22 +678,21 @@ impl GlRenderer {
                     }
                 } else {
                     // Texture not found: revert to the simple shader
-                    self.simple_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, None, None);
+                    self.simple_shader.use_shader(ShaderUniform::ClipTexture, None);
                 }
 
                 panic_on_gl_error("Set texture shader");
             }
 
-            LinearGradient { texture, texture_transform, repeat, alpha, erase_texture, clip_texture } => {
+            LinearGradient { texture, texture_transform, repeat, alpha, clip_texture } => {
                 let gradient_shader     = &mut self.gradient_shader;
                 let textures            = &self.textures;
                 let TextureId(texture)  = texture;
                 let texture             = if texture < self.textures.len() { self.textures[texture].as_ref() } else { None };
-                let erase_texture       = erase_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let clip_texture        = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let texture_transform   = texture_transform.to_opengl_matrix();
 
-                let program             = gradient_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, erase_texture, clip_texture);
+                let program             = gradient_shader.use_shader(ShaderUniform::ClipTexture, clip_texture);
 
                 // Set up the texture program
                 if let Some(texture) = texture {
@@ -732,7 +728,7 @@ impl GlRenderer {
                     }
                 } else {
                     // Texture not found: revert to the simple shader
-                    self.simple_shader.use_shader(ShaderUniform::EraseTexture, ShaderUniform::ClipTexture, None, None);
+                    self.simple_shader.use_shader(ShaderUniform::ClipTexture, None);
                 }
 
                 panic_on_gl_error("Set linear gradient shader");
@@ -803,27 +799,19 @@ impl GlRenderer {
             use self::ShaderType::*;
 
             let shader = match &self.active_shader {
-                Some(Simple { erase_texture: None, clip_texture: None })                            => Some(&mut self.simple_shader.basic),
-                Some(Simple { erase_texture: Some(_), clip_texture: None })                         => Some(&mut self.simple_shader.erase),
-                Some(Simple { erase_texture: None, clip_texture: Some(_) })                         => Some(&mut self.simple_shader.clip),
-                Some(Simple { erase_texture: Some(_), clip_texture: Some(_) })                      => Some(&mut self.simple_shader.clip_erase),
+                Some(Simple { clip_texture: None })                         => Some(&mut self.simple_shader.basic),
+                Some(Simple { clip_texture: Some(_) })                      => Some(&mut self.simple_shader.clip),
 
-                Some(DashedLine { dash_texture: _, erase_texture: None, clip_texture: None })       => Some(&mut self.dashed_line_shader.basic),
-                Some(DashedLine { dash_texture: _, erase_texture: Some(_), clip_texture: None })    => Some(&mut self.dashed_line_shader.erase),
-                Some(DashedLine { dash_texture: _, erase_texture: None, clip_texture: Some(_) })    => Some(&mut self.dashed_line_shader.clip),
-                Some(DashedLine { dash_texture: _, erase_texture: Some(_), clip_texture: Some(_) }) => Some(&mut self.dashed_line_shader.clip_erase),
+                Some(DashedLine { dash_texture: _, clip_texture: None })    => Some(&mut self.dashed_line_shader.basic),
+                Some(DashedLine { dash_texture: _, clip_texture: Some(_) }) => Some(&mut self.dashed_line_shader.clip),
 
-                Some(Texture { erase_texture: None, clip_texture: None, .. })                       => Some(&mut self.texture_shader.basic),
-                Some(Texture { erase_texture: Some(_), clip_texture: None, .. })                    => Some(&mut self.texture_shader.erase),
-                Some(Texture { erase_texture: None, clip_texture: Some(_), .. })                    => Some(&mut self.texture_shader.clip),
-                Some(Texture { erase_texture: Some(_), clip_texture: Some(_), .. })                 => Some(&mut self.texture_shader.clip_erase),
+                Some(Texture { clip_texture: None, .. })                    => Some(&mut self.texture_shader.basic),
+                Some(Texture { clip_texture: Some(_), .. })                 => Some(&mut self.texture_shader.clip),
 
-                Some(LinearGradient { erase_texture: None, clip_texture: None, .. })                => Some(&mut self.gradient_shader.basic),
-                Some(LinearGradient { erase_texture: Some(_), clip_texture: None, .. })             => Some(&mut self.gradient_shader.erase),
-                Some(LinearGradient { erase_texture: None, clip_texture: Some(_), .. })             => Some(&mut self.gradient_shader.clip),
-                Some(LinearGradient { erase_texture: Some(_), clip_texture: Some(_), .. })          => Some(&mut self.gradient_shader.clip_erase),
+                Some(LinearGradient { clip_texture: None, .. })             => Some(&mut self.gradient_shader.basic),
+                Some(LinearGradient { clip_texture: Some(_), .. })          => Some(&mut self.gradient_shader.clip),
 
-                None                                                                                => None
+                None                                                        => None
             };
 
             self.transform_matrix.as_ref().and_then(|transform_matrix|

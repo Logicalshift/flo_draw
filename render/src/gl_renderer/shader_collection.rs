@@ -16,9 +16,7 @@ use std::hash::{Hash};
 pub struct ShaderCollection<UniformAttribute>
 where UniformAttribute: Hash+Eq {
     pub basic:      ShaderProgram<UniformAttribute>,
-    pub erase:      ShaderProgram<UniformAttribute>,
     pub clip:       ShaderProgram<UniformAttribute>,
-    pub clip_erase: ShaderProgram<UniformAttribute>,
 }
 
 impl<UniformAttribute> ShaderCollection<UniformAttribute>
@@ -31,23 +29,13 @@ where UniformAttribute: Hash+Eq {
         let basic_fragment      = Self::compile(fragment_program,  &fragment_attributes,   GlShaderType::Fragment, &vec![]);
         let basic               = ShaderProgram::from_shaders(vec![basic_vertex, basic_fragment]);
 
-        let erase_vertex        = Self::compile(vertex_program,    &vertex_attributes,     GlShaderType::Vertex,   &vec!["ERASE_MASK"]);
-        let erase_fragment      = Self::compile(fragment_program,  &fragment_attributes,   GlShaderType::Fragment, &vec!["ERASE_MASK"]);
-        let erase               = ShaderProgram::from_shaders(vec![erase_vertex, erase_fragment]);
-
         let clip_vertex         = Self::compile(vertex_program,    &vertex_attributes,     GlShaderType::Vertex,   &vec!["CLIP_MASK"]);
         let clip_fragment       = Self::compile(fragment_program,  &fragment_attributes,   GlShaderType::Fragment, &vec!["CLIP_MASK"]);
         let clip                = ShaderProgram::from_shaders(vec![clip_vertex, clip_fragment]);
 
-        let clip_erase_vertex   = Self::compile(vertex_program,    &vertex_attributes,     GlShaderType::Vertex,   &vec!["ERASE_MASK", "CLIP_MASK"]);
-        let clip_erase_fragment = Self::compile(fragment_program,  &fragment_attributes,   GlShaderType::Fragment, &vec!["ERASE_MASK", "CLIP_MASK"]);
-        let clip_erase          = ShaderProgram::from_shaders(vec![clip_erase_vertex, clip_erase_fragment]);
-
         ShaderCollection {
             basic,
-            erase,
-            clip,
-            clip_erase
+            clip
         }
     }
 
@@ -69,29 +57,16 @@ where UniformAttribute: Hash+Eq {
     /// Textures 1 and 2 are used for the erase and clip mask: texture 0 is intended as the shader input, but 3 and upwards can be used as
     /// well, provided care is taken if we ever need more 'standard' variants
     ///
-    pub fn use_shader<'a>(&'a mut self, erase_uniform: UniformAttribute, clip_uniform: UniformAttribute, erase_texture: Option<&Texture>, clip_texture: Option<&Texture>) -> &'a mut ShaderProgram<UniformAttribute> {
+    pub fn use_shader<'a>(&'a mut self, clip_uniform: UniformAttribute, clip_texture: Option<&Texture>) -> &'a mut ShaderProgram<UniformAttribute> {
         unsafe {
             // Pick the program based on the requested textures
-            let program = match (erase_texture.is_some(), clip_texture.is_some()) {
-                (false, false)  => &mut self.basic,
-                (true, false)   => &mut self.erase,
-                (false, true)   => &mut self.clip,
-                (true, true)    => &mut self.clip_erase,
+            let program = match clip_texture.is_some() {
+                false   => &mut self.basic,
+                true    => &mut self.clip,
             };
             gl::UseProgram(**program);
 
             // Apply the textures
-            if let Some(texture) = erase_texture {
-                // Set the erase texture
-                gl::ActiveTexture(gl::TEXTURE1);
-                gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **texture);
-
-                program.uniform_location(erase_uniform, "t_EraseMask")
-                    .map(|erase_mask| {
-                        gl::Uniform1i(erase_mask, 1);
-                    });
-            }
-
             if let Some(texture) = clip_texture {
                 // Set the clip texture
                 gl::ActiveTexture(gl::TEXTURE2);

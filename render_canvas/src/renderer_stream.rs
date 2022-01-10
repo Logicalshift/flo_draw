@@ -91,9 +91,6 @@ struct RenderStreamState {
     /// The blend mode to use
     blend_mode: Option<render::BlendMode>,
 
-    /// The texture to use as the eraser mask (None for no eraser texture)
-    erase_mask: Maybe<render::TextureId>,
-
     /// The texture to use for the clip mask (None for no clip mask)
     clip_mask: Maybe<render::TextureId>,
 
@@ -149,7 +146,6 @@ impl RenderStreamState {
         RenderStreamState {
             render_target:      None,
             blend_mode:         None,
-            erase_mask:         Maybe::Unknown,
             clip_mask:          Maybe::Unknown, 
             shader_modifier:    None,
             transform:          None,
@@ -221,7 +217,7 @@ impl RenderStreamState {
                 // Set up to render the clip buffers
                 updates.extend(vec![
                     render::RenderAction::SelectRenderTarget(CLIP_RENDER_TARGET),
-                    render::RenderAction::UseShader(render::ShaderType::Simple { clip_texture: None, erase_texture: None }),
+                    render::RenderAction::UseShader(render::ShaderType::Simple { clip_texture: None }),
                     render::RenderAction::Clear(render::Rgba8([0,0,0,255])),
                     render::RenderAction::BlendMode(render::BlendMode::AllChannelAlphaSourceOver),
                     render::RenderAction::SetTransform(transform_to_matrix(&transform)),
@@ -254,18 +250,18 @@ impl RenderStreamState {
         }
 
         // Update the shader we're using
-        if let (Some(erase), Some(clip), Some(modifier)) = (self.erase_mask.value(), self.clip_mask.value(), &self.shader_modifier) {
-            let mask_textures_changed   = Some(erase) != from.erase_mask.value() || Some(clip) != from.clip_mask.value();
+        if let (Some(clip), Some(modifier)) = (self.clip_mask.value(), &self.shader_modifier) {
+            let mask_textures_changed   = Some(clip) != from.clip_mask.value();
             let render_target_changed   = self.render_target != from.render_target && self.render_target.is_some();
             let modifier_changed        = Some(modifier) != from.shader_modifier.as_ref();
 
             if mask_textures_changed || render_target_changed || reset_render_target || modifier_changed {
                 // Pick the shader based on the modifier
                 let shader = match modifier {
-                    ShaderModifier::Simple                                      => render::ShaderType::Simple { erase_texture: erase, clip_texture: clip },
-                    ShaderModifier::DashPattern(_)                              => render::ShaderType::DashedLine { dash_texture: DASH_TEXTURE, erase_texture: erase, clip_texture: clip },
-                    ShaderModifier::Texture(texture_id, matrix, repeat, alpha)  => render::ShaderType::Texture { texture: *texture_id, texture_transform: *matrix, repeat: *repeat, alpha: *alpha, erase_texture: erase, clip_texture: clip },
-                    ShaderModifier::Gradient(texture_id, matrix, repeat, alpha) => render::ShaderType::LinearGradient { texture: *texture_id, texture_transform: *matrix, repeat: *repeat, alpha: *alpha, erase_texture: erase, clip_texture: clip }
+                    ShaderModifier::Simple                                      => render::ShaderType::Simple { clip_texture: clip },
+                    ShaderModifier::DashPattern(_)                              => render::ShaderType::DashedLine { dash_texture: DASH_TEXTURE, clip_texture: clip },
+                    ShaderModifier::Texture(texture_id, matrix, repeat, alpha)  => render::ShaderType::Texture { texture: *texture_id, texture_transform: *matrix, repeat: *repeat, alpha: *alpha, clip_texture: clip },
+                    ShaderModifier::Gradient(texture_id, matrix, repeat, alpha) => render::ShaderType::LinearGradient { texture: *texture_id, texture_transform: *matrix, repeat: *repeat, alpha: *alpha, clip_texture: clip }
                 };
 
                 // Add to the updates
@@ -313,7 +309,6 @@ impl RenderCore {
         render_state.transform          = Some(viewport_transform);
         render_state.blend_mode         = Some(render::BlendMode::SourceOver);
         render_state.render_target      = Some(MAIN_RENDER_TARGET);
-        render_state.erase_mask         = Maybe::None;
         render_state.clip_mask          = Maybe::None;
         render_state.clip_buffers       = Some(vec![]);
         render_state.shader_modifier    = Some(ShaderModifier::Simple);
@@ -404,7 +399,6 @@ impl RenderCore {
                     // Render the main buffer
                     render_state.blend_mode     = Some(*new_blend_mode);
                     render_state.render_target  = Some(MAIN_RENDER_TARGET);
-                    render_state.erase_mask     = Maybe::None;
 
                     // Update to the new state
                     render_order.extend(render_state.update_from_state(&old_state));
@@ -532,7 +526,7 @@ impl<'a> RenderStream<'a> {
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::SetTransform(render::Matrix::identity()),
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
-                render::RenderAction::UseShader(render::ShaderType::Simple { erase_texture: None, clip_texture: None }),
+                render::RenderAction::UseShader(render::ShaderType::Simple { clip_texture: None }),
                 render::RenderAction::DrawTriangles(self.background_vertex_buffer, 0..6),
             ];
 
