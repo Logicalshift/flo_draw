@@ -66,7 +66,6 @@ fn compile_metal() {
     // Compile the shaders
     println!("cargo:rerun-if-changed=shaders");
     compile_metal_shader("shaders/simple/simple.metal", "simple.air");
-    compile_metal_shader("shaders/simple/eraser.metal", "eraser.air");
     compile_metal_shader("shaders/simple/clip_mask.metal", "clip_mask.air");
     compile_metal_shader("shaders/texture/gradient_fragment.metal", "gradient_fragment.air");
     compile_metal_shader("shaders/texture/texture_fragment.metal", "texture_fragment.air");

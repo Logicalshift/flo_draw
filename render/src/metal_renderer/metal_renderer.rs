@@ -804,16 +804,6 @@ impl MetalRenderer {
                 state.clip_texture                      = self.textures[clip_texture].clone();
             }
 
-            ShaderType::Texture { texture: TextureId(fill_texture), texture_transform, repeat, alpha, clip_texture: Some(TextureId(clip_texture)) } => {
-                state.pipeline_config.vertex_shader     = String::from("texture_vertex");
-                state.pipeline_config.fragment_shader   = String::from("texture_eraser_clip_mask_multisample_fragment");
-                state.texture_transform                 = Some(MatrixBuffer::from_matrix(&self.device, texture_transform));
-                state.texture_alpha                     = Some(alpha as _);
-
-                state.fill_texture                      = self.textures[fill_texture].clone();
-                state.clip_texture                      = self.textures[clip_texture].clone();
-            }
-
             ShaderType::LinearGradient { texture: TextureId(gradient_texture), texture_transform, repeat, alpha, clip_texture: None } => { 
                 state.pipeline_config.vertex_shader     = String::from("gradient_vertex");
                 state.pipeline_config.fragment_shader   = String::from("gradient_fragment");

@@ -41,22 +41,6 @@ fragment float4 gradient_fragment(
     return color;
 }
 
-fragment float4 gradient_eraser_multisample_fragment(
-      GradientData                in [[stage_in]],
-      constant float              *texture_alpha [[ buffer(FragmentAlpha) ]],
-      metal::texture1d<half>      texture [[ texture(FragmentIndexTexture) ]],
-      metal::texture2d_ms<half>   eraser_texture [[ texture(FragmentIndexEraseTexture) ]]) {
-    // Color from the gradient
-    constexpr metal::sampler texture_sampler (metal::mag_filter::linear, metal::min_filter::linear);
-    const half4 color_sample    = texture.sample(texture_sampler, in.v_TexCoord);
-
-    // Apply the eraser
-    float4 color  = apply_eraser(static_cast<float4>(color_sample), in.v_PaperCoord, eraser_texture);
-    color[3]      *= *texture_alpha;
-
-    return color;
-}
-
 fragment float4 gradient_clip_mask_multisample_fragment(
       GradientData                in [[stage_in]],
       constant float              *texture_alpha [[ buffer(FragmentAlpha) ]],
@@ -70,23 +54,5 @@ fragment float4 gradient_clip_mask_multisample_fragment(
     float4 color  = apply_clip_mask(static_cast<float4>(color_sample), in.v_PaperCoord, clip_mask_texture);
     color[3]      *= *texture_alpha;
 
-    return color;
-}
-
-fragment float4 gradient_eraser_clip_mask_multisample_fragment(
-      GradientData                in [[stage_in]],
-      constant float              *texture_alpha [[ buffer(FragmentAlpha) ]],
-      metal::texture1d<half>      texture [[ texture(FragmentIndexTexture) ]],
-      metal::texture2d_ms<half>   eraser_texture [[ texture(FragmentIndexEraseTexture) ]],
-      metal::texture2d_ms<half>   clip_mask_texture [[ texture(FragmentIndexClipMaskTexture) ]]) {
-    // Color from the gradient
-    constexpr metal::sampler texture_sampler (metal::mag_filter::linear, metal::min_filter::linear);
-    const half4 color_sample    = texture.sample(texture_sampler, in.v_TexCoord);
-
-    // Apply the eraser and clip mask
-    float4 color  = apply_eraser(static_cast<float4>(color_sample), in.v_PaperCoord, eraser_texture);
-    color         = apply_clip_mask(color, in.v_PaperCoord, clip_mask_texture);
-    color[3]      *= *texture_alpha;
-    
     return color;
 }

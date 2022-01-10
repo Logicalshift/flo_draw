@@ -33,25 +33,9 @@ fragment float4 simple_fragment(
     return in.v_Color;
 }
 
-fragment float4 simple_eraser_multisample_fragment(
-      RasterizerData            in [[stage_in]],
-      metal::texture2d_ms<half> eraser_texture [[ texture(FragmentIndexEraseTexture) ]]) {
-    float4 color = apply_eraser(in.v_Color, in.v_PaperCoord, eraser_texture);
-    return color;
-}
-
 fragment float4 simple_clip_mask_multisample_fragment(
       RasterizerData            in [[stage_in]],
       metal::texture2d_ms<half> clip_mask_texture [[ texture(FragmentIndexClipMaskTexture) ]]) {
     float4 color = apply_clip_mask(in.v_Color, in.v_PaperCoord, clip_mask_texture);
-    return color;
-}
-
-fragment float4 simple_eraser_clip_mask_multisample_fragment(
-      RasterizerData            in [[stage_in]],
-      metal::texture2d_ms<half> eraser_texture [[ texture(FragmentIndexEraseTexture) ]],
-      metal::texture2d_ms<half> clip_mask_texture [[ texture(FragmentIndexClipMaskTexture) ]]) {
-    float4 color = apply_eraser(in.v_Color, in.v_PaperCoord, eraser_texture);
-    color = apply_clip_mask(color, in.v_PaperCoord, clip_mask_texture);
     return color;
 }
