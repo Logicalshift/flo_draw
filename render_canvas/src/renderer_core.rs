@@ -401,6 +401,8 @@ impl RenderCore {
             stored_states:              vec![],
             commit_before_rendering:    false,
             commit_after_rendering:     false,
+            blend_mode:                 canvas::BlendMode::SourceOver,
+            alpha:                      1.0
         };
 
         mem::swap(&mut old_layer, &mut self.layer_definitions[layer_idx as usize]);

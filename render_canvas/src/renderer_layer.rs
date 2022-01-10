@@ -19,6 +19,12 @@ pub struct Layer {
     /// True if this layer should be drawn to the render buffer immediately after rendering (eg: due to blend mode)
     pub commit_after_rendering: bool,
 
+    /// The blend mode to use when committing this layer (if committing after rendering)
+    pub blend_mode: canvas::BlendMode,
+
+    /// The alpha blend value to use for this layer (if committing after rendering)
+    pub alpha: f64,
+
     /// The stored states for this layer
     pub stored_states: Vec<LayerState>
 }
