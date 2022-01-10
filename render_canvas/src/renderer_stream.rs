@@ -479,15 +479,35 @@ impl RenderCore {
             // The render buffer is clear after this
             render_state.is_clear = Some(true);
 
-            // TODO: blend mode for the layer as a whole
+            // The blend mode for the layer
+            let alpha       = layer.alpha;
+            let blend_mode  = match layer.blend_mode {
+                canvas::BlendMode::SourceOver       => render::BlendMode::SourceOver,
+                canvas::BlendMode::SourceIn         => render::BlendMode::SourceIn,
+                canvas::BlendMode::SourceOut        => render::BlendMode::SourceOut,
+                canvas::BlendMode::DestinationOver  => render::BlendMode::DestinationOver,
+                canvas::BlendMode::DestinationIn    => render::BlendMode::DestinationIn,
+                canvas::BlendMode::DestinationOut   => render::BlendMode::DestinationOut,
+                canvas::BlendMode::SourceAtop       => render::BlendMode::SourceATop,
+                canvas::BlendMode::DestinationAtop  => render::BlendMode::DestinationATop,
+                canvas::BlendMode::Multiply         => render::BlendMode::SourceOver,
+                canvas::BlendMode::Screen           => render::BlendMode::SourceOver,
+                canvas::BlendMode::Darken           => render::BlendMode::SourceOver,
+                canvas::BlendMode::Lighten          => render::BlendMode::SourceOver,
+            };
+
             render_order.extend(vec![
                 render::RenderAction::RenderToFrameBuffer,
-                render::RenderAction::BlendMode(render::BlendMode::SourceOver),
-                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::Alpha(1.0)),
+                render::RenderAction::BlendMode(blend_mode),
+                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::Alpha(alpha)),
 
                 render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
                 render::RenderAction::Clear(render::Rgba8([0,0,0,0]))
             ]);
+
+            if blend_mode != render::BlendMode::SourceOver {
+                render_order.push(render::RenderAction::BlendMode(render::BlendMode::SourceOver));
+            }
         }
 
         // Generate a pending set of actions for the current layer
