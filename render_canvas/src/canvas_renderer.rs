@@ -944,6 +944,28 @@ impl CanvasRenderer {
                         });
                     }
 
+                    // Sets the alpha blend mode for a particular layer
+                    LayerAlpha(canvas::LayerId(layer_id), layer_alpha) => {
+                        core.sync(move |core| {
+                            let layer_id = layer_id as usize;
+
+                            if layer_id < core.layers.len() {
+                                // Fetch the layer
+                                let layer_handle    = core.layers[layer_id];
+                                let layer           = core.layer(layer_handle);
+
+                                let layer_alpha     = f32::max(0.0, f32::min(1.0, layer_alpha));
+
+                                // Update the alpha value and set the layer's 'commit' mode
+                                layer.alpha    = layer_alpha as _;
+                                if layer_alpha < 1.0 {
+                                    layer.commit_before_rendering   = true;
+                                    layer.commit_after_rendering    = true;
+                                }
+                            }
+                        });
+                    }
+
                     // Clears the current layer
                     ClearLayer | ClearSprite => {
                         fill_state      = FillState::None;

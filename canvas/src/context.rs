@@ -157,6 +157,11 @@ pub trait GraphicsContext {
         self.draw(Draw::LayerBlend(layer_id, blend_mode));
     }
 
+    /// Sets the alpha value for a particular layer
+    fn layer_alpha(&mut self, layer_id: LayerId, alpha: f64) {
+        self.draw(Draw::LayerAlpha(layer_id, alpha as _));
+    }
+
     /// Clears the current layer
     fn clear_layer(&mut self)                               { self.draw(Draw::ClearLayer); }
 

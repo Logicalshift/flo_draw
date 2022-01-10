@@ -386,6 +386,7 @@ enum DecoderState {
     NewLayerBlendU32(String),                   // 'Nb' (id, mode)
     NewLayer(String),                           // 'NL' (id)
     NewLayerBlend(DecodeLayerId, String),       // 'NB' (id, mode)
+    NewLayerAlpha(DecodeLayerId, String),       // 'Nt' (id, alpha)
     SwapLayers(Option<LayerId>, String),        // 'NX' (layer1, layer2)
 
     NewSprite(String),                          // 'Ns' (id)
@@ -511,6 +512,7 @@ impl CanvasDecoder {
             NewLayerBlendU32(param)         => Self::decode_new_layer_blend_u32(next_chr, param)?,
             NewLayer(param)                 => Self::decode_new_layer(next_chr, param)?,
             NewLayerBlend(layer, blend)     => Self::decode_new_layer_blend(next_chr, layer, blend)?,
+            NewLayerAlpha(layer, alpha)     => Self::decode_new_layer_alpha(next_chr, layer, alpha)?,
             SwapLayers(layer1, param)       => Self::decode_swap_layers(next_chr, layer1, param)?,
 
             NewSprite(param)                => Self::decode_new_sprite(next_chr, param)?,
@@ -601,6 +603,7 @@ impl CanvasDecoder {
             'b'     => Ok((DecoderState::NewLayerBlendU32(String::new()), None)),
             'L'     => Ok((DecoderState::NewLayer(String::new()), None)),
             'B'     => Ok((DecoderState::NewLayerBlend(PartialResult::MatchMore(String::new()), String::new()), None)),
+            't'     => Ok((DecoderState::NewLayerAlpha(PartialResult::MatchMore(String::new()), String::new()), None)),
             'X'     => Ok((DecoderState::SwapLayers(None, String::new()), None)),
             's'     => Ok((DecoderState::NewSprite(String::new()), None)),
 
@@ -1055,6 +1058,21 @@ impl CanvasDecoder {
             (PartialResult::MatchMore(layer_param), _)  => Ok((DecoderState::NewLayerBlend(Self::decode_layer_id(next_chr, layer_param)?, blend_mode), None)),
             (PartialResult::FullMatch(layer_id), 0)     => { blend_mode.push(next_chr); Ok((DecoderState::NewLayerBlend(PartialResult::FullMatch(layer_id), blend_mode), None)) },
             (PartialResult::FullMatch(layer_id), _)     => { blend_mode.push(next_chr); Ok((DecoderState::None, Some(Draw::LayerBlend(layer_id, Self::decode_blend_mode_only(&mut blend_mode.chars())?)))) }
+        }
+    }
+
+    #[inline] fn decode_new_layer_alpha(next_chr: char, layer_param: PartialResult<LayerId>, mut alpha: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match layer_param {
+            PartialResult::MatchMore(layer_param)   => Ok((DecoderState::NewLayerAlpha(Self::decode_layer_id(next_chr, layer_param)?, alpha), None)),
+            PartialResult::FullMatch(layer_id)      => { 
+                alpha.push(next_chr);
+
+                if alpha.len() < 6 {
+                    Ok((DecoderState::NewLayerAlpha(PartialResult::FullMatch(layer_id), alpha), None))
+                } else {
+                    Ok((DecoderState::None, Some(Draw::LayerAlpha(layer_id, Self::decode_f32(&mut alpha.chars())?))))
+                }
+            }
         }
     }
 
@@ -1938,6 +1956,11 @@ mod test {
     }
 
     #[test]
+    fn decode_layer_alpha() {
+        check_round_trip_single(Draw::LayerAlpha(LayerId(75), 0.25));
+    }
+
+    #[test]
     fn decode_clear_layer() {
         check_round_trip_single(Draw::ClearLayer);
     }
@@ -2197,6 +2220,8 @@ mod test {
             Draw::PopState,
             Draw::ClearCanvas(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
             Draw::Layer(LayerId(21)),
+            Draw::LayerBlend(LayerId(22), BlendMode::DestinationOut),
+            Draw::LayerAlpha(LayerId(23), 0.4),
             Draw::ClearLayer,
             Draw::ClearAllLayers,
             Draw::SwapLayers(LayerId(1), LayerId(2)),

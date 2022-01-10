@@ -486,6 +486,7 @@ impl CanvasEncoding<String> for Draw {
             &ClearCanvas(color)                         => ('N', 'A', color).encode_canvas(append_to),
             &Layer(layer_id)                            => ('N', 'L', layer_id).encode_canvas(append_to),
             &LayerBlend(layer_id, blend_mode)           => ('N', 'B', layer_id, blend_mode).encode_canvas(append_to),
+            &LayerAlpha(layer_id, alpha)                => ('N', 't', layer_id, alpha).encode_canvas(append_to),
             &ClearLayer                                 => ('N', 'C').encode_canvas(append_to),
             &ClearAllLayers                             => ('N', 'a').encode_canvas(append_to),
             &SwapLayers(layer1, layer2)                 => ('N', 'X', layer1, layer2).encode_canvas(append_to),
@@ -597,6 +598,8 @@ mod test {
     fn encode_layer() { assert!(&encode_draw(Draw::Layer(LayerId(2))) == "NLC") }
     #[test]
     fn encode_layer_blend() { assert!(&encode_draw(Draw::LayerBlend(LayerId(2), BlendMode::Screen)) == "NBCES") }
+    #[test]
+    fn encode_layer_alpha() { assert!(&encode_draw(Draw::LayerAlpha(LayerId(2), 0.5)) == "NtCAAAA/A") }
     #[test]
     fn encode_clearlayer() { assert!(&encode_draw(Draw::ClearLayer) == "NC") }
     #[test]

@@ -259,6 +259,9 @@ pub enum Draw {
     /// Sets how a particular layer is blended with the underlying layer
     LayerBlend(LayerId, BlendMode),
 
+    /// Sets the alpha value for a particular layer (0.0-1.0)
+    LayerAlpha(LayerId, f32),
+
     /// Clears the current layer
     ClearLayer,
 
