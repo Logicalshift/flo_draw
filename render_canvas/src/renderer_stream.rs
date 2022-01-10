@@ -61,6 +61,9 @@ pub struct RenderStream<'a> {
     /// The future that is processing new drawing instructions
     processing_future: Option<BoxFuture<'a, ()>>,
 
+    /// Set to true if the layer buffer is clear after rendering the current layer
+    layer_buffer_is_clear: bool,
+
     /// The current layer ID that we're processing
     layer_id: usize,
 
@@ -101,7 +104,10 @@ struct RenderStreamState {
     transform: Option<canvas::Transform2D>,
 
     /// The buffers to use to render the clipping region
-    clip_buffers: Option<Vec<(render::VertexBufferId, render::IndexBufferId, usize)>>
+    clip_buffers: Option<Vec<(render::VertexBufferId, render::IndexBufferId, usize)>>,
+
+    /// Set to true or false if this layer has left the layer buffer clear (or None if this is unknown)
+    is_clear: Option<bool>
 }
 
 impl<'a> RenderStream<'a> {
@@ -118,6 +124,7 @@ impl<'a> RenderStream<'a> {
             pending:                    VecDeque::from(initial_actions),
             final_actions:              Some(final_actions),
             viewport_transform:         viewport_transform,
+            layer_buffer_is_clear:      true,
             layer_id:                   0,
             layer_count:                0,
             render_index:               0
@@ -149,7 +156,8 @@ impl RenderStreamState {
             clip_mask:          Maybe::Unknown, 
             shader_modifier:    None,
             transform:          None,
-            clip_buffers:       None
+            clip_buffers:       None,
+            is_clear:           None
         }
     }
 
@@ -302,9 +310,9 @@ impl RenderCore {
         // Render the layer
         let mut render_order            = vec![];
         let mut active_transform        = canvas::Transform2D::identity();
-        let is_first_layer              = core.layers[0] == layer_handle;
         let mut layer                   = core.layer(layer_handle);
         let initial_state               = render_state.clone();
+        let layer_buffer_is_clear       = initial_state.is_clear.unwrap_or(false);
 
         render_state.transform          = Some(viewport_transform);
         render_state.blend_mode         = Some(render::BlendMode::SourceOver);
@@ -312,10 +320,10 @@ impl RenderCore {
         render_state.clip_mask          = Maybe::None;
         render_state.clip_buffers       = Some(vec![]);
         render_state.shader_modifier    = Some(ShaderModifier::Simple);
+        render_state.is_clear           = Some(false);
 
         // Commit the layer to the render buffer if needed
-        if layer.commit_before_rendering && !is_first_layer {
-            // TODO: use the appropriate blend mode for the underlying layer
+        if layer.commit_before_rendering && !layer_buffer_is_clear {
             render_order.extend(vec![
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
@@ -468,28 +476,18 @@ impl RenderCore {
 
         // If the layer has 'commit after rendering' and the next layer does not have 'commit before rendering', then commit what we just rendered
         if layer.commit_after_rendering {
-            let layer_index         = core.layers.iter().position(|layer| layer == &layer_handle);
-            let next_layer_index    = layer_index.and_then(|idx| if idx+1 < core.layers.len() { Some(idx+1) } else { None });
+            // The render buffer is clear after this
+            render_state.is_clear = Some(true);
 
-            // The last layer will cause us to commit anyway, so we don't 'commit after rendering'
-            // TODO: ... unless the blend mode requires it as this will always commit 'source over'
-            let is_last_layer       = layer_index == Some(core.layers.len()-1);
+            // TODO: blend mode for the layer as a whole
+            render_order.extend(vec![
+                render::RenderAction::RenderToFrameBuffer,
+                render::RenderAction::BlendMode(render::BlendMode::SourceOver),
+                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::Alpha(1.0)),
 
-            // If the next layer has 'commit before rendering', then we don't need to commit here (we'll commit instead when the next layer starts rendering)
-            let next_layer_commits  = next_layer_index.map(|idx| core.layer(core.layers[idx]).commit_before_rendering);
-            let next_layer_commits  = next_layer_commits.unwrap_or(false);
-
-            if !is_last_layer && !next_layer_commits {
-                // TODO: blend mode for the layer as a whole
-                render_order.extend(vec![
-                    render::RenderAction::RenderToFrameBuffer,
-                    render::RenderAction::BlendMode(render::BlendMode::SourceOver),
-                    render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::Alpha(1.0)),
-
-                    render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
-                    render::RenderAction::Clear(render::Rgba8([0,0,0,0]))
-                ]);
-            }
+                render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
+                render::RenderAction::Clear(render::Rgba8([0,0,0,0]))
+            ]);
         }
 
         // Generate a pending set of actions for the current layer
@@ -590,11 +588,15 @@ impl<'a> Stream for RenderStream<'a> {
             // Stop if we've processed all the layers
             None
         } else {
-            let result = self.core.sync(|core| {
+            let core                        = &self.core;
+            let mut layer_buffer_is_clear   = self.layer_buffer_is_clear;
+
+            let result                  = core.sync(|core| {
                 // Send any pending vertex buffers, then render the layer
                 let layer_handle        = core.layers[layer_id];
                 let send_vertex_buffers = core.send_vertex_buffers(layer_handle);
                 let mut render_state    = RenderStreamState::new();
+                render_state.is_clear   = Some(layer_buffer_is_clear);
 
                 let mut render_layer    = VecDeque::new();
 
@@ -602,8 +604,14 @@ impl<'a> Stream for RenderStream<'a> {
                 render_layer.extend(core.render_layer(viewport_transform, layer_handle, &mut render_state));
                 render_layer.extend(RenderStreamState::new().update_from_state(&render_state));
 
+                // The state will update to indicate if the layer buffer is clear or not for the next layer
+                layer_buffer_is_clear   = render_state.is_clear.unwrap_or(false);
+
                 Some(render_layer)
             });
+
+            // Store the new 'is clear' setting
+            self.layer_buffer_is_clear  = layer_buffer_is_clear;
 
             // Advance the layer ID
             layer_id += 1;
