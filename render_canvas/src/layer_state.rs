@@ -34,12 +34,6 @@ pub struct LayerState {
     /// The scale factor applied by the current matrix (used to determine the precision of the tessellator)
     pub scale_factor: f32,
 
-    /// True if this layer should be drawn on a fresh framebuffer (eg: due to blend mode of the layer or items in the layer)
-    pub commit_before_rendering: bool,
-
-    /// True if this layer should be drawn to the render buffer immediately after rendering (eg: due to blend mode)
-    pub commit_after_rendering: bool,
-
     /// The current transform to apply when rendering sprites
     pub sprite_matrix: canvas::Transform2D
 }

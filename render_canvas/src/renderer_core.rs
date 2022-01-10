@@ -386,21 +386,21 @@ impl RenderCore {
         // Swap in an old layer for the new layer
         let LayerHandle(layer_idx)  = layer_handle;
         let mut old_layer           = Layer {
-            render_order:       vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
-            state:              LayerState {
-                is_sprite:                  false,
-                fill_color:                 FillState::Color(render::Rgba8([0, 0, 0, 255])),
-                winding_rule:               FillRule::NonZero,
-                stroke_settings:            StrokeSettings::new(),
-                current_matrix:             canvas::Transform2D::identity(),
-                sprite_matrix:              canvas::Transform2D::identity(),
-                scale_factor:               1.0,
-                blend_mode:                 canvas::BlendMode::SourceOver,
-                commit_before_rendering:    false,
-                commit_after_rendering:     false,
-                restore_point:              None
+            render_order:               vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
+            state:                      LayerState {
+                is_sprite:          false,
+                fill_color:         FillState::Color(render::Rgba8([0, 0, 0, 255])),
+                winding_rule:       FillRule::NonZero,
+                stroke_settings:    StrokeSettings::new(),
+                current_matrix:     canvas::Transform2D::identity(),
+                sprite_matrix:      canvas::Transform2D::identity(),
+                scale_factor:       1.0,
+                blend_mode:         canvas::BlendMode::SourceOver,
+                restore_point:      None
             },
-            stored_states:      vec![]
+            stored_states:              vec![],
+            commit_before_rendering:    false,
+            commit_after_rendering:     false,
         };
 
         mem::swap(&mut old_layer, &mut self.layer_definitions[layer_idx as usize]);

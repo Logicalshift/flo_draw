@@ -319,7 +319,7 @@ impl RenderCore {
         render_state.shader_modifier    = Some(ShaderModifier::Simple);
 
         // Commit the layer to the render buffer if needed
-        if layer.state.commit_before_rendering && !is_first_layer {
+        if layer.commit_before_rendering && !is_first_layer {
             // TODO: use the appropriate blend mode for the underlying layer
             render_order.extend(vec![
                 render::RenderAction::RenderToFrameBuffer,
@@ -473,7 +473,7 @@ impl RenderCore {
         }
 
         // If the layer has 'commit after rendering' and the next layer does not have 'commit before rendering', then commit what we just rendered
-        if layer.state.commit_after_rendering {
+        if layer.commit_after_rendering {
             let layer_index         = core.layers.iter().position(|layer| layer == &layer_handle);
             let next_layer_index    = layer_index.and_then(|idx| if idx+1 < core.layers.len() { Some(idx+1) } else { None });
 
@@ -482,7 +482,7 @@ impl RenderCore {
             let is_last_layer       = layer_index == Some(core.layers.len()-1);
 
             // If the next layer has 'commit before rendering', then we don't need to commit here (we'll commit instead when the next layer starts rendering)
-            let next_layer_commits  = next_layer_index.map(|idx| core.layer(core.layers[idx]).state.commit_before_rendering);
+            let next_layer_commits  = next_layer_index.map(|idx| core.layer(core.layers[idx]).commit_before_rendering);
             let next_layer_commits  = next_layer_commits.unwrap_or(false);
 
             if !is_last_layer && !next_layer_commits {
