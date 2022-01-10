@@ -19,6 +19,7 @@ use std::ops::{Range};
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum MsaaAttribute {
+    Alpha,
     Texture
 }
 
@@ -146,7 +147,7 @@ impl GlRenderer {
                 FreeRenderTarget(render_id)                                             => { self.free_render_target(render_id); }
                 SelectRenderTarget(render_id)                                           => { self.select_render_target(render_id); }
                 RenderToFrameBuffer                                                     => { self.select_main_frame_buffer(); }
-                DrawFrameBuffer(render_id, x, y)                                        => { self.draw_frame_buffer(render_id, x, y); }
+                DrawFrameBuffer(render_id, Alpha(alpha))                                => { self.draw_frame_buffer(render_id, alpha); }
                 ShowFrameBuffer                                                         => { /* This doesn't double-buffer so nothing to do */ }
                 CreateTextureBgra(texture_id, width, height)                            => { self.create_bgra_texture(texture_id, width, height); }
                 CreateTextureMono(texture_id, width, height)                            => { self.create_mono_texture(texture_id, width, height); }
@@ -519,7 +520,7 @@ impl GlRenderer {
     ///
     /// Draws a frame buffer at a location
     ///
-    fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, x: i32, y: i32) {
+    fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, alpha: f64) {
         let shader = &mut self.msaa4_resolve_shader;
 
         self.render_targets[source_buffer].as_ref().map(|source_buffer| {
@@ -531,6 +532,11 @@ impl GlRenderer {
                     // Set the texture for the render buffer
                     gl::ActiveTexture(gl::TEXTURE0);
                     gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, *texture);
+
+                    shader.uniform_location(MsaaAttribute::Alpha, "t_Alpha")
+                        .map(|t_alpha| {
+                            gl::Uniform1f(t_alpha, alpha as _);
+                        });
 
                     shader.uniform_location(MsaaAttribute::Texture, "t_SourceTexture")
                         .map(|source_texture| {
@@ -564,7 +570,8 @@ impl GlRenderer {
 
                     // TODO: finish up by resetting the shader
                 } else {
-                    // Blit the framebuffer if we're using a renderbuffer directly instead of a backing texture (won't blend)
+                    // Blit the framebuffer if we're using a renderbuffer directly instead of a backing texture (won't blend or obey the alpha value)
+                    let (x, y)          = (0, 0);
                     let (width, height) = source_buffer.get_size();
                     let width           = width as i32;
                     let height          = height as i32;

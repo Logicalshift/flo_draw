@@ -319,7 +319,7 @@ impl RenderCore {
             render_order.extend(vec![
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
-                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, 0, 0),
+                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::Alpha(1.0)),
 
                 render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
                 render::RenderAction::Clear(render::Rgba8([0,0,0,0]))
@@ -484,7 +484,7 @@ impl RenderCore {
                 render_order.extend(vec![
                     render::RenderAction::RenderToFrameBuffer,
                     render::RenderAction::BlendMode(render::BlendMode::SourceOver),
-                    render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, 0, 0),
+                    render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::Alpha(1.0)),
 
                     render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
                     render::RenderAction::Clear(render::Rgba8([0,0,0,0]))

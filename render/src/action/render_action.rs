@@ -10,6 +10,12 @@ use std::ops::{Range};
 use std::sync::*;
 
 ///
+/// Represents an alpha blend level
+///
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct Alpha(pub f64);
+
+///
 /// Represents an action for a render target
 ///
 #[derive(Clone, PartialEq, Debug)]
@@ -72,7 +78,7 @@ pub enum RenderAction {
     ///
     /// Renders the specified framebuffer to the current framebuffer
     ///
-    DrawFrameBuffer(RenderTargetId, i32, i32),
+    DrawFrameBuffer(RenderTargetId, Alpha),
 
     ///
     /// Creates an 8-bit BGRA 2D texture of the specified size
@@ -163,7 +169,7 @@ impl RenderAction {
             SelectRenderTarget(render_id)                                   => format!("SelectRenderTarget({:?})", render_id),
             RenderToFrameBuffer                                             => format!("RenderToFrameBuffer"),
             ShowFrameBuffer                                                 => format!("ShowFrameBuffer"),
-            DrawFrameBuffer(render_id, x, y)                                => format!("DrawFrameBuffer({:?}, {:?}, {:?})", render_id, x, y),
+            DrawFrameBuffer(render_id, alpha)                               => format!("DrawFrameBuffer({:?}, {:?})", render_id, alpha),
             CreateTextureBgra(texture_id, w, h)                             => format!("CreateTextureBgra({:?}, {:?}, {:?})", texture_id, w, h),
             CreateTextureMono(texture_id, w, h)                             => format!("CreateTextureMono({:?}, {:?}, {:?})", texture_id, w, h),
             Create1DTextureBgra(texture_id, w)                              => format!("Create1DTextureBgra({:?}, {:?})", texture_id, w),
