@@ -521,7 +521,8 @@ impl GlRenderer {
     /// Draws a frame buffer at a location
     ///
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, alpha: f64) {
-        let shader = &mut self.msaa4_resolve_shader;
+        let shader          = &mut self.msaa4_resolve_shader;
+        let simple_shader   = &mut self.simple_shader.basic;
 
         self.render_targets[source_buffer].as_ref().map(|source_buffer| {
             unsafe {
@@ -567,8 +568,6 @@ impl GlRenderer {
                     gl::DrawArrays(gl::TRIANGLES, 0, 6);
 
                     gl::BindVertexArray(0);
-
-                    // TODO: finish up by resetting the shader
                 } else {
                     // Blit the framebuffer if we're using a renderbuffer directly instead of a backing texture (won't blend or obey the alpha value)
                     let (x, y)          = (0, 0);
@@ -579,6 +578,9 @@ impl GlRenderer {
                     gl::BindFramebuffer(gl::READ_FRAMEBUFFER, **source_buffer);
                     gl::BlitFramebuffer(0, 0, width, height, x, y, x+width, y+height, gl::COLOR_BUFFER_BIT, gl::NEAREST);
                 }
+
+                // We always revert to the simple shader after this
+                gl::UseProgram(**simple_shader);
 
                 // Finish up by checking for errors
                 panic_on_gl_error("Draw frame buffer");
