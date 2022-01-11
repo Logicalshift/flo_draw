@@ -494,6 +494,10 @@ impl MetalRenderer {
             state.command_encoder.set_vertex_buffer(VertexInputIndex_VertexInputIndexVertices as u64, Some(&triangle_strip), 0);
             state.command_encoder.set_fragment_texture(FragmentInputIndex_FragmentIndexTexture as u64, Some(&source_texture));
 
+            let alpha = alpha as f32;
+            let alpha = alpha.to_ne_bytes();
+            state.command_encoder.set_fragment_bytes(FragmentInputIndex_FragmentAlpha as u64, 4, alpha.as_ptr() as _);
+
             // Draw the texture
             state.command_encoder.draw_primitives(metal::MTLPrimitiveType::TriangleStrip, 0, 4);
 
