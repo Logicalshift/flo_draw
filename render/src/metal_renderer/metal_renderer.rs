@@ -243,31 +243,31 @@ impl MetalRenderer {
             use self::RenderAction::*;
 
             match action {
-                SetTransform(matrix)                                                    => { self.set_transform(matrix, &mut render_state); }
-                CreateVertex2DBuffer(id, vertices)                                      => { self.create_vertex_buffer_2d(id, vertices); }
-                CreateIndexBuffer(id, indices)                                          => { self.create_index_buffer(id, indices); }
-                FreeVertexBuffer(id)                                                    => { self.free_vertex_buffer(id); }
-                FreeIndexBuffer(id)                                                     => { self.free_index_buffer(id); }
-                BlendMode(blend_mode)                                                   => { self.blend_mode(blend_mode, &mut render_state); }
-                CreateRenderTarget(render_id, texture_id, width, height, render_type)   => { self.create_render_target(render_id, texture_id, width, height, render_type); }
-                FreeRenderTarget(render_id)                                             => { self.free_render_target(render_id); }
-                SelectRenderTarget(render_id)                                           => { self.select_render_target(render_id, &mut render_state); }
-                RenderToFrameBuffer                                                     => { self.select_main_frame_buffer(&mut render_state); }
-                DrawFrameBuffer(render_id, x, y)                                        => { self.draw_frame_buffer(render_id, x, y, &mut render_state); }
-                ShowFrameBuffer                                                         => { /* This doesn't double-buffer so nothing to do */ }
-                CreateTextureBgra(texture_id, width, height)                            => { self.create_bgra_texture(texture_id, width, height); }
-                CreateTextureMono(texture_id, width, height)                            => { self.create_mono_texture(texture_id, width, height); }
-                Create1DTextureBgra(texture_id, width)                                  => { self.create_bgra_1d_texture(texture_id, width); }
-                Create1DTextureMono(texture_id, width)                                  => { self.create_mono_1d_texture(texture_id, width); }
-                WriteTextureData(texture_id, (x1, y1), (x2, y2), data)                  => { self.write_texture_data_2d(texture_id, x1, y1, x2, y2, data); }
-                WriteTexture1D(texture_id, x1, x2, data)                                => { self.write_texture_data_1d(texture_id, x1, x2, data); }
-                CreateMipMaps(texture_id)                                               => { self.create_mipmaps(texture_id, &mut render_state); }
-                CopyTexture(src_texture, tgt_texture)                                   => { self.copy_texture(src_texture, tgt_texture, &mut render_state); }
-                FreeTexture(texture_id)                                                 => { self.free_texture(texture_id); }
-                Clear(color)                                                            => { self.clear(color, &mut render_state); }
-                UseShader(shader_type)                                                  => { self.use_shader(shader_type, &mut render_state); }
-                DrawTriangles(buffer_id, buffer_range)                                  => { self.draw_triangles(buffer_id, buffer_range, &mut render_state); }
-                DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)         => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices, &mut render_state); }
+                SetTransform(matrix)                                                            => { self.set_transform(matrix, &mut render_state); }
+                CreateVertex2DBuffer(id, vertices)                                              => { self.create_vertex_buffer_2d(id, vertices); }
+                CreateIndexBuffer(id, indices)                                                  => { self.create_index_buffer(id, indices); }
+                FreeVertexBuffer(id)                                                            => { self.free_vertex_buffer(id); }
+                FreeIndexBuffer(id)                                                             => { self.free_index_buffer(id); }
+                BlendMode(blend_mode)                                                           => { self.blend_mode(blend_mode, &mut render_state); }
+                CreateRenderTarget(render_id, texture_id, Size2D(width, height), render_type)   => { self.create_render_target(render_id, texture_id, width, height, render_type); }
+                FreeRenderTarget(render_id)                                                     => { self.free_render_target(render_id); }
+                SelectRenderTarget(render_id)                                                   => { self.select_render_target(render_id, &mut render_state); }
+                RenderToFrameBuffer                                                             => { self.select_main_frame_buffer(&mut render_state); }
+                DrawFrameBuffer(render_id, Alpha(alpha))                                        => { self.draw_frame_buffer(render_id, alpha, &mut render_state); }
+                ShowFrameBuffer                                                                 => { /* This doesn't double-buffer so nothing to do */ }
+                CreateTextureBgra(texture_id, Size2D(width, height))                            => { self.create_bgra_texture(texture_id, width, height); }
+                CreateTextureMono(texture_id, Size2D(width, height))                            => { self.create_mono_texture(texture_id, width, height); }
+                Create1DTextureBgra(texture_id, Size1D(width))                                  => { self.create_bgra_1d_texture(texture_id, width); }
+                Create1DTextureMono(texture_id, Size1D(width))                                  => { self.create_mono_1d_texture(texture_id, width); }
+                WriteTextureData(texture_id, Position2D(x1, y1), Position2D(x2, y2), data)      => { self.write_texture_data_2d(texture_id, x1, y1, x2, y2, data); }
+                WriteTexture1D(texture_id, Position1D(x1), Position1D(x2), data)                => { self.write_texture_data_1d(texture_id, x1, x2, data); }
+                CreateMipMaps(texture_id)                                                       => { self.create_mipmaps(texture_id, &mut render_state); }
+                CopyTexture(src_texture, tgt_texture)                                           => { self.copy_texture(src_texture, tgt_texture, &mut render_state); }
+                FreeTexture(texture_id)                                                         => { self.free_texture(texture_id); }
+                Clear(color)                                                                    => { self.clear(color, &mut render_state); }
+                UseShader(shader_type)                                                          => { self.use_shader(shader_type, &mut render_state); }
+                DrawTriangles(buffer_id, buffer_range)                                          => { self.draw_triangles(buffer_id, buffer_range, &mut render_state); }
+                DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)                 => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices, &mut render_state); }
             }
         }
 
@@ -447,7 +447,7 @@ impl MetalRenderer {
     ///
     /// Renders a frame buffer to another texture (resolving multi-sampling if there is any)
     ///
-    fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, x: i32, y: i32, state: &mut RenderState) {
+    fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, alpha: f64, state: &mut RenderState) {
         let render_targets  = &self.render_targets;
 
         if let Some(source_buffer) = &render_targets[source_buffer] {
@@ -482,10 +482,10 @@ impl MetalRenderer {
 
             // The rendering is a simple triangle strip
             let triangle_strip              = vec![
-                Vertex2D { pos: [ x as f32, y as f32 ],                                 tex_coord: [ 0.0, source_height ],          color: [0,0,0,0] },
-                Vertex2D { pos: [ x as f32, y as f32 + source_height ],                 tex_coord: [ 0.0,  0.0],                    color: [0,0,0,0] },
-                Vertex2D { pos: [ x as f32 + source_width, y as f32 ],                  tex_coord: [ source_width, source_height ], color: [0,0,0,0] },
-                Vertex2D { pos: [ x as f32 + source_width, y as f32 + source_height ],  tex_coord: [ source_width, 0.0 ],           color: [0,0,0,0] },
+                Vertex2D { pos: [ 0.0, 0.0 ],                       tex_coord: [ 0.0, source_height ],          color: [0,0,0,0] },
+                Vertex2D { pos: [ 0.0, source_height ],             tex_coord: [ 0.0,  0.0],                    color: [0,0,0,0] },
+                Vertex2D { pos: [ source_width, 0.0 ],              tex_coord: [ source_width, source_height ], color: [0,0,0,0] },
+                Vertex2D { pos: [ source_width, source_height ],    tex_coord: [ source_width, 0.0 ],           color: [0,0,0,0] },
             ];
             let triangle_strip              = Buffer::from_vertices(&self.device, triangle_strip);
 
