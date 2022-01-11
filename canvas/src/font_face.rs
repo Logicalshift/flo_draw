@@ -259,7 +259,7 @@ impl CanvasFontFace {
 
         // Result is 'None' if the font has no 'units_per_em' value, as that means we don't know how to scale this font
         Some(FontMetrics {
-            em_size:            font.units_per_em()? as _,
+            em_size:            font.units_per_em() as _,
             ascender:           font.ascender() as _,
             descender:          font.descender() as _,
             height:             font.height() as _,

@@ -113,7 +113,7 @@ pub fn drawing_with_text_as_paths<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                     if let Some(font) = font_map.get(&font_id) {
                         // Use this font to generate the glyphs
                         let ttf_font        = font.ttf_font();
-                        let units_per_em    = ttf_font.units_per_em().unwrap_or(16385) as f32;
+                        let units_per_em    = ttf_font.units_per_em() as f32;
 
                         for glyph in glyphs {
                             // Start rendering this glyph

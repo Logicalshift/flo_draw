@@ -63,7 +63,7 @@ impl CanvasFontLineLayout {
     pub fn new(font: &Arc<CanvasFontFace>, em_size: f32) -> CanvasFontLineLayout {
         // Gather font info
         let ttf_font            = font.ttf_font();
-        let units_per_em        = ttf_font.units_per_em().unwrap_or(16385) as f32;
+        let units_per_em        = ttf_font.units_per_em() as f32;
 
         // Generate the initial font metrics
         let scale_factor        = (em_size / units_per_em) as f64;
