@@ -46,7 +46,7 @@ pub fn main() {
             // Second layer: 'world'
             gc.layer(LayerId(2));
             gc.layer_alpha(LayerId(2), 0.0);
-            gc.fill_color(Color::Rgba(0.0, 0.2, 0.5, 1.0));
+            gc.fill_color(Color::Rgba(0.5, 0.3, 0.0, 1.0));
             gc.draw_text(FontId(1), "World".to_string(), world_x_pos as _, world_y_pos as _);
         });
 
