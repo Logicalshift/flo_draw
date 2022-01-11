@@ -17,7 +17,8 @@ void main() {
     vec4 sample3    = texelFetch(t_SourceTexture, pos, 2);
     vec4 sample4    = texelFetch(t_SourceTexture, pos, 3);
 
-    vec4 avg        = (sample1 + sample2 + sample3 + sample4) / 4.0 * t_Alpha;
+    vec4 avg        = (sample1 + sample2 + sample3 + sample4) / 4.0;
+    avg[3]          *= t_Alpha;
 
     f_Color         = avg;
 }
