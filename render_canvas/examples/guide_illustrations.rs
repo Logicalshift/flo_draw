@@ -11,7 +11,7 @@ use futures::prelude::*;
 use futures::stream;
 use futures::executor;
 
-use png::*;
+use png;
 
 use std::io::*;
 use std::fs::*;
@@ -79,7 +79,8 @@ pub fn section_badge<TDrawFn: FnOnce(&mut Vec<Draw>) -> ()>(filename: &str, back
     let ref mut writer  = BufWriter::new(file);
 
     let mut png_encoder = png::Encoder::new(writer, BADGE_SIZE as _, BADGE_SIZE as _);
-    png_encoder.set(png::ColorType::RGBA).set(png::BitDepth::Eight);
+    png_encoder.set_color(png::ColorType::Rgba);
+    png_encoder.set_depth(png::BitDepth::Eight);
     let mut png_writer  = png_encoder.write_header().unwrap();
 
     png_writer.write_image_data(&image).unwrap();

@@ -15,12 +15,12 @@ opengl      = [ "gl", "libc", "flo_render_gl_offscreen" ]
 osx-metal   = [ "metal", "cocoa", "flo_canvas" ]
 
 [build-dependencies]
-bindgen = "0.54"
+bindgen = "0.59"
 
 [dependencies]
 gl                      = { version = "0.14", optional = true }
 metal                   = { version = "0.23", optional = true }
-cocoa                   = { version = "0.23", optional = true }
+cocoa                   = { version = "0.24", optional = true }
 libc                    = { version = "0.2", optional = true }
 flo_canvas              = { version = "0.4", optional = true }
 flo_render_gl_offscreen = { version = "0.4", optional = true }

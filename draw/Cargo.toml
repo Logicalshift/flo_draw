@@ -16,7 +16,7 @@ flo_canvas          = { version = "0.4", features = [ "outline-fonts", "image-lo
 flo_canvas_events   = { version = "0.4" }
 flo_render          = { version = "0.4", features = [ "opengl" ] }
 flo_render_canvas   = "0.4"
-flo_stream          = "0.6"
+flo_stream          = "0.7"
 flo_binding         = "2.0"
 desync              = "0.7"
 
