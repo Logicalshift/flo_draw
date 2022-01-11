@@ -298,8 +298,8 @@ impl CanvasFontLineLayout {
         // Shape the pending text
         let ttf_font        = self.font.ttf_font();
         let mut shaper      = self.font.allsorts_font();
-        let glyphs          = shaper.map_glyphs(&pending, MatchingPresentation::NotRequired);
-        let shape           = shaper.shape(glyphs, tag::LATN, Some(tag::DFLT), &gsub::Features::Mask(gsub::GsubFeatureMask::default()), true).ok()
+        let glyphs          = shaper.map_glyphs(&pending, tag::LATN, MatchingPresentation::NotRequired);
+        let shape           = shaper.shape(glyphs, tag::LATN, Some(tag::DFLT), &gsub::Features::Mask(gsub::FeatureMask::default()), true).ok()
             .unwrap_or_else(|| vec![]);
 
         // The scale factor is used to convert between font units and screen units
@@ -316,9 +316,11 @@ impl CanvasFontLineLayout {
 
             // Adjust by any requested offset
             let (off_x, off_y)  = match glyph.placement {
-                gpos::Placement::None           => (0.0, 0.0),
-                gpos::Placement::Distance(x, y) => (x as f32, y as f32),
-                gpos::Placement::Anchor(_ ,_)   => (0.0, 0.0), // TODO: https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-3-cursive-attachment-positioning-subtable
+                gpos::Placement::None                       => (0.0, 0.0),
+                gpos::Placement::Distance(x, y)             => (x as f32, y as f32),
+                gpos::Placement::MarkAnchor(_ ,_, _)        => (0.0, 0.0), // TODO
+                gpos::Placement::CursiveAnchor(_ ,_, _, _)  => (0.0, 0.0), // TODO: https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-3-cursive-attachment-positioning-subtable
+                gpos::Placement::MarkOverprint(_)           => (0.0, 0.0), // TODO
             };
             let off_x           = off_x * scale_factor;
             let off_y           = off_y * scale_factor;
