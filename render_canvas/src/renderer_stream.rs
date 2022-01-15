@@ -590,7 +590,22 @@ impl<'a> RenderStream<'a> {
             instructions
         } else {
             // Convert the bounds for any 'draw frame buffer' instruction to affect only the invalid bounds
-            // TODO: this won't work until the TODO in the renderer_core is addressed
+            let new_bounds          = self.invalid_bounds;
+            let mut instructions    = instructions;
+
+            instructions.iter_mut()
+                .for_each(|item| {
+                    match item {
+                        render::RenderAction::DrawFrameBuffer(target, _bounds, alpha)  => {
+                            let target  = *target;
+                            let alpha   = *alpha;
+
+                            *item       = render::RenderAction::DrawFrameBuffer(target, new_bounds.into(), alpha);
+                        },
+
+                        _ => { }
+                    }
+                });
 
             instructions
         }
