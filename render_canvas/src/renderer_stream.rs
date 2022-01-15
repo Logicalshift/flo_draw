@@ -81,7 +81,10 @@ pub struct RenderStream<'a> {
     final_actions: Option<Vec<render::RenderAction>>,
 
     /// The transformation for the viewport
-    viewport_transform: canvas::Transform2D
+    viewport_transform: canvas::Transform2D,
+
+    /// The region of the layer buffer that has been drawn on
+    invalid_bounds: LayerBounds
 }
 
 ///
@@ -129,9 +132,10 @@ impl<'a> RenderStream<'a> {
             final_actions:              Some(final_actions),
             viewport_transform:         viewport_transform,
             layer_buffer_is_clear:      true,
+            invalid_bounds:             LayerBounds::default(),
             layer_id:                   0,
             layer_count:                0,
-            render_index:               0
+            render_index:               0,
         }
     }
 }
@@ -570,6 +574,29 @@ impl<'a> RenderStream<'a> {
             self.pending.extend(background_actions);
         }
     }
+
+    ///
+    /// Modifies any 'draw framebuffer' operations in the pending list so that they render only the invalid region
+    ///
+    fn clip_draw_framebuffer(&self, instructions: Vec<render::RenderAction>) -> Vec<render::RenderAction> {
+        if self.invalid_bounds.is_undefined() {
+            // Remove any 'draw frame buffer' as there's nothing to draw
+            let mut instructions = instructions;
+            instructions.retain(|item| {
+                match item {
+                    render::RenderAction::DrawFrameBuffer(_, _, _)  => false,
+                    _                                               => true
+                }
+            });
+
+            instructions
+        } else {
+            // Convert the bounds for any 'draw frame buffer' instruction to affect only the invalid bounds
+            // TODO: this won't work until the TODO in the renderer_core is addressed
+
+            instructions
+        }
+    }
 }
 
 impl<'a> Stream for RenderStream<'a> {
@@ -628,13 +655,15 @@ impl<'a> Stream for RenderStream<'a> {
         } else {
             let core                        = &self.core;
             let mut layer_buffer_is_clear   = self.layer_buffer_is_clear;
+            let mut invalid_bounds          = self.invalid_bounds;
 
             let result                  = core.sync(|core| {
                 // Send any pending vertex buffers, then render the layer
-                let layer_handle        = core.layers[layer_id];
-                let send_vertex_buffers = core.send_vertex_buffers(layer_handle);
-                let mut render_state    = RenderStreamState::new();
-                render_state.is_clear   = Some(layer_buffer_is_clear);
+                let layer_handle            = core.layers[layer_id];
+                let send_vertex_buffers     = core.send_vertex_buffers(layer_handle);
+                let mut render_state        = RenderStreamState::new();
+                render_state.is_clear       = Some(layer_buffer_is_clear);
+                render_state.invalid_bounds = invalid_bounds;
 
                 let mut render_layer    = VecDeque::new();
 
@@ -644,12 +673,14 @@ impl<'a> Stream for RenderStream<'a> {
 
                 // The state will update to indicate if the layer buffer is clear or not for the next layer
                 layer_buffer_is_clear   = render_state.is_clear.unwrap_or(false);
+                invalid_bounds          = render_state.invalid_bounds;
 
                 Some(render_layer)
             });
 
             // Store the new 'is clear' setting
             self.layer_buffer_is_clear  = layer_buffer_is_clear;
+            self.invalid_bounds         = invalid_bounds;
 
             // Advance the layer ID
             layer_id += 1;
@@ -667,6 +698,7 @@ impl<'a> Stream for RenderStream<'a> {
             return Poll::Ready(self.pending.pop_front());
         } else if let Some(final_actions) = self.final_actions.take() {
             // There are no more drawing actions, but we have a set of final post-render instructions to execute
+            let final_actions = self.clip_draw_framebuffer(final_actions);
             self.pending.extend(final_actions);
             return Poll::Ready(self.pending.pop_front());
         } else {

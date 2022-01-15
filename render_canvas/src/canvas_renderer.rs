@@ -1333,6 +1333,7 @@ impl CanvasRenderer {
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
                 render::RenderAction::SetTransform(render::Matrix::identity()),
+                // Note that the framebuffer region can be updated by the renderer stream (or this instruction can be removed): see `clip_draw_framebuffer()` in renderer_stream.rs
                 render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::FrameBufferRegion::default(), render::Alpha(1.0)),
                 render::RenderAction::ShowFrameBuffer,
 
