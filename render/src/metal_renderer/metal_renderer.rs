@@ -480,12 +480,28 @@ impl MetalRenderer {
             let viewport_matrix             = transform_to_matrix(&viewport_transform);
             let viewport_matrix             = MatrixBuffer::from_matrix(&self.device, viewport_matrix);
 
+            // Work out the region that's being rendered
+            let min_x                       = region.min_x();
+            let min_y                       = region.min_y();
+            let max_x                       = region.max_x();
+            let max_y                       = region.max_y();
+
+            let min_x                       = (min_x + 1.0)/2.0;
+            let min_y                       = (min_y + 1.0)/2.0;
+            let max_x                       = (max_x + 1.0)/2.0;
+            let max_y                       = (max_y + 1.0)/2.0;
+
+            let min_x                       = min_x * source_width;
+            let min_y                       = min_y * source_height;
+            let max_x                       = max_x * source_width;
+            let max_y                       = max_y * source_height;
+
             // The rendering is a simple triangle strip
             let triangle_strip              = vec![
-                Vertex2D { pos: [ 0.0, 0.0 ],                       tex_coord: [ 0.0, source_height ],          color: [0,0,0,0] },
-                Vertex2D { pos: [ 0.0, source_height ],             tex_coord: [ 0.0,  0.0],                    color: [0,0,0,0] },
-                Vertex2D { pos: [ source_width, 0.0 ],              tex_coord: [ source_width, source_height ], color: [0,0,0,0] },
-                Vertex2D { pos: [ source_width, source_height ],    tex_coord: [ source_width, 0.0 ],           color: [0,0,0,0] },
+                Vertex2D { pos: [ min_x, min_y ],                   tex_coord: [ min_x, max_y ],                color: [0,0,0,0] },
+                Vertex2D { pos: [ min_x, max_y ],                   tex_coord: [ min_x, min_y ],                color: [0,0,0,0] },
+                Vertex2D { pos: [ max_x, min_y ],                   tex_coord: [ max_x, max_y ],                color: [0,0,0,0] },
+                Vertex2D { pos: [ max_x, max_y ],                   tex_coord: [ max_x, min_y ],                color: [0,0,0,0] },
             ];
             let triangle_strip              = Buffer::from_vertices(&self.device, triangle_strip);
 
