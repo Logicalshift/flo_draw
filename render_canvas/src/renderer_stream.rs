@@ -1,4 +1,5 @@
 use super::matrix::*;
+use super::layer_bounds::*;
 use super::resource_ids::*;
 use super::render_entity::*;
 use super::renderer_core::*;
@@ -107,7 +108,10 @@ struct RenderStreamState {
     clip_buffers: Option<Vec<(render::VertexBufferId, render::IndexBufferId, usize)>>,
 
     /// Set to true or false if this layer has left the layer buffer clear (or None if this is unknown)
-    is_clear: Option<bool>
+    is_clear: Option<bool>,
+
+    /// The region of the layer buffer that has been drawn on
+    invalid_bounds: LayerBounds
 }
 
 impl<'a> RenderStream<'a> {
@@ -157,7 +161,8 @@ impl RenderStreamState {
             shader_modifier:    None,
             transform:          None,
             clip_buffers:       None,
-            is_clear:           None
+            is_clear:           None,
+            invalid_bounds:     LayerBounds::default()
         }
     }
 
@@ -313,6 +318,7 @@ impl RenderCore {
         let mut layer                   = core.layer(layer_handle);
         let initial_state               = render_state.clone();
         let layer_buffer_is_clear       = initial_state.is_clear.unwrap_or(false);
+        let initial_invalid_bounds      = initial_state.invalid_bounds;
 
         render_state.transform          = Some(viewport_transform);
         render_state.blend_mode         = Some(render::BlendMode::SourceOver);
@@ -323,7 +329,7 @@ impl RenderCore {
         render_state.is_clear           = Some(false);
 
         // Commit the layer to the render buffer if needed
-        if layer.commit_before_rendering && !layer_buffer_is_clear {
+        if layer.commit_before_rendering && !layer_buffer_is_clear && !initial_invalid_bounds.is_undefined() {
             render_order.extend(vec![
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
@@ -332,7 +338,13 @@ impl RenderCore {
                 render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
                 render::RenderAction::Clear(render::Rgba8([0,0,0,0]))
             ]);
+
+            // This resets the invalid area of the layer buffer
+            render_state.invalid_bounds = LayerBounds::default();
         }
+
+        // Chnage the invalidated region for the layer buffer
+        render_state.invalid_bounds.combine(&layer.bounds);
 
         // Update to the new state for this layer
         render_order.extend(render_state.update_from_state(&initial_state));
@@ -475,10 +487,7 @@ impl RenderCore {
         }
 
         // If the layer has 'commit after rendering' and the next layer does not have 'commit before rendering', then commit what we just rendered
-        if layer.commit_after_rendering {
-            // The render buffer is clear after this
-            render_state.is_clear = Some(true);
-
+        if layer.commit_after_rendering && !render_state.invalid_bounds.is_undefined() {
             // The blend mode for the layer
             let alpha       = layer.alpha;
             let blend_mode  = match layer.blend_mode {
@@ -508,6 +517,10 @@ impl RenderCore {
             if blend_mode != render::BlendMode::SourceOver {
                 render_order.push(render::RenderAction::BlendMode(render::BlendMode::SourceOver));
             }
+
+            // The render buffer is clear after this
+            render_state.is_clear       = Some(true);
+            render_state.invalid_bounds = LayerBounds::default();
         }
 
         // Generate a pending set of actions for the current layer
