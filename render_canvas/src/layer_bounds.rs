@@ -57,10 +57,7 @@ impl LayerBounds {
     /// Combines the bounds of the specified entity into this layer
     ///
     pub fn add_entity_with_details(&mut self, details: RenderEntityDetails) {
-        self.min_x = f32::min(self.min_x, details.min.0);
-        self.min_y = f32::min(self.min_y, details.min.1);
-        self.max_x = f32::max(self.max_x, details.max.0);
-        self.max_y = f32::max(self.max_y, details.max.1);
+        self.combine(&details.bounds);
     }
 
     ///

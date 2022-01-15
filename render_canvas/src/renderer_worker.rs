@@ -89,9 +89,9 @@ impl CanvasWorker {
         use self::CanvasJob::*;
 
         match job {
-            Fill    { path, fill_rule, color, scale_factor, transform, entity } => self.fill(path, fill_rule, color.flat_color(), scale_factor, entity),
-            Clip    { path, fill_rule, color, scale_factor, transform, entity } => self.clip(path, fill_rule, color, scale_factor, entity),
-            Stroke  { path, stroke_options, scale_factor, transform, entity }   => self.stroke(path, stroke_options, scale_factor, entity),
+            Fill    { path, fill_rule, color, scale_factor, transform, entity } => self.fill(path, fill_rule, color.flat_color(), scale_factor, transform, entity),
+            Clip    { path, fill_rule, color, scale_factor, transform, entity } => self.clip(path, fill_rule, color, scale_factor, transform, entity),
+            Stroke  { path, stroke_options, scale_factor, transform, entity }   => self.stroke(path, stroke_options, scale_factor, transform, entity),
         }
     }
 
@@ -126,9 +126,9 @@ impl CanvasWorker {
     ///
     /// Fills the current path and returns the resulting render entity
     ///
-    fn fill(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity, RenderEntityDetails) {
+    fn fill(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64, transform: canvas::Transform2D, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity, RenderEntityDetails) {
         let geometry    = self.fill_geometry(path, fill_rule, render::Rgba8(color), scale_factor);
-        let details     = RenderEntityDetails::from_vertices(&geometry.vertices);
+        let details     = RenderEntityDetails::from_vertices(&geometry.vertices, &transform);
 
         (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Draw), details)
     }
@@ -136,9 +136,9 @@ impl CanvasWorker {
     ///
     /// Fills the current path and returns the resulting render entity
     ///
-    fn clip(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity, RenderEntityDetails) {
+    fn clip(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64, transform: canvas::Transform2D, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity, RenderEntityDetails) {
         let geometry    = self.fill_geometry(path, fill_rule, render::Rgba8(color), scale_factor);
-        let details     = RenderEntityDetails::from_vertices(&geometry.vertices);
+        let details     = RenderEntityDetails::from_vertices(&geometry.vertices, &transform);
 
         (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Clip), details)
     }
@@ -201,9 +201,9 @@ impl CanvasWorker {
     ///
     /// Strokes a path and returns the resulting render entity
     ///
-    fn stroke(&mut self, path: path::Path, stroke_options: StrokeSettings, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity, RenderEntityDetails) {
+    fn stroke(&mut self, path: path::Path, stroke_options: StrokeSettings, scale_factor: f64, transform: canvas::Transform2D, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity, RenderEntityDetails) {
         let geometry    = self.stroke_geometry(path, stroke_options, scale_factor);
-        let details     = RenderEntityDetails::from_vertices(&geometry.vertices);
+        let details     = RenderEntityDetails::from_vertices(&geometry.vertices, &transform);
 
         (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Draw), details)
     }

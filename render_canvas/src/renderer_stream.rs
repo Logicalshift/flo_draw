@@ -348,7 +348,7 @@ impl RenderCore {
         }
 
         // Chnage the invalidated region for the layer buffer
-        render_state.invalid_bounds.combine(&layer.bounds);
+        render_state.invalid_bounds.combine(&layer.bounds.transform(&viewport_transform));
 
         // Update to the new state for this layer
         render_order.extend(render_state.update_from_state(&initial_state));
@@ -493,9 +493,7 @@ impl RenderCore {
         // If the layer has 'commit after rendering' and the next layer does not have 'commit before rendering', then commit what we just rendered
         if layer.commit_after_rendering && !render_state.invalid_bounds.is_undefined() {
             // Work out the invalid region of the current layer
-            let layer_transform     = render_state.transform
-                .unwrap_or_else(|| canvas::Transform2D::identity());
-            let invalid_bounds      = render_state.invalid_bounds.transform(&layer_transform);
+            let invalid_bounds      = render_state.invalid_bounds;
 
             // The blend mode for the layer
             let alpha       = layer.alpha;
