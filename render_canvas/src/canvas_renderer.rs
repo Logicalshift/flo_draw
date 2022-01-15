@@ -1,6 +1,7 @@
 use super::matrix::*;
 use super::fill_state::*;
 use super::layer_state::*;
+use super::layer_bounds::*;
 use super::render_entity::*;
 use super::stroke_settings::*;
 use super::renderer_core::*;
@@ -250,6 +251,7 @@ impl CanvasRenderer {
                 blend_mode:         canvas::BlendMode::SourceOver,
                 restore_point:      None
             },
+            bounds:                     LayerBounds::default(),
             stored_states:              vec![],
             commit_before_rendering:    false,
             commit_after_rendering:     false,
@@ -1282,7 +1284,7 @@ impl CanvasRenderer {
             while let Some(result_list) = job_results.next().await {
                 for (entity, operation, details) in result_list {
                     // Store each result in the core
-                    core.sync(|core| core.store_job_result(entity, operation));
+                    core.sync(|core| core.store_job_result(entity, operation, details));
                 }
             }
         };

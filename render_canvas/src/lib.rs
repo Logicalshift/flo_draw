@@ -4,6 +4,7 @@ mod render_entity_details;
 mod layer_state;
 mod fill_state;
 mod stroke_settings;
+mod layer_bounds;
 mod canvas_renderer;
 mod renderer_core;
 mod renderer_layer;

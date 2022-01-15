@@ -1,9 +1,11 @@
 use super::fill_state::*;
 use super::layer_state::*;
+use super::layer_bounds::*;
 use super::render_entity::*;
 use super::renderer_layer::*;
 use super::renderer_worker::*;
 use super::stroke_settings::*;
+use super::render_entity_details::*;
 
 use flo_canvas as canvas;
 use flo_render as render;
@@ -178,7 +180,7 @@ impl RenderCore {
     ///
     /// Stores the result of a worker job in this core item
     ///
-    pub fn store_job_result(&mut self, entity_ref: LayerEntityRef, render_entity: RenderEntity) {
+    pub fn store_job_result(&mut self, entity_ref: LayerEntityRef, render_entity: RenderEntity, details: RenderEntityDetails) {
         let LayerHandle(layer_idx)  = entity_ref.layer_id;
         let layer_idx               = layer_idx as usize;
 
@@ -206,8 +208,10 @@ impl RenderCore {
         }
 
         // Store the render entity
-        self.layer_definitions[layer_idx]
-            .render_order[entity_ref.entity_index] = render_entity;
+        let layer = &mut self.layer_definitions[layer_idx];
+
+        layer.render_order[entity_ref.entity_index] = render_entity;
+        layer.bounds.add_entity_with_details(details);
     }
 
     ///
@@ -398,6 +402,7 @@ impl RenderCore {
                 blend_mode:         canvas::BlendMode::SourceOver,
                 restore_point:      None
             },
+            bounds:                     LayerBounds::default(),
             stored_states:              vec![],
             commit_before_rendering:    false,
             commit_after_rendering:     false,

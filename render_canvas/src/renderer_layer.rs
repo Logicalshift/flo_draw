@@ -1,4 +1,5 @@
 use super::layer_state::*;
+use super::layer_bounds::*;
 use super::render_entity::*;
 
 use flo_canvas as canvas;
@@ -9,6 +10,9 @@ use flo_canvas as canvas;
 pub struct Layer {
     /// The render order for this layer
     pub render_order: Vec<RenderEntity>,
+
+    /// The bounds of the entities rendered to this layer
+    pub bounds: LayerBounds,
 
     /// The state of this layer
     pub state: LayerState,
