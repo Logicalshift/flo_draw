@@ -1280,7 +1280,7 @@ impl CanvasRenderer {
         let process_tessellations    = async move {
             // Read job results from the workers until everything is done
             while let Some(result_list) = job_results.next().await {
-                for (entity, operation) in result_list {
+                for (entity, operation, details) in result_list {
                     // Store each result in the core
                     core.sync(|core| core.store_job_result(entity, operation));
                 }

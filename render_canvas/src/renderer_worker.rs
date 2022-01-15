@@ -2,6 +2,7 @@ use super::fill_state::*;
 use super::render_entity::*;
 use super::renderer_core::*;
 use super::stroke_settings::*;
+use super::render_entity_details::*;
 
 use flo_render as render;
 use flo_canvas as canvas;
@@ -81,7 +82,7 @@ impl CanvasWorker {
     ///
     /// Processes a single tessellation job (returning a vertex buffer entity)
     ///
-    pub fn process_job(&mut self, job: CanvasJob) -> (LayerEntityRef, RenderEntity) {
+    pub fn process_job(&mut self, job: CanvasJob) -> (LayerEntityRef, RenderEntity, RenderEntityDetails) {
         use self::CanvasJob::*;
 
         match job {
@@ -122,19 +123,21 @@ impl CanvasWorker {
     ///
     /// Fills the current path and returns the resulting render entity
     ///
-    fn fill(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
-        let geometry = self.fill_geometry(path, fill_rule, render::Rgba8(color), scale_factor);
+    fn fill(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity, RenderEntityDetails) {
+        let geometry    = self.fill_geometry(path, fill_rule, render::Rgba8(color), scale_factor);
+        let details     = RenderEntityDetails::from_vertices(&geometry.vertices);
 
-        (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Draw))
+        (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Draw), details)
     }
 
     ///
     /// Fills the current path and returns the resulting render entity
     ///
-    fn clip(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
-        let geometry = self.fill_geometry(path, fill_rule, render::Rgba8(color), scale_factor);
+    fn clip(&mut self, path: path::Path, fill_rule: FillRule, render::Rgba8(color): render::Rgba8, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity, RenderEntityDetails) {
+        let geometry    = self.fill_geometry(path, fill_rule, render::Rgba8(color), scale_factor);
+        let details     = RenderEntityDetails::from_vertices(&geometry.vertices);
 
-        (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Clip))
+        (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Clip), details)
     }
 
     ///
@@ -195,9 +198,10 @@ impl CanvasWorker {
     ///
     /// Strokes a path and returns the resulting render entity
     ///
-    fn stroke(&mut self, path: path::Path, stroke_options: StrokeSettings, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity) {
-        let geometry = self.stroke_geometry(path, stroke_options, scale_factor);
+    fn stroke(&mut self, path: path::Path, stroke_options: StrokeSettings, scale_factor: f64, entity: LayerEntityRef) -> (LayerEntityRef, RenderEntity, RenderEntityDetails) {
+        let geometry    = self.stroke_geometry(path, stroke_options, scale_factor);
+        let details     = RenderEntityDetails::from_vertices(&geometry.vertices);
 
-        (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Draw))
+        (entity, RenderEntity::VertexBuffer(geometry, VertexBufferIntent::Draw), details)
     }
 }
