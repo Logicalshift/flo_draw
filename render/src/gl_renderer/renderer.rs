@@ -545,9 +545,14 @@ impl GlRenderer {
                         });
 
                     // Create the vertices for the two triangles making up the screen
+                    let min_x               = region.min_x();
+                    let min_y               = region.min_y();
+                    let max_x               = region.max_x();
+                    let max_y               = region.max_y();
+
                     let vertices            = vec![
-                        Vertex2D::with_pos(-1.0, -1.0), Vertex2D::with_pos( 1.0, -1.0), Vertex2D::with_pos(-1.0, 1.0),
-                        Vertex2D::with_pos( 1.0, -1.0), Vertex2D::with_pos(-1.0,  1.0), Vertex2D::with_pos( 1.0, 1.0),
+                        Vertex2D::with_pos(min_x, min_y), Vertex2D::with_pos(max_x, min_y), Vertex2D::with_pos(min_x, max_y),
+                        Vertex2D::with_pos(max_x, min_y), Vertex2D::with_pos(min_x, max_y), Vertex2D::with_pos(max_x, max_y),
                     ];
                     let mut buffer          = Buffer::new();
                     let vertex_array        = VertexArray::new();

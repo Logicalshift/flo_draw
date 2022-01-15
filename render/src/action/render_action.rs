@@ -188,6 +188,35 @@ impl Default for FrameBufferRegion {
     }
 }
 
+impl FrameBufferRegion {
+    #[inline]
+    fn clip(val: f32) -> f32 {
+        if val < -1.0 { -1.0 }
+        else if val > 1.0 { 1.0 }
+        else { val }
+    }
+
+    /// Returns the minimum X coordinate (-1 to 1)
+    #[inline] pub fn min_x(&self) -> f32 {
+        Self::clip(self.0.0)
+    }
+
+    /// Returns the minimum Y coordinate (-1 to 1)
+    #[inline] pub fn min_y(&self) -> f32 {
+        Self::clip(self.0.1)
+    }
+
+    /// Returns the maximum X coordinate (-1 to 1)
+    #[inline] pub fn max_x(&self) -> f32 {
+        Self::clip(self.1.0)
+    }
+
+    /// Returns the maximum Y coordinate (-1 to 1)
+    #[inline] pub fn max_y(&self) -> f32 {
+        Self::clip(self.1.1)
+    }
+}
+
 impl RenderAction {
     ///
     /// Provides a description of this action without the full details (similar to using the Debug trait, but won't show the full list of vertices)
