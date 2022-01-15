@@ -39,7 +39,7 @@ pub fn main() {
                 RenderAction::BlendMode(BlendMode::SourceOver),
                 RenderAction::SetTransform(Matrix([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]])),
                 RenderAction::Clear(Rgba8([255, 255, 255, 255])),
-                RenderAction::DrawFrameBuffer(RenderTargetId(0), Alpha(1.0)),
+                RenderAction::DrawFrameBuffer(RenderTargetId(0), FrameBufferRegion::default(), Alpha(1.0)),
                 RenderAction::ShowFrameBuffer,
                 RenderAction::FreeRenderTarget(RenderTargetId(0)),
                 RenderAction::FreeRenderTarget(RenderTargetId(1)),

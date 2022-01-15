@@ -147,7 +147,7 @@ impl GlRenderer {
                 FreeRenderTarget(render_id)                                                     => { self.free_render_target(render_id); }
                 SelectRenderTarget(render_id)                                                   => { self.select_render_target(render_id); }
                 RenderToFrameBuffer                                                             => { self.select_main_frame_buffer(); }
-                DrawFrameBuffer(render_id, Alpha(alpha))                                        => { self.draw_frame_buffer(render_id, alpha); }
+                DrawFrameBuffer(render_id, region, Alpha(alpha))                                => { self.draw_frame_buffer(render_id, region, alpha); }
                 ShowFrameBuffer                                                                 => { /* This doesn't double-buffer so nothing to do */ }
                 CreateTextureBgra(texture_id, Size2D(width, height))                            => { self.create_bgra_texture(texture_id, width, height); }
                 CreateTextureMono(texture_id, Size2D(width, height))                            => { self.create_mono_texture(texture_id, width, height); }
@@ -520,7 +520,7 @@ impl GlRenderer {
     ///
     /// Draws a frame buffer at a location
     ///
-    fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, alpha: f64) {
+    fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, region: FrameBufferRegion, alpha: f64) {
         let shader          = &mut self.msaa4_resolve_shader;
         let simple_shader   = &mut self.simple_shader.basic;
 

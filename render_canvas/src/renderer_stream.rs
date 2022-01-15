@@ -333,7 +333,7 @@ impl RenderCore {
             render_order.extend(vec![
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
-                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::Alpha(1.0)),
+                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, initial_invalid_bounds.into(), render::Alpha(1.0)),
 
                 render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
                 render::RenderAction::Clear(render::Rgba8([0,0,0,0]))
@@ -488,6 +488,11 @@ impl RenderCore {
 
         // If the layer has 'commit after rendering' and the next layer does not have 'commit before rendering', then commit what we just rendered
         if layer.commit_after_rendering && !render_state.invalid_bounds.is_undefined() {
+            // Work out the invalid region of the current layer
+            let layer_transform     = render_state.transform
+                .unwrap_or_else(|| canvas::Transform2D::identity());
+            let invalid_bounds      = render_state.invalid_bounds.transform(&layer_transform);
+
             // The blend mode for the layer
             let alpha       = layer.alpha;
             let blend_mode  = match layer.blend_mode {
@@ -508,7 +513,7 @@ impl RenderCore {
             render_order.extend(vec![
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(blend_mode),
-                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::Alpha(alpha)),
+                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, invalid_bounds.into(), render::Alpha(alpha)),
 
                 render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
                 render::RenderAction::Clear(render::Rgba8([0,0,0,0]))

@@ -1,6 +1,7 @@
 use crate::render_entity_details::*;
 
 use flo_canvas as canvas;
+use flo_render as render;
 
 ///
 /// Represents the bounds of a particular layer on the canvas
@@ -21,6 +22,12 @@ impl Default for LayerBounds {
             max_x:  f32::MIN,
             max_y:  f32::MIN
         }
+    }
+}
+
+impl Into<render::FrameBufferRegion> for LayerBounds {
+    fn into(self) -> render::FrameBufferRegion {
+        render::FrameBufferRegion((self.min_x, self.min_y), (self.max_x, self.max_y))
     }
 }
 
@@ -59,7 +66,7 @@ impl LayerBounds {
     ///
     /// Returns the effect of transforming these bounds by some transformation
     ///
-    pub fn transform(&self, transform: canvas::Transform2D) -> LayerBounds {
+    pub fn transform(&self, transform: &canvas::Transform2D) -> LayerBounds {
         // Transforming has no effect on undefined layer bounds
         if self.is_undefined() { return LayerBounds::default(); }
 

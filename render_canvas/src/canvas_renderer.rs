@@ -1333,7 +1333,7 @@ impl CanvasRenderer {
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
                 render::RenderAction::SetTransform(render::Matrix::identity()),
-                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::Alpha(1.0)),
+                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::FrameBufferRegion::default(), render::Alpha(1.0)),
                 render::RenderAction::ShowFrameBuffer,
 
                 render::RenderAction::FreeRenderTarget(MAIN_RENDER_TARGET),

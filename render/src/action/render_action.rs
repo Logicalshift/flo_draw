@@ -40,6 +40,13 @@ pub struct Size1D(pub usize);
 pub struct Size2D(pub usize, pub usize);
 
 ///
+/// The minimum and maximum coordinates to render (where -1.0 represents the minimum point and 1.0 represents the maximum point)
+/// to render during a DrawFrameBuffer operation
+///
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct FrameBufferRegion(pub (f32, f32), pub (f32, f32));
+
+///
 /// Represents an action for a render target
 ///
 #[derive(Clone, PartialEq, Debug)]
@@ -102,7 +109,7 @@ pub enum RenderAction {
     ///
     /// Renders the specified framebuffer to the current framebuffer
     ///
-    DrawFrameBuffer(RenderTargetId, Alpha),
+    DrawFrameBuffer(RenderTargetId, FrameBufferRegion, Alpha),
 
     ///
     /// Creates an 8-bit BGRA 2D texture of the specified size
@@ -174,6 +181,13 @@ pub enum RenderAction {
     DrawIndexedTriangles(VertexBufferId, IndexBufferId, usize)
 }
 
+impl Default for FrameBufferRegion {
+    fn default() -> FrameBufferRegion {
+        // The default frame buffer region is the whole frame buffer
+        FrameBufferRegion((-1.0, -1.0), (1.0, 1.0))
+    }
+}
+
 impl RenderAction {
     ///
     /// Provides a description of this action without the full details (similar to using the Debug trait, but won't show the full list of vertices)
@@ -193,7 +207,7 @@ impl RenderAction {
             SelectRenderTarget(render_id)                                   => format!("SelectRenderTarget({:?})", render_id),
             RenderToFrameBuffer                                             => format!("RenderToFrameBuffer"),
             ShowFrameBuffer                                                 => format!("ShowFrameBuffer"),
-            DrawFrameBuffer(render_id, alpha)                               => format!("DrawFrameBuffer({:?}, {:?})", render_id, alpha),
+            DrawFrameBuffer(render_id, region, alpha)                       => format!("DrawFrameBuffer({:?}, {:?}, {:?})", render_id, region, alpha),
             CreateTextureBgra(texture_id, size)                             => format!("CreateTextureBgra({:?}, {:?})", texture_id, size),
             CreateTextureMono(texture_id, size)                             => format!("CreateTextureMono({:?}, {:?})", texture_id, size),
             Create1DTextureBgra(texture_id, w)                              => format!("Create1DTextureBgra({:?}, {:?})", texture_id, w),
