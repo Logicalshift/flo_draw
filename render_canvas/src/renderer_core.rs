@@ -211,7 +211,7 @@ impl RenderCore {
         let layer = &mut self.layer_definitions[layer_idx];
 
         layer.render_order[entity_ref.entity_index] = render_entity;
-        layer.bounds.add_entity_with_details(details);
+        layer.bounds.add_entity_with_details(details);                  // TODO: take account of the transform here (instead of after the layer has finished, as the transform can change over time)
     }
 
     ///
