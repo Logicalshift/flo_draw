@@ -477,6 +477,7 @@ impl CanvasRenderer {
                                 let color               = layer.state.fill_color.clone();
                                 let fill_rule           = layer.state.winding_rule;
                                 let entity_index        = layer.render_order.len();
+                                let transform           = *active_transform;
 
                                 // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
                                 let color               = if layer.state.blend_mode == canvas::BlendMode::DestinationOut { color.all_channel_alpha() } else { color };
@@ -486,7 +487,7 @@ impl CanvasRenderer {
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
                                 // Create the canvas job
-                                CanvasJob::Fill { path, fill_rule, color, scale_factor, entity }
+                                CanvasJob::Fill { path, fill_rule, color, scale_factor, transform, entity }
                             });
 
                             pending_jobs.push(job);
@@ -547,6 +548,7 @@ impl CanvasRenderer {
                                 let scale_factor        = layer.state.tolerance_scale_factor(viewport_height);
                                 let mut stroke_options  = layer.state.stroke_settings.clone();
                                 let entity_index        = layer.render_order.len();
+                                let transform           = *active_transform;
 
                                 // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
                                 let color                   = stroke_options.stroke_color;
@@ -557,7 +559,7 @@ impl CanvasRenderer {
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
                                 // Create the canvas job
-                                CanvasJob::Stroke { path, stroke_options, scale_factor, entity }
+                                CanvasJob::Stroke { path, stroke_options, scale_factor, transform, entity }
                             });
 
                             pending_jobs.push(job);
@@ -773,6 +775,7 @@ impl CanvasRenderer {
                                 let color               = render::Rgba8([255, 255, 255, 255]);
                                 let fill_rule           = layer.state.winding_rule;
                                 let entity_index        = layer.render_order.len();
+                                let transform           = *active_transform;
 
                                 // Update the clipping path and enable clipping
                                 layer.render_order.push(RenderEntity::Tessellating(entity_id));
@@ -780,7 +783,7 @@ impl CanvasRenderer {
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
                                 // Create the canvas job
-                                CanvasJob::Clip { path, fill_rule, color, scale_factor, entity }
+                                CanvasJob::Clip { path, fill_rule, color, scale_factor, transform, entity }
                             });
 
                             pending_jobs.push(job);

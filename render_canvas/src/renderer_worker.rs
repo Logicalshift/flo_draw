@@ -39,6 +39,7 @@ pub enum CanvasJob {
         color:          FillState,
         fill_rule:      FillRule,
         scale_factor:   f64,
+        transform:      canvas::Transform2D,
         entity:         LayerEntityRef
     },
 
@@ -49,6 +50,7 @@ pub enum CanvasJob {
         path:           path::Path,
         stroke_options: StrokeSettings,
         scale_factor:   f64,
+        transform:      canvas::Transform2D,
         entity:         LayerEntityRef
     },
 
@@ -60,6 +62,7 @@ pub enum CanvasJob {
         color:          render::Rgba8,
         fill_rule:      FillRule,
         scale_factor:   f64,
+        transform:      canvas::Transform2D,
         entity:         LayerEntityRef
     }
 }
@@ -86,9 +89,9 @@ impl CanvasWorker {
         use self::CanvasJob::*;
 
         match job {
-            Fill    { path, fill_rule, color, scale_factor, entity }    => self.fill(path, fill_rule, color.flat_color(), scale_factor, entity),
-            Clip    { path, fill_rule, color, scale_factor, entity }    => self.clip(path, fill_rule, color, scale_factor, entity),
-            Stroke  { path, stroke_options, scale_factor, entity }      => self.stroke(path, stroke_options, scale_factor, entity),
+            Fill    { path, fill_rule, color, scale_factor, transform, entity } => self.fill(path, fill_rule, color.flat_color(), scale_factor, entity),
+            Clip    { path, fill_rule, color, scale_factor, transform, entity } => self.clip(path, fill_rule, color, scale_factor, entity),
+            Stroke  { path, stroke_options, scale_factor, transform, entity }   => self.stroke(path, stroke_options, scale_factor, entity),
         }
     }
 
