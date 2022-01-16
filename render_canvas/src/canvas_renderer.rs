@@ -87,6 +87,7 @@ impl CanvasRenderer {
             background_color:       render::Rgba8([0, 0, 0, 0]),
             sprites:                HashMap::new(),
             used_textures:          HashMap::new(),
+            texture_size:           HashMap::new(),
             layer_textures:         HashMap::new(),
             canvas_textures:        HashMap::new(),
             canvas_gradients:       HashMap::new(),
@@ -1123,6 +1124,7 @@ impl CanvasRenderer {
                             // Add this as a texture with a usage count of 1
                             core.canvas_textures.insert(texture_id, RenderTexture::Loading(render_texture));
                             core.used_textures.insert(render_texture, 1);
+                            core.texture_size.insert(render_texture, render::Size2D(width as _, height as _));
 
                             // Create the texture in the setup actions
                             core.setup_actions.push(render::RenderAction::CreateTextureBgra(render_texture, render::Size2D(width as _, height as _)));
@@ -1171,6 +1173,7 @@ impl CanvasRenderer {
                                         core.canvas_textures.insert(texture_id, RenderTexture::Loading(copy_texture_id));
 
                                         // Generate a copy
+                                        core.texture_size.insert(copy_texture_id, core.texture_size.get(&render_texture).unwrap().clone());
                                         core.setup_actions.push(render::RenderAction::CopyTexture(render_texture, copy_texture_id));
 
                                         // Update the data in the copy
@@ -1214,6 +1217,7 @@ impl CanvasRenderer {
                                         core.canvas_textures.insert(texture_id, RenderTexture::Loading(new_texture_id));
 
                                         // Generate a copy
+                                        core.texture_size.insert(new_texture_id, core.texture_size.get(&render_texture).unwrap().clone());
                                         core.setup_actions.push(render::RenderAction::CopyTexture(render_texture, new_texture_id));
 
                                         // Write to the new texture

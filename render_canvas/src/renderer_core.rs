@@ -86,6 +86,9 @@ pub struct RenderCore {
     /// The number of times each render texture is being used by the layers or by the canvas itself (0 = ready to free)
     pub used_textures: HashMap<render::TextureId, usize>,
 
+    /// The size of the textures (when in use)
+    pub texture_size: HashMap<render::TextureId, render::Size2D>,
+
     /// Textures that are waiting to be rendered from layers
     pub layer_textures: HashMap<render::TextureId, TextureRender>,
 
@@ -184,6 +187,9 @@ impl RenderCore {
 
             // Prevent any rendering to this texture
             self.layer_textures.remove(&free_texture_id);
+
+            // This texture no longer has a size associated with it
+            self.texture_size.remove(&free_texture_id);
 
             // Add as a texture ID we can reallocate
             self.free_textures.push(free_texture_id);
