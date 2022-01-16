@@ -1,3 +1,5 @@
+use crate::sprite::*;
+
 use std::sync::*;
 
 ///
@@ -34,6 +36,8 @@ pub enum TextureOp {
 
     /// Sets a region of a texture (specified as minx, miny, width, height) to the specified bitmap
     SetBytes(TexturePosition, TextureSize, Arc<Vec<u8>>),
+
+    //SetFromSprite(SpriteId, SpriteBounds),
 
     /// Sets the transparency to use when rendering a texture
     FillTransparency(f32),

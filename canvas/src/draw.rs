@@ -5,6 +5,7 @@
 use crate::transform2d::*;
 use crate::gradient::*;
 use crate::texture::*;
+use crate::sprite::*;
 use crate::color::*;
 use crate::font::*;
 use crate::path::*;
@@ -76,20 +77,6 @@ pub enum WindingRule {
 ///
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LayerId(pub u64);
-
-///
-/// Identifier of a canvas 'sprite'
-///
-/// A 'sprite' is just a placeholder for a set of pre-rendered actions (it's useful for things like
-/// images or drawings that are expected to repeat). Sprites survive layer and canvas clears so they
-/// can be re-used repeatedly. The drawing layer may cache these actions in order to render the sprite
-/// quickly.
-///
-/// Sprites are also faster to draw when rendering to a remote surface as they only need to be sent
-/// across once before they can be re-rendered as often as necessary.
-///
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct SpriteId(pub u64);
 
 ///
 /// Identifier for a font

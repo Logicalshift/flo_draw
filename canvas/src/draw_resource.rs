@@ -1,5 +1,6 @@
 use crate::draw::*;
 use crate::font::*;
+use crate::sprite::*;
 use crate::texture::*;
 use crate::gradient::*;
 

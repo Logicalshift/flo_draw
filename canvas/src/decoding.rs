@@ -2,6 +2,7 @@ use crate::draw::*;
 use crate::path::*;
 use crate::font::*;
 use crate::color::*;
+use crate::sprite::*;
 use crate::texture::*;
 use crate::gradient::*;
 use crate::font_face::*;

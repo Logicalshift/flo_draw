@@ -123,6 +123,7 @@ mod test {
     use crate::path::*;
     use crate::font::*;
     use crate::color::*;
+    use crate::sprite::*;
     use crate::context::*;
     use crate::font_face::*;
 

@@ -221,6 +221,7 @@ mod test {
     use super::*;
     use crate::path::*;
     use crate::font::*;
+    use crate::sprite::*;
     use crate::gradient::*;
     use crate::font_face::*;
     use crate::primitives::*;
