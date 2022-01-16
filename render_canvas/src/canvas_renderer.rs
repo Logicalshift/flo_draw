@@ -79,23 +79,24 @@ impl CanvasRenderer {
     pub fn new() -> CanvasRenderer {
         // Create the shared core
         let core = RenderCore {
-            frame_starts:           0,
-            setup_actions:          vec![],
-            layers:                 vec![],
-            free_layers:            vec![],
-            layer_definitions:      vec![],
-            background_color:       render::Rgba8([0, 0, 0, 0]),
-            sprites:                HashMap::new(),
-            used_textures:          HashMap::new(),
-            texture_size:           HashMap::new(),
-            layer_textures:         HashMap::new(),
-            canvas_textures:        HashMap::new(),
-            canvas_gradients:       HashMap::new(),
-            texture_alpha:          HashMap::new(),
-            unused_vertex_buffer:   0,
-            free_vertex_buffers:    vec![],
-            unused_texture_id:      16,
-            free_textures:          vec![]
+            frame_starts:               0,
+            setup_actions:              vec![],
+            layers:                     vec![],
+            free_layers:                vec![],
+            layer_definitions:          vec![],
+            background_color:           render::Rgba8([0, 0, 0, 0]),
+            sprites:                    HashMap::new(),
+            used_textures:              HashMap::new(),
+            render_target_for_texture:  HashMap::new(),
+            texture_size:               HashMap::new(),
+            layer_textures:             HashMap::new(),
+            canvas_textures:            HashMap::new(),
+            canvas_gradients:           HashMap::new(),
+            texture_alpha:              HashMap::new(),
+            unused_vertex_buffer:       0,
+            free_vertex_buffers:        vec![],
+            unused_texture_id:          16,
+            free_textures:              vec![]
         };
         let core = Arc::new(Desync::new(core));
 

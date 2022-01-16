@@ -86,6 +86,9 @@ pub struct RenderCore {
     /// The number of times each render texture is being used by the layers or by the canvas itself (0 = ready to free)
     pub used_textures: HashMap<render::TextureId, usize>,
 
+    /// If a texture was created to use as a render target, this provides the render target ID
+    pub render_target_for_texture: HashMap<render::TextureId, render::RenderTargetId>,
+
     /// The size of the textures (when in use)
     pub texture_size: HashMap<render::TextureId, render::Size2D>,
 
@@ -193,6 +196,13 @@ impl RenderCore {
 
             // Add as a texture ID we can reallocate
             self.free_textures.push(free_texture_id);
+
+            // Free the render target if there is one
+            if let Some(render_target_id) = self.render_target_for_texture.get(&free_texture_id) {
+                render_actions.push(render::RenderAction::FreeRenderTarget(*render_target_id));
+            }
+
+            self.render_target_for_texture.remove(&free_texture_id);
 
             // Generate a 'free texture' action to release the graphics memory used by this texture
             render_actions.push(render::RenderAction::FreeTexture(free_texture_id));
