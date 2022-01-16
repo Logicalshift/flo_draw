@@ -53,6 +53,18 @@ impl Into<render::TextureId> for &RenderTexture {
 }
 
 ///
+/// Textures with pending render instructions
+///
+pub enum TextureRender {
+    ///
+    /// The specified sprite bounds should be made to fill the texture
+    ///
+    /// Once this instruction has been completed by a stream, the texture will not be rendered again
+    ///
+    FromSprite(LayerHandle, canvas::SpriteBounds)
+}
+
+///
 /// Parts of the renderer that are shared with the workers
 ///
 pub struct RenderCore {
@@ -73,6 +85,9 @@ pub struct RenderCore {
 
     /// The number of times each render texture is being used by the layers or by the canvas itself (0 = ready to free)
     pub used_textures: HashMap<render::TextureId, usize>,
+
+    /// Textures that are waiting to be rendered from layers
+    pub layer_textures: HashMap<render::TextureId, TextureRender>,
 
     /// Maps canvas textures to render textures
     pub canvas_textures: HashMap<canvas::TextureId, RenderTexture>,
@@ -166,6 +181,9 @@ impl RenderCore {
         for free_texture_id in unused_textures.into_iter() {
             // Remove from the 'used textures' hash
             self.used_textures.remove(&free_texture_id);
+
+            // Prevent any rendering to this texture
+            self.layer_textures.remove(&free_texture_id);
 
             // Add as a texture ID we can reallocate
             self.free_textures.push(free_texture_id);

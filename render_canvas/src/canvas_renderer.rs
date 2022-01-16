@@ -87,6 +87,7 @@ impl CanvasRenderer {
             background_color:       render::Rgba8([0, 0, 0, 0]),
             sprites:                HashMap::new(),
             used_textures:          HashMap::new(),
+            layer_textures:         HashMap::new(),
             canvas_textures:        HashMap::new(),
             canvas_gradients:       HashMap::new(),
             texture_alpha:          HashMap::new(),
@@ -1150,7 +1151,7 @@ impl CanvasRenderer {
                             if let Some(render_texture) = core.canvas_textures.get(&texture_id) {
                                 let mut render_texture = *render_texture;
 
-                                // If the texture has one used count and is in a 'ready' state, switch it back to 'loading'
+                                // If the texture has one used count and is in a 'ready' state, switch it back to 'loading' (nothing has rendered it)
                                 if let RenderTexture::Ready(render_texture_id) = &render_texture {
                                     if core.used_textures.get(render_texture_id) == Some(&1) {
                                         core.canvas_textures.insert(texture_id, RenderTexture::Loading(*render_texture_id));
@@ -1185,6 +1186,52 @@ impl CanvasRenderer {
                         });
                     }
 
+                    // Render a texture from a sprite
+                    Texture(texture_id, canvas::TextureOp::SetFromSprite(sprite_id, canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h)))) => {
+                        core.sync(|core| {
+                            // Specify this as a texture that needs to be loaded by rendering from a layer
+                            if let (Some(render_texture), Some(sprite_layer_handle)) = (core.canvas_textures.get(&texture_id), core.sprites.get(&sprite_id)) {
+                                let mut render_texture  = *render_texture;
+                                let sprite_layer_handle = *sprite_layer_handle;
+
+                                // If the texture has one used count and is in a 'ready' state, switch it back to 'loading' (nothing has rendered it)
+                                if let RenderTexture::Ready(render_texture_id) = &render_texture {
+                                    if core.used_textures.get(render_texture_id) == Some(&1) {
+                                        core.canvas_textures.insert(texture_id, RenderTexture::Loading(*render_texture_id));
+                                        render_texture = RenderTexture::Loading(*render_texture_id);
+                                    }
+                                }
+
+                                // This texture needs to be marked to be rendered after the setup is completed
+                                let texture_id = match render_texture {
+                                    RenderTexture::Ready(render_texture)    => {
+                                        // Create a blank texture, and move back to the loading state
+                                        let new_texture_id = core.allocate_texture();
+
+                                        // Stop using the initial texture, and create a new copy that's 'Loading'
+                                        core.used_textures.get_mut(&render_texture).map(|usage_count| *usage_count -= 1);
+                                        core.used_textures.insert(new_texture_id, 1);
+                                        core.canvas_textures.insert(texture_id, RenderTexture::Loading(new_texture_id));
+
+                                        // Generate a copy
+                                        core.setup_actions.push(render::RenderAction::CopyTexture(render_texture, new_texture_id));
+
+                                        // Write to the new texture
+                                        new_texture_id
+                                    }
+
+                                    RenderTexture::Loading(render_texture)  => {
+                                        // Use the existing texture
+                                        render_texture
+                                    }
+                                };
+
+                                // Cause the stream to render the sprite to the texture at the start of the next frame
+                                core.layer_textures.insert(texture_id, TextureRender::FromSprite(sprite_layer_handle, canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h))));
+                            }
+                        });
+                    }
+
                     // Sets the transparency to use when drawing a particular texture
                     Texture(texture_id, canvas::TextureOp::FillTransparency(alpha)) => {
                         self.core.sync(|core| {
@@ -1195,11 +1242,6 @@ impl CanvasRenderer {
                                 layer.state.fill_color  = layer.state.fill_color.with_texture_alpha(alpha);
                             }
                         });
-                    }
-
-                    // Render a texture from a sprite
-                    Texture(texture_id, canvas::TextureOp::SetFromSprite(sprite_id, canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h)))) => {
-                        unimplemented!()
                     }
 
                     // Performs a font operation
