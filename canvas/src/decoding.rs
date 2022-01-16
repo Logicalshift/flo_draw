@@ -1492,7 +1492,7 @@ impl CanvasDecoder {
             None        => { return Err(DecoderError::NotReady); }
         };
 
-        Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::Create(w, h, format)))))
+        Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::Create(TextureSize(w, h), format)))))
     }
 
     ///
@@ -1519,7 +1519,7 @@ impl CanvasDecoder {
         let w           = Self::decode_u32(&mut chars)?;
         let h           = Self::decode_u32(&mut chars)?;
 
-        Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, w, h, Arc::new(bytes.to_bytes()?))))))
+        Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::SetBytes(TexturePosition(x, y), TextureSize(w, h), Arc::new(bytes.to_bytes()?))))))
     }
 
     ///
@@ -2094,7 +2094,7 @@ mod test {
 
     #[test]
     fn decode_create_texture() {
-        check_round_trip_single(Draw::Texture(TextureId(42), TextureOp::Create(100, 200, TextureFormat::Rgba)));
+        check_round_trip_single(Draw::Texture(TextureId(42), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba)));
     }
 
     #[test]
@@ -2104,7 +2104,7 @@ mod test {
 
     #[test]
     fn decode_texture_set_bytes() {
-        check_round_trip_single(Draw::Texture(TextureId(44), TextureOp::SetBytes(100, 200, 300, 400, Arc::new(vec![240, 230, 220, 210, 200, 190]))));
+        check_round_trip_single(Draw::Texture(TextureId(44), TextureOp::SetBytes(TexturePosition(100, 200), TextureSize(300, 400), Arc::new(vec![240, 230, 220, 210, 200, 190]))));
     }
 
     #[test]
@@ -2231,9 +2231,9 @@ mod test {
             Draw::SpriteTransform(SpriteTransform::Translate(4.0, 5.0)),
             Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))),
             Draw::DrawSprite(SpriteId(1300)),
-            Draw::Texture(TextureId(42), TextureOp::Create(1024, 768, TextureFormat::Rgba)),
+            Draw::Texture(TextureId(42), TextureOp::Create(TextureSize(1024, 768), TextureFormat::Rgba)),
             Draw::Texture(TextureId(43), TextureOp::Free),
-            Draw::Texture(TextureId(44), TextureOp::SetBytes(2, 3, 4, 5, Arc::new(vec![1,2,3,4,5]))),
+            Draw::Texture(TextureId(44), TextureOp::SetBytes(TexturePosition(2, 3), TextureSize(4, 5), Arc::new(vec![1,2,3,4,5]))),
             Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.5)),
 
             Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))),

@@ -1096,7 +1096,7 @@ impl CanvasRenderer {
                     },
 
                     // Creates or replaces a texture
-                    Texture(texture_id, canvas::TextureOp::Create(width, height, canvas::TextureFormat::Rgba)) => {
+                    Texture(texture_id, canvas::TextureOp::Create(canvas::TextureSize(width, height), canvas::TextureFormat::Rgba)) => {
                         core.sync(|core| {
                             // If the texture ID was previously in use, reduce the usage count
                             let render_texture = if let Some(old_render_texture) = core.canvas_textures.get(&texture_id) {
@@ -1143,7 +1143,7 @@ impl CanvasRenderer {
                     }
 
                     // Updates an existing texture
-                    Texture(texture_id, canvas::TextureOp::SetBytes(x, y, width, height, bytes)) => {
+                    Texture(texture_id, canvas::TextureOp::SetBytes(canvas::TexturePosition(x, y), canvas::TextureSize(width, height), bytes)) => {
                         core.sync(|core| {
                             // Create a canvas renderer job that will write these bytes to the texture
                             if let Some(render_texture) = core.canvas_textures.get(&texture_id) {

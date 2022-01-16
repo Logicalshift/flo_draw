@@ -237,7 +237,7 @@ pub trait GraphicsContext {
 
     /// Creates a new texture that can be used with fill_texture of the specified width and height
     fn create_texture(&mut self, texture_id: TextureId, width: u32, height: u32, format: TextureFormat) {
-        self.draw(Draw::Texture(texture_id, TextureOp::Create(width, height, format)));
+        self.draw(Draw::Texture(texture_id, TextureOp::Create(TextureSize(width, height), format)));
     }
 
     /// Releases the memory allocated to a particular texture
@@ -247,7 +247,7 @@ pub trait GraphicsContext {
 
     /// Sets the bitmap data for a texture, in the format specified by the call to create_texture()
     fn set_texture_bytes(&mut self, texture_id: TextureId, x: u32, y: u32, width: u32, height: u32, bytes: Arc<Vec<u8>>) {
-        self.draw(Draw::Texture(texture_id, TextureOp::SetBytes(x, y, width, height, bytes)));
+        self.draw(Draw::Texture(texture_id, TextureOp::SetBytes(TexturePosition(x, y), TextureSize(width, height), bytes)));
     }
 
     /// Applies an alpha value to a texture

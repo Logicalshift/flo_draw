@@ -98,7 +98,7 @@ impl Draw {
             ClearSprite                             => smallvec![],
             SwapLayers(layer1, layer2)              => smallvec![DrawResource::Layer(*layer1), DrawResource::Layer(*layer2)],
 
-            Texture(_, TextureOp::Create(_, _, _))  => smallvec![],
+            Texture(_, TextureOp::Create(_, _))     => smallvec![],
             Gradient(_, GradientOp::Create(_))      => smallvec![],
             Font(_, FontOp::UseFontDefinition(_))   => smallvec![],
             Font(_, FontOp::FontSize(_))            => smallvec![],
