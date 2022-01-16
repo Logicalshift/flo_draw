@@ -67,6 +67,7 @@ struct DecodeBytes {
 
 type DecodeLayerId      = PartialResult<LayerId>;
 type DecodeFontId       = PartialResult<FontId>;
+type DecodeSpriteId     = PartialResult<SpriteId>;
 type DecodeTextureId    = PartialResult<TextureId>;
 type DecodeGradientId   = PartialResult<GradientId>;
 
@@ -398,25 +399,26 @@ enum DecoderState {
     SpriteTransformRotate(String),              // 'sTr' (degrees)
     SpriteTransformTransform(String),           // 'sTT' (transform)
 
-    FontDrawing,                                            // 't'
-    FontDrawText(DecodeFontId, DecodeString, String),       // 'tT' (font_id, string, x, y)
-    FontBeginLayout(String),                                // 'tl' (x, y, align)
+    FontDrawing,                                                // 't'
+    FontDrawText(DecodeFontId, DecodeString, String),           // 'tT' (font_id, string, x, y)
+    FontBeginLayout(String),                                    // 'tl' (x, y, align)
 
-    FontOp(DecodeFontId),                                   // 'f' (id, op)
-    FontOpSize(FontId, String),                             // 'f<id>S' (size)
-    FontOpData(FontId),                                     // 'f<id>d'
-    FontOpTtf(FontId, DecodeBytes),                         // 'f<id>dT' (bytes)
-    FontOpLayoutText(FontId, DecodeString),                 // 'f<id>L' (string)
-    FontOpDrawGlyphs(FontId, DecodeGlyphPositions),         // 'f<id>G' (glyph positions)
+    FontOp(DecodeFontId),                                       // 'f' (id, op)
+    FontOpSize(FontId, String),                                 // 'f<id>S' (size)
+    FontOpData(FontId),                                         // 'f<id>d'
+    FontOpTtf(FontId, DecodeBytes),                             // 'f<id>dT' (bytes)
+    FontOpLayoutText(FontId, DecodeString),                     // 'f<id>L' (string)
+    FontOpDrawGlyphs(FontId, DecodeGlyphPositions),             // 'f<id>G' (glyph positions)
 
-    TextureOp(DecodeTextureId),                             // 'B<id>' (id, op)
-    TextureOpCreate(TextureId, String),                     // 'B<id>N' (w, h, format)
-    TextureOpSetBytes(TextureId, String, DecodeBytes),      // 'B<id>D' (x, y, w, h, bytes)
-    TextureOpFillTransparency(TextureId, String),           // 'B<id>t' (alpha)
+    TextureOp(DecodeTextureId),                                 // 'B<id>' (id, op)
+    TextureOpCreate(TextureId, String),                         // 'B<id>N' (w, h, format)
+    TextureOpSetBytes(TextureId, String, DecodeBytes),          // 'B<id>D' (x, y, w, h, bytes)
+    TextureOpSetFromSprite(TextureId, DecodeSpriteId, String),  // 'B<id>S (sprite, x, y, w, h)
+    TextureOpFillTransparency(TextureId, String),               // 'B<id>t' (alpha)
 
-    GradientOp(DecodeGradientId),                           // 'G' (id, op)
-    GradientOpNew(GradientId, String),                      // 'G<id>N' (r, g, b, a)
-    GradientOpAddStop(GradientId, String),                  // 'G<id>S' (pos, r, g, b, a)
+    GradientOp(DecodeGradientId),                               // 'G' (id, op)
+    GradientOpNew(GradientId, String),                          // 'G<id>N' (r, g, b, a)
+    GradientOpAddStop(GradientId, String),                      // 'G<id>S' (pos, r, g, b, a)
 }
 
 ///
@@ -538,6 +540,7 @@ impl CanvasDecoder {
             TextureOp(texture_id)                               => Self::decode_texture_op(next_chr, texture_id)?,
             TextureOpCreate(texture_id, param)                  => Self::decode_texture_create(next_chr, texture_id, param)?,
             TextureOpSetBytes(texture_id, param, bytes)         => Self::decode_texture_set_bytes(next_chr, texture_id, param, bytes)?,
+            TextureOpSetFromSprite(texture_id, sprite, param)   => Self::decode_texture_set_from_sprite(next_chr, texture_id, sprite, param)?,
             TextureOpFillTransparency(texture_id, param)        => Self::decode_texture_fill_transparency(next_chr, texture_id, param)?,
 
             GradientOp(gradient_id)                             => Self::decode_gradient_op(next_chr, gradient_id)?,     
@@ -1464,6 +1467,7 @@ impl CanvasDecoder {
             'N' => Ok((DecoderState::TextureOpCreate(texture_id, String::new()), None)),
             'X' => Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::Free)))),
             'D' => Ok((DecoderState::TextureOpSetBytes(texture_id, String::new(), DecodeBytes::new()), None)),
+            'S' => Ok((DecoderState::TextureOpSetFromSprite(texture_id, DecodeSpriteId::new(), String::new()), None)),
             't' => Ok((DecoderState::TextureOpFillTransparency(texture_id, String::new()), None)),
 
             _   => Err(DecoderError::InvalidCharacter(chr))
@@ -1521,6 +1525,39 @@ impl CanvasDecoder {
         let h           = Self::decode_u32(&mut chars)?;
 
         Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::SetBytes(TexturePosition(x, y), TextureSize(w, h), Arc::new(bytes.to_bytes()?))))))
+    }
+
+    ///
+    /// Decodes a texture 'set bytes' operation
+    ///
+    fn decode_texture_set_from_sprite(chr: char, texture_id: TextureId, sprite_id: DecodeSpriteId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Decode the sprite ID first
+        let sprite_id = match sprite_id {
+            PartialResult::MatchMore(sprite_id) => { 
+                let sprite_id = Self::decode_sprite_id(chr, sprite_id)?;
+                return Ok((DecoderState::TextureOpSetFromSprite(texture_id, sprite_id, param), None));
+            }
+
+            PartialResult::FullMatch(sprite_id) => sprite_id
+        };
+
+        // The parameter is 4x f32
+        let mut param = param;
+        param.push(chr);
+
+        if param.len() < 4*6 {
+            return Ok((DecoderState::TextureOpSetFromSprite(texture_id, PartialResult::FullMatch(sprite_id), param), None));
+        }
+
+        // Decode the parameters
+        let mut param   = param.chars();
+
+        let x           = Self::decode_f32(&mut param)?;
+        let y           = Self::decode_f32(&mut param)?;
+        let w           = Self::decode_f32(&mut param)?;
+        let h           = Self::decode_f32(&mut param)?;
+
+        Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::SetFromSprite(sprite_id, SpriteBounds(SpritePosition(x, y), SpriteSize(w, h)))))))
     }
 
     ///
@@ -2109,6 +2146,11 @@ mod test {
     }
 
     #[test]
+    fn decode_texture_set_from_sprite() {
+        check_round_trip_single(Draw::Texture(TextureId(44), TextureOp::SetFromSprite(SpriteId(42), SpriteBounds(SpritePosition(20.0, 30.0), SpriteSize(40.0, 50.0)))));
+    }
+
+    #[test]
     fn decode_fill_transparency() {
         check_round_trip_single(Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.75)));
     }
@@ -2179,6 +2221,8 @@ mod test {
             Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))),
             Draw::DrawSprite(SpriteId(1300)),
 
+            Draw::Texture(TextureId(44), TextureOp::SetFromSprite(SpriteId(42), SpriteBounds(SpritePosition(20.0, 30.0), SpriteSize(40.0, 50.0)))),
+
             Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
             Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),
         ]);
@@ -2235,6 +2279,7 @@ mod test {
             Draw::Texture(TextureId(42), TextureOp::Create(TextureSize(1024, 768), TextureFormat::Rgba)),
             Draw::Texture(TextureId(43), TextureOp::Free),
             Draw::Texture(TextureId(44), TextureOp::SetBytes(TexturePosition(2, 3), TextureSize(4, 5), Arc::new(vec![1,2,3,4,5]))),
+            Draw::Texture(TextureId(44), TextureOp::SetFromSprite(SpriteId(42), SpriteBounds(SpritePosition(20.0, 30.0), SpriteSize(40.0, 50.0)))),
             Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.5)),
 
             Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))),

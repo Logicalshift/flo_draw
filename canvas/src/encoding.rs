@@ -289,10 +289,11 @@ impl<'a> CanvasEncoding<String> for &'a TextureOp {
         use self::TextureOp::*;
 
         match self {
-            Create(TextureSize(width, height), format)                          => ('N', *width, *height, *format).encode_canvas(append_to), 
-            Free                                                                => ('X').encode_canvas(append_to),
-            SetBytes(TexturePosition(x, y), TextureSize(width, height), bytes)  => ('D', *x, *y, *width, *height, &**bytes).encode_canvas(append_to),
-            FillTransparency(alpha)                                             => ('t', *alpha).encode_canvas(append_to),
+            Create(TextureSize(width, height), format)                                      => ('N', *width, *height, *format).encode_canvas(append_to), 
+            Free                                                                            => ('X').encode_canvas(append_to),
+            SetBytes(TexturePosition(x, y), TextureSize(width, height), bytes)              => ('D', *x, *y, *width, *height, &**bytes).encode_canvas(append_to),
+            SetFromSprite(sprite_id, SpriteBounds(SpritePosition(x, y), SpriteSize(w, h)))  => ('S', *sprite_id, *x, *y, *w, *h).encode_canvas(append_to),
+            FillTransparency(alpha)                                                         => ('t', *alpha).encode_canvas(append_to),
         }
     }
 }

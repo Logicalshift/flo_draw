@@ -1128,6 +1128,7 @@ impl CanvasRenderer {
                         });
                     }
 
+                    // Release an existing texture
                     Texture(texture_id, canvas::TextureOp::Free) => {
                         core.sync(|core| {
                             // If the texture ID was previously in use, reduce the usage count
@@ -1184,6 +1185,7 @@ impl CanvasRenderer {
                         });
                     }
 
+                    // Sets the transparency to use when drawing a particular texture
                     Texture(texture_id, canvas::TextureOp::FillTransparency(alpha)) => {
                         self.core.sync(|core| {
                             core.texture_alpha.insert(texture_id, alpha);
@@ -1193,6 +1195,11 @@ impl CanvasRenderer {
                                 layer.state.fill_color  = layer.state.fill_color.with_texture_alpha(alpha);
                             }
                         });
+                    }
+
+                    // Render a texture from a sprite
+                    Texture(texture_id, canvas::TextureOp::SetFromSprite(sprite_id, canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h)))) => {
+                        unimplemented!()
                     }
 
                     // Performs a font operation
