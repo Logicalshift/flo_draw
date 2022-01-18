@@ -77,6 +77,9 @@ pub struct RenderStream<'a> {
     /// Render actions waiting to be sent
     pending: VecDeque<render::RenderAction>,
 
+    /// The textures that need to be set up before the layers can be rendered
+    setup_textures: Vec<TextureRenderRequest>,
+
     /// The operations to run when the rendering is complete (None if they've already been rendered)
     final_actions: Option<Vec<render::RenderAction>>,
 
@@ -121,7 +124,7 @@ impl<'a> RenderStream<'a> {
     ///
     /// Creates a new render stream
     ///
-    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, frame_suspended: bool, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, background_vertex_buffer: render::VertexBufferId, initial_actions: Vec<render::RenderAction>, final_actions: Vec<render::RenderAction>) -> RenderStream<'a>
+    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, frame_suspended: bool, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, background_vertex_buffer: render::VertexBufferId, initial_actions: Vec<render::RenderAction>, setup_textures: Vec<TextureRenderRequest>, final_actions: Vec<render::RenderAction>) -> RenderStream<'a>
     where   ProcessFuture: 'a+Send+Future<Output=()> {
         RenderStream {
             core:                       core,
@@ -129,6 +132,7 @@ impl<'a> RenderStream<'a> {
             background_vertex_buffer:   background_vertex_buffer,
             processing_future:          Some(processing_future.boxed()),
             pending:                    VecDeque::from(initial_actions),
+            setup_textures:             setup_textures,
             final_actions:              Some(final_actions),
             viewport_transform:         viewport_transform,
             layer_buffer_is_clear:      true,
@@ -577,6 +581,56 @@ impl<'a> RenderStream<'a> {
     }
 
     ///
+    /// Given a texture to use as a render target, renders a layer to it
+    ///
+    /// This will (re)create the texture as a render target
+    ///
+    fn render_layer_to_texture(&self, texture_id: render::TextureId, layer_handle: LayerHandle, region: canvas::SpriteBounds) -> Vec<render::RenderAction> {
+        self.core.sync(move |core| {
+            // Need to know the texture size to recreate it as a render target
+            let texture_size = core.texture_size.get(&texture_id).cloned();
+            let texture_size = if let Some(texture_size) = texture_size { texture_size } else { return vec![] };
+
+            // Create a viewport transform for the render region (-1.0 - 1.0 will be the texture size, so we just need a transform that maps the appropriate coordinates)
+            let canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h)) = region;
+
+            let mid_x                   = (x+(x+w))/2.0;
+            let mid_y                   = (y+(y+h))/2.0;
+            let scale_x                 = 2.0/w;
+            let scale_y                 = 2.0/h;
+
+            let viewport_transform      = canvas::Transform2D::scale(scale_x, scale_y) * canvas::Transform2D::translate(-mid_x, -mid_y);
+
+            // Start by rendering to a multi-sampled texture
+            let mut render_to_texture   = vec![];
+
+            use render::RenderAction::*;
+            render_to_texture.push(CreateRenderTarget(OFFSCREEN_RENDER_TARGET, OFFSCREEN_TEXTURE, texture_size, render::RenderTargetType::MultisampledTexture));
+            render_to_texture.push(SelectRenderTarget(OFFSCREEN_RENDER_TARGET));
+            render_to_texture.push(Clear(render::Rgba8([0, 0, 0, 0])));
+
+            let mut render_state        = RenderStreamState::new();
+            render_state.render_target  = Some(OFFSCREEN_RENDER_TARGET);
+            render_to_texture.extend(core.render_layer(viewport_transform, layer_handle, &mut render_state));
+
+            // Draw the multi-sample texture to a normal texture
+            render_to_texture.push(CreateRenderTarget(RESOLVE_RENDER_TARGET, texture_id, texture_size, render::RenderTargetType::Standard));
+            render_to_texture.push(SelectRenderTarget(RESOLVE_RENDER_TARGET));
+            render_to_texture.push(Clear(render::Rgba8([0, 0, 0, 0])));
+            render_to_texture.push(BlendMode(render::BlendMode::SourceOver));
+            render_to_texture.push(DrawFrameBuffer(OFFSCREEN_RENDER_TARGET, render::FrameBufferRegion::default(), render::Alpha(1.0)));
+
+            // Return to the main framebuffer and free up the render targets
+            render_to_texture.push(SelectRenderTarget(MAIN_RENDER_TARGET));
+            render_to_texture.push(FreeRenderTarget(OFFSCREEN_RENDER_TARGET));
+            render_to_texture.push(FreeTexture(OFFSCREEN_TEXTURE));
+            render_to_texture.push(CreateMipMaps(texture_id));
+
+            render_to_texture
+        })
+    }
+
+    ///
     /// Modifies any 'draw framebuffer' operations in the pending list so that they render only the invalid region
     ///
     fn clip_draw_framebuffer(&self, instructions: Vec<render::RenderAction>) -> Vec<render::RenderAction> {
@@ -659,6 +713,20 @@ impl<'a> Stream for RenderStream<'a> {
             } else {
                 return Poll::Ready(None);
             }
+        }
+
+        // After the vertex buffers are generated, we can render any sprites to textures that are pending
+        if let Some(setup_texture) = self.setup_textures.pop() {
+            match setup_texture {
+                TextureRenderRequest::FromSprite(texture_id, layer_handle, bounds) => {
+                    let rendering = self.render_layer_to_texture(texture_id, layer_handle, bounds);
+                    self.pending.extend(rendering);
+                }
+            }
+        }
+
+        if self.pending.len() > 0 {
+            return Poll::Ready(self.pending.pop_front());
         }
 
         // We've generated all the vertex buffers: generate the instructions to render them

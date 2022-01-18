@@ -1232,7 +1232,7 @@ impl CanvasRenderer {
                                 };
 
                                 // Cause the stream to render the sprite to the texture at the start of the next frame
-                                core.layer_textures.insert(texture_id, TextureRenderRequest::FromSprite(sprite_layer_handle, canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h))));
+                                core.layer_textures.insert(texture_id, TextureRenderRequest::FromSprite(texture_id, sprite_layer_handle, canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h))));
                             }
                         });
                     }
@@ -1413,12 +1413,21 @@ impl CanvasRenderer {
             }
         };
 
+        // We need to process the instructions waiting to set up textures
+        let setup_textures = self.core.sync(|core| {
+            let textures = mem::take(&mut core.layer_textures);
+
+            textures.into_iter()
+                .map(|(_, request)| request)
+                .collect()
+        });
+
         // Start processing the drawing instructions
         let core                = Arc::clone(&self.core);
         let processing          = self.process_drawing(drawing);
 
         // Return a stream of results from processing the drawing
-        RenderStream::new(core, rendering_suspended, processing, viewport_transform, background_vertex_buffer, initialise, finalize)
+        RenderStream::new(core, rendering_suspended, processing, viewport_transform, background_vertex_buffer, initialise, setup_textures, finalize)
     }
 }
 

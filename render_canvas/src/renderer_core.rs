@@ -61,7 +61,7 @@ pub enum TextureRenderRequest {
     ///
     /// Once this instruction has been completed by a stream, the texture will not be rendered again
     ///
-    FromSprite(LayerHandle, canvas::SpriteBounds)
+    FromSprite(render::TextureId, LayerHandle, canvas::SpriteBounds)
 }
 
 ///
