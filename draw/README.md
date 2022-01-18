@@ -67,6 +67,7 @@ For more information, you may be interested in the [guide](GUIDE.md), or the [ex
 
 * [`cargo run --example canvas_window`](./examples/canvas_window.rs) - displays a basic window
 * [`cargo run --example hello_world`](./examples/hello_world.rs) - traditional
+* [`cargo run --example layer_alpha`](./examples/layer_alpha.rs) - blending between layers
 * [`cargo run --example bounce_sprites`](./examples/bounce_sprites.rs) - animates some bouncing balls
 * [`cargo run --example follow_mouse`](./examples/follow_mouse.rs) - demonstrates event handling by tracking the mouse around
 * [`cargo run --example vectoroids`](./examples/vectoroids.rs) - more involved example of event handling with an incomplete game (arrow keys to move, space to fire)
