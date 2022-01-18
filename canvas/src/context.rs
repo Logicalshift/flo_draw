@@ -251,6 +251,11 @@ pub trait GraphicsContext {
         self.draw(Draw::Texture(texture_id, TextureOp::SetBytes(TexturePosition(x, y), TextureSize(width, height), bytes)));
     }
 
+    /// Creates the texture bytes by drawing from a sprite
+    fn set_texture_from_sprite(&mut self, texture_id: TextureId, sprite_id: SpriteId, sprite_x: f32, sprite_y: f32, sprite_width: f32, sprite_height: f32) {
+        self.draw(Draw::Texture(texture_id, TextureOp::SetFromSprite(sprite_id, SpriteBounds(SpritePosition(sprite_x, sprite_y), SpriteSize(sprite_width, sprite_height)))));
+    }
+
     /// Applies an alpha value to a texture
     fn set_texture_fill_alpha(&mut self, texture_id: TextureId, alpha: f32) {
         self.draw(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha)));
