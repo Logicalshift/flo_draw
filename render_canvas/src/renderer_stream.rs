@@ -719,7 +719,10 @@ impl<'a> Stream for RenderStream<'a> {
         if let Some(setup_texture) = self.setup_textures.pop() {
             match setup_texture {
                 TextureRenderRequest::FromSprite(texture_id, layer_handle, bounds) => {
-                    let rendering = self.render_layer_to_texture(texture_id, layer_handle, bounds);
+                    let send_vertex_buffers     = self.core.sync(|core| core.send_vertex_buffers(layer_handle));
+                    let rendering               = self.render_layer_to_texture(texture_id, layer_handle, bounds);
+
+                    self.pending.extend(send_vertex_buffers);
                     self.pending.extend(rendering);
                 }
             }
