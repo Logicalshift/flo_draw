@@ -1232,7 +1232,7 @@ impl CanvasRenderer {
                                 };
 
                                 // Cause the stream to render the sprite to the texture at the start of the next frame
-                                core.layer_textures.insert(texture_id, TextureRender::FromSprite(sprite_layer_handle, canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h))));
+                                core.layer_textures.insert(texture_id, TextureRenderRequest::FromSprite(sprite_layer_handle, canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h))));
                             }
                         });
                     }

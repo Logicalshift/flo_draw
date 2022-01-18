@@ -55,7 +55,7 @@ impl Into<render::TextureId> for &RenderTexture {
 ///
 /// Textures with pending render instructions
 ///
-pub enum TextureRender {
+pub enum TextureRenderRequest {
     ///
     /// The specified sprite bounds should be made to fill the texture
     ///
@@ -93,7 +93,7 @@ pub struct RenderCore {
     pub texture_size: HashMap<render::TextureId, render::Size2D>,
 
     /// Textures that are waiting to be rendered from layers
-    pub layer_textures: HashMap<render::TextureId, TextureRender>,
+    pub layer_textures: HashMap<render::TextureId, TextureRenderRequest>,
 
     /// Maps canvas textures to render textures
     pub canvas_textures: HashMap<canvas::TextureId, RenderTexture>,
