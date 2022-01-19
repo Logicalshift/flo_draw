@@ -621,6 +621,18 @@ impl<'a> RenderStream<'a> {
                 Clear(render::Rgba8([0, 0, 0, 0])),
             ]);
 
+            use render::*;
+            let black = [0, 0, 0, 255];
+            render_to_texture.extend(vec![
+                SetTransform(render::Matrix::identity()),
+                RenderAction::CreateVertex2DBuffer(VertexBufferId(10000), vec![
+                    Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: black },
+                    Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: black },
+                    Vertex2D { pos: [1.0, -1.0],    tex_coord: [0.0, 0.0], color: black },
+                ]),
+                RenderAction::DrawTriangles(VertexBufferId(10000), 0..3),
+            ]);
+
             let mut render_state        = RenderStreamState::new();
             render_state.render_target  = Some(OFFSCREEN_RENDER_TARGET);
             render_to_texture.extend(core.render_layer(viewport_transform, layer_handle, OFFSCREEN_RENDER_TARGET, &mut render_state));
