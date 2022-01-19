@@ -623,6 +623,7 @@ impl<'a> RenderStream<'a> {
             // Return to the main framebuffer and free up the render targets
             render_to_texture.push(SelectRenderTarget(MAIN_RENDER_TARGET));
             render_to_texture.push(FreeRenderTarget(OFFSCREEN_RENDER_TARGET));
+            render_to_texture.push(FreeRenderTarget(RESOLVE_RENDER_TARGET));
             render_to_texture.push(FreeTexture(OFFSCREEN_TEXTURE));
             render_to_texture.push(CreateMipMaps(texture_id));
 
