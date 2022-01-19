@@ -628,7 +628,7 @@ impl<'a> RenderStream<'a> {
             render_to_texture.push(SelectRenderTarget(RESOLVE_RENDER_TARGET));
             render_to_texture.push(Clear(render::Rgba8([0, 0, 0, 0])));
             render_to_texture.push(BlendMode(render::BlendMode::SourceOver));
-            render_to_texture.push(DrawFrameBuffer(OFFSCREEN_RENDER_TARGET, render::FrameBufferRegion::default(), render::Alpha(1.0)));
+            render_to_texture.push(DrawFrameBuffer(OFFSCREEN_RENDER_TARGET, render_state.invalid_bounds.into(), render::Alpha(1.0)));
 
             // Return to the main framebuffer and free up the render targets
             render_to_texture.push(SelectRenderTarget(MAIN_RENDER_TARGET));
