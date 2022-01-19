@@ -315,7 +315,7 @@ impl RenderCore {
     ///
     /// Generates the rendering actions for the layer with the specified handle
     ///
-    fn render_layer(&mut self, viewport_transform: canvas::Transform2D, layer_handle: LayerHandle, render_state: &mut RenderStreamState) -> Vec<render::RenderAction> {
+    fn render_layer(&mut self, viewport_transform: canvas::Transform2D, layer_handle: LayerHandle, render_target: render::RenderTargetId, render_state: &mut RenderStreamState) -> Vec<render::RenderAction> {
         use self::RenderEntity::*;
 
         let core                        = self;
@@ -330,7 +330,7 @@ impl RenderCore {
 
         render_state.transform          = Some(viewport_transform);
         render_state.blend_mode         = Some(render::BlendMode::SourceOver);
-        render_state.render_target      = Some(MAIN_RENDER_TARGET);
+        render_state.render_target      = Some(render_target);
         render_state.clip_mask          = Maybe::None;
         render_state.clip_buffers       = Some(vec![]);
         render_state.shader_modifier    = Some(ShaderModifier::Simple);
@@ -341,9 +341,9 @@ impl RenderCore {
             render_order.extend(vec![
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
-                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, initial_invalid_bounds.into(), render::Alpha(1.0)),
+                render::RenderAction::DrawFrameBuffer(render_target, initial_invalid_bounds.into(), render::Alpha(1.0)),
 
-                render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
+                render::RenderAction::SelectRenderTarget(render_target),
                 render::RenderAction::Clear(render::Rgba8([0,0,0,0]))
             ]);
 
@@ -394,7 +394,7 @@ impl RenderCore {
                         let old_state               = render_state.clone();
 
                         // Render the layer associated with the sprite
-                        let render_sprite           = core.render_layer(sprite_transform, sprite_layer, render_state);
+                        let render_sprite           = core.render_layer(sprite_transform, sprite_layer, render_target, render_state);
 
                         // Render the sprite
                         render_order.extend(render_sprite);
@@ -620,7 +620,7 @@ impl<'a> RenderStream<'a> {
 
             let mut render_state        = RenderStreamState::new();
             render_state.render_target  = Some(OFFSCREEN_RENDER_TARGET);
-            render_to_texture.extend(core.render_layer(viewport_transform, layer_handle, &mut render_state));
+            render_to_texture.extend(core.render_layer(viewport_transform, layer_handle, OFFSCREEN_RENDER_TARGET, &mut render_state));
 
             // Draw the multi-sample texture to a normal texture
             render_to_texture.push(CreateRenderTarget(RESOLVE_RENDER_TARGET, texture_id, texture_size, render::RenderTargetType::Standard));
@@ -765,7 +765,7 @@ impl<'a> Stream for RenderStream<'a> {
                 let mut render_layer    = VecDeque::new();
 
                 render_layer.extend(send_vertex_buffers);
-                render_layer.extend(core.render_layer(viewport_transform, layer_handle, &mut render_state));
+                render_layer.extend(core.render_layer(viewport_transform, layer_handle, MAIN_RENDER_TARGET, &mut render_state));
                 render_layer.extend(RenderStreamState::new().update_from_state(&render_state));
 
                 // The state will update to indicate if the layer buffer is clear or not for the next layer
