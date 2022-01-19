@@ -96,6 +96,7 @@ See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` su
 * [`cargo run --example texture`](./draw/examples/texture.rs) - bitmap rendering
 * [`cargo run --example texture_sprites`](./draw/examples/texture_sprites.rs) - bouncing balls with bitmap images
 * [`cargo run --example texture_spin`](./draw/examples/texture_spin.rs) - bitmap rendering with an animated transformation applied
+* [`cargo run --example texture_from_sprite`](./draw/examples/texture_from_sprite.rs) - demonstrates rendering to a texture
 * [`cargo run --example gradient`](./draw/examples/gradient.rs) - gradient rendering
 * [`cargo run --example mascot_shadow`](./draw/examples/mascot_shadow.rs) - reprocess the mascot rendering to add some extra shading
 * [`cargo run --example wibble_mascot`](./draw/examples/wibble_mascot.rs) - reprocess the mascot rendering to make it wobble
