@@ -327,6 +327,7 @@ impl RenderCore {
         let initial_state               = render_state.clone();
         let layer_buffer_is_clear       = initial_state.is_clear.unwrap_or(false);
         let initial_invalid_bounds      = initial_state.invalid_bounds;
+        let is_sprite                   = layer.state.is_sprite;
 
         render_state.transform          = Some(viewport_transform);
         render_state.blend_mode         = Some(render::BlendMode::SourceOver);
@@ -337,7 +338,7 @@ impl RenderCore {
         render_state.is_clear           = Some(false);
 
         // Commit the layer to the render buffer if needed
-        if layer.commit_before_rendering && !layer_buffer_is_clear && !initial_invalid_bounds.is_undefined() {
+        if layer.commit_before_rendering && !layer_buffer_is_clear && !initial_invalid_bounds.is_undefined() && !is_sprite {
             render_order.extend(vec![
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(render::BlendMode::SourceOver),
@@ -498,7 +499,7 @@ impl RenderCore {
         }
 
         // If the layer has 'commit after rendering' and the next layer does not have 'commit before rendering', then commit what we just rendered
-        if layer.commit_after_rendering && !render_state.invalid_bounds.is_undefined() {
+        if layer.commit_after_rendering && !render_state.invalid_bounds.is_undefined() && !is_sprite {
             // Work out the invalid region of the current layer
             let invalid_bounds      = render_state.invalid_bounds;
 
