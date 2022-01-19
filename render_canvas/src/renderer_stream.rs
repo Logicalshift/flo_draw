@@ -621,6 +621,7 @@ impl<'a> RenderStream<'a> {
                 Clear(render::Rgba8([0, 0, 0, 0])),
             ]);
 
+            // Sprites render using the viewport transform only (even though they have a layer transform it's not actually updated later on. See how sprite_transform is calculated in RenderSprite also)
             let mut render_state        = RenderStreamState::new();
             render_state.render_target  = Some(OFFSCREEN_RENDER_TARGET);
             render_to_texture.extend(core.render_layer(viewport_transform * sprite_transform, layer_handle, OFFSCREEN_RENDER_TARGET, &mut render_state));
@@ -631,7 +632,8 @@ impl<'a> RenderStream<'a> {
                 SelectRenderTarget(RESOLVE_RENDER_TARGET),
                 Clear(render::Rgba8([0, 0, 0, 0])),
                 BlendMode(render::BlendMode::SourceOver),
-                DrawFrameBuffer(OFFSCREEN_RENDER_TARGET, render_state.invalid_bounds.into(), render::Alpha(1.0)),
+                SetTransform(render::Matrix::identity()),
+                DrawFrameBuffer(OFFSCREEN_RENDER_TARGET, render::FrameBufferRegion::default(), render::Alpha(1.0)), // TODO: render_state.invalid_bounds to improve performance, but because the viewport transform is 'wrong' for sprites the invalid bounds are also 'wrong'
             ]);
 
             // Return to the main framebuffer and free up the render targets
