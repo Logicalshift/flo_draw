@@ -623,7 +623,7 @@ impl<'a> RenderStream<'a> {
 
             let mut render_state        = RenderStreamState::new();
             render_state.render_target  = Some(OFFSCREEN_RENDER_TARGET);
-            render_to_texture.extend(core.render_layer(viewport_transform, layer_handle, OFFSCREEN_RENDER_TARGET, &mut render_state));
+            render_to_texture.extend(core.render_layer(viewport_transform * sprite_transform, layer_handle, OFFSCREEN_RENDER_TARGET, &mut render_state));
 
             // Draw the multi-sample texture to a normal texture
             render_to_texture.extend(vec![
