@@ -624,11 +624,11 @@ impl<'a> RenderStream<'a> {
             use render::*;
             let black = [0, 0, 0, 255];
             render_to_texture.extend(vec![
-                SetTransform(render::Matrix::identity()),
+                SetTransform(transform_to_matrix(&(viewport_transform * sprite_transform))),
                 RenderAction::CreateVertex2DBuffer(VertexBufferId(10000), vec![
                     Vertex2D { pos: [-1.0, -1.0],   tex_coord: [0.0, 0.0], color: black },
-                    Vertex2D { pos: [1.0, 1.0],     tex_coord: [0.0, 0.0], color: black },
-                    Vertex2D { pos: [1.0, -1.0],    tex_coord: [0.0, 0.0], color: black },
+                    Vertex2D { pos: [100.0, 100.0],     tex_coord: [0.0, 0.0], color: black },
+                    Vertex2D { pos: [100.0, -1.0],    tex_coord: [0.0, 0.0], color: black },
                 ]),
                 RenderAction::DrawTriangles(VertexBufferId(10000), 0..3),
             ]);
