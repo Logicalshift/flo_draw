@@ -587,18 +587,27 @@ impl<'a> RenderStream<'a> {
     ///
     fn render_layer_to_texture(&self, texture_id: render::TextureId, layer_handle: LayerHandle, region: canvas::SpriteBounds) -> Vec<render::RenderAction> {
         self.core.sync(move |core| {
+            // Fetch the current transformation matrix of the sprite layer
+            let sprite_transform    = core.layer(layer_handle).state.current_matrix;
+
             // Need to know the texture size to recreate it as a render target
-            let texture_size = core.texture_size.get(&texture_id).cloned();
-            let texture_size = if let Some(texture_size) = texture_size { texture_size } else { return vec![] };
+            let texture_size        = core.texture_size.get(&texture_id).cloned();
+            let texture_size        = if let Some(texture_size) = texture_size { texture_size } else { return vec![] };
 
             // Create a viewport transform for the render region (-1.0 - 1.0 will be the texture size, so we just need a transform that maps the appropriate coordinates)
             let canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h)) = region;
 
-            let mid_x                   = (x+(x+w))/2.0;
-            let mid_y                   = (y+(y+h))/2.0;
-            let scale_x                 = 2.0/w;
-            let scale_y                 = 2.0/h;
+            // Coordinates of the region as they're currently being mapped from the sprite
+            let (x1, y1)                = sprite_transform.transform_point(x, y);
+            let (x2, y2)                = sprite_transform.transform_point(x+w, y+h);
 
+            // Where the mid point should be, and how much the viewport should scale
+            let mid_x                   = (x1+x2)/2.0;
+            let mid_y                   = (y1+y2)/2.0;
+            let scale_x                 = 2.0/(x2-x1);
+            let scale_y                 = 2.0/(y2-y1);
+
+            // Map the viewport so the appropriate part of the sprite is visible
             let viewport_transform      = canvas::Transform2D::scale(scale_x, scale_y) * canvas::Transform2D::translate(-mid_x, -mid_y);
 
             // Start by rendering to a multi-sampled texture
