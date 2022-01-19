@@ -615,27 +615,33 @@ impl<'a> RenderStream<'a> {
             let mut render_to_texture   = vec![];
 
             use render::RenderAction::*;
-            render_to_texture.push(CreateRenderTarget(OFFSCREEN_RENDER_TARGET, OFFSCREEN_TEXTURE, texture_size, render::RenderTargetType::MultisampledTexture));
-            render_to_texture.push(SelectRenderTarget(OFFSCREEN_RENDER_TARGET));
-            render_to_texture.push(Clear(render::Rgba8([0, 0, 0, 0])));
+            render_to_texture.extend(vec![
+                CreateRenderTarget(OFFSCREEN_RENDER_TARGET, OFFSCREEN_TEXTURE, texture_size, render::RenderTargetType::MultisampledTexture),
+                SelectRenderTarget(OFFSCREEN_RENDER_TARGET),
+                Clear(render::Rgba8([0, 0, 0, 0])),
+            ]);
 
             let mut render_state        = RenderStreamState::new();
             render_state.render_target  = Some(OFFSCREEN_RENDER_TARGET);
             render_to_texture.extend(core.render_layer(viewport_transform, layer_handle, OFFSCREEN_RENDER_TARGET, &mut render_state));
 
             // Draw the multi-sample texture to a normal texture
-            render_to_texture.push(CreateRenderTarget(RESOLVE_RENDER_TARGET, texture_id, texture_size, render::RenderTargetType::Standard));
-            render_to_texture.push(SelectRenderTarget(RESOLVE_RENDER_TARGET));
-            render_to_texture.push(Clear(render::Rgba8([0, 0, 0, 0])));
-            render_to_texture.push(BlendMode(render::BlendMode::SourceOver));
-            render_to_texture.push(DrawFrameBuffer(OFFSCREEN_RENDER_TARGET, render_state.invalid_bounds.into(), render::Alpha(1.0)));
+            render_to_texture.extend(vec![
+                CreateRenderTarget(RESOLVE_RENDER_TARGET, texture_id, texture_size, render::RenderTargetType::Standard),
+                SelectRenderTarget(RESOLVE_RENDER_TARGET),
+                Clear(render::Rgba8([0, 0, 0, 0])),
+                BlendMode(render::BlendMode::SourceOver),
+                DrawFrameBuffer(OFFSCREEN_RENDER_TARGET, render_state.invalid_bounds.into(), render::Alpha(1.0)),
+            ]);
 
             // Return to the main framebuffer and free up the render targets
-            render_to_texture.push(SelectRenderTarget(MAIN_RENDER_TARGET));
-            render_to_texture.push(FreeRenderTarget(OFFSCREEN_RENDER_TARGET));
-            render_to_texture.push(FreeRenderTarget(RESOLVE_RENDER_TARGET));
-            render_to_texture.push(FreeTexture(OFFSCREEN_TEXTURE));
-            render_to_texture.push(CreateMipMaps(texture_id));
+            render_to_texture.extend(vec![
+                SelectRenderTarget(MAIN_RENDER_TARGET),
+                FreeRenderTarget(OFFSCREEN_RENDER_TARGET),
+                FreeRenderTarget(RESOLVE_RENDER_TARGET),
+                FreeTexture(OFFSCREEN_TEXTURE),
+                CreateMipMaps(texture_id),
+            ]);
 
             render_to_texture
         })
