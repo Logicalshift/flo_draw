@@ -1215,7 +1215,7 @@ impl CanvasRenderer {
                                         // Stop using the initial texture, and create a new copy that's 'Loading'
                                         core.used_textures.get_mut(&render_texture).map(|usage_count| *usage_count -= 1);
                                         core.used_textures.insert(new_texture_id, 1);
-                                        core.canvas_textures.insert(texture_id, RenderTexture::Loading(new_texture_id));
+                                        core.canvas_textures.insert(texture_id, RenderTexture::Ready(new_texture_id));
 
                                         // Generate a copy
                                         core.texture_size.insert(new_texture_id, core.texture_size.get(&render_texture).unwrap().clone());
@@ -1227,6 +1227,7 @@ impl CanvasRenderer {
 
                                     RenderTexture::Loading(render_texture)  => {
                                         // Use the existing texture
+                                        core.canvas_textures.insert(texture_id, RenderTexture::Ready(render_texture));
                                         render_texture
                                     }
                                 };
@@ -1242,7 +1243,41 @@ impl CanvasRenderer {
                         let canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(sprite_w, sprite_h)) = sprite_bounds;
                         let canvas::CanvasSize(canvas_w, canvas_h) = canvas_size;
 
-                        todo!()
+                        core.sync(|core| {
+                            if let Some(sprite_layer_handle) = core.sprites.get(&sprite_id) {
+                                let sprite_layer_handle = *sprite_layer_handle;
+                                let transform           = core.layer(self.current_layer).state.current_matrix;
+
+                                // If the texture ID was previously in use, reduce the usage count
+                                let render_texture_id = if let Some(old_render_texture) = core.canvas_textures.get(&texture_id) {
+                                    let old_render_texture  = old_render_texture.into();
+                                    let usage_count         = core.used_textures.get_mut(&old_render_texture);
+
+                                    if usage_count == Some(&mut 1) {
+                                        // Leave the usage count as is and reallocate the existing texture
+                                        // The 1 usage is the rendered version of this texture
+                                        old_render_texture
+                                    } else {
+                                        // Reduce the usage count
+                                        usage_count.map(|usage_count| *usage_count -=1);
+
+                                        // Allocate a new texture
+                                        core.allocate_texture()
+                                    }
+                                } else {
+                                    // Unused texture ID: allocate a new texture
+                                    core.allocate_texture()
+                                };
+
+                                // Add this as a texture with a usage count of 1
+                                core.canvas_textures.insert(texture_id, RenderTexture::Loading(render_texture_id));
+                                core.used_textures.insert(render_texture_id, 1);
+                                core.texture_size.insert(render_texture_id, render::Size2D(1 as _, 1 as _));
+
+                                // Specify as a dynamic texture
+                                core.layer_textures.insert(render_texture_id, TextureRenderRequest::DynamicTexture(render_texture_id, sprite_layer_handle, sprite_bounds, canvas_size, transform));
+                            }
+                        });
                     },
 
                     // Sets the transparency to use when drawing a particular texture

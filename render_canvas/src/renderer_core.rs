@@ -61,7 +61,12 @@ pub enum TextureRenderRequest {
     ///
     /// Once this instruction has been completed by a stream, the texture will not be rendered again
     ///
-    FromSprite(render::TextureId, LayerHandle, canvas::SpriteBounds)
+    FromSprite(render::TextureId, LayerHandle, canvas::SpriteBounds),
+
+    ///
+    /// A dynamic texture is re-rendered any time the layer or the canvas size changes
+    ///
+    DynamicTexture(render::TextureId, LayerHandle, canvas::SpriteBounds, canvas::CanvasSize, canvas::Transform2D),
 }
 
 ///

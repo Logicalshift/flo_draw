@@ -744,6 +744,10 @@ impl<'a> Stream for RenderStream<'a> {
                     self.pending.extend(send_vertex_buffers);
                     self.pending.extend(rendering);
                 }
+
+                TextureRenderRequest::DynamicTexture(texture_id, layer_handle, bounds, size, transform) => {
+                    todo!()
+                }
             }
         }
 
