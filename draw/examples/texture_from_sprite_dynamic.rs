@@ -1,8 +1,6 @@
 use flo_draw::*;
 use flo_draw::canvas::*;
 
-use std::thread;
-
 ///
 /// Dynamic textures can be used to have a texture created from a sprite that is re-rendered to match the resolution of the canvas
 ///
