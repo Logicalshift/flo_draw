@@ -1237,6 +1237,14 @@ impl CanvasRenderer {
                         });
                     }
 
+                    // Render a texture from a sprite, updating it dynamically as the canvas resolution changes
+                    Texture(texture_id, canvas::TextureOp::CreateDynamicSprite(sprite_id, sprite_bounds, canvas_size)) => {
+                        let canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(sprite_w, sprite_h)) = sprite_bounds;
+                        let canvas::CanvasSize(canvas_w, canvas_h) = canvas_size;
+
+                        todo!()
+                    },
+
                     // Sets the transparency to use when drawing a particular texture
                     Texture(texture_id, canvas::TextureOp::FillTransparency(alpha)) => {
                         self.core.sync(|core| {

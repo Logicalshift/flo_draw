@@ -399,26 +399,27 @@ enum DecoderState {
     SpriteTransformRotate(String),              // 'sTr' (degrees)
     SpriteTransformTransform(String),           // 'sTT' (transform)
 
-    FontDrawing,                                                // 't'
-    FontDrawText(DecodeFontId, DecodeString, String),           // 'tT' (font_id, string, x, y)
-    FontBeginLayout(String),                                    // 'tl' (x, y, align)
+    FontDrawing,                                                        // 't'
+    FontDrawText(DecodeFontId, DecodeString, String),                   // 'tT' (font_id, string, x, y)
+    FontBeginLayout(String),                                            // 'tl' (x, y, align)
 
-    FontOp(DecodeFontId),                                       // 'f' (id, op)
-    FontOpSize(FontId, String),                                 // 'f<id>S' (size)
-    FontOpData(FontId),                                         // 'f<id>d'
-    FontOpTtf(FontId, DecodeBytes),                             // 'f<id>dT' (bytes)
-    FontOpLayoutText(FontId, DecodeString),                     // 'f<id>L' (string)
-    FontOpDrawGlyphs(FontId, DecodeGlyphPositions),             // 'f<id>G' (glyph positions)
+    FontOp(DecodeFontId),                                               // 'f' (id, op)
+    FontOpSize(FontId, String),                                         // 'f<id>S' (size)
+    FontOpData(FontId),                                                 // 'f<id>d'
+    FontOpTtf(FontId, DecodeBytes),                                     // 'f<id>dT' (bytes)
+    FontOpLayoutText(FontId, DecodeString),                             // 'f<id>L' (string)
+    FontOpDrawGlyphs(FontId, DecodeGlyphPositions),                     // 'f<id>G' (glyph positions)
 
-    TextureOp(DecodeTextureId),                                 // 'B<id>' (id, op)
-    TextureOpCreate(TextureId, String),                         // 'B<id>N' (w, h, format)
-    TextureOpSetBytes(TextureId, String, DecodeBytes),          // 'B<id>D' (x, y, w, h, bytes)
-    TextureOpSetFromSprite(TextureId, DecodeSpriteId, String),  // 'B<id>S (sprite, x, y, w, h)
-    TextureOpFillTransparency(TextureId, String),               // 'B<id>t' (alpha)
+    TextureOp(DecodeTextureId),                                         // 'B<id>' (id, op)
+    TextureOpCreate(TextureId, String),                                 // 'B<id>N' (w, h, format)
+    TextureOpSetBytes(TextureId, String, DecodeBytes),                  // 'B<id>D' (x, y, w, h, bytes)
+    TextureOpSetFromSprite(TextureId, DecodeSpriteId, String),          // 'B<id>S (sprite, x, y, w, h)
+    TextureOpCreateDynamicSprite(TextureId, DecodeSpriteId, String),    // 'B<id>s (sprite, x, y, w1, h1, w2, h2)
+    TextureOpFillTransparency(TextureId, String),                       // 'B<id>t' (alpha)
 
-    GradientOp(DecodeGradientId),                               // 'G' (id, op)
-    GradientOpNew(GradientId, String),                          // 'G<id>N' (r, g, b, a)
-    GradientOpAddStop(GradientId, String),                      // 'G<id>S' (pos, r, g, b, a)
+    GradientOp(DecodeGradientId),                                       // 'G' (id, op)
+    GradientOpNew(GradientId, String),                                  // 'G<id>N' (r, g, b, a)
+    GradientOpAddStop(GradientId, String),                              // 'G<id>S' (pos, r, g, b, a)
 }
 
 ///
@@ -526,26 +527,27 @@ impl CanvasDecoder {
             SpriteTransformRotate(param)    => Self::decode_sprite_transform_rotate(next_chr, param)?,
             SpriteTransformTransform(param) => Self::decode_sprite_transform_transform(next_chr, param)?,
 
-            FontDrawing                                         => Self::decode_font_drawing(next_chr)?,
-            FontDrawText(font_id, string_decode, coords)        => Self::decode_font_draw_text(next_chr, font_id, string_decode, coords)?,
-            FontBeginLayout(param)                              => Self::decode_font_begin_layout(next_chr, param)?,
+            FontDrawing                                             => Self::decode_font_drawing(next_chr)?,
+            FontDrawText(font_id, string_decode, coords)            => Self::decode_font_draw_text(next_chr, font_id, string_decode, coords)?,
+            FontBeginLayout(param)                                  => Self::decode_font_begin_layout(next_chr, param)?,
 
-            FontOp(font_id)                                     => Self::decode_font_op(next_chr, font_id)?,
-            FontOpSize(font_id, size)                           => Self::decode_font_op_size(next_chr, font_id, size)?,
-            FontOpData(font_id)                                 => Self::decode_font_op_data(next_chr, font_id)?,
-            FontOpTtf(font_id, bytes)                           => Self::decode_font_data_ttf(next_chr, font_id, bytes)?,
-            FontOpLayoutText(font_id, string)                   => Self::decode_font_op_layout(next_chr, font_id, string)?,
-            FontOpDrawGlyphs(font_id, glyphs)                   => Self::decode_font_op_glyphs(next_chr, font_id, glyphs)?,
+            FontOp(font_id)                                         => Self::decode_font_op(next_chr, font_id)?,
+            FontOpSize(font_id, size)                               => Self::decode_font_op_size(next_chr, font_id, size)?,
+            FontOpData(font_id)                                     => Self::decode_font_op_data(next_chr, font_id)?,
+            FontOpTtf(font_id, bytes)                               => Self::decode_font_data_ttf(next_chr, font_id, bytes)?,
+            FontOpLayoutText(font_id, string)                       => Self::decode_font_op_layout(next_chr, font_id, string)?,
+            FontOpDrawGlyphs(font_id, glyphs)                       => Self::decode_font_op_glyphs(next_chr, font_id, glyphs)?,
 
-            TextureOp(texture_id)                               => Self::decode_texture_op(next_chr, texture_id)?,
-            TextureOpCreate(texture_id, param)                  => Self::decode_texture_create(next_chr, texture_id, param)?,
-            TextureOpSetBytes(texture_id, param, bytes)         => Self::decode_texture_set_bytes(next_chr, texture_id, param, bytes)?,
-            TextureOpSetFromSprite(texture_id, sprite, param)   => Self::decode_texture_set_from_sprite(next_chr, texture_id, sprite, param)?,
-            TextureOpFillTransparency(texture_id, param)        => Self::decode_texture_fill_transparency(next_chr, texture_id, param)?,
+            TextureOp(texture_id)                                   => Self::decode_texture_op(next_chr, texture_id)?,
+            TextureOpCreate(texture_id, param)                      => Self::decode_texture_create(next_chr, texture_id, param)?,
+            TextureOpSetBytes(texture_id, param, bytes)             => Self::decode_texture_set_bytes(next_chr, texture_id, param, bytes)?,
+            TextureOpSetFromSprite(texture_id, sprite, param)       => Self::decode_texture_set_from_sprite(next_chr, texture_id, sprite, param)?,
+            TextureOpCreateDynamicSprite(texture_id, sprite, param) => Self::decode_texture_create_dynamic_sprite(next_chr, texture_id, sprite, param)?,
+            TextureOpFillTransparency(texture_id, param)            => Self::decode_texture_fill_transparency(next_chr, texture_id, param)?,
 
-            GradientOp(gradient_id)                             => Self::decode_gradient_op(next_chr, gradient_id)?,     
-            GradientOpNew(gradient_id, param)                   => Self::decode_gradient_new(next_chr, gradient_id, param)?,
-            GradientOpAddStop(gradient_id, param)               => Self::decode_gradient_add_stop(next_chr, gradient_id, param)?,
+            GradientOp(gradient_id)                                 => Self::decode_gradient_op(next_chr, gradient_id)?,     
+            GradientOpNew(gradient_id, param)                       => Self::decode_gradient_new(next_chr, gradient_id, param)?,
+            GradientOpAddStop(gradient_id, param)                   => Self::decode_gradient_add_stop(next_chr, gradient_id, param)?,
         };
 
         self.state = next_state;
@@ -1468,6 +1470,7 @@ impl CanvasDecoder {
             'X' => Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::Free)))),
             'D' => Ok((DecoderState::TextureOpSetBytes(texture_id, String::new(), DecodeBytes::new()), None)),
             'S' => Ok((DecoderState::TextureOpSetFromSprite(texture_id, DecodeSpriteId::new(), String::new()), None)),
+            's' => Ok((DecoderState::TextureOpCreateDynamicSprite(texture_id, DecodeSpriteId::new(), String::new()), None)),
             't' => Ok((DecoderState::TextureOpFillTransparency(texture_id, String::new()), None)),
 
             _   => Err(DecoderError::InvalidCharacter(chr))
@@ -1528,7 +1531,7 @@ impl CanvasDecoder {
     }
 
     ///
-    /// Decodes a texture 'set bytes' operation
+    /// Decodes a texture 'set from sprite' operation
     ///
     fn decode_texture_set_from_sprite(chr: char, texture_id: TextureId, sprite_id: DecodeSpriteId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         // Decode the sprite ID first
@@ -1558,6 +1561,41 @@ impl CanvasDecoder {
         let h           = Self::decode_f32(&mut param)?;
 
         Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::SetFromSprite(sprite_id, SpriteBounds(SpritePosition(x, y), SpriteSize(w, h)))))))
+    }
+
+    ///
+    /// Decodes a texture 'create dynamic sprite' operation
+    ///
+    fn decode_texture_create_dynamic_sprite(chr: char, texture_id: TextureId, sprite_id: DecodeSpriteId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Decode the sprite ID first
+        let sprite_id = match sprite_id {
+            PartialResult::MatchMore(sprite_id) => { 
+                let sprite_id = Self::decode_sprite_id(chr, sprite_id)?;
+                return Ok((DecoderState::TextureOpCreateDynamicSprite(texture_id, sprite_id, param), None));
+            }
+
+            PartialResult::FullMatch(sprite_id) => sprite_id
+        };
+
+        // The parameter is 6x f32
+        let mut param = param;
+        param.push(chr);
+
+        if param.len() < 6*6 {
+            return Ok((DecoderState::TextureOpCreateDynamicSprite(texture_id, PartialResult::FullMatch(sprite_id), param), None));
+        }
+
+        // Decode the parameters
+        let mut param   = param.chars();
+
+        let x           = Self::decode_f32(&mut param)?;
+        let y           = Self::decode_f32(&mut param)?;
+        let sprite_w    = Self::decode_f32(&mut param)?;
+        let sprite_h    = Self::decode_f32(&mut param)?;
+        let canvas_w    = Self::decode_f32(&mut param)?;
+        let canvas_h    = Self::decode_f32(&mut param)?;
+
+        Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::CreateDynamicSprite(sprite_id, SpriteBounds(SpritePosition(x, y), SpriteSize(sprite_w, sprite_h)), CanvasSize(canvas_w, canvas_h))))))
     }
 
     ///
@@ -2151,6 +2189,11 @@ mod test {
     }
 
     #[test]
+    fn decode_texture_create_dynamic_from_sprite() {
+        check_round_trip_single(Draw::Texture(TextureId(44), TextureOp::CreateDynamicSprite(SpriteId(42), SpriteBounds(SpritePosition(20.0, 30.0), SpriteSize(40.0, 50.0)), CanvasSize(60.0, 70.0))));
+    }
+
+    #[test]
     fn decode_fill_transparency() {
         check_round_trip_single(Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.75)));
     }
@@ -2280,6 +2323,7 @@ mod test {
             Draw::Texture(TextureId(43), TextureOp::Free),
             Draw::Texture(TextureId(44), TextureOp::SetBytes(TexturePosition(2, 3), TextureSize(4, 5), Arc::new(vec![1,2,3,4,5]))),
             Draw::Texture(TextureId(44), TextureOp::SetFromSprite(SpriteId(42), SpriteBounds(SpritePosition(20.0, 30.0), SpriteSize(40.0, 50.0)))),
+            Draw::Texture(TextureId(44), TextureOp::CreateDynamicSprite(SpriteId(42), SpriteBounds(SpritePosition(20.0, 30.0), SpriteSize(40.0, 50.0)), CanvasSize(60.0, 70.0))),
             Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.5)),
 
             Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))),

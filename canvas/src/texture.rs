@@ -24,6 +24,12 @@ pub enum TextureFormat {
 }
 
 ///
+/// Size of a region on the canvas
+///
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+pub struct CanvasSize(pub f32, pub f32);
+
+///
 /// Operations that can be performed on a texture
 ///
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
@@ -39,6 +45,11 @@ pub enum TextureOp {
 
     /// Renders the specified sprite to the texture (mapping the supplied bounds to the coordinates in the texture)
     SetFromSprite(SpriteId, SpriteBounds),
+
+    /// Creates a dynamic texture that updates if the sprite updates or if the canvas resolution changes
+    /// The texture is created so that it can cover a region specified by CanvasSize in the current coordinate scheme
+    /// with a 1-to-1 pixel mapping
+    CreateDynamicSprite(SpriteId, SpriteBounds, CanvasSize),
 
     /// Sets the transparency to use when rendering a texture
     FillTransparency(f32),
