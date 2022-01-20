@@ -1240,9 +1240,6 @@ impl CanvasRenderer {
 
                     // Render a texture from a sprite, updating it dynamically as the canvas resolution changes
                     Texture(texture_id, canvas::TextureOp::CreateDynamicSprite(sprite_id, sprite_bounds, canvas_size)) => {
-                        let canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(sprite_w, sprite_h)) = sprite_bounds;
-                        let canvas::CanvasSize(canvas_w, canvas_h) = canvas_size;
-
                         core.sync(|core| {
                             if let Some(sprite_layer_handle) = core.sprites.get(&sprite_id) {
                                 let sprite_layer_handle = *sprite_layer_handle;
