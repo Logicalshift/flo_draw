@@ -37,7 +37,7 @@ pub fn main() {
         loop {
             // Render the png to the window
             canvas.draw(|gc| {
-                // Draw on layer 0
+                // Redraw layer 0 rather than clearing the canvas (as clearing the canvas also clears out the textures)
                 gc.layer(LayerId(0));
                 gc.clear_layer();
 
