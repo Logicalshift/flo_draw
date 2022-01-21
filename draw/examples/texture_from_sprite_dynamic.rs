@@ -44,8 +44,8 @@ pub fn main() {
 
             // Draw the texture with 4x the size so the pixels can be seen
             gc.new_path();
-            gc.rect(300.0, 300.0, 700.0, 700.0);
-            gc.fill_texture(TextureId(0), 300.0, 300.0, 700.0, 700.0);
+            gc.rect(200.0, 200.0, 800.0, 800.0);
+            gc.fill_texture(TextureId(0), 200.0, 200.0, 800.0, 800.0);
             gc.fill();
 
             // Draw at 1x scale
