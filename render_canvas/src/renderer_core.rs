@@ -55,6 +55,7 @@ impl Into<render::TextureId> for &RenderTexture {
 ///
 /// Textures with pending render instructions
 ///
+#[derive(Clone, Copy)]
 pub enum TextureRenderRequest {
     ///
     /// The specified sprite bounds should be made to fill the texture

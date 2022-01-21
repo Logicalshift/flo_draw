@@ -1456,11 +1456,29 @@ impl CanvasRenderer {
 
         // We need to process the instructions waiting to set up textures
         let setup_textures = self.core.sync(|core| {
-            let textures = mem::take(&mut core.layer_textures);
+            let mut textures = vec![];
 
-            textures.into_iter()
-                .map(|(_, request)| request)
-                .collect()
+            for (_, render_request) in mem::take(&mut core.layer_textures) {
+                use self::TextureRenderRequest::*;
+                match &render_request {
+                    FromSprite(_, _, _) => {
+                        // These are always rendered
+                        textures.push(render_request);
+                    },
+
+                    DynamicTexture(texture_id, _, _, _, _) => {
+                        let texture_id = *texture_id;
+
+                        // These are rendered if the viewport or sprite has changed since the last rime
+                        textures.push(render_request);
+
+                        // Put back on the request list so we re-render this texture
+                        core.layer_textures.insert(texture_id, render_request);
+                    }
+                }
+            }
+
+            textures
         });
 
         // Start processing the drawing instructions
