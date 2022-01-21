@@ -498,10 +498,10 @@ impl MetalRenderer {
 
             // The rendering is a simple triangle strip
             let triangle_strip              = vec![
-                Vertex2D { pos: [ min_x, min_y ],                   tex_coord: [ min_x, max_y ],                color: [0,0,0,0] },
-                Vertex2D { pos: [ min_x, max_y ],                   tex_coord: [ min_x, min_y ],                color: [0,0,0,0] },
-                Vertex2D { pos: [ max_x, min_y ],                   tex_coord: [ max_x, max_y ],                color: [0,0,0,0] },
-                Vertex2D { pos: [ max_x, max_y ],                   tex_coord: [ max_x, min_y ],                color: [0,0,0,0] },
+                Vertex2D { pos: [ min_x, min_y ],                   tex_coord: [ min_x, source_height-min_y ],                color: [0,0,0,0] },
+                Vertex2D { pos: [ min_x, max_y ],                   tex_coord: [ min_x, source_height-max_y ],                color: [0,0,0,0] },
+                Vertex2D { pos: [ max_x, min_y ],                   tex_coord: [ max_x, source_height-min_y ],                color: [0,0,0,0] },
+                Vertex2D { pos: [ max_x, max_y ],                   tex_coord: [ max_x, source_height-max_y ],                color: [0,0,0,0] },
             ];
             let triangle_strip              = Buffer::from_vertices(&self.device, triangle_strip);
 
