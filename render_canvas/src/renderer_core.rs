@@ -98,6 +98,9 @@ pub struct RenderCore {
     /// The size of the textures (when in use)
     pub texture_size: HashMap<render::TextureId, render::Size2D>,
 
+    /// The viewport size that a particular dynamic texture was last rendered at
+    pub dynamic_texture_viewport: HashMap<render::TextureId, (f32, f32)>,
+
     /// Textures that are waiting to be rendered from layers
     pub layer_textures: HashMap<render::TextureId, TextureRenderRequest>,
 
