@@ -86,6 +86,7 @@ See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` su
 
 * [`cargo run --example canvas_window`](./draw/examples/canvas_window.rs) - displays a basic window
 * [`cargo run --example hello_world`](./draw/examples/hello_world.rs) - traditional
+* [`cargo run --example layer_alpha`](./draw/examples/layer_alpha.rs) - blending between layers
 * [`cargo run --example bounce_sprites`](./draw/examples/bounce_sprites.rs) - animates some bouncing balls
 * [`cargo run --example follow_mouse`](./draw/examples/follow_mouse.rs) - demonstrates event handling by tracking the mouse around
 * [`cargo run --example vectoroids`](./draw/examples/vectoroids.rs) - more involved example of event handling with an incomplete game (arrow keys to move, space to fire)
@@ -97,6 +98,7 @@ See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` su
 * [`cargo run --example texture_sprites`](./draw/examples/texture_sprites.rs) - bouncing balls with bitmap images
 * [`cargo run --example texture_spin`](./draw/examples/texture_spin.rs) - bitmap rendering with an animated transformation applied
 * [`cargo run --example texture_from_sprite`](./draw/examples/texture_from_sprite.rs) - demonstrates rendering to a texture
+* [`cargo run --example texture_from_sprite_dynamic`](./draw/examples/texture_from_sprite_dynamic.rs) - dynamic textures provide a way to render to textures at 'native' canvas resolution
 * [`cargo run --example gradient`](./draw/examples/gradient.rs) - gradient rendering
 * [`cargo run --example mascot_shadow`](./draw/examples/mascot_shadow.rs) - reprocess the mascot rendering to add some extra shading
 * [`cargo run --example wibble_mascot`](./draw/examples/wibble_mascot.rs) - reprocess the mascot rendering to make it wobble

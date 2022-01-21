@@ -78,6 +78,8 @@ For more information, you may be interested in the [guide](GUIDE.md), or the [ex
 * [`cargo run --example texture`](./examples/texture.rs) - bitmap rendering
 * [`cargo run --example texture_sprites`](./examples/texture_sprites.rs) - bouncing balls with bitmap images
 * [`cargo run --example texture_spin`](./examples/texture_spin.rs) - bitmap rendering with an animated transformation applied
+* [`cargo run --example texture_from_sprite`](./examples/texture_from_sprite.rs) - demonstrates rendering to a texture
+* [`cargo run --example texture_from_sprite_dynamic`](./examples/texture_from_sprite_dynamic.rs) - dynamic textures provide a way to render to textures at 'native' canvas resolution
 * [`cargo run --example gradient`](./examples/gradient.rs) - gradient rendering
 * [`cargo run --example mascot_shadow`](./examples/mascot_shadow.rs) - reprocess the mascot rendering to add some extra shading
 * [`cargo run --example wibble_mascot`](./examples/wibble_mascot.rs) - reprocess the mascot rendering to make it wobble
