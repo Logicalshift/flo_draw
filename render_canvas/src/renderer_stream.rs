@@ -590,7 +590,7 @@ impl<'a> RenderStream<'a> {
     ///
     /// This will (re)create the texture as a render target
     ///
-    fn render_layer_to_texture(&self, texture_id: render::TextureId, layer_handle: LayerHandle, region: canvas::SpriteBounds) -> Vec<render::RenderAction> {
+    fn render_layer_to_texture(&self, texture_id: render::TextureId, layer_handle: LayerHandle, region: canvas::SpriteBounds, create_mipmap: bool) -> Vec<render::RenderAction> {
         self.core.sync(move |core| {
             // Fetch the current transformation matrix of the sprite layer
             let sprite_transform    = core.layer(layer_handle).state.current_matrix;
@@ -646,8 +646,11 @@ impl<'a> RenderStream<'a> {
                 FreeRenderTarget(OFFSCREEN_RENDER_TARGET),
                 FreeRenderTarget(RESOLVE_RENDER_TARGET),
                 FreeTexture(OFFSCREEN_TEXTURE),
-                CreateMipMaps(texture_id),
             ]);
+
+            if create_mipmap {
+                render_to_texture.push(CreateMipMaps(texture_id));
+            }
 
             render_to_texture
         })
@@ -681,7 +684,7 @@ impl<'a> RenderStream<'a> {
         self.core.sync(|core| core.texture_size.insert(texture_id, size));
 
         // Render to the texture
-        self.render_layer_to_texture(texture_id, layer_handle, sprite_region)
+        self.render_layer_to_texture(texture_id, layer_handle, sprite_region, true)
     }
 
     ///
@@ -774,7 +777,7 @@ impl<'a> Stream for RenderStream<'a> {
             match setup_texture {
                 TextureRenderRequest::FromSprite(texture_id, layer_handle, bounds) => {
                     let send_vertex_buffers     = self.core.sync(|core| core.send_vertex_buffers(layer_handle));
-                    let rendering               = self.render_layer_to_texture(texture_id, layer_handle, bounds);
+                    let rendering               = self.render_layer_to_texture(texture_id, layer_handle, bounds, true);
 
                     self.pending.extend(send_vertex_buffers);
                     self.pending.extend(rendering);
