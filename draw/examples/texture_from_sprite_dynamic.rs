@@ -1,6 +1,9 @@
 use flo_draw::*;
 use flo_draw::canvas::*;
 
+use std::thread;
+use std::time::{Duration};
+
 ///
 /// Dynamic textures can be used to have a texture created from a sprite that is re-rendered to match the resolution of the canvas
 ///
@@ -37,22 +40,37 @@ pub fn main() {
             gc.create_dynamic_texture(TextureId(0), SpriteId(0), 0.0, 0.0, 100.0, 100.0, 100.0, 100.0);
         });
 
-        // Render the texture to the window
-        canvas.draw(|gc| {
-            gc.layer(LayerId(0));
-            gc.clear_layer();
+        let mut angle = 0.0;
 
-            // Draw the texture with 4x the size so the pixels can be seen
-            gc.new_path();
-            gc.rect(200.0, 200.0, 800.0, 800.0);
-            gc.fill_texture(TextureId(0), 200.0, 200.0, 800.0, 800.0);
-            gc.fill();
+        loop {
+            // Render the texture to the window
+            canvas.draw(|gc| {
+                gc.layer(LayerId(0));
+                gc.clear_layer();
 
-            // Draw at 1x scale
-            gc.new_path();
-            gc.rect(100.0, 100.0, 200.0, 200.0);
-            gc.fill_texture(TextureId(0), 100.0, 100.0, 200.0, 200.0);
-            gc.fill();
-        });
+                // Draw the texture with 4x the size so the pixels can be seen (also spin it)
+                gc.new_path();
+                gc.rect(0.0, 0.0, 1000.0, 1000.0);
+                gc.fill_texture(TextureId(0), 200.0, 200.0, 800.0, 800.0);
+
+                gc.fill_transform(Transform2D::translate(-500.0, -500.0));
+                gc.fill_transform(Transform2D::rotate_degrees(angle));
+                gc.fill_transform(Transform2D::translate(500.0, 500.0));
+
+                gc.fill();
+
+                // Draw at 1x scale
+                gc.new_path();
+                gc.rect(100.0, 100.0, 200.0, 200.0);
+                gc.fill_texture(TextureId(0), 100.0, 100.0, 200.0, 200.0);
+                gc.fill();
+            });
+
+            // Wait for the next frame
+            thread::sleep(Duration::from_nanos(1_000_000_000 / 60));
+
+            // Rotate the texture
+            angle += 0.1;
+        }
     });
 }
