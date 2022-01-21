@@ -18,24 +18,24 @@ pub fn main() {
         // Create an offscreen context
         let mut context     = initialize_offscreen_rendering().unwrap();
 
+        // Describe what to draw
+        let mut drawing     = vec![];
+        drawing.clear_canvas(Color::Rgba(0.0, 0.0, 0.0, 0.0));
+        drawing.canvas_height(1000.0);
+        drawing.transform(Transform2D::scale(1.0, -1.0));
+        drawing.center_region(0.0, 0.0, 1000.0, 1000.0);
+        
+        drawing.new_path();
+        drawing.move_to(200.0, 200.0);
+        drawing.line_to(800.0, 200.0);
+        drawing.line_to(500.0, 800.0);
+        drawing.line_to(200.0, 200.0);
+
+        drawing.fill_color(Color::Rgba(0.0, 0.6, 0.8, 1.0));
+        drawing.fill();
+
         // Render an image to bytes
-        use Draw::*;
-        use PathOp::*;
-        let image           = render_canvas_offscreen(&mut context, 1024, 768, 1.0, stream::iter(vec![
-            ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)),
-            CanvasHeight(1000.0),
-            MultiplyTransform(Transform2D::scale(1.0, -1.0)),
-            CenterRegion((0.0, 0.0), (1000.0, 1000.0)),
-
-            NewPath.into(),
-            Move(200.0, 200.0).into(),
-            Line(800.0, 200.0).into(),
-            Line(500.0, 800.0).into(),
-            Line(200.0, 200.0).into(),
-
-            FillColor(Color::Rgba(0.0, 0.6, 0.8, 1.0)),
-            Fill
-        ])).await;
+        let image           = render_canvas_offscreen(&mut context, 1024, 768, 1.0, stream::iter(drawing)).await;
 
         // Save to a png file
         let path            = path::Path::new(r"triangle.png");
