@@ -1400,6 +1400,7 @@ impl CanvasRenderer {
 
         // Set up the initial set of rendering actions
         let viewport_transform  = self.viewport_transform;
+        let viewport_size       = render::Size2D(self.viewport_size.0 as usize, self.viewport_size.1 as usize);
         let viewport_matrix     = transform_to_matrix(&self.viewport_transform);
         let mut initialise      = if rendering_suspended {
             vec![]
@@ -1467,7 +1468,7 @@ impl CanvasRenderer {
         let processing          = self.process_drawing(drawing);
 
         // Return a stream of results from processing the drawing
-        RenderStream::new(core, rendering_suspended, processing, viewport_transform, background_vertex_buffer, initialise, setup_textures, finalize)
+        RenderStream::new(core, rendering_suspended, processing, viewport_transform, viewport_size, background_vertex_buffer, initialise, setup_textures, finalize)
     }
 }
 

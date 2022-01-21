@@ -86,6 +86,9 @@ pub struct RenderStream<'a> {
     /// The transformation for the viewport
     viewport_transform: canvas::Transform2D,
 
+    /// The size of the viewport
+    viewport_size: render::Size2D,
+
     /// The region of the layer buffer that has been drawn on
     invalid_bounds: LayerBounds
 }
@@ -124,7 +127,7 @@ impl<'a> RenderStream<'a> {
     ///
     /// Creates a new render stream
     ///
-    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, frame_suspended: bool, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, background_vertex_buffer: render::VertexBufferId, initial_actions: Vec<render::RenderAction>, setup_textures: Vec<TextureRenderRequest>, final_actions: Vec<render::RenderAction>) -> RenderStream<'a>
+    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, frame_suspended: bool, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, viewport_size: render::Size2D, background_vertex_buffer: render::VertexBufferId, initial_actions: Vec<render::RenderAction>, setup_textures: Vec<TextureRenderRequest>, final_actions: Vec<render::RenderAction>) -> RenderStream<'a>
     where   ProcessFuture: 'a+Send+Future<Output=()> {
         RenderStream {
             core:                       core,
@@ -135,6 +138,7 @@ impl<'a> RenderStream<'a> {
             setup_textures:             setup_textures,
             final_actions:              Some(final_actions),
             viewport_transform:         viewport_transform,
+            viewport_size:              viewport_size,
             layer_buffer_is_clear:      true,
             invalid_bounds:             LayerBounds::default(),
             layer_id:                   0,
@@ -650,6 +654,37 @@ impl<'a> RenderStream<'a> {
     }
 
     ///
+    /// Creates the rendering actions for generating a dynamic texture
+    ///
+    fn render_dynamic_texture(&self, texture_id: render::TextureId, layer_handle: LayerHandle, sprite_region: canvas::SpriteBounds, size: canvas::CanvasSize, transform: canvas::Transform2D) -> Vec<render::RenderAction> {
+        // Convert the transform to viewport coordinates
+        let transform = self.viewport_transform * transform;
+
+        // Coordinates for the size
+        let (x1, y1)    = transform.transform_point(0.0, 0.0);
+        let (x2, y2)    = transform.transform_point(size.0, size.1);
+
+        let min_x       = f32::min(x1, x2);
+        let min_y       = f32::min(y1, y2);
+        let max_x       = f32::max(x1, x2);
+        let max_y       = f32::max(y1, y2);
+
+        // Size relative to the framebuffer size
+        let size_w      = (max_x - min_x)/2.0;
+        let size_h      = (max_y - min_y)/2.0;
+
+        let size_w      = self.viewport_size.0 as f32 * size_w;
+        let size_h      = self.viewport_size.1 as f32 * size_h;
+
+        // Set the texture size
+        let size        = render::Size2D(size_w as _, size_h as _);
+        self.core.sync(|core| core.texture_size.insert(texture_id, size));
+
+        // Render to the texture
+        self.render_layer_to_texture(texture_id, layer_handle, sprite_region)
+    }
+
+    ///
     /// Modifies any 'draw framebuffer' operations in the pending list so that they render only the invalid region
     ///
     fn clip_draw_framebuffer(&self, instructions: Vec<render::RenderAction>) -> Vec<render::RenderAction> {
@@ -746,7 +781,11 @@ impl<'a> Stream for RenderStream<'a> {
                 }
 
                 TextureRenderRequest::DynamicTexture(texture_id, layer_handle, bounds, size, transform) => {
-                    todo!()
+                    let send_vertex_buffers     = self.core.sync(|core| core.send_vertex_buffers(layer_handle));
+                    let rendering               = self.render_dynamic_texture(texture_id, layer_handle, bounds, size, transform);
+
+                    self.pending.extend(send_vertex_buffers);
+                    self.pending.extend(rendering);
                 }
             }
         }
