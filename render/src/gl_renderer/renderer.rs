@@ -249,6 +249,8 @@ impl GlRenderer {
         use self::BlendMode::*;
 
         unsafe {
+            gl::BlendEquationSeparate(gl::FUNC_ADD, gl::FUNC_ADD);
+
             match blend_mode {
                 SourceOver          => gl::BlendFuncSeparate(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
                 DestinationOver     => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::DST_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::ONE),
@@ -260,8 +262,21 @@ impl GlRenderer {
                 DestinationATop     => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC_ALPHA),
 
                 // TODO: these both require the shader to multiply the alpha in (a modification to the texture shader)
+                // Multiply is a*b. Here we multiply the source colour by the destination colour, then blend the destination back in again to take account of
+                // alpha in the source layer (this version of multiply has no effect on the target alpha value: a more strict version might multiply those too)
+                //
+                // (This is a*b + alpha*b. I think if we change how the pre-multiply works so that a=1 when alpha is 0 - premultiply by inverse alpha - this works)
                 Multiply            => gl::BlendFuncSeparate(gl::DST_COLOR, gl::ONE_MINUS_SRC_ALPHA, gl::ZERO, gl::ONE),
-                Screen              => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_COLOR, gl::ONE, gl::ZERO, gl::ONE),
+
+                // TODO: screen is 1-(1-a)*(1-b) which I think is harder to fake. If we precalculate (1-a) as the src in the shader
+                // then can multiply by ONE_MINUS_DST_COLOR to get (1-a)*(1-b). Can use gl::ONE as our target colour, and then a 
+                // reverse subtraction to get 1-(1-a)*(1-b)
+                // (This implementation doesn't work: the gl::ONE is 1*DST_COLOR and not 1 so this is currently 1*b-(1-a)*(1-b)
+                // with shader support)
+                Screen              => {
+                    gl::BlendEquationSeparate(gl::FUNC_REVERSE_SUBTRACT, gl::FUNC_ADD);
+                    gl::BlendFuncSeparate(gl::ONE_MINUS_DST_COLOR, gl::ONE, gl::ZERO, gl::ONE);
+                },
 
                 AllChannelAlphaSourceOver       => gl::BlendFuncSeparate(gl::ONE, gl::ONE_MINUS_SRC_COLOR, gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
                 AllChannelAlphaDestinationOver  => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_COLOR, gl::ONE, gl::ONE_MINUS_DST_ALPHA, gl::ONE),
