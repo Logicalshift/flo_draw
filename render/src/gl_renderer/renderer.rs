@@ -524,6 +524,9 @@ impl GlRenderer {
         self.render_targets[source_buffer].as_ref().map(|source_buffer| {
             unsafe {
                 if let Some(texture) = source_buffer.texture() {
+                    // TODO: when blending where the source is a frame buffer, we know that the source is pre-multiplied already (this assume SourceOver so only works sometimes)
+                    gl::BlendFuncSeparate(gl::ONE, gl::ONE_MINUS_SRC_ALPHA, gl::ONE, gl::ONE_MINUS_SRC_ALPHA);
+                    
                     // Activate the resolving program
                     let shader = shaders.use_program(StandardShaderProgram::MsaaResolve(4, post_process));
 
