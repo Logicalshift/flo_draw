@@ -63,8 +63,19 @@ pub fn main() {
                 gc.draw_list(mascot.iter().cloned());
 
                 // Draw the silouette over the top with a gradient
-                gc.create_gradient(GradientId(1), Color::Rgba(0.1, 0.1, 0.1, 0.05));
-                gc.gradient_stop(GradientId(1), 1.0, Color::Rgba(0.0, 0.1, 0.2, 0.6));
+                match shading_mode % 4 {
+                    1 => { 
+                        // With the multiply blend mode we can use no transparency as the colours are multiplied
+                        gc.create_gradient(GradientId(1), Color::Rgba(1.0, 1.0, 1.0, 1.0));
+                        gc.gradient_stop(GradientId(1), 1.0, Color::Rgba(0.0, 0.1*0.6, 0.2*0.6, 1.0));
+                    }
+
+                    _ => {
+                        // Use a standard gradient for the other blend modes
+                        gc.create_gradient(GradientId(1), Color::Rgba(0.1, 0.1, 0.1, 0.05));
+                        gc.gradient_stop(GradientId(1), 1.0, Color::Rgba(0.0, 0.1, 0.2, 0.6));
+                    }
+                }
 
                 gc.transform(Transform2D([[1.0, 0.0, -6.25128], [0.0, 1.0, -61.994], [0.0, 0.0, 1.0]]));
                 match shading_mode % 4 {
@@ -85,6 +96,10 @@ pub fn main() {
                 // Draw another siloutte on a lower layer
                 gc.layer(LayerId(1));
                 gc.clear_layer();
+
+                gc.create_gradient(GradientId(1), Color::Rgba(0.1, 0.1, 0.1, 0.05));
+                gc.gradient_stop(GradientId(1), 1.0, Color::Rgba(0.0, 0.1, 0.2, 0.6));
+
                 gc.transform(Transform2D([[1.0, 0.0, 10.0], [0.0, 1.0, 10.0], [0.0, 0.0, 1.0]]));
                 gc.fill_gradient(GradientId(1), 200.0, 200.0, 800.0, 600.0);
 
