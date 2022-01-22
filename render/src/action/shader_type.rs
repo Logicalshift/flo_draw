@@ -17,7 +17,7 @@ pub enum ShaderType {
     /// Colour derived from a texture with a transform mapping from canvas coordinates to texture coordinates
     Texture { texture: TextureId, texture_transform: Matrix, repeat: bool, alpha: f32, clip_texture: Option<TextureId> },
 
-    /// Colour dervide from a 1D texture using a transform mapping (used for rendering linear gradients)
+    /// Colour derived from a 1D texture using a transform mapping (used for rendering linear gradients)
     LinearGradient { texture: TextureId, texture_transform: Matrix, repeat: bool, alpha: f32, clip_texture: Option<TextureId> }
 }
 
