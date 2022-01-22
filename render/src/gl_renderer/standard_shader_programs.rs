@@ -117,12 +117,8 @@ impl StandardShaderProgram {
                 LinearGradient(variant, post_process)   => { Self::load_shader(&gradient_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &gradient_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
                 DashedLine(variant, post_process)       => { Self::load_shader(&simple_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &dashed_line_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
 
-                MsaaResolve(4)                          => {
-                    let msaa4_resolve_fragment  = Shader::compile(&msaa4_resolve, GlShaderType::Fragment, vec![]);
-                    let msaa4_resolve_vertex    = Shader::compile(&msaa_vertex, GlShaderType::Vertex, vec![]);
-                    ShaderProgram::from_shaders(vec![msaa4_resolve_vertex, msaa4_resolve_fragment])
-                }
-                MsaaResolve(_num_samples)       => { unimplemented!() }
+                MsaaResolve(4)                          => { Self::load_shader(&msaa_vertex, &vec![], &msaa4_resolve, &vec![], &vec![]) }
+                MsaaResolve(_num_samples)               => { unimplemented!() }
             }
         }
     }
