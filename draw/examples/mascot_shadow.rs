@@ -6,6 +6,9 @@ use futures::prelude::*;
 use futures::executor;
 use futures::stream;
 
+use std::thread;
+use std::time::{Duration};
+
 ///
 /// Draws FlowBetween's mascot with extra processing to add shading effects and a drop shadow
 ///
@@ -50,37 +53,53 @@ pub fn main() {
 
         // Render to a window
         let canvas = create_drawing_window("Flo with shading");
-        canvas.draw(|gc| {
-            // Draw the mascot
-            gc.draw_list(mascot);
+        let mut shading_mode = 0;
 
-            gc.layer(LayerId(3));
-            gc.clear_layer();
+        loop {
+            canvas.draw(|gc| {
+                // Draw the mascot
+                gc.layer(LayerId(2));
+                gc.clear_layer();
+                gc.draw_list(mascot.iter().cloned());
 
-            // Draw the silouette over the top with a gradient
-            gc.create_gradient(GradientId(1), Color::Rgba(0.1, 0.1, 0.1, 0.05));
-            gc.gradient_stop(GradientId(1), 1.0, Color::Rgba(0.0, 0.1, 0.2, 0.6));
+                // Draw the silouette over the top with a gradient
+                gc.create_gradient(GradientId(1), Color::Rgba(0.1, 0.1, 0.1, 0.05));
+                gc.gradient_stop(GradientId(1), 1.0, Color::Rgba(0.0, 0.1, 0.2, 0.6));
 
-            gc.transform(Transform2D([[1.0, 0.0, -6.25128], [0.0, 1.0, -61.994], [0.0, 0.0, 1.0]]));
-            gc.fill_gradient(GradientId(1), 200.0, 200.0, 800.0, 600.0);
+                gc.transform(Transform2D([[1.0, 0.0, -6.25128], [0.0, 1.0, -61.994], [0.0, 0.0, 1.0]]));
+                match shading_mode % 4 {
+                    0 => gc.blend_mode(BlendMode::SourceOver),
+                    1 => gc.blend_mode(BlendMode::Multiply),
+                    2 => gc.blend_mode(BlendMode::Screen),
+                    3 => gc.blend_mode(BlendMode::DestinationIn),
+                    _ => gc.blend_mode(BlendMode::SourceOver),
+                }
+                gc.fill_gradient(GradientId(1), 200.0, 200.0, 800.0, 600.0);
 
-            gc.new_path();
-            silouette.iter().for_each(|path| gc.bezier_path(path));
+                gc.new_path();
+                silouette.iter().for_each(|path| gc.bezier_path(path));
 
-            gc.fill();
+                gc.fill();
+                gc.blend_mode(BlendMode::SourceOver);
 
-            // Draw another siloutte on a lower layer
-            gc.layer(LayerId(0));
-            gc.transform(Transform2D([[1.0, 0.0, 10.0], [0.0, 1.0, 10.0], [0.0, 0.0, 1.0]]));
-            gc.fill_gradient(GradientId(1), 200.0, 200.0, 800.0, 600.0);
+                // Draw another siloutte on a lower layer
+                gc.layer(LayerId(1));
+                gc.clear_layer();
+                gc.transform(Transform2D([[1.0, 0.0, 10.0], [0.0, 1.0, 10.0], [0.0, 0.0, 1.0]]));
+                gc.fill_gradient(GradientId(1), 200.0, 200.0, 800.0, 600.0);
 
-            gc.new_path();
-            silouette.iter().for_each(|path| gc.bezier_path(path));
+                gc.new_path();
+                silouette.iter().for_each(|path| gc.bezier_path(path));
 
-            gc.blend_mode(BlendMode::DestinationIn);
-            gc.fill_gradient(GradientId(1), 200.0, 200.0, 200.0, 600.0);
-            gc.fill();
-        });
+                gc.blend_mode(BlendMode::DestinationIn);
+                gc.fill_gradient(GradientId(1), 200.0, 200.0, 200.0, 600.0);
+                gc.fill();
+            });
+
+            // Display each shading mode for 10s then move on to the next one
+            shading_mode += 1;
+            thread::sleep(Duration::from_secs(10));
+        }
     });
 }
 
