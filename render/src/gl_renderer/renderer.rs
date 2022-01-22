@@ -592,10 +592,8 @@ impl GlRenderer {
             Some(DashedLine { dash_texture: _, clip_texture: None })                => Some(StandardShaderProgram::DashedLine(StandardShaderVariant::NoClipping)),
             Some(DashedLine { dash_texture: _, clip_texture: Some(_) })             => Some(StandardShaderProgram::DashedLine(StandardShaderVariant::ClippingMask)),
 
-            Some(Texture { clip_texture: None, premultiply_colours: false, .. })    => Some(StandardShaderProgram::Texture(StandardShaderVariant::NoClipping, ColorPostProcessingStep::NoPostProcessing)),
-            Some(Texture { clip_texture: Some(_), premultiply_colours: false, .. }) => Some(StandardShaderProgram::Texture(StandardShaderVariant::ClippingMask, ColorPostProcessingStep::NoPostProcessing)),
-            Some(Texture { clip_texture: None, premultiply_colours: true, .. })     => Some(StandardShaderProgram::Texture(StandardShaderVariant::NoClipping, ColorPostProcessingStep::MultiplyAlpha)),
-            Some(Texture { clip_texture: Some(_), premultiply_colours: true, .. })  => Some(StandardShaderProgram::Texture(StandardShaderVariant::ClippingMask, ColorPostProcessingStep::MultiplyAlpha)),
+            Some(Texture { clip_texture: None, .. })                                => Some(StandardShaderProgram::Texture(StandardShaderVariant::NoClipping, ColorPostProcessingStep::NoPostProcessing)),
+            Some(Texture { clip_texture: Some(_), .. })                             => Some(StandardShaderProgram::Texture(StandardShaderVariant::ClippingMask, ColorPostProcessingStep::NoPostProcessing)),
 
             Some(LinearGradient { clip_texture: None, .. })                         => Some(StandardShaderProgram::LinearGradient(StandardShaderVariant::NoClipping)),
             Some(LinearGradient { clip_texture: Some(_), .. })                      => Some(StandardShaderProgram::LinearGradient(StandardShaderVariant::ClippingMask)),
@@ -654,13 +652,13 @@ impl GlRenderer {
                 panic_on_gl_error("Set dash shader");
             }
 
-            Texture { texture, texture_transform, repeat, alpha, premultiply_colours, clip_texture } => {
+            Texture { texture, texture_transform, repeat, alpha, clip_texture } => {
                 let textures            = &self.textures;
                 let TextureId(texture)  = texture;
                 let texture             = if texture < self.textures.len() { self.textures[texture].as_ref() } else { None };
                 let clip_texture        = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let variant             = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
-                let premultiply         = if premultiply_colours { ColorPostProcessingStep::MultiplyAlpha } else { ColorPostProcessingStep::NoPostProcessing };
+                let premultiply         = ColorPostProcessingStep::NoPostProcessing;
                 let texture_transform   = texture_transform.to_opengl_matrix();
 
                 let program             = self.shader_programs.use_program(StandardShaderProgram::Texture(variant, premultiply));

@@ -285,7 +285,7 @@ impl RenderStreamState {
                 let shader = match modifier {
                     ShaderModifier::Simple                                      => render::ShaderType::Simple { clip_texture: clip },
                     ShaderModifier::DashPattern(_)                              => render::ShaderType::DashedLine { dash_texture: DASH_TEXTURE, clip_texture: clip },
-                    ShaderModifier::Texture(texture_id, matrix, repeat, alpha)  => render::ShaderType::Texture { texture: *texture_id, texture_transform: *matrix, repeat: *repeat, alpha: *alpha, clip_texture: clip, premultiply_colours: false },
+                    ShaderModifier::Texture(texture_id, matrix, repeat, alpha)  => render::ShaderType::Texture { texture: *texture_id, texture_transform: *matrix, repeat: *repeat, alpha: *alpha, clip_texture: clip },
                     ShaderModifier::Gradient(texture_id, matrix, repeat, alpha) => render::ShaderType::LinearGradient { texture: *texture_id, texture_transform: *matrix, repeat: *repeat, alpha: *alpha, clip_texture: clip }
                 };
 
