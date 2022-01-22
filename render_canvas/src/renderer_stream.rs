@@ -518,8 +518,8 @@ impl RenderCore {
                 canvas::BlendMode::DestinationOut   => render::BlendMode::DestinationOut,
                 canvas::BlendMode::SourceAtop       => render::BlendMode::SourceATop,
                 canvas::BlendMode::DestinationAtop  => render::BlendMode::DestinationATop,
-                canvas::BlendMode::Multiply         => render::BlendMode::SourceOver,
-                canvas::BlendMode::Screen           => render::BlendMode::SourceOver,
+                canvas::BlendMode::Multiply         => render::BlendMode::Multiply,
+                canvas::BlendMode::Screen           => render::BlendMode::Screen,
                 canvas::BlendMode::Darken           => render::BlendMode::SourceOver,
                 canvas::BlendMode::Lighten          => render::BlendMode::SourceOver,
             };

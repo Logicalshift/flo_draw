@@ -301,6 +301,10 @@ impl GlRenderer {
                 SourceATop          => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::SRC_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::SRC_ALPHA),
                 DestinationATop     => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC_ALPHA),
 
+                // TODO: these both require the shader to multiply the alpha in (a modification to the texture shader)
+                Multiply            => gl::BlendFuncSeparate(gl::DST_COLOR, gl::ZERO, gl::ONE, gl::ZERO),
+                Screen              => gl::BlendFuncSeparate(gl::ONE, gl::ONE_MINUS_DST_COLOR, gl::ONE, gl::ZERO),
+
                 AllChannelAlphaSourceOver       => gl::BlendFuncSeparate(gl::ONE, gl::ONE_MINUS_SRC_COLOR, gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
                 AllChannelAlphaDestinationOver  => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_COLOR, gl::ONE, gl::ONE_MINUS_DST_ALPHA, gl::ONE),
             }

@@ -680,9 +680,10 @@ impl CanvasRenderer {
                                 SourceAtop      => render::BlendMode::SourceATop,
                                 DestinationAtop => render::BlendMode::DestinationATop,
 
+                                Multiply        => render::BlendMode::Multiply,
+                                Screen          => render::BlendMode::Screen,
+
                                 // TODO: these are not supported yet (they might require explicit shader support)
-                                Multiply        => render::BlendMode::SourceOver,
-                                Screen          => render::BlendMode::SourceOver,
                                 Darken          => render::BlendMode::SourceOver,
                                 Lighten         => render::BlendMode::SourceOver,
                             };
