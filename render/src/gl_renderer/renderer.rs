@@ -655,7 +655,7 @@ impl GlRenderer {
                 panic_on_gl_error("Set dash shader");
             }
 
-            Texture { texture, texture_transform, repeat, alpha, clip_texture } => {
+            Texture { texture, texture_transform, repeat, alpha, premultiply_colours, clip_texture } => {
                 let texture_shader      = &mut self.texture_shader;
                 let textures            = &self.textures;
                 let TextureId(texture)  = texture;
