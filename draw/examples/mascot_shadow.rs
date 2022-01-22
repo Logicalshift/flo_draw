@@ -54,6 +54,9 @@ pub fn main() {
             // Draw the mascot
             gc.draw_list(mascot);
 
+            gc.layer(LayerId(3));
+            gc.clear_layer();
+
             // Draw the silouette over the top with a gradient
             gc.create_gradient(GradientId(1), Color::Rgba(0.1, 0.1, 0.1, 0.05));
             gc.gradient_stop(GradientId(1), 1.0, Color::Rgba(0.0, 0.1, 0.2, 0.6));
