@@ -1,12 +1,11 @@
 use super::error::*;
 use super::buffer::*;
-use super::shader::*;
 use super::texture::*;
 use super::vertex_array::*;
 use super::render_target::*;
-use super::shader_program::*;
 use super::shader_uniforms::*;
 use super::shader_collection::*;
+use super::standard_shader_programs::*;
 
 use crate::action::*;
 use crate::buffer::*;
@@ -14,14 +13,6 @@ use crate::buffer::*;
 use std::ptr;
 use std::ops::{Range};
 
-///
-/// Attributes for the MSAA shader program
-///
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-enum MsaaAttribute {
-    Alpha,
-    Texture
-}
 
 ///
 /// OpenGL action renderer
@@ -48,20 +39,8 @@ pub struct GlRenderer {
     /// The render targets assigned to this renderer
     render_targets: Vec<Option<RenderTarget>>,
 
-    /// The simple shader program
-    simple_shader: ShaderCollection<ShaderUniform>,
-
-    /// The 'dashed line' shader program
-    dashed_line_shader: ShaderCollection<ShaderUniform>,
-
-    /// The 'texture fill' shader program
-    texture_shader: ShaderCollection<ShaderUniform>,
-
-    /// The 'linear gradient' shader program
-    gradient_shader: ShaderCollection<ShaderUniform>,
-
-    /// Used when resolving the MSAA texture to the main canvas
-    msaa4_resolve_shader: ShaderProgram<MsaaAttribute>
+    /// The shader programs
+    shader_programs: ShaderCollection<StandardShaderProgram, ShaderUniform>,
 }
 
 impl GlRenderer {
@@ -69,24 +48,7 @@ impl GlRenderer {
     /// Creates a new renderer that will render to the specified device and factory
     ///
     pub fn new() -> GlRenderer {
-        let simple_vertex                       = String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap();
-        let simple_fragment                     = String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap();
-        let dashed_line_fragment                = String::from_utf8(include_bytes!["../../shaders/dashed_line/dashed_line.glslf"].to_vec()).unwrap();
-        let texture_vertex                      = String::from_utf8(include_bytes!["../../shaders/texture/texture.glslv"].to_vec()).unwrap();
-        let texture_fragment                    = String::from_utf8(include_bytes!["../../shaders/texture/texture.glslf"].to_vec()).unwrap();
-        let gradient_vertex                     = String::from_utf8(include_bytes!["../../shaders/texture/gradient.glslv"].to_vec()).unwrap();
-        let gradient_fragment                   = String::from_utf8(include_bytes!["../../shaders/texture/gradient.glslf"].to_vec()).unwrap();
-        let msaa_vertex                         = String::from_utf8(include_bytes!["../../shaders/simple/resolve.glslv"].to_vec()).unwrap();
-        let msaa4_resolve                       = String::from_utf8(include_bytes!["../../shaders/simple/multisample_resolve_4.glslf"].to_vec()).unwrap();
-
-        let simple_shader                       = ShaderCollection::new(&simple_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &simple_fragment, vec![]);
-        let dashed_line_shader                  = ShaderCollection::new(&simple_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &dashed_line_fragment, vec![]);
-        let texture_shader                      = ShaderCollection::new(&texture_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &texture_fragment, vec![]);
-        let gradient_shader                     = ShaderCollection::new(&gradient_vertex, vec!["a_Pos", "a_Color", "a_TexCoord"], &gradient_fragment, vec![]);
-
-        let msaa4_resolve_fragment              = Shader::compile(&msaa4_resolve, GlShaderType::Fragment, vec![]);
-        let msaa4_resolve_vertex                = Shader::compile(&msaa_vertex, GlShaderType::Vertex, vec![]);
-        let msaa4_resolve_shader                = ShaderProgram::from_shaders(vec![msaa4_resolve_vertex, msaa4_resolve_fragment]);
+        let shader_programs     = ShaderCollection::new(StandardShaderProgram::create_shader_loader());
 
         GlRenderer {
             buffers:                        vec![],
@@ -96,11 +58,7 @@ impl GlRenderer {
             active_shader:                  None,
             transform_matrix:               None,
             render_targets:                 vec![],
-            simple_shader:                  simple_shader,
-            dashed_line_shader:             dashed_line_shader,
-            texture_shader:                 texture_shader,
-            gradient_shader:                gradient_shader,
-            msaa4_resolve_shader:           msaa4_resolve_shader,
+            shader_programs:                shader_programs,
         }
     }
 
@@ -183,7 +141,7 @@ impl GlRenderer {
             gl::BlendEquationSeparate(gl::FUNC_ADD, gl::FUNC_ADD);
 
             // Use the basic shader program by default
-            gl::UseProgram(*self.simple_shader.basic);
+            self.shader_programs.use_program(StandardShaderProgram::Simple(StandardShaderVariant::NoClipping));
 
             self.blend_mode(BlendMode::SourceOver);
         }
@@ -528,25 +486,24 @@ impl GlRenderer {
     /// Draws a frame buffer at a location
     ///
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, region: FrameBufferRegion, alpha: f64) {
-        let shader          = &mut self.msaa4_resolve_shader;
-        let simple_shader   = &mut self.simple_shader.basic;
+        let shaders         = &mut self.shader_programs;
 
         self.render_targets[source_buffer].as_ref().map(|source_buffer| {
             unsafe {
                 if let Some(texture) = source_buffer.texture() {
                     // Activate the resolving program
-                    gl::UseProgram(**shader);
+                    let shader = shaders.use_program(StandardShaderProgram::MsaaResolve(4));
 
                     // Set the texture for the render buffer
                     gl::ActiveTexture(gl::TEXTURE0);
                     gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, *texture);
 
-                    shader.uniform_location(MsaaAttribute::Alpha, "t_Alpha")
+                    shader.uniform_location(ShaderUniform::MsaaAlpha, "t_Alpha")
                         .map(|t_alpha| {
                             gl::Uniform1f(t_alpha, alpha as _);
                         });
 
-                    shader.uniform_location(MsaaAttribute::Texture, "t_SourceTexture")
+                    shader.uniform_location(ShaderUniform::MsaaTexture, "t_SourceTexture")
                         .map(|source_texture| {
                             gl::Uniform1i(source_texture, 0);
                         });
@@ -591,8 +548,8 @@ impl GlRenderer {
                     gl::BlitFramebuffer(0, 0, width, height, x, y, x+width, y+height, gl::COLOR_BUFFER_BIT, gl::NEAREST);
                 }
 
-                // We always revert to the simple shader after this
-                gl::UseProgram(**simple_shader);
+                // We always revert to the simple shader after this operation
+                shaders.use_program(StandardShaderProgram::Simple(StandardShaderVariant::NoClipping));
 
                 // Finish up by checking for errors
                 panic_on_gl_error("Draw frame buffer");
@@ -608,6 +565,31 @@ impl GlRenderer {
     }
 
     ///
+    /// Returns the shader program identifier to use for the currently selected shader
+    ///
+    fn active_shader_program(&self) -> Option<StandardShaderProgram> {
+        use self::ShaderType::*;
+
+        match &self.active_shader {
+            Some(Simple { clip_texture: None })                                     => Some(StandardShaderProgram::Simple(StandardShaderVariant::NoClipping)),
+            Some(Simple { clip_texture: Some(_) })                                  => Some(StandardShaderProgram::Simple(StandardShaderVariant::ClippingMask)),
+
+            Some(DashedLine { dash_texture: _, clip_texture: None })                => Some(StandardShaderProgram::DashedLine(StandardShaderVariant::NoClipping)),
+            Some(DashedLine { dash_texture: _, clip_texture: Some(_) })             => Some(StandardShaderProgram::DashedLine(StandardShaderVariant::ClippingMask)),
+
+            Some(Texture { clip_texture: None, premultiply_colours: false, .. })    => Some(StandardShaderProgram::Texture(StandardShaderVariant::NoClipping, ColorPostProcessingStep::NoPostProcessing)),
+            Some(Texture { clip_texture: Some(_), premultiply_colours: false, .. }) => Some(StandardShaderProgram::Texture(StandardShaderVariant::ClippingMask, ColorPostProcessingStep::NoPostProcessing)),
+            Some(Texture { clip_texture: None, premultiply_colours: true, .. })     => Some(StandardShaderProgram::Texture(StandardShaderVariant::NoClipping, ColorPostProcessingStep::MultiplyAlpha)),
+            Some(Texture { clip_texture: Some(_), premultiply_colours: true, .. })  => Some(StandardShaderProgram::Texture(StandardShaderVariant::ClippingMask, ColorPostProcessingStep::MultiplyAlpha)),
+
+            Some(LinearGradient { clip_texture: None, .. })                         => Some(StandardShaderProgram::LinearGradient(StandardShaderVariant::NoClipping)),
+            Some(LinearGradient { clip_texture: Some(_), .. })                      => Some(StandardShaderProgram::LinearGradient(StandardShaderVariant::ClippingMask)),
+
+            None                                                                    => None
+        }
+    }
+
+    ///
     /// Enables a particular shader for future rendering operations
     ///
     fn use_shader(&mut self, shader_type: ShaderType) {
@@ -617,24 +599,26 @@ impl GlRenderer {
 
         match shader_type {
             Simple { clip_texture } => {
-                let simple_shader   = &mut self.simple_shader;
                 let textures        = &self.textures;
                 let clip_texture    = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
+                let variant         = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
 
-                simple_shader.use_shader(ShaderUniform::ClipTexture, clip_texture);
+                let program = self.shader_programs.use_program(StandardShaderProgram::Simple(variant));
+                if let Some(clip_texture) = clip_texture { program.use_texture(ShaderUniform::ClipTexture, "t_ClipMask", clip_texture, 2); }
 
                 panic_on_gl_error("Set simple shader");
             }
 
             DashedLine { dash_texture, clip_texture } => {
                 // Set the basic clip/erase textures
-                let dash_shader             = &mut self.dashed_line_shader;
                 let textures                = &self.textures;
                 let TextureId(dash_texture) = dash_texture;
                 let dash_texture            = self.textures[dash_texture].as_ref();
                 let clip_texture            = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
+                let variant                 = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
 
-                let program                 = dash_shader.use_shader(ShaderUniform::ClipTexture, clip_texture);
+                let program                 = self.shader_programs.use_program(StandardShaderProgram::DashedLine(variant));
+                if let Some(clip_texture) = clip_texture { program.use_texture(ShaderUniform::ClipTexture, "t_ClipMask", clip_texture, 2); }
 
                 // Set the dash texture
                 if let Some(dash_texture) = dash_texture {
@@ -649,21 +633,23 @@ impl GlRenderer {
                     }
                 } else {
                     // Texture not found: revert to the simple shader
-                    self.simple_shader.use_shader(ShaderUniform::ClipTexture, None);
+                    self.shader_programs.use_program(StandardShaderProgram::default());
                 }
 
                 panic_on_gl_error("Set dash shader");
             }
 
             Texture { texture, texture_transform, repeat, alpha, premultiply_colours, clip_texture } => {
-                let texture_shader      = &mut self.texture_shader;
                 let textures            = &self.textures;
                 let TextureId(texture)  = texture;
                 let texture             = if texture < self.textures.len() { self.textures[texture].as_ref() } else { None };
                 let clip_texture        = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
+                let variant             = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
+                let premultiply         = if premultiply_colours { ColorPostProcessingStep::MultiplyAlpha } else { ColorPostProcessingStep::NoPostProcessing };
                 let texture_transform   = texture_transform.to_opengl_matrix();
 
-                let program             = texture_shader.use_shader(ShaderUniform::ClipTexture, clip_texture);
+                let program             = self.shader_programs.use_program(StandardShaderProgram::Texture(variant, premultiply));
+                if let Some(clip_texture) = clip_texture { program.use_texture(ShaderUniform::ClipTexture, "t_ClipMask", clip_texture, 2); }
 
                 // Set up the texture program
                 if let Some(texture) = texture {
@@ -699,21 +685,22 @@ impl GlRenderer {
                     }
                 } else {
                     // Texture not found: revert to the simple shader
-                    self.simple_shader.use_shader(ShaderUniform::ClipTexture, None);
+                    self.shader_programs.use_program(StandardShaderProgram::default());
                 }
 
                 panic_on_gl_error("Set texture shader");
             }
 
             LinearGradient { texture, texture_transform, repeat, alpha, clip_texture } => {
-                let gradient_shader     = &mut self.gradient_shader;
                 let textures            = &self.textures;
                 let TextureId(texture)  = texture;
                 let texture             = if texture < self.textures.len() { self.textures[texture].as_ref() } else { None };
                 let clip_texture        = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
+                let variant             = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
                 let texture_transform   = texture_transform.to_opengl_matrix();
 
-                let program             = gradient_shader.use_shader(ShaderUniform::ClipTexture, clip_texture);
+                let program             = self.shader_programs.use_program(StandardShaderProgram::LinearGradient(variant));
+                if let Some(clip_texture) = clip_texture { program.use_texture(ShaderUniform::ClipTexture, "t_ClipMask", clip_texture, 2); }
 
                 // Set up the texture program
                 if let Some(texture) = texture {
@@ -749,7 +736,7 @@ impl GlRenderer {
                     }
                 } else {
                     // Texture not found: revert to the simple shader
-                    self.simple_shader.use_shader(ShaderUniform::ClipTexture, None);
+                    self.shader_programs.use_program(StandardShaderProgram::default());
                 }
 
                 panic_on_gl_error("Set linear gradient shader");
@@ -817,25 +804,12 @@ impl GlRenderer {
     ///
     fn update_shader_transform(&mut self) {
         unsafe {
-            use self::ShaderType::*;
+            let shader              = self.active_shader_program();
+            let shader_programs     = &mut self.shader_programs;
+            let transform_matrix    = &self.transform_matrix;
+            let shader              = shader.map(|shader| shader_programs.program(shader));
 
-            let shader = match &self.active_shader {
-                Some(Simple { clip_texture: None })                         => Some(&mut self.simple_shader.basic),
-                Some(Simple { clip_texture: Some(_) })                      => Some(&mut self.simple_shader.clip),
-
-                Some(DashedLine { dash_texture: _, clip_texture: None })    => Some(&mut self.dashed_line_shader.basic),
-                Some(DashedLine { dash_texture: _, clip_texture: Some(_) }) => Some(&mut self.dashed_line_shader.clip),
-
-                Some(Texture { clip_texture: None, .. })                    => Some(&mut self.texture_shader.basic),
-                Some(Texture { clip_texture: Some(_), .. })                 => Some(&mut self.texture_shader.clip),
-
-                Some(LinearGradient { clip_texture: None, .. })             => Some(&mut self.gradient_shader.basic),
-                Some(LinearGradient { clip_texture: Some(_), .. })          => Some(&mut self.gradient_shader.clip),
-
-                None                                                        => None
-            };
-
-            self.transform_matrix.as_ref().and_then(|transform_matrix|
+            transform_matrix.as_ref().and_then(|transform_matrix|
                 shader.map(|shader| (shader, transform_matrix))
             ).map(|(shader, matrix)| {
                 shader.uniform_location(ShaderUniform::Transform, "transform").map(|transform_uniform| {

@@ -22,6 +22,18 @@ pub struct Shader {
 
 impl Shader {
     ///
+    /// Compiles a shader program with a set of defines
+    ///
+    pub fn compile_with_defines(program: &str, attributes: &Vec<&str>, shader_type: GlShaderType, defines: &Vec<&str>) -> Shader {
+        let program = format!("{}\n\n{}\n{}\n", 
+            "#version 330 core",
+            defines.iter().map(|defn| format!("#define {}\n", defn)).collect::<Vec<_>>().join(""),
+            program);
+
+        Self::compile(&program, shader_type, attributes.iter().map(|s| *s))
+    }
+
+    ///
     /// Compiles a shader program
     ///
     pub fn compile<'a, AttributeIter: IntoIterator<Item=&'a str>>(program: &str, shader_type: GlShaderType, attributes: AttributeIter) -> Shader {

@@ -1,4 +1,5 @@
 use super::shader::*;
+use super::texture::*;
 
 use gl;
 
@@ -95,6 +96,23 @@ impl<UniformAttribute: Hash+Eq> ShaderProgram<UniformAttribute> {
                     gl::GetUniformLocation(shader_program, name.as_ptr())
                 }
             }))
+    }
+
+    ///
+    /// Assigns a texture to a particular texture unit and sets its index in a uniform
+    ///
+    pub fn use_texture(&mut self, uniform: UniformAttribute, uniform_name: &str, texture: &Texture, texture_num: u8) {
+        unsafe {
+            // Set the clip texture
+            let texture_num = texture_num as gl::types::GLenum;
+            gl::ActiveTexture(gl::TEXTURE0 + texture_num);
+            gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, **texture);
+
+            self.uniform_location(uniform, uniform_name)
+                .map(|clip_mask| {
+                    gl::Uniform1i(clip_mask, 2);
+                });
+        }
     }
 }
 
