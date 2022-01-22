@@ -99,7 +99,7 @@ pub fn main() {
                     // Draw a multiply layer
                     gc.layer_blend(LayerId(3), BlendMode::Multiply);
                     gc.new_path();
-                    gc.rect(100.0, 100.0, 800.0, 800.0);
+                    gc.rect(100.0, 100.0, 1000.0, 800.0);
                     gc.fill_color(Color::Rgba(0.8, 0.8, 0.8, 1.0));
                     gc.fill();
                 }
