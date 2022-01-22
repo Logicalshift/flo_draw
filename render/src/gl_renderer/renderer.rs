@@ -265,8 +265,8 @@ impl GlRenderer {
                 // Multiply is a*b. Here we multiply the source colour by the destination colour, then blend the destination back in again to take account of
                 // alpha in the source layer (this version of multiply has no effect on the target alpha value: a more strict version might multiply those too)
                 //
-                // (This is a*b + alpha*b. I think if we change how the pre-multiply works so that a=1 when alpha is 0 - premultiply by inverse alpha - this works)
-                Multiply            => gl::BlendFuncSeparate(gl::DST_COLOR, gl::ONE_MINUS_SRC_ALPHA, gl::ZERO, gl::ONE),
+                // The source side is precalculated so that an alpha of 0 produces a colour of 1,1,1 to take account of transparency in the source.
+                Multiply            => gl::BlendFuncSeparate(gl::DST_COLOR, gl::ZERO, gl::ZERO, gl::ONE),
 
                 // TODO: screen is 1-(1-a)*(1-b) which I think is harder to fake. If we precalculate (1-a) as the src in the shader
                 // then can multiply by ONE_MINUS_DST_COLOR to get (1-a)*(1-b). Can use gl::ONE as our target colour, and then a 
