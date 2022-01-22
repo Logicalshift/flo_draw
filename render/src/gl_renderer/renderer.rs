@@ -141,7 +141,7 @@ impl GlRenderer {
             gl::BlendEquationSeparate(gl::FUNC_ADD, gl::FUNC_ADD);
 
             // Use the basic shader program by default
-            self.shader_programs.use_program(StandardShaderProgram::Simple(StandardShaderVariant::NoClipping));
+            self.shader_programs.use_program(StandardShaderProgram::default());
 
             self.blend_mode(BlendMode::SourceOver);
         }
@@ -564,7 +564,7 @@ impl GlRenderer {
                 }
 
                 // We always revert to the simple shader after this operation
-                shaders.use_program(StandardShaderProgram::Simple(StandardShaderVariant::NoClipping));
+                shaders.use_program(StandardShaderProgram::default());
 
                 // Finish up by checking for errors
                 panic_on_gl_error("Draw frame buffer");
@@ -586,17 +586,17 @@ impl GlRenderer {
         use self::ShaderType::*;
 
         match &self.active_shader {
-            Some(Simple { clip_texture: None })                                     => Some(StandardShaderProgram::Simple(StandardShaderVariant::NoClipping)),
-            Some(Simple { clip_texture: Some(_) })                                  => Some(StandardShaderProgram::Simple(StandardShaderVariant::ClippingMask)),
+            Some(Simple { clip_texture: None })                                     => Some(StandardShaderProgram::Simple(StandardShaderVariant::NoClipping, ColorPostProcessingStep::NoPostProcessing)),
+            Some(Simple { clip_texture: Some(_) })                                  => Some(StandardShaderProgram::Simple(StandardShaderVariant::ClippingMask, ColorPostProcessingStep::NoPostProcessing)),
 
-            Some(DashedLine { dash_texture: _, clip_texture: None })                => Some(StandardShaderProgram::DashedLine(StandardShaderVariant::NoClipping)),
-            Some(DashedLine { dash_texture: _, clip_texture: Some(_) })             => Some(StandardShaderProgram::DashedLine(StandardShaderVariant::ClippingMask)),
+            Some(DashedLine { dash_texture: _, clip_texture: None })                => Some(StandardShaderProgram::DashedLine(StandardShaderVariant::NoClipping, ColorPostProcessingStep::NoPostProcessing)),
+            Some(DashedLine { dash_texture: _, clip_texture: Some(_) })             => Some(StandardShaderProgram::DashedLine(StandardShaderVariant::ClippingMask, ColorPostProcessingStep::NoPostProcessing)),
 
             Some(Texture { clip_texture: None, .. })                                => Some(StandardShaderProgram::Texture(StandardShaderVariant::NoClipping, ColorPostProcessingStep::NoPostProcessing)),
             Some(Texture { clip_texture: Some(_), .. })                             => Some(StandardShaderProgram::Texture(StandardShaderVariant::ClippingMask, ColorPostProcessingStep::NoPostProcessing)),
 
-            Some(LinearGradient { clip_texture: None, .. })                         => Some(StandardShaderProgram::LinearGradient(StandardShaderVariant::NoClipping)),
-            Some(LinearGradient { clip_texture: Some(_), .. })                      => Some(StandardShaderProgram::LinearGradient(StandardShaderVariant::ClippingMask)),
+            Some(LinearGradient { clip_texture: None, .. })                         => Some(StandardShaderProgram::LinearGradient(StandardShaderVariant::NoClipping, ColorPostProcessingStep::NoPostProcessing)),
+            Some(LinearGradient { clip_texture: Some(_), .. })                      => Some(StandardShaderProgram::LinearGradient(StandardShaderVariant::ClippingMask, ColorPostProcessingStep::NoPostProcessing)),
 
             None                                                                    => None
         }
@@ -615,8 +615,9 @@ impl GlRenderer {
                 let textures        = &self.textures;
                 let clip_texture    = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let variant         = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
+                let premultiply     = ColorPostProcessingStep::NoPostProcessing;
 
-                let program = self.shader_programs.use_program(StandardShaderProgram::Simple(variant));
+                let program = self.shader_programs.use_program(StandardShaderProgram::Simple(variant, premultiply));
                 if let Some(clip_texture) = clip_texture { program.use_texture(ShaderUniform::ClipTexture, "t_ClipMask", clip_texture, 2); }
 
                 panic_on_gl_error("Set simple shader");
@@ -629,8 +630,9 @@ impl GlRenderer {
                 let dash_texture            = self.textures[dash_texture].as_ref();
                 let clip_texture            = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let variant                 = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
+                let premultiply             = ColorPostProcessingStep::NoPostProcessing;
 
-                let program                 = self.shader_programs.use_program(StandardShaderProgram::DashedLine(variant));
+                let program                 = self.shader_programs.use_program(StandardShaderProgram::DashedLine(variant, premultiply));
                 if let Some(clip_texture) = clip_texture { program.use_texture(ShaderUniform::ClipTexture, "t_ClipMask", clip_texture, 2); }
 
                 // Set the dash texture
@@ -710,9 +712,10 @@ impl GlRenderer {
                 let texture             = if texture < self.textures.len() { self.textures[texture].as_ref() } else { None };
                 let clip_texture        = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let variant             = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
+                let premultiply         = ColorPostProcessingStep::NoPostProcessing;
                 let texture_transform   = texture_transform.to_opengl_matrix();
 
-                let program             = self.shader_programs.use_program(StandardShaderProgram::LinearGradient(variant));
+                let program             = self.shader_programs.use_program(StandardShaderProgram::LinearGradient(variant, premultiply));
                 if let Some(clip_texture) = clip_texture { program.use_texture(ShaderUniform::ClipTexture, "t_ClipMask", clip_texture, 2); }
 
                 // Set up the texture program

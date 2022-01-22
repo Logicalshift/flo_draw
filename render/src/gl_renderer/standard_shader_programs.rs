@@ -23,7 +23,10 @@ pub enum ColorPostProcessingStep {
     NoPostProcessing,
 
     /// The shader should multiply its outputs by the alpha value
-    MultiplyAlpha
+    MultiplyAlpha,
+
+    /// The colour is blended so that at alpha (0), the RGB values are (1,1,1) - the inverse of pre-multiplications
+    InvertColorAlpha,
 }
 
 ///
@@ -32,16 +35,16 @@ pub enum ColorPostProcessingStep {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum StandardShaderProgram {
     /// Flat colour shader
-    Simple(StandardShaderVariant),
+    Simple(StandardShaderVariant, ColorPostProcessingStep),
 
     /// Renders fragments from a texture input
     Texture(StandardShaderVariant, ColorPostProcessingStep),
 
     /// Uses a 1D texture input to render a linear gradient fill
-    LinearGradient(StandardShaderVariant),
+    LinearGradient(StandardShaderVariant, ColorPostProcessingStep),
 
     /// Uses a 1D texture to draw dashed lines
-    DashedLine(StandardShaderVariant),
+    DashedLine(StandardShaderVariant, ColorPostProcessingStep),
 
     /// Texture renderer that resolves MSAA textures 1-to-1 with the given number of samples
     MsaaResolve(u8)
@@ -54,7 +57,7 @@ impl StandardShaderVariant {
     pub fn defines(&self) -> Vec<&str> {
         match self {
             StandardShaderVariant::NoClipping   => vec![],
-            StandardShaderVariant::ClippingMask => vec!["CLIP_MASK"]
+            StandardShaderVariant::ClippingMask => vec!["CLIP_MASK"],
         }
     }
 }
@@ -66,14 +69,15 @@ impl ColorPostProcessingStep {
     pub fn defines(&self) -> Vec<&str> {
         match self {
             ColorPostProcessingStep::NoPostProcessing   => vec![],
-            ColorPostProcessingStep::MultiplyAlpha      => vec!["MULTIPLY_ALPHA"]
+            ColorPostProcessingStep::MultiplyAlpha      => vec!["MULTIPLY_ALPHA"],
+            ColorPostProcessingStep::InvertColorAlpha   => vec!["INVERT_COLOUR_ALPHA"],
         }
     }
 }
 
 impl Default for StandardShaderProgram {
     fn default() -> Self {
-        StandardShaderProgram::Simple(StandardShaderVariant::NoClipping)
+        StandardShaderProgram::Simple(StandardShaderVariant::NoClipping, ColorPostProcessingStep::NoPostProcessing)
     }
 }
 
@@ -108,12 +112,12 @@ impl StandardShaderProgram {
             use StandardShaderProgram::*;
 
             match program_type {
-                Simple(variant)                 => { Self::load_shader(&simple_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &simple_fragment, &vec![], &variant.defines()) }
-                Texture(variant, post_process)  => { Self::load_shader(&texture_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &texture_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
-                LinearGradient(variant)         => { Self::load_shader(&gradient_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &gradient_fragment, &vec![], &variant.defines()) }
-                DashedLine(variant)             => { Self::load_shader(&simple_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &dashed_line_fragment, &vec![], &variant.defines()) }
+                Simple(variant, post_process)           => { Self::load_shader(&simple_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &simple_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
+                Texture(variant, post_process)          => { Self::load_shader(&texture_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &texture_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
+                LinearGradient(variant, post_process)   => { Self::load_shader(&gradient_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &gradient_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
+                DashedLine(variant, post_process)       => { Self::load_shader(&simple_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &dashed_line_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
 
-                MsaaResolve(4)                  => {
+                MsaaResolve(4)                          => {
                     let msaa4_resolve_fragment  = Shader::compile(&msaa4_resolve, GlShaderType::Fragment, vec![]);
                     let msaa4_resolve_vertex    = Shader::compile(&msaa_vertex, GlShaderType::Vertex, vec![]);
                     ShaderProgram::from_shaders(vec![msaa4_resolve_vertex, msaa4_resolve_fragment])
