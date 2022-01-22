@@ -91,7 +91,7 @@ pub fn main() {
                 gc.new_path();
                 silouette.iter().for_each(|path| gc.bezier_path(path));
 
-                gc.blend_mode(BlendMode::DestinationIn);
+                gc.blend_mode(BlendMode::SourceOver);
                 gc.fill_gradient(GradientId(1), 200.0, 200.0, 200.0, 600.0);
                 gc.fill();
             });
