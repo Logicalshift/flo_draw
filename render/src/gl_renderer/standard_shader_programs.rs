@@ -47,7 +47,7 @@ pub enum StandardShaderProgram {
     DashedLine(StandardShaderVariant, ColorPostProcessingStep),
 
     /// Texture renderer that resolves MSAA textures 1-to-1 with the given number of samples
-    MsaaResolve(u8)
+    MsaaResolve(u8, ColorPostProcessingStep)
 }
 
 impl StandardShaderVariant {
