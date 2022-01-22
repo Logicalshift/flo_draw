@@ -44,6 +44,13 @@ void main() {
     f_Color[3] *= clipColor;
 #endif
 
+#ifdef INVERT_COLOUR_ALPHA
+    // Blend towards one as the alpha approaches 0 (used for the multiply blend mode)
+    f_Color[0]          += (1-f_Color[0]) * (1 - f_Color[3]);
+    f_Color[1]          += (1-f_Color[1]) * (1 - f_Color[3]);
+    f_Color[2]          += (1-f_Color[2]) * (1 - f_Color[3]);
+#endif
+
 #ifdef MULTIPLY_ALPHA
     // This means that the input texture does not have pre-multiplied alpha but we want the output texture to be set up this way
     // This is used in particular for some blend modes (Multiply, Screen)
