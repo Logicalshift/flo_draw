@@ -112,13 +112,13 @@ impl StandardShaderProgram {
             use StandardShaderProgram::*;
 
             match program_type {
-                Simple(variant, post_process)           => { Self::load_shader(&simple_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &simple_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
-                Texture(variant, post_process)          => { Self::load_shader(&texture_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &texture_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
-                LinearGradient(variant, post_process)   => { Self::load_shader(&gradient_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &gradient_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
-                DashedLine(variant, post_process)       => { Self::load_shader(&simple_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &dashed_line_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
+                Simple(variant, post_process)               => { Self::load_shader(&simple_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &simple_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
+                Texture(variant, post_process)              => { Self::load_shader(&texture_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &texture_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
+                LinearGradient(variant, post_process)       => { Self::load_shader(&gradient_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &gradient_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
+                DashedLine(variant, post_process)           => { Self::load_shader(&simple_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &dashed_line_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
 
-                MsaaResolve(4)                          => { Self::load_shader(&msaa_vertex, &vec![], &msaa4_resolve, &vec![], &vec![]) }
-                MsaaResolve(_num_samples)               => { unimplemented!() }
+                MsaaResolve(4, post_process)                => { Self::load_shader(&msaa_vertex, &vec![], &msaa4_resolve, &vec![], &post_process.defines()) }
+                MsaaResolve(_num_samples, _post_process)    => { unimplemented!() }
             }
         }
     }

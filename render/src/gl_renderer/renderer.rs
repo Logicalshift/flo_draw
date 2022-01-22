@@ -518,13 +518,14 @@ impl GlRenderer {
     /// Draws a frame buffer at a location
     ///
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, region: FrameBufferRegion, alpha: f64) {
+        let post_process    = self.post_processing_for_blend_mode(self.blend_mode);
         let shaders         = &mut self.shader_programs;
 
         self.render_targets[source_buffer].as_ref().map(|source_buffer| {
             unsafe {
                 if let Some(texture) = source_buffer.texture() {
                     // Activate the resolving program
-                    let shader = shaders.use_program(StandardShaderProgram::MsaaResolve(4));
+                    let shader = shaders.use_program(StandardShaderProgram::MsaaResolve(4, post_process));
 
                     // Set the texture for the render buffer
                     gl::ActiveTexture(gl::TEXTURE0);
