@@ -285,6 +285,19 @@ impl GlRenderer {
                 AllChannelAlphaSourceOver       => gl::BlendFuncSeparate(gl::ONE, gl::ONE_MINUS_SRC_COLOR, gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
                 AllChannelAlphaDestinationOver  => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_COLOR, gl::ONE, gl::ONE_MINUS_DST_ALPHA, gl::ONE),
             }
+
+            // Store the new blend mode
+            let old_processing_step = self.post_processing_for_blend_mode(self.blend_mode);
+            let new_processing_step = self.post_processing_for_blend_mode(blend_mode);
+            self.blend_mode         = blend_mode;
+
+            // If the post-processing step has changed, reload the shader
+            if old_processing_step != new_processing_step {
+                if let Some(shader) = &self.active_shader {
+                    let shader = shader.clone();
+                    self.use_shader(shader);
+                }
+            }
         }
     }
 
