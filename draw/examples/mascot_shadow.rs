@@ -82,7 +82,7 @@ pub fn main() {
                     0 => gc.blend_mode(BlendMode::SourceOver),
                     1 => gc.blend_mode(BlendMode::Multiply),
                     2 => gc.blend_mode(BlendMode::Screen),
-                    3 => gc.blend_mode(BlendMode::DestinationIn),
+                    3 => gc.blend_mode(BlendMode::SourceOver),
                     _ => gc.blend_mode(BlendMode::SourceOver),
                 }
                 gc.fill_gradient(GradientId(1), 200.0, 200.0, 800.0, 600.0);
@@ -92,6 +92,17 @@ pub fn main() {
 
                 gc.fill();
                 gc.blend_mode(BlendMode::SourceOver);
+
+                gc.layer(LayerId(3));
+                gc.clear_layer();
+                if shading_mode % 4 == 3 {
+                    // Draw a multiply layer
+                    gc.layer_blend(LayerId(3), BlendMode::Multiply);
+                    gc.new_path();
+                    gc.rect(100.0, 100.0, 800.0, 800.0);
+                    gc.fill_color(Color::Rgba(0.8, 0.8, 0.8, 1.0));
+                    gc.fill();
+                }
 
                 // Draw another siloutte on a lower layer
                 gc.layer(LayerId(1));
