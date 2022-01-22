@@ -43,4 +43,10 @@ void main() {
     f_Color[2] *= clipColor;
     f_Color[3] *= clipColor;
 #endif
+
+    // This means that the input texture does not have pre-multiplied alpha but we want the output texture to be set up this way
+    // This is used in particular for some blend modes (Multiply, Screen)
+    f_Color[0]          *= f_Color[3];
+    f_Color[1]          *= f_Color[3];
+    f_Color[2]          *= f_Color[3];
 }
