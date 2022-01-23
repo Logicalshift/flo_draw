@@ -23,6 +23,11 @@ pub struct PipelineConfiguration {
     pub blend_mode: BlendMode,
 
     ///
+    /// True if the source alpha has been pre-multiplied into its components
+    ///
+    pub source_is_premultiplied: bool,
+
+    ///
     /// The name of the vertex shader to use
     ///
     pub vertex_shader: String,
@@ -36,11 +41,12 @@ pub struct PipelineConfiguration {
 impl Default for PipelineConfiguration {
     fn default() -> PipelineConfiguration {
         PipelineConfiguration {
-            sample_count:       1,
-            pixel_format:       metal::MTLPixelFormat::BGRA8Unorm,
-            blend_mode:         BlendMode::SourceOver,
-            vertex_shader:      String::from("simple_vertex"),
-            fragment_shader:    String::from("simple_fragment")
+            sample_count:               1,
+            pixel_format:               metal::MTLPixelFormat::BGRA8Unorm,
+            blend_mode:                 BlendMode::SourceOver,
+            source_is_premultiplied:    false,
+            vertex_shader:              String::from("simple_vertex"),
+            fragment_shader:            String::from("simple_fragment")
         }
     }
 }
@@ -81,27 +87,41 @@ impl PipelineConfiguration {
         // Set the blend mode
         use self::BlendMode::*;
         use metal::MTLBlendFactor::{SourceAlpha, OneMinusSourceAlpha, One, DestinationAlpha, DestinationColor, OneMinusDestinationAlpha, Zero, OneMinusSourceColor, OneMinusDestinationColor};
-        let (src_rgb, dst_rgb, src_alpha, dst_alpha) = match self.blend_mode {
-            SourceOver                      => (SourceAlpha, OneMinusSourceAlpha, One, OneMinusSourceAlpha),
-            DestinationOver                 => (OneMinusDestinationAlpha, DestinationAlpha, OneMinusDestinationAlpha, One),
-            SourceIn                        => (DestinationAlpha, Zero, DestinationAlpha, Zero),
-            DestinationIn                   => (Zero, SourceAlpha, Zero, SourceAlpha),
-            SourceOut                       => (Zero, OneMinusDestinationAlpha, Zero, OneMinusDestinationAlpha),
-            DestinationOut                  => (Zero, OneMinusSourceAlpha, Zero, OneMinusSourceAlpha),
-            SourceATop                      => (OneMinusDestinationAlpha, SourceAlpha, OneMinusDestinationAlpha, SourceAlpha),
-            DestinationATop                 => (OneMinusDestinationAlpha, OneMinusSourceAlpha, OneMinusDestinationAlpha, OneMinusSourceAlpha),
+        let (src_rgb, dst_rgb, src_alpha, dst_alpha) = match (self.blend_mode, self.source_is_premultiplied) {
+            (SourceOver, false)                         => (SourceAlpha, OneMinusSourceAlpha, One, OneMinusSourceAlpha),
+            (DestinationOver, false)                    => (OneMinusDestinationAlpha, DestinationAlpha, OneMinusDestinationAlpha, One),
+            (SourceIn, false)                           => (DestinationAlpha, Zero, DestinationAlpha, Zero),
+            (DestinationIn, false)                      => (Zero, SourceAlpha, Zero, SourceAlpha),
+            (SourceOut, false)                          => (Zero, OneMinusDestinationAlpha, Zero, OneMinusDestinationAlpha),
+            (DestinationOut, false)                     => (Zero, OneMinusSourceAlpha, Zero, OneMinusSourceAlpha),
+            (SourceATop, false)                         => (OneMinusDestinationAlpha, SourceAlpha, OneMinusDestinationAlpha, SourceAlpha),
+            (DestinationATop, false)                    => (OneMinusDestinationAlpha, OneMinusSourceAlpha, OneMinusDestinationAlpha, OneMinusSourceAlpha),
 
             // Multiply is a*b. Here we multiply the source colour by the destination colour, then blend the destination back in again to take account of
             // alpha in the source layer (this version of multiply has no effect on the target alpha value: a more strict version might multiply those too)
             //
             // The source side is precalculated so that an alpha of 0 produces a colour of 1,1,1 to take account of transparency in the source.
-            Multiply                        => (DestinationColor, Zero, Zero, One),
+            (Multiply, false)                           => (DestinationColor, Zero, Zero, One),
 
             // TODO: screen is 1-(1-a)*(1-b) which I think is harder to fake. If we precalculate (1-a) as the src in the shader
-            Screen                          => (OneMinusDestinationColor, One, Zero, One),
+            (Screen, false)                             => (OneMinusDestinationColor, One, Zero, One),
 
-            AllChannelAlphaSourceOver       => (One, OneMinusSourceColor, One, OneMinusSourceAlpha),
-            AllChannelAlphaDestinationOver  => (OneMinusDestinationColor, One, OneMinusDestinationAlpha, One)
+            (AllChannelAlphaSourceOver, false)          => (One, OneMinusSourceColor, One, OneMinusSourceAlpha),
+            (AllChannelAlphaDestinationOver, false)     => (OneMinusDestinationColor, One, OneMinusDestinationAlpha, One),
+
+            (SourceOver, true)                          => (One, OneMinusSourceAlpha, One, OneMinusSourceAlpha),
+            (DestinationOver, true)                     => (OneMinusDestinationAlpha, DestinationAlpha, OneMinusDestinationAlpha, One),
+            (SourceIn, true)                            => (DestinationAlpha, Zero, DestinationAlpha, Zero),
+            (DestinationIn, true)                       => (Zero, SourceAlpha, Zero, SourceAlpha),
+            (SourceOut, true)                           => (Zero, OneMinusDestinationAlpha, Zero, OneMinusDestinationAlpha),
+            (DestinationOut, true)                      => (Zero, OneMinusSourceAlpha, Zero, OneMinusSourceAlpha),
+            (SourceATop, true)                          => (OneMinusDestinationAlpha, SourceAlpha, OneMinusDestinationAlpha, SourceAlpha),
+            (DestinationATop, true)                     => (OneMinusDestinationAlpha, OneMinusSourceAlpha, OneMinusDestinationAlpha, OneMinusSourceAlpha),
+            (Multiply, true)                            => (DestinationColor, Zero, Zero, One),
+            (Screen, true)                              => (OneMinusDestinationColor, One, Zero, One),
+
+            (AllChannelAlphaSourceOver, true)           => (One, OneMinusSourceColor, One, OneMinusSourceAlpha),
+            (AllChannelAlphaDestinationOver, true)      => (OneMinusDestinationColor, One, OneMinusDestinationAlpha, One),
         };
 
         descriptor.color_attachments().object_at(0).unwrap().set_pixel_format(self.pixel_format);

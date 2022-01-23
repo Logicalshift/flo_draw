@@ -452,20 +452,21 @@ impl MetalRenderer {
 
         if let Some(source_buffer) = &render_targets[source_buffer] {
             // Read information about the source texture
-            let source_texture      = source_buffer.render_texture().clone();
-            let source_width        = source_texture.width() as f32;
-            let source_height       = source_texture.height() as f32;
+            let source_texture              = source_buffer.render_texture().clone();
+            let source_width                = source_texture.width() as f32;
+            let source_height               = source_texture.height() as f32;
 
             // Create a pipeline state for rendering this framebuffer
-            let mut config          = PipelineConfiguration::for_texture(&state.target_texture);
+            let mut config                  = PipelineConfiguration::for_texture(&state.target_texture);
 
             // Basic vertex shader and blend mode
-            config.vertex_shader    = String::from("simple_vertex");
-            config.blend_mode       = BlendMode::SourceOver;
-            config.fragment_shader  = if source_buffer.is_multisampled() { String::from("texture_multisample_fragment") } else { String::from("texture_fragment") };
+            config.vertex_shader            = String::from("simple_vertex");
+            config.blend_mode               = BlendMode::SourceOver;
+            config.source_is_premultiplied  = true;
+            config.fragment_shader          = if source_buffer.is_multisampled() { String::from("texture_multisample_fragment") } else { String::from("texture_fragment") };
 
             // Convert to a pipeline state
-            let pipeline_state      = self.get_pipeline_state(&config);
+            let pipeline_state              = self.get_pipeline_state(&config);
 
             // Change the state of the encoder so we're ready to render this frame buffer
             state.command_encoder.set_render_pipeline_state(&pipeline_state);
