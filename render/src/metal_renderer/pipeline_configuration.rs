@@ -76,9 +76,14 @@ impl PipelineConfiguration {
     pub fn to_pipeline_state(&self, device: &metal::Device, library: &metal::Library) -> metal::RenderPipelineState {
         let descriptor      = metal::RenderPipelineDescriptor::new();
 
+        let fragment_shader = match self.blend_mode {
+            BlendMode::Multiply => format!("{}_invert_color_alpha", self.fragment_shader),
+            _                   => format!("{}", self.fragment_shader)
+        };
+
         // Load the shader
         let vertex_shader   = library.get_function(&self.vertex_shader, None).unwrap();
-        let fragment_shader = library.get_function(&self.fragment_shader, None).unwrap();
+        let fragment_shader = library.get_function(&fragment_shader, None).unwrap();
 
         descriptor.set_vertex_function(Some(&vertex_shader));
         descriptor.set_fragment_function(Some(&fragment_shader));
