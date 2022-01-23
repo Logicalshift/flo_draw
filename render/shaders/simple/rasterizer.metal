@@ -9,3 +9,6 @@ float4 apply_clip_mask(
       float4                    color, 
       float2                    paper_coord,
       metal::texture2d_ms<half> eraser_texture);
+
+float4 invert_color_alpha(float4 col);
+float4 multiply_alpha(float4 col);
