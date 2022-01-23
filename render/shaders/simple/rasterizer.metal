@@ -5,11 +5,6 @@ typedef struct {
     float2 v_PaperCoord;
 } RasterizerData;
 
-float4 apply_eraser(
-      float4                    color, 
-      float2                    paper_coord,
-      metal::texture2d_ms<half> eraser_texture);
-
 float4 apply_clip_mask(
       float4                    color, 
       float2                    paper_coord,
