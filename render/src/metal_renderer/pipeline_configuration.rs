@@ -80,7 +80,7 @@ impl PipelineConfiguration {
 
         // Set the blend mode
         use self::BlendMode::*;
-        use metal::MTLBlendFactor::{SourceAlpha, OneMinusSourceAlpha, One, DestinationAlpha, OneMinusDestinationAlpha, Zero, OneMinusSourceColor, OneMinusDestinationColor};
+        use metal::MTLBlendFactor::{SourceAlpha, OneMinusSourceAlpha, One, DestinationAlpha, DestinationColor, OneMinusDestinationAlpha, Zero, OneMinusSourceColor, OneMinusDestinationColor};
         let (src_rgb, dst_rgb, src_alpha, dst_alpha) = match self.blend_mode {
             SourceOver                      => (SourceAlpha, OneMinusSourceAlpha, One, OneMinusSourceAlpha),
             DestinationOver                 => (OneMinusDestinationAlpha, DestinationAlpha, OneMinusDestinationAlpha, One),
@@ -90,6 +90,15 @@ impl PipelineConfiguration {
             DestinationOut                  => (Zero, OneMinusSourceAlpha, Zero, OneMinusSourceAlpha),
             SourceATop                      => (OneMinusDestinationAlpha, SourceAlpha, OneMinusDestinationAlpha, SourceAlpha),
             DestinationATop                 => (OneMinusDestinationAlpha, OneMinusSourceAlpha, OneMinusDestinationAlpha, OneMinusSourceAlpha),
+
+            // Multiply is a*b. Here we multiply the source colour by the destination colour, then blend the destination back in again to take account of
+            // alpha in the source layer (this version of multiply has no effect on the target alpha value: a more strict version might multiply those too)
+            //
+            // The source side is precalculated so that an alpha of 0 produces a colour of 1,1,1 to take account of transparency in the source.
+            Multiply                        => (DestinationColor, Zero, Zero, One),
+
+            // TODO: screen is 1-(1-a)*(1-b) which I think is harder to fake. If we precalculate (1-a) as the src in the shader
+            Screen                          => (OneMinusDestinationColor, One, Zero, One),
 
             AllChannelAlphaSourceOver       => (One, OneMinusSourceColor, One, OneMinusSourceAlpha),
             AllChannelAlphaDestinationOver  => (OneMinusDestinationColor, One, OneMinusDestinationAlpha, One)
