@@ -70,3 +70,52 @@ fragment float4 texture_clip_mask_multisample_fragment(
     color[3]      *= *texture_alpha;
     return color;
 }
+
+fragment float4 texture_fragment_invert_color_alpha(
+      RasterizerData              in [[stage_in]],
+      constant float              *texture_alpha [[ buffer(FragmentAlpha) ]],
+      metal::texture2d<half>      texture [[ texture(FragmentIndexTexture) ]]) {
+    constexpr metal::sampler texture_sampler (metal::mag_filter::linear, metal::min_filter::linear);
+
+    const half4 color_sample  = texture.sample(texture_sampler, in.v_TexCoord);
+
+    float4 color              = float4(color_sample);
+    color[3]                  *= *texture_alpha;
+
+    return invert_color_alpha(color);
+}
+
+fragment float4 texture_multisample_fragment_invert_color_alpha(
+      RasterizerData              in [[stage_in]],
+      constant float              *texture_alpha [[ buffer(FragmentAlpha) ]],
+      metal::texture2d_ms<half>   texture [[ texture(FragmentIndexTexture) ]]) {
+    const uint num_samples      = texture.get_num_samples();
+    const uint2 tex_coord       = uint2(in.v_TexCoord);
+    half4 color_totals          = half4(0,0,0,0);
+
+    for (uint sample_num=0; sample_num<num_samples; ++sample_num) {
+        const half4 sample      = texture.read(tex_coord, sample_num);
+        color_totals            += sample;
+    }
+
+    float4 color                = float4(color_totals);
+    color /= float(num_samples);
+    color[3]                    *= *texture_alpha;
+
+    return invert_color_alpha(color);
+}
+
+fragment float4 texture_clip_mask_multisample_fragment_invert_color_alpha(
+      RasterizerData              in [[stage_in]],
+      constant float              *texture_alpha [[ buffer(FragmentAlpha) ]],
+      metal::texture2d<half>      texture [[ texture(FragmentIndexTexture) ]],
+      metal::texture2d_ms<half>   clip_mask_texture [[ texture(FragmentIndexClipMaskTexture) ]]) {
+    // Color from the texture
+    constexpr metal::sampler texture_sampler (metal::mag_filter::linear, metal::min_filter::linear);
+    const half4 color_sample    = texture.sample(texture_sampler, in.v_TexCoord);
+
+    // Apply the clip mask
+    float4 color  = apply_clip_mask(static_cast<float4>(color_sample), in.v_PaperCoord, clip_mask_texture);
+    color[3]      *= *texture_alpha;
+    return invert_color_alpha(color);
+}

@@ -39,3 +39,15 @@ fragment float4 simple_clip_mask_multisample_fragment(
     float4 color = apply_clip_mask(in.v_Color, in.v_PaperCoord, clip_mask_texture);
     return color;
 }
+
+fragment float4 simple_fragment_invert_color_alpha(
+      RasterizerData in [[stage_in]]) {
+    return invert_color_alpha(in.v_Color);
+}
+
+fragment float4 simple_clip_mask_multisample_fragment_invert_color_alpha(
+      RasterizerData            in [[stage_in]],
+      metal::texture2d_ms<half> clip_mask_texture [[ texture(FragmentIndexClipMaskTexture) ]]) {
+    float4 color = apply_clip_mask(in.v_Color, in.v_PaperCoord, clip_mask_texture);
+    return invert_color_alpha(color);
+}
