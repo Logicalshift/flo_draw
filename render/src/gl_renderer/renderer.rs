@@ -33,6 +33,9 @@ pub struct GlRenderer {
     /// The currently set blend mode
     blend_mode: BlendMode,
 
+    /// Set to true if the source of a blending operation is premultiplied
+    source_is_premultiplied: bool,
+
     /// The matrix that's currently in use
     transform_matrix: Option<[gl::types::GLfloat; 16]>,
 
@@ -60,6 +63,7 @@ impl GlRenderer {
             default_render_target:          None,
             active_shader:                  None,
             blend_mode:                     BlendMode::SourceOver,
+            source_is_premultiplied:        false,
             transform_matrix:               None,
             render_targets:                 vec![],
             shader_programs:                shader_programs,
@@ -104,7 +108,7 @@ impl GlRenderer {
                 CreateIndexBuffer(id, indices)                                                  => { self.create_index_buffer(id, indices); }
                 FreeVertexBuffer(id)                                                            => { self.free_vertex_buffer(id); }
                 FreeIndexBuffer(id)                                                             => { self.free_index_buffer(id); }
-                BlendMode(blend_mode)                                                           => { self.blend_mode(blend_mode); }
+                BlendMode(blend_mode)                                                           => { self.blend_mode(blend_mode, self.source_is_premultiplied); }
                 CreateRenderTarget(render_id, texture_id, Size2D(width, height), render_type)   => { self.create_render_target(render_id, texture_id, width, height, render_type); }
                 FreeRenderTarget(render_id)                                                     => { self.free_render_target(render_id); }
                 SelectRenderTarget(render_id)                                                   => { self.select_render_target(render_id); }
@@ -147,7 +151,7 @@ impl GlRenderer {
             // Use the basic shader program by default
             self.shader_programs.use_program(StandardShaderProgram::default());
 
-            self.blend_mode(BlendMode::SourceOver);
+            self.blend_mode(BlendMode::SourceOver, false);
         }
     }
 
@@ -249,47 +253,76 @@ impl GlRenderer {
     ///
     /// Sets the blending mode to use
     ///
-    fn blend_mode(&mut self, blend_mode: BlendMode) {
+    /// Due to limitations in how OpenGL produces results, target render buffers always use pre-multiplied alphas (the blend functions cannot
+    /// be represented in a way that doesn't do this)
+    ///
+    fn blend_mode(&mut self, blend_mode: BlendMode, source_is_premultiplied: bool) {
         use self::BlendMode::*;
 
         unsafe {
             gl::BlendEquationSeparate(gl::FUNC_ADD, gl::FUNC_ADD);
 
-            match blend_mode {
-                SourceOver          => gl::BlendFuncSeparate(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
-                DestinationOver     => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::DST_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::ONE),
-                SourceIn            => gl::BlendFuncSeparate(gl::DST_ALPHA, gl::ZERO, gl::DST_ALPHA, gl::ZERO),
-                DestinationIn       => gl::BlendFuncSeparate(gl::ZERO, gl::SRC_ALPHA, gl::ZERO, gl::SRC_ALPHA),
-                SourceOut           => gl::BlendFuncSeparate(gl::ZERO, gl::ONE_MINUS_DST_ALPHA, gl::ZERO, gl::ONE_MINUS_DST_ALPHA),
-                DestinationOut      => gl::BlendFuncSeparate(gl::ZERO, gl::ONE_MINUS_SRC_ALPHA, gl::ZERO, gl::ONE_MINUS_SRC_ALPHA),
-                SourceATop          => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::SRC_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::SRC_ALPHA),
-                DestinationATop     => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC_ALPHA),
+            if !source_is_premultiplied {
+                // Target will be pre-multiplied after blending
+                match blend_mode {
+                    SourceOver          => gl::BlendFuncSeparate(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
+                    DestinationOver     => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::DST_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::ONE),
+                    SourceIn            => gl::BlendFuncSeparate(gl::DST_ALPHA, gl::ZERO, gl::DST_ALPHA, gl::ZERO),
+                    DestinationIn       => gl::BlendFuncSeparate(gl::ZERO, gl::SRC_ALPHA, gl::ZERO, gl::SRC_ALPHA),
+                    SourceOut           => gl::BlendFuncSeparate(gl::ZERO, gl::ONE_MINUS_DST_ALPHA, gl::ZERO, gl::ONE_MINUS_DST_ALPHA),
+                    DestinationOut      => gl::BlendFuncSeparate(gl::ZERO, gl::ONE_MINUS_SRC_ALPHA, gl::ZERO, gl::ONE_MINUS_SRC_ALPHA),
+                    SourceATop          => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::SRC_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::SRC_ALPHA),
+                    DestinationATop     => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC_ALPHA),
 
-                // TODO: these both require the shader to multiply the alpha in (a modification to the texture shader)
-                // Multiply is a*b. Here we multiply the source colour by the destination colour, then blend the destination back in again to take account of
-                // alpha in the source layer (this version of multiply has no effect on the target alpha value: a more strict version might multiply those too)
-                //
-                // The source side is precalculated so that an alpha of 0 produces a colour of 1,1,1 to take account of transparency in the source.
-                Multiply            => gl::BlendFuncSeparate(gl::DST_COLOR, gl::ZERO, gl::ZERO, gl::ONE),
+                    // Multiply is a*b. Here we multiply the source colour by the destination colour, then blend the destination back in again to take account of
+                    // alpha in the source layer (this version of multiply has no effect on the target alpha value: a more strict version might multiply those too)
+                    //
+                    // The source side is precalculated so that an alpha of 0 produces a colour of 1,1,1 to take account of transparency in the source.
+                    Multiply            => gl::BlendFuncSeparate(gl::DST_COLOR, gl::ZERO, gl::ZERO, gl::ONE),
 
-                // TODO: screen is 1-(1-a)*(1-b) which I think is harder to fake. If we precalculate (1-a) as the src in the shader
-                // then can multiply by ONE_MINUS_DST_COLOR to get (1-a)*(1-b). Can use gl::ONE as our target colour, and then a 
-                // reverse subtraction to get 1-(1-a)*(1-b)
-                // (This implementation doesn't work: the gl::ONE is 1*DST_COLOR and not 1 so this is currently 1*b-(1-a)*(1-b)
-                // with shader support)
-                Screen              => {
-                    gl::BlendEquationSeparate(gl::FUNC_REVERSE_SUBTRACT, gl::FUNC_ADD);
-                    gl::BlendFuncSeparate(gl::ONE_MINUS_DST_COLOR, gl::ONE, gl::ZERO, gl::ONE);
-                },
+                    // TODO: screen is 1-(1-a)*(1-b) which I think is harder to fake. If we precalculate (1-a) as the src in the shader
+                    // then can multiply by ONE_MINUS_DST_COLOR to get (1-a)*(1-b). Can use gl::ONE as our target colour, and then a 
+                    // reverse subtraction to get 1-(1-a)*(1-b)
+                    // (This implementation doesn't work: the gl::ONE is 1*DST_COLOR and not 1 so this is currently 1*b-(1-a)*(1-b)
+                    // with shader support)
+                    Screen              => {
+                        gl::BlendEquationSeparate(gl::FUNC_REVERSE_SUBTRACT, gl::FUNC_ADD);
+                        gl::BlendFuncSeparate(gl::ONE_MINUS_DST_COLOR, gl::ONE, gl::ZERO, gl::ONE);
+                    },
 
-                AllChannelAlphaSourceOver       => gl::BlendFuncSeparate(gl::ONE, gl::ONE_MINUS_SRC_COLOR, gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
-                AllChannelAlphaDestinationOver  => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_COLOR, gl::ONE, gl::ONE_MINUS_DST_ALPHA, gl::ONE),
+                    AllChannelAlphaSourceOver       => gl::BlendFuncSeparate(gl::ONE, gl::ONE_MINUS_SRC_COLOR, gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
+                    AllChannelAlphaDestinationOver  => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_COLOR, gl::ONE, gl::ONE_MINUS_DST_ALPHA, gl::ONE),
+                }
+            } else {
+                // Source is already pre-multiplied
+                match blend_mode {
+                    SourceOver          => gl::BlendFuncSeparate(gl::ONE, gl::ONE_MINUS_SRC_ALPHA, gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
+                    DestinationOver     => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::DST_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::ONE),
+                    SourceIn            => gl::BlendFuncSeparate(gl::DST_ALPHA, gl::ZERO, gl::DST_ALPHA, gl::ZERO),
+                    DestinationIn       => gl::BlendFuncSeparate(gl::ZERO, gl::ONE, gl::ZERO, gl::SRC_ALPHA),
+                    SourceOut           => gl::BlendFuncSeparate(gl::ZERO, gl::ONE_MINUS_DST_ALPHA, gl::ZERO, gl::ONE_MINUS_DST_ALPHA),
+                    DestinationOut      => gl::BlendFuncSeparate(gl::ZERO, gl::ONE_MINUS_SRC_ALPHA, gl::ZERO, gl::ONE_MINUS_SRC_ALPHA),
+                    SourceATop          => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::SRC_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::SRC_ALPHA),
+                    DestinationATop     => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC_ALPHA),
+
+                    Multiply            => gl::BlendFuncSeparate(gl::DST_COLOR, gl::ZERO, gl::ZERO, gl::ONE),
+
+                    // TODO: see above
+                    Screen              => {
+                        gl::BlendEquationSeparate(gl::FUNC_REVERSE_SUBTRACT, gl::FUNC_ADD);
+                        gl::BlendFuncSeparate(gl::ONE_MINUS_DST_COLOR, gl::ONE, gl::ZERO, gl::ONE);
+                    },
+
+                    AllChannelAlphaSourceOver       => gl::BlendFuncSeparate(gl::ONE, gl::ONE_MINUS_SRC_COLOR, gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
+                    AllChannelAlphaDestinationOver  => gl::BlendFuncSeparate(gl::ONE_MINUS_DST_COLOR, gl::ONE, gl::ONE_MINUS_DST_ALPHA, gl::ONE),
+                }
             }
 
             // Store the new blend mode
-            let old_processing_step = self.post_processing_for_blend_mode(self.blend_mode);
-            let new_processing_step = self.post_processing_for_blend_mode(blend_mode);
-            self.blend_mode         = blend_mode;
+            let old_processing_step         = self.post_processing_for_blend_mode(self.blend_mode, self.source_is_premultiplied);
+            let new_processing_step         = self.post_processing_for_blend_mode(blend_mode, source_is_premultiplied);
+            self.blend_mode                 = blend_mode;
+            self.source_is_premultiplied    = source_is_premultiplied;
 
             // If the post-processing step has changed, reload the shader
             if old_processing_step != new_processing_step {
@@ -518,15 +551,16 @@ impl GlRenderer {
     /// Draws a frame buffer at a location
     ///
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, region: FrameBufferRegion, alpha: f64) {
-        let post_process    = self.post_processing_for_blend_mode(self.blend_mode);
-        let shaders         = &mut self.shader_programs;
+        let post_process        = self.post_processing_for_blend_mode(self.blend_mode, true);
+        let was_premultiplied   = self.source_is_premultiplied;
 
+        // Use the pre-multiplied version of the blend mode
+        self.blend_mode(self.blend_mode, true);
+
+        let shaders             = &mut self.shader_programs;
         self.render_targets[source_buffer].as_ref().map(|source_buffer| {
             unsafe {
                 if let Some(texture) = source_buffer.texture() {
-                    // TODO: when blending where the source is a frame buffer, we know that the source is pre-multiplied already (this assume SourceOver so only works sometimes)
-                    gl::BlendFuncSeparate(gl::ONE, gl::ONE_MINUS_SRC_ALPHA, gl::ONE, gl::ONE_MINUS_SRC_ALPHA);
-                    
                     // Activate the resolving program
                     let shader = shaders.use_program(StandardShaderProgram::MsaaResolve(4, post_process));
 
@@ -583,14 +617,15 @@ impl GlRenderer {
                     gl::BindFramebuffer(gl::READ_FRAMEBUFFER, **source_buffer);
                     gl::BlitFramebuffer(0, 0, width, height, x, y, x+width, y+height, gl::COLOR_BUFFER_BIT, gl::NEAREST);
                 }
-
-                // We always revert to the simple shader after this operation
-                shaders.use_program(StandardShaderProgram::default());
-
-                // Finish up by checking for errors
-                panic_on_gl_error("Draw frame buffer");
             }
         });
+
+        // We always revert to the simple shader after this operation
+        shaders.use_program(StandardShaderProgram::default());
+        self.blend_mode(self.blend_mode, was_premultiplied);
+
+        // Finish up by checking for errors
+        panic_on_gl_error("Draw frame buffer");
     }
 
     ///
@@ -603,7 +638,7 @@ impl GlRenderer {
     ///
     /// Returns the post-processing step to use for the specified blend mode
     ///
-    fn post_processing_for_blend_mode(&self, blend_mode: BlendMode) -> ColorPostProcessingStep {
+    fn post_processing_for_blend_mode(&self, blend_mode: BlendMode, _source_is_premultiplied: bool) -> ColorPostProcessingStep {
         match blend_mode {
             BlendMode::Multiply     => ColorPostProcessingStep::InvertColorAlpha,
             BlendMode::Screen       => ColorPostProcessingStep::MultiplyAlpha,
@@ -618,7 +653,7 @@ impl GlRenderer {
     fn active_shader_program(&self) -> Option<StandardShaderProgram> {
         use self::ShaderType::*;
 
-        let post_processing = self.post_processing_for_blend_mode(self.blend_mode);
+        let post_processing = self.post_processing_for_blend_mode(self.blend_mode, self.source_is_premultiplied);
 
         match &self.active_shader {
             Some(Simple { clip_texture: None })                         => Some(StandardShaderProgram::Simple(StandardShaderVariant::NoClipping, post_processing)),
@@ -644,7 +679,7 @@ impl GlRenderer {
         use self::ShaderType::*;
 
         self.active_shader  = Some(shader_type);
-        let premultiply     = self.post_processing_for_blend_mode(self.blend_mode);
+        let premultiply     = self.post_processing_for_blend_mode(self.blend_mode, self.source_is_premultiplied);
 
         match shader_type {
             Simple { clip_texture } => {
