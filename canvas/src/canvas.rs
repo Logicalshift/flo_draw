@@ -1033,4 +1033,48 @@ mod test {
             assert!(stream.next().await == Some(Draw::Fill));
         });
     }
+
+    #[test]
+    fn store_then_restore_and_free() {
+        let canvas      = Canvas::new();
+        let mut stream  = canvas.stream();
+
+        canvas.draw(|gc| {
+            gc.layer(LayerId(0));
+            gc.store();
+            gc.push_state();
+            gc.new_path();
+        });
+
+        // Read until we see the new_path
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
+            assert!(stream.next().await == Some(Draw::StartFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(0))));
+            assert!(stream.next().await == Some(Draw::Store));
+            assert!(stream.next().await == Some(Draw::PushState));
+
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::ShowFrame));
+        });
+
+        // Restore the canvas
+        canvas.draw(|gc| {
+            gc.pop_state();
+            gc.restore();
+            gc.free_stored_buffer();
+        });
+
+        // Read the next frame
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::StartFrame));
+
+            assert!(stream.next().await == Some(Draw::PopState));
+            assert!(stream.next().await == Some(Draw::Restore));
+            assert!(stream.next().await == Some(Draw::FreeStoredBuffer));
+            assert!(stream.next().await == Some(Draw::ShowFrame));
+        });
+    }
 }
