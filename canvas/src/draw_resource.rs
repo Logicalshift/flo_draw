@@ -115,6 +115,9 @@ impl Draw {
             BlendMode(_)                            |
             FillColor(_)                            => smallvec![],
 
+            LayerBlend(layer_id, _)                 => smallvec![DrawResource::Layer(*layer_id)],
+            LayerAlpha(layer_id, _)                 => smallvec![DrawResource::Layer(*layer_id)],
+
             // Dash pattern is defined by multiple steps
             DashLength(_)                           |
             DashOffset(_)                           => smallvec![DrawResource::StrokeDash],
@@ -194,6 +197,7 @@ impl Draw {
 
             SwapLayers(layer1, _layer2)         => DrawResource::Layer(*layer1),
             LayerBlend(layer_id, _)             => DrawResource::Layer(*layer_id),
+            LayerAlpha(layer_id, _)             => DrawResource::Layer(*layer_id),
             Font(font_id, FontOp::FontSize(_))  => DrawResource::FontSize(*font_id),
             Font(font_id, _)                    => DrawResource::Font(*font_id),
             Texture(texture_id, _)              => DrawResource::Texture(*texture_id),
