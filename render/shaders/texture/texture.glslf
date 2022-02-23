@@ -19,7 +19,7 @@ uniform sampler2DMS t_ClipMask;
 void main() {
     f_Color             = texture(t_Texture, IN.v_TexCoord);
 
-    f_Color[3]          *= texture_alpha;
+    f_Color[3]          *= texture_alpha;           // TODO: if source is pre-multiplied, we need to do f_Color *= texture_alpha here
 
 #ifdef CLIP_MASK
     ivec2 clipSize      = textureSize(t_ClipMask);
