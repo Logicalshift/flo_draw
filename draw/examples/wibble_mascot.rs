@@ -4,6 +4,7 @@ use flo_curves::*;
 use flo_curves::bezier::*;
 use flo_curves::bezier::path::*;
 
+use rayon::iter::*;
 use futures::prelude::*;
 use futures::executor;
 use futures::stream;
@@ -38,7 +39,7 @@ pub fn main() {
             let amplitude               = 12.0;
 
             // Distort each of the paths in turn
-            let distorted_mascot        = mascot_paths.iter()
+            let distorted_mascot        = mascot_paths.par_iter()
                 .map(|(attributes, path_set)| (attributes, path_set.iter()
                     .map(move |path: &SimpleBezierPath| distort_path::<_, _, SimpleBezierPath>(path, |point: Coord2, _curve, _t| {
                         let distance    = point.magnitude();
@@ -49,7 +50,8 @@ pub fn main() {
 
                         Coord2(point.x() + offset_x, point.y() + offset_y)
                     }, 2.0, 1.0).unwrap())
-                    .collect::<Vec<_>>()));
+                    .collect::<Vec<_>>()))
+                .collect::<Vec<_>>();
 
             // Render the current frame
             canvas.draw(|gc| {
