@@ -852,11 +852,15 @@ impl CanvasRenderer {
 
                     // Restore a state previously pushed
                     PopState => {
+                        // The current transform is applied globally
                         self.transform_stack.pop()
                             .map(|transform| self.active_transform = transform);
 
                         core.sync(|core| {
+                            core.layer(self.current_layer).update_transform(&self.active_transform);
+
                             for layer_id in core.layers.clone() {
+                                // Pop the state for the layer
                                 core.layer(layer_id).pop_state();
                             }
                         })
@@ -988,7 +992,7 @@ impl CanvasRenderer {
                             // Sprite layers act as if their transform is already set
                             if core.layer(self.current_layer).state.is_sprite {
                                 layer.state.is_sprite       = true;
-                                layer.state.current_matrix  = self.active_transform;
+                                layer.update_transform(&self.active_transform);
                             }
 
                             // Swap into the layer list to replace the old one
@@ -1072,7 +1076,7 @@ impl CanvasRenderer {
 
                             // Set the sprite matrix to be 'unchanged' from the active transform
                             let layer                   = core.layer(self.current_layer);
-                            layer.state.current_matrix  = self.active_transform;
+                            layer.update_transform(&self.active_transform);
                         })
                     },
 
@@ -1240,6 +1244,8 @@ impl CanvasRenderer {
                     // Render a texture from a sprite, updating it dynamically as the canvas resolution changes
                     Texture(texture_id, canvas::TextureOp::CreateDynamicSprite(sprite_id, sprite_bounds, canvas_size)) => {
                         core.sync(|core| {
+                            core.layer(self.current_layer).update_transform(&self.active_transform);
+
                             if let Some(sprite_layer_handle) = core.sprites.get(&sprite_id) {
                                 let sprite_layer_handle = *sprite_layer_handle;
                                 let transform           = core.layer(self.current_layer).state.current_matrix;
