@@ -65,7 +65,16 @@ impl Layer {
     /// If this layer has any stored states, restores the most recent one
     ///
     pub fn pop_state(&mut self) {
+        // The active layer transform is preserved across a state pop (the transform is global). These are the values set by `update_transform` above
+        let old_matrix          = self.state.current_matrix;
+        let old_scale_factor    = self.state.scale_factor;
+
+        // Pop the state from the layer
         self.stored_states.pop()
             .map(|restored_state| self.state = restored_state);
+
+        // Keep the matrix/scale factor from before so `update_transform` will do the right thing later on (see PopState: note that the transform is popped independently of the layer state)
+        self.state.current_matrix   = old_matrix;
+        self.state.scale_factor     = old_scale_factor;
     }
 }
