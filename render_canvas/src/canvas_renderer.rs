@@ -992,11 +992,13 @@ impl CanvasRenderer {
                             // Sprite layers act as if their transform is already set
                             if core.layer(self.current_layer).state.is_sprite {
                                 layer.state.is_sprite       = true;
-                                layer.update_transform(&self.active_transform);
                             }
 
                             // Swap into the layer list to replace the old one
                             mem::swap(core.layer(self.current_layer), &mut layer);
+
+                            // Ensure the layer transform is up to date
+                            core.layer(self.current_layer).update_transform(&self.active_transform);
 
                             // Free the data for the current layer
                             core.free_layer_entities(layer);
