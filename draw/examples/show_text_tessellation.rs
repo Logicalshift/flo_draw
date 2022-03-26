@@ -75,7 +75,7 @@ pub fn main() {
         mem::drop(canvas);
 
         // Create a window to render on
-        let tessellation_window     = create_drawing_window("Circle Tessellation");
+        let tessellation_window     = create_drawing_window("Hello, world tessellation");
 
         // Run an executor to track the instructions that we would be sending to the GPU and render them to the tessellation window instead
         executor::block_on(async {
