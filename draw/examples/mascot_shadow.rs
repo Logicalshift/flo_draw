@@ -40,7 +40,7 @@ pub fn main() {
         // Decode
         let mascot = decode_drawing(MASCOT.chars()).collect::<Result<Vec<Draw>, _>>().unwrap();
 
-        // Convert the mascot to a set of paths
+        // Convert the mascot to a set of paths (note we skip the setup steps here so the paths are not affected by the initial transformation matrix)
         let render_mascot   = stream::iter(mascot.clone().into_iter()).skip(4);
         let mascot_paths    = drawing_to_paths::<SimpleBezierPath, _>(render_mascot);
         let mascot_paths    = executor::block_on(async move { mascot_paths.collect::<Vec<_>>().await });
@@ -124,7 +124,7 @@ pub fn main() {
 
             // Display each shading mode for 10s then move on to the next one
             shading_mode += 1;
-            thread::sleep(Duration::from_secs(10));
+            thread::sleep(Duration::from_secs(1));
         }
     });
 }
