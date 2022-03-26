@@ -77,7 +77,6 @@ pub fn main() {
                     }
                 }
 
-                gc.transform(Transform2D([[1.0, 0.0, -6.25128], [0.0, 1.0, -61.994], [0.0, 0.0, 1.0]]));
                 match shading_mode % 4 {
                     0 => gc.blend_mode(BlendMode::SourceOver),
                     1 => gc.blend_mode(BlendMode::Multiply),
