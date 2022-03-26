@@ -41,7 +41,7 @@ pub fn main() {
         let mascot = decode_drawing(MASCOT.chars()).collect::<Result<Vec<Draw>, _>>().unwrap();
 
         // Convert the mascot to a set of paths
-        let render_mascot   = stream::iter(mascot.clone().into_iter());
+        let render_mascot   = stream::iter(mascot.clone().into_iter()).skip(4);
         let mascot_paths    = drawing_to_paths::<SimpleBezierPath, _>(render_mascot);
         let mascot_paths    = executor::block_on(async move { mascot_paths.collect::<Vec<_>>().await });
 
