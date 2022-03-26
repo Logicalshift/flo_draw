@@ -54,6 +54,8 @@ BezierPath::Point:  Send+Coordinate2D {
         let mut current_path: Option<BezierPathBuilder<_>>  = None;
         let mut current_components                          = vec![];
         let mut start_point                                 = None;
+        let mut current_transform: Option<Transform2D>      = None;
+        let mut transform_stack                             = vec![];
 
         // Read to the end of the stream
         let mut draw_stream                                 = draw_stream;
@@ -81,12 +83,16 @@ BezierPath::Point:  Send+Coordinate2D {
                         current_components.push(path.build());
                     }
 
+                    let (x, y) = if let Some(transform) = &current_transform { transform.transform_point(x, y) } else { (x, y) };
+
                     // Start a new path
                     current_path = Some(BezierPathBuilder::start(BezierPath::Point::from_components(&[x as _, y as _])));
                     start_point  = Some(BezierPath::Point::from_components(&[x as _, y as _]));
                 }
 
                 Draw::Path(Line(x, y))                                          => {
+                    let (x, y) = if let Some(transform) = &current_transform { transform.transform_point(x, y) } else { (x, y) };
+
                     // Add the line to the current path
                     current_path = current_path.map(|current_path| {
                         current_path.line_to(BezierPath::Point::from_components(&[x as _, y as _]))
@@ -94,6 +100,13 @@ BezierPath::Point:  Send+Coordinate2D {
                 }
 
                 Draw::Path(BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x1, y1))) => {
+                    let ((cp1x, cp1y), (cp2x, cp2y), (x1, y1)) = if let Some(transform) = &current_transform { 
+                        (transform.transform_point(cp1x, cp1y), transform.transform_point(cp2x, cp2y), transform.transform_point(x1, y1))
+                    } else { 
+                        ((cp1x, cp1y), (cp2x, cp2y), (x1, y1))
+                    };
+
+
                     // Add the curve to the current path
                     current_path = current_path.map(|current_path| {
                         current_path.curve_to(
@@ -109,6 +122,22 @@ BezierPath::Point:  Send+Coordinate2D {
                             current_path.line_to(start_point.clone())
                         })
                     }
+                }
+
+                Draw::MultiplyTransform(transform)                              => {
+                    if let Some(last_transform) = current_transform {
+                        current_transform = Some(last_transform * transform);
+                    } else {
+                        current_transform = Some(transform);
+                    }
+                }
+
+                Draw::PushState                                                 => {
+                    transform_stack.push(current_transform);
+                }
+
+                Draw::PopState                                                  => {
+                    current_transform = transform_stack.pop().unwrap_or(None);
                 }
 
                 // Ignore other instructions
