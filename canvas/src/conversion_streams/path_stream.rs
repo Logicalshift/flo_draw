@@ -183,6 +183,7 @@ BezierPath::Point:  Send+Coordinate2D {
         let mut stroke_color                                = Color::Rgba(0.0, 0.0, 0.0, 1.0);
         let mut line_width                                  = None;
         let mut line_width_pixels                           = None;
+        let mut current_transform: Option<Transform2D>      = None;
 
         let mut state_stack                                 = vec![];
 
@@ -215,12 +216,16 @@ BezierPath::Point:  Send+Coordinate2D {
                         current_components.push(path.build());
                     }
 
+                    let (x, y) = if let Some(transform) = &current_transform { transform.transform_point(x, y) } else { (x, y) };
+
                     // Start a new path
                     current_path = Some(BezierPathBuilder::start(BezierPath::Point::from_components(&[x as _, y as _])));
                     start_point  = Some(BezierPath::Point::from_components(&[x as _, y as _]));
                 }
 
                 Draw::Path(Line(x, y))                                          => {
+                    let (x, y) = if let Some(transform) = &current_transform { transform.transform_point(x, y) } else { (x, y) };
+
                     // Add the line to the current path
                     current_path = current_path.map(|current_path| {
                         current_path.line_to(BezierPath::Point::from_components(&[x as _, y as _]))
@@ -228,6 +233,12 @@ BezierPath::Point:  Send+Coordinate2D {
                 }
 
                 Draw::Path(BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (x1, y1))) => {
+                    let ((cp1x, cp1y), (cp2x, cp2y), (x1, y1)) = if let Some(transform) = &current_transform { 
+                        (transform.transform_point(cp1x, cp1y), transform.transform_point(cp2x, cp2y), transform.transform_point(x1, y1))
+                    } else { 
+                        ((cp1x, cp1y), (cp2x, cp2y), (x1, y1))
+                    };
+
                     // Add the curve to the current path
                     current_path = current_path.map(|current_path| {
                         current_path.curve_to(
@@ -282,16 +293,25 @@ BezierPath::Point:  Send+Coordinate2D {
                     line_width          = None;
                 }
 
+                Draw::MultiplyTransform(transform)                              => {
+                    if let Some(last_transform) = current_transform {
+                        current_transform = Some(last_transform * transform);
+                    } else {
+                        current_transform = Some(transform);
+                    }
+                }
+
                 Draw::PushState                                                 => {
-                    state_stack.push((fill_color, stroke_color, line_width, line_width_pixels));
+                    state_stack.push((fill_color, stroke_color, line_width, line_width_pixels, current_transform));
                 }
 
                 Draw::PopState                                                  => {
-                    if let Some((new_fill_color, new_stroke_color, new_line_width, new_line_width_pixels)) = state_stack.pop() {
+                    if let Some((new_fill_color, new_stroke_color, new_line_width, new_line_width_pixels, new_transform)) = state_stack.pop() {
                         fill_color          = new_fill_color;
                         stroke_color        = new_stroke_color;
                         line_width          = new_line_width;
                         line_width_pixels   = new_line_width_pixels;
+                        current_transform   = new_transform;
                     }
                 }
 
