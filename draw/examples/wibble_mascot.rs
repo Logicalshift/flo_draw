@@ -24,8 +24,8 @@ pub fn main() {
         // Create a window
         let canvas      = create_drawing_window("Wibbling mascot");
 
-        // Convert the mascot to a set of paths
-        let render_mascot   = stream::iter(mascot.into_iter());
+        // Convert the mascot to a set of paths (note we skip the setup steps here so the paths are not affected by the initial transformation matrix)
+        let render_mascot   = stream::iter(mascot.into_iter().skip(4));
         let mascot_paths    = drawing_to_attributed_paths::<SimpleBezierPath, _>(render_mascot);
         let mascot_paths    = executor::block_on(async move { mascot_paths.collect::<Vec<_>>().await });
 
