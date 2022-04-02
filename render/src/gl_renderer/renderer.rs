@@ -489,7 +489,9 @@ impl GlRenderer {
     /// Releases an existing render target
     ///
     fn free_texture(&mut self, TextureId(texture_id): TextureId) {
-        self.textures[texture_id] = None;
+        if texture_id < self.textures.len() {
+            self.textures[texture_id] = None;
+        }
     }
 
     ///
