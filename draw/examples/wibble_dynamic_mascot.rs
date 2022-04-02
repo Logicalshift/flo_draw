@@ -89,8 +89,9 @@ pub fn main() {
                 gc.stroke_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
                 gc.line_width(6.0);
 
-                // Render the distorted paths
-                // TODO: to the sprite
+                // Render the distorted paths to sprite 0
+                gc.sprite(SpriteId(0));
+                gc.clear_sprite();
                 for (attributes, path_set) in distorted_mascot {
                     gc.new_path();
 
@@ -132,6 +133,20 @@ pub fn main() {
                     }
                 }
 
+                // Render as a repeating texture (as the texture is dynamic, it's re-rendered to be the correct size and whenever the sprite changes)
+                gc.layer(LayerId(0));
+
+                gc.new_path();
+                gc.rect(-1000.0, -1000.0, 2000.0, 2000.0);
+                gc.fill_texture(TextureId(0), 512.0 - 100.0 - 32.0, 384.0 - 100.0 - 32.0, 512.0 + 100.0 - 32.0, 384.0 + 100.0 - 32.0);
+                gc.set_texture_fill_alpha(TextureId(0), 0.5);
+                gc.fill();
+
+                gc.new_path();
+                gc.rect(-1000.0, -1000.0, 2000.0, 2000.0);
+                gc.fill_texture(TextureId(0), 512.0 - 100.0, 384.0 - 100.0, 512.0 + 100.0, 384.0 + 100.0);
+                gc.set_texture_fill_alpha(TextureId(0), 1.0);
+                gc.fill();
             });
 
             // Wait for the next frame
