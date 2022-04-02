@@ -673,8 +673,8 @@ impl<'a> RenderStream<'a> {
         let max_y       = f32::max(y1, y2);
 
         // Size relative to the framebuffer size
-        let size_w      = (max_x - min_x)/2.0;
-        let size_h      = (max_y - min_y)/2.0;
+        let size_w      = (max_x - min_x)/size.0/2.0;
+        let size_h      = (max_y - min_y)/size.1/2.0;
 
         let size_w      = self.viewport_size.0 as f32 * size_w;
         let size_h      = self.viewport_size.1 as f32 * size_h;
