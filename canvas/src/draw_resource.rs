@@ -53,6 +53,18 @@ impl Draw {
             Stroke                                  => match resource { DrawResource::CanvasTransform | DrawResource::StrokeLineWidth | DrawResource::StrokeLineCap | DrawResource::StrokeLineJoin | DrawResource::StrokeDash | DrawResource::StrokeColor | DrawResource::FillBlend => true, _ => false },
 
             // Texture and font operations generally alter the existing resource so they have a dependency
+            Texture(texture_id, TextureOp::CreateDynamicSprite(sprite_id, _, _)) => {
+                if resource == &DrawResource::CanvasTransform {
+                    true
+                } else if resource == &DrawResource::Sprite(*sprite_id) {
+                    true
+                } else if resource == &DrawResource::Texture(*texture_id) {
+                    true
+                } else {
+                    false
+                }
+            }
+
             Texture(texture_id, _)                  => resource == &DrawResource::Texture(*texture_id),
             Gradient(gradient_id, _)                => resource == &DrawResource::Gradient(*gradient_id),
             Font(font_id, FontOp::LayoutText(_))    |
@@ -127,6 +139,8 @@ impl Draw {
             Stroke                                  => smallvec![*active_resource, DrawResource::CanvasTransform, DrawResource::StrokeLineWidth, DrawResource::StrokeLineCap, DrawResource::StrokeLineJoin, DrawResource::StrokeDash, DrawResource::StrokeColor, DrawResource::FillBlend],
 
             // Texture and font operations generally alter the existing resource so they have a dependency
+            Texture(texture_id, TextureOp::CreateDynamicSprite(sprite_id, _, _)) => smallvec![DrawResource::Texture(*texture_id), DrawResource::Sprite(*sprite_id), DrawResource::CanvasTransform],
+
             Texture(texture_id, _)                  => smallvec![DrawResource::Texture(*texture_id)],
             Font(font_id, FontOp::LayoutText(_))    |
             Font(font_id, FontOp::DrawGlyphs(_))    => smallvec![*active_resource, DrawResource::Font(*font_id), DrawResource::FontSize(*font_id), DrawResource::CanvasTransform, DrawResource::FillWindingRule, DrawResource::FillBlend, DrawResource::FillColor],
