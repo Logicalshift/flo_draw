@@ -650,6 +650,25 @@ impl GlRenderer {
     }
 
     ///
+    /// Determines the correct way to alpha blend colours from a texture
+    ///
+    #[inline]
+    fn alpha_blend_step_for_texture(&self, texture: &TextureId) -> AlphaBlendStep {
+        let TextureId(texture)  = *texture;
+        let texture             = if texture < self.textures.len() { self.textures[texture].as_ref() } else { None };
+
+        if let Some(texture) = texture {
+            if texture.premultiplied {
+                AlphaBlendStep::Premultiply
+            } else {
+                AlphaBlendStep::NoPremultiply
+            }
+        } else {
+            AlphaBlendStep::NoPremultiply
+        }
+    }
+
+    ///
     /// Returns the shader program identifier to use for the currently selected shader
     ///
     fn active_shader_program(&self) -> Option<StandardShaderProgram> {
@@ -664,8 +683,8 @@ impl GlRenderer {
             Some(DashedLine { dash_texture: _, clip_texture: None })    => Some(StandardShaderProgram::DashedLine(StandardShaderVariant::NoClipping, post_processing)),
             Some(DashedLine { dash_texture: _, clip_texture: Some(_) }) => Some(StandardShaderProgram::DashedLine(StandardShaderVariant::ClippingMask, post_processing)),
 
-            Some(Texture { clip_texture: None, .. })                    => Some(StandardShaderProgram::Texture(StandardShaderVariant::NoClipping, post_processing)),
-            Some(Texture { clip_texture: Some(_), .. })                 => Some(StandardShaderProgram::Texture(StandardShaderVariant::ClippingMask, post_processing)),
+            Some(Texture { texture, clip_texture: None, .. })           => Some(StandardShaderProgram::Texture(StandardShaderVariant::NoClipping, self.alpha_blend_step_for_texture(texture), post_processing)),
+            Some(Texture { texture, clip_texture: Some(_), .. })        => Some(StandardShaderProgram::Texture(StandardShaderVariant::ClippingMask, self.alpha_blend_step_for_texture(texture), post_processing)),
 
             Some(LinearGradient { clip_texture: None, .. })             => Some(StandardShaderProgram::LinearGradient(StandardShaderVariant::NoClipping, post_processing)),
             Some(LinearGradient { clip_texture: Some(_), .. })          => Some(StandardShaderProgram::LinearGradient(StandardShaderVariant::ClippingMask, post_processing)),
@@ -728,6 +747,7 @@ impl GlRenderer {
 
             Texture { texture, texture_transform, repeat, alpha, clip_texture } => {
                 let textures            = &self.textures;
+                let alpha_blend_step    = self.alpha_blend_step_for_texture(&texture);
                 let TextureId(texture)  = texture;
                 let texture             = if texture < self.textures.len() { self.textures[texture].as_ref() } else { None };
                 let clip_texture        = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
@@ -735,7 +755,7 @@ impl GlRenderer {
                 let texture_transform   = texture_transform.to_opengl_matrix();
                 is_premultiplied        = texture.map(|texture| texture.premultiplied).unwrap_or(false);
 
-                let program             = self.shader_programs.use_program(StandardShaderProgram::Texture(variant, premultiply));
+                let program             = self.shader_programs.use_program(StandardShaderProgram::Texture(variant, alpha_blend_step, premultiply));
                 if let Some(clip_texture) = clip_texture { program.use_texture(ShaderUniform::ClipTexture, "t_ClipMask", clip_texture, 2); }
 
                 // Set up the texture program

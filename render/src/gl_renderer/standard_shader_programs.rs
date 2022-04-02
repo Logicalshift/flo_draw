@@ -30,6 +30,18 @@ pub enum ColorPostProcessingStep {
 }
 
 ///
+/// Describes what to do when applying an alpha value to a pixel
+///
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum AlphaBlendStep {
+    /// Input colours are not pre-multiplied
+    NoPremultiply,
+
+    /// Input colours are pre-mulitplied
+    Premultiply,
+}
+
+///
 /// The shader programs that are loaded by default into an OpenGL renderer
 ///
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -38,7 +50,7 @@ pub enum StandardShaderProgram {
     Simple(StandardShaderVariant, ColorPostProcessingStep),
 
     /// Renders fragments from a texture input
-    Texture(StandardShaderVariant, ColorPostProcessingStep),
+    Texture(StandardShaderVariant, AlphaBlendStep, ColorPostProcessingStep),
 
     /// Uses a 1D texture input to render a linear gradient fill
     LinearGradient(StandardShaderVariant, ColorPostProcessingStep),
@@ -74,6 +86,18 @@ impl ColorPostProcessingStep {
         }
     }
 }
+impl AlphaBlendStep {
+    ///
+    /// Returns the #defines to declare in the shader program for this variant
+    ///
+    pub fn defines(&self) -> Vec<&str> {
+        match self {
+            AlphaBlendStep::NoPremultiply   => vec![],
+            AlphaBlendStep::Premultiply     => vec!["PREMULITPLIED_INPUT_ALPHA"]
+        }
+    }
+}
+
 
 impl Default for StandardShaderProgram {
     fn default() -> Self {
@@ -113,7 +137,7 @@ impl StandardShaderProgram {
 
             match program_type {
                 Simple(variant, post_process)               => { Self::load_shader(&simple_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &simple_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
-                Texture(variant, post_process)              => { Self::load_shader(&texture_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &texture_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
+                Texture(variant, alpha_mode, post_process)  => { Self::load_shader(&texture_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &texture_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).chain(alpha_mode.defines()).collect()) }
                 LinearGradient(variant, post_process)       => { Self::load_shader(&gradient_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &gradient_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
                 DashedLine(variant, post_process)           => { Self::load_shader(&simple_vertex, &vec!["a_Pos", "a_Color", "a_TexCoord"], &dashed_line_fragment, &vec![], &variant.defines().into_iter().chain(post_process.defines()).collect()) }
 
