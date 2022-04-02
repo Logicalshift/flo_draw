@@ -136,6 +136,9 @@ pub fn main() {
                 // Render as a repeating texture (as the texture is dynamic, it's re-rendered to be the correct size and whenever the sprite changes)
                 gc.layer(LayerId(0));
 
+                // TODO: shouldn't need to do this
+                gc.create_dynamic_texture(TextureId(0), SpriteId(0), 0.0, 0.0, 1024.0, 1024.0, 200.0, 200.0);
+
                 gc.new_path();
                 gc.rect(-1000.0, -1000.0, 2000.0, 2000.0);
                 gc.fill_texture(TextureId(0), 512.0 - 100.0 - 32.0, 384.0 - 100.0 - 32.0, 512.0 + 100.0 - 32.0, 384.0 + 100.0 - 32.0);
