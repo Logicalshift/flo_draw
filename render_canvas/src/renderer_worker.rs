@@ -174,6 +174,9 @@ impl CanvasWorker {
         let mut tessellator         = tessellation::StrokeTessellator::new();
         let mut geometry            = VertexBuffers::new();
 
+        // TODO: works around a bug when rendering sprites where we pick the wrong scale factor
+        let scale_factor            = 1.0;
+
         // Set up the stroke options
         let render::Rgba8(color)    = stroke_options.stroke_color;
         let mut stroke_options      = Self::convert_stroke_settings(stroke_options);
