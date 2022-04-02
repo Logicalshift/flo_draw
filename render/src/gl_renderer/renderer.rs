@@ -680,8 +680,9 @@ impl GlRenderer {
     fn use_shader(&mut self, shader_type: ShaderType) {
         use self::ShaderType::*;
 
-        self.active_shader  = Some(shader_type);
-        let premultiply     = self.post_processing_for_blend_mode(self.blend_mode, self.source_is_premultiplied);
+        self.active_shader          = Some(shader_type);
+        let premultiply             = self.post_processing_for_blend_mode(self.blend_mode, false);
+        let mut is_premultiplied    = false;
 
         match shader_type {
             Simple { clip_texture } => {
@@ -732,6 +733,7 @@ impl GlRenderer {
                 let clip_texture        = clip_texture.and_then(|TextureId(texture_id)| textures[texture_id].as_ref());
                 let variant             = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
                 let texture_transform   = texture_transform.to_opengl_matrix();
+                is_premultiplied        = texture.map(|texture| texture.premultiplied).unwrap_or(false);
 
                 let program             = self.shader_programs.use_program(StandardShaderProgram::Texture(variant, premultiply));
                 if let Some(clip_texture) = clip_texture { program.use_texture(ShaderUniform::ClipTexture, "t_ClipMask", clip_texture, 2); }
@@ -830,6 +832,12 @@ impl GlRenderer {
 
         // Set the transform for the newly selected shader
         self.update_shader_transform();
+
+        // Update the blend mode for the shader source
+        if self.source_is_premultiplied != is_premultiplied {
+            self.source_is_premultiplied = is_premultiplied;
+            self.blend_mode(self.blend_mode, self.source_is_premultiplied);
+        }
     }
 
     ///
