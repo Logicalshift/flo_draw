@@ -64,6 +64,12 @@ pub fn main() {
                 gc.rect(100.0, 100.0, 200.0, 200.0);
                 gc.fill_texture(TextureId(0), 100.0, 100.0, 200.0, 200.0);
                 gc.fill();
+
+                // Also draw at 2x scale
+                gc.new_path();
+                gc.rect(50.0, 200.0, 250.0, 400.0);
+                gc.fill_texture(TextureId(0), 50.0, 200.0, 250.0, 400.0);
+                gc.fill();
             });
 
             // Wait for the next frame
