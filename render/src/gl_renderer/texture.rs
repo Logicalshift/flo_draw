@@ -18,6 +18,7 @@ struct TextureRef {
 pub struct Texture {
     texture:                    Rc<TextureRef>,
 
+    pub (super) premultiplied:  bool,
     pub (super) texture_target: gl::types::GLuint,
     pub (super) texture_format: gl::types::GLuint,
     num_samples:                usize, 
@@ -36,6 +37,7 @@ impl Texture {
 
             Texture {
                 texture:        Rc::new(TextureRef { texture_id: new_texture }),
+                premultiplied:  false,
                 texture_target: gl::TEXTURE_2D,
                 texture_format: gl::RGBA,
                 num_samples:    0,

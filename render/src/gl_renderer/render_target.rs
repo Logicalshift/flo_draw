@@ -55,6 +55,7 @@ impl RenderTarget {
                     // Use a backing texture for the rendering
                     let mut backing_texture = Texture::new();
                     backing_texture.create_empty(width, height);
+                    backing_texture.premultiplied = true;
 
                     gl::FramebufferTexture2D(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D, *backing_texture, 0);
 
@@ -87,6 +88,7 @@ impl RenderTarget {
                     // Use a backing texture for the rendering
                     let mut backing_texture = Texture::new();
                     backing_texture.create_empty_multisampled(width, height, 4);
+                    backing_texture.premultiplied = true;
 
                     gl::FramebufferTexture2D(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D_MULTISAMPLE, *backing_texture, 0);
 
@@ -99,6 +101,7 @@ impl RenderTarget {
                     // Use a backing texture for the rendering
                     let mut backing_texture = Texture::new();
                     backing_texture.create_monochrome(width, height);
+                    backing_texture.premultiplied = true;
 
                     gl::FramebufferTexture2D(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D, *backing_texture, 0);
 
@@ -111,6 +114,7 @@ impl RenderTarget {
                     // Use a backing texture for the rendering
                     let mut backing_texture = Texture::new();
                     backing_texture.create_monochrome_multisampled(width, height, 4);
+                    backing_texture.premultiplied = true;
 
                     gl::FramebufferTexture2D(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D_MULTISAMPLE, *backing_texture, 0);
 
