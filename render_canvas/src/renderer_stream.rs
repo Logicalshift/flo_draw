@@ -659,13 +659,13 @@ impl<'a> RenderStream<'a> {
     ///
     /// Creates the rendering actions for generating a dynamic texture
     ///
-    fn render_dynamic_texture(&self, texture_id: render::TextureId, layer_handle: LayerHandle, sprite_region: canvas::SpriteBounds, size: canvas::CanvasSize, transform: canvas::Transform2D) -> Vec<render::RenderAction> {
+    fn render_dynamic_texture(&self, texture_id: render::TextureId, layer_handle: LayerHandle, sprite_region: canvas::SpriteBounds, canvas_size: canvas::CanvasSize, transform: canvas::Transform2D) -> Vec<render::RenderAction> {
         // Convert the transform to viewport coordinates
         let transform = self.viewport_transform * transform;
 
         // Coordinates for the size
         let (x1, y1)    = transform.transform_point(0.0, 0.0);
-        let (x2, y2)    = transform.transform_point(size.0, size.1);
+        let (x2, y2)    = transform.transform_point(canvas_size.0, canvas_size.1);
 
         let min_x       = f32::min(x1, x2);
         let min_y       = f32::min(y1, y2);
@@ -673,8 +673,8 @@ impl<'a> RenderStream<'a> {
         let max_y       = f32::max(y1, y2);
 
         // Size relative to the framebuffer size
-        let size_w      = (max_x - min_x)/size.0/2.0;
-        let size_h      = (max_y - min_y)/size.1/2.0;
+        let size_w      = (max_x - min_x)/2.0;
+        let size_h      = (max_y - min_y)/2.0;
 
         let size_w      = self.viewport_size.0 as f32 * size_w;
         let size_h      = self.viewport_size.1 as f32 * size_h;

@@ -1250,7 +1250,7 @@ impl CanvasRenderer {
 
                             if let Some(sprite_layer_handle) = core.sprites.get(&sprite_id) {
                                 let sprite_layer_handle = *sprite_layer_handle;
-                                let transform           = core.layer(self.current_layer).state.current_matrix;
+                                let transform           = self.active_transform;
 
                                 // If the texture ID was previously in use, reduce the usage count
                                 let render_texture_id = if let Some(old_render_texture) = core.canvas_textures.get(&texture_id) {
