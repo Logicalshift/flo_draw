@@ -103,6 +103,9 @@ impl CanvasWorker {
         let mut tessellator     = tessellation::FillTessellator::new();
         let mut geometry        = VertexBuffers::new();
 
+        // TODO: works around a bug when rendering sprites where we pick the wrong scale factor
+        let scale_factor            = 1.0;
+
         // Set up the fill options
         let mut fill_options    = FillOptions::default();
         fill_options.fill_rule  = fill_rule;
