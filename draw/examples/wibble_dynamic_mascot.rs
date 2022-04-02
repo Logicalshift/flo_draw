@@ -35,7 +35,7 @@ pub fn main() {
         // Set up the canvas, with a dynamic sprite to wibble
         canvas.draw(|gc| {
             // Clear the canvas
-            gc.clear_canvas(Color::Rgba(0.5, 0.9, 0.7, 1.0));
+            gc.clear_canvas(Color::Rgba(0.3, 0.7, 0.5, 1.0));
 
             // Canvas scale
             gc.canvas_height(768.0);
