@@ -12,6 +12,7 @@ mod renderer_worker;
 mod renderer_stream;
 mod offscreen;
 mod matrix;
+mod dynamic_texture_state;
 
 pub use self::canvas_renderer::*;
 pub use self::offscreen::*;

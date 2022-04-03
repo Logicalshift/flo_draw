@@ -9,6 +9,7 @@ use super::renderer_layer::*;
 use super::renderer_worker::*;
 use super::renderer_stream::*;
 use super::resource_ids::*;
+use super::dynamic_texture_state::*;
 
 use flo_render as render;
 use flo_render::{RenderTargetType};
@@ -88,7 +89,7 @@ impl CanvasRenderer {
             sprites:                    HashMap::new(),
             used_textures:              HashMap::new(),
             render_target_for_texture:  HashMap::new(),
-            dynamic_texture_viewport:   HashMap::new(),
+            dynamic_texture_state:      HashMap::new(),
             texture_size:               HashMap::new(),
             layer_textures:             HashMap::new(),
             canvas_textures:            HashMap::new(),
@@ -1284,7 +1285,7 @@ impl CanvasRenderer {
                                 core.canvas_textures.insert(texture_id, RenderTexture::Loading(render_texture_id));
                                 core.used_textures.insert(render_texture_id, 1);
                                 core.texture_size.insert(render_texture_id, render::Size2D(1 as _, 1 as _));
-                                core.dynamic_texture_viewport.remove(&render_texture_id);
+                                core.dynamic_texture_state.remove(&render_texture_id);
 
                                 // Specify as a dynamic texture
                                 core.layer_textures.insert(render_texture_id, TextureRenderRequest::DynamicTexture(render_texture_id, sprite_layer_handle, sprite_bounds, canvas_size, transform));
@@ -1483,14 +1484,15 @@ impl CanvasRenderer {
                     },
 
                     DynamicTexture(texture_id, layer_handle, _, _, _) => {
-                        let texture_id = *texture_id;
+                        let texture_id      = *texture_id;
+                        let current_state   = DynamicTextureState { viewport: viewport_size, sprite_modification_count: core.layer(*layer_handle).state.modification_count };
 
-                        if core.dynamic_texture_viewport.get(&texture_id) != Some(&viewport_size) {
+                        if core.dynamic_texture_state.get(&texture_id) != Some(&current_state) {
                             // These are rendered if the viewport or sprite has changed since the last time
                             textures.push(render_request);
 
                             // Update the viewport data so this isn't re-rendered until it changes
-                            core.dynamic_texture_viewport.insert(texture_id, viewport_size);
+                            core.dynamic_texture_state.insert(texture_id, current_state);
                         }
 
                         // Put back on the request list so we re-render this texture in the next frame
