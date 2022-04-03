@@ -13,6 +13,9 @@ pub struct LayerState {
     /// True if this layer contains a sprite
     pub is_sprite: bool,
 
+    /// The number of times this layer has been modified
+    pub modification_count: usize,
+
     /// The current fill colour
     pub fill_color: FillState,
 

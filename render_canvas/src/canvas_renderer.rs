@@ -246,6 +246,7 @@ impl CanvasRenderer {
             render_order:               vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             state:                      LayerState {
                 is_sprite:          false,
+                modification_count: 0,
                 fill_color:         FillState::Color(render::Rgba8([0, 0, 0, 255])),
                 winding_rule:       FillRule::NonZero,
                 stroke_settings:    StrokeSettings::new(),
@@ -487,6 +488,7 @@ impl CanvasRenderer {
                                 let color               = if layer.state.blend_mode == canvas::BlendMode::DestinationOut { color.all_channel_alpha() } else { color };
 
                                 layer.render_order.push(RenderEntity::Tessellating(entity_id));
+                                layer.state.modification_count += 1;
 
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
@@ -559,6 +561,7 @@ impl CanvasRenderer {
                                 stroke_options.stroke_color = if layer.state.blend_mode == canvas::BlendMode::DestinationOut { render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]]) } else { color };
 
                                 layer.render_order.push(RenderEntity::Tessellating(entity_id));
+                                layer.state.modification_count += 1;
 
                                 let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
 
@@ -994,6 +997,9 @@ impl CanvasRenderer {
                                 layer.state.is_sprite       = true;
                             }
 
+                            // Retain the modification count from the old layer
+                            layer.state.modification_count = core.layer(self.current_layer).state.modification_count + 1;
+
                             // Swap into the layer list to replace the old one
                             mem::swap(core.layer(self.current_layer), &mut layer);
 
@@ -1036,7 +1042,7 @@ impl CanvasRenderer {
                     SwapLayers(canvas::LayerId(layer1), canvas::LayerId(layer2)) => {
                         if layer1 != layer2 {
                             core.sync(move |core| {
-                                // Create layers so we can swap with arbitrary layers
+                                // Create layers if they don't already exist so we can swap with arbitrary layers
                                 let max_layer_id = u64::max(layer1, layer2) as usize;
                                 while core.layers.len() <= max_layer_id  {
                                     let new_layer = Self::create_default_layer();
@@ -1099,7 +1105,8 @@ impl CanvasRenderer {
                             layer.update_transform(&self.active_transform);
 
                             // Render the sprite
-                            layer.render_order.push(RenderEntity::RenderSprite(sprite_id, sprite_matrix))
+                            layer.render_order.push(RenderEntity::RenderSprite(sprite_id, sprite_matrix));
+                            layer.state.modification_count += 1;
                         })
                     },
 
@@ -1475,7 +1482,7 @@ impl CanvasRenderer {
                         textures.push(render_request);
                     },
 
-                    DynamicTexture(texture_id, _, _, _, _) => {
+                    DynamicTexture(texture_id, layer_handle, _, _, _) => {
                         let texture_id = *texture_id;
 
                         if core.dynamic_texture_viewport.get(&texture_id) != Some(&viewport_size) {
@@ -1486,7 +1493,7 @@ impl CanvasRenderer {
                             core.dynamic_texture_viewport.insert(texture_id, viewport_size);
                         }
 
-                        // Put back on the request list so we re-render this texture
+                        // Put back on the request list so we re-render this texture in the next frame
                         core.layer_textures.insert(texture_id, render_request);
                     }
                 }

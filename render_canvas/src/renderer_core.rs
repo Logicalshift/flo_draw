@@ -436,6 +436,7 @@ impl RenderCore {
             render_order:               vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             state:                      LayerState {
                 is_sprite:          false,
+                modification_count: self.layer_definitions[layer_idx as usize].state.modification_count,
                 fill_color:         FillState::Color(render::Rgba8([0, 0, 0, 255])),
                 winding_rule:       FillRule::NonZero,
                 stroke_settings:    StrokeSettings::new(),
