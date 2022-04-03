@@ -138,8 +138,20 @@ pub fn main() {
 
                 gc.new_path();
                 gc.rect(-1000.0, -1000.0, 2000.0, 2000.0);
+                gc.fill_texture(TextureId(0), 512.0 - 100.0 - 48.0, 384.0 - 100.0 - 48.0, 512.0 + 100.0 - 48.0, 384.0 + 100.0 - 48.0);
+                gc.set_texture_fill_alpha(TextureId(0), 0.2);
+                gc.fill();
+
+                gc.new_path();
+                gc.rect(-1000.0, -1000.0, 2000.0, 2000.0);
                 gc.fill_texture(TextureId(0), 512.0 - 100.0 - 32.0, 384.0 - 100.0 - 32.0, 512.0 + 100.0 - 32.0, 384.0 + 100.0 - 32.0);
-                gc.set_texture_fill_alpha(TextureId(0), 0.5);
+                gc.set_texture_fill_alpha(TextureId(0), 0.4);
+                gc.fill();
+
+                gc.new_path();
+                gc.rect(-1000.0, -1000.0, 2000.0, 2000.0);
+                gc.fill_texture(TextureId(0), 512.0 - 100.0 - 16.0, 384.0 - 100.0 - 16.0, 512.0 + 100.0 - 16.0, 384.0 + 100.0 - 16.0);
+                gc.set_texture_fill_alpha(TextureId(0), 0.6);
                 gc.fill();
 
                 gc.new_path();
