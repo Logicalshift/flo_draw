@@ -994,12 +994,14 @@ impl CanvasRenderer {
                             let mut layer   = Self::create_default_layer();
 
                             // Sprite layers act as if their transform is already set
-                            if core.layer(self.current_layer).state.is_sprite {
-                                layer.state.is_sprite       = true;
+                            let old_layer   = core.layer(self.current_layer);
+                            if old_layer.state.is_sprite {
+                                layer.state.is_sprite   = true;
                             }
 
                             // Retain the modification count from the old layer
-                            layer.state.modification_count = core.layer(self.current_layer).state.modification_count + 1;
+                            layer.state.modification_count  = old_layer.state.modification_count + 1;
+                            layer.state.scale_factor        = old_layer.state.scale_factor;
 
                             // Swap into the layer list to replace the old one
                             mem::swap(core.layer(self.current_layer), &mut layer);
