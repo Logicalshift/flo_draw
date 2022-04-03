@@ -1069,6 +1069,15 @@ impl CanvasRenderer {
                     // Selects a particular sprite for drawing
                     Sprite(sprite_id) => { 
                         core.sync(|core| {
+                            // Update the transform in the current layer, so the scale factor is correct
+                            core.layer(self.current_layer).update_transform(&self.active_transform);
+
+                            // We transfer the scale factor from the current layer to the sprite layer (this is because sprite layers
+                            // otherwise don't get transformation matrices, so we tessellate them as they would appear on the current 
+                            // layer). When switching between sprite layers the scale factor also gets inherited from the last non-sprite
+                            // layer this way.
+                            let previous_layer_scale_factor = core.layer(self.current_layer).state.scale_factor;
+
                             if let Some(sprite_handle) = core.sprites.get(&sprite_id) {
                                 // Use the existing sprite layer if one exists
                                 self.current_layer = *sprite_handle;
@@ -1088,6 +1097,9 @@ impl CanvasRenderer {
                             // Set the sprite matrix to be 'unchanged' from the active transform
                             let layer                   = core.layer(self.current_layer);
                             layer.update_transform(&self.active_transform);
+
+                            // Set the scale factor in the sprite layer
+                            layer.state.scale_factor = previous_layer_scale_factor;
                         })
                     },
 
