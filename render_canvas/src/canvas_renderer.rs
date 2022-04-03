@@ -253,7 +253,7 @@ impl CanvasRenderer {
                 stroke_settings:    StrokeSettings::new(),
                 current_matrix:     canvas::Transform2D::identity(),
                 sprite_matrix:      canvas::Transform2D::identity(),
-                scale_factor:       1.0,
+                scale_factor:       0.002,                              // Canvas height of approximately 768 (1.0 will tessellate at far too fine a detail for these coordinate schemes, so we default to 0.002 as a safety net)
                 blend_mode:         canvas::BlendMode::SourceOver,
                 restore_point:      None
             },
