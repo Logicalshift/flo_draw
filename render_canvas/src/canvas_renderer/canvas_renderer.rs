@@ -47,7 +47,7 @@ pub struct CanvasRenderer {
     background_vertex_buffer: Option<render::VertexBufferId>,
 
     /// The layer that the next drawing instruction will apply to
-    current_layer: LayerHandle,
+    pub (super) current_layer: LayerHandle,
 
     /// The viewport transformation (this makes for rectangular pixels with the bottom of the window at 0, -1 and the top at 0, 1)
     viewport_transform: canvas::Transform2D,
@@ -56,13 +56,13 @@ pub struct CanvasRenderer {
     inverse_viewport_transform: canvas::Transform2D,
 
     /// The currently active transformation
-    active_transform: canvas::Transform2D,
+    pub (super) active_transform: canvas::Transform2D,
 
     /// The transforms pushed to the stack when PushState was called
     transform_stack: Vec<canvas::Transform2D>,
 
     /// The next ID to assign to an entity for tessellation
-    next_entity_id: usize,
+    pub (super) next_entity_id: usize,
 
     /// The width and size of the window overall
     window_size: (f32, f32),
@@ -74,7 +74,7 @@ pub struct CanvasRenderer {
     viewport_origin: (f32, f32),
 
     /// The width and size of the viewport we're rendering to
-    viewport_size: (f32, f32)
+    pub (super) viewport_size: (f32, f32)
 }
 
 impl CanvasRenderer {
@@ -338,110 +338,7 @@ impl CanvasRenderer {
                     Path(BezierCurve((cp1, cp2), p))    => path_state.tes_bezier_curve(cp1, cp2, p),
                     Path(ClosePath)                     => path_state.tes_close_path(),
 
-                    // Fill the current path
-                    Fill => {
-                        // Update the active path if the builder exists
-                        path_state.build();
-
-                        // Publish the fill job to the tessellators
-                        if let Some(path) = &path_state.current_path {
-                            let path                = path.clone();
-                            let layer_id            = self.current_layer;
-                            let entity_id           = self.next_entity_id;
-                            let viewport_height     = self.viewport_size.1;
-                            let active_transform    = &self.active_transform;
-                            let dash_pattern        = &mut dash_pattern;
-                            let fill_state          = &mut fill_state;
-
-                            self.next_entity_id += 1;
-
-                            let job         = core.sync(move |core| {
-                                let layer               = core.layer(layer_id);
-
-                                // Update the transformation matrix
-                                layer.update_transform(active_transform);
-
-                                // Rendering in a blend mode other than source over sets the 'commit before rendering' flag for this layer
-                                if layer.state.blend_mode != canvas::BlendMode::SourceOver {
-                                    layer.commit_before_rendering = true;
-                                }
-
-                                // If the shader state has changed, generate the operations needed to use that shader state
-                                if *fill_state != layer.state.fill_color {
-                                    // Update the active fill state to match that of the layer
-                                    match layer.state.fill_color {
-                                        FillState::None | FillState::Color(_) => { 
-                                            layer.render_order.push(RenderEntity::SetFlatColor);
-                                        }
-
-                                        FillState::Texture(texture_id, matrix, repeat, alpha) => {
-                                            // Finish/get the render texture
-                                            if let Some(render_texture) = core.texture_for_rendering(texture_id) {
-                                                // Increase the usage count for this texture
-                                                core.used_textures.get_mut(&render_texture)
-                                                    .map(|usage_count| *usage_count += 1);
-
-                                                // Add to the layer
-                                                core.layer(layer_id).render_order.push(RenderEntity::SetFillTexture(render_texture, matrix, repeat, alpha));
-                                            } else {
-                                                // Texture is not set up
-                                                core.layer(layer_id).render_order.push(RenderEntity::SetFlatColor);
-                                            }
-                                        }
-
-                                        FillState::LinearGradient(gradient_id, matrix, repeat, alpha) => {
-                                            // Finish/get the texture for the gradient
-                                            if let Some(gradient_texture) = core.gradient_for_rendering(gradient_id) {
-                                                // Increase the usage count for the texture
-                                                core.used_textures.get_mut(&gradient_texture)
-                                                    .map(|usage_count| *usage_count += 1);
-
-                                                // Add to the layer
-                                                core.layer(layer_id).render_order.push(RenderEntity::SetFillGradient(gradient_texture, matrix, repeat, alpha));
-                                            } else {
-                                                // Gradient is not set up
-                                                core.layer(layer_id).render_order.push(RenderEntity::SetFlatColor);
-                                            }
-                                        }
-                                    }
-
-
-                                    *dash_pattern   = vec![];
-                                    *fill_state     = core.layer(layer_id).state.fill_color.clone();
-                                } else if *dash_pattern != vec![] {
-                                    // Ensure there's no dash pattern
-                                    layer.render_order.push(RenderEntity::SetFlatColor);
-                                    *dash_pattern   = vec![];
-                                    *fill_state     = layer.state.fill_color.clone();
-                                }
-
-                                // Create the render entity in the tessellating state
-                                let layer               = core.layer(layer_id);
-                                let scale_factor        = layer.state.tolerance_scale_factor(viewport_height);
-                                let color               = layer.state.fill_color.clone();
-                                let fill_rule           = layer.state.winding_rule;
-                                let entity_index        = layer.render_order.len();
-                                let transform           = *active_transform;
-
-                                // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
-                                let color               = if layer.state.blend_mode == canvas::BlendMode::DestinationOut { color.all_channel_alpha() } else { color };
-
-                                layer.render_order.push(RenderEntity::Tessellating(entity_id));
-                                layer.state.modification_count += 1;
-
-                                let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
-
-                                // Create the canvas job
-                                CanvasJob::Fill { path, fill_rule, color, scale_factor, transform, entity }
-                            });
-
-                            pending_jobs.push(job);
-                            if pending_jobs.len() >= batch_size {
-                                job_publisher.publish(pending_jobs).await;
-                                pending_jobs = vec![];
-                            }
-                        }
-                    }
+                    Fill                                => self.tes_fill(&mut path_state, &mut fill_state, &mut dash_pattern, &mut job_publisher, &mut pending_jobs).await,
 
                     // Draw a line around the current path
                     Stroke => {
