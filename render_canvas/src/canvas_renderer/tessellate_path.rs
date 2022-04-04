@@ -14,7 +14,7 @@ const BATCH_SIZE: usize = 20;
 
 impl CanvasRenderer {
     /// Fill the current path
-    pub (super) async fn tes_fill(&mut self, path_state: &mut PathState, fill_state: &mut FillState, dash_pattern: &mut Vec<f32>, job_publisher: &mut SinglePublisher<Vec<CanvasJob>>, pending_jobs: &mut Vec<CanvasJob>) {
+    pub (super) async fn tes_fill(&mut self, path_state: &mut PathState, job_publisher: &mut SinglePublisher<Vec<CanvasJob>>, pending_jobs: &mut Vec<CanvasJob>) {
         // Update the active path if the builder exists
         path_state.build();
 
@@ -40,7 +40,7 @@ impl CanvasRenderer {
                 }
 
                 // If the shader state has changed, generate the operations needed to use that shader state
-                if *fill_state != layer.state.fill_color {
+                if path_state.fill_state != layer.state.fill_color {
                     // Update the active fill state to match that of the layer
                     match layer.state.fill_color {
                         FillState::None | FillState::Color(_) => { 
@@ -79,13 +79,13 @@ impl CanvasRenderer {
                     }
 
 
-                    *dash_pattern   = vec![];
-                    *fill_state     = core.layer(layer_id).state.fill_color.clone();
-                } else if *dash_pattern != vec![] {
+                    path_state.dash_pattern = vec![];
+                    path_state.fill_state   = core.layer(layer_id).state.fill_color.clone();
+                } else if !path_state.dash_pattern.is_empty() {
                     // Ensure there's no dash pattern
                     layer.render_order.push(RenderEntity::SetFlatColor);
-                    *dash_pattern   = vec![];
-                    *fill_state     = layer.state.fill_color.clone();
+                    path_state.dash_pattern = vec![];
+                    path_state.fill_state   = layer.state.fill_color.clone();
                 }
 
                 // Create the render entity in the tessellating state

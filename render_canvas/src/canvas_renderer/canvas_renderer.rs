@@ -306,12 +306,6 @@ impl CanvasRenderer {
             // The current path that is being built up
             let mut path_state      = PathState::default();
 
-            // The dash pattern that's currently applied
-            let mut dash_pattern    = vec![];
-
-            // The active fill state (shader that will be applied to active fills)
-            let mut fill_state      = FillState::None;
-
             // Create the default layer if one doesn't already exist
             core.sync(|core| {
                 if core.layers.len() == 0 {
@@ -338,7 +332,7 @@ impl CanvasRenderer {
                     Path(BezierCurve((cp1, cp2), p))    => path_state.tes_bezier_curve(cp1, cp2, p),
                     Path(ClosePath)                     => path_state.tes_close_path(),
 
-                    Fill                                => self.tes_fill(&mut path_state, &mut fill_state, &mut dash_pattern, &mut job_publisher, &mut pending_jobs).await,
+                    Fill                                => self.tes_fill(&mut path_state, &mut job_publisher, &mut pending_jobs).await,
 
                     // Draw a line around the current path
                     Stroke => {
@@ -352,8 +346,8 @@ impl CanvasRenderer {
                             let entity_id           = self.next_entity_id;
                             let viewport_height     = self.viewport_size.1;
                             let active_transform    = &self.active_transform;
-                            let dash_pattern        = &mut dash_pattern;
-                            let fill_state          = &mut fill_state;
+                            let dash_pattern        = &mut path_state.dash_pattern;
+                            let fill_state          = &mut path_state.fill_state;
 
                             self.next_entity_id += 1;
 
@@ -704,8 +698,6 @@ impl CanvasRenderer {
                         //todo!("Stop any incoming tessellated data for this layer");
                         //todo!("Mark vertex buffers as freed");
 
-                        fill_state      = FillState::None;
-                        dash_pattern    = vec![];
                         path_state      = PathState::default();
 
                         core.sync(|core| {
@@ -810,8 +802,6 @@ impl CanvasRenderer {
 
                     // Clears the current layer
                     ClearLayer | ClearSprite => {
-                        fill_state      = FillState::None;
-                        dash_pattern    = vec![];
                         path_state      = PathState::default();
 
                         core.sync(|core| {
@@ -840,8 +830,6 @@ impl CanvasRenderer {
                     },
 
                     ClearAllLayers => {
-                        fill_state      = FillState::None;
-                        dash_pattern    = vec![];
                         path_state      = PathState::default();
 
                         core.sync(|core| {

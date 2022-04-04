@@ -1,3 +1,5 @@
+use crate::fill_state::*;
+
 use lyon::path;
 use lyon::math::{point};
 
@@ -8,6 +10,9 @@ pub (super) struct PathState {
     pub (super) current_path:   Option<path::Path>,
     pub (super) in_subpath:     bool,
     pub (super) path_builder:   Option<path::path::Builder>,
+
+    pub (super) fill_state:     FillState,
+    pub (super) dash_pattern:   Vec<f32>,
 }
 
 impl Default for PathState {
@@ -15,7 +20,9 @@ impl Default for PathState {
         PathState {
             current_path:   None,
             in_subpath:     false,
-            path_builder:   None
+            path_builder:   None,
+            fill_state:     FillState::None,
+            dash_pattern:   vec![],
         }
     }
 }
