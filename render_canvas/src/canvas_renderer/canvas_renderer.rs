@@ -15,6 +15,8 @@ use crate::render_texture::*;
 use crate::render_gradient::*;
 use crate::texture_render_request::*;
 
+use super::tessellate_frame::*;
+
 use flo_render as render;
 use flo_render::{RenderTargetType};
 use flo_canvas as canvas;
@@ -41,7 +43,7 @@ pub struct CanvasRenderer {
     workers: Vec<Arc<Desync<CanvasWorker>>>,
 
     /// Layers defined by the canvas
-    core: Arc<Desync<RenderCore>>,
+    pub (super) core: Arc<Desync<RenderCore>>,
 
     /// Vertex buffer used to draw the background quad (if we need to)
     background_vertex_buffer: Option<render::VertexBufferId>,
@@ -333,25 +335,9 @@ impl CanvasRenderer {
                 use math::point;
 
                 match draw {
-                    StartFrame => {
-                        self.core.desync(|core| {
-                            core.frame_starts += 1;
-                        });
-                    }
-
-                    ShowFrame => {
-                        self.core.desync(|core| {
-                            if core.frame_starts > 0 { 
-                                core.frame_starts -= 1;
-                            }
-                        });
-                    }
-
-                    ResetFrame => {
-                        self.core.desync(|core| {
-                            core.frame_starts = 0;
-                        });
-                    }
+                    StartFrame      => self.start_frame(),
+                    ShowFrame       => self.show_frame(),
+                    ResetFrame      => self.reset_frame(),
 
                     // Begins a new path
                     Path(NewPath) => {
