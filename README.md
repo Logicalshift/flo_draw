@@ -102,6 +102,7 @@ See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` su
 * [`cargo run --example gradient`](./draw/examples/gradient.rs) - gradient rendering
 * [`cargo run --example mascot_shadow`](./draw/examples/mascot_shadow.rs) - reprocess the mascot rendering to add some extra shading
 * [`cargo run --example wibble_mascot`](./draw/examples/wibble_mascot.rs) - reprocess the mascot rendering to make it wobble
+* [`cargo run --example wibble_dynamic_mascot`](./draw/examples/wibble_dynamic_mascot.rs) - wobbly mascot rendered multiple times using a dynamic texture
 * [`cargo run --example text_layout`](./draw/examples/text_layout.rs) - some effects that can be acheived with the text layout engine
 * [`cargo run --example show_tessellation`](./draw/examples/show_tessellation.rs) - demonstrates how 2D graphics are tessellated for display using a GPU (and how to perform this manually and intercept the results)
 * [`cargo run --example show_text_tessellation`](./draw/examples/show_text_tessellation.rs) - tessellating text rendered from a font
