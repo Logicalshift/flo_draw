@@ -15,7 +15,7 @@ use crate::render_texture::*;
 use crate::render_gradient::*;
 use crate::texture_render_request::*;
 
-use super::tessellate_frame::*;
+use super::tessellate_build_path::*;
 
 use flo_render as render;
 use flo_render::{RenderTargetType};
@@ -26,8 +26,6 @@ use ::desync::*;
 
 use futures::prelude::*;
 use num_cpus;
-use lyon::path;
-use lyon::math;
 use lyon::tessellation::{FillRule};
 
 use std::collections::{HashMap};
@@ -306,11 +304,7 @@ impl CanvasRenderer {
             let batch_size          = 20;
 
             // The current path that is being built up
-            let mut path_builder    = None;
-            let mut in_subpath      = false;
-
-            // The last path that was generated
-            let mut current_path    = None;
+            let mut path_state      = PathState::default();
 
             // The dash pattern that's currently applied
             let mut dash_pattern    = vec![];
@@ -332,71 +326,25 @@ impl CanvasRenderer {
             for draw in drawing {
                 use canvas::Draw::*;
                 use canvas::PathOp::*;
-                use math::point;
 
                 match draw {
-                    StartFrame      => self.start_frame(),
-                    ShowFrame       => self.show_frame(),
-                    ResetFrame      => self.reset_frame(),
+                    StartFrame                          => self.tes_start_frame(),
+                    ShowFrame                           => self.tes_show_frame(),
+                    ResetFrame                          => self.tes_reset_frame(),
 
-                    // Begins a new path
-                    Path(NewPath) => {
-                        current_path = None;
-                        in_subpath   = false;
-                        path_builder = Some(path::Path::builder());
-                    }
-
-                    // Move to a new point
-                    Path(Move(x, y)) => {
-                        if in_subpath {
-                            path_builder.as_mut().map(|builder| builder.end(false));
-                        }
-                        path_builder.get_or_insert_with(|| path::Path::builder())
-                            .begin(point(x, y));
-                        in_subpath = true;
-                    }
-
-                    // Line to point
-                    Path(Line(x, y)) => {
-                        if in_subpath {
-                            path_builder.get_or_insert_with(|| path::Path::builder())
-                                .line_to(point(x, y));
-                        } else {
-                            path_builder.get_or_insert_with(|| path::Path::builder())
-                                .begin(point(x, y));
-                            in_subpath = true;
-                        }
-                    }
-
-                    // Bezier curve to point
-                    Path(BezierCurve(((cp1x, cp1y), (cp2x, cp2y)), (px, py))) => {
-                        if in_subpath {
-                            path_builder.get_or_insert_with(|| path::Path::builder())
-                                .cubic_bezier_to(point(cp1x, cp1y), point(cp2x, cp2y), point(px, py));
-                        } else {
-                            path_builder.get_or_insert_with(|| path::Path::builder())
-                                .begin(point(px, py));
-                            in_subpath = true;
-                        }
-                    }
-
-                    // Closes the current path
-                    Path(ClosePath) => {
-                        path_builder.get_or_insert_with(|| path::Path::builder())
-                            .end(true);
-                        in_subpath = false;
-                    }
+                    Path(NewPath)                       => path_state.tes_new_path(),
+                    Path(Move(x, y))                    => path_state.tes_move(x, y),
+                    Path(Line(x, y))                    => path_state.tes_line(x, y),
+                    Path(BezierCurve((cp1, cp2), p))    => path_state.tes_bezier_curve(cp1, cp2, p),
+                    Path(ClosePath)                     => path_state.tes_close_path(),
 
                     // Fill the current path
                     Fill => {
                         // Update the active path if the builder exists
-                        if let Some(mut path_builder) = path_builder.take() {
-                            if in_subpath { path_builder.end(false); }
-                            current_path = Some(path_builder.build());
-                        }
+                        path_state.build();
 
                         // Publish the fill job to the tessellators
-                        if let Some(path) = &current_path {
+                        if let Some(path) = &path_state.current_path {
                             let path                = path.clone();
                             let layer_id            = self.current_layer;
                             let entity_id           = self.next_entity_id;
@@ -498,13 +446,10 @@ impl CanvasRenderer {
                     // Draw a line around the current path
                     Stroke => {
                         // Update the active path if the builder exists
-                        if let Some(mut path_builder) = path_builder.take() {
-                            if in_subpath { path_builder.end(false); }
-                            current_path = Some(path_builder.build());
-                        }
+                        path_state.build();
 
                         // Publish the job to the tessellators
-                        if let Some(path) = &current_path {
+                        if let Some(path) = &path_state.current_path {
                             let path                = path.clone();
                             let layer_id            = self.current_layer;
                             let entity_id           = self.next_entity_id;
@@ -748,13 +693,10 @@ impl CanvasRenderer {
                     // Clip to the currently set path
                     Clip => {
                         // Update the active path if the builder exists
-                        if let Some(mut path_builder) = path_builder.take() {
-                            if in_subpath { path_builder.end(false); }
-                            current_path = Some(path_builder.build());
-                        }
+                        path_state.build();
 
                         // Publish the fill job to the tessellators
-                        if let Some(path) = &current_path {
+                        if let Some(path) = &path_state.current_path {
                             let path                = path.clone();
                             let layer_id            = self.current_layer;
                             let entity_id           = self.next_entity_id;
@@ -867,9 +809,7 @@ impl CanvasRenderer {
 
                         fill_state      = FillState::None;
                         dash_pattern    = vec![];
-                        current_path    = None;
-                        path_builder    = None;
-                        in_subpath      = false;
+                        path_state      = PathState::default();
 
                         core.sync(|core| {
                             // Release the textures
@@ -975,9 +915,7 @@ impl CanvasRenderer {
                     ClearLayer | ClearSprite => {
                         fill_state      = FillState::None;
                         dash_pattern    = vec![];
-                        current_path    = None;
-                        path_builder    = None;
-                        in_subpath      = false;
+                        path_state      = PathState::default();
 
                         core.sync(|core| {
                             // Create a new layer
@@ -1007,9 +945,7 @@ impl CanvasRenderer {
                     ClearAllLayers => {
                         fill_state      = FillState::None;
                         dash_pattern    = vec![];
-                        current_path    = None;
-                        path_builder    = None;
-                        in_subpath      = false;
+                        path_state      = PathState::default();
 
                         core.sync(|core| {
                             let handles = core.layers.clone();

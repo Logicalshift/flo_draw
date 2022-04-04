@@ -9,7 +9,7 @@ impl CanvasRenderer {
     ///
     /// The frame state persists across a 'ClearCanvas'
     #[inline]
-    pub (super) fn start_frame(&self) {
+    pub (super) fn tes_start_frame(&self) {
         self.core.desync(|core| {
             core.frame_starts += 1;
         });
@@ -17,7 +17,7 @@ impl CanvasRenderer {
 
     /// Displays any requested queued after 'StartFrame'
     #[inline]
-    pub (super) fn show_frame(&self) {
+    pub (super) fn tes_show_frame(&self) {
         self.core.desync(|core| {
             if core.frame_starts > 0 { 
                 core.frame_starts -= 1;
@@ -27,7 +27,7 @@ impl CanvasRenderer {
 
     /// Resets the frame count back to 0 (for when regenerating the state of a canvas)
     #[inline]
-    pub (super) fn reset_frame(&self) {
+    pub (super) fn tes_reset_frame(&self) {
         self.core.desync(|core| {
             core.frame_starts = 0;
         });
