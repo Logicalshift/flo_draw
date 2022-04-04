@@ -1,12 +1,16 @@
 use super::fill_state::*;
 use super::layer_state::*;
 use super::layer_bounds::*;
+use super::layer_handle::*;
 use super::render_entity::*;
+use super::render_texture::*;
 use super::renderer_layer::*;
+use super::render_gradient::*;
 use super::renderer_worker::*;
 use super::stroke_settings::*;
 use super::render_entity_details::*;
 use super::dynamic_texture_state::*;
+use super::texture_render_request::*;
 
 use flo_canvas as canvas;
 use flo_render as render;
@@ -16,60 +20,6 @@ use lyon::tessellation::{FillRule};
 use std::mem;
 use std::sync::*;
 use std::collections::{HashMap};
-
-///
-/// Handle referencing a renderer layer
-///
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct LayerHandle(pub u64);
-
-///
-/// Used to indicate the state of a texture
-///
-/// A 'loading' texture is one where we're still writing data, where a 'Ready' texture is one where we've
-/// generated the mipmap and are using it somewhere in the core
-///
-#[derive(Clone, Copy)]
-pub enum RenderTexture {
-    Loading(render::TextureId),
-    Ready(render::TextureId)
-}
-
-///
-/// Ued to indicate the state of a gradient: these are loaded as 1-dimensional textures when they are used
-///
-#[derive(Clone)]
-pub enum RenderGradient {
-    Defined(Vec<canvas::GradientOp>),
-    Ready(render::TextureId, Vec<canvas::GradientOp>)
-}
-
-impl Into<render::TextureId> for &RenderTexture {
-    fn into(self) -> render::TextureId {
-        match self {
-            RenderTexture::Loading(texture_id)  => *texture_id,
-            RenderTexture::Ready(texture_id)    => *texture_id
-        }
-    }
-}
-
-///
-/// Textures with pending render instructions
-///
-#[derive(Clone, Copy)]
-pub enum TextureRenderRequest {
-    ///
-    /// The specified sprite bounds should be made to fill the texture
-    ///
-    /// Once this instruction has been completed by a stream, the texture will not be rendered again
-    ///
-    FromSprite(render::TextureId, LayerHandle, canvas::SpriteBounds),
-
-    ///
-    /// A dynamic texture is re-rendered any time the layer or the canvas size changes
-    ///
-    DynamicTexture(render::TextureId, LayerHandle, canvas::SpriteBounds, canvas::CanvasSize, canvas::Transform2D),
-}
 
 ///
 /// Parts of the renderer that are shared with the workers

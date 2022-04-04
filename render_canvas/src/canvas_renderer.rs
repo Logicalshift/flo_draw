@@ -10,6 +10,10 @@ use super::renderer_worker::*;
 use super::renderer_stream::*;
 use super::resource_ids::*;
 use super::dynamic_texture_state::*;
+use super::layer_handle::*;
+use super::render_texture::*;
+use super::render_gradient::*;
+use super::texture_render_request::*;
 
 use flo_render as render;
 use flo_render::{RenderTargetType};

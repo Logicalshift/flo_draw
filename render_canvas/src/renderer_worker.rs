@@ -1,6 +1,6 @@
 use super::fill_state::*;
+use super::layer_handle::*;
 use super::render_entity::*;
-use super::renderer_core::*;
 use super::stroke_settings::*;
 use super::render_entity_details::*;
 

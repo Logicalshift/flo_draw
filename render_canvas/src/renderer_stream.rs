@@ -3,6 +3,8 @@ use super::layer_bounds::*;
 use super::resource_ids::*;
 use super::render_entity::*;
 use super::renderer_core::*;
+use super::layer_handle::*;
+use super::texture_render_request::*;
 
 use flo_canvas as canvas;
 use flo_render as render;
