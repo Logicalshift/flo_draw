@@ -22,7 +22,7 @@ pub fn main() {
         let mascot      = decode_drawing(MASCOT.chars()).collect::<Result<Vec<Draw>, _>>().unwrap();
 
         // Create a window
-        let canvas      = create_drawing_window("Wibbling mascot using a dynamic sprite");
+        let canvas      = create_drawing_window("Wibbling mascot using a dynamic texture");
 
         // Convert the mascot to a set of paths (note we skip the setup steps here so the paths are not affected by the initial transformation matrix)
         let render_mascot   = stream::iter(mascot.into_iter().skip(4));
@@ -65,10 +65,11 @@ pub fn main() {
                 .map(|(attributes, path_set)| (attributes, path_set.iter()
                     .map(move |path: &SimpleBezierPath| distort_path::<_, _, SimpleBezierPath>(path, |point: Coord2, _curve, _t| {
                         let distance    = point.magnitude();
-                        let ripple      = (since_start / (f64::consts::PI * 500_000_000.0)) * 10.0;
+                        let ripple_1    = (since_start / (f64::consts::PI * 500_000_000.0)) * 10.0;
+                        let ripple_2    = (since_start / (f64::consts::PI * 400_000_000.0)) * 10.0;
 
-                        let offset_x    = (distance / (f64::consts::PI*5.0) + ripple).sin() * amplitude * 0.5;
-                        let offset_y    = (distance / (f64::consts::PI*4.0) + ripple).cos() * amplitude * 0.5;
+                        let offset_x    = (distance / (f64::consts::PI*5.0) + ripple_1).sin() * amplitude * 0.5;
+                        let offset_y    = (distance / (f64::consts::PI*4.0) + ripple_2).cos() * amplitude * 0.5;
 
                         Coord2(point.x() + offset_x, point.y() + offset_y)
                     }, 2.0, 1.0).unwrap())
