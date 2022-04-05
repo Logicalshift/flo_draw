@@ -320,60 +320,16 @@ impl CanvasRenderer {
                     DashLength(length)                          => self.tes_dash_length(length),
                     DashOffset(offset)                          => self.tes_dash_offset(offset),
                     FillColor(color)                            => self.tes_fill_color(color),
-                    FillTexture(texture_id, lower, upper)       => self.tes_fill_texture(texture_id, lower, upper),
-                    FillGradient(gradient_id, lower, upper)     => self.tes_fill_gradient(gradient_id, lower, upper),
+                    FillTexture(texture_id, min, max)           => self.tes_fill_texture(texture_id, min, max),
+                    FillGradient(gradient_id, min, max)         => self.tes_fill_gradient(gradient_id, min, max),
                     FillTransform(transform)                    => self.tes_fill_transform(transform),
                     StrokeColor(color)                          => self.tes_stroke_color(color),
                     BlendMode(blend_mode)                       => self.tes_blend_mode(blend_mode),
 
-                    // Reset the transformation to the identity transformation
-                    IdentityTransform => {
-                        self.active_transform = canvas::Transform2D::identity();
-                    }
-
-                    // Sets a transformation such that:
-                    // (0,0) is the center point of the canvas
-                    // (0,height/2) is the top of the canvas
-                    // Pixels are square
-                    CanvasHeight(height) => {
-                        // Window height is set at 2.0 by the viewport transform
-                        let window_height       = 2.0;
-
-                        // Work out the scale to use for this widget
-                        let height              = f32::max(1.0, height);
-                        let scale               = window_height / height;
-                        let scale               = canvas::Transform2D::scale(scale, scale);
-
-                        // (0, 0) is already the center of the window
-                        let transform           = scale;
-
-                        // Set as the active transform
-                        self.active_transform   = transform;
-                    }
-
-                    // Moves a particular region to the center of the canvas (coordinates are minx, miny, maxx, maxy)
-                    CenterRegion((x1, y1), (x2, y2)) => {
-                        // Get the center point in viewport coordinates
-                        let center_x                = 0.0;
-                        let center_y                = 0.0;
-
-                        // Find the current center point
-                        let current_transform       = self.active_transform.clone();
-                        let inverse_transform       = current_transform.invert().unwrap();
-
-                        let (center_x, center_y)    = inverse_transform.transform_point(center_x, center_y);
-
-                        // Translate the center point onto the center of the region
-                        let (new_x, new_y)          = ((x1+x2)/2.0, (y1+y2)/2.0);
-                        let translation             = canvas::Transform2D::translate(-(new_x - center_x), -(new_y - center_y));
-
-                        self.active_transform       = self.active_transform * translation;
-                    }
-
-                    // Multiply a 2D transform into the canvas
-                    MultiplyTransform(transform) => {
-                        self.active_transform = self.active_transform * transform;
-                    }
+                    IdentityTransform                           => self.tes_identity_transform(), 
+                    CanvasHeight(height)                        => self.tes_canvas_height(height),
+                    CenterRegion(min, max)                      => self.tes_center_region(min, max),
+                    MultiplyTransform(transform)                => self.tes_multiply_transform(transform),
 
                     // Unset the clipping path
                     Unclip => {
@@ -384,9 +340,7 @@ impl CanvasRenderer {
                             layer.render_order.push(RenderEntity::DisableClipping);
                         })
                     }
-
-                    // Clip to the currently set path
-                    Clip => self.tes_clip(&mut path_state, &mut job_publisher, &mut pending_jobs).await,
+                    Clip                                        => self.tes_clip(&mut path_state, &mut job_publisher, &mut pending_jobs).await,
 
                     // Stores the content of the clipping path from the current layer in a background buffer
                     Store => {
