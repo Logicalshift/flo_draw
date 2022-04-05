@@ -5,7 +5,6 @@ use crate::renderer_stream::*;
 use crate::resource_ids::*;
 use crate::dynamic_texture_state::*;
 use crate::layer_handle::*;
-use crate::render_gradient::*;
 use crate::texture_render_request::*;
 
 use super::tessellate_build_path::*;
@@ -319,42 +318,13 @@ impl CanvasRenderer {
                     DrawSprite(sprite_id)                       => self.tes_draw_sprite(sprite_id),
 
                     Texture(texture_id, texture_op)             => self.tes_texture(texture_id, texture_op),
+                    Gradient(gradient_id, gradient_op)          => self.tes_gradient(gradient_id, gradient_op),
 
                     // Fonts aren't directly rendered by the canvas renderer (use a helper to convert to textures or outlines)
                     Font(font_id, font_op)                      => self.tes_font(font_id, font_op),
                     DrawText(font_id, text, x, y)               => self.tes_draw_text(font_id, text, x, y),
                     BeginLineLayout(x, y, alignment)            => self.tes_begin_line_layout(x, y, alignment),
                     DrawLaidOutText                             => self.tes_draw_laid_out_text(),
-                    
-                    Gradient(gradient_id, canvas::GradientOp::Create(initial_colour)) => {
-                        // Start the gradient definition from scratch
-                        self.core.sync(move |core| {
-                            core.canvas_gradients.insert(gradient_id, RenderGradient::Defined(vec![canvas::GradientOp::Create(initial_colour)]));
-                        });
-                    }
-
-                    Gradient(gradient_id, canvas::GradientOp::AddStop(pos, stop_colour)) => {
-                        // Continue an existing gradient definition
-                        self.core.sync(move |core| {
-                            use canvas::GradientOp::AddStop;
-
-                            match core.canvas_gradients.get_mut(&gradient_id) {
-                                Some(RenderGradient::Defined(defn)) => {
-                                    // Gradient has not yet been mapped to a texture
-                                    defn.push(AddStop(pos, stop_colour))
-                                }
-
-                                Some(RenderGradient::Ready(_, defn)) => {
-                                    // Gradient has been mapped to a texture (continue defining it as a new texture)
-                                    let mut defn = defn.clone();
-                                    defn.push(AddStop(pos, stop_colour));
-                                    core.canvas_gradients.insert(gradient_id, RenderGradient::Defined(defn));
-                                }
-
-                                None => { }
-                            }
-                        });
-                    }
                 }
             }
 

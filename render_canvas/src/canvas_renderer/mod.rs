@@ -8,6 +8,7 @@ mod tessellate_state;
 mod tessellate_layers;
 mod tessellate_sprites;
 mod tessellate_textures;
+mod tessellate_gradients;
 mod tessellate_font;
 
 pub use self::canvas_renderer::*;
