@@ -6,5 +6,6 @@ mod tessellate_properties;
 mod tessellate_transform;
 mod tessellate_state;
 mod tessellate_layers;
+mod tessellate_sprites;
 
 pub use self::canvas_renderer::*;

@@ -318,68 +318,13 @@ impl CanvasRenderer {
                     LayerBlend(layer_id, blend_mode)            => self.tes_layer_blend(layer_id, blend_mode),
                     LayerAlpha(layer_id, layer_alpha)           => self.tes_layer_alpha(layer_id, layer_alpha),
                     ClearLayer                                  => self.tes_clear_layer(&mut path_state), 
-                    ClearSprite                                 => self.tes_clear_layer(&mut path_state), 
                     ClearAllLayers                              => self.tes_clear_all_layers(&mut path_state),
                     SwapLayers(layer1, layer2)                  => self.tes_swap_layers(layer1, layer2),
 
-                    // Selects a particular sprite for drawing
-                    Sprite(sprite_id) => { 
-                        core.sync(|core| {
-                            // Update the transform in the current layer, so the scale factor is correct
-                            core.layer(self.current_layer).update_transform(&self.active_transform);
-
-                            // We transfer the scale factor from the current layer to the sprite layer (this is because sprite layers
-                            // otherwise don't get transformation matrices, so we tessellate them as they would appear on the current 
-                            // layer). When switching between sprite layers the scale factor also gets inherited from the last non-sprite
-                            // layer this way.
-                            let previous_layer_scale_factor = core.layer(self.current_layer).state.scale_factor;
-
-                            if let Some(sprite_handle) = core.sprites.get(&sprite_id) {
-                                // Use the existing sprite layer if one exists
-                                self.current_layer = *sprite_handle;
-                            } else {
-                                // Create a new sprite layer
-                                let mut sprite_layer            = Self::create_default_layer();
-                                sprite_layer.state.is_sprite    = true;
-
-                                // Associate it with the sprite ID
-                                let sprite_layer                = core.allocate_layer_handle(sprite_layer);
-                                core.sprites.insert(sprite_id, sprite_layer);
-
-                                // Choose the layer as the current sprite layer
-                                self.current_layer              = sprite_layer;
-                            }
-
-                            // Set the sprite matrix to be 'unchanged' from the active transform
-                            let layer                   = core.layer(self.current_layer);
-                            layer.update_transform(&self.active_transform);
-
-                            // Set the scale factor in the sprite layer
-                            layer.state.scale_factor = previous_layer_scale_factor;
-                        })
-                    },
-
-                    // Adds a sprite transform to the current list of transformations to apply
-                    SpriteTransform(transform) => {
-                        core.sync(|core| {
-                            core.layer(self.current_layer).state.apply_sprite_transform(transform)
-                        })
-                    },
-
-                    // Renders a sprite with a set of transformations
-                    DrawSprite(sprite_id) => { 
-                        core.sync(|core| {
-                            let layer           = core.layer(self.current_layer);
-                            let sprite_matrix   = layer.state.sprite_matrix;
-
-                            // Update the transformation matrix
-                            layer.update_transform(&self.active_transform);
-
-                            // Render the sprite
-                            layer.render_order.push(RenderEntity::RenderSprite(sprite_id, sprite_matrix));
-                            layer.state.modification_count += 1;
-                        })
-                    },
+                    ClearSprite                                 => self.tes_clear_layer(&mut path_state), 
+                    Sprite(sprite_id)                           => self.tes_sprite(sprite_id), 
+                    SpriteTransform(transform)                  => self.tes_sprite_transform(transform),
+                    DrawSprite(sprite_id)                       => self.tes_draw_sprite(sprite_id),
 
                     // Creates or replaces a texture
                     Texture(texture_id, canvas::TextureOp::Create(canvas::TextureSize(width, height), canvas::TextureFormat::Rgba)) => {
