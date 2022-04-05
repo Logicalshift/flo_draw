@@ -194,4 +194,53 @@ impl CanvasRenderer {
             }
         }
     }
+
+    ///
+    /// Clip to the currently set path
+    ///
+    pub (super) async fn tes_clip(&mut self, path_state: &mut PathState, job_publisher: &mut SinglePublisher<Vec<CanvasJob>>, pending_jobs: &mut Vec<CanvasJob>) {
+        // Update the active path if the builder exists
+        path_state.build();
+
+        // Publish the fill job to the tessellators
+        if let Some(path) = &path_state.current_path {
+            let path                = path.clone();
+            let layer_id            = self.current_layer;
+            let entity_id           = self.next_entity_id;
+            let viewport_height     = self.viewport_size.1;
+            let active_transform    = &self.active_transform;
+
+            self.next_entity_id += 1;
+
+            let job = self.core.sync(move |core| {
+                let layer = core.layer(layer_id);
+
+                // Update the transformation matrix
+                layer.update_transform(active_transform);
+
+                // Create the render entity in the tessellating state
+                let scale_factor        = layer.state.tolerance_scale_factor(viewport_height);
+                let color               = render::Rgba8([255, 255, 255, 255]);
+                let fill_rule           = layer.state.winding_rule;
+                let entity_index        = layer.render_order.len();
+                let transform           = *active_transform;
+
+                // Update the clipping path and enable clipping
+                layer.render_order.push(RenderEntity::Tessellating(entity_id));
+
+                let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
+
+                // Create the canvas job
+                CanvasJob::Clip { path, fill_rule, color, scale_factor, transform, entity }
+            });
+
+            pending_jobs.push(job);
+            if pending_jobs.len() >= BATCH_SIZE {
+                let mut jobs_to_send = vec![];
+                mem::swap(&mut jobs_to_send, pending_jobs);
+
+                job_publisher.publish(jobs_to_send).await;
+            }
+        }
+    }
 }

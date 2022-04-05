@@ -301,7 +301,6 @@ impl CanvasRenderer {
             let core                = Arc::clone(&self.core);
             let mut job_publisher   = job_publisher;
             let mut pending_jobs    = vec![];
-            let batch_size          = 20;
 
             // The current path that is being built up
             let mut path_state      = PathState::default();
@@ -513,49 +512,7 @@ impl CanvasRenderer {
                     }
 
                     // Clip to the currently set path
-                    Clip => {
-                        // Update the active path if the builder exists
-                        path_state.build();
-
-                        // Publish the fill job to the tessellators
-                        if let Some(path) = &path_state.current_path {
-                            let path                = path.clone();
-                            let layer_id            = self.current_layer;
-                            let entity_id           = self.next_entity_id;
-                            let viewport_height     = self.viewport_size.1;
-                            let active_transform    = &self.active_transform;
-
-                            self.next_entity_id += 1;
-
-                            let job         = core.sync(move |core| {
-                                let layer               = core.layer(layer_id);
-
-                                // Update the transformation matrix
-                                layer.update_transform(active_transform);
-
-                                // Create the render entity in the tessellating state
-                                let scale_factor        = layer.state.tolerance_scale_factor(viewport_height);
-                                let color               = render::Rgba8([255, 255, 255, 255]);
-                                let fill_rule           = layer.state.winding_rule;
-                                let entity_index        = layer.render_order.len();
-                                let transform           = *active_transform;
-
-                                // Update the clipping path and enable clipping
-                                layer.render_order.push(RenderEntity::Tessellating(entity_id));
-
-                                let entity          = LayerEntityRef { layer_id, entity_index, entity_id };
-
-                                // Create the canvas job
-                                CanvasJob::Clip { path, fill_rule, color, scale_factor, transform, entity }
-                            });
-
-                            pending_jobs.push(job);
-                            if pending_jobs.len() >= batch_size {
-                                job_publisher.publish(pending_jobs).await;
-                                pending_jobs = vec![];
-                            }
-                        }
-                    }
+                    Clip => self.tes_clip(&mut path_state, &mut job_publisher, &mut pending_jobs).await,
 
                     // Stores the content of the clipping path from the current layer in a background buffer
                     Store => {
