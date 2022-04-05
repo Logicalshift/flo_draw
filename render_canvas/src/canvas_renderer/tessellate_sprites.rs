@@ -1,4 +1,5 @@
 use super::canvas_renderer::*;
+use super::tessellate_build_path::*;
 
 use crate::render_entity::*;
 
@@ -7,6 +8,15 @@ use flo_canvas as canvas;
 use std::sync::*;
 
 impl CanvasRenderer {
+    ///
+    /// Clears the currently selected sprite
+    ///
+    #[inline]
+    pub (super) fn tes_clear_sprite(&mut self, path_state: &mut PathState) {
+        // Sprites are just layers that we don't render in the standard stack
+        self.tes_clear_layer(path_state);
+    }
+
     ///
     /// Selects a particular sprite for drawing
     ///
