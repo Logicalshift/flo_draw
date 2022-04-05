@@ -65,10 +65,10 @@ pub struct CanvasRenderer {
     pub (super) next_entity_id: usize,
 
     /// The width and size of the window overall
-    window_size: (f32, f32),
+    pub (super) window_size: (f32, f32),
 
     /// The scale factor of the window
-    window_scale: f32,
+    pub (super) window_scale: f32,
 
     /// The origin of the viewport
     viewport_origin: (f32, f32),
@@ -271,29 +271,6 @@ impl CanvasRenderer {
     }
 
     ///
-    /// Changes a colour component to a u8 format
-    ///
-    fn col_to_u8(component: f32) -> u8 {
-        if component > 1.0 {
-            255
-        } else if component < 0.0 {
-            0
-        } else {
-            (component * 255.0) as u8
-        }
-    }
-
-    ///
-    /// Converts a canvas colour to a render colour
-    ///
-    fn render_color(color: canvas::Color) -> render::Rgba8 {
-        let (r, g, b, a)    = color.to_rgba_components();
-        let (r, g, b, a)    = (Self::col_to_u8(r), Self::col_to_u8(g), Self::col_to_u8(b), Self::col_to_u8(a));
-
-        render::Rgba8([r, g, b, a])
-    }
-
-    ///
     /// Tessellates a drawing to the layers in this renderer
     ///
     fn tessellate<'a, DrawIter: 'a+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter, job_publisher: SinglePublisher<Vec<CanvasJob>>) -> impl 'a+Future<Output=()> {
@@ -321,136 +298,33 @@ impl CanvasRenderer {
                 use canvas::PathOp::*;
 
                 match draw {
-                    StartFrame                          => self.tes_start_frame(),
-                    ShowFrame                           => self.tes_show_frame(),
-                    ResetFrame                          => self.tes_reset_frame(),
+                    StartFrame                                  => self.tes_start_frame(),
+                    ShowFrame                                   => self.tes_show_frame(),
+                    ResetFrame                                  => self.tes_reset_frame(),
 
-                    Path(NewPath)                       => path_state.tes_new_path(),
-                    Path(Move(x, y))                    => path_state.tes_move(x, y),
-                    Path(Line(x, y))                    => path_state.tes_line(x, y),
-                    Path(BezierCurve((cp1, cp2), p))    => path_state.tes_bezier_curve(cp1, cp2, p),
-                    Path(ClosePath)                     => path_state.tes_close_path(),
+                    Path(NewPath)                               => path_state.tes_new_path(),
+                    Path(Move(x, y))                            => path_state.tes_move(x, y),
+                    Path(Line(x, y))                            => path_state.tes_line(x, y),
+                    Path(BezierCurve((cp1, cp2), p))            => path_state.tes_bezier_curve(cp1, cp2, p),
+                    Path(ClosePath)                             => path_state.tes_close_path(),
 
-                    Fill                                => self.tes_fill(&mut path_state, &mut job_publisher, &mut pending_jobs).await,
-                    Stroke                              => self.tes_stroke(&mut path_state, &mut job_publisher, &mut pending_jobs).await,
+                    Fill                                        => self.tes_fill(&mut path_state, &mut job_publisher, &mut pending_jobs).await,
+                    Stroke                                      => self.tes_stroke(&mut path_state, &mut job_publisher, &mut pending_jobs).await,
 
-                    // Set the line width
-                    LineWidth(width) => {
-                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.line_width = width);
-                    }
-
-                    // Set the line width in pixels
-                    LineWidthPixels(pixel_width) => {
-                        // TODO: if the window width changes we won't re-tessellate the lines affected by this line width
-                        let canvas::Transform2D(transform)  = &self.active_transform;
-                        let pixel_size                      = 2.0/self.window_size.1 * self.window_scale;
-                        let pixel_width                     = pixel_width * pixel_size;
-                        let scale                           = (transform[0][0]*transform[0][0] + transform[1][0]*transform[1][0]).sqrt();
-                        let width                           = pixel_width / scale;
-
-                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.line_width = width);
-                    }
-
-                    // Line join
-                    LineJoin(join_type) => {
-                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.join = join_type);
-                    }
-
-                    // The cap to use on lines
-                    LineCap(cap_type) => {
-                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.cap = cap_type);
-                    }
-
-                    // The winding rule to use when filling areas
-                    WindingRule(canvas::WindingRule::EvenOdd) => {
-                        core.sync(|core| core.layer(self.current_layer).state.winding_rule = FillRule::EvenOdd);
-                    }
-                    WindingRule(canvas::WindingRule::NonZero) => {
-                        core.sync(|core| core.layer(self.current_layer).state.winding_rule = FillRule::NonZero);
-                    }
-
-                    // Resets the dash pattern to empty (which is a solid line)
-                    NewDashPattern => {
-                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.dash_pattern = vec![]);
-                    }
-
-                    // Adds a dash to the current dash pattern
-                    DashLength(dash_length) => {
-                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.dash_pattern.push(dash_length));
-                    }
-
-                    // Sets the offset for the dash pattern
-                    DashOffset(offset) => {
-                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.dash_offset = offset);
-                    }
-
-                    // Set the fill color
-                    FillColor(color) => {
-                        core.sync(|core| core.layer(self.current_layer).state.fill_color = FillState::Color(Self::render_color(color)));
-                    }
-
-                    // Set a fill texture
-                    FillTexture(texture_id, (x1, y1), (x2, y2)) => {
-                        core.sync(|core| {
-                            let alpha               = core.texture_alpha.get(&texture_id).cloned().unwrap_or(1.0);
-                            let layer               = core.layer(self.current_layer);
-
-                            layer.state.fill_color  = FillState::texture_fill(texture_id, x1, y1, x2, y2, alpha)
-                        });
-                    }
-
-                    // Set a fill gradient
-                    FillGradient(gradient_id, (x1, y1), (x2, y2)) => {
-                        core.sync(|core| {
-                            let layer               = core.layer(self.current_layer);
-
-                            layer.state.fill_color  = FillState::linear_gradient_fill(gradient_id, x1, y1, x2, y2);
-                        });
-                    }
-
-                    // Transforms the existing fill
-                    FillTransform(transform) => {
-                        core.sync(|core| {
-                            let layer               = core.layer(self.current_layer);
-
-                            let transform           = transform.invert().unwrap_or_else(|| canvas::Transform2D::identity());
-                            layer.state.fill_color  = layer.state.fill_color.transform(&transform);
-                        });
-                    }
-
-                    // Set the line color
-                    StrokeColor(color) => {
-                        core.sync(|core| core.layer(self.current_layer).state.stroke_settings.stroke_color = Self::render_color(color));
-                    }
-
-                    // Set how future renderings are blended with one another
-                    BlendMode(blend_mode) => {
-                        core.sync(|core| {
-                            use canvas::BlendMode::*;
-                            core.layer(self.current_layer).state.blend_mode = blend_mode;
-
-                            let blend_mode = match blend_mode {
-                                SourceOver      => render::BlendMode::SourceOver,
-                                DestinationOver => render::BlendMode::DestinationOver,
-                                DestinationOut  => render::BlendMode::DestinationOut,
-
-                                SourceIn        => render::BlendMode::SourceIn,
-                                SourceOut       => render::BlendMode::SourceOut,
-                                DestinationIn   => render::BlendMode::DestinationIn,
-                                SourceAtop      => render::BlendMode::SourceATop,
-                                DestinationAtop => render::BlendMode::DestinationATop,
-
-                                Multiply        => render::BlendMode::Multiply,
-                                Screen          => render::BlendMode::Screen,
-
-                                // TODO: these are not supported yet (they might require explicit shader support)
-                                Darken          => render::BlendMode::SourceOver,
-                                Lighten         => render::BlendMode::SourceOver,
-                            };
-
-                            core.layer(self.current_layer).render_order.push(RenderEntity::SetBlendMode(blend_mode));
-                        });
-                    }
+                    LineWidth(width)                            => self.tes_line_width(width),
+                    LineWidthPixels(pixel_width)                => self.tes_line_width_pixels(pixel_width),
+                    LineJoin(join_type)                         => self.tes_line_join(join_type),
+                    LineCap(cap_type)                           => self.tes_line_cap(cap_type),
+                    WindingRule(winding_rule)                   => self.tes_winding_rule(winding_rule),
+                    NewDashPattern                              => self.tes_new_dash_pattern(),
+                    DashLength(length)                          => self.tes_dash_length(length),
+                    DashOffset(offset)                          => self.tes_dash_offset(offset),
+                    FillColor(color)                            => self.tes_fill_color(color),
+                    FillTexture(texture_id, lower, upper)       => self.tes_fill_texture(texture_id, lower, upper),
+                    FillGradient(gradient_id, lower, upper)     => self.tes_fill_gradient(gradient_id, lower, upper),
+                    FillTransform(transform)                    => self.tes_fill_transform(transform),
+                    StrokeColor(color)                          => self.tes_stroke_color(color),
+                    BlendMode(blend_mode)                       => self.tes_blend_mode(blend_mode),
 
                     // Reset the transformation to the identity transformation
                     IdentityTransform => {
