@@ -1,11 +1,5 @@
 use crate::matrix::*;
-use crate::fill_state::*;
-use crate::layer_state::*;
-use crate::layer_bounds::*;
-use crate::render_entity::*;
-use crate::stroke_settings::*;
 use crate::renderer_core::*;
-use crate::renderer_layer::*;
 use crate::renderer_worker::*;
 use crate::renderer_stream::*;
 use crate::resource_ids::*;
@@ -26,7 +20,6 @@ use ::desync::*;
 
 use futures::prelude::*;
 use num_cpus;
-use lyon::tessellation::{FillRule};
 
 use std::collections::{HashMap};
 use std::ops::{Range};
