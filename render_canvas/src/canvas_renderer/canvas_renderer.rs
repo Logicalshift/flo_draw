@@ -331,15 +331,7 @@ impl CanvasRenderer {
                     CenterRegion(min, max)                      => self.tes_center_region(min, max),
                     MultiplyTransform(transform)                => self.tes_multiply_transform(transform),
 
-                    // Unset the clipping path
-                    Unclip => {
-                        core.sync(|core| {
-                            let layer           = core.layer(self.current_layer);
-
-                            // Render the sprite
-                            layer.render_order.push(RenderEntity::DisableClipping);
-                        })
-                    }
+                    Unclip                                      => self.tes_unclip(),
                     Clip                                        => self.tes_clip(&mut path_state, &mut job_publisher, &mut pending_jobs).await,
 
                     // Stores the content of the clipping path from the current layer in a background buffer

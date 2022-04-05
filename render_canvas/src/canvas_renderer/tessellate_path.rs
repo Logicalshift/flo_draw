@@ -243,4 +243,16 @@ impl CanvasRenderer {
             }
         }
     }
+
+    ///
+    /// Unset the clipping path
+    ///
+    pub fn tes_unclip(&mut self) {
+        self.core.sync(|core| {
+            let layer           = core.layer(self.current_layer);
+
+            // Render the sprite
+            layer.render_order.push(RenderEntity::DisableClipping);
+        })
+    }
 }
