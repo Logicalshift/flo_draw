@@ -320,23 +320,11 @@ impl CanvasRenderer {
 
                     Texture(texture_id, texture_op)             => self.tes_texture(texture_id, texture_op),
 
-                    // Performs a font operation
-                    Font(_, _) => {
-                        // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
-                    },
-
-                    // Draws some text in a particular font
-                    DrawText(_, _, _, _) => {
-                        // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
-                    },
-
-                    BeginLineLayout(_, _, _) => {
-                        // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
-                    },
-
-                    DrawLaidOutText => {
-                        // Fonts aren't directly rendered by the canvas renderer (need a helper to convert to textures or outlines)
-                    },
+                    // Fonts aren't directly rendered by the canvas renderer (use a helper to convert to textures or outlines)
+                    Font(font_id, font_op)                      => self.tes_font(font_id, font_op),
+                    DrawText(font_id, text, x, y)               => self.tes_draw_text(font_id, text, x, y),
+                    BeginLineLayout(x, y, alignment)            => self.tes_begin_line_layout(x, y, alignment),
+                    DrawLaidOutText                             => self.tes_draw_laid_out_text(),
                     
                     Gradient(gradient_id, canvas::GradientOp::Create(initial_colour)) => {
                         // Start the gradient definition from scratch
