@@ -791,6 +791,17 @@ impl<'a> Stream for RenderStream<'a> {
 
                     self.pending.extend(send_vertex_buffers);
                     self.pending.extend(rendering);
+                },
+
+                TextureRenderRequest::CopyTexture(source_texture_id, target_texture_id) => {
+                    // TODO: CreateMipMaps should be a rendering instruction
+                    self.pending.push_back(render::RenderAction::CopyTexture(source_texture_id, target_texture_id));
+                    self.pending.push_back(render::RenderAction::CreateMipMaps(target_texture_id));
+                    self.core.desync(move |core| {
+                        if let Some(source_usage_count) = core.used_textures.get_mut(&source_texture_id) {
+                            *source_usage_count -= 1;
+                        }
+                    });
                 }
             }
         }

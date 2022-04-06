@@ -448,10 +448,11 @@ impl CanvasRenderer {
             let mut textures    = vec![];
             let viewport_size   = self.viewport_size;
 
-            for (_, render_request) in mem::take(&mut core.layer_textures) {
+            for (_, render_request) in mem::take(&mut core.layer_textures).into_iter().rev() {
                 use self::TextureRenderRequest::*;
                 match &render_request {
-                    FromSprite(_, _, _) => {
+                    FromSprite(_, _, _) |
+                    CopyTexture(_, _) => {
                         // These are always rendered
                         textures.push(render_request);
                     },

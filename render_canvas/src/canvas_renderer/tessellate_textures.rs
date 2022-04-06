@@ -260,8 +260,13 @@ impl CanvasRenderer {
             core.used_textures.insert(target_render_texture, 1);
             core.texture_size.insert(target_render_texture, source_texture_size);
 
+            // Increase the usage count of the source texture (it's decreased again once the copy completes)
+            if let Some(source_usage_count) = core.used_textures.get_mut(&source_render_texture.into()) {
+                *source_usage_count += 1;
+            }
+
             // Generate the copy instruction
-            core.setup_actions.push(render::RenderAction::CopyTexture(source_render_texture.into(), target_render_texture));
+            core.layer_textures.push((target_render_texture, TextureRenderRequest::CopyTexture(source_render_texture.into(), target_render_texture)));
         });
     }
 }

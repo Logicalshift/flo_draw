@@ -8,7 +8,7 @@ use flo_canvas as canvas;
 ///
 /// These actions are taken after layer tessellation has completed but before any other rendering instructions (including the setup instructions)
 ///
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum TextureRenderRequest {
     ///
     /// The specified sprite bounds should be made to fill the texture
@@ -21,4 +21,9 @@ pub enum TextureRenderRequest {
     /// A dynamic texture is re-rendered any time the layer or the canvas size changes
     ///
     DynamicTexture(render::TextureId, LayerHandle, canvas::SpriteBounds, canvas::CanvasSize, canvas::Transform2D),
+
+    ///
+    /// Copy the first texture to the second texture, then decrease the usage count of the first texture
+    ///
+    CopyTexture(render::TextureId, render::TextureId),
 }
