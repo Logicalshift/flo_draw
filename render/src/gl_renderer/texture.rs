@@ -271,13 +271,19 @@ impl Texture {
     pub fn make_copy(&self) -> Option<Texture> {
         unsafe {
             // Allocate a new texture for the copy
-            let copy                = Texture::new();
+            let mut copy            = Texture::new();
             let texture_id          = copy.texture.texture_id;
 
             // Fetch information on the existing texture
             let format              = self.texture_format;
             let width               = self.width;
             let height              = self.height;
+
+            // Give the copy the same texture properties as the original
+            copy.texture_format     = format;
+            copy.width              = width;
+            copy.height             = height;
+            copy.premultiplied      = self.premultiplied;
 
             // Attach the existing texture to the read buffer
             let existing_texture    = RenderTarget::from_texture(self)?;
