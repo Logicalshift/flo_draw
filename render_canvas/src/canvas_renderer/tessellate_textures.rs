@@ -24,7 +24,7 @@ impl CanvasRenderer {
             SetFromSprite(sprite_id, bounds)                            => self.tes_texture_set_from_sprite(texture_id, sprite_id, bounds),
             CreateDynamicSprite(sprite_id, sprite_bounds, canvas_size)  => self.tes_texture_create_dynamic_sprite(texture_id, sprite_id, sprite_bounds, canvas_size),
             FillTransparency(alpha)                                     => self.tes_texture_fill_transparency(texture_id, alpha),
-            Copy(target_texture_id)                                     => { todo!() },
+            Copy(target_texture_id)                                     => self.tes_texture_copy(texture_id, target_texture_id),
             Filter(filter)                                              => { todo!() },
         }
     }
@@ -234,6 +234,35 @@ impl CanvasRenderer {
             if layer.state.fill_color.texture_id() == Some(texture_id) {
                 layer.state.fill_color  = layer.state.fill_color.with_texture_alpha(alpha);
             }
+        });
+    }
+
+    ///
+    /// Generates a copy from one texture to another
+    ///
+    fn tes_texture_copy(&mut self, source_texture_id: canvas::TextureId, target_texture_id: canvas::TextureId) {
+        self.core.sync(|core| {
+            // Get the source texture we're copying from
+            let source_render_texture   = if let Some(texture) = core.canvas_textures.get(&source_texture_id) { *texture } else { return; };
+            let source_texture_size     = *core.texture_size.get(&source_render_texture.into()).unwrap();
+
+            // If the target is an existing texture, need to reduce the usage count
+            if let Some(old_render_texture) = core.canvas_textures.get(&target_texture_id) {
+                let old_render_texture = old_render_texture.into();
+                core.used_textures.get_mut(&old_render_texture)
+                    .map(|usage_count| *usage_count -=1);
+            }
+
+            // Allocate a new texture as the target (it's loading for the moment as nothing is actually using it)
+            let target_render_texture   = core.allocate_texture();
+ 
+            core.canvas_textures.insert(target_texture_id, RenderTexture::Loading(target_render_texture));
+            core.used_textures.insert(target_render_texture, 1);
+            core.texture_size.insert(target_render_texture, source_texture_size);
+
+            // Generate the copy instruction
+            core.setup_actions.push(render::RenderAction::CopyTexture(source_render_texture.into(), target_render_texture));
+            core.setup_actions.push(render::RenderAction::CreateMipMaps(target_render_texture));
         });
     }
 }

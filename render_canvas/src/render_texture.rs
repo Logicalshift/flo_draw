@@ -12,6 +12,15 @@ pub enum RenderTexture {
     Ready(render::TextureId)
 }
 
+impl Into<render::TextureId> for RenderTexture {
+    fn into(self) -> render::TextureId {
+        match self {
+            RenderTexture::Loading(texture_id)  => texture_id,
+            RenderTexture::Ready(texture_id)    => texture_id
+        }
+    }
+}
+
 impl Into<render::TextureId> for &RenderTexture {
     fn into(self) -> render::TextureId {
         match self {

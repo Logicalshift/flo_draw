@@ -4,7 +4,9 @@ use flo_render as render;
 use flo_canvas as canvas;
 
 ///
-/// Textures with pending render instructions
+/// Requests to render vertex data to textures
+///
+/// These actions are taken after layer tessellation has completed but before any other rendering instructions (including the setup instructions)
 ///
 #[derive(Clone, Copy)]
 pub enum TextureRenderRequest {
