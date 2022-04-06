@@ -24,6 +24,8 @@ impl CanvasRenderer {
             SetFromSprite(sprite_id, bounds)                            => self.tes_texture_set_from_sprite(texture_id, sprite_id, bounds),
             CreateDynamicSprite(sprite_id, sprite_bounds, canvas_size)  => self.tes_texture_create_dynamic_sprite(texture_id, sprite_id, sprite_bounds, canvas_size),
             FillTransparency(alpha)                                     => self.tes_texture_fill_transparency(texture_id, alpha),
+            Copy(target_texture_id)                                     => { todo!() },
+            Filter(filter)                                              => { todo!() },
         }
     }
 

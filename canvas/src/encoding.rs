@@ -295,9 +295,22 @@ impl<'a> CanvasEncoding<String> for &'a TextureOp {
             SetFromSprite(sprite_id, SpriteBounds(SpritePosition(x, y), SpriteSize(w, h)))  => ('S', *sprite_id, *x, *y, *w, *h).encode_canvas(append_to),
             CreateDynamicSprite(sprite_id, SpriteBounds(SpritePosition(x, y), SpriteSize(sprite_w, sprite_h)), CanvasSize(canvas_w, canvas_h))  => ('s', *sprite_id, (*x, *y, *sprite_w, *sprite_h), (*canvas_w, *canvas_h)).encode_canvas(append_to),
             FillTransparency(alpha)                                                         => ('t', *alpha).encode_canvas(append_to),
+            Copy(target_texture)                                                            => ('C', *target_texture).encode_canvas(append_to),
+            Filter(filter)                                                                  => ('F', filter).encode_canvas(append_to),
         }
     }
 }
+
+impl<'a> CanvasEncoding<String> for &'a TextureFilter {
+    fn encode_canvas(&self, append_to: &mut String) {
+        use self::TextureFilter::*;
+
+        match self {
+            GaussianBlur(radius)    => ('B', *radius).encode_canvas(append_to)
+        }
+    }
+}
+
 
 impl<'a> CanvasEncoding<String> for &'a GradientOp {
     fn encode_canvas(&self, append_to: &mut String) {

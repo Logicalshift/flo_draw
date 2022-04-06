@@ -88,14 +88,6 @@ pub struct LayerId(pub u64);
 pub struct FontId(pub u64);
 
 ///
-/// Identifier for a texture
-///
-/// Textures are bitmaps that can be used as fills
-///
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct TextureId(pub u64);
-
-///
 /// Transformation to apply to a canvas 'sprite'
 ///
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]

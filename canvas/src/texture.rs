@@ -3,6 +3,14 @@ use crate::sprite::*;
 use std::sync::*;
 
 ///
+/// Identifier for a texture
+///
+/// Textures are bitmaps that can be used as fills
+///
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct TextureId(pub u64);
+
+///
 /// The position of a pixel within a texture, in pixels
 ///
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
@@ -30,6 +38,15 @@ pub enum TextureFormat {
 pub struct CanvasSize(pub f32, pub f32);
 
 ///
+/// Bitmap filters that can be applied as a post-processing step to textures
+///
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+pub enum TextureFilter {
+    /// Applies a gaussian blur with a given radius
+    GaussianBlur(f32)
+}
+
+///
 /// Operations that can be performed on a texture
 ///
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
@@ -53,4 +70,12 @@ pub enum TextureOp {
 
     /// Sets the transparency to use when rendering a texture
     FillTransparency(f32),
+
+    /// Copies this texture to another texture
+    Copy(TextureId),
+
+    /// Applies a filter to this texture. For dynamic textures, this filter will be re-applied any time the texture is rendered.
+    /// For dynamic textures, any measurements (eg: gaussian blur radius) are in sprite units, but for static textures, measurements
+    /// are in pixels.
+    Filter(TextureFilter),
 }

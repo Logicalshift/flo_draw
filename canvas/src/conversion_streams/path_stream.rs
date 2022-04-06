@@ -1,6 +1,7 @@
 use crate::draw::*;
 use crate::path::*;
 use crate::color::*;
+use crate::texture::*;
 use crate::gradient::*;
 use crate::transform2d::*;
 
