@@ -54,6 +54,8 @@ pub fn main() {
             gc.clear_layer();
         });
 
+        let mut iter = 0;
+
         loop {
             // Get the current time where we're rendering this
             let since_start             = Instant::now().duration_since(start_time);
@@ -134,6 +136,12 @@ pub fn main() {
                     }
                 }
 
+                if iter == 0 {
+                    gc.draw(Draw::Texture(TextureId(0), TextureOp::Copy(TextureId(1))));
+                }
+
+                iter += 1;
+
                 // Render as a repeating texture (as the texture is dynamic, it's re-rendered to be the correct size and whenever the sprite changes)
                 gc.layer(LayerId(0));
 
@@ -145,8 +153,8 @@ pub fn main() {
 
                 gc.new_path();
                 gc.rect(-1000.0, -1000.0, 2000.0, 2000.0);
-                gc.fill_texture(TextureId(0), 512.0 - 100.0 - 32.0, 384.0 - 100.0 - 32.0, 512.0 + 100.0 - 32.0, 384.0 + 100.0 - 32.0);
-                gc.set_texture_fill_alpha(TextureId(0), 0.4);
+                gc.fill_texture(TextureId(1), 512.0 - 100.0 - 32.0, 384.0 - 100.0 - 32.0, 512.0 + 100.0 - 32.0, 384.0 + 100.0 - 32.0);
+                gc.set_texture_fill_alpha(TextureId(1), 0.4);
                 gc.fill();
 
                 gc.new_path();
