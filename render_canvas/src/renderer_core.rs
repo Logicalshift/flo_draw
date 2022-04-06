@@ -53,7 +53,7 @@ pub struct RenderCore {
     pub dynamic_texture_state: HashMap<render::TextureId, DynamicTextureState>,
 
     /// Textures that are waiting to be rendered from layers
-    pub layer_textures: HashMap<render::TextureId, TextureRenderRequest>,
+    pub layer_textures: Vec<(render::TextureId, TextureRenderRequest)>,
 
     /// Maps canvas textures to render textures
     pub canvas_textures: HashMap<canvas::TextureId, RenderTexture>,
@@ -149,7 +149,7 @@ impl RenderCore {
             self.used_textures.remove(&free_texture_id);
 
             // Prevent any rendering to this texture
-            self.layer_textures.remove(&free_texture_id);
+            self.layer_textures.retain(|(id, _req)| id != &free_texture_id);
 
             // This texture no longer has a size associated with it
             self.texture_size.remove(&free_texture_id);

@@ -174,7 +174,7 @@ impl CanvasRenderer {
                 };
 
                 // Cause the stream to render the sprite to the texture at the start of the next frame
-                core.layer_textures.insert(texture_id, TextureRenderRequest::FromSprite(texture_id, sprite_layer_handle, canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h))));
+                core.layer_textures.push((texture_id, TextureRenderRequest::FromSprite(texture_id, sprite_layer_handle, canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h)))));
             }
         });
     }
@@ -218,7 +218,7 @@ impl CanvasRenderer {
                 core.dynamic_texture_state.remove(&render_texture_id);
 
                 // Specify as a dynamic texture
-                core.layer_textures.insert(render_texture_id, TextureRenderRequest::DynamicTexture(render_texture_id, sprite_layer_handle, sprite_bounds, canvas_size, transform));
+                core.layer_textures.push((render_texture_id, TextureRenderRequest::DynamicTexture(render_texture_id, sprite_layer_handle, sprite_bounds, canvas_size, transform)));
             }
         });
     }
@@ -262,7 +262,6 @@ impl CanvasRenderer {
 
             // Generate the copy instruction
             core.setup_actions.push(render::RenderAction::CopyTexture(source_render_texture.into(), target_render_texture));
-            core.setup_actions.push(render::RenderAction::CreateMipMaps(target_render_texture));
         });
     }
 }

@@ -86,7 +86,7 @@ impl CanvasRenderer {
             render_target_for_texture:  HashMap::new(),
             dynamic_texture_state:      HashMap::new(),
             texture_size:               HashMap::new(),
-            layer_textures:             HashMap::new(),
+            layer_textures:             vec![],
             canvas_textures:            HashMap::new(),
             canvas_gradients:           HashMap::new(),
             texture_alpha:              HashMap::new(),
@@ -469,7 +469,7 @@ impl CanvasRenderer {
                         }
 
                         // Put back on the request list so we re-render this texture in the next frame
-                        core.layer_textures.insert(texture_id, render_request);
+                        core.layer_textures.push((texture_id, render_request));
                     }
                 }
             }
