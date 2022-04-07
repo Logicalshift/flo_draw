@@ -160,7 +160,7 @@ impl CanvasRenderer {
                         // Stop using the initial texture, and create a new copy that's 'Loading'
                         // core.used_textures.get_mut(&render_texture).map(|usage_count| *usage_count -= 1);    // Usage count is decreased after the copy is made
                         core.used_textures.insert(new_texture_id, 1);
-                        core.canvas_textures.insert(texture_id, RenderTexture::Ready(new_texture_id));
+                        core.canvas_textures.insert(texture_id, RenderTexture::Loading(new_texture_id));
 
                         // Generate a copy
                         core.texture_size.insert(new_texture_id, core.texture_size.get(&render_texture).unwrap().clone());
@@ -172,7 +172,7 @@ impl CanvasRenderer {
 
                     RenderTexture::Loading(render_texture)  => {
                         // Use the existing texture
-                        core.canvas_textures.insert(texture_id, RenderTexture::Ready(render_texture));
+                        core.canvas_textures.insert(texture_id, RenderTexture::Loading(render_texture));
                         render_texture
                     }
                 };

@@ -796,7 +796,6 @@ impl<'a> Stream for RenderStream<'a> {
 
                     self.pending.extend(send_vertex_buffers);
                     self.pending.extend(rendering);
-                    self.pending.push_back(render::RenderAction::CreateMipMaps(texture_id));
                 }
 
                 DynamicTexture(texture_id, layer_handle, bounds, size, transform) => {
