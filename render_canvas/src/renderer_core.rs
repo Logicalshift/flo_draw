@@ -151,6 +151,9 @@ impl RenderCore {
             // Prevent any rendering to this texture
             self.layer_textures.retain(|(id, _req)| id != &free_texture_id);
 
+            // No longer has any 'dynamic' texture state
+            self.dynamic_texture_state.remove(&free_texture_id);
+
             // This texture no longer has a size associated with it
             self.texture_size.remove(&free_texture_id);
 
