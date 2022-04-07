@@ -755,7 +755,7 @@ impl<'a> RenderStream<'a> {
                 render_actions.extend(rendering);
             }
 
-            DynamicTexture(texture_id, layer_handle, bounds, size, transform) => {
+            DynamicTexture(texture_id, layer_handle, bounds, size, transform, post_rendering) => {
                 // Ensure that the vertex buffers are available for this sprite
                 let send_vertex_buffers     = self.core.sync(|core| core.send_vertex_buffers(layer_handle));
 
@@ -767,6 +767,7 @@ impl<'a> RenderStream<'a> {
 
                 // For dynamic textures we always create the mipmaps (as the original request will be lost after the first frame)
                 render_actions.push(render::RenderAction::CreateMipMaps(texture_id));
+                render_actions.extend(post_rendering.iter().flat_map(|request| self.texture_render_request(request.clone())));
             },
 
             CopyTexture(source_texture_id, target_texture_id) => {

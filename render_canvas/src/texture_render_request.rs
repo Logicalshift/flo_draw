@@ -37,7 +37,10 @@ pub enum TextureRenderRequest {
     ///
     /// A dynamic texture is re-rendered any time the layer or the canvas size changes
     ///
-    DynamicTexture(render::TextureId, LayerHandle, canvas::SpriteBounds, canvas::CanvasSize, canvas::Transform2D),
+    /// The list of requests are post-processing instructions made after the texture has been regenerated. These are automatically populated for
+    /// requests like `CreateMipMaps`.
+    ///
+    DynamicTexture(render::TextureId, LayerHandle, canvas::SpriteBounds, canvas::CanvasSize, canvas::Transform2D, Arc<Vec<TextureRenderRequest>>),
 
     ///
     /// Copy the first texture to the second texture, then decrease the usage count of the first texture

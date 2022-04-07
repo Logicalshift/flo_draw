@@ -460,7 +460,7 @@ impl CanvasRenderer {
                         textures.push(render_request);
                     },
 
-                    DynamicTexture(texture_id, layer_handle, _, _, _) => {
+                    DynamicTexture(texture_id, layer_handle, _, _, _, _) => {
                         let texture_id      = *texture_id;
                         let current_state   = DynamicTextureState { viewport: viewport_size, sprite_modification_count: core.layer(*layer_handle).state.modification_count };
 

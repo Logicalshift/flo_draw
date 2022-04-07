@@ -222,7 +222,7 @@ impl CanvasRenderer {
                 core.dynamic_texture_state.remove(&render_texture_id);
 
                 // Specify as a dynamic texture
-                core.layer_textures.push((render_texture_id, TextureRenderRequest::DynamicTexture(render_texture_id, sprite_layer_handle, sprite_bounds, canvas_size, transform)));
+                core.layer_textures.push((render_texture_id, TextureRenderRequest::DynamicTexture(render_texture_id, sprite_layer_handle, sprite_bounds, canvas_size, transform, Arc::new(vec![]))));
             }
         });
     }
