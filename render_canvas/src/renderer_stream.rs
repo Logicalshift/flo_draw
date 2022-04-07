@@ -592,7 +592,7 @@ impl<'a> RenderStream<'a> {
     ///
     /// This will (re)create the texture as a render target
     ///
-    fn render_layer_to_texture(&self, texture_id: render::TextureId, layer_handle: LayerHandle, region: canvas::SpriteBounds, create_mipmap: bool) -> Vec<render::RenderAction> {
+    fn render_layer_to_texture(&self, texture_id: render::TextureId, layer_handle: LayerHandle, region: canvas::SpriteBounds) -> Vec<render::RenderAction> {
         self.core.sync(move |core| {
             // Fetch the current transformation matrix of the sprite layer
             let sprite_transform    = core.layer(layer_handle).state.current_matrix;
@@ -650,10 +650,6 @@ impl<'a> RenderStream<'a> {
                 FreeTexture(OFFSCREEN_TEXTURE),
             ]);
 
-            if create_mipmap {
-                render_to_texture.push(CreateMipMaps(texture_id));
-            }
-
             render_to_texture
         })
     }
@@ -686,7 +682,7 @@ impl<'a> RenderStream<'a> {
         self.core.sync(|core| core.texture_size.insert(texture_id, size));
 
         // Render to the texture
-        self.render_layer_to_texture(texture_id, layer_handle, sprite_region, true)
+        self.render_layer_to_texture(texture_id, layer_handle, sprite_region)
     }
 
     ///
@@ -788,7 +784,7 @@ impl<'a> Stream for RenderStream<'a> {
                     let send_vertex_buffers     = self.core.sync(|core| core.send_vertex_buffers(layer_handle));
 
                     // Generate the instructions for rendering the contents of the sprite to a new texture
-                    let rendering               = self.render_layer_to_texture(texture_id, layer_handle, bounds, true);
+                    let rendering               = self.render_layer_to_texture(texture_id, layer_handle, bounds);
 
                     self.pending.extend(send_vertex_buffers);
                     self.pending.extend(rendering);
@@ -803,6 +799,9 @@ impl<'a> Stream for RenderStream<'a> {
 
                     self.pending.extend(send_vertex_buffers);
                     self.pending.extend(rendering);
+
+                    // For dynamic textures we always create the mipmaps (as the original request will be lost after the first frame)
+                    self.pending.push_back(render::RenderAction::CreateMipMaps(texture_id));
                 },
 
                 CopyTexture(source_texture_id, target_texture_id) => {
