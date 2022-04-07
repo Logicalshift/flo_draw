@@ -776,27 +776,37 @@ impl<'a> Stream for RenderStream<'a> {
 
         // After the vertex buffers are generated, we can render any sprites to textures that are pending
         if let Some(setup_texture) = self.setup_textures.pop() {
+            use TextureRenderRequest::*;
+
             match setup_texture {
-                TextureRenderRequest::FromSprite(texture_id, layer_handle, bounds) => {
+                CreateMipMaps(texture_id) => {
+                    self.pending.push_back(render::RenderAction::CreateMipMaps(texture_id));
+                }
+
+                FromSprite(texture_id, layer_handle, bounds) => {
+                    // Ensure that the vertex buffers are available for this sprite
                     let send_vertex_buffers     = self.core.sync(|core| core.send_vertex_buffers(layer_handle));
+
+                    // Generate the instructions for rendering the contents of the sprite to a new texture
                     let rendering               = self.render_layer_to_texture(texture_id, layer_handle, bounds, true);
 
                     self.pending.extend(send_vertex_buffers);
                     self.pending.extend(rendering);
                 }
 
-                TextureRenderRequest::DynamicTexture(texture_id, layer_handle, bounds, size, transform) => {
+                DynamicTexture(texture_id, layer_handle, bounds, size, transform) => {
+                    // Ensure that the vertex buffers are available for this sprite
                     let send_vertex_buffers     = self.core.sync(|core| core.send_vertex_buffers(layer_handle));
+
+                    // Dynamic textures differ from normal sprite rendering in that the size of the texture depends on the resolution of the canvas (at the point the dynamic request was made)
                     let rendering               = self.render_dynamic_texture(texture_id, layer_handle, bounds, size, transform);
 
                     self.pending.extend(send_vertex_buffers);
                     self.pending.extend(rendering);
                 },
 
-                TextureRenderRequest::CopyTexture(source_texture_id, target_texture_id) => {
-                    // TODO: CreateMipMaps should be a rendering instruction
+                CopyTexture(source_texture_id, target_texture_id) => {
                     self.pending.push_back(render::RenderAction::CopyTexture(source_texture_id, target_texture_id));
-                    self.pending.push_back(render::RenderAction::CreateMipMaps(target_texture_id));
                     self.core.desync(move |core| {
                         if let Some(source_usage_count) = core.used_textures.get_mut(&source_texture_id) {
                             *source_usage_count -= 1;

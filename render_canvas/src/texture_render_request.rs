@@ -11,6 +11,11 @@ use flo_canvas as canvas;
 #[derive(Clone, Copy, Debug)]
 pub enum TextureRenderRequest {
     ///
+    /// Apply mipmaps to the specified texture
+    ///
+    CreateMipMaps(render::TextureId),
+
+    ///
     /// The specified sprite bounds should be made to fill the texture
     ///
     /// Once this instruction has been completed by a stream, the texture will not be rendered again

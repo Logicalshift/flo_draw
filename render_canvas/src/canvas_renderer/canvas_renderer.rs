@@ -451,8 +451,9 @@ impl CanvasRenderer {
             for (_, render_request) in mem::take(&mut core.layer_textures).into_iter().rev() {
                 use self::TextureRenderRequest::*;
                 match &render_request {
+                    CreateMipMaps(_)    |
                     FromSprite(_, _, _) |
-                    CopyTexture(_, _) => {
+                    CopyTexture(_, _)   => {
                         // These are always rendered
                         textures.push(render_request);
                     },

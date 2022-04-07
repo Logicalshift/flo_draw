@@ -317,7 +317,7 @@ impl RenderCore {
                 let render_texture = *render_texture;
 
                 // Finish the texture
-                self.setup_actions.push(render::RenderAction::CreateMipMaps(render_texture));
+                self.layer_textures.push((render_texture, TextureRenderRequest::CreateMipMaps(render_texture)));
 
                 // Mark as finished
                 self.canvas_textures.get_mut(&texture_id)
