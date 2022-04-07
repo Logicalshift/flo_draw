@@ -775,6 +775,14 @@ impl<'a> Stream for RenderStream<'a> {
             use TextureRenderRequest::*;
 
             match setup_texture {
+                CreateBlankTexture(texture_id, canvas::TextureSize(w, h), canvas::TextureFormat::Rgba) => {
+                    self.pending.push_back(render::RenderAction::CreateTextureBgra(texture_id, render::Size2D(w as _, h as _)));
+                }
+
+                SetBytes(texture_id, canvas::TexturePosition(x, y), canvas::TextureSize(w, h), bytes) => {
+                    self.pending.push_back(render::RenderAction::WriteTextureData(texture_id, render::Position2D(x as _, y as _), render::Position2D((x+w) as _, (y+h) as _), bytes));
+                }
+
                 CreateMipMaps(texture_id) => {
                     self.pending.push_back(render::RenderAction::CreateMipMaps(texture_id));
                 }
@@ -788,6 +796,7 @@ impl<'a> Stream for RenderStream<'a> {
 
                     self.pending.extend(send_vertex_buffers);
                     self.pending.extend(rendering);
+                    self.pending.push_back(render::RenderAction::CreateMipMaps(texture_id));
                 }
 
                 DynamicTexture(texture_id, layer_handle, bounds, size, transform) => {

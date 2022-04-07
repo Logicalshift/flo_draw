@@ -451,9 +451,11 @@ impl CanvasRenderer {
             for (_, render_request) in mem::take(&mut core.layer_textures).into_iter().rev() {
                 use self::TextureRenderRequest::*;
                 match &render_request {
-                    CreateMipMaps(_)    |
-                    FromSprite(_, _, _) |
-                    CopyTexture(_, _)   => {
+                    CreateBlankTexture(_, _, _) |
+                    SetBytes(_, _, _, _)        |
+                    CreateMipMaps(_)            |
+                    FromSprite(_, _, _)         |
+                    CopyTexture(_, _)           => {
                         // These are always rendered
                         textures.push(render_request);
                     },
@@ -464,7 +466,7 @@ impl CanvasRenderer {
 
                         if core.dynamic_texture_state.get(&texture_id) != Some(&current_state) {
                             // These are rendered if the viewport or sprite has changed since the last time
-                            textures.push(render_request);
+                            textures.push(render_request.clone());
 
                             // Update the viewport data so this isn't re-rendered until it changes
                             core.dynamic_texture_state.insert(texture_id, current_state);

@@ -3,13 +3,25 @@ use super::layer_handle::*;
 use flo_render as render;
 use flo_canvas as canvas;
 
+use std::sync::*;
+
 ///
 /// Requests to render vertex data to textures
 ///
 /// These actions are taken after layer tessellation has completed but before any other rendering instructions (including the setup instructions)
 ///
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub enum TextureRenderRequest {
+    ///
+    /// Creates an empty texture of a particular size
+    ///
+    CreateBlankTexture(render::TextureId, canvas::TextureSize, canvas::TextureFormat),
+
+    ///
+    /// Changes the bytes representing a rectangular region of this texture
+    ///
+    SetBytes(render::TextureId, canvas::TexturePosition, canvas::TextureSize, Arc<Vec<u8>>),
+
     ///
     /// Apply mipmaps to the specified texture
     ///
