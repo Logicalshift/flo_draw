@@ -445,17 +445,28 @@ impl CanvasRenderer {
 
         // We need to process the instructions waiting to set up textures
         let setup_textures = self.core.sync(|core| {
-            let mut textures    = vec![];
-            let viewport_size   = self.viewport_size;
+            let mut textures                        = vec![];
+            let mut actions_for_dynamic_textures    = HashMap::<render::TextureId, Vec<TextureRenderRequest>>::new();
+            let viewport_size                       = self.viewport_size;
 
+            // After performing the pending render instructions, the textures remain loaded until replaced
             for (_, render_request) in mem::take(&mut core.layer_textures).into_iter().rev() {
                 use self::TextureRenderRequest::*;
                 match &render_request {
                     CreateBlankTexture(_, _, _) |
-                    SetBytes(_, _, _, _)        |
-                    CreateMipMaps(_)            |
                     FromSprite(_, _, _)         |
                     CopyTexture(_, _)           => {
+                        // These are always rendered
+                        textures.push(render_request);
+                    },
+
+                    SetBytes(texture_id, _, _, _)   |
+                    CreateMipMaps(texture_id)       => {
+                        // These also attach to the actions if the target texture is a dynamic texture
+                        if let Some(dynamic_actions) = actions_for_dynamic_textures.get_mut(texture_id) {
+                            dynamic_actions.push(render_request.clone());
+                        }
+
                         // These are always rendered
                         textures.push(render_request);
                     },
@@ -463,6 +474,9 @@ impl CanvasRenderer {
                     DynamicTexture(texture_id, layer_handle, _, _, _, _) => {
                         let texture_id      = *texture_id;
                         let current_state   = DynamicTextureState { viewport: viewport_size, sprite_modification_count: core.layer(*layer_handle).state.modification_count };
+
+                        // Clear and start collecting any processing actions for this texture
+                        actions_for_dynamic_textures.insert(texture_id, vec![]);
 
                         if core.dynamic_texture_state.get(&texture_id) != Some(&current_state) {
                             // These are rendered if the viewport or sprite has changed since the last time
@@ -475,6 +489,21 @@ impl CanvasRenderer {
                         // Put back on the request list so we re-render this texture in the next frame
                         core.layer_textures.push((texture_id, render_request));
                     }
+                }
+            }
+
+            // The layer_textures now contains the actions that need to be preserved for the next frame
+            // This is mainly dynamic texture rendering, which needs to be amended with the post-processing actions that were applied
+            for (_, render_request) in core.layer_textures.iter_mut() {
+                use self::TextureRenderRequest::*;
+                match render_request {
+                    DynamicTexture(texture_id, _, _, _, _, post_processing) => { 
+                        if let Some(actions) = actions_for_dynamic_textures.remove(texture_id) {
+                            Arc::make_mut(post_processing).extend(actions);
+                        }
+                    }
+
+                    _ => { /* Ignore */}
                 }
             }
 
