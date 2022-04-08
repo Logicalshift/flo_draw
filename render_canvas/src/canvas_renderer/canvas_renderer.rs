@@ -450,7 +450,7 @@ impl CanvasRenderer {
             let viewport_size                       = self.viewport_size;
 
             // After performing the pending render instructions, the textures remain loaded until replaced
-            for (_, render_request) in mem::take(&mut core.layer_textures).into_iter().rev() {
+            for (_, render_request) in mem::take(&mut core.layer_textures).into_iter() {
                 use self::TextureRenderRequest::*;
                 match &render_request {
                     CreateBlankTexture(_, _, _) |
@@ -506,6 +506,9 @@ impl CanvasRenderer {
                     _ => { /* Ignore */}
                 }
             }
+
+            // The list of texture actions is treated as a stack by the renderer stream, so reverse it
+            textures.reverse();
 
             textures
         });
