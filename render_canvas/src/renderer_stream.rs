@@ -765,8 +765,7 @@ impl<'a> RenderStream<'a> {
                 render_actions.extend(send_vertex_buffers);
                 render_actions.extend(rendering);
 
-                // For dynamic textures we always create the mipmaps (as the original request will be lost after the first frame)
-                render_actions.push(render::RenderAction::CreateMipMaps(*texture_id));
+                // Dynamic textures can have a set of post-processing actions applied to them (eg, filters or CreateMipMaps)
                 render_actions.extend(post_rendering.iter().flat_map(|request| self.texture_render_request(request)));
             },
 
