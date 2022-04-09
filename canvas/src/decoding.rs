@@ -33,6 +33,13 @@ impl<T> PartialResult<T> {
         PartialResult::MatchMore(String::new())
     }
 
+    pub fn match_more(self) -> Result<String, DecoderError> {
+        match self {
+            PartialResult::MatchMore(data)  => Ok(data),
+            PartialResult::FullMatch(_)     => Err(DecoderError::UnexpectedlyComplete)
+        }
+    }
+
     pub fn map<TFn: FnOnce(T) -> S, S>(self, map_fn: TFn) -> PartialResult<S> {
         match self {
             PartialResult::FullMatch(result)    => PartialResult::FullMatch(map_fn(result)),
@@ -413,9 +420,12 @@ enum DecoderState {
     TextureOp(DecodeTextureId),                                         // 'B<id>' (id, op)
     TextureOpCreate(TextureId, String),                                 // 'B<id>N' (w, h, format)
     TextureOpSetBytes(TextureId, String, DecodeBytes),                  // 'B<id>D' (x, y, w, h, bytes)
-    TextureOpSetFromSprite(TextureId, DecodeSpriteId, String),          // 'B<id>S (sprite, x, y, w, h)
-    TextureOpCreateDynamicSprite(TextureId, DecodeSpriteId, String),    // 'B<id>s (sprite, x, y, w1, h1, w2, h2)
+    TextureOpSetFromSprite(TextureId, DecodeSpriteId, String),          // 'B<id>S' (sprite, x, y, w, h)
+    TextureOpCreateDynamicSprite(TextureId, DecodeSpriteId, String),    // 'B<id>s' (sprite, x, y, w1, h1, w2, h2)
     TextureOpFillTransparency(TextureId, String),                       // 'B<id>t' (alpha)
+    TextureOpCopy(TextureId, DecodeTextureId),                          // 'B<id>C' (texture)
+    TextureOpFilter(TextureId),                                         // 'B<id>F' (filter)
+    TextureOpFilterGaussianBlur(TextureId, String),                     // 'B<id>FB' (radius)
 
     GradientOp(DecodeGradientId),                                       // 'G' (id, op)
     GradientOpNew(GradientId, String),                                  // 'G<id>N' (r, g, b, a)
@@ -443,7 +453,10 @@ pub enum DecoderError {
     IsInErrorState,
 
     /// The decoder was asked for a result when it was not ready (usually indicates an internal bug)
-    NotReady
+    NotReady,
+
+    /// The decoder was expecting a state as a partial match but it was completed
+    UnexpectedlyComplete,
 }
 
 ///
@@ -544,6 +557,9 @@ impl CanvasDecoder {
             TextureOpSetFromSprite(texture_id, sprite, param)       => Self::decode_texture_set_from_sprite(next_chr, texture_id, sprite, param)?,
             TextureOpCreateDynamicSprite(texture_id, sprite, param) => Self::decode_texture_create_dynamic_sprite(next_chr, texture_id, sprite, param)?,
             TextureOpFillTransparency(texture_id, param)            => Self::decode_texture_fill_transparency(next_chr, texture_id, param)?,
+            TextureOpCopy(texture_id, param)                        => Self::decode_texture_copy(next_chr, texture_id, param)?,
+            TextureOpFilter(texture_id)                             => Self::decode_texture_filter(next_chr, texture_id)?,
+            TextureOpFilterGaussianBlur(texture_id, param)          => Self::decode_texture_filter_gaussian_blur(next_chr, texture_id, param)?,
 
             GradientOp(gradient_id)                                 => Self::decode_gradient_op(next_chr, gradient_id)?,     
             GradientOpNew(gradient_id, param)                       => Self::decode_gradient_new(next_chr, gradient_id, param)?,
@@ -1472,6 +1488,8 @@ impl CanvasDecoder {
             'S' => Ok((DecoderState::TextureOpSetFromSprite(texture_id, DecodeSpriteId::new(), String::new()), None)),
             's' => Ok((DecoderState::TextureOpCreateDynamicSprite(texture_id, DecodeSpriteId::new(), String::new()), None)),
             't' => Ok((DecoderState::TextureOpFillTransparency(texture_id, String::new()), None)),
+            'C' => Ok((DecoderState::TextureOpCopy(texture_id, DecodeTextureId::new()), None)),
+            'F' => Ok((DecoderState::TextureOpFilter(texture_id), None)),
 
             _   => Err(DecoderError::InvalidCharacter(chr))
         }
@@ -1615,6 +1633,48 @@ impl CanvasDecoder {
         let alpha       = Self::decode_f32(&mut chars)?;
 
         Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha)))))
+    }
+
+    ///
+    /// Decodes a texture copy
+    ///
+    fn decode_texture_copy(chr: char, texture_id: TextureId, param: DecodeTextureId) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Decode the target texture ID
+        let target_texture_id = match Self::decode_texture_id(chr, param.match_more()?)? {
+            PartialResult::MatchMore(param)             => return Ok((DecoderState::TextureOpCopy(texture_id, PartialResult::MatchMore(param)), None)),
+            PartialResult::FullMatch(target_texture_id) => target_texture_id
+        };
+
+        Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::Copy(target_texture_id)))))
+    }
+
+    ///
+    /// Decodes a texture filter op
+    ///
+    fn decode_texture_filter(chr: char, texture_id: TextureId) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match chr {
+            'B' => Ok((DecoderState::TextureOpFilterGaussianBlur(texture_id, String::new()), None)),
+            _   => Err(DecoderError::InvalidCharacter(chr))
+        }
+    }
+
+    ///
+    /// Decodes a texture gaussian blur filter op
+    ///
+    fn decode_texture_filter_gaussian_blur(chr: char, texture_id: TextureId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Add the character to the end of the parameter
+        let mut param = param;
+        param.push(chr);
+
+        // Parameter is one floating point value
+        if param.len() < 6 {
+            Ok((DecoderState::TextureOpFilterGaussianBlur(texture_id, param), None))
+        } else {
+            let mut param   = param.chars();
+            let radius      = Self::decode_f32(&mut param)?;
+
+            Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::Filter(TextureFilter::GaussianBlur(radius))))))
+        }
     }
 
     ///
@@ -2219,6 +2279,16 @@ mod test {
     }
 
     #[test]
+    fn decode_texture_copy() {
+        check_round_trip_single(Draw::Texture(TextureId(46), TextureOp::Copy(TextureId(47))));
+    }
+
+    #[test]
+    fn decode_texture_filter_gaussian_blur() {
+        check_round_trip_single(Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::GaussianBlur(23.0))));
+    }
+
+    #[test]
     fn decode_all_iter() {
         check_round_trip(vec![
             Draw::Path(PathOp::NewPath),
@@ -2264,7 +2334,14 @@ mod test {
             Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))),
             Draw::DrawSprite(SpriteId(1300)),
 
+            Draw::Texture(TextureId(42), TextureOp::Create(TextureSize(1024, 768), TextureFormat::Rgba)),
+            Draw::Texture(TextureId(43), TextureOp::Free),
+            Draw::Texture(TextureId(44), TextureOp::SetBytes(TexturePosition(2, 3), TextureSize(4, 5), Arc::new(vec![1,2,3,4,5]))),
             Draw::Texture(TextureId(44), TextureOp::SetFromSprite(SpriteId(42), SpriteBounds(SpritePosition(20.0, 30.0), SpriteSize(40.0, 50.0)))),
+            Draw::Texture(TextureId(44), TextureOp::CreateDynamicSprite(SpriteId(42), SpriteBounds(SpritePosition(20.0, 30.0), SpriteSize(40.0, 50.0)), CanvasSize(60.0, 70.0))),
+            Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.5)),
+            Draw::Texture(TextureId(46), TextureOp::Copy(TextureId(47))),
+            Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::GaussianBlur(23.0))),
 
             Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
             Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),
@@ -2325,6 +2402,8 @@ mod test {
             Draw::Texture(TextureId(44), TextureOp::SetFromSprite(SpriteId(42), SpriteBounds(SpritePosition(20.0, 30.0), SpriteSize(40.0, 50.0)))),
             Draw::Texture(TextureId(44), TextureOp::CreateDynamicSprite(SpriteId(42), SpriteBounds(SpritePosition(20.0, 30.0), SpriteSize(40.0, 50.0)), CanvasSize(60.0, 70.0))),
             Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.5)),
+            Draw::Texture(TextureId(46), TextureOp::Copy(TextureId(47))),
+            Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::GaussianBlur(23.0))),
 
             Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
             Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),
