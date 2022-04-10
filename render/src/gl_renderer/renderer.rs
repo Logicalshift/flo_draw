@@ -493,7 +493,33 @@ impl GlRenderer {
     /// Modifies a texture by applying a filter to it
     ///
     fn filter_texture(&mut self, TextureId(texture_id): TextureId, texture_filter: Vec<TextureFilter>) {
+        // Borrow the parameters we need
+        let textures    = &mut self.textures;
+        let shaders     = &mut self.shader_programs;
 
+        // Fetch the texture that we're going to process
+        let texture     = textures.get_mut(texture_id);
+        let texture     = if let Some(texture) = texture { texture } else { return; };
+        let texture     = if let Some(texture) = texture { texture } else { return; };
+
+        // Run the texture filters against the texture (replacing it each time)
+        for filter in texture_filter {
+            use TextureFilter::*;
+
+            // Choose a shader for the filter
+            let shader = match filter {
+                GaussianBlurHorizontal5(_sigma)    => shaders.program(StandardShaderProgram::Blur5Horizontal),
+                GaussianBlurVertical5(_sigma)      => shaders.program(StandardShaderProgram::Blur5Vertical),
+            };
+
+            // TODO: set up the uniforms for the filter
+
+            // Apply the filter to the texture
+            let new_texture = texture.filter(shader);
+            if let Some(new_texture) = new_texture {
+                *texture    = new_texture;
+            }
+        }
     }
 
     ///
