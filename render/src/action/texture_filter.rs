@@ -31,6 +31,9 @@ impl TextureFilter {
     /// Transforms the weights for the gaussian blur to a set of offsets and weights that can be used
     /// with bilinear texture filtering
     ///
+    /// See See <https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/> for a
+    /// description of this algorithm
+    ///
     pub (crate) fn weights_and_offsets_for_gaussian_blur(weights: Vec<f32>) -> (Vec<f32>, Vec<f32>) {
         let mut new_weights = vec![weights[0]];
         let mut new_offsets = vec![0.0];
