@@ -263,6 +263,7 @@ impl MetalRenderer {
                 WriteTexture1D(texture_id, Position1D(x1), Position1D(x2), data)                => { self.write_texture_data_1d(texture_id, x1, x2, data); }
                 CreateMipMaps(texture_id)                                                       => { self.create_mipmaps(texture_id, &mut render_state); }
                 CopyTexture(src_texture, tgt_texture)                                           => { self.copy_texture(src_texture, tgt_texture, &mut render_state); }
+                FilterTexture(texture, filter)                                                  => { self.filter_texture(texture, filter, &mut render_state); }
                 FreeTexture(texture_id)                                                         => { self.free_texture(texture_id); }
                 Clear(color)                                                                    => { self.clear(color, &mut render_state); }
                 UseShader(shader_type)                                                          => { self.use_shader(shader_type, &mut render_state); }
@@ -758,6 +759,13 @@ impl MetalRenderer {
 
         // Store the target texture
         self.store_texture(tgt_texture_id, tgt_texture);
+    }
+
+    ///
+    /// Applies a filter to an existing texture
+    ///
+    fn filter_texture(&mut self, TextureId(texture_id): TextureId, filter: Vec<TextureFilter>, state: &mut RenderState) {
+        todo!()
     }
 
     ///

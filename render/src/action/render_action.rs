@@ -2,6 +2,7 @@ use super::color::*;
 use super::identities::*;
 use super::blend_mode::*;
 use super::shader_type::*;
+use super::texture_filter::*;
 use super::render_target_type::*;
 
 use crate::buffer::*;
@@ -154,6 +155,11 @@ pub enum RenderAction {
     CopyTexture(TextureId, TextureId),
 
     ///
+    /// Applies a set of filters to a texture
+    ///
+    FilterTexture(TextureId, Vec<TextureFilter>),
+
+    ///
     /// Frees up an existing texture
     ///
     FreeTexture(TextureId),
@@ -244,6 +250,7 @@ impl RenderAction {
             WriteTextureData(texture_id, pos, size, bytes)                  => format!("WriteTextureData({:?}, {:?}, {:?}, [{} bytes])", texture_id, pos, size, bytes.len()),
             WriteTexture1D(texture_id, x, w, bytes)                         => format!("WriteTexture1D({:?}, {:?}, {:?}, [{} bytes])", texture_id, x, w, bytes.len()),
             CreateMipMaps(texture_id)                                       => format!("CreateMipMaps({:?})", texture_id),
+            FilterTexture(texture_id, filter)                               => format!("FilterTexture({:?}, {:?})", texture_id, filter),
             CopyTexture(id1, id2)                                           => format!("CopyTexture({:?}, {:?})", id1, id2),
             FreeTexture(texture_id)                                         => format!("FreeTexture({:?})", texture_id),
             Clear(bg_col)                                                   => format!("Clear({:?})", bg_col),

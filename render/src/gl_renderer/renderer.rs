@@ -123,6 +123,7 @@ impl GlRenderer {
                 WriteTexture1D(texture_id, Position1D(x1), Position1D(x2), data)                => { self.write_texture_data_1d(texture_id, x1, x2, &*data); }
                 CreateMipMaps(texture_id)                                                       => { self.create_mipmaps(texture_id); }
                 CopyTexture(source, target)                                                     => { self.copy_texture(source, target); }
+                FilterTexture(texture, filter)                                                  => { self.filter_texture(texture, filter); }
                 FreeTexture(texture_id)                                                         => { self.free_texture(texture_id); }
                 Clear(color)                                                                    => { self.clear(color); }
                 UseShader(shader_type)                                                          => { self.use_shader(shader_type); }
@@ -462,6 +463,9 @@ impl GlRenderer {
         }
     }
 
+    ///
+    /// Makes a copy of a texture into another texture
+    ///
     fn copy_texture(&mut self, TextureId(source_id): TextureId, TextureId(target_id): TextureId) {
         // Extend the textures array as needed
         if source_id >= self.textures.len() {
@@ -483,6 +487,13 @@ impl GlRenderer {
             // Ask the source to copy itself
             self.textures[target_id] = self.textures[source_id].as_ref().and_then(|texture| texture.make_copy());
         }
+    }
+
+    ///
+    /// Modifies a texture by applying a filter to it
+    ///
+    fn filter_texture(&mut self, TextureId(texture_id): TextureId, texture_filter: Vec<TextureFilter>) {
+
     }
 
     ///
