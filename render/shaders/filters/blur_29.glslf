@@ -16,8 +16,8 @@ void main() {
         f_Color     += texture(t_Texture, (vec2(gl_FragCoord) + vec2(t_Offset[idx], 0.0)) / size) * t_Weight[idx];
         f_Color     += texture(t_Texture, (vec2(gl_FragCoord) - vec2(t_Offset[idx], 0.0)) / size) * t_Weight[idx];
 #else
-        f_Color     += texture(t_Texture, (vec2(gl_FragCoord) + vec2(0.0, t_Offset[1])) / size) * t_Weight[idx];
-        f_Color     += texture(t_Texture, (vec2(gl_FragCoord) - vec2(0.0, t_Offset[1])) / size) * t_Weight[idx];
+        f_Color     += texture(t_Texture, (vec2(gl_FragCoord) + vec2(0.0, t_Offset[idx])) / size) * t_Weight[idx];
+        f_Color     += texture(t_Texture, (vec2(gl_FragCoord) - vec2(0.0, t_Offset[idx])) / size) * t_Weight[idx];
 #endif
     }
 
