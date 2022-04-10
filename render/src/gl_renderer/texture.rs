@@ -418,6 +418,8 @@ impl Texture {
             gl::ActiveTexture(gl::TEXTURE0);
             gl::BindTexture(self.texture_target, **self);
 
+            gl::Disable(gl::BLEND);
+
             // Bilinear filtering (useful for things like gaussian blur)
             gl::TexParameteri(self.texture_target, gl::TEXTURE_MIN_FILTER, gl::LINEAR as _);
             gl::TexParameteri(self.texture_target, gl::TEXTURE_MAG_FILTER, gl::LINEAR as _);
@@ -473,6 +475,8 @@ impl Texture {
             // Reset to the original render target
             gl::BindFramebuffer(gl::FRAMEBUFFER, *original_render_target);
             gl::Viewport(original_viewport[0], original_viewport[1], original_viewport[2], original_viewport[3]);
+
+            gl::Enable(gl::BLEND);
 
             panic_on_gl_error("Texture filter");
 
