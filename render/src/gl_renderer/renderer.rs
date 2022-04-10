@@ -508,8 +508,8 @@ impl GlRenderer {
 
             // Choose a shader for the filter
             let shader = match filter {
-                GaussianBlurHorizontal5(_sigma)    => shaders.program(StandardShaderProgram::Blur5Horizontal),
-                GaussianBlurVertical5(_sigma)      => shaders.program(StandardShaderProgram::Blur5Vertical),
+                GaussianBlurHorizontal9(_sigma)    => shaders.program(StandardShaderProgram::Blur9Horizontal),
+                GaussianBlurVertical9(_sigma)      => shaders.program(StandardShaderProgram::Blur9Vertical),
             };
 
             // TODO: set up the uniforms for the filter
