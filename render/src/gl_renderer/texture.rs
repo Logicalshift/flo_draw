@@ -1,5 +1,11 @@
 use super::error::*;
+use super::buffer::*;
+use super::vertex_array::*;
 use super::render_target::*;
+use super::shader_program::*;
+use super::shader_uniforms::*;
+
+use crate::buffer::*;
 
 use gl;
 
@@ -45,6 +51,31 @@ impl Texture {
                 height:         0
             }
         }
+    }
+
+    ///
+    /// Creates an empty texture that's the equivalent of the specified texture
+    ///
+    pub fn empty_equivalent(properties_from: &Texture) -> Option<Texture> {
+        // Create a new texture with the same properties as the existing one
+        let mut new_texture = Self::new();
+
+        match (properties_from.texture_target, properties_from.texture_format) {
+            (gl::TEXTURE_2D, gl::RGBA)              => new_texture.create_empty(properties_from.width as _, properties_from.height as _),
+            (gl::TEXTURE_2D, gl::RED)               => new_texture.create_monochrome(properties_from.width as _, properties_from.height as _),
+            (gl::TEXTURE_2D_MULTISAMPLE, gl::RGBA)  => new_texture.create_empty_multisampled(properties_from.width as _, properties_from.height as _, properties_from.num_samples as _),
+            (gl::TEXTURE_2D_MULTISAMPLE, gl::RED)   => new_texture.create_monochrome_multisampled(properties_from.width as _, properties_from.height as _, properties_from.num_samples as _),
+
+            (gl::TEXTURE_1D, gl::RGBA)              => new_texture.create_empty_1d(properties_from.width as _),
+            (gl::TEXTURE_1D, gl::RED)               => new_texture.create_monochrome_1d(properties_from.width as _),
+
+            _                                       => { return None; }
+        };
+
+        // Copy over other properties
+        new_texture.premultiplied = properties_from.premultiplied;
+
+        Some(new_texture)
     }
 
     ///
@@ -369,6 +400,80 @@ impl Texture {
     ///
     pub fn is_mono(&self) -> bool {
         self.texture_format == gl::RED
+    }
+
+    ///
+    /// Performs a filter operation, creating a new texture (typically used to replace this one)
+    ///
+    /// This sets up the new texture as a render target, sets the rendering state for filtering and then performs
+    /// the filter operation using the currently selected texture
+    ///
+    pub fn filter<'a>(&self, filter_shader: &'a mut ShaderProgram<ShaderUniform>) -> Option<Texture> {
+        unsafe {
+            // Create a texture blank that's equivalent of this one
+            let new_texture = Self::empty_equivalent(self)?;
+
+            // Activate the texture and set up the rendering parameters
+            gl::ActiveTexture(gl::TEXTURE0);
+            gl::BindTexture(self.texture_target, **self);
+
+            // Bilinear filtering (useful for things like gaussian blur)
+            gl::TexParameteri(self.texture_target, gl::TEXTURE_MIN_FILTER, gl::LINEAR as _);
+            gl::TexParameteri(self.texture_target, gl::TEXTURE_MAG_FILTER, gl::LINEAR as _);
+
+            // Texture wrap is clamp to edge
+            gl::TexParameteri(self.texture_target, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as _);
+            gl::TexParameteri(self.texture_target, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as _);
+
+            // Set the current texture in the shader program
+            filter_shader.uniform_location(ShaderUniform::Texture, "t_Texture")
+                .map(|texture_uniform| {
+                    gl::Uniform1i(texture_uniform, 0);
+                });
+
+            // Create a render target for the new texture
+            let original_render_target  = RenderTarget::reference_to_current();
+            let filter_render_target    = RenderTarget::from_texture(&new_texture)?;
+
+            let mut original_viewport: [gl::types::GLint; 4] = [0, 0, 0, 0];
+            gl::GetIntegerv(gl::VIEWPORT, &mut original_viewport[0]);
+
+            // Bind to the render target
+            gl::BindFramebuffer(gl::FRAMEBUFFER, *filter_render_target);
+            gl::Viewport(0, 0, new_texture.width as _, new_texture.height as _);
+
+            // Create some vertices representing the triangles the fill the render target
+            let vertices        = vec![
+                Vertex2D::with_pos(-1.0, -1.0), Vertex2D::with_pos(1.0, -1.0), Vertex2D::with_pos(-1.0, 1.0),
+                Vertex2D::with_pos(1.0, -1.0), Vertex2D::with_pos(-1.0, 1.0), Vertex2D::with_pos(1.0, 1.0),
+            ];
+            let mut buffer      = Buffer::new();
+            let vertex_array    = VertexArray::new();
+            buffer.static_draw(&vertices);
+
+            // Bind a vertex array object to it
+            gl::BindVertexArray(*vertex_array);
+            gl::BindBuffer(gl::ARRAY_BUFFER, *buffer);
+
+            Vertex2D::define_attributes();
+
+            // Clear the bindings
+            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+            gl::BindVertexArray(0);
+
+            // Render a quad filling the screen
+            gl::BindVertexArray(*vertex_array);
+            gl::DrawArrays(gl::TRIANGLES, 0, 6);
+
+            gl::BindVertexArray(0);
+
+            // Reset to the original render target
+            gl::BindFramebuffer(gl::FRAMEBUFFER, *original_render_target);
+            gl::Viewport(original_viewport[0], original_viewport[1], original_viewport[2], original_viewport[3]);
+
+            // The new texture is the result
+            Some(new_texture)
+        }
     }
 }
 
