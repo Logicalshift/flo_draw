@@ -1,7 +1,6 @@
 uniform sampler2D   t_Texture;
 uniform float       t_Offset[3] = float[](0.0, 1.3846153846, 3.2307692308);
 uniform float       t_Weight[3] = float[](0.2270270270, 0.3162162162, 0.0702702703);
-
 out vec4            f_Color;
 
 // See <https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/> for a description of how we use bilinear sampling here
@@ -15,9 +14,15 @@ void main() {
 #ifdef FILTER_HORIZ
     f_Color         += texture(t_Texture, (vec2(gl_FragCoord) + vec2(t_Offset[1], 0.0)) / size) * t_Weight[1];
     f_Color         += texture(t_Texture, (vec2(gl_FragCoord) + vec2(t_Offset[2], 0.0)) / size) * t_Weight[2];
+
+    f_Color         += texture(t_Texture, (vec2(gl_FragCoord) - vec2(t_Offset[1], 0.0)) / size) * t_Weight[1];
+    f_Color         += texture(t_Texture, (vec2(gl_FragCoord) - vec2(t_Offset[2], 0.0)) / size) * t_Weight[2];
 #else
     f_Color         += texture(t_Texture, (vec2(gl_FragCoord) + vec2(0.0, t_Offset[1])) / size) * t_Weight[1];
     f_Color         += texture(t_Texture, (vec2(gl_FragCoord) + vec2(0.0, t_Offset[2])) / size) * t_Weight[2];
+
+    f_Color         += texture(t_Texture, (vec2(gl_FragCoord) - vec2(0.0, t_Offset[1])) / size) * t_Weight[1];
+    f_Color         += texture(t_Texture, (vec2(gl_FragCoord) - vec2(0.0, t_Offset[2])) / size) * t_Weight[2];
 #endif
 
 #ifdef INVERT_COLOUR_ALPHA
