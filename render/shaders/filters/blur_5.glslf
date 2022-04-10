@@ -10,14 +10,14 @@ out vec4            f_Color;
 void main() {
     vec2 size       = textureSize(t_Texture, 0);
 
-    f_Color         = texture2D(t_Texture, vec2(gl_FragCoord) / size) * t_Weight[0];
+    f_Color         = texture(t_Texture, vec2(gl_FragCoord) / size) * t_Weight[0];
 
 #ifdef FILTER_HORIZ
-    f_Color         += texture2D(t_Texture, (vec2(gl_FragCoord) + vec2(t_Offset[1], 0.0)) / size) * t_Weight[1];
-    f_Color         += texture2D(t_Texture, (vec2(gl_FragCoord) + vec2(t_Offset[2], 0.0)) / size) * t_Weight[2];
+    f_Color         += texture(t_Texture, (vec2(gl_FragCoord) + vec2(t_Offset[1], 0.0)) / size) * t_Weight[1];
+    f_Color         += texture(t_Texture, (vec2(gl_FragCoord) + vec2(t_Offset[2], 0.0)) / size) * t_Weight[2];
 #else
-    f_Color         += texture2D(t_Texture, (vec2(gl_FragCoord) + vec2(0.0, t_Offset[1])) / size) * t_Weight[1];
-    f_Color         += texture2D(t_Texture, (vec2(gl_FragCoord) + vec2(0.0, t_Offset[2])) / size) * t_Weight[2];
+    f_Color         += texture(t_Texture, (vec2(gl_FragCoord) + vec2(0.0, t_Offset[1])) / size) * t_Weight[1];
+    f_Color         += texture(t_Texture, (vec2(gl_FragCoord) + vec2(0.0, t_Offset[2])) / size) * t_Weight[2];
 #endif
 
 #ifdef INVERT_COLOUR_ALPHA
