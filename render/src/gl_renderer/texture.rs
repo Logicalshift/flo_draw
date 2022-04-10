@@ -414,6 +414,7 @@ impl Texture {
             let new_texture = Self::empty_equivalent(self)?;
 
             // Activate the texture and set up the rendering parameters
+            gl::UseProgram(**filter_shader);
             gl::ActiveTexture(gl::TEXTURE0);
             gl::BindTexture(self.texture_target, **self);
 
@@ -437,6 +438,8 @@ impl Texture {
 
             let mut original_viewport: [gl::types::GLint; 4] = [0, 0, 0, 0];
             gl::GetIntegerv(gl::VIEWPORT, &mut original_viewport[0]);
+
+            panic_on_gl_error("Set up for texture filtering");
 
             // Bind to the render target
             gl::BindFramebuffer(gl::FRAMEBUFFER, *filter_render_target);
@@ -470,6 +473,8 @@ impl Texture {
             // Reset to the original render target
             gl::BindFramebuffer(gl::FRAMEBUFFER, *original_render_target);
             gl::Viewport(original_viewport[0], original_viewport[1], original_viewport[2], original_viewport[3]);
+
+            panic_on_gl_error("Texture filter");
 
             // The new texture is the result
             Some(new_texture)
