@@ -272,6 +272,16 @@ pub trait GraphicsContext {
         self.draw(Draw::Texture(texture_id, TextureOp::FillTransparency(alpha)));
     }
 
+    /// Copies a texture from one ID to another
+    fn copy_texture(&mut self, source_texture_id: TextureId, target_texture_id: TextureId) {
+        self.draw(Draw::Texture(source_texture_id, TextureOp::Copy(target_texture_id)));
+    }
+
+    /// Applies a gaussian blur to a texture
+    fn gaussian_blue_texture(&mut self, texture_id: TextureId, radius: f32) {
+        self.draw(Draw::Texture(texture_id, TextureOp::Filter(TextureFilter::GaussianBlur(radius))));
+    }
+
 
 
     /// Defines a new gradient with a colour at stop position 0.0. Gradients can be used via fill_gradient()
