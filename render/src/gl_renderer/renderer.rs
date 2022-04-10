@@ -520,6 +520,15 @@ impl GlRenderer {
                 *texture    = new_texture;
             }
         }
+
+        // Reset the blend mode and shader
+        if let Some(active_shader) = &self.active_shader {
+            let active_shader = *active_shader;
+            self.use_shader(active_shader);
+        } else {
+            shaders.use_program(StandardShaderProgram::default());
+        }
+        self.blend_mode(self.blend_mode, self.source_is_premultiplied);
     }
 
     ///
