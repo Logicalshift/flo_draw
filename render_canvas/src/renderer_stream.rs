@@ -766,7 +766,7 @@ impl<'a> RenderStream<'a> {
                 render_actions.extend(rendering);
 
                 // Dynamic textures can have a set of post-processing actions applied to them (eg, filters or CreateMipMaps)
-                render_actions.push(render::RenderAction::FilterTexture(*texture_id, vec![render::TextureFilter::GaussianBlurHorizontal9(0.84089642), render::TextureFilter::GaussianBlurVertical9(0.84089642)]));
+                render_actions.push(render::RenderAction::FilterTexture(*texture_id, vec![render::TextureFilter::GaussianBlurHorizontal61(10.0), render::TextureFilter::GaussianBlurVertical61(10.0)]));
                 render_actions.extend(post_rendering.iter().flat_map(|request| self.texture_render_request(request)));
             },
 
