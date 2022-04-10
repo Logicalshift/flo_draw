@@ -8,11 +8,42 @@ pub enum TextureFilter {
     /// Applies a horizontal gaussian blur with the specified sigma (standard deviation) value, using a 9-pixel kernel
     GaussianBlurHorizontal9(f32),
 
+    /// Applies a horizontal gaussian blur with the specified sigma (standard deviation) value, using a 29-pixel kernel
+    GaussianBlurHorizontal29(f32),
+
+    /// Applies a horizontal gaussian blur with the specified sigma (standard deviation) value, using a 61-pixel kernel
+    GaussianBlurHorizontal61(f32),
+
     /// Applies a vertical gaussian blur with the specified sigma (standard deviation) value, using a 9-pixel kernel
     GaussianBlurVertical9(f32),
+
+    /// Applies a vertical gaussian blur with the specified sigma (standard deviation) value, using a 9-pixel kernel
+    GaussianBlurVertical29(f32),
+
+    /// Applies a vertical gaussian blur with the specified sigma (standard deviation) value, using a 9-pixel kernel
+    GaussianBlurVertical61(f32),
 }
 
 impl TextureFilter {
+    ///
+    /// If this filter uses a kernel, returns the size to generate for the shader.
+    ///
+    /// This is the value to pass in for `weights_for_gaussian_blur`, so it's the half the total size of the kernel,
+    /// plus 1 for the central value.
+    ///
+    pub (crate) fn kernel_size(&self) -> usize {
+        use TextureFilter::*;
+
+        match self {
+            GaussianBlurHorizontal9(_)  => 5,
+            GaussianBlurHorizontal29(_) => 15,
+            GaussianBlurHorizontal61(_) => 31,
+            GaussianBlurVertical9(_)    => 5,
+            GaussianBlurVertical29(_)   => 15,
+            GaussianBlurVertical61(_)   => 31,
+        }
+    }
+
     ///
     /// Computes the 1D weights for a gaussian blur for a particular standard deviation
     ///

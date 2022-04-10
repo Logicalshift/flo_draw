@@ -508,15 +508,24 @@ impl GlRenderer {
 
             // Choose a shader for the filter
             let shader = match filter {
-                GaussianBlurHorizontal9(_sigma)    => shaders.program(StandardShaderProgram::Blur9Horizontal),
-                GaussianBlurVertical9(_sigma)      => shaders.program(StandardShaderProgram::Blur9Vertical),
+                GaussianBlurHorizontal9(_sigma)     => shaders.program(StandardShaderProgram::Blur9Horizontal),
+                GaussianBlurHorizontal29(_sigma)    => shaders.program(StandardShaderProgram::Blur29Horizontal),
+                GaussianBlurHorizontal61(_sigma)    => shaders.program(StandardShaderProgram::Blur61Horizontal),
+                GaussianBlurVertical9(_sigma)       => shaders.program(StandardShaderProgram::Blur9Vertical),
+                GaussianBlurVertical29(_sigma)      => shaders.program(StandardShaderProgram::Blur29Vertical),
+                GaussianBlurVertical61(_sigma)      => shaders.program(StandardShaderProgram::Blur61Vertical),
             };
 
             // Set up the uniforms for the filter
             match filter {
-                GaussianBlurHorizontal9(sigma)  |
-                GaussianBlurVertical9(sigma)    => {
-                    let weights             = TextureFilter::weights_for_gaussian_blur(sigma, 5);
+                GaussianBlurHorizontal9(sigma)   |
+                GaussianBlurHorizontal29(sigma)  |
+                GaussianBlurHorizontal61(sigma)  |
+                GaussianBlurVertical9(sigma)     |
+                GaussianBlurVertical29(sigma)    |
+                GaussianBlurVertical61(sigma)    => {
+                    let kernel_size         = filter.kernel_size();
+                    let weights             = TextureFilter::weights_for_gaussian_blur(sigma, kernel_size);
                     let (weights, offsets)  = TextureFilter::weights_and_offsets_for_gaussian_blur(weights);
 
                     unsafe {
@@ -524,11 +533,11 @@ impl GlRenderer {
 
                         shader.uniform_location(ShaderUniform::BlurWeights, "t_Weight")
                             .map(|weights_uniform| {
-                                gl::Uniform1fv(weights_uniform, 3, weights.as_ptr());
+                                gl::Uniform1fv(weights_uniform, (kernel_size/2+1) as _, weights.as_ptr());
                             });
                         shader.uniform_location(ShaderUniform::BlurOffsets, "t_Offset")
                             .map(|offset_uniform| {
-                                gl::Uniform1fv(offset_uniform, 3, offsets.as_ptr());
+                                gl::Uniform1fv(offset_uniform, (kernel_size/2+1) as _, offsets.as_ptr());
                             });
                     }
                 }
