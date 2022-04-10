@@ -512,7 +512,27 @@ impl GlRenderer {
                 GaussianBlurVertical9(_sigma)      => shaders.program(StandardShaderProgram::Blur9Vertical),
             };
 
-            // TODO: set up the uniforms for the filter
+            // Set up the uniforms for the filter
+            match filter {
+                GaussianBlurHorizontal9(sigma)  |
+                GaussianBlurVertical9(sigma)    => {
+                    let weights             = TextureFilter::weights_for_gaussian_blur(sigma, 5);
+                    let (weights, offsets)  = TextureFilter::weights_and_offsets_for_gaussian_blur(weights);
+
+                    unsafe {
+                        gl::UseProgram(**shader);
+
+                        shader.uniform_location(ShaderUniform::BlurWeights, "t_Weight")
+                            .map(|weights_uniform| {
+                                gl::Uniform1fv(weights_uniform, 3, weights.as_ptr());
+                            });
+                        shader.uniform_location(ShaderUniform::BlurOffsets, "t_Offset")
+                            .map(|offset_uniform| {
+                                gl::Uniform1fv(offset_uniform, 3, offsets.as_ptr());
+                            });
+                    }
+                }
+            }
 
             // Apply the filter to the texture
             let new_texture = texture.filter(shader);

@@ -26,4 +26,10 @@ pub enum ShaderUniform {
 
     /// The alpha value to use for a MSAA shader
     MsaaAlpha,
+
+    /// The weights for the gaussian blur shader
+    BlurWeights,
+
+    /// The offsets for the gaussian blur shader
+    BlurOffsets,
 }

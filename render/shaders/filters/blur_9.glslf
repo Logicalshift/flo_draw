@@ -1,6 +1,6 @@
 uniform sampler2D   t_Texture;
-uniform float       t_Offset[3] = float[](0.0, 1.3846153846, 3.2307692308);
-uniform float       t_Weight[3] = float[](0.2270270270, 0.3162162162, 0.0702702703);
+uniform float       t_Offset[3];
+uniform float       t_Weight[3];
 out vec4            f_Color;
 
 // See <https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/> for a description of how we use bilinear sampling here
