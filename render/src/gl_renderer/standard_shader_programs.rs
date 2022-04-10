@@ -61,6 +61,9 @@ pub enum StandardShaderProgram {
     /// Texture renderer that resolves MSAA textures 1-to-1 with the given number of samples
     MsaaResolve(u8, ColorPostProcessingStep),
 
+    /// Turns a texture without pre-multiplied alpha into one with pre-multiplied alpha
+    PremultiplyAlpha,
+
     /// 9-pixel gaussian blur in the horizontal direction
     Blur9Horizontal,
 
@@ -149,6 +152,7 @@ impl StandardShaderProgram {
         let msaa_vertex                         = String::from_utf8(include_bytes!["../../shaders/simple/resolve.glslv"].to_vec()).unwrap();
         let msaa4_resolve                       = String::from_utf8(include_bytes!["../../shaders/simple/multisample_resolve_4.glslf"].to_vec()).unwrap();
         let filter_vertex                       = String::from_utf8(include_bytes!["../../shaders/simple/resolve.glslv"].to_vec()).unwrap();
+        let premultiply                         = String::from_utf8(include_bytes!["../../shaders/filters/premultiply.glslf"].to_vec()).unwrap();
         let blur9                               = String::from_utf8(include_bytes!["../../shaders/filters/blur_9.glslf"].to_vec()).unwrap();
         let blur29                              = String::from_utf8(include_bytes!["../../shaders/filters/blur_29.glslf"].to_vec()).unwrap();
         let blur61                              = String::from_utf8(include_bytes!["../../shaders/filters/blur_61.glslf"].to_vec()).unwrap();
@@ -166,6 +170,7 @@ impl StandardShaderProgram {
                 MsaaResolve(4, post_process)                => { Self::load_shader(&msaa_vertex, &vec![], &msaa4_resolve, &vec![], &post_process.defines()) }
                 MsaaResolve(_num_samples, _post_process)    => { unimplemented!() }
 
+                PremultiplyAlpha                            => { Self::load_shader(&filter_vertex, &vec![], &premultiply, &vec![], &vec![]) }
                 Blur9Horizontal                             => { Self::load_shader(&filter_vertex, &vec![], &blur9, &vec![], &vec!["FILTER_HORIZ"]) }
                 Blur9Vertical                               => { Self::load_shader(&filter_vertex, &vec![], &blur9, &vec![], &vec!["FILTER_VERT"]) }
                 Blur29Horizontal                            => { Self::load_shader(&filter_vertex, &vec![], &blur29, &vec![], &vec!["FILTER_HORIZ"]) }

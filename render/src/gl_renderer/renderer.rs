@@ -502,6 +502,17 @@ impl GlRenderer {
         let texture     = if let Some(texture) = texture { texture } else { return; };
         let texture     = if let Some(texture) = texture { texture } else { return; };
 
+        // All the filters need textures with pre-multiplied alpha, so apply that beforehand
+        if !texture.premultiplied {
+            let premultiply_shader  = shaders.program(StandardShaderProgram::PremultiplyAlpha);
+            let premultiplied       = texture.filter(premultiply_shader);
+
+            if let Some(mut premultiplied) = premultiplied {
+                premultiplied.premultiplied = true;
+                *texture                    = premultiplied;
+            }
+        }
+
         // Run the texture filters against the texture (replacing it each time)
         for filter in texture_filter {
             use TextureFilter::*;
