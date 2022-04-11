@@ -8,6 +8,7 @@ use super::shader_uniforms::*;
 use crate::buffer::*;
 
 use gl;
+use half::f16;
 
 use std::ptr;
 use std::rc::*;
@@ -221,6 +222,28 @@ impl Texture {
     }
 
     ///
+    /// Associates an empty image with this texture
+    ///
+    pub fn create_monochrome_1d_float(&mut self, width: u16) {
+        unsafe {
+            let texture_id      = self.texture.texture_id;
+            self.texture_target = gl::TEXTURE_1D;
+            self.texture_format = gl::R16F;
+            self.width          = width as _;
+            self.height         = 1;
+
+            gl::BindTexture(gl::TEXTURE_1D, texture_id);
+
+            gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+            gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+
+            gl::TexImage1D(gl::TEXTURE_1D, 0, gl::R16F as _, width as _, 0, gl::RED, gl::FLOAT, ptr::null());
+
+            panic_on_gl_error("Create 1D mono texture");
+        }
+    }
+
+    ///
     /// Generates mip-maps for this texture
     ///
     pub fn generate_mipmaps(&mut self) {
@@ -291,6 +314,22 @@ impl Texture {
         unsafe {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
             gl::TexSubImage1D(gl::TEXTURE_1D, 0, x as _, width as _, gl::RED, gl::UNSIGNED_BYTE, pixels.as_ptr() as _);
+
+            panic_on_gl_error("Set mono 1D data");
+        }
+    }
+
+    ///
+    /// Sets 8-bit mono pixel data for a texture
+    ///
+    pub fn set_data_mono_1d_float(&mut self, x: usize, width: usize, pixels: &[f16]) {
+        if pixels.len() != width {
+            panic!("set_data_mono_1d_f16 called with incorrect sized pixel array")
+        }
+
+        unsafe {
+            gl::BindTexture(self.texture_target, self.texture.texture_id);
+            gl::TexSubImage1D(gl::TEXTURE_1D, 0, x as _, width as _, gl::RED, gl::FLOAT, pixels.as_ptr() as _);
 
             panic_on_gl_error("Set mono 1D data");
         }
