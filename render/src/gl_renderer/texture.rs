@@ -239,7 +239,7 @@ impl Texture {
 
             gl::TexImage1D(gl::TEXTURE_1D, 0, gl::R16F as _, width as _, 0, gl::RED, gl::FLOAT, ptr::null());
 
-            panic_on_gl_error("Create 1D mono texture");
+            panic_on_gl_error("Create 1D mono texture (floating point)");
         }
     }
 
@@ -331,7 +331,7 @@ impl Texture {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
             gl::TexSubImage1D(gl::TEXTURE_1D, 0, x as _, width as _, gl::RED, gl::FLOAT, pixels.as_ptr() as _);
 
-            panic_on_gl_error("Set mono 1D data");
+            panic_on_gl_error("Set mono 1D data (float)");
         }
     }
 
