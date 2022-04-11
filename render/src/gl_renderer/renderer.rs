@@ -10,8 +10,6 @@ use super::standard_shader_programs::*;
 use crate::action::*;
 use crate::buffer::*;
 
-use half::{f16};
-
 use std::ptr;
 use std::ops::{Range};
 
@@ -578,9 +576,6 @@ impl GlRenderer {
                     // Fill the textures then set them for the shader program
                     unsafe {
                         // Load the weights
-                        let weights = weights.into_iter().map(|weight| f16::from_f32(weight)).collect::<Vec<_>>();
-                        let offsets = offsets.into_iter().map(|offset| f16::from_f32(offset)).collect::<Vec<_>>();
-
                         weight_texture.set_data_mono_1d_float(0, weights.len() as _, &weights);
                         offset_texture.set_data_mono_1d_float(0, offsets.len() as _, &offsets);
 

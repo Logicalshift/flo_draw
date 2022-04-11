@@ -322,10 +322,12 @@ impl Texture {
     ///
     /// Sets 8-bit mono pixel data for a texture
     ///
-    pub fn set_data_mono_1d_float(&mut self, x: usize, width: usize, pixels: &[f16]) {
+    pub fn set_data_mono_1d_float(&mut self, x: usize, width: usize, pixels: &[f32]) {
         if pixels.len() != width {
             panic!("set_data_mono_1d_f16 called with incorrect sized pixel array")
         }
+
+        let pixels = pixels.iter().map(|px| f16::from_f32(*px).to_bits()).collect::<Vec<_>>();
 
         unsafe {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
