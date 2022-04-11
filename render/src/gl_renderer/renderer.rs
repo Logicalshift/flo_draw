@@ -570,17 +570,16 @@ impl GlRenderer {
                     let weight_texture      = weight_texture.as_mut().unwrap();
                     let offset_texture      = offset_texture.as_mut().unwrap();
 
-                    weight_texture.create_monochrome_1d(weights.len() as _);
-                    offset_texture.create_monochrome_1d(offsets.len() as _);
+                    weight_texture.create_monochrome_1d_float(weights.len() as _);
+                    offset_texture.create_monochrome_1d_float(offsets.len() as _);
 
                     // Fill the textures then set them for the shader program
                     unsafe {
-                        let weights = weights.into_iter().map(|w| (w*255.0) as u8).collect::<Vec<_>>();
-                        let offsets = offsets.into_iter().map(|w| ((w%1.0)*255.0) as u8).collect::<Vec<_>>();
+                        let offsets = offsets.into_iter().map(|w| w%1.0).collect::<Vec<_>>();
 
                         // Load the weights
-                        weight_texture.set_data_mono_1d(0, weights.len() as _, &weights);
-                        offset_texture.set_data_mono_1d(0, offsets.len() as _, &offsets);
+                        weight_texture.set_data_mono_1d_float(0, weights.len() as _, &weights);
+                        offset_texture.set_data_mono_1d_float(0, offsets.len() as _, &offsets);
 
                         panic_on_gl_error("Set float data");
 
