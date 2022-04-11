@@ -14,7 +14,7 @@ void main() {
     f_Color         = texture(t_Texture, vec2(gl_FragCoord) / size) * weight;
 
     for (int idx=1; idx<num_weights; ++idx) {
-        float offset = texelFetch(t_OffsetTexture, idx, 0)[0];
+        float offset = texelFetch(t_OffsetTexture, idx, 0)[0] + idx;
         float weight = texelFetch(t_WeightTexture, idx, 0)[0];
 
 #ifdef FILTER_HORIZ
