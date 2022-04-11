@@ -10,6 +10,7 @@ use super::standard_shader_programs::*;
 use crate::action::*;
 use crate::buffer::*;
 
+use std::mem;
 use std::ptr;
 use std::ops::{Range};
 
@@ -612,6 +613,18 @@ impl GlRenderer {
             if let Some(new_texture) = new_texture {
                 *texture    = new_texture;
             }
+        }
+
+        // Reset textures, if we set them
+        unsafe {
+            gl::ActiveTexture(gl::TEXTURE1);
+            gl::BindTexture(gl::TEXTURE_1D, 0);
+
+            gl::ActiveTexture(gl::TEXTURE2);
+            gl::BindTexture(gl::TEXTURE_1D, 0);
+
+            mem::drop(weight_texture);
+            mem::drop(offset_texture);
         }
 
         // Reset the blend mode and shader
