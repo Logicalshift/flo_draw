@@ -32,4 +32,10 @@ pub enum ShaderUniform {
 
     /// The offsets for the gaussian blur shader
     BlurOffsets,
+
+    /// The weights for the gaussian blur shader (when defined as a texture)
+    TextureBlurWeights,
+
+    /// The weights for the gaussian blur shader (when defined as a texture)
+    TextureBlurOffsets,
 }

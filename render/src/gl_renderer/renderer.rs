@@ -10,9 +10,10 @@ use super::standard_shader_programs::*;
 use crate::action::*;
 use crate::buffer::*;
 
+use half::{f16};
+
 use std::ptr;
 use std::ops::{Range};
-
 
 ///
 /// OpenGL action renderer
@@ -513,18 +514,23 @@ impl GlRenderer {
             }
         }
 
+        let mut weight_texture: Option<Texture> = None;
+        let mut offset_texture: Option<Texture> = None;
+
         // Run the texture filters against the texture (replacing it each time)
         for filter in texture_filter {
             use TextureFilter::*;
 
             // Choose a shader for the filter
             let shader = match filter {
-                GaussianBlurHorizontal9(_sigma)     => shaders.program(StandardShaderProgram::Blur9Horizontal),
-                GaussianBlurHorizontal29(_sigma)    => shaders.program(StandardShaderProgram::Blur29Horizontal),
-                GaussianBlurHorizontal61(_sigma)    => shaders.program(StandardShaderProgram::Blur61Horizontal),
-                GaussianBlurVertical9(_sigma)       => shaders.program(StandardShaderProgram::Blur9Vertical),
-                GaussianBlurVertical29(_sigma)      => shaders.program(StandardShaderProgram::Blur29Vertical),
-                GaussianBlurVertical61(_sigma)      => shaders.program(StandardShaderProgram::Blur61Vertical),
+                GaussianBlurHorizontal9(_sigma)         => shaders.program(StandardShaderProgram::Blur9Horizontal),
+                GaussianBlurHorizontal29(_sigma)        => shaders.program(StandardShaderProgram::Blur29Horizontal),
+                GaussianBlurHorizontal61(_sigma)        => shaders.program(StandardShaderProgram::Blur61Horizontal),
+                GaussianBlurHorizontal(_sigma, _size)   => shaders.program(StandardShaderProgram::BlurTextureHorizontal),
+                GaussianBlurVertical9(_sigma)           => shaders.program(StandardShaderProgram::Blur9Vertical),
+                GaussianBlurVertical29(_sigma)          => shaders.program(StandardShaderProgram::Blur29Vertical),
+                GaussianBlurVertical61(_sigma)          => shaders.program(StandardShaderProgram::Blur61Vertical),
+                GaussianBlurVertical(_sigma, _size)     => shaders.program(StandardShaderProgram::BlurTextureVertical),
             };
 
             // Set up the uniforms for the filter
@@ -551,10 +557,60 @@ impl GlRenderer {
                                 gl::Uniform1fv(offset_uniform, (kernel_size/2+1) as _, offsets.as_ptr());
                             });
                     }
+                },
+
+                GaussianBlurHorizontal(sigma, size)     |
+                GaussianBlurVertical(sigma, size)       => {
+                    // Calculate the kernel
+                    let kernel_size         = (size-1)/2+1;
+                    let weights             = TextureFilter::weights_for_gaussian_blur(sigma, kernel_size);
+                    let (weights, offsets)  = TextureFilter::weights_and_offsets_for_gaussian_blur(weights);
+
+                    // Create textures for the weights and offsets
+                    weight_texture          = Some(Texture::new());
+                    offset_texture          = Some(Texture::new());
+                    let weight_texture      = weight_texture.as_mut().unwrap();
+                    let offset_texture      = offset_texture.as_mut().unwrap();
+
+                    weight_texture.create_monochrome_1d_float(weights.len() as _);
+                    offset_texture.create_monochrome_1d_float(offsets.len() as _);
+
+                    // Fill the textures then set them for the shader program
+                    unsafe {
+                        // Load the weights
+                        let weights = weights.into_iter().map(|weight| f16::from_f32(weight)).collect::<Vec<_>>();
+                        let offsets = offsets.into_iter().map(|offset| f16::from_f32(offset)).collect::<Vec<_>>();
+
+                        weight_texture.set_data_mono_1d_float(0, weights.len() as _, &weights);
+                        offset_texture.set_data_mono_1d_float(0, offsets.len() as _, &offsets);
+
+                        panic_on_gl_error("Set float data");
+
+                        // Bind the textures
+                        gl::ActiveTexture(gl::TEXTURE1);
+                        gl::BindTexture(gl::TEXTURE_1D, **weight_texture);
+
+                        gl::ActiveTexture(gl::TEXTURE2);
+                        gl::BindTexture(gl::TEXTURE_1D, **offset_texture);
+
+                        gl::UseProgram(**shader);
+
+                        shader.uniform_location(ShaderUniform::TextureBlurWeights, "t_WeightTexture")
+                            .map(|weights_uniform| {
+                                gl::Uniform1i(weights_uniform, 1);
+                            });
+                        shader.uniform_location(ShaderUniform::TextureBlurOffsets, "t_OffsetTexture")
+                            .map(|offset_uniform| {
+                                gl::Uniform1i(offset_uniform, 2);
+                            });
+
+                        gl::ActiveTexture(gl::TEXTURE0);
+                    }
                 }
             }
 
             // Apply the filter to the texture
+            panic_on_gl_error("Filter setup");
             let new_texture = texture.filter(shader);
             if let Some(new_texture) = new_texture {
                 *texture    = new_texture;

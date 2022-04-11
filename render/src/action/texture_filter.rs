@@ -22,6 +22,12 @@ pub enum TextureFilter {
 
     /// Applies a vertical gaussian blur with the specified sigma (standard deviation) value, using a 9-pixel kernel
     GaussianBlurVertical61(f32),
+
+    /// Applies a gaussian blur in the horizontal direction with the specified sigma and kernel size
+    GaussianBlurHorizontal(f32, usize),
+
+    /// Applies a gaussian blur in the vertical direction with the specified sigma and kernel size
+    GaussianBlurVertical(f32, usize),
 }
 
 impl TextureFilter {
@@ -35,12 +41,14 @@ impl TextureFilter {
         use TextureFilter::*;
 
         match self {
-            GaussianBlurHorizontal9(_)  => 5,
-            GaussianBlurHorizontal29(_) => 15,
-            GaussianBlurHorizontal61(_) => 31,
-            GaussianBlurVertical9(_)    => 5,
-            GaussianBlurVertical29(_)   => 15,
-            GaussianBlurVertical61(_)   => 31,
+            GaussianBlurHorizontal9(_)      => 5,
+            GaussianBlurHorizontal29(_)     => 15,
+            GaussianBlurHorizontal61(_)     => 31,
+            GaussianBlurVertical9(_)        => 5,
+            GaussianBlurVertical29(_)       => 15,
+            GaussianBlurVertical61(_)       => 31,
+            GaussianBlurHorizontal(_, size) => (size-1)/2+1,
+            GaussianBlurVertical(_, size)   => (size-1)/2+1,
         }
     }
 
