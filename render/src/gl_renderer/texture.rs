@@ -8,7 +8,6 @@ use super::shader_uniforms::*;
 use crate::buffer::*;
 
 use gl;
-use half::f16;
 
 use std::ptr;
 use std::rc::*;

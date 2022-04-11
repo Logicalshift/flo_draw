@@ -24,7 +24,6 @@ cocoa                   = { version = "0.24", optional = true }
 libc                    = { version = "0.2", optional = true }
 flo_canvas              = { version = "0.4", optional = true }
 flo_render_gl_offscreen = { version = "0.4", optional = true }
-half                    = "1.8"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation         = "0.9"
