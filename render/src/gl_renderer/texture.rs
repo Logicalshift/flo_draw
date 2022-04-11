@@ -327,8 +327,6 @@ impl Texture {
             panic!("set_data_mono_1d_f16 called with incorrect sized pixel array")
         }
 
-        let pixels = pixels.iter().map(|px| f16::from_f32(*px).to_bits()).collect::<Vec<_>>();
-
         unsafe {
             gl::BindTexture(self.texture_target, self.texture.texture_id);
             gl::TexSubImage1D(gl::TEXTURE_1D, 0, x as _, width as _, gl::RED, gl::FLOAT, pixels.as_ptr() as _);
