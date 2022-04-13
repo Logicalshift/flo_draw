@@ -522,26 +522,26 @@ impl GlRenderer {
 
             // Choose a shader for the filter
             let shader = match filter {
-                GaussianBlurHorizontal9(_sigma)         => shaders.program(StandardShaderProgram::Blur9Horizontal),
-                GaussianBlurHorizontal29(_sigma)        => shaders.program(StandardShaderProgram::Blur29Horizontal),
-                GaussianBlurHorizontal61(_sigma)        => shaders.program(StandardShaderProgram::Blur61Horizontal),
-                GaussianBlurHorizontal(_sigma, _size)   => shaders.program(StandardShaderProgram::BlurTextureHorizontal),
-                GaussianBlurVertical9(_sigma)           => shaders.program(StandardShaderProgram::Blur9Vertical),
-                GaussianBlurVertical29(_sigma)          => shaders.program(StandardShaderProgram::Blur29Vertical),
-                GaussianBlurVertical61(_sigma)          => shaders.program(StandardShaderProgram::Blur61Vertical),
-                GaussianBlurVertical(_sigma, _size)     => shaders.program(StandardShaderProgram::BlurTextureVertical),
+                GaussianBlurHorizontal9(_sigma, _step)          => shaders.program(StandardShaderProgram::Blur9Horizontal),
+                GaussianBlurHorizontal29(_sigma, _step)         => shaders.program(StandardShaderProgram::Blur29Horizontal),
+                GaussianBlurHorizontal61(_sigma, _step)         => shaders.program(StandardShaderProgram::Blur61Horizontal),
+                GaussianBlurHorizontal(_sigma, _step, _size)    => shaders.program(StandardShaderProgram::BlurTextureHorizontal),
+                GaussianBlurVertical9(_sigma, _step)            => shaders.program(StandardShaderProgram::Blur9Vertical),
+                GaussianBlurVertical29(_sigma, _step)           => shaders.program(StandardShaderProgram::Blur29Vertical),
+                GaussianBlurVertical61(_sigma, _step)           => shaders.program(StandardShaderProgram::Blur61Vertical),
+                GaussianBlurVertical(_sigma, _step, _size)      => shaders.program(StandardShaderProgram::BlurTextureVertical),
             };
 
             // Set up the uniforms for the filter
             match filter {
-                GaussianBlurHorizontal9(sigma)   |
-                GaussianBlurHorizontal29(sigma)  |
-                GaussianBlurHorizontal61(sigma)  |
-                GaussianBlurVertical9(sigma)     |
-                GaussianBlurVertical29(sigma)    |
-                GaussianBlurVertical61(sigma)    => {
+                GaussianBlurHorizontal9(sigma, step)    |
+                GaussianBlurHorizontal29(sigma, step)   |
+                GaussianBlurHorizontal61(sigma, step)   |
+                GaussianBlurVertical9(sigma, step)      |
+                GaussianBlurVertical29(sigma, step)     |
+                GaussianBlurVertical61(sigma, step)     => {
                     let kernel_size         = filter.kernel_size();
-                    let weights             = TextureFilter::weights_for_gaussian_blur(sigma, kernel_size);
+                    let weights             = TextureFilter::weights_for_gaussian_blur(sigma, step, kernel_size);
                     let (weights, offsets)  = TextureFilter::weights_and_offsets_for_gaussian_blur(weights);
 
                     unsafe {
@@ -558,11 +558,11 @@ impl GlRenderer {
                     }
                 },
 
-                GaussianBlurHorizontal(sigma, size)     |
-                GaussianBlurVertical(sigma, size)       => {
+                GaussianBlurHorizontal(sigma, step, size)   |
+                GaussianBlurVertical(sigma, step, size)     => {
                     // Calculate the kernel
                     let kernel_size         = (size-1)/2+1;
-                    let weights             = TextureFilter::weights_for_gaussian_blur(sigma, kernel_size);
+                    let weights             = TextureFilter::weights_for_gaussian_blur(sigma, step, kernel_size);
                     let (weights, offsets)  = TextureFilter::weights_and_offsets_for_gaussian_blur(weights);
 
                     // Create textures for the weights and offsets

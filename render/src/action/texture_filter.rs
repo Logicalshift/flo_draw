@@ -5,29 +5,29 @@ use std::f32;
 ///
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum TextureFilter {
-    /// Applies a horizontal gaussian blur with the specified sigma (standard deviation) value, using a 9-pixel kernel
-    GaussianBlurHorizontal9(f32),
+    /// Applies a horizontal gaussian blur with the specified sigma (standard deviation) and step value, using a 9-pixel kernel
+    GaussianBlurHorizontal9(f32, f32),
 
-    /// Applies a horizontal gaussian blur with the specified sigma (standard deviation) value, using a 29-pixel kernel
-    GaussianBlurHorizontal29(f32),
+    /// Applies a horizontal gaussian blur with the specified sigma (standard deviation) and step value, using a 29-pixel kernel
+    GaussianBlurHorizontal29(f32, f32),
 
-    /// Applies a horizontal gaussian blur with the specified sigma (standard deviation) value, using a 61-pixel kernel
-    GaussianBlurHorizontal61(f32),
+    /// Applies a horizontal gaussian blur with the specified sigma (standard deviation) and step value, using a 61-pixel kernel
+    GaussianBlurHorizontal61(f32, f32),
 
-    /// Applies a vertical gaussian blur with the specified sigma (standard deviation) value, using a 9-pixel kernel
-    GaussianBlurVertical9(f32),
+    /// Applies a vertical gaussian blur with the specified sigma (standard deviation) and step value, using a 9-pixel kernel
+    GaussianBlurVertical9(f32, f32),
 
-    /// Applies a vertical gaussian blur with the specified sigma (standard deviation) value, using a 9-pixel kernel
-    GaussianBlurVertical29(f32),
+    /// Applies a vertical gaussian blur with the specified sigma (standard deviation) and step value, using a 9-pixel kernel
+    GaussianBlurVertical29(f32, f32),
 
-    /// Applies a vertical gaussian blur with the specified sigma (standard deviation) value, using a 9-pixel kernel
-    GaussianBlurVertical61(f32),
+    /// Applies a vertical gaussian blur with the specified sigma (standard deviation) and step value, using a 9-pixel kernel
+    GaussianBlurVertical61(f32, f32),
 
-    /// Applies a gaussian blur in the horizontal direction with the specified sigma and kernel size
-    GaussianBlurHorizontal(f32, usize),
+    /// Applies a gaussian blur in the horizontal direction with the specified sigma, step and kernel size
+    GaussianBlurHorizontal(f32, f32, usize),
 
-    /// Applies a gaussian blur in the vertical direction with the specified sigma and kernel size
-    GaussianBlurVertical(f32, usize),
+    /// Applies a gaussian blur in the vertical direction with the specified sigma, step and kernel size
+    GaussianBlurVertical(f32, f32, usize),
 }
 
 impl TextureFilter {
@@ -41,29 +41,40 @@ impl TextureFilter {
         use TextureFilter::*;
 
         match self {
-            GaussianBlurHorizontal9(_)      => 5,
-            GaussianBlurHorizontal29(_)     => 15,
-            GaussianBlurHorizontal61(_)     => 31,
-            GaussianBlurVertical9(_)        => 5,
-            GaussianBlurVertical29(_)       => 15,
-            GaussianBlurVertical61(_)       => 31,
-            GaussianBlurHorizontal(_, size) => (size-1)/2+1,
-            GaussianBlurVertical(_, size)   => (size-1)/2+1,
+            GaussianBlurHorizontal9(_, _)       => 5,
+            GaussianBlurHorizontal29(_, _)      => 15,
+            GaussianBlurHorizontal61(_, _)      => 31,
+            GaussianBlurVertical9(_, _)         => 5,
+            GaussianBlurVertical29(_, _)        => 15,
+            GaussianBlurVertical61(_, _)        => 31,
+            GaussianBlurHorizontal(_, _, size)  => (size-1)/2+1,
+            GaussianBlurVertical(_, _, size)    => (size-1)/2+1,
         }
     }
 
     ///
     /// Computes the 1D weights for a gaussian blur for a particular standard deviation
     ///
-    pub (crate) fn weights_for_gaussian_blur(sigma: f32, count: usize) -> Vec<f32> {
-        let sigma_squared = sigma * sigma;
+    pub (crate) fn weights_for_gaussian_blur(sigma: f32, step: f32, count: usize) -> Vec<f32> {
+        // Short-circuit the case where count is 0
+        if count == 0 { return vec![]; }
 
-        (0..count).into_iter()
+        let sigma_squared   = sigma * sigma;
+
+        // Compute the weight at each position
+        let uncorrected     = (0..count).into_iter()
             .map(|x| {
                 let x = x as f32;
+                let x = x * step;
                 (1.0/((2.0*f32::consts::PI*sigma_squared).sqrt())) * (f32::consts::E.powf(-(x*x)/(2.0*sigma_squared)))
             })
-            .collect()
+            .collect::<Vec<_>>();
+
+        // Correct the blur so that the weights all add up to 1
+        let sum             = uncorrected[0] + uncorrected.iter().skip(1).fold(0.0, |x, y| x+*y)*2.0;
+        let corrected       = uncorrected.into_iter().map(|weight| weight/sum).collect();
+
+        corrected
     }
 
     ///
