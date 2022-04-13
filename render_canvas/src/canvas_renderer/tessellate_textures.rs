@@ -25,7 +25,7 @@ impl CanvasRenderer {
             CreateDynamicSprite(sprite_id, sprite_bounds, canvas_size)  => self.tes_texture_create_dynamic_sprite(texture_id, sprite_id, sprite_bounds, canvas_size),
             FillTransparency(alpha)                                     => self.tes_texture_fill_transparency(texture_id, alpha),
             Copy(target_texture_id)                                     => self.tes_texture_copy(texture_id, target_texture_id),
-            Filter(filter)                                              => { todo!() },
+            Filter(filter)                                              => self.tes_texture_filter(texture_id, filter),
         }
     }
 
@@ -272,5 +272,12 @@ impl CanvasRenderer {
             // Generate the copy instruction
             core.layer_textures.push((target_render_texture, TextureRenderRequest::CopyTexture(source_render_texture.into(), target_render_texture)));
         });
+    }
+
+    ///
+    /// Applies a filter to a texture
+    ///
+    fn tes_texture_filter(&mut self, texture_id: canvas::TextureId, filter: canvas::TextureFilter) {
+        todo!()
     }
 }
