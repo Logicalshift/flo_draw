@@ -10,6 +10,7 @@ mod layer_handle;
 mod render_texture;
 mod render_gradient;
 mod texture_render_request;
+mod texture_filter_request;
 mod renderer_core;
 mod renderer_layer;
 mod renderer_worker;

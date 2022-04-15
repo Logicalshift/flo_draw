@@ -1,4 +1,5 @@
 use super::layer_handle::*;
+use super::texture_filter_request::*;
 
 use flo_render as render;
 use flo_canvas as canvas;
@@ -46,4 +47,7 @@ pub enum TextureRenderRequest {
     /// Copy the first texture to the second texture, then decrease the usage count of the first texture
     ///
     CopyTexture(render::TextureId, render::TextureId),
+
+    /// Applies a filter to the texture
+    Filter(render::TextureId, TextureFilterRequest)
 }

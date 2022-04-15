@@ -461,7 +461,8 @@ impl CanvasRenderer {
                     },
 
                     SetBytes(texture_id, _, _, _)   |
-                    CreateMipMaps(texture_id)       => {
+                    CreateMipMaps(texture_id)       |
+                    Filter(texture_id, _)           => {
                         // These also attach to the actions if the target texture is a dynamic texture
                         if let Some(dynamic_actions) = actions_for_dynamic_textures.get_mut(texture_id) {
                             dynamic_actions.push(render_request.clone());

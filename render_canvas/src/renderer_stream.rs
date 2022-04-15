@@ -780,6 +780,10 @@ impl<'a> RenderStream<'a> {
                         *source_usage_count -= 1;
                     }
                 });
+            },
+
+            Filter(_texture_id, _filter) => {
+                // Not implemented yet
             }
         }
 
