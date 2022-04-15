@@ -119,6 +119,7 @@ pub fn main() {
                 gc.center_region(0.0, 0.0, 1024.0, 768.0);
 
                 // Render the distorted paths to sprite 0
+                // The dynamic texture will automatically update when the sprite changes, and this will affect the rest of the rendering
                 gc.sprite(SpriteId(0));
                 gc.clear_sprite();
                 for (attributes, path_set) in distorted_mascot {
