@@ -2,6 +2,7 @@ use super::canvas_renderer::*;
 
 use crate::render_texture::*;
 use crate::texture_render_request::*;
+use crate::texture_filter_request::*;
 
 use flo_canvas as canvas;
 use flo_render as render;
@@ -280,6 +281,28 @@ impl CanvasRenderer {
     /// Applies a filter to a texture
     ///
     fn tes_texture_filter(&mut self, texture_id: canvas::TextureId, filter: canvas::TextureFilter) {
-        todo!()
+        use canvas::TextureFilter::*;
+
+        let render_texture = if let Some(texture) = self.core.sync(|core| core.canvas_textures.get(&texture_id).cloned()) { texture } else { return; };
+
+        match filter {
+            GaussianBlur(radius) => self.tes_texture_filter_gaussian_blur(render_texture.into(), radius)
+        }
+    }
+
+    ///
+    /// Applies the gaussian blur filter to a texture
+    ///
+    fn tes_texture_filter_gaussian_blur(&mut self, texture_id: render::TextureId, radius: f32) {
+        self.core.sync(|core| {
+            if let Some(transform) = core.texture_transform.get(&texture_id) {
+                // If this texture has a canvas transform, then render it using canvas units rather than pixel units
+                // (This is mainly for dynamic textures where we want to blur using the canvas coordinate scheme rather than in pixels)
+                core.layer_textures.push((texture_id, TextureRenderRequest::Filter(texture_id, TextureFilterRequest::CanvasBlur(radius, *transform))));
+            } else {
+                // If there's no canvas transform, then the radius is in texture pixels
+                core.layer_textures.push((texture_id, TextureRenderRequest::Filter(texture_id, TextureFilterRequest::PixelBlur(radius))));
+            }
+        });
     }
 }
