@@ -278,6 +278,11 @@ pub trait GraphicsContext {
     }
 
     /// Applies a gaussian blur to a texture
+    ///
+    /// The radius is measured in texture units: for a standard texture, this is just pixels but for a dynamic texture, this
+    /// is in canvas coordinates (so the blur effect doesn't change if the canvas is resized)
+    ///
+    /// The standard deviation for a blur created using this filter is 0.25 * radius
     fn gaussian_blur_texture(&mut self, texture_id: TextureId, radius: f32) {
         self.draw(Draw::Texture(texture_id, TextureOp::Filter(TextureFilter::GaussianBlur(radius))));
     }
