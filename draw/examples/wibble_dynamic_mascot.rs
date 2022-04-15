@@ -46,15 +46,19 @@ pub fn main() {
             gc.sprite(SpriteId(0));
             gc.clear_sprite();
 
-            // Turn the sprite into a dynamic texture: this will be updated whenever we update the sprite
+            // Turn the sprite into a dynamic texture: this will be updated whenever we update the sprite, or if the window geometry changes
             gc.create_dynamic_texture(TextureId(0), SpriteId(0), 0.0, 0.0, 1024.0, 1024.0, 200.0, 200.0);
+
+            // Create another copy of the image, this time with a blur applied to it (this is used for the 'shadows': 
+            // note that the blur radius is in texture coordinates for dynamic textures so the effect doesn't change 
+            // when the window is resized)
+            gc.create_dynamic_texture(TextureId(1), SpriteId(0), 0.0, 0.0, 1024.0, 1024.0, 200.0, 200.0);
+            gc.gaussian_blur_texture(TextureId(1), 4.0);
 
             // Layer 0 will be where we draw the textures containing the mascot
             gc.layer(LayerId(0));
             gc.clear_layer();
         });
-
-        let mut iter = 0;
 
         loop {
             // Get the current time where we're rendering this
@@ -136,18 +140,12 @@ pub fn main() {
                     }
                 }
 
-                if iter == 0 {
-                    gc.draw(Draw::Texture(TextureId(0), TextureOp::Copy(TextureId(1))));
-                }
-
-                iter += 1;
-
                 // Render as a repeating texture (as the texture is dynamic, it's re-rendered to be the correct size and whenever the sprite changes)
                 gc.layer(LayerId(0));
 
                 gc.new_path();
                 gc.rect(-1000.0, -1000.0, 2000.0, 2000.0);
-                gc.fill_texture(TextureId(0), 512.0 - 100.0 - 48.0, 384.0 - 100.0 - 48.0, 512.0 + 100.0 - 48.0, 384.0 + 100.0 - 48.0);
+                gc.fill_texture(TextureId(1), 512.0 - 100.0 - 48.0, 384.0 - 100.0 - 48.0, 512.0 + 100.0 - 48.0, 384.0 + 100.0 - 48.0);
                 gc.set_texture_fill_alpha(TextureId(0), 0.2);
                 gc.fill();
 
@@ -159,7 +157,7 @@ pub fn main() {
 
                 gc.new_path();
                 gc.rect(-1000.0, -1000.0, 2000.0, 2000.0);
-                gc.fill_texture(TextureId(0), 512.0 - 100.0 - 16.0, 384.0 - 100.0 - 16.0, 512.0 + 100.0 - 16.0, 384.0 + 100.0 - 16.0);
+                gc.fill_texture(TextureId(1), 512.0 - 100.0 - 16.0, 384.0 - 100.0 - 16.0, 512.0 + 100.0 - 16.0, 384.0 + 100.0 - 16.0);
                 gc.set_texture_fill_alpha(TextureId(0), 0.6);
                 gc.fill();
 
