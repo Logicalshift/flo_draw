@@ -278,7 +278,7 @@ pub trait GraphicsContext {
     }
 
     /// Applies a gaussian blur to a texture
-    fn gaussian_blue_texture(&mut self, texture_id: TextureId, radius: f32) {
+    fn gaussian_blur_texture(&mut self, texture_id: TextureId, radius: f32) {
         self.draw(Draw::Texture(texture_id, TextureOp::Filter(TextureFilter::GaussianBlur(radius))));
     }
 
