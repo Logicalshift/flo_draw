@@ -82,10 +82,10 @@ pub enum StandardShaderProgram {
     /// 61-pixel gaussian blur in the vertical direction
     Blur61Vertical,
 
-    /// Arbitrary-length gaussian blue in the horizontal direction
+    /// Arbitrary-length gaussian blur in the horizontal direction
     BlurTextureHorizontal,
 
-    /// Arbitrary-length gaussian blue in the vertical direction
+    /// Arbitrary-length gaussian blur in the vertical direction
     BlurTextureVertical,
 }
 
