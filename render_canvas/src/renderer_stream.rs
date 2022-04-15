@@ -777,6 +777,8 @@ impl<'a> RenderStream<'a> {
         match request {
             PixelBlur(radius)               => self.filter_gaussian_blur(texture_id, *radius, *radius),
             CanvasBlur(radius, transform)   => {
+                let transform   = self.viewport_transform * *transform;
+
                 // Convert the radius using the transform
                 let (x1, y1)    = transform.transform_point(0.0, 0.0);
                 let (x2, y2)    = transform.transform_point(*radius, *radius);
