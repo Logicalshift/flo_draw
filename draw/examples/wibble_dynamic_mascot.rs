@@ -89,16 +89,9 @@ pub fn main() {
             // Render the current frame
             canvas.draw(|gc| {
                 // Set up the canvas
-                gc.layer(LayerId(0));
-                gc.clear_layer();
-
                 gc.canvas_height(768.0);
                 gc.transform(Transform2D::scale(1.0, -1.0));
                 gc.center_region(0.0, 0.0, 1024.0, 768.0);
-
-                gc.fill_color(Color::Rgba(1.0, 1.0, 1.0, 1.0));
-                gc.stroke_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
-                gc.line_width(6.0);
 
                 // Render the distorted paths to sprite 0
                 gc.sprite(SpriteId(0));
@@ -146,6 +139,7 @@ pub fn main() {
 
                 // Render as a repeating texture (as the texture is dynamic, it's re-rendered to be the correct size and whenever the sprite changes)
                 gc.layer(LayerId(0));
+                gc.clear_layer();
 
                 gc.new_path();
                 gc.rect(-1000.0, -1000.0, 2000.0, 2000.0);
