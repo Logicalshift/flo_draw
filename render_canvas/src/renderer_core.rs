@@ -49,6 +49,9 @@ pub struct RenderCore {
     /// The size of the textures (when in use)
     pub texture_size: HashMap<render::TextureId, render::Size2D>,
 
+    /// The canvas transform applied to the texture, if it's a dynamic texture
+    pub texture_transform: HashMap<render::TextureId, canvas::Transform2D>,
+
     /// The render state that a dynamic texture was last rendered at
     pub dynamic_texture_state: HashMap<render::TextureId, DynamicTextureState>,
 
@@ -151,11 +154,10 @@ impl RenderCore {
             // Prevent any rendering to this texture
             self.layer_textures.retain(|(id, _req)| id != &free_texture_id);
 
-            // No longer has any 'dynamic' texture state
+            // Free the resources attached to the texture
             self.dynamic_texture_state.remove(&free_texture_id);
-
-            // This texture no longer has a size associated with it
             self.texture_size.remove(&free_texture_id);
+            self.texture_transform.remove(&free_texture_id);
 
             // Add as a texture ID we can reallocate
             self.free_textures.push(free_texture_id);

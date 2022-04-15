@@ -61,6 +61,7 @@ impl CanvasRenderer {
             core.canvas_textures.insert(texture_id, RenderTexture::Loading(render_texture));
             core.used_textures.insert(render_texture, 1);
             core.texture_size.insert(render_texture, render::Size2D(width as _, height as _));
+            core.texture_transform.remove(&render_texture);
 
             // Create the texture in the texture request section
             use canvas::{TextureSize, TextureFormat};
@@ -220,6 +221,7 @@ impl CanvasRenderer {
                 core.used_textures.insert(render_texture_id, 1);
                 core.texture_size.insert(render_texture_id, render::Size2D(1 as _, 1 as _));
                 core.dynamic_texture_state.remove(&render_texture_id);
+                core.texture_transform.insert(render_texture_id, transform);
 
                 // Specify as a dynamic texture
                 core.layer_textures.push((render_texture_id, TextureRenderRequest::DynamicTexture(render_texture_id, sprite_layer_handle, sprite_bounds, canvas_size, transform, Arc::new(vec![]))));

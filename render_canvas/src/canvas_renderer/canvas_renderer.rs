@@ -86,6 +86,7 @@ impl CanvasRenderer {
             render_target_for_texture:  HashMap::new(),
             dynamic_texture_state:      HashMap::new(),
             texture_size:               HashMap::new(),
+            texture_transform:          HashMap::new(),
             layer_textures:             vec![],
             canvas_textures:            HashMap::new(),
             canvas_gradients:           HashMap::new(),
