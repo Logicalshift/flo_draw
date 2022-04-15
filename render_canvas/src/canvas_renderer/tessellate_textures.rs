@@ -283,10 +283,39 @@ impl CanvasRenderer {
     fn tes_texture_filter(&mut self, texture_id: canvas::TextureId, filter: canvas::TextureFilter) {
         use canvas::TextureFilter::*;
 
+        // Fetch the render texture
         let render_texture = if let Some(texture) = self.core.sync(|core| core.canvas_textures.get(&texture_id).cloned()) { texture } else { return; };
 
+        // If the texture is in the 'ready' state, then copy it for modification
+        let render_texture = match render_texture {
+            RenderTexture::Ready(render_texture)    => {
+                self.core.sync(|core| {
+                    // Create a blank texture, and move back to the loading state
+                    let new_texture_id = core.allocate_texture();
+
+                    // Stop using the initial texture, and create a new copy that's 'Loading'
+                    // Copying the texture will reduce the usage count of the older texture
+                    core.used_textures.insert(new_texture_id, 1);
+                    core.canvas_textures.insert(texture_id, RenderTexture::Loading(new_texture_id));
+
+                    // Generate a copy
+                    core.texture_size.insert(new_texture_id, core.texture_size.get(&render_texture).unwrap().clone());
+                    core.layer_textures.push((render_texture, TextureRenderRequest::CopyTexture(render_texture, new_texture_id)));
+
+                    // Write to the new texture
+                    new_texture_id
+                })
+            }
+
+            RenderTexture::Loading(render_texture)  => {
+                // Use the existing texture
+                render_texture
+            }
+        };
+
+        // Dispatch the filter operation
         match filter {
-            GaussianBlur(radius) => self.tes_texture_filter_gaussian_blur(render_texture.into(), radius)
+            GaussianBlur(radius) => self.tes_texture_filter_gaussian_blur(render_texture, radius)
         }
     }
 
