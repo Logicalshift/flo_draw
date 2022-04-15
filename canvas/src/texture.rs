@@ -43,6 +43,8 @@ pub struct CanvasSize(pub f32, pub f32);
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum TextureFilter {
     /// Applies a gaussian blur with a given radius
+    ///
+    /// The radius supplied here is used to calculate the sigma for the blur: a sigma of 0.25 corresponds to a radius of 1.0, 0.5 to a radius of 2.0, etc.
     GaussianBlur(f32)
 }
 
