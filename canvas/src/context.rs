@@ -262,7 +262,9 @@ pub trait GraphicsContext {
     /// Creates a dynamic texture that is rendered from a sprite and automatically chooses its resolution to cover
     /// a particular area of the canvas.
     ///
-    /// This is useful for applying filter effects to rendering, or caching a complicated rendering for later
+    /// This is useful for applying filter effects to rendering, or caching a complicated rendering for later. It can
+    /// also be used to update parts of the rendering just by changing the source sprite, and can be combined with 
+    /// filters such as the gaussian blur filter for more complicated effects.
     fn create_dynamic_texture(&mut self, texture_id: TextureId, sprite_id: SpriteId, sprite_x: f32, sprite_y: f32, sprite_width: f32, sprite_height: f32, canvas_width: f32, canvas_height: f32) {
         self.draw(Draw::Texture(texture_id, TextureOp::CreateDynamicSprite(sprite_id, SpriteBounds(SpritePosition(sprite_x, sprite_y), SpriteSize(sprite_width, sprite_height)), CanvasSize(canvas_width, canvas_height))));
     }
