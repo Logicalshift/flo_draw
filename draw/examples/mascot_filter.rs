@@ -40,7 +40,7 @@ pub fn main() {
                 gc.clear_layer();
 
                 gc.sprite_transform(SpriteTransform::Identity);
-                //gc.sprite_transform(SpriteTransform::Translate(100.0, 0.0));
+                gc.sprite_transform(SpriteTransform::Translate(100.0, 0.0));
                 gc.draw_sprite(SpriteId(0));
             });
 
