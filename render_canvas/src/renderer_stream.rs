@@ -435,7 +435,7 @@ impl RenderCore {
                 SetBlendMode(new_blend_mode) => {
                     let old_state               = render_state.clone();
 
-                    // Render the main buffer
+                    // Render to the main buffer
                     render_state.blend_mode     = Some(*new_blend_mode);
                     render_state.render_target  = Some(MAIN_RENDER_TARGET);
 
