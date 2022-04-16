@@ -81,4 +81,21 @@ impl LayerBounds {
             max_y: f32::max(f32::max(f32::max(y1, y2), y3), y4),
         }
     }
+
+    ///
+    /// Converts the coordinates in these bounds into the number of pixels it will occupy in a viewport of the specified size
+    ///
+    pub fn to_viewport_pixels(&self, viewport_size: &render::Size2D) -> LayerBounds {
+        // The viewport occupies the coordinates -1 to 1: these map to the pixel coordinates 0-viewport_size
+        let render::Size2D(w, h)    = viewport_size;
+        let w                       = *w as f32;
+        let h                       = *h as f32;
+
+        LayerBounds {
+            min_x: (self.min_x + 1.0)/2.0 * w,
+            min_y: (self.min_y + 1.0)/2.0 * h,
+            max_x: (self.max_x + 1.0)/2.0 * w,
+            max_y: (self.max_y + 1.0)/2.0 * h,
+        }
+    }
 }
