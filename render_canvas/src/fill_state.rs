@@ -31,18 +31,6 @@ pub enum FillState {
 
 impl FillState {
     ///
-    /// Returns a variant of this fill state with all channels set as the alpha channel
-    ///
-    pub fn all_channel_alpha(&self) -> Self {
-        match self {
-            FillState::None                         => FillState::None,
-            FillState::Color(color)                 => FillState::Color(render::Rgba8([color.0[3], color.0[3], color.0[3], color.0[3]])),
-            FillState::Texture(_, _, _, _)          => self.clone(),
-            FillState::LinearGradient(_, _, _, _)   => self.clone()
-        }
-    }
-
-    ///
     /// Returns the flat colour to use for this fill state
     ///
     pub fn flat_color(&self) -> render::Rgba8 {
