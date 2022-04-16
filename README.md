@@ -94,6 +94,8 @@ See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` su
 * [`cargo run --example mandelbrot`](./draw/examples/mandelbrot.rs) - an interactive mandelbrot set program
 * [`cargo run --example wibble`](./draw/examples/wibble.rs) - render text to vectors and distort it in real time
 * [`cargo run --example mascot`](./draw/examples/mascot.rs) - render FlowBetween's mascot from some pre-encoded vector instructions
+* [`cargo run --example mascot_sprite`](./draw/examples/mascot_sprite.rs) - use a sprite to render the mascot
+* [`cargo run --example mascot_sprite`](./draw/examples/mascot_filter.rs) - render the mascot with a filter applied to it
 * [`cargo run --example texture`](./draw/examples/texture.rs) - bitmap rendering
 * [`cargo run --example texture_sprites`](./draw/examples/texture_sprites.rs) - bouncing balls with bitmap images
 * [`cargo run --example texture_spin`](./draw/examples/texture_spin.rs) - bitmap rendering with an animated transformation applied
