@@ -37,7 +37,8 @@ impl CanvasRenderer {
 
             if let Some(sprite_handle) = core.sprites.get(&sprite_id) {
                 // Use the existing sprite layer if one exists
-                self.current_layer = *sprite_handle;
+                self.current_layer              = *sprite_handle;
+                self.current_layer_is_sprite    = true;
             } else {
                 // Create a new sprite layer
                 let mut sprite_layer            = Self::create_default_layer();
@@ -49,6 +50,7 @@ impl CanvasRenderer {
 
                 // Choose the layer as the current sprite layer
                 self.current_layer              = sprite_layer;
+                self.current_layer_is_sprite    = true;
             }
 
             // Set the sprite matrix to be 'unchanged' from the active transform

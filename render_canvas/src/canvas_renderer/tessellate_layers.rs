@@ -88,7 +88,8 @@ impl CanvasRenderer {
             let layer0 = core.allocate_layer_handle(layer0);
             core.layers.push(layer0);
 
-            self.current_layer = layer0;
+            self.current_layer              = layer0;
+            self.current_layer_is_sprite    = false;
         });
 
         self.active_transform   = canvas::Transform2D::identity();
@@ -111,7 +112,8 @@ impl CanvasRenderer {
                 core.layers.push(new_layer);
             }
 
-            self.current_layer = core.layers[layer_id];
+            self.current_layer              = core.layers[layer_id];
+            self.current_layer_is_sprite    = false;
         });
     }
 
