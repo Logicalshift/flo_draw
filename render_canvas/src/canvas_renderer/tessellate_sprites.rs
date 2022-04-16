@@ -1,6 +1,8 @@
 use super::canvas_renderer::*;
 use super::tessellate_build_path::*;
 
+use crate::texture_filter_request::*;
+
 use crate::render_entity::*;
 
 use flo_canvas as canvas;
@@ -75,7 +77,7 @@ impl CanvasRenderer {
             let layer           = core.layer(self.current_layer);
             let sprite_matrix   = layer.state.sprite_matrix;
 
-            // Update the transformation matrix
+            // Update the transformation matrix for the layer
             layer.update_transform(&self.active_transform);
 
             // Render the sprite
@@ -88,6 +90,25 @@ impl CanvasRenderer {
     /// Renders a sprite with a set of transformations and filters
     ///
     pub (super) fn tes_draw_sprite_with_filters(&mut self, sprite_id: canvas::SpriteId, filters: Vec<canvas::TextureFilter>) { 
-        todo!();
+        self.core.sync(|core| {
+            let layer           = core.layer(self.current_layer);
+            let sprite_matrix   = layer.state.sprite_matrix;
+
+            // Update the transformation matrix for the layer
+            layer.update_transform(&self.active_transform);
+
+            // Turn the TextureFilters into filter requests
+            let filters = filters.into_iter().map(|filter| {
+                use canvas::TextureFilter::*;
+
+                match filter {
+                    GaussianBlur(radius)    => TextureFilterRequest::CanvasBlur(radius, self.active_transform)
+                }
+            }).collect();
+
+            // Render the sprite
+            layer.render_order.push(RenderEntity::RenderSpriteWithFilters(sprite_id, sprite_matrix, filters));
+            layer.state.modification_count += 1;
+        })
     }
 }
