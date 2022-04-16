@@ -401,6 +401,7 @@ enum DecoderState {
     NewSprite(String),                          // 'Ns' (id)
     SpriteDraw(String),                         // 'sD' (id)
     SpriteDrawWithFilters(String),              // 'sF' (id) (len) (filters)
+    SpriteDrawWithFiltersId(SpriteId, String),  // 'sF' (id) (len) (filters)
     SpriteTransform,                            // 'sT' (transform)
     SpriteTransformTranslate(String),           // 'sTt' (x, y)
     SpriteTransformScale(String),               // 'sTs' (x, y)
@@ -532,14 +533,15 @@ impl CanvasDecoder {
             NewLayerAlpha(layer, alpha)     => Self::decode_new_layer_alpha(next_chr, layer, alpha)?,
             SwapLayers(layer1, param)       => Self::decode_swap_layers(next_chr, layer1, param)?,
 
-            NewSprite(param)                => Self::decode_new_sprite(next_chr, param)?,
-            SpriteDraw(param)               => Self::decode_sprite_draw(next_chr, param)?,
-            SpriteDrawWithFilters(param)    => Self::decode_sprite_draw_with_filters(next_chr, param)?,
-            SpriteTransform                 => Self::decode_sprite_transform(next_chr)?,
-            SpriteTransformTranslate(param) => Self::decode_sprite_transform_translate(next_chr, param)?,
-            SpriteTransformScale(param)     => Self::decode_sprite_transform_scale(next_chr, param)?,
-            SpriteTransformRotate(param)    => Self::decode_sprite_transform_rotate(next_chr, param)?,
-            SpriteTransformTransform(param) => Self::decode_sprite_transform_transform(next_chr, param)?,
+            NewSprite(param)                    => Self::decode_new_sprite(next_chr, param)?,
+            SpriteDraw(param)                   => Self::decode_sprite_draw(next_chr, param)?,
+            SpriteDrawWithFilters(param)        => Self::decode_sprite_draw_with_filters(next_chr, param)?,
+            SpriteDrawWithFiltersId(id, param)  => Self::decode_sprite_draw_with_filters_id(next_chr, id, param)?,
+            SpriteTransform                     => Self::decode_sprite_transform(next_chr)?,
+            SpriteTransformTranslate(param)     => Self::decode_sprite_transform_translate(next_chr, param)?,
+            SpriteTransformScale(param)         => Self::decode_sprite_transform_scale(next_chr, param)?,
+            SpriteTransformRotate(param)        => Self::decode_sprite_transform_rotate(next_chr, param)?,
+            SpriteTransformTransform(param)     => Self::decode_sprite_transform_transform(next_chr, param)?,
 
             FontDrawing                                             => Self::decode_font_drawing(next_chr)?,
             FontDrawText(font_id, string_decode, coords)            => Self::decode_font_draw_text(next_chr, font_id, string_decode, coords)?,
@@ -678,6 +680,7 @@ impl CanvasDecoder {
         // Matched 's' so far
         match next_chr {
             'D'     => Ok((DecoderState::SpriteDraw(String::new()), None)),
+            'F'     => Ok((DecoderState::SpriteDrawWithFilters(String::new()), None)),
             'C'     => Ok((DecoderState::None, Some(Draw::ClearSprite))),
             'T'     => Ok((DecoderState::SpriteTransform, None)),
 
@@ -1112,11 +1115,38 @@ impl CanvasDecoder {
         }
     }
 
-    fn decode_sprite_draw_with_filters(next_chr: char, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+    #[inline] fn decode_sprite_draw_with_filters(next_chr: char, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         match Self::decode_sprite_id(next_chr, param)? {
-            PartialResult::FullMatch(sprite_id) => Ok((DecoderState::None, Some(Draw::DrawSprite(sprite_id)))),
-            PartialResult::MatchMore(param)     => Ok((DecoderState::SpriteDraw(param), None))
+            PartialResult::FullMatch(sprite_id) => Ok((DecoderState::SpriteDrawWithFiltersId(sprite_id, String::new()), None)),
+            PartialResult::MatchMore(param)     => Ok((DecoderState::SpriteDrawWithFilters(param), None))
         }
+    }
+
+    fn decode_sprite_draw_with_filters_id(next_chr: char, sprite_id: SpriteId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        // Add the character to the parameter
+        let mut param = param;
+        param.push(next_chr);
+
+        // Try decoding
+        let mut chars = param.chars();
+
+        // Decode the length
+        let length = match Self::try_decode_compact_u64(&mut chars)? {
+            Some(length)    => length,
+            None            => { return Ok((DecoderState::SpriteDrawWithFiltersId(sprite_id, param), None)); }
+        };
+
+        // Decode the filters
+        let mut filters = vec![];
+
+        for _ in 0..length {
+            match Self::try_decode_texture_filter(&mut chars)? {
+                Some(filter)    => { filters.push(filter); },
+                None            => { return Ok((DecoderState::SpriteDrawWithFiltersId(sprite_id, param), None)); }
+            }
+        }
+
+        return Ok((DecoderState::None, Some(Draw::DrawSpriteWithFilters(sprite_id, filters))));
     }
 
     #[inline] fn decode_sprite_transform(next_chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
@@ -1233,22 +1263,38 @@ impl CanvasDecoder {
     ///
     /// Consumes characters until we have a u64 ID
     ///
-    fn decode_compact_id(next_chr: char, mut param: String) -> Result<PartialResult<u64>, DecoderError> {
-        // Add the next character
-        param.push(next_chr);
+    fn try_decode_compact_u64(chars: &mut Chars) -> Result<Option<u64>, DecoderError> {
+        let mut result  = 0u64;
+        let mut shift   = 0;
 
         // Decode to a u64 if the 0x20 bit is not set
-        if (Self::decode_base64(next_chr)? & 0x20) == 0 {
-            let mut result = 0u64;
-
-            while let Some(chr) = param.pop() {
-                result <<= 5;
-                result |= (Self::decode_base64(chr)? & !0x20) as u64;
+        while let Some(next_chr) = chars.next() {
+            if shift >= 64 {
+                return Err(DecoderError::BadNumber);
             }
 
-            Ok(PartialResult::FullMatch(result))
-        } else {
-            Ok(PartialResult::MatchMore(param))
+            let decoded = Self::decode_base64(next_chr)?;
+            result |= ((decoded & !0x20) as u64) << shift;
+
+            if (decoded & 0x20) == 0 {
+                return Ok(Some(result));
+            }
+
+            shift += 5;
+        }
+
+        Ok(None)
+    }
+
+    ///
+    /// Consumes characters until we have a u64 ID
+    ///
+    fn decode_compact_id(next_chr: char, mut param: String) -> Result<PartialResult<u64>, DecoderError> {
+        param.push(next_chr);
+
+        match Self::try_decode_compact_u64(&mut param.chars())? {
+            Some(num)   => Ok(PartialResult::FullMatch(num)),
+            None        => Ok(PartialResult::MatchMore(param))
         }
     }
 
@@ -1660,9 +1706,7 @@ impl CanvasDecoder {
     ///
     /// Returns the texture filter if the parameter matches one, 'None' if more characters are required, or an error if there's a problem
     ///
-    fn try_decode_texture_filter(param: &str) -> Result<Option<TextureFilter>, DecoderError> {
-        let mut chars = param.chars();
-
+    fn try_decode_texture_filter(chars: &mut Chars) -> Result<Option<TextureFilter>, DecoderError> {
          match chars.next() {
             Some('B')   => Self::try_decode_texture_filter_gaussian_blur(chars),
             Some(other) => Err(DecoderError::InvalidCharacter(other)),
@@ -1673,9 +1717,8 @@ impl CanvasDecoder {
     ///
     /// Decodes the parameters for a gaussian blur texture filter
     ///
-    fn try_decode_texture_filter_gaussian_blur(chars: Chars) -> Result<Option<TextureFilter>, DecoderError> {
-        let mut chars   = chars;
-        let radius      = Self::try_decode_f32(&mut chars)?;
+    fn try_decode_texture_filter_gaussian_blur(chars: &mut Chars) -> Result<Option<TextureFilter>, DecoderError> {
+        let radius      = Self::try_decode_f32(chars)?;
 
         if let Some(radius) = radius {
             Ok(Some(TextureFilter::GaussianBlur(radius)))
@@ -1692,7 +1735,7 @@ impl CanvasDecoder {
 
         param.push(chr);
 
-        if let Some(filter) = Self::try_decode_texture_filter(&param)? {
+        if let Some(filter) = Self::try_decode_texture_filter(&mut param.chars())? {
             Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::Filter(filter)))))
         } else {
             Ok((DecoderState::TextureOpFilter(texture_id, param), None))
@@ -2392,6 +2435,9 @@ mod test {
             Draw::SpriteTransform(SpriteTransform::Translate(4.0, 5.0)),
             Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))),
             Draw::DrawSprite(SpriteId(1300)),
+            Draw::DrawSpriteWithFilters(SpriteId(10), vec![]),
+            Draw::DrawSpriteWithFilters(SpriteId(10), vec![TextureFilter::GaussianBlur(4.0)]),
+            Draw::DrawSpriteWithFilters(SpriteId(10), vec![TextureFilter::GaussianBlur(4.0), TextureFilter::GaussianBlur(8.0)]),
 
             Draw::Texture(TextureId(42), TextureOp::Create(TextureSize(1024, 768), TextureFormat::Rgba)),
             Draw::Texture(TextureId(43), TextureOp::Free),
@@ -2455,6 +2501,9 @@ mod test {
             Draw::SpriteTransform(SpriteTransform::Translate(4.0, 5.0)),
             Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))),
             Draw::DrawSprite(SpriteId(1300)),
+            Draw::DrawSpriteWithFilters(SpriteId(10), vec![]),
+            Draw::DrawSpriteWithFilters(SpriteId(10), vec![TextureFilter::GaussianBlur(4.0)]),
+            Draw::DrawSpriteWithFilters(SpriteId(10), vec![TextureFilter::GaussianBlur(4.0), TextureFilter::GaussianBlur(8.0)]),
             Draw::Texture(TextureId(42), TextureOp::Create(TextureSize(1024, 768), TextureFormat::Rgba)),
             Draw::Texture(TextureId(43), TextureOp::Free),
             Draw::Texture(TextureId(44), TextureOp::SetBytes(TexturePosition(2, 3), TextureSize(4, 5), Arc::new(vec![1,2,3,4,5]))),
