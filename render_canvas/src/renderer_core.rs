@@ -412,6 +412,7 @@ impl RenderCore {
                 current_matrix:     canvas::Transform2D::identity(),
                 sprite_matrix:      canvas::Transform2D::identity(),
                 scale_factor:       1.0,
+                base_scale_factor:  1.0,
                 blend_mode:         canvas::BlendMode::SourceOver,
                 restore_point:      None
             },

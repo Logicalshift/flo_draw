@@ -58,7 +58,8 @@ impl CanvasRenderer {
             layer.update_transform(&self.active_transform);
 
             // Set the scale factor in the sprite layer
-            layer.state.scale_factor = previous_layer_scale_factor;
+            layer.state.base_scale_factor   = previous_layer_scale_factor;
+            layer.state.scale_factor        = previous_layer_scale_factor;
         })
     }
 

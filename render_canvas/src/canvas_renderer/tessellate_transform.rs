@@ -62,6 +62,7 @@ impl CanvasRenderer {
 
                 let new_transform           = layer.state.current_matrix * transform;
                 layer.state.current_matrix  = new_transform;
+                layer.update_scale_factor();
 
                 layer.render_order.push(RenderEntity::SetTransform(new_transform));
             });

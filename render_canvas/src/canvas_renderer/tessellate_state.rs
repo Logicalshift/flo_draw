@@ -91,6 +91,7 @@ impl CanvasRenderer {
 
                     if layer.state.current_matrix != old_transform {
                         layer.render_order.push(RenderEntity::SetTransform(layer.state.current_matrix));
+                        layer.update_scale_factor();
                     }
                 } else {
                     // Pop the state for the layer

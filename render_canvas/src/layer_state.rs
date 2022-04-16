@@ -37,6 +37,9 @@ pub struct LayerState {
     /// The scale factor applied by the current matrix (used to determine the precision of the tessellator)
     pub scale_factor: f32,
 
+    /// For sprites, this will be a value indicating the base scale factor (for when the 'identity' transformation is used)
+    pub base_scale_factor: f32,
+
     /// The current transform to apply when rendering sprites
     pub sprite_matrix: canvas::Transform2D
 }

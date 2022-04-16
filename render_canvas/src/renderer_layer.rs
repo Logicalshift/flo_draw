@@ -42,16 +42,23 @@ impl Layer {
             // Update the current matrix
             self.state.current_matrix   = *active_transform;
 
-            // Work out the scale factor from the matrix (skewed matrices won't produce accurate values here)
-            let canvas::Transform2D([[_a, _b, _], [d, e, _], [_, _, _]]) = active_transform;
-            // let scale_x              = a*a + b*b;
-            let scale_y                 = d*d + e*e;
-
-            self.state.scale_factor     = scale_y.sqrt();
+            self.update_scale_factor();
 
             // Add a 'set transform' to the rendering for this layer
             self.render_order.push(RenderEntity::SetTransform(*active_transform));
         }
+    }
+
+    ///
+    /// Updates the scale factor for this layer from the currently set transform
+    ///
+    pub fn update_scale_factor(&mut self) {
+        // Work out the scale factor from the matrix (skewed matrices won't produce accurate values here)
+        let canvas::Transform2D([[_a, _b, _], [d, e, _], [_, _, _]]) = self.state.current_matrix;
+        // let scale_x              = a*a + b*b;
+        let scale_y                 = d*d + e*e;
+
+        self.state.scale_factor     = scale_y.sqrt() * self.state.base_scale_factor;
     }
 
     ///

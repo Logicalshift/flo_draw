@@ -33,6 +33,7 @@ impl CanvasRenderer {
                 current_matrix:     canvas::Transform2D::identity(),
                 sprite_matrix:      canvas::Transform2D::identity(),
                 scale_factor:       0.002,                              // Canvas height of approximately 768 (1.0 will tessellate at far too fine a detail for these coordinate schemes, so we default to 0.002 as a safety net)
+                base_scale_factor:  1.0,
                 blend_mode:         canvas::BlendMode::SourceOver,
                 restore_point:      None
             },
@@ -182,6 +183,7 @@ impl CanvasRenderer {
 
             // Retain the modification count from the old layer
             layer.state.modification_count  = old_layer.state.modification_count + 1;
+            layer.state.base_scale_factor   = old_layer.state.base_scale_factor;
             layer.state.scale_factor        = old_layer.state.scale_factor;
 
             // Swap into the layer list to replace the old one
