@@ -49,9 +49,9 @@ pub fn main() {
                 gc.clear_layer();
 
                 gc.sprite_transform(SpriteTransform::Identity);
-                gc.sprite_transform(SpriteTransform::Translate(512.0, 384.0));
-                gc.sprite_transform(SpriteTransform::Scale(scale, scale));
                 gc.sprite_transform(SpriteTransform::Translate(-512.0, -384.0));
+                gc.sprite_transform(SpriteTransform::Scale(scale, scale));
+                gc.sprite_transform(SpriteTransform::Translate(512.0, 384.0));
                 gc.sprite_transform(SpriteTransform::Translate(x_off, y_off));
                 gc.draw_sprite(SpriteId(0));
             });
