@@ -421,6 +421,40 @@ impl RenderCore {
                     layer                   = core.layer(layer_handle);
                 },
 
+                RenderSpriteWithFilters(sprite_id, sprite_transform, filters) => {
+                    let sprite_id           = *sprite_id;
+                    let sprite_transform    = *sprite_transform;
+
+                    if let Some(sprite_layer) = core.sprites.get(&sprite_id) {
+                        let sprite_layer = *sprite_layer;
+
+                        // The sprite transform is appended to the viewport transform
+                        let combined_transform      = &viewport_transform * &active_transform;
+                        let sprite_transform        = combined_transform * sprite_transform;
+
+                        // The items from before the sprite should be rendered using the current state
+                        let old_state               = render_state.clone();
+
+                        // Render the layer associated with the sprite
+                        let render_sprite           = core.render_layer(sprite_transform, sprite_layer, render_target, render_state);
+
+                        // Render the sprite
+                        render_order.extend(render_sprite);
+
+                        // Restore the state back to the state before the sprite was rendered
+                        render_order.extend(old_state.update_from_state(&render_state));
+
+                        // Following instructions are rendered using the state before the sprite (except for the invalid area)
+                        let invalid_bounds          = render_state.invalid_bounds;
+                        *render_state               = old_state;
+                        render_state.invalid_bounds = invalid_bounds;
+                        render_state.is_clear       = Some(false);
+                    }
+
+                    // Reborrow the layer
+                    layer                   = core.layer(layer_handle);
+                },
+
                 SetTransform(new_transform) => {
                     // The new transform will apply to all the following render instructions
                     active_transform        = *new_transform;

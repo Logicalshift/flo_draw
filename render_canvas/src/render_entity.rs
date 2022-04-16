@@ -1,3 +1,5 @@
+use super::texture_filter_request::*;
+
 use flo_canvas as canvas;
 use flo_render as render;
 
@@ -32,6 +34,9 @@ pub enum RenderEntity {
 
     /// Render the sprite layer with the specified ID
     RenderSprite(canvas::SpriteId, canvas::Transform2D),
+
+    /// Render a sprite to an off-screen texture and then apply a filter to it
+    RenderSpriteWithFilters(canvas::SpriteId, canvas::Transform2D, Vec<TextureFilterRequest>),
 
     /// Updates the transformation matrix for the layer
     SetTransform(canvas::Transform2D),

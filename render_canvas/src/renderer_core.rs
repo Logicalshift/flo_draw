@@ -111,6 +111,7 @@ impl RenderCore {
             SetFlatColor                            => { }
             SetDashPattern(_)                       => { }
             RenderSprite(_, _)                      => { }
+            RenderSpriteWithFilters(_, _, _)        => { }
             DisableClipping                         => { }
 
             SetFillTexture(texture_id, _, _, _)     => { 
@@ -288,12 +289,13 @@ impl RenderCore {
 
         for render_idx in 0..layer.render_order.len() {
             match &layer.render_order[render_idx] {
-                VertexBuffer(_buffers, _)                   => { 
+                VertexBuffer(_buffers, _) => { 
                     send_vertex_buffers.extend(self.send_layer_vertex_buffer(layer_handle, render_idx)); 
                     layer = self.layer(layer_handle);
                 },
 
-                RenderSprite(sprite_id, _sprite_transform)  => { 
+                RenderSprite(sprite_id, _)                  |
+                RenderSpriteWithFilters(sprite_id, _, _)    => { 
                     let sprite_id           = *sprite_id;
                     let sprite_layer_handle = self.sprites.get(&sprite_id).cloned();
 
@@ -304,7 +306,7 @@ impl RenderCore {
                     layer = self.layer(layer_handle);
                 },
 
-                _                                           => { }
+                _ => { }
             }
         }
 
