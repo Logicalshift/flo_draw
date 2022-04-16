@@ -395,18 +395,18 @@ impl RenderCore {
                     let sprite_id           = *sprite_id;
                     let sprite_transform    = *sprite_transform;
 
-                    if let Some(sprite_layer) = core.sprites.get(&sprite_id) {
-                        let sprite_layer = *sprite_layer;
+                    if let Some(sprite_layer_handle) = core.sprites.get(&sprite_id) {
+                        let sprite_layer_handle = *sprite_layer_handle;
 
                         // The sprite transform is appended to the viewport transform
                         let combined_transform      = &viewport_transform * &active_transform;
-                        let sprite_transform        = combined_transform * sprite_transform;
+                        let combined_transform      = combined_transform * sprite_transform;
 
                         // The items from before the sprite should be rendered using the current state
                         let old_state               = render_state.clone();
 
                         // Render the layer associated with the sprite
-                        let render_sprite           = core.render_layer(sprite_transform, sprite_layer, render_target, render_state);
+                        let render_sprite           = core.render_layer(combined_transform, sprite_layer_handle, render_target, render_state);
 
                         // Render the sprite
                         render_order.extend(render_sprite);
@@ -429,18 +429,24 @@ impl RenderCore {
                     let sprite_id           = *sprite_id;
                     let sprite_transform    = *sprite_transform;
 
-                    if let Some(sprite_layer) = core.sprites.get(&sprite_id) {
-                        let sprite_layer = *sprite_layer;
+                    if let Some(sprite_layer_handle) = core.sprites.get(&sprite_id) {
+                        let sprite_layer_handle     = *sprite_layer_handle;
 
                         // The sprite transform is appended to the viewport transform
                         let combined_transform      = &viewport_transform * &active_transform;
-                        let sprite_transform        = combined_transform * sprite_transform;
+                        let combined_transform      = combined_transform * sprite_transform;
+
+                        // Figure out the sprite size in pixels
+                        let sprite_layer            = core.layer(sprite_layer_handle);
+                        let sprite_bounds           = sprite_layer.bounds;
+                        let sprite_bounds           = sprite_bounds.transform(&((active_transform * sprite_transform) * active_transform.invert().unwrap()));
+                        let sprite_bounds           = sprite_bounds.to_viewport_pixels(&render_state.viewport_size);
 
                         // The items from before the sprite should be rendered using the current state
                         let old_state               = render_state.clone();
 
                         // Render the layer associated with the sprite
-                        let render_sprite           = core.render_layer(sprite_transform, sprite_layer, render_target, render_state);
+                        let render_sprite           = core.render_layer(combined_transform, sprite_layer_handle, render_target, render_state);
 
                         // Render the sprite
                         render_order.extend(render_sprite);
