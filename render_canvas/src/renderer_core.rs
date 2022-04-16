@@ -307,7 +307,7 @@ impl RenderCore {
                     if let Some(sprite_layer_handle) = sprite_layer_handle {
                         send_vertex_buffers.extend(self.send_vertex_buffers(sprite_layer_handle));
 
-                        let transform       = active_transform * transform;
+                        let transform       = (active_transform * transform) * active_transform.invert().unwrap();
                         let sprite_layer    = self.layer(sprite_layer_handle);
                         sprite_bounds       = sprite_layer.bounds;
                         sprite_bounds       = sprite_bounds.transform(&transform);
