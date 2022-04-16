@@ -29,19 +29,30 @@ pub fn main() {
             gc.draw_list(mascot);
         });
 
+        let mut iter = 0;
+
         loop {
+            let phase_1 = (iter as f32)/20.0;
+            let phase_2 = (iter as f32)/23.0;
+
+            let x_off = phase_1.sin() * 50.0;
+            let y_off = phase_2.sin() * 50.0;
+
             canvas.draw(|gc| {
                 // Draw the mascot as a sprite
                 gc.layer(LayerId(0));
                 gc.clear_layer();
 
                 gc.sprite_transform(SpriteTransform::Identity);
+                gc.sprite_transform(SpriteTransform::Translate(x_off, y_off));
                 gc.draw_sprite(SpriteId(0));
             });
 
 
             // Wait for the next frame
             thread::sleep(Duration::from_nanos(1_000_000_000 / 60));
+
+            iter += 1;
         }
     });
 }
