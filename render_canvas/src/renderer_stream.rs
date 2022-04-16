@@ -123,7 +123,10 @@ struct RenderStreamState {
     is_clear: Option<bool>,
 
     /// The region of the layer buffer that has been drawn on
-    invalid_bounds: LayerBounds
+    invalid_bounds: LayerBounds,
+
+    /// The size of the viewport
+    viewport_size: render::Size2D,
 }
 
 impl<'a> RenderStream<'a> {
@@ -168,7 +171,7 @@ impl RenderStreamState {
     ///
     /// Creates a new render stream state
     ///
-    fn new() -> RenderStreamState {
+    fn new(viewport_size: render::Size2D) -> RenderStreamState {
         RenderStreamState {
             render_target:      None,
             blend_mode:         None,
@@ -177,6 +180,7 @@ impl RenderStreamState {
             transform:          None,
             clip_buffers:       None,
             is_clear:           None,
+            viewport_size:      viewport_size,
             invalid_bounds:     LayerBounds::default()
         }
     }
@@ -663,7 +667,7 @@ impl<'a> RenderStream<'a> {
             ]);
 
             // Sprites render using the viewport transform only (even though they have a layer transform it's not actually updated later on. See how sprite_transform is calculated in RenderSprite also)
-            let mut render_state        = RenderStreamState::new();
+            let mut render_state        = RenderStreamState::new(texture_size);
             render_state.render_target  = Some(OFFSCREEN_RENDER_TARGET);
             render_to_texture.extend(core.render_layer(viewport_transform * sprite_transform, layer_handle, OFFSCREEN_RENDER_TARGET, &mut render_state));
 
@@ -969,20 +973,21 @@ impl<'a> Stream for RenderStream<'a> {
             let core                        = &self.core;
             let mut layer_buffer_is_clear   = self.layer_buffer_is_clear;
             let mut invalid_bounds          = self.invalid_bounds;
+            let viewport_size               = self.viewport_size;
 
             let result                  = core.sync(|core| {
                 // Send any pending vertex buffers, then render the layer
                 let layer_handle            = core.layers[layer_id];
                 let send_vertex_buffers     = core.send_vertex_buffers(layer_handle);
-                let mut render_state        = RenderStreamState::new();
+                let mut render_state        = RenderStreamState::new(viewport_size);
                 render_state.is_clear       = Some(layer_buffer_is_clear);
                 render_state.invalid_bounds = invalid_bounds;
 
-                let mut render_layer    = VecDeque::new();
+                let mut render_layer        = VecDeque::new();
 
                 render_layer.extend(send_vertex_buffers);
                 render_layer.extend(core.render_layer(viewport_transform, layer_handle, MAIN_RENDER_TARGET, &mut render_state));
-                render_layer.extend(RenderStreamState::new().update_from_state(&render_state));
+                render_layer.extend(RenderStreamState::new(viewport_size).update_from_state(&render_state));
 
                 // The state will update to indicate if the layer buffer is clear or not for the next layer
                 layer_buffer_is_clear   = render_state.is_clear.unwrap_or(false);
