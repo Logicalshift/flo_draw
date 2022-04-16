@@ -286,9 +286,12 @@ impl RenderCore {
 
         let mut send_vertex_buffers = vec![];
         let mut layer               = self.layer(layer_handle);
+        let mut active_transform    = canvas::Transform2D::identity();
 
         for render_idx in 0..layer.render_order.len() {
             match &layer.render_order[render_idx] {
+                SetTransform(new_transform) => { active_transform = *new_transform; }
+
                 VertexBuffer(_buffers, _) => { 
                     send_vertex_buffers.extend(self.send_layer_vertex_buffer(layer_handle, render_idx)); 
                     layer = self.layer(layer_handle);
@@ -304,6 +307,7 @@ impl RenderCore {
                     if let Some(sprite_layer_handle) = sprite_layer_handle {
                         send_vertex_buffers.extend(self.send_vertex_buffers(sprite_layer_handle));
 
+                        let transform       = active_transform * transform;
                         let sprite_layer    = self.layer(sprite_layer_handle);
                         sprite_bounds       = sprite_layer.bounds;
                         sprite_bounds.transform(&transform);
