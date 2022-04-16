@@ -37,9 +37,11 @@ pub fn main() {
         loop {
             let phase_1 = (iter as f32)/20.0;
             let phase_2 = (iter as f32)/23.0;
+            let phase_3 = (iter as f32)/27.0;
 
             let x_off = phase_1.sin() * 50.0;
             let y_off = phase_2.sin() * 50.0;
+            let scale = phase_3.sin() * 0.2 + 1.0;
 
             canvas.draw(|gc| {
                 // Draw the mascot as a sprite
@@ -47,6 +49,9 @@ pub fn main() {
                 gc.clear_layer();
 
                 gc.sprite_transform(SpriteTransform::Identity);
+                gc.sprite_transform(SpriteTransform::Translate(512.0, 384.0));
+                gc.sprite_transform(SpriteTransform::Scale(scale, scale));
+                gc.sprite_transform(SpriteTransform::Translate(-512.0, -384.0));
                 gc.sprite_transform(SpriteTransform::Translate(x_off, y_off));
                 gc.draw_sprite(SpriteId(0));
             });
