@@ -99,9 +99,6 @@ impl CanvasRenderer {
                 let entity_index        = layer.render_order.len();
                 let transform           = *active_transform;
 
-                // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
-                let color               = if layer.state.blend_mode == canvas::BlendMode::DestinationOut { color.all_channel_alpha() } else { color };
-
                 layer.render_order.push(RenderEntity::Tessellating(entity_id));
                 layer.state.modification_count += 1;
 
