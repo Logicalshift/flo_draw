@@ -74,7 +74,10 @@ impl Layer {
             .map(|restored_state| self.state = restored_state);
 
         // Keep the matrix/scale factor from before so `update_transform` will do the right thing later on (see PopState: note that the transform is popped independently of the layer state)
-        self.state.current_matrix   = old_matrix;
-        self.state.scale_factor     = old_scale_factor;
+        if !self.state.is_sprite {
+            // Sprites update transforms more immediately so they are excluded here
+            self.state.current_matrix   = old_matrix;
+            self.state.scale_factor     = old_scale_factor;
+        }
     }
 }

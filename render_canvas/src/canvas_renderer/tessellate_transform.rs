@@ -1,5 +1,7 @@
 use super::canvas_renderer::*;
 
+use crate::render_entity::*;
+
 use flo_canvas as canvas;
 
 impl CanvasRenderer {
@@ -49,6 +51,20 @@ impl CanvasRenderer {
 
     /// Multiply a 2D transform into the canvas
     pub (super) fn tes_multiply_transform(&mut self, transform: canvas::Transform2D) {
+        // Update the active transform: it's applied next time we draw something
         self.active_transform = self.active_transform * transform;
+
+        if self.current_layer_is_sprite {
+            // For sprite layers: apply the transform immediately
+            // (Sprites do this because they have a default transform of 1.0 and aren't affected by center_region or canvas_height)
+            self.core.sync(|core| {
+                let layer                   = core.layer(self.current_layer);
+
+                let new_transform           = layer.state.current_matrix * transform;
+                layer.state.current_matrix  = new_transform;
+
+                layer.render_order.push(RenderEntity::SetTransform(new_transform));
+            });
+        }
     }
 }

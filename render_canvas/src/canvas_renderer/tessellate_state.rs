@@ -1,5 +1,7 @@
 use super::canvas_renderer::*;
 
+use crate::render_entity::*;
+
 impl CanvasRenderer {
     ///
     /// Stores the content of the clipping path from the current layer in a background buffer
@@ -72,8 +74,20 @@ impl CanvasRenderer {
             core.layer(self.current_layer).update_transform(&self.active_transform);
 
             for layer_id in core.layers.clone() {
-                // Pop the state for the layer
-                core.layer(layer_id).pop_state();
+                let layer = core.layer(layer_id);
+
+                if layer.state.is_sprite {
+                    // Sprites update their transformation matrix immediately when their state is popped (if it's different)
+                    let old_transform = layer.state.current_matrix;
+                    layer.pop_state();
+
+                    if layer.state.current_matrix != old_transform {
+                        layer.render_order.push(RenderEntity::SetTransform(layer.state.current_matrix));
+                    }
+                } else {
+                    // Pop the state for the layer
+                    layer.pop_state();
+                }
             }
         })
     }
