@@ -310,7 +310,7 @@ impl RenderCore {
                         let transform       = active_transform * transform;
                         let sprite_layer    = self.layer(sprite_layer_handle);
                         sprite_bounds       = sprite_layer.bounds;
-                        sprite_bounds.transform(&transform);
+                        sprite_bounds       = sprite_bounds.transform(&transform);
                     }
 
                     layer = self.layer(layer_handle);
