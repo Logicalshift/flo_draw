@@ -56,7 +56,11 @@ impl CanvasRenderer {
         self.transform_stack.push(self.active_transform);
 
         self.core.sync(|core| {
-            for layer_id in core.layers.clone() {
+            let all_layers = core.layers.iter().cloned()
+                .chain(core.sprites.iter().map(|(_, layer_id)| *layer_id))
+                .collect::<Vec<_>>();
+
+            for layer_id in all_layers {
                 core.layer(layer_id).push_state();
             }
         })
@@ -73,7 +77,11 @@ impl CanvasRenderer {
         self.core.sync(|core| {
             core.layer(self.current_layer).update_transform(&self.active_transform);
 
-            for layer_id in core.layers.clone() {
+            let all_layers = core.layers.iter().cloned()
+                .chain(core.sprites.iter().map(|(_, layer_id)| *layer_id))
+                .collect::<Vec<_>>();
+
+            for layer_id in all_layers {
                 let layer = core.layer(layer_id);
 
                 if layer.state.is_sprite {
