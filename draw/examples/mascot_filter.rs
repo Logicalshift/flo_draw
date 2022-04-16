@@ -11,7 +11,6 @@ pub fn main() {
     with_2d_graphics(|| {
         // Decode
         let mascot = decode_drawing(MASCOT.chars()).collect::<Result<Vec<Draw>, _>>().unwrap();
-        println!("{:?}", mascot);
 
         let canvas = create_drawing_window("Flo with filters");
 
@@ -20,17 +19,14 @@ pub fn main() {
 
             // Canvas scale
             gc.canvas_height(768.0);
+            gc.transform(Transform2D::scale(1.0, -1.0));
             gc.center_region(0.0, 0.0, 1024.0, 768.0);
 
             // Create a sprite containing the mascot
             gc.sprite(SpriteId(0));
             gc.clear_sprite();
 
-            gc.fill_color(Color::Rgba(0.0, 1.0, 1.0, 1.0));
-            gc.new_path();
-            gc.circle(200.0, 200.0, 100.0);
-            gc.fill();
-            // gc.draw_list(mascot);
+            gc.draw_list(mascot);
         });
 
         loop {
@@ -40,8 +36,6 @@ pub fn main() {
                 gc.clear_layer();
 
                 gc.sprite_transform(SpriteTransform::Identity);
-                gc.sprite_transform(SpriteTransform::Translate(100.0, 0.0));
-                gc.sprite_transform(SpriteTransform::Scale(2.0, 2.0));
                 gc.draw_sprite(SpriteId(0));
             });
 
