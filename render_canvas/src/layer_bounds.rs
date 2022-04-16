@@ -69,9 +69,9 @@ impl LayerBounds {
 
         // Transform the x and y coordinates of the four corners of the bounding box
         let (x1, y1) = transform.transform_point(self.min_x, self.min_y);
-        let (x2, y2) = transform.transform_point(self.max_x, self.max_y);
+        let (x2, y2) = transform.transform_point(self.max_x, self.min_y);
         let (x3, y3) = transform.transform_point(self.min_x, self.max_y);
-        let (x4, y4) = transform.transform_point(self.min_x, self.max_y);
+        let (x4, y4) = transform.transform_point(self.max_x, self.max_y);
 
         // Use the min/max values of each coordinate
         LayerBounds {
