@@ -266,8 +266,13 @@ pub enum Draw {
     /// Adds a sprite transform to the current list of transformations to apply
     SpriteTransform(SpriteTransform),
 
-    /// Renders a sprite with a set of transformations
+    /// Renders a sprite after applying the transformations set by SpriteTransform
     DrawSprite(SpriteId),
+
+    /// Renders a sprite with a set of filters applied to it
+    ///
+    /// This is similar to creating a dynamic texture from the sprite, except that no texture is kept in memory afterwards
+    DrawSpriteWithFilters(SpriteId, Vec<TextureFilter>),
 
     /// Performs an operation on a texture
     Texture(TextureId, TextureOp),

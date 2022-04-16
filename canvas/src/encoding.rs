@@ -78,6 +78,14 @@ impl CanvasEncoding<String> for f32 {
     }
 }
 
+impl CanvasEncoding<String> for &f32 {
+    #[inline]
+    fn encode_canvas(&self, append_to: &mut String) {
+        let transmuted: u32 = f32::to_bits(**self);
+        transmuted.encode_canvas(append_to)
+    }
+}
+
 //
 // Some convenience encodings for implementing the main canvas encoding
 //
@@ -140,10 +148,10 @@ impl<A: CanvasEncoding<String>> CanvasEncoding<String> for [A] {
 // Main canvas encoding
 //
 
-impl CanvasEncoding<String> for Color {
+impl CanvasEncoding<String> for &Color {
     fn encode_canvas(&self, append_to: &mut String) {
         match self {
-            &Color::Rgba(r,g,b,a) => ('R', r, g, b, a),
+            Color::Rgba(r,g,b,a) => ('R', *r, *g, *b, *a),
 
             other => {
                 let (r, g, b, a) = other.to_rgba_components();
@@ -153,7 +161,7 @@ impl CanvasEncoding<String> for Color {
     }
 }
 
-impl CanvasEncoding<String> for LineJoin {
+impl CanvasEncoding<String> for &LineJoin {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::LineJoin::*;
 
@@ -165,7 +173,7 @@ impl CanvasEncoding<String> for LineJoin {
     }
 }
 
-impl CanvasEncoding<String> for LineCap {
+impl CanvasEncoding<String> for &LineCap {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::LineCap::*;
 
@@ -177,7 +185,7 @@ impl CanvasEncoding<String> for LineCap {
     }
 }
 
-impl CanvasEncoding<String> for WindingRule {
+impl CanvasEncoding<String> for &WindingRule {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::WindingRule::*;
 
@@ -188,7 +196,7 @@ impl CanvasEncoding<String> for WindingRule {
     }
 }
 
-impl CanvasEncoding<String> for BlendMode {
+impl CanvasEncoding<String> for &BlendMode {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::BlendMode::*;
 
@@ -210,7 +218,7 @@ impl CanvasEncoding<String> for BlendMode {
     }
 }
 
-impl CanvasEncoding<String> for Transform2D {
+impl CanvasEncoding<String> for &Transform2D {
     #[inline]
     fn encode_canvas(&self, append_to: &mut String) {
         let Transform2D([a, b, c]) = *self;
@@ -220,7 +228,7 @@ impl CanvasEncoding<String> for Transform2D {
     }
 }
 
-impl CanvasEncoding<String> for LayerId {
+impl CanvasEncoding<String> for &LayerId {
     #[inline]
     fn encode_canvas(&self, append_to: &mut String) {
         let LayerId(layer_id) = self;
@@ -228,7 +236,7 @@ impl CanvasEncoding<String> for LayerId {
     }
 }
 
-impl CanvasEncoding<String> for SpriteId {
+impl CanvasEncoding<String> for &SpriteId {
     #[inline]
     fn encode_canvas(&self, append_to: &mut String) {
         let SpriteId(sprite_id) = self;
@@ -236,7 +244,7 @@ impl CanvasEncoding<String> for SpriteId {
     }
 }
 
-impl CanvasEncoding<String> for TextureId {
+impl CanvasEncoding<String> for &TextureId {
     #[inline]
     fn encode_canvas(&self, append_to: &mut String) {
         let TextureId(texture_id) = self;
@@ -244,7 +252,7 @@ impl CanvasEncoding<String> for TextureId {
     }
 }
 
-impl CanvasEncoding<String> for FontId {
+impl CanvasEncoding<String> for &FontId {
     #[inline]
     fn encode_canvas(&self, append_to: &mut String) {
         let FontId(font_id) = self;
@@ -252,7 +260,7 @@ impl CanvasEncoding<String> for FontId {
     }
 }
 
-impl CanvasEncoding<String> for GradientId {
+impl CanvasEncoding<String> for &GradientId {
     #[inline]
     fn encode_canvas(&self, append_to: &mut String) {
         let GradientId(gradient_id) = self;
@@ -260,7 +268,7 @@ impl CanvasEncoding<String> for GradientId {
     }
 }
 
-impl CanvasEncoding<String> for SpriteTransform {
+impl CanvasEncoding<String> for &SpriteTransform {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::SpriteTransform::*;
 
@@ -269,12 +277,12 @@ impl CanvasEncoding<String> for SpriteTransform {
             Translate(x, y)         => ('t', *x, *y).encode_canvas(append_to),
             Scale(x, y)             => ('s', *x, *y).encode_canvas(append_to),
             Rotate(degrees)         => ('r', *degrees).encode_canvas(append_to),
-            Transform2D(transform)  => ('T', *transform).encode_canvas(append_to)
+            Transform2D(transform)  => ('T', transform).encode_canvas(append_to)
         }
     }
 }
 
-impl CanvasEncoding<String> for TextureFormat {
+impl CanvasEncoding<String> for &TextureFormat {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::TextureFormat::*;
 
@@ -289,13 +297,13 @@ impl<'a> CanvasEncoding<String> for &'a TextureOp {
         use self::TextureOp::*;
 
         match self {
-            Create(TextureSize(width, height), format)                                      => ('N', *width, *height, *format).encode_canvas(append_to), 
+            Create(TextureSize(width, height), format)                                      => ('N', *width, *height, format).encode_canvas(append_to), 
             Free                                                                            => ('X').encode_canvas(append_to),
             SetBytes(TexturePosition(x, y), TextureSize(width, height), bytes)              => ('D', *x, *y, *width, *height, &**bytes).encode_canvas(append_to),
-            SetFromSprite(sprite_id, SpriteBounds(SpritePosition(x, y), SpriteSize(w, h)))  => ('S', *sprite_id, *x, *y, *w, *h).encode_canvas(append_to),
-            CreateDynamicSprite(sprite_id, SpriteBounds(SpritePosition(x, y), SpriteSize(sprite_w, sprite_h)), CanvasSize(canvas_w, canvas_h))  => ('s', *sprite_id, (*x, *y, *sprite_w, *sprite_h), (*canvas_w, *canvas_h)).encode_canvas(append_to),
+            SetFromSprite(sprite_id, SpriteBounds(SpritePosition(x, y), SpriteSize(w, h)))  => ('S', sprite_id, *x, *y, *w, *h).encode_canvas(append_to),
+            CreateDynamicSprite(sprite_id, SpriteBounds(SpritePosition(x, y), SpriteSize(sprite_w, sprite_h)), CanvasSize(canvas_w, canvas_h))  => ('s', sprite_id, (*x, *y, *sprite_w, *sprite_h), (*canvas_w, *canvas_h)).encode_canvas(append_to),
             FillTransparency(alpha)                                                         => ('t', *alpha).encode_canvas(append_to),
-            Copy(target_texture)                                                            => ('C', *target_texture).encode_canvas(append_to),
+            Copy(target_texture)                                                            => ('C', target_texture).encode_canvas(append_to),
             Filter(filter)                                                                  => ('F', filter).encode_canvas(append_to),
         }
     }
@@ -311,14 +319,20 @@ impl<'a> CanvasEncoding<String> for &'a TextureFilter {
     }
 }
 
+impl<'a> CanvasEncoding<String> for &'a Vec<TextureFilter> {
+    fn encode_canvas(&self, append_to: &mut String) {
+        encode_compact_u64(&(self.len() as u64), append_to);
+        self.iter().for_each(|pos| pos.encode_canvas(append_to));
+    }
+}
 
 impl<'a> CanvasEncoding<String> for &'a GradientOp {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::GradientOp::*;
 
         match self {
-            Create(color)       => ('N', *color).encode_canvas(append_to),
-            AddStop(pos, color) => ('S', *pos, *color).encode_canvas(append_to)
+            Create(color)       => ('N', color).encode_canvas(append_to),
+            AddStop(pos, color) => ('S', pos, color).encode_canvas(append_to)
         }
     }
 }
@@ -337,7 +351,7 @@ impl<'a> CanvasEncoding<String> for &'a FontOp {
     }
 }
 
-impl<'a> CanvasEncoding<String> for TextAlignment {
+impl<'a> CanvasEncoding<String> for &TextAlignment {
     fn encode_canvas(&self, append_to: &mut String) {
         use TextAlignment::*;
 
@@ -464,58 +478,59 @@ impl CanvasEncoding<String> for Draw {
         use self::PathOp::*;
 
         match self {
-            &StartFrame                                 => ('N', 'F').encode_canvas(append_to),
-            &ShowFrame                                  => ('N', 'f').encode_canvas(append_to),
-            &ResetFrame                                 => ('N', 'G').encode_canvas(append_to),
-            &Path(NewPath)                              => ('N', 'p').encode_canvas(append_to),
-            &Path(Move(x, y))                           => ('m', x, y).encode_canvas(append_to),
-            &Path(Line(x, y))                           => ('l', x, y).encode_canvas(append_to),
-            &Path(BezierCurve((cp1, cp2), p))           => ('c', p, cp1, cp2).encode_canvas(append_to),
-            &Path(ClosePath)                            => ('.').encode_canvas(append_to),
-            &Fill                                       => 'F'.encode_canvas(append_to),
-            &Stroke                                     => 'S'.encode_canvas(append_to),
-            &LineWidth(width)                           => ('L', 'w', width).encode_canvas(append_to),
-            &LineWidthPixels(width)                     => ('L', 'p', width).encode_canvas(append_to),
-            &LineJoin(join)                             => ('L', 'j', join).encode_canvas(append_to),
-            &LineCap(cap)                               => ('L', 'c', cap).encode_canvas(append_to),
-            &WindingRule(rule)                          => ('W', rule).encode_canvas(append_to),
-            &NewDashPattern                             => ('D', 'n').encode_canvas(append_to),
-            &DashLength(length)                         => ('D', 'l', length).encode_canvas(append_to),
-            &DashOffset(offset)                         => ('D', 'o', offset).encode_canvas(append_to),
-            &StrokeColor(col)                           => ('C', 's', col).encode_canvas(append_to),
-            &FillColor(col)                             => ('C', 'f', col).encode_canvas(append_to),
-            &FillTexture(texture, (x1, y1), (x2, y2))   => ('C', 't', texture, (x1, y1), (x2, y2)).encode_canvas(append_to),
-            &FillGradient(gradient, (x1, y1), (x2, y2)) => ('C', 'g', gradient, (x1, y1), (x2, y2)).encode_canvas(append_to),
-            &FillTransform(transform)                   => ('C', 'T', transform).encode_canvas(append_to),
-            &BlendMode(mode)                            => ('M', mode).encode_canvas(append_to),
-            &IdentityTransform                          => ('T', 'i').encode_canvas(append_to),
-            &CanvasHeight(height)                       => ('T', 'h', height).encode_canvas(append_to),
-            &CenterRegion(min, max)                     => ('T', 'c', min, max).encode_canvas(append_to),
-            &MultiplyTransform(transform)               => ('T', 'm', transform).encode_canvas(append_to),
-            &Unclip                                     => ('Z', 'n').encode_canvas(append_to),
-            &Clip                                       => ('Z', 'c').encode_canvas(append_to),
-            &Store                                      => ('Z', 's').encode_canvas(append_to),
-            &Restore                                    => ('Z', 'r').encode_canvas(append_to),
-            &FreeStoredBuffer                           => ('Z', 'f').encode_canvas(append_to),
-            &PushState                                  => 'P'.encode_canvas(append_to),
-            &PopState                                   => 'p'.encode_canvas(append_to),
-            &ClearCanvas(color)                         => ('N', 'A', color).encode_canvas(append_to),
-            &Layer(layer_id)                            => ('N', 'L', layer_id).encode_canvas(append_to),
-            &LayerBlend(layer_id, blend_mode)           => ('N', 'B', layer_id, blend_mode).encode_canvas(append_to),
-            &LayerAlpha(layer_id, alpha)                => ('N', 't', layer_id, alpha).encode_canvas(append_to),
-            &ClearLayer                                 => ('N', 'C').encode_canvas(append_to),
-            &ClearAllLayers                             => ('N', 'a').encode_canvas(append_to),
-            &SwapLayers(layer1, layer2)                 => ('N', 'X', layer1, layer2).encode_canvas(append_to),
-            &Sprite(sprite_id)                          => ('N', 's', sprite_id).encode_canvas(append_to),
-            &ClearSprite                                => ('s', 'C').encode_canvas(append_to),
-            &SpriteTransform(sprite_transform)          => ('s', 'T', sprite_transform).encode_canvas(append_to),
-            &DrawSprite(sprite_id)                      => ('s', 'D', sprite_id).encode_canvas(append_to),
-            &Texture(texture_id, ref op)                => ('B', texture_id, op).encode_canvas(append_to),
-            &Font(font_id, ref op)                      => ('f', font_id, op).encode_canvas(append_to),
-            &DrawText(font_id, ref string, x, y)        => ('t', 'T', font_id, string, x, y).encode_canvas(append_to),
-            &BeginLineLayout(x, y, align)               => ('t', 'l', x, y, align).encode_canvas(append_to),
-            &DrawLaidOutText                            => ('t', 'R').encode_canvas(append_to),
-            &Gradient(gradient_id, ref gradient_op)     => ('G', gradient_id, gradient_op).encode_canvas(append_to)
+            StartFrame                                  => ('N', 'F').encode_canvas(append_to),
+            ShowFrame                                   => ('N', 'f').encode_canvas(append_to),
+            ResetFrame                                  => ('N', 'G').encode_canvas(append_to),
+            Path(NewPath)                               => ('N', 'p').encode_canvas(append_to),
+            Path(Move(x, y))                            => ('m', x, y).encode_canvas(append_to),
+            Path(Line(x, y))                            => ('l', x, y).encode_canvas(append_to),
+            Path(BezierCurve((cp1, cp2), p))            => ('c', *p, *cp1, *cp2).encode_canvas(append_to),
+            Path(ClosePath)                             => ('.').encode_canvas(append_to),
+            Fill                                        => 'F'.encode_canvas(append_to),
+            Stroke                                      => 'S'.encode_canvas(append_to),
+            LineWidth(width)                            => ('L', 'w', width).encode_canvas(append_to),
+            LineWidthPixels(width)                      => ('L', 'p', width).encode_canvas(append_to),
+            LineJoin(join)                              => ('L', 'j', join).encode_canvas(append_to),
+            LineCap(cap)                                => ('L', 'c', cap).encode_canvas(append_to),
+            WindingRule(rule)                           => ('W', rule).encode_canvas(append_to),
+            NewDashPattern                              => ('D', 'n').encode_canvas(append_to),
+            DashLength(length)                          => ('D', 'l', length).encode_canvas(append_to),
+            DashOffset(offset)                          => ('D', 'o', offset).encode_canvas(append_to),
+            StrokeColor(col)                            => ('C', 's', col).encode_canvas(append_to),
+            FillColor(col)                              => ('C', 'f', col).encode_canvas(append_to),
+            FillTexture(texture, (x1, y1), (x2, y2))    => ('C', 't', texture, (x1, y1), (x2, y2)).encode_canvas(append_to),
+            FillGradient(gradient, (x1, y1), (x2, y2))  => ('C', 'g', gradient, (x1, y1), (x2, y2)).encode_canvas(append_to),
+            FillTransform(transform)                    => ('C', 'T', transform).encode_canvas(append_to),
+            BlendMode(mode)                             => ('M', mode).encode_canvas(append_to),
+            IdentityTransform                           => ('T', 'i').encode_canvas(append_to),
+            CanvasHeight(height)                        => ('T', 'h', height).encode_canvas(append_to),
+            CenterRegion(min, max)                      => ('T', 'c', *min, *max).encode_canvas(append_to),
+            MultiplyTransform(transform)                => ('T', 'm', transform).encode_canvas(append_to),
+            Unclip                                      => ('Z', 'n').encode_canvas(append_to),
+            Clip                                        => ('Z', 'c').encode_canvas(append_to),
+            Store                                       => ('Z', 's').encode_canvas(append_to),
+            Restore                                     => ('Z', 'r').encode_canvas(append_to),
+            FreeStoredBuffer                            => ('Z', 'f').encode_canvas(append_to),
+            PushState                                   => 'P'.encode_canvas(append_to),
+            PopState                                    => 'p'.encode_canvas(append_to),
+            ClearCanvas(color)                          => ('N', 'A', color).encode_canvas(append_to),
+            Layer(layer_id)                             => ('N', 'L', layer_id).encode_canvas(append_to),
+            LayerBlend(layer_id, blend_mode)            => ('N', 'B', layer_id, blend_mode).encode_canvas(append_to),
+            LayerAlpha(layer_id, alpha)                 => ('N', 't', layer_id, alpha).encode_canvas(append_to),
+            ClearLayer                                  => ('N', 'C').encode_canvas(append_to),
+            ClearAllLayers                              => ('N', 'a').encode_canvas(append_to),
+            SwapLayers(layer1, layer2)                  => ('N', 'X', layer1, layer2).encode_canvas(append_to),
+            Sprite(sprite_id)                           => ('N', 's', sprite_id).encode_canvas(append_to),
+            ClearSprite                                 => ('s', 'C').encode_canvas(append_to),
+            SpriteTransform(sprite_transform)           => ('s', 'T', sprite_transform).encode_canvas(append_to),
+            DrawSprite(sprite_id)                       => ('s', 'D', sprite_id).encode_canvas(append_to),
+            DrawSpriteWithFilters(sprite_id, filters)   => ('s', 'F', sprite_id, filters).encode_canvas(append_to),
+            Texture(texture_id, ref op)                 => ('B', texture_id, op).encode_canvas(append_to),
+            Font(font_id, ref op)                       => ('f', font_id, op).encode_canvas(append_to),
+            DrawText(font_id, ref string, x, y)         => ('t', 'T', font_id, string, x, y).encode_canvas(append_to),
+            BeginLineLayout(x, y, align)                => ('t', 'l', x, y, align).encode_canvas(append_to),
+            DrawLaidOutText                             => ('t', 'R').encode_canvas(append_to),
+            Gradient(gradient_id, ref gradient_op)      => ('G', gradient_id, gradient_op).encode_canvas(append_to)
         }
     }
 }

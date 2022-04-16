@@ -317,6 +317,7 @@ impl CanvasRenderer {
                     Sprite(sprite_id)                           => self.tes_sprite(sprite_id), 
                     SpriteTransform(transform)                  => self.tes_sprite_transform(transform),
                     DrawSprite(sprite_id)                       => self.tes_draw_sprite(sprite_id),
+                    DrawSpriteWithFilters(sprite_id, filters)   => self.tes_draw_sprite_with_filters(sprite_id, filters),
 
                     Texture(texture_id, texture_op)             => self.tes_texture(texture_id, texture_op),
                     Gradient(gradient_id, gradient_op)          => self.tes_gradient(gradient_id, gradient_op),

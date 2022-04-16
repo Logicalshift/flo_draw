@@ -83,4 +83,11 @@ impl CanvasRenderer {
             layer.state.modification_count += 1;
         })
     }
+
+    ///
+    /// Renders a sprite with a set of transformations and filters
+    ///
+    pub (super) fn tes_draw_sprite_with_filters(&mut self, sprite_id: canvas::SpriteId, filters: Vec<canvas::TextureFilter>) { 
+        todo!();
+    }
 }
