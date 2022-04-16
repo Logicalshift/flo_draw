@@ -245,7 +245,7 @@ impl RenderCore {
         let LayerHandle(layer_idx)  = layer_id;
         let layer_idx               = layer_idx as usize;
 
-        // Remove the action from the layer
+        // Remove the action from the layer (so we don't send the same buffer again)
         let mut vertex_action = RenderEntity::Missing;
         mem::swap(&mut self.layer_definitions[layer_idx].render_order[render_index], &mut vertex_action);
 
@@ -294,16 +294,23 @@ impl RenderCore {
                     layer = self.layer(layer_handle);
                 },
 
-                RenderSprite(sprite_id, _)                  |
-                RenderSpriteWithFilters(sprite_id, _, _)    => { 
+                RenderSprite(sprite_id, transform)                  |
+                RenderSpriteWithFilters(sprite_id, transform, _)    => { 
                     let sprite_id           = *sprite_id;
+                    let transform           = *transform;
                     let sprite_layer_handle = self.sprites.get(&sprite_id).cloned();
+                    let mut sprite_bounds   = LayerBounds::default();
 
                     if let Some(sprite_layer_handle) = sprite_layer_handle {
                         send_vertex_buffers.extend(self.send_vertex_buffers(sprite_layer_handle));
+
+                        let sprite_layer    = self.layer(sprite_layer_handle);
+                        sprite_bounds       = sprite_layer.bounds;
+                        sprite_bounds.transform(&transform);
                     }
 
                     layer = self.layer(layer_handle);
+                    layer.bounds.combine(&sprite_bounds);
                 },
 
                 _ => { }
