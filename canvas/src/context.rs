@@ -197,8 +197,13 @@ pub trait GraphicsContext {
         self.draw(Draw::SpriteTransform(transform));
     }
 
-    /// Renders a sprite with a set of transformations
+    /// Renders a sprite with the transformations set by `sprite_transform()`
     fn draw_sprite(&mut self, sprite_id: SpriteId)          { self.draw(Draw::DrawSprite(sprite_id)); }
+
+    /// Renders a sprite to a texture, then applies a set of filters before committing to the drawing
+    ///
+    /// (Unlike a dynamic texture, the texture isn't retained and the effect is reapplied every time the scene is rendered)
+    fn draw_sprite_with_filters(&mut self, sprite_id: SpriteId, filters: Vec<TextureFilter>) { self.draw(Draw::DrawSpriteWithFilters(sprite_id, filters)); }
 
 
 
