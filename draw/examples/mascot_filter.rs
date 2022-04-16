@@ -39,13 +39,9 @@ pub fn main() {
                 gc.layer(LayerId(0));
                 gc.clear_layer();
 
-                gc.sprite_transform(SpriteTransform::Translate(100.0, 0.0));
+                gc.sprite_transform(SpriteTransform::Identity);
+                //gc.sprite_transform(SpriteTransform::Translate(100.0, 0.0));
                 gc.draw_sprite(SpriteId(0));
-
-                gc.fill_color(Color::Rgba(0.0, 0.0, 0.5, 1.0));
-                gc.new_path();
-                gc.circle(200.0, 400.0, 100.0);
-                gc.fill();
             });
 
 
