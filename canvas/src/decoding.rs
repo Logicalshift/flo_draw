@@ -400,6 +400,7 @@ enum DecoderState {
 
     NewSprite(String),                          // 'Ns' (id)
     SpriteDraw(String),                         // 'sD' (id)
+    SpriteDrawWithFilters(String),              // 'sF' (id) (len) (filters)
     SpriteTransform,                            // 'sT' (transform)
     SpriteTransformTranslate(String),           // 'sTt' (x, y)
     SpriteTransformScale(String),               // 'sTs' (x, y)
@@ -424,8 +425,7 @@ enum DecoderState {
     TextureOpCreateDynamicSprite(TextureId, DecodeSpriteId, String),    // 'B<id>s' (sprite, x, y, w1, h1, w2, h2)
     TextureOpFillTransparency(TextureId, String),                       // 'B<id>t' (alpha)
     TextureOpCopy(TextureId, DecodeTextureId),                          // 'B<id>C' (texture)
-    TextureOpFilter(TextureId),                                         // 'B<id>F' (filter)
-    TextureOpFilterGaussianBlur(TextureId, String),                     // 'B<id>FB' (radius)
+    TextureOpFilter(TextureId, String),                                 // 'B<id>F' (filter)
 
     GradientOp(DecodeGradientId),                                       // 'G' (id, op)
     GradientOpNew(GradientId, String),                                  // 'G<id>N' (r, g, b, a)
@@ -534,6 +534,7 @@ impl CanvasDecoder {
 
             NewSprite(param)                => Self::decode_new_sprite(next_chr, param)?,
             SpriteDraw(param)               => Self::decode_sprite_draw(next_chr, param)?,
+            SpriteDrawWithFilters(param)    => Self::decode_sprite_draw_with_filters(next_chr, param)?,
             SpriteTransform                 => Self::decode_sprite_transform(next_chr)?,
             SpriteTransformTranslate(param) => Self::decode_sprite_transform_translate(next_chr, param)?,
             SpriteTransformScale(param)     => Self::decode_sprite_transform_scale(next_chr, param)?,
@@ -558,8 +559,7 @@ impl CanvasDecoder {
             TextureOpCreateDynamicSprite(texture_id, sprite, param) => Self::decode_texture_create_dynamic_sprite(next_chr, texture_id, sprite, param)?,
             TextureOpFillTransparency(texture_id, param)            => Self::decode_texture_fill_transparency(next_chr, texture_id, param)?,
             TextureOpCopy(texture_id, param)                        => Self::decode_texture_copy(next_chr, texture_id, param)?,
-            TextureOpFilter(texture_id)                             => Self::decode_texture_filter(next_chr, texture_id)?,
-            TextureOpFilterGaussianBlur(texture_id, param)          => Self::decode_texture_filter_gaussian_blur(next_chr, texture_id, param)?,
+            TextureOpFilter(texture_id, param)                      => Self::decode_texture_filter(next_chr, texture_id, param)?,
 
             GradientOp(gradient_id)                                 => Self::decode_gradient_op(next_chr, gradient_id)?,     
             GradientOpNew(gradient_id, param)                       => Self::decode_gradient_new(next_chr, gradient_id, param)?,
@@ -1112,6 +1112,13 @@ impl CanvasDecoder {
         }
     }
 
+    fn decode_sprite_draw_with_filters(next_chr: char, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match Self::decode_sprite_id(next_chr, param)? {
+            PartialResult::FullMatch(sprite_id) => Ok((DecoderState::None, Some(Draw::DrawSprite(sprite_id)))),
+            PartialResult::MatchMore(param)     => Ok((DecoderState::SpriteDraw(param), None))
+        }
+    }
+
     #[inline] fn decode_sprite_transform(next_chr: char) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         match next_chr {
             'i' => Ok((DecoderState::None, Some(Draw::SpriteTransform(SpriteTransform::Identity)))),
@@ -1489,7 +1496,7 @@ impl CanvasDecoder {
             's' => Ok((DecoderState::TextureOpCreateDynamicSprite(texture_id, DecodeSpriteId::new(), String::new()), None)),
             't' => Ok((DecoderState::TextureOpFillTransparency(texture_id, String::new()), None)),
             'C' => Ok((DecoderState::TextureOpCopy(texture_id, DecodeTextureId::new()), None)),
-            'F' => Ok((DecoderState::TextureOpFilter(texture_id), None)),
+            'F' => Ok((DecoderState::TextureOpFilter(texture_id, String::new()), None)),
 
             _   => Err(DecoderError::InvalidCharacter(chr))
         }
@@ -1649,31 +1656,46 @@ impl CanvasDecoder {
     }
 
     ///
-    /// Decodes a texture filter op
+    /// Given a texture filter string, attempts to decode the corresponding filter
     ///
-    fn decode_texture_filter(chr: char, texture_id: TextureId) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        match chr {
-            'B' => Ok((DecoderState::TextureOpFilterGaussianBlur(texture_id, String::new()), None)),
-            _   => Err(DecoderError::InvalidCharacter(chr))
+    /// Returns the texture filter if the parameter matches one, 'None' if more characters are required, or an error if there's a problem
+    ///
+    fn try_decode_texture_filter(param: &str) -> Result<Option<TextureFilter>, DecoderError> {
+        let mut chars = param.chars();
+
+         match chars.next() {
+            Some('B')   => Self::try_decode_texture_filter_gaussian_blur(chars),
+            Some(other) => Err(DecoderError::InvalidCharacter(other)),
+            None        => Ok(None)
+         }
+    }
+
+    ///
+    /// Decodes the parameters for a gaussian blur texture filter
+    ///
+    fn try_decode_texture_filter_gaussian_blur(chars: Chars) -> Result<Option<TextureFilter>, DecoderError> {
+        let mut chars   = chars;
+        let radius      = Self::try_decode_f32(&mut chars)?;
+
+        if let Some(radius) = radius {
+            Ok(Some(TextureFilter::GaussianBlur(radius)))
+        } else {
+            Ok(None)
         }
     }
 
     ///
-    /// Decodes a texture gaussian blur filter op
+    /// Decodes a texture filter op
     ///
-    fn decode_texture_filter_gaussian_blur(chr: char, texture_id: TextureId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
-        // Add the character to the end of the parameter
+    fn decode_texture_filter(chr: char, texture_id: TextureId, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
         let mut param = param;
+
         param.push(chr);
 
-        // Parameter is one floating point value
-        if param.len() < 6 {
-            Ok((DecoderState::TextureOpFilterGaussianBlur(texture_id, param), None))
+        if let Some(filter) = Self::try_decode_texture_filter(&param)? {
+            Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::Filter(filter)))))
         } else {
-            let mut param   = param.chars();
-            let radius      = Self::decode_f32(&mut param)?;
-
-            Ok((DecoderState::None, Some(Draw::Texture(texture_id, TextureOp::Filter(TextureFilter::GaussianBlur(radius))))))
+            Ok((DecoderState::TextureOpFilter(texture_id, param), None))
         }
     }
 
@@ -1762,6 +1784,20 @@ impl CanvasDecoder {
     ///
     /// Consumes 6 characters to decode a f32
     ///
+    fn try_decode_f32(chrs: &mut Chars) -> Result<Option<f32>, DecoderError> {
+        let as_u32 = Self::try_decode_u32(chrs)?;
+        if let Some(as_u32) = as_u32 {
+            let as_f32 = f32::from_bits(as_u32);
+
+            Ok(Some(as_f32))
+        } else {
+            Ok(None)
+        }
+    }
+
+    ///
+    /// Consumes 6 characters to decode a f32
+    ///
     fn decode_f32(chrs: &mut Chars) -> Result<f32, DecoderError> {
         let as_u32 = Self::decode_u32(chrs)?;
         let as_f32 = f32::from_bits(as_u32);
@@ -1782,8 +1818,24 @@ impl CanvasDecoder {
             shift           += 6;
         }
 
-
         Ok(result)
+    }
+
+    ///
+    /// Consumes 6 characters to decode a u32
+    ///
+    fn try_decode_u32(chrs: &mut Chars) -> Result<Option<u32>, DecoderError> {
+        let mut result  = 0;
+        let mut shift   = 0;
+
+        for _ in 0..6 {
+            let next_chr    = chrs.next();
+            let next_chr    = if let Some(next_chr) = next_chr { next_chr } else { return Ok(None); };
+            result          |= (Self::decode_base64(next_chr)? as u32) << shift;
+            shift           += 6;
+        }
+
+        Ok(Some(result))
     }
 
     ///
@@ -2156,6 +2208,13 @@ mod test {
         check_round_trip_single(Draw::DrawSprite(SpriteId(10)));
         check_round_trip_single(Draw::DrawSprite(SpriteId(1300)));
         check_round_trip_single(Draw::DrawSprite(SpriteId(1000000000)));
+    }
+
+    #[test]
+    fn decode_draw_sprite_filtered() {
+        check_round_trip_single(Draw::DrawSpriteWithFilters(SpriteId(10), vec![]));
+        check_round_trip_single(Draw::DrawSpriteWithFilters(SpriteId(10), vec![TextureFilter::GaussianBlur(4.0)]));
+        check_round_trip_single(Draw::DrawSpriteWithFilters(SpriteId(10), vec![TextureFilter::GaussianBlur(4.0), TextureFilter::GaussianBlur(8.0)]));
     }
 
     #[test]
