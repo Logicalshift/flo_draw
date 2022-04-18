@@ -239,6 +239,25 @@ impl RenderCore {
     }
 
     ///
+    /// Frees a texture that is in use
+    ///
+    pub fn free_texture(&mut self, texture_id: render::TextureId) {
+        // Remove from the 'used textures' hash
+        self.used_textures.remove(&texture_id);
+
+        // Prevent any rendering to this texture
+        self.layer_textures.retain(|(id, _req)| id != &texture_id);
+
+        // Free the resources attached to the texture
+        self.dynamic_texture_state.remove(&texture_id);
+        self.texture_size.remove(&texture_id);
+        self.texture_transform.remove(&texture_id);
+
+        // Add to the list of free textures
+        self.free_textures.push(texture_id);
+    }
+
+    ///
     /// Returns the render actions required to send a vertex buffer (as a stack, so in reverse order)
     ///
     pub fn send_layer_vertex_buffer(&mut self, layer_id: LayerHandle, render_index: usize) -> Vec<render::RenderAction> {
