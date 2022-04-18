@@ -223,6 +223,8 @@ impl RenderCore {
     ///
     /// Allocates a free vertex buffer ID
     ///
+    /// Index buffers share the same IDs as vertex buffers, so the return value should be turned into a vertex buffer ID or an index buffer ID as needed
+    ///
     pub fn allocate_vertex_buffer(&mut self) -> usize {
         self.free_vertex_buffers.pop()
             .unwrap_or_else(|| {
@@ -230,6 +232,13 @@ impl RenderCore {
                 self.unused_vertex_buffer += 1;
                 buffer_id
             })
+    }
+
+    ///
+    /// Frees a vertex buffer allocated by `allocate_vertex_buffer`
+    ///
+    pub fn free_vertex_buffer(&mut self, buffer_id: usize) {
+        self.free_vertex_buffers.push(buffer_id);
     }
 
     ///

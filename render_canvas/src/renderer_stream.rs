@@ -367,7 +367,7 @@ impl RenderCore {
         render.push(DrawTriangles(VertexBufferId(debug_vertex_buffer), 0..6));
 
         // Add back to the free list after rendering
-        self.free_vertex_buffers.push(debug_vertex_buffer);
+        self.free_vertex_buffer(debug_vertex_buffer);
 
         // Update the invalid bounds
         let region = LayerBounds { min_x, min_y, max_x, max_y };
