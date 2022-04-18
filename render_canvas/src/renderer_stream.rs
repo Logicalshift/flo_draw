@@ -525,8 +525,11 @@ impl RenderCore {
                             render_order.extend(core.render_layer_to_texture(temp_texture, sprite_layer_handle, texture_transform, texture_bounds.to_sprite_bounds()));
 
                             // Render the texture to the screen, then free it
-                            let last_transform  = render_state.transform.unwrap_or_else(|| &viewport_transform * &active_transform);
-                            let render_bounds   = texture_bounds.to_viewport_coordinates(&render_state.viewport_size);
+                            let last_transform      = render_state.transform.unwrap_or_else(|| &viewport_transform * &active_transform);
+                            let render_bounds       = texture_bounds.to_viewport_coordinates(&render_state.viewport_size);
+                            let texture_transform   = 
+                                canvas::Transform2D::scale(1.0/render_bounds.width(), -1.0/render_bounds.height()) *
+                                canvas::Transform2D::translate(-render_bounds.min_x, -render_bounds.max_y);
 
                             render_order.extend(vec![
                                 SetTransform(transform_to_matrix(&canvas::Transform2D::identity())),
@@ -543,11 +546,12 @@ impl RenderCore {
                                 ]),
                                 UseShader(ShaderType::Texture { 
                                     texture:            temp_texture, 
-                                    texture_transform:  Matrix::identity(),
+                                    texture_transform:  transform_to_matrix(&texture_transform),
                                     repeat:             false,
                                     alpha:              1.0,
                                     clip_texture:       None,
                                 }),
+                                // UseShader(ShaderType::Simple { clip_texture: None }),
                                 DrawTriangles(VertexBufferId(texture_vertex_buffer), 0..6),
 
                                 FreeVertexBuffer(VertexBufferId(texture_vertex_buffer)),
@@ -559,12 +563,6 @@ impl RenderCore {
 
                             core.free_texture(temp_texture);
                             core.free_vertex_buffer(texture_vertex_buffer);
-
-                            // Render the layer associated with the sprite
-                            let render_sprite           = core.render_layer(combined_transform, sprite_layer_handle, render_target, render_state);
-
-                            // Render the sprite
-                            render_order.extend(render_sprite);
 
                             // Restore the state back to the state before the sprite was rendered
                             render_state.shader_modifier    = Some(ShaderModifier::Simple);
