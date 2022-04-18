@@ -496,6 +496,15 @@ impl RenderCore {
                         let sprite_bounds           = sprite_bounds.transform(&((active_transform * sprite_transform) * active_transform.invert().unwrap()));
                         let sprite_bounds           = sprite_bounds.to_viewport_pixels(&render_state.viewport_size);
 
+                        // Clip the sprite bounds against the viewport to get the texture bounds
+                        let viewport_bounds         = LayerBounds { min_x: 0.0, min_y: 0.0, max_x: render_state.viewport_size.0 as _, max_y: render_state.viewport_size.1 as _ };
+                        let texture_bounds          = sprite_bounds.clip(&viewport_bounds);
+
+                        render_order.extend(core.render_debug_region(viewport_transform*active_transform, render_state.viewport_size, sprite_bounds, &mut render_state.invalid_bounds));
+                        if let Some(texture_bounds) = texture_bounds {
+                            render_order.extend(core.render_debug_region(viewport_transform*active_transform, render_state.viewport_size, texture_bounds, &mut render_state.invalid_bounds));
+                        }
+
                         // The items from before the sprite should be rendered using the current state
                         let old_state               = render_state.clone();
 
