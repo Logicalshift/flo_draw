@@ -97,7 +97,9 @@ impl CanvasRenderer {
             unused_vertex_buffer:       0,
             free_vertex_buffers:        vec![],
             unused_texture_id:          16,
-            free_textures:              vec![]
+            free_textures:              vec![],
+            unused_render_target_id:    16,
+            free_render_targets:        vec![],
         };
         let core = Arc::new(Desync::new(core));
 

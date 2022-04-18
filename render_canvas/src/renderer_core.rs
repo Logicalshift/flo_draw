@@ -83,7 +83,13 @@ pub struct RenderCore {
     pub unused_texture_id: usize,
 
     /// Textures that were previously used but are now free
-    pub free_textures: Vec<render::TextureId>
+    pub free_textures: Vec<render::TextureId>,
+
+    /// The first unused render target ID
+    pub unused_render_target_id: usize,
+
+    /// Render targets that were previously used by are now free
+    pub free_render_targets: Vec<render::RenderTargetId>,
 }
 
 impl RenderCore {
@@ -255,6 +261,25 @@ impl RenderCore {
 
         // Add to the list of free textures
         self.free_textures.push(texture_id);
+    }
+
+    ///
+    /// Allocates a texture ID
+    ///
+    pub fn allocate_render_target(&mut self) -> render::RenderTargetId {
+        self.free_render_targets.pop()
+            .unwrap_or_else(|| {
+                let render_target_id = self.unused_render_target_id;
+                self.unused_render_target_id += 1;
+                render::RenderTargetId(render_target_id)
+            })
+    }
+
+    ///
+    /// Frees a render target that was previously allocated by allocate_render_target
+    ///
+    pub fn free_render_target(&mut self, render_target_id: render::RenderTargetId) {
+        self.free_render_targets.push(render_target_id);
     }
 
     ///
