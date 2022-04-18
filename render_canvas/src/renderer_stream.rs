@@ -491,7 +491,7 @@ impl RenderCore {
                         let combined_transform      = combined_transform * sprite_transform;
 
                         // Figure out the sprite size in pixels
-                        let transform               = (active_transform * sprite_transform) * active_transform.invert().unwrap();           // TODO: the bounds should be in the same coordinates as the sprite so this 'invert' shouldn't be necessary
+                        let transform               = active_transform * sprite_transform;
                         let sprite_layer            = core.layer(sprite_layer_handle);
                         let sprite_bounds           = sprite_layer.bounds;
                         let sprite_bounds           = sprite_bounds.transform(&(viewport_transform * transform));
