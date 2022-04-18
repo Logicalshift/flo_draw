@@ -704,8 +704,9 @@ impl<'a> RenderStream<'a> {
     fn render_layer_to_texture(&self, texture_id: render::TextureId, layer_handle: LayerHandle, region: canvas::SpriteBounds) -> Vec<render::RenderAction> {
         self.core.sync(move |core| {
             // Fetch the current transformation matrix of the sprite layer
-            let sprite_transform    = core.layer(layer_handle).state.current_matrix;
-            let offscreen_texture   = core.allocate_texture();
+            let sprite_transform        = core.layer(layer_handle).state.current_matrix;
+            let offscreen_texture       = core.allocate_texture();
+            let offscreen_render_target = core.allocate_render_target();
 
             // Need to know the texture size to recreate it as a render target
             let texture_size        = core.texture_size.get(&texture_id).cloned();
@@ -732,15 +733,15 @@ impl<'a> RenderStream<'a> {
 
             use render::RenderAction::*;
             render_to_texture.extend(vec![
-                CreateRenderTarget(OFFSCREEN_RENDER_TARGET, offscreen_texture, texture_size, render::RenderTargetType::MultisampledTexture),
-                SelectRenderTarget(OFFSCREEN_RENDER_TARGET),
+                CreateRenderTarget(offscreen_render_target, offscreen_texture, texture_size, render::RenderTargetType::MultisampledTexture),
+                SelectRenderTarget(offscreen_render_target),
                 Clear(render::Rgba8([0, 0, 0, 0])),
             ]);
 
             // Sprites render using the viewport transform only (even though they have a layer transform it's not actually updated later on. See how sprite_transform is calculated in RenderSprite also)
             let mut render_state        = RenderStreamState::new(texture_size);
-            render_state.render_target  = Some(OFFSCREEN_RENDER_TARGET);
-            render_to_texture.extend(core.render_layer(viewport_transform * sprite_transform, layer_handle, OFFSCREEN_RENDER_TARGET, &mut render_state));
+            render_state.render_target  = Some(offscreen_render_target);
+            render_to_texture.extend(core.render_layer(viewport_transform * sprite_transform, layer_handle, offscreen_render_target, &mut render_state));
 
             // Draw the multi-sample texture to a normal texture
             render_to_texture.extend(vec![
@@ -749,18 +750,19 @@ impl<'a> RenderStream<'a> {
                 Clear(render::Rgba8([0, 0, 0, 0])),
                 BlendMode(render::BlendMode::SourceOver),
                 SetTransform(render::Matrix::identity()),
-                DrawFrameBuffer(OFFSCREEN_RENDER_TARGET, render::FrameBufferRegion::default(), render::Alpha(1.0)), // TODO: render_state.invalid_bounds to improve performance, but because the viewport transform is 'wrong' for sprites the invalid bounds are also 'wrong'
+                DrawFrameBuffer(offscreen_render_target, render::FrameBufferRegion::default(), render::Alpha(1.0)), // TODO: render_state.invalid_bounds to improve performance, but because the viewport transform is 'wrong' for sprites the invalid bounds are also 'wrong'
             ]);
 
             // Return to the main framebuffer and free up the render targets
             render_to_texture.extend(vec![
                 SelectRenderTarget(MAIN_RENDER_TARGET),
-                FreeRenderTarget(OFFSCREEN_RENDER_TARGET),
+                FreeRenderTarget(offscreen_render_target),
                 FreeRenderTarget(RESOLVE_RENDER_TARGET),
                 FreeTexture(offscreen_texture),
             ]);
 
             core.free_texture(offscreen_texture);
+            core.free_render_target(offscreen_render_target);
 
             render_to_texture
         })
