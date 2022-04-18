@@ -54,6 +54,24 @@ impl LayerBounds {
     }
 
     ///
+    /// Returns the overlapping region between two bounds (or None if the bounds do not overlap)
+    ///
+    pub fn clip(&self, bounds: &LayerBounds) -> Option<LayerBounds> {
+        let new_bounds = LayerBounds {
+            min_x: f32::max(self.min_x, bounds.min_x),
+            min_y: f32::max(self.min_y, bounds.min_y),
+            max_x: f32::min(self.max_x, bounds.max_x),
+            max_y: f32::min(self.max_y, bounds.max_y),
+        };
+
+        if new_bounds.min_x > new_bounds.max_x || new_bounds.min_y > new_bounds.max_y {
+            None
+        } else {
+            Some(new_bounds)
+        }
+    }
+
+    ///
     /// Combines the bounds of the specified entity into this layer
     ///
     pub fn add_entity_with_details(&mut self, details: RenderEntityDetails) {
