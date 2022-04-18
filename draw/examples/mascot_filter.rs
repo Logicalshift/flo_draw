@@ -47,6 +47,8 @@ pub fn main() {
 
                 gc.sprite_transform(SpriteTransform::Identity);
                 gc.sprite_transform(SpriteTransform::Translate(x_off, y_off));
+                gc.sprite_transform(SpriteTransform::Rotate(phase_2.sin() * 45.0));
+                gc.draw_sprite(SpriteId(0));
                 gc.draw_sprite_with_filters(SpriteId(0), vec![TextureFilter::GaussianBlur(blur.abs())]);
             });
 
