@@ -705,6 +705,7 @@ impl<'a> RenderStream<'a> {
         self.core.sync(move |core| {
             // Fetch the current transformation matrix of the sprite layer
             let sprite_transform    = core.layer(layer_handle).state.current_matrix;
+            let offscreen_texture   = core.allocate_texture();
 
             // Need to know the texture size to recreate it as a render target
             let texture_size        = core.texture_size.get(&texture_id).cloned();
@@ -731,7 +732,7 @@ impl<'a> RenderStream<'a> {
 
             use render::RenderAction::*;
             render_to_texture.extend(vec![
-                CreateRenderTarget(OFFSCREEN_RENDER_TARGET, OFFSCREEN_TEXTURE, texture_size, render::RenderTargetType::MultisampledTexture),
+                CreateRenderTarget(OFFSCREEN_RENDER_TARGET, offscreen_texture, texture_size, render::RenderTargetType::MultisampledTexture),
                 SelectRenderTarget(OFFSCREEN_RENDER_TARGET),
                 Clear(render::Rgba8([0, 0, 0, 0])),
             ]);
@@ -756,8 +757,10 @@ impl<'a> RenderStream<'a> {
                 SelectRenderTarget(MAIN_RENDER_TARGET),
                 FreeRenderTarget(OFFSCREEN_RENDER_TARGET),
                 FreeRenderTarget(RESOLVE_RENDER_TARGET),
-                FreeTexture(OFFSCREEN_TEXTURE),
+                FreeTexture(offscreen_texture),
             ]);
+
+            core.free_texture(offscreen_texture);
 
             render_to_texture
         })
