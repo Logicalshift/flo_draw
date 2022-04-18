@@ -691,7 +691,7 @@ impl RenderCore {
     fn render_layer_to_texture(&mut self, texture_id: render::TextureId, layer_handle: LayerHandle, sprite_transform: canvas::Transform2D, region: canvas::SpriteBounds) -> Vec<render::RenderAction> {
         let core = self;
 
-        // Fetch the current transformation matrix of the sprite layer
+        // Allocate a texture and a render target for this operation
         let offscreen_texture       = core.allocate_texture();
         let offscreen_render_target = core.allocate_render_target();
 
@@ -800,10 +800,7 @@ impl<'a> RenderStream<'a> {
     ///
     fn render_layer_to_texture(&self, texture_id: render::TextureId, layer_handle: LayerHandle, region: canvas::SpriteBounds) -> Vec<render::RenderAction> {
         self.core.sync(move |core| {
-            // Fetch the current transformation matrix of the sprite layer
-            let sprite_transform        = core.layer(layer_handle).state.current_matrix;
-
-            core.render_layer_to_texture(texture_id, layer_handle, sprite_transform, region)
+            core.render_layer_to_texture(texture_id, layer_handle, canvas::Transform2D::identity(), region)
         })
     }
 
