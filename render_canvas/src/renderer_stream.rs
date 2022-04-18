@@ -324,6 +324,60 @@ impl RenderStreamState {
 
 impl RenderCore {
     ///
+    /// Draws some bounds using viewport coordinates
+    ///
+    fn render_debug_region(&mut self, active_transform: canvas::Transform2D, viewport_size: render::Size2D, debug_region: LayerBounds, invalid_bounds: &mut LayerBounds) -> Vec<render::RenderAction> {
+        // Reverse the active transform (so we figure out coordinates that will map to the debug region)
+        let render::Size2D(w, h)    = viewport_size;
+        let reverse_transform       = active_transform.invert().unwrap();
+        let w                       = w as f32;
+        let h                       = h as f32;
+
+        // Work out where the minimum and maximum coordinates are
+        let min_x           = debug_region.min_x / w;
+        let min_y           = debug_region.min_y / h;
+        let max_x           = debug_region.max_x / w;
+        let max_y           = debug_region.max_y / h;
+
+        let min_x           = min_x * 2.0 - 1.0;
+        let min_y           = min_y * 2.0 - 1.0;
+        let max_x           = max_x * 2.0 - 1.0;
+        let max_y           = max_y * 2.0 - 1.0;
+
+        let (min_x, min_y)  = reverse_transform.transform_point(min_x, min_y);
+        let (max_x, max_y)  = reverse_transform.transform_point(max_x, max_y);
+
+        // Draw to a temporary vertex buffer
+        use render::RenderAction::*;
+        use render::{VertexBufferId, Vertex2D};
+
+        let mut render          = vec![];
+        let debug_vertex_buffer = self.allocate_vertex_buffer();
+
+        render.push(UseShader(render::ShaderType::Simple { clip_texture: None }));
+        render.push(CreateVertex2DBuffer(VertexBufferId(debug_vertex_buffer), vec![
+            Vertex2D::with_pos(min_x, min_y).with_color(0.4, 0.8, 0.0, 0.6),
+            Vertex2D::with_pos(min_x, max_y).with_color(0.4, 0.8, 0.0, 0.6),
+            Vertex2D::with_pos(max_x, min_y).with_color(0.4, 0.8, 0.0, 0.6),
+
+            Vertex2D::with_pos(max_x, max_y).with_color(0.4, 0.8, 0.0, 0.6),
+            Vertex2D::with_pos(max_x, min_y).with_color(0.4, 0.8, 0.0, 0.6),
+            Vertex2D::with_pos(min_x, max_y).with_color(0.4, 0.8, 0.0, 0.6),
+        ]));
+        render.push(DrawTriangles(VertexBufferId(debug_vertex_buffer), 0..6));
+
+        // Add back to the free list after rendering
+        self.free_vertex_buffers.push(debug_vertex_buffer);
+
+        // Update the invalid bounds
+        let region = LayerBounds { min_x, min_y, max_x, max_y };
+        let region = region.transform(&active_transform);
+        invalid_bounds.combine(&region);
+
+        render
+    }
+
+    ///
     /// Generates the rendering actions for the layer with the specified handle
     ///
     fn render_layer(&mut self, viewport_transform: canvas::Transform2D, layer_handle: LayerHandle, render_target: render::RenderTargetId, render_state: &mut RenderStreamState) -> Vec<render::RenderAction> {
