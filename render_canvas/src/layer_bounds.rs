@@ -32,6 +32,16 @@ impl Into<render::FrameBufferRegion> for LayerBounds {
 }
 
 impl LayerBounds {
+    #[inline]
+    pub fn width(&self) -> f32 {
+        self.max_x - self.min_x
+    }
+
+    #[inline]
+    pub fn height(&self) -> f32 {
+        self.max_y - self.min_y
+    }
+
     ///
     /// True if this represents an 'undefined' bounding box (eg, due to a layer being empty)
     ///
@@ -115,5 +125,26 @@ impl LayerBounds {
             max_x: (self.max_x + 1.0)/2.0 * w,
             max_y: (self.max_y + 1.0)/2.0 * h,
         }
+    }
+
+    ///
+    /// Creates a version of this with coordinates snapped to integer boundaries
+    ///
+    pub fn snap_to_pixels(&self) -> LayerBounds {
+        LayerBounds {
+            min_x: self.min_x.floor(),
+            min_y: self.min_y.floor(),
+            max_x: self.max_x.ceil(),
+            max_y: self.max_y.ceil(),
+        }
+    }
+
+    ///
+    /// Converts these layer bounds to a sprite bounds object
+    ///
+    pub fn to_sprite_bounds(&self) -> canvas::SpriteBounds {
+        canvas::SpriteBounds(
+            canvas::SpritePosition(self.min_x, self.min_y), 
+            canvas::SpriteSize(self.width(), self.height()))
     }
 }
