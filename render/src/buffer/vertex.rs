@@ -20,4 +20,15 @@ impl Vertex2D {
             color:      [0, 0, 0, 0]
         }
     }
+
+    ///
+    /// Updates this vertex with a particular colour
+    ///
+    pub fn with_color(self, r: f32, g: f32, b: f32, a: f32) -> Vertex2D {
+        Vertex2D {
+            pos:        self.pos,
+            tex_coord:  self.tex_coord,
+            color:      [(r*255.0) as _, (g*255.0) as _, (b*255.0) as _, (a*255.0) as _]
+        }
+    }
 }
