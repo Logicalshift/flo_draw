@@ -501,12 +501,9 @@ impl RenderCore {
                         let viewport_bounds         = LayerBounds { min_x: 0.0, min_y: 0.0, max_x: render_state.viewport_size.0 as _, max_y: render_state.viewport_size.1 as _ };
                         let texture_bounds          = sprite_bounds.clip(&viewport_bounds);
 
-                        render_order.extend(core.render_debug_region(viewport_transform*active_transform, render_state.viewport_size, sprite_bounds, &mut render_state.invalid_bounds));
                         if let Some(texture_bounds) = texture_bounds {
                             use render::RenderAction::*;
-
-                            // TODO: remove debug code
-                            render_order.extend(core.render_debug_region(viewport_transform*active_transform, render_state.viewport_size, texture_bounds, &mut render_state.invalid_bounds));
+                            use render::{VertexBufferId, ShaderType, Matrix, Vertex2D};
 
                             // The items from before the sprite should be rendered using the current state
                             let old_state               = render_state.clone();
@@ -514,6 +511,7 @@ impl RenderCore {
                             // Allocate a texture to render to
                             let texture_bounds          = texture_bounds.snap_to_pixels();
                             let temp_texture            = core.allocate_texture();
+                            let texture_vertex_buffer   = core.allocate_vertex_buffer();
                             let texture_size            = render::Size2D(texture_bounds.width() as _, texture_bounds.height() as _);
 
                             core.texture_size.insert(temp_texture, texture_size);
@@ -527,11 +525,40 @@ impl RenderCore {
                             render_order.extend(core.render_layer_to_texture(temp_texture, sprite_layer_handle, texture_transform, texture_bounds.to_sprite_bounds()));
 
                             // Render the texture to the screen, then free it
+                            let last_transform  = render_state.transform.unwrap_or_else(|| &viewport_transform * &active_transform);
+                            let render_bounds   = texture_bounds.to_viewport_coordinates(&render_state.viewport_size);
+
                             render_order.extend(vec![
-                                FreeTexture(temp_texture)
+                                SetTransform(transform_to_matrix(&canvas::Transform2D::identity())),
+
+                                CreateMipMaps(temp_texture),
+                                CreateVertex2DBuffer(VertexBufferId(texture_vertex_buffer), vec![
+                                    Vertex2D::with_pos(render_bounds.min_x, render_bounds.min_y).with_texture_coordinates(0.0, 0.0),
+                                    Vertex2D::with_pos(render_bounds.min_x, render_bounds.max_y).with_texture_coordinates(0.0, 1.0),
+                                    Vertex2D::with_pos(render_bounds.max_x, render_bounds.min_y).with_texture_coordinates(1.0, 0.0),
+
+                                    Vertex2D::with_pos(render_bounds.min_x, render_bounds.max_y).with_texture_coordinates(0.0, 1.0),
+                                    Vertex2D::with_pos(render_bounds.max_x, render_bounds.max_y).with_texture_coordinates(1.0, 1.0),
+                                    Vertex2D::with_pos(render_bounds.max_x, render_bounds.min_y).with_texture_coordinates(1.0, 0.0),
+                                ]),
+                                UseShader(ShaderType::Texture { 
+                                    texture:            temp_texture, 
+                                    texture_transform:  Matrix::identity(),
+                                    repeat:             false,
+                                    alpha:              1.0,
+                                    clip_texture:       None,
+                                }),
+                                DrawTriangles(VertexBufferId(texture_vertex_buffer), 0..6),
+
+                                FreeVertexBuffer(VertexBufferId(texture_vertex_buffer)),
+                                FreeTexture(temp_texture),
+
+                                SetTransform(transform_to_matrix(&last_transform)),
+                                UseShader(ShaderType::Simple { clip_texture: None }),
                             ]);
 
                             core.free_texture(temp_texture);
+                            core.free_vertex_buffer(texture_vertex_buffer);
 
                             // Render the layer associated with the sprite
                             let render_sprite           = core.render_layer(combined_transform, sprite_layer_handle, render_target, render_state);
@@ -540,6 +567,8 @@ impl RenderCore {
                             render_order.extend(render_sprite);
 
                             // Restore the state back to the state before the sprite was rendered
+                            render_state.shader_modifier    = Some(ShaderModifier::Simple);
+                            render_state.clip_mask          = Maybe::None;
                             render_order.extend(old_state.update_from_state(&render_state));
 
                             // Following instructions are rendered using the state before the sprite (except for the invalid area)
