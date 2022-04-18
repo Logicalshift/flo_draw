@@ -31,4 +31,15 @@ impl Vertex2D {
             color:      [(r*255.0) as _, (g*255.0) as _, (b*255.0) as _, (a*255.0) as _]
         }
     }
+
+    ///
+    /// Updates this vertex with a texture coordinate
+    ///
+    pub fn with_texture_coordinates(self, x: f32, y: f32) -> Vertex2D {
+        Vertex2D {
+            pos:        self.pos,
+            tex_coord:  [x, y],
+            color:      self.color
+        }
+    }
 }
