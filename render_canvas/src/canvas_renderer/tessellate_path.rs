@@ -97,7 +97,7 @@ impl CanvasRenderer {
                 let color               = layer.state.fill_color.clone();
                 let fill_rule           = layer.state.winding_rule;
                 let entity_index        = layer.render_order.len();
-                let transform           = *active_transform;
+                let transform           = layer.state.current_matrix;
 
                 layer.render_order.push(RenderEntity::Tessellating(entity_id));
                 layer.state.modification_count += 1;
@@ -167,7 +167,7 @@ impl CanvasRenderer {
                 let scale_factor        = layer.state.tolerance_scale_factor(viewport_height);
                 let mut stroke_options  = layer.state.stroke_settings.clone();
                 let entity_index        = layer.render_order.len();
-                let transform           = *active_transform;
+                let transform           = layer.state.current_matrix;
 
                 // When drawing to the erase layer (DesintationOut blend mode), all colour components are alpha components
                 let color                   = stroke_options.stroke_color;
