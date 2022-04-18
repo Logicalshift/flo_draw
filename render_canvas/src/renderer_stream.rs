@@ -493,6 +493,7 @@ impl RenderCore {
                         // Figure out the sprite size in pixels
                         let transform               = active_transform * sprite_transform;
                         let sprite_layer            = core.layer(sprite_layer_handle);
+                        let original_bounds         = sprite_layer.bounds;
                         let sprite_bounds           = sprite_layer.bounds;
                         let sprite_bounds           = sprite_bounds.transform(&(viewport_transform * transform));
                         let sprite_bounds           = sprite_bounds.to_viewport_pixels(&render_state.viewport_size);
@@ -522,7 +523,7 @@ impl RenderCore {
 
                             // Render the sprite to the texture
                             let texture_transform       = sprite_transform;
-                            render_order.extend(core.render_layer_to_texture(temp_texture, sprite_layer_handle, texture_transform, texture_bounds.to_sprite_bounds()));
+                            render_order.extend(core.render_layer_to_texture(temp_texture, sprite_layer_handle, texture_transform, original_bounds.to_sprite_bounds()));
 
                             // Render the texture to the screen, then free it
                             let last_transform      = render_state.transform.unwrap_or_else(|| &viewport_transform * &active_transform);
@@ -551,7 +552,6 @@ impl RenderCore {
                                     alpha:              1.0,
                                     clip_texture:       None,
                                 }),
-                                // UseShader(ShaderType::Simple { clip_texture: None }),
                                 DrawTriangles(VertexBufferId(texture_vertex_buffer), 0..6),
 
                                 FreeVertexBuffer(VertexBufferId(texture_vertex_buffer)),
