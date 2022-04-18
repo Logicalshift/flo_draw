@@ -128,6 +128,22 @@ impl LayerBounds {
     }
 
     ///
+    /// Converts from viewport pixel coordinates to viewport rendering coordinates (from -1 to 1)
+    ///
+    pub fn to_viewport_coordinates(&self, viewport_size: &render::Size2D) -> LayerBounds {
+        let render::Size2D(w, h)    = viewport_size;
+        let w                       = *w as f32;
+        let h                       = *h as f32;
+
+        LayerBounds {
+            min_x: (self.min_x / w) * 2.0 - 1.0,
+            min_y: (self.min_y / h) * 2.0 - 1.0,
+            max_x: (self.max_x / w) * 2.0 - 1.0,
+            max_y: (self.max_y / h) * 2.0 - 1.0,
+        }
+    }
+
+    ///
     /// Creates a version of this with coordinates snapped to integer boundaries
     ///
     pub fn snap_to_pixels(&self) -> LayerBounds {
