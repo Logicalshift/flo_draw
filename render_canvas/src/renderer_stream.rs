@@ -503,26 +503,27 @@ impl RenderCore {
 
                         render_order.extend(core.render_debug_region(viewport_transform*active_transform, render_state.viewport_size, sprite_bounds, &mut render_state.invalid_bounds));
                         if let Some(texture_bounds) = texture_bounds {
+                            // TODO: remove debug code
                             render_order.extend(core.render_debug_region(viewport_transform*active_transform, render_state.viewport_size, texture_bounds, &mut render_state.invalid_bounds));
+
+                            // The items from before the sprite should be rendered using the current state
+                            let old_state               = render_state.clone();
+
+                            // Render the layer associated with the sprite
+                            let render_sprite           = core.render_layer(combined_transform, sprite_layer_handle, render_target, render_state);
+
+                            // Render the sprite
+                            render_order.extend(render_sprite);
+
+                            // Restore the state back to the state before the sprite was rendered
+                            render_order.extend(old_state.update_from_state(&render_state));
+
+                            // Following instructions are rendered using the state before the sprite (except for the invalid area)
+                            let invalid_bounds          = render_state.invalid_bounds;
+                            *render_state               = old_state;
+                            render_state.invalid_bounds = invalid_bounds;
+                            render_state.is_clear       = Some(false);
                         }
-
-                        // The items from before the sprite should be rendered using the current state
-                        let old_state               = render_state.clone();
-
-                        // Render the layer associated with the sprite
-                        let render_sprite           = core.render_layer(combined_transform, sprite_layer_handle, render_target, render_state);
-
-                        // Render the sprite
-                        render_order.extend(render_sprite);
-
-                        // Restore the state back to the state before the sprite was rendered
-                        render_order.extend(old_state.update_from_state(&render_state));
-
-                        // Following instructions are rendered using the state before the sprite (except for the invalid area)
-                        let invalid_bounds          = render_state.invalid_bounds;
-                        *render_state               = old_state;
-                        render_state.invalid_bounds = invalid_bounds;
-                        render_state.is_clear       = Some(false);
                     }
 
                     // Reborrow the layer
