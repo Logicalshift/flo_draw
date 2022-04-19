@@ -486,14 +486,9 @@ impl RenderCore {
                     if let Some(sprite_layer_handle) = core.sprites.get(&sprite_id) {
                         let sprite_layer_handle     = *sprite_layer_handle;
 
-                        // The sprite transform is appended to the viewport transform
-                        let combined_transform      = &viewport_transform * &active_transform;
-                        let combined_transform      = combined_transform * sprite_transform;
-
                         // Figure out the sprite size in pixels
                         let transform               = active_transform * sprite_transform;
                         let sprite_layer            = core.layer(sprite_layer_handle);
-                        let original_bounds         = sprite_layer.bounds;
                         let sprite_bounds           = sprite_layer.bounds;
                         let sprite_bounds           = sprite_bounds.transform(&(viewport_transform * transform));
                         let sprite_bounds           = sprite_bounds.to_viewport_pixels(&render_state.viewport_size);
