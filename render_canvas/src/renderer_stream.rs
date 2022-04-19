@@ -523,7 +523,7 @@ impl RenderCore {
 
                             // Render the sprite to the texture
                             let texture_transform       = sprite_transform;
-                            render_order.extend(core.render_layer_to_texture(temp_texture, sprite_layer_handle, texture_transform, original_bounds.to_sprite_bounds()));
+                            render_order.extend(core.render_layer_to_texture(temp_texture, sprite_layer_handle, texture_transform, texture_bounds.to_sprite_bounds()));
 
                             // Render the texture to the screen, then free it
                             let last_transform      = render_state.transform.unwrap_or_else(|| &viewport_transform * &active_transform);
@@ -729,18 +729,12 @@ impl RenderCore {
         // Create a viewport transform for the render region (-1.0 - 1.0 will be the texture size, so we just need a transform that maps the appropriate coordinates)
         let canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h)) = region;
 
-        // Coordinates of the region as they're currently being mapped from the sprite
-        let (x1, y1)                = sprite_transform.transform_point(x, y);
-        let (x2, y2)                = sprite_transform.transform_point(x+w, y+h);
-
-        // Where the mid point should be, and how much the viewport should scale
-        let mid_x                   = (x1+x2)/2.0;
-        let mid_y                   = (y1+y2)/2.0;
-        let scale_x                 = 2.0/(x2-x1);
-        let scale_y                 = 2.0/(y2-y1);
+        let viewport_transform      = 
+            canvas::Transform2D::scale(2.0/w, 2.0/h) *
+            canvas::Transform2D::translate(-(x+(w/2.0)), -(y+h/2.0));
 
         // Map the viewport so the appropriate part of the sprite is visible
-        let viewport_transform      = canvas::Transform2D::scale(scale_x, scale_y) * canvas::Transform2D::translate(-mid_x, -mid_y);
+        let viewport_transform      = viewport_transform * sprite_transform;
 
         // Start by rendering to a multi-sampled texture
         let mut render_to_texture   = vec![];
