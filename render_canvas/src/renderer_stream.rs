@@ -502,7 +502,7 @@ impl RenderCore {
 
                         if let Some(texture_bounds_pixels) = texture_bounds_pixels {
                             use render::RenderAction::*;
-                            use render::{VertexBufferId, ShaderType, Matrix, Vertex2D};
+                            use render::{VertexBufferId, ShaderType, Vertex2D};
 
                             // The items from before the sprite should be rendered using the current state
                             let old_state               = render_state.clone();
