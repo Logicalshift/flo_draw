@@ -744,13 +744,13 @@ impl RenderCore {
         render_to_texture.extend(vec![
             CreateRenderTarget(offscreen_render_target, offscreen_texture, texture_size, render::RenderTargetType::MultisampledTexture),
             SelectRenderTarget(offscreen_render_target),
-            Clear(render::Rgba8([0, 0, 0, 0])),
+            Clear(render::Rgba8([0, 0, 0, 0]))
         ]);
 
         // Sprites render using the viewport transform only (even though they have a layer transform it's not actually updated later on. See how sprite_transform is calculated in RenderSprite also)
         let mut render_state        = RenderStreamState::new(texture_size);
         render_state.render_target  = Some(offscreen_render_target);
-        render_to_texture.extend(core.render_layer(viewport_transform * sprite_transform, layer_handle, offscreen_render_target, &mut render_state));
+        render_to_texture.extend(core.render_layer(viewport_transform, layer_handle, offscreen_render_target, &mut render_state));
 
         // Draw the multi-sample texture to a normal texture
         render_to_texture.extend(vec![
