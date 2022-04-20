@@ -108,6 +108,8 @@ pub fn main() {
                 gc.layer(LayerId(1));
                 gc.clear_layer();
 
+                gc.sprite(SpriteId(0));
+                gc.clear_sprite();
                 gc.create_gradient(GradientId(1), Color::Rgba(0.1, 0.1, 0.1, 0.05));
                 gc.gradient_stop(GradientId(1), 1.0, Color::Rgba(0.0, 0.1, 0.2, 0.6));
 
@@ -120,6 +122,10 @@ pub fn main() {
                 gc.blend_mode(BlendMode::SourceOver);
                 gc.fill_gradient(GradientId(1), 200.0, 200.0, 200.0, 600.0);
                 gc.fill();
+
+                gc.layer(LayerId(1));
+                gc.sprite_transform(SpriteTransform::Identity);
+                gc.draw_sprite_with_filters(SpriteId(0), vec![TextureFilter::GaussianBlur(20.0)]);
             });
 
             // Display each shading mode for 10s then move on to the next one
