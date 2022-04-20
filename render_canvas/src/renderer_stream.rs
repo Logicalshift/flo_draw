@@ -525,14 +525,14 @@ impl RenderCore {
                             // Render the sprite to the texture
                             render_order.extend(core.render_layer_to_texture(temp_texture, sprite_layer_handle, render_transform, render_bounds.to_sprite_bounds()));
 
-                            // Render the texture to the screen, then free it
                             let last_transform      = render_state.transform.unwrap_or_else(|| &viewport_transform * &active_transform);
 
-                            let render_bounds       = texture_bounds_pixels.to_viewport_coordinates(&render_state.viewport_size);
+                            // The texture transform maps viewport coordinates to texture coordinates
                             let texture_transform   = 
-                                canvas::Transform2D::scale(1.0/render_bounds.width(), -1.0/render_bounds.height()) *
-                                canvas::Transform2D::translate(-render_bounds.min_x, -render_bounds.max_y);
+                                canvas::Transform2D::scale(1.0/render_bounds.width(), 1.0/render_bounds.height()) *
+                                canvas::Transform2D::translate(-render_bounds.min_x, -render_bounds.min_y);
 
+                            // Render the texture to the screen, then free it
                             render_order.extend(vec![
                                 SetTransform(transform_to_matrix(&canvas::Transform2D::identity())),
 
