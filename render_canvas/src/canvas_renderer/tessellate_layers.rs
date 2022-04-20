@@ -192,7 +192,7 @@ impl CanvasRenderer {
             // Ensure the layer transform is up to date
             core.layer(self.current_layer).update_transform(&self.active_transform);
 
-            // Free the data for the current layer
+            // Free the data for the layer that we just replaced
             core.free_layer_entities(layer);
         });
     }
