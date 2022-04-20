@@ -605,7 +605,7 @@ impl RenderCore {
 
                     // Render to the main buffer
                     render_state.blend_mode     = Some(*new_blend_mode);
-                    render_state.render_target  = Some(MAIN_RENDER_TARGET);
+                    render_state.render_target  = Some(render_target);
 
                     // Update to the new state
                     render_order.extend(render_state.update_from_state(&old_state));
