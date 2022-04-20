@@ -698,9 +698,9 @@ impl RenderCore {
             render_order.extend(vec![
                 render::RenderAction::RenderToFrameBuffer,
                 render::RenderAction::BlendMode(blend_mode),
-                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, invalid_bounds.into(), render::Alpha(alpha)),
+                render::RenderAction::DrawFrameBuffer(render_target, invalid_bounds.into(), render::Alpha(alpha)),
 
-                render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
+                render::RenderAction::SelectRenderTarget(render_target),
                 render::RenderAction::Clear(render::Rgba8([0,0,0,0]))
             ]);
 
