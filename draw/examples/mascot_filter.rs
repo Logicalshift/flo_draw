@@ -35,6 +35,7 @@ pub fn main() {
             let phase_1 = (iter as f32)/20.0;
             let phase_2 = (iter as f32)/23.0;
             let phase_3 = (iter as f32)/13.0;
+            let phase_4 = (iter as f32)/51.0;
 
             let x_off = phase_1.sin() * 50.0;
             let y_off = phase_2.sin() * 50.0;
@@ -46,6 +47,10 @@ pub fn main() {
                 gc.clear_layer();
 
                 gc.sprite_transform(SpriteTransform::Identity);
+                gc.sprite_transform(SpriteTransform::Translate(-512.0, -384.0));
+                gc.sprite_transform(SpriteTransform::Scale((phase_4.sin() + 1.0) * 0.1 + 0.9, (phase_4.sin() + 1.0) * 0.1 + 0.9));
+                gc.sprite_transform(SpriteTransform::Rotate((phase_3.sin()) * 5.0));
+                gc.sprite_transform(SpriteTransform::Translate(512.0, 384.0));
                 gc.sprite_transform(SpriteTransform::Translate(x_off, y_off));
                 gc.draw_sprite_with_filters(SpriteId(0), vec![TextureFilter::GaussianBlur(blur.abs())]);
             });
