@@ -81,7 +81,6 @@ impl CanvasRenderer {
                         }
                     }
 
-
                     path_state.dash_pattern = vec![];
                     path_state.fill_state   = core.layer(layer_id).state.fill_color.clone();
                 } else if !path_state.dash_pattern.is_empty() {
