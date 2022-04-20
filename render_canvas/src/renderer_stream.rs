@@ -489,15 +489,17 @@ impl RenderCore {
                         // Figure out the sprite size in pixels
                         let transform               = active_transform * sprite_transform;
                         let sprite_layer            = core.layer(sprite_layer_handle);
-                        let sprite_bounds           = sprite_layer.bounds;
-                        let sprite_bounds           = sprite_bounds.transform(&(viewport_transform * transform));
-                        let sprite_bounds           = sprite_bounds.to_viewport_pixels(&render_state.viewport_size);
+
+                        // The sprite bounds are in sprite coordinates, so we need to apply the active and sprite transform to get them to 
+                        let sprite_bounds_normal    = sprite_layer.bounds;
+                        let sprite_bounds_viewport  = sprite_bounds_normal.transform(&(viewport_transform * transform));
+                        let sprite_bounds_pixels    = sprite_bounds_viewport.to_viewport_pixels(&render_state.viewport_size);
 
                         // Clip the sprite bounds against the viewport to get the texture bounds
-                        let viewport_bounds         = LayerBounds { min_x: 0.0, min_y: 0.0, max_x: render_state.viewport_size.0 as _, max_y: render_state.viewport_size.1 as _ };
-                        let texture_bounds          = sprite_bounds.clip(&viewport_bounds);
+                        let viewport_bounds_pixels  = LayerBounds { min_x: 0.0, min_y: 0.0, max_x: render_state.viewport_size.0 as _, max_y: render_state.viewport_size.1 as _ };
+                        let texture_bounds_pixels   = sprite_bounds_pixels.clip(&viewport_bounds_pixels);
 
-                        if let Some(texture_bounds) = texture_bounds {
+                        if let Some(texture_bounds_pixels) = texture_bounds_pixels {
                             use render::RenderAction::*;
                             use render::{VertexBufferId, ShaderType, Matrix, Vertex2D};
 
@@ -505,10 +507,10 @@ impl RenderCore {
                             let old_state               = render_state.clone();
 
                             // Allocate a texture to render to
-                            let texture_bounds          = texture_bounds.snap_to_pixels();
+                            let texture_bounds_pixels   = texture_bounds_pixels.snap_to_pixels();
                             let temp_texture            = core.allocate_texture();
                             let texture_vertex_buffer   = core.allocate_vertex_buffer();
-                            let texture_size            = render::Size2D(texture_bounds.width() as _, texture_bounds.height() as _);
+                            let texture_size            = render::Size2D(texture_bounds_pixels.width() as _, texture_bounds_pixels.height() as _);
 
                             core.texture_size.insert(temp_texture, texture_size);
 
@@ -516,13 +518,17 @@ impl RenderCore {
                                 CreateTextureBgra(temp_texture, texture_size),
                             ]);
 
+                            // Create a transform that maps the sprite onto coordinates for the current viewport
+                            let render_transform        = viewport_transform * (active_transform * sprite_transform);
+                            let render_bounds           = texture_bounds_pixels.to_viewport_coordinates(&render_state.viewport_size);
+
                             // Render the sprite to the texture
-                            let texture_transform       = sprite_transform;
-                            render_order.extend(core.render_layer_to_texture(temp_texture, sprite_layer_handle, texture_transform, texture_bounds.to_sprite_bounds()));
+                            render_order.extend(core.render_layer_to_texture(temp_texture, sprite_layer_handle, render_transform, render_bounds.to_sprite_bounds()));
 
                             // Render the texture to the screen, then free it
                             let last_transform      = render_state.transform.unwrap_or_else(|| &viewport_transform * &active_transform);
-                            let render_bounds       = texture_bounds.to_viewport_coordinates(&render_state.viewport_size);
+
+                            let render_bounds       = texture_bounds_pixels.to_viewport_coordinates(&render_state.viewport_size);
                             let texture_transform   = 
                                 canvas::Transform2D::scale(1.0/render_bounds.width(), -1.0/render_bounds.height()) *
                                 canvas::Transform2D::translate(-render_bounds.min_x, -render_bounds.max_y);
