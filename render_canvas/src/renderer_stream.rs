@@ -980,80 +980,10 @@ impl<'a> RenderStream<'a> {
     }
 
     ///
-    /// Generates the render actions for a gaussian blur filter with the specified radius
-    ///
-    fn filter_gaussian_blur(&self, texture_id: render::TextureId, radius_pixels_x: f32, radius_pixels_y: f32) -> Vec<render::RenderAction> {
-        // Blur has no effect below a 1px radius
-        if radius_pixels_x <= 1.0 { return vec![]; };
-        if radius_pixels_y <= 1.0 { return vec![]; };
-
-        // Sigma is fixed, the x and y steps are calculated from the radius
-        let sigma   = 0.25;
-        let x_step  = 1.0 / radius_pixels_x;
-        let y_step  = 1.0 / radius_pixels_y;
-
-        // We calculate a kernel out to 4 sigma
-        let kernel_size = ((sigma / x_step) * 8.0).ceil() as usize;
-        let x_filter    = if kernel_size <= 9 {
-            render::TextureFilter::GaussianBlurHorizontal9(sigma, x_step)
-        } else if kernel_size <= 29 {
-            render::TextureFilter::GaussianBlurHorizontal29(sigma, x_step)
-        } else if kernel_size <= 61 {
-            render::TextureFilter::GaussianBlurHorizontal61(sigma, x_step)
-        } else {
-            render::TextureFilter::GaussianBlurHorizontal(sigma, x_step, kernel_size)
-        };
-
-        let kernel_size = ((sigma / y_step) * 8.0).ceil() as usize;
-        let y_filter    = if kernel_size <= 9 {
-            render::TextureFilter::GaussianBlurVertical9(sigma, y_step)
-        } else if kernel_size <= 29 {
-            render::TextureFilter::GaussianBlurVertical29(sigma, y_step)
-        } else if kernel_size <= 61 {
-            render::TextureFilter::GaussianBlurVertical61(sigma, y_step)
-        } else {
-            render::TextureFilter::GaussianBlurVertical(sigma, y_step, kernel_size)
-        };
-
-        vec![
-            render::RenderAction::FilterTexture(texture_id, vec![
-                x_filter,
-                y_filter,
-            ])
-        ]
-    }
-
-    ///
     /// Applies a filter to a texture
     ///
     fn texture_filter_request(&self, texture_id: render::TextureId, request: &TextureFilterRequest) -> Vec<render::RenderAction> {
-        use TextureFilterRequest::*;
-
-        match request {
-            PixelBlur(radius)               => self.filter_gaussian_blur(texture_id, *radius, *radius),
-            CanvasBlur(radius, transform)   => {
-                let transform   = self.viewport_transform * *transform;
-
-                // Convert the radius using the transform
-                let (x1, y1)    = transform.transform_point(0.0, 0.0);
-                let (x2, y2)    = transform.transform_point(*radius, *radius);
-
-                let min_x       = f32::min(x1, x2);
-                let min_y       = f32::min(y1, y2);
-                let max_x       = f32::max(x1, x2);
-                let max_y       = f32::max(y1, y2);
-
-                // Size relative to the framebuffer size
-                let size_w      = (max_x - min_x)/2.0;
-                let size_h      = (max_y - min_y)/2.0;
-
-                let x_radius    = self.viewport_size.0 as f32 * size_w;
-                let y_radius    = self.viewport_size.1 as f32 * size_h;
-
-                // Generate the actions to apply the filter
-                self.filter_gaussian_blur(texture_id, x_radius, y_radius)
-            },
-        }
+        RenderCore::texture_filter_request(texture_id, self.viewport_transform, self.viewport_size, request)
     }
 
     ///
