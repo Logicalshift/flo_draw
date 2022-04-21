@@ -6,7 +6,7 @@ use flo_render as render;
 /// A 'loading' texture is one where we're still writing data, where a 'Ready' texture is one where we've
 /// generated the mipmap and are using it somewhere in the core
 ///
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum RenderTexture {
     Loading(render::TextureId),
     Ready(render::TextureId)
