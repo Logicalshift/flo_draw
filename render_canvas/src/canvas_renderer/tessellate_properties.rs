@@ -103,6 +103,11 @@ impl CanvasRenderer {
     #[inline]
     pub (super) fn tes_fill_texture(&mut self, texture_id: canvas::TextureId, (x1, y1): (f32, f32), (x2, y2): (f32, f32)) {
         self.core.sync(|core| {
+            let render_texture  = core.canvas_textures.get(&texture_id);
+            if render_texture.is_none() {
+                return;
+            }
+
             let alpha               = core.texture_alpha.get(&texture_id).cloned().unwrap_or(1.0);
             let layer               = core.layer(self.current_layer);
 
