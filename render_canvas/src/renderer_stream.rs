@@ -133,6 +133,8 @@ impl<'a> RenderStream<'a> {
     ///
     /// Creates a new render stream
     ///
+    /// If rendering is suspended at the point that the processing future completes then the initial and final actions will not be taken
+    ///
     pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, viewport_size: render::Size2D, background_vertex_buffer: render::VertexBufferId, initial_actions: Vec<render::RenderAction>, final_actions: Vec<render::RenderAction>) -> RenderStream<'a>
     where   ProcessFuture: 'a+Send+Future<Output=()> {
         RenderStream {

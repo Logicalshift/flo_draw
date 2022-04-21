@@ -390,23 +390,16 @@ impl CanvasRenderer {
     /// Returns a stream of render actions after applying a set of canvas drawing operations to this renderer
     ///
     pub fn draw<'a, DrawIter: 'a+Send+Iterator<Item=canvas::Draw>>(&'a mut self, drawing: DrawIter) -> impl 'a+Send+Stream<Item=render::RenderAction> {
-        // See if rendering is suspended (we just load vertex buffers if it is)
-        let rendering_suspended = self.core.sync(|core| core.frame_starts > 0);
-
         // Set up the initial set of rendering actions
         let viewport_transform  = self.viewport_transform;
         let viewport_size       = render::Size2D(self.viewport_size.0 as usize, self.viewport_size.1 as usize);
         let viewport_matrix     = transform_to_matrix(&self.viewport_transform);
-        let mut initialise      = if rendering_suspended {
-            vec![]
-        } else { 
-            vec![
-                render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
-                render::RenderAction::BlendMode(render::BlendMode::SourceOver),
-                render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])),
-                render::RenderAction::SetTransform(viewport_matrix),
-            ]
-        };
+        let mut initialise      = vec![
+            render::RenderAction::SelectRenderTarget(MAIN_RENDER_TARGET),
+            render::RenderAction::BlendMode(render::BlendMode::SourceOver),
+            render::RenderAction::Clear(render::Rgba8([0, 0, 0, 0])),
+            render::RenderAction::SetTransform(viewport_matrix),
+        ];
 
         // Initialise the default render target
         initialise.insert(0, render::RenderAction::CreateRenderTarget(MAIN_RENDER_TARGET, MAIN_RENDER_TEXTURE, 
@@ -419,23 +412,19 @@ impl CanvasRenderer {
             RenderTargetType::MonochromeMultisampledTexture));
 
         // When finished, render the MSAA buffer to the main framebuffer
-        let finalize            = if rendering_suspended {
-            vec![]
-        } else {
-            vec![
-                render::RenderAction::RenderToFrameBuffer,
-                render::RenderAction::BlendMode(render::BlendMode::SourceOver),
-                render::RenderAction::SetTransform(render::Matrix::identity()),
-                // Note that the framebuffer region can be updated by the renderer stream (or this instruction can be removed): see `clip_draw_framebuffer()` in renderer_stream.rs
-                render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::FrameBufferRegion::default(), render::Alpha(1.0)),
-                render::RenderAction::ShowFrameBuffer,
+        let finalize            = vec![
+            render::RenderAction::RenderToFrameBuffer,
+            render::RenderAction::BlendMode(render::BlendMode::SourceOver),
+            render::RenderAction::SetTransform(render::Matrix::identity()),
+            // Note that the framebuffer region can be updated by the renderer stream (or this instruction can be removed): see `clip_draw_framebuffer()` in renderer_stream.rs
+            render::RenderAction::DrawFrameBuffer(MAIN_RENDER_TARGET, render::FrameBufferRegion::default(), render::Alpha(1.0)),
+            render::RenderAction::ShowFrameBuffer,
 
-                render::RenderAction::FreeRenderTarget(MAIN_RENDER_TARGET),
-                render::RenderAction::FreeRenderTarget(CLIP_RENDER_TARGET),
-                render::RenderAction::FreeTexture(MAIN_RENDER_TEXTURE),
-                render::RenderAction::FreeTexture(CLIP_RENDER_TEXTURE),
-            ]
-        };
+            render::RenderAction::FreeRenderTarget(MAIN_RENDER_TARGET),
+            render::RenderAction::FreeRenderTarget(CLIP_RENDER_TARGET),
+            render::RenderAction::FreeTexture(MAIN_RENDER_TEXTURE),
+            render::RenderAction::FreeTexture(CLIP_RENDER_TEXTURE),
+        ];
 
         // The render stream needs a vertex buffer to render the background to, so make sure that's allocated
         let background_vertex_buffer = match self.background_vertex_buffer {
