@@ -155,8 +155,8 @@ impl RenderCore {
         for layer_handle in self.layers.iter() {
             let state = &self.layer_readonly(*layer_handle).state;
             match &state.fill_color {
-                FillState::Texture(texture_id, _, _, _)         => { unused_textures.remove(texture_id); }
-                FillState::LinearGradient(texture_id, _, _, _)  => { unused_textures.remove(texture_id); }
+                FillState::Texture(texture_id, _, _, _, _)          => { unused_textures.remove(texture_id); }
+                FillState::LinearGradient(texture_id, _, _, _, _)   => { unused_textures.remove(texture_id); }
 
                 _ => { }
             }

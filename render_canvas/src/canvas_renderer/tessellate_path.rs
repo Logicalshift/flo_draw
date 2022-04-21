@@ -50,7 +50,7 @@ impl CanvasRenderer {
                             layer.render_order.push(RenderEntity::SetFlatColor);
                         }
 
-                        FillState::Texture(render_texture, matrix, repeat, alpha) => {
+                        FillState::Texture(render_texture, _canvas_texture, matrix, repeat, alpha) => {
                             // Increase the usage count for this texture
                             core.used_textures.get_mut(&render_texture)
                                 .map(|usage_count| *usage_count += 1);
@@ -59,7 +59,7 @@ impl CanvasRenderer {
                             core.layer(layer_id).render_order.push(RenderEntity::SetFillTexture(render_texture, matrix, repeat, alpha));
                         }
 
-                        FillState::LinearGradient(gradient_texture, matrix, repeat, alpha) => {
+                        FillState::LinearGradient(gradient_texture, _canvas_texture, matrix, repeat, alpha) => {
                             // Increase the usage count for the texture
                             core.used_textures.get_mut(&gradient_texture)
                                 .map(|usage_count| *usage_count += 1);

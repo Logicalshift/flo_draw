@@ -110,7 +110,7 @@ impl CanvasRenderer {
                 let alpha               = core.texture_alpha.get(&texture_id).cloned().unwrap_or(1.0);
                 let layer               = core.layer(self.current_layer);
 
-                layer.state.fill_color  = FillState::texture_fill(render_texture, x1, y1, x2, y2, alpha)
+                layer.state.fill_color  = FillState::texture_fill(render_texture, texture_id, x1, y1, x2, y2, alpha)
             }
         });
     }
@@ -125,7 +125,7 @@ impl CanvasRenderer {
                 // Choose this gradient
                 let layer               = core.layer(self.current_layer);
 
-                layer.state.fill_color  = FillState::linear_gradient_fill(render_gradient, x1, y1, x2, y2);
+                layer.state.fill_color  = FillState::linear_gradient_fill(render_gradient, gradient_id, x1, y1, x2, y2);
             }
         });
     }
