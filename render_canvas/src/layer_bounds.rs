@@ -16,6 +16,7 @@ pub struct LayerBounds {
 
 impl Default for LayerBounds {
     fn default() -> Self {
+        // Default value is an undefined bounds value
         LayerBounds {
             min_x:  f32::MAX,
             min_y:  f32::MAX,
@@ -51,6 +52,29 @@ impl LayerBounds {
         self.min_y == f32::MAX ||
         self.max_x == f32::MIN ||
         self.max_y == f32::MIN
+    }
+
+    ///
+    /// Increases the size of the bounds by a particular radius
+    ///
+    pub fn inflate(&self, radius: f32) -> LayerBounds {
+        // Nothing to do if already undefined
+        if self.is_undefined() { return *self; }
+
+        // Add the radius to the sides of the bounds
+        let new_bounds = LayerBounds {
+            min_x: self.min_x - radius,
+            min_y: self.min_y - radius,
+            max_x: self.max_x + radius,
+            max_y: self.max_y + radius
+        };
+
+        if new_bounds.min_x > new_bounds.max_x || new_bounds.min_y > new_bounds.max_y {
+            // Result is undefined if the radius was negative enough
+            Self::default()
+        } else {
+            new_bounds
+        }
     }
 
     ///
