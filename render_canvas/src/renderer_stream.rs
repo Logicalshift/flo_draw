@@ -830,6 +830,42 @@ impl RenderCore {
     }
 
     ///
+    /// Returns the extra number of pixels that are needed to calculate and display a filter request
+    ///
+    /// A filter could require a different input size to its output size: for example a gaussian blur filter can use a smaller input if all pixels
+    /// outside of the texture are assumed to be transparent. We assume both are the same: this can make the result more expensive to calculate but
+    /// makes it easier to apply multiple filters in a row and also helps with the case where a region is clipped against the viewport
+    ///
+    fn texture_filter_radius(viewport_transform: canvas::Transform2D, viewport_size: render::Size2D, request: &TextureFilterRequest) -> i64 {
+        use TextureFilterRequest::*;
+
+        match request {
+            PixelBlur(radius)               => radius.ceil() as _,
+            CanvasBlur(radius, transform)   => {
+                let transform   = viewport_transform * *transform;
+
+                // Convert the radius using the transform
+                let (x1, y1)    = transform.transform_point(0.0, 0.0);
+                let (x2, y2)    = transform.transform_point(*radius, *radius);
+
+                let min_x       = f32::min(x1, x2);
+                let min_y       = f32::min(y1, y2);
+                let max_x       = f32::max(x1, x2);
+                let max_y       = f32::max(y1, y2);
+
+                // Size relative to the framebuffer size
+                let size_w      = (max_x - min_x)/2.0;
+                let size_h      = (max_y - min_y)/2.0;
+
+                let x_radius    = viewport_size.0 as f32 * size_w;
+                let y_radius    = viewport_size.1 as f32 * size_h;
+
+                f32::max(x_radius, y_radius).ceil() as _
+            }
+        }
+    }
+
+    ///
     /// Applies a filter to a texture
     ///
     fn texture_filter_request(texture_id: render::TextureId, viewport_transform: canvas::Transform2D, viewport_size: render::Size2D, request: &TextureFilterRequest) -> Vec<render::RenderAction> {
