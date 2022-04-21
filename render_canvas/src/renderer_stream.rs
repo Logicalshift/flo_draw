@@ -506,6 +506,13 @@ impl RenderCore {
                             use render::RenderAction::*;
                             use render::{VertexBufferId, ShaderType, Vertex2D};
 
+                            // Calculate the radius needed by the filters (we use the maximum of all the filters here, which is simpler but not always correct)
+                            let filter_radius           = filters.iter()
+                                .fold(0, |radius, filter| {
+                                    i64::max(radius, Self::texture_filter_radius_pixels(viewport_transform, render_state.viewport_size, filter))
+                                });
+                            let texture_bounds_pixels   = texture_bounds_pixels.inflate(filter_radius as f32);
+
                             // The items from before the sprite should be rendered using the current state
                             let old_state               = render_state.clone();
 
@@ -836,7 +843,7 @@ impl RenderCore {
     /// outside of the texture are assumed to be transparent. We assume both are the same: this can make the result more expensive to calculate but
     /// makes it easier to apply multiple filters in a row and also helps with the case where a region is clipped against the viewport
     ///
-    fn texture_filter_radius(viewport_transform: canvas::Transform2D, viewport_size: render::Size2D, request: &TextureFilterRequest) -> i64 {
+    fn texture_filter_radius_pixels(viewport_transform: canvas::Transform2D, viewport_size: render::Size2D, request: &TextureFilterRequest) -> i64 {
         use TextureFilterRequest::*;
 
         match request {
