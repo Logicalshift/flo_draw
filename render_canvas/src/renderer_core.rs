@@ -154,8 +154,9 @@ impl RenderCore {
         // Remove any texture that's selected as the fill state from the unused list (these still count as 'used')
         for layer_handle in self.layers.iter() {
             let state = &self.layer_readonly(*layer_handle).state;
-            match state.fill_color {
-                FillState::Texture(texture_id, _, _, _) => { }
+            match &state.fill_color {
+                FillState::Texture(texture_id, _, _, _)         => { unused_textures.remove(texture_id); }
+                FillState::LinearGradient(texture_id, _, _, _)  => { unused_textures.remove(texture_id); }
 
                 _ => { }
             }
