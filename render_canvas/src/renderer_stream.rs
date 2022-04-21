@@ -1099,12 +1099,7 @@ impl<'a> Stream for RenderStream<'a> {
 
         // We've generated all the vertex buffers: if frame rendering is suspended, stop here
         if self.frame_suspended {
-            if let Some(final_actions) = self.final_actions.take() {
-                self.pending = final_actions.into();
-                return Poll::Ready(self.pending.pop_front());
-            } else {
-                return Poll::Ready(None);
-            }
+            return Poll::Ready(None);
         }
 
         // After the vertex buffers are generated, we can render any sprites to textures that are pending
