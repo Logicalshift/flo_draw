@@ -6,6 +6,7 @@ use futures::prelude::*;
 use futures::executor;
 use futures::stream;
 use num_complex::*;
+use rayon::iter::*;
 
 use std::thread;
 use std::sync::*;
@@ -341,15 +342,22 @@ fn draw_mandelbrot(canvas: &DrawingTarget, layer: LayerId, texture: TextureId, (
         let y = y / (height as f64);
         let y = (max.im - min.im) * y + min.im;
 
-        for x in 0..width {
-            let x = x as f64;
-            let x = x / (width as f64);
-            let x = (max.re - min.re) * x + min.re;
+        let line = (0..width)
+            .into_par_iter()
+            .map(|x| {
+                let x = x as f64;
+                let x = x / (width as f64);
+                let x = (max.re - min.re) * x + min.re;
 
-            let c               = Complex::new(x, y);
-            let cycles          = count_cycles(c, num_cycles);
-            let (r, g, b, a)    = color_for_cycles(cycles);
+                let c               = Complex::new(x, y);
+                let cycles          = count_cycles(c, num_cycles);
+                let (r, g, b, a)    = color_for_cycles(cycles);
 
+                (r, g, b, a)
+            })
+            .collect::<Vec<_>>();
+
+        for (r, g, b, a) in line {
             pixels[pos+0]       = r;
             pixels[pos+1]       = g;
             pixels[pos+2]       = b;
