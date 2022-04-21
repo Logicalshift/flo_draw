@@ -21,12 +21,12 @@ pub enum FillState {
     ///
     /// Fill with a particular texture
     ///
-    Texture(canvas::TextureId, render::Matrix, bool, f32),
+    Texture(render::TextureId, render::Matrix, bool, f32),
 
     ///
     /// Fill with a particular gradient
     ///
-    LinearGradient(canvas::GradientId, render::Matrix, bool, f32)
+    LinearGradient(render::TextureId, render::Matrix, bool, f32)
 }
 
 impl FillState {
@@ -45,7 +45,7 @@ impl FillState {
     ///
     /// Creates a texture fill 
     ///
-    pub fn texture_fill(texture_id: canvas::TextureId, x1: f32, y1: f32, x2: f32, y2: f32, alpha: f32) -> FillState {
+    pub fn texture_fill(texture_id: render::TextureId, x1: f32, y1: f32, x2: f32, y2: f32, alpha: f32) -> FillState {
         // Avoid division by zero
         let x2 = if x2 == x1 { x1 + 0.0000001 } else { x2 };
         let y2 = if y2 == y1 { y1 + 0.0000001 } else { y2 };
@@ -73,7 +73,7 @@ impl FillState {
     ///
     /// Creates a linear gradient fill
     ///
-    pub fn linear_gradient_fill(gradient_id: canvas::GradientId, x1: f32, y1: f32, x2: f32, y2: f32) -> FillState {
+    pub fn linear_gradient_fill(gradient_id: render::TextureId, x1: f32, y1: f32, x2: f32, y2: f32) -> FillState {
         // Avoid division by zero
         let x2 = if x2 == x1 { x1 + 0.0000001 } else { x2 };
         let y2 = if y2 == y1 { y1 + 0.0000001 } else { y2 };
@@ -110,7 +110,7 @@ impl FillState {
     ///
     /// Returns the ID of the texture used by this state
     ///
-    pub fn texture_id(&self) -> Option<canvas::TextureId> {
+    pub fn texture_id(&self) -> Option<render::TextureId> {
         match self {
             FillState::None                         => None,
             FillState::Color(_)                     => None,

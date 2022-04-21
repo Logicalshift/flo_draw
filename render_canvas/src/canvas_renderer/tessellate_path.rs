@@ -50,34 +50,22 @@ impl CanvasRenderer {
                             layer.render_order.push(RenderEntity::SetFlatColor);
                         }
 
-                        FillState::Texture(texture_id, matrix, repeat, alpha) => {
-                            // Finish/get the render texture
-                            if let Some(render_texture) = core.texture_for_rendering(texture_id) {
-                                // Increase the usage count for this texture
-                                core.used_textures.get_mut(&render_texture)
-                                    .map(|usage_count| *usage_count += 1);
+                        FillState::Texture(render_texture, matrix, repeat, alpha) => {
+                            // Increase the usage count for this texture
+                            core.used_textures.get_mut(&render_texture)
+                                .map(|usage_count| *usage_count += 1);
 
-                                // Add to the layer
-                                core.layer(layer_id).render_order.push(RenderEntity::SetFillTexture(render_texture, matrix, repeat, alpha));
-                            } else {
-                                // Texture is not set up
-                                core.layer(layer_id).render_order.push(RenderEntity::SetFlatColor);
-                            }
+                            // Add to the layer
+                            core.layer(layer_id).render_order.push(RenderEntity::SetFillTexture(render_texture, matrix, repeat, alpha));
                         }
 
-                        FillState::LinearGradient(gradient_id, matrix, repeat, alpha) => {
-                            // Finish/get the texture for the gradient
-                            if let Some(gradient_texture) = core.gradient_for_rendering(gradient_id) {
-                                // Increase the usage count for the texture
-                                core.used_textures.get_mut(&gradient_texture)
-                                    .map(|usage_count| *usage_count += 1);
+                        FillState::LinearGradient(gradient_texture, matrix, repeat, alpha) => {
+                            // Increase the usage count for the texture
+                            core.used_textures.get_mut(&gradient_texture)
+                                .map(|usage_count| *usage_count += 1);
 
-                                // Add to the layer
-                                core.layer(layer_id).render_order.push(RenderEntity::SetFillGradient(gradient_texture, matrix, repeat, alpha));
-                            } else {
-                                // Gradient is not set up
-                                core.layer(layer_id).render_order.push(RenderEntity::SetFlatColor);
-                            }
+                            // Add to the layer
+                            core.layer(layer_id).render_order.push(RenderEntity::SetFillGradient(gradient_texture, matrix, repeat, alpha));
                         }
                     }
 

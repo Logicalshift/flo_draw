@@ -238,9 +238,11 @@ impl CanvasRenderer {
             core.texture_alpha.insert(texture_id, alpha);
             let layer                   = core.layer(self.current_layer);
 
+            /* --- ... TODO
             if layer.state.fill_color.texture_id() == Some(texture_id) {
                 layer.state.fill_color  = layer.state.fill_color.with_texture_alpha(alpha);
             }
+            */
         });
     }
 

@@ -105,15 +105,13 @@ impl CanvasRenderer {
         self.core.sync(|core| {
             // Check that the texture is ready for rendering (this also commits it at the point it's selected)
             let render_texture  = core.texture_for_rendering(texture_id);
-            if render_texture.is_none() {
-                return;
+            if let Some(render_texture) = render_texture {
+                // Choose this texture
+                let alpha               = core.texture_alpha.get(&texture_id).cloned().unwrap_or(1.0);
+                let layer               = core.layer(self.current_layer);
+
+                layer.state.fill_color  = FillState::texture_fill(render_texture, x1, y1, x2, y2, alpha)
             }
-
-            // Choose this texture
-            let alpha               = core.texture_alpha.get(&texture_id).cloned().unwrap_or(1.0);
-            let layer               = core.layer(self.current_layer);
-
-            layer.state.fill_color  = FillState::texture_fill(texture_id, x1, y1, x2, y2, alpha)
         });
     }
 
@@ -123,14 +121,12 @@ impl CanvasRenderer {
         self.core.sync(|core| {
             // Check that the texture is ready for rendering (this also commits it at the point it's selected)
             let render_gradient  = core.gradient_for_rendering(gradient_id);
-            if render_gradient.is_none() {
-                return;
+            if let Some(render_gradient) = render_gradient {
+                // Choose this gradient
+                let layer               = core.layer(self.current_layer);
+
+                layer.state.fill_color  = FillState::linear_gradient_fill(render_gradient, x1, y1, x2, y2);
             }
-
-            // Choose this gradient
-            let layer               = core.layer(self.current_layer);
-
-            layer.state.fill_color  = FillState::linear_gradient_fill(gradient_id, x1, y1, x2, y2);
         });
     }
 
