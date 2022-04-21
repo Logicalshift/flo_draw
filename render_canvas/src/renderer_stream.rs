@@ -133,15 +133,15 @@ impl<'a> RenderStream<'a> {
     ///
     /// Creates a new render stream
     ///
-    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, frame_suspended: bool, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, viewport_size: render::Size2D, background_vertex_buffer: render::VertexBufferId, initial_actions: Vec<render::RenderAction>, setup_textures: Vec<TextureRenderRequest>, final_actions: Vec<render::RenderAction>) -> RenderStream<'a>
+    pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, viewport_size: render::Size2D, background_vertex_buffer: render::VertexBufferId, initial_actions: Vec<render::RenderAction>, final_actions: Vec<render::RenderAction>) -> RenderStream<'a>
     where   ProcessFuture: 'a+Send+Future<Output=()> {
         RenderStream {
             core:                       core,
-            frame_suspended:            frame_suspended,
+            frame_suspended:            false,
             background_vertex_buffer:   background_vertex_buffer,
             processing_future:          Some(processing_future.boxed()),
             pending:                    VecDeque::from(initial_actions),
-            setup_textures:             setup_textures,
+            setup_textures:             vec![],
             final_actions:              Some(final_actions),
             viewport_transform:         viewport_transform,
             viewport_size:              viewport_size,
@@ -1076,7 +1076,15 @@ impl<'a> Stream for RenderStream<'a> {
                 self.render_index       = 0;
 
                 // Perform any setup actions that might exist or have been generated before proceeding
-                let (setup_actions, release_textures)   = self.core.sync(|core| (mem::take(&mut core.setup_actions), core.free_unused_textures()));
+                let render::Size2D(w, h) = self.viewport_size;
+                let (setup_actions, setup_textures, release_textures, rendering_suspended) = self.core.sync(move |core| 
+                    (mem::take(&mut core.setup_actions), 
+                        core.setup_textures((w as _, h as _)), 
+                        core.free_unused_textures(), 
+                        core.frame_starts > 0));
+
+                self.setup_textures     = setup_textures;
+                self.frame_suspended    = rendering_suspended;
                 
                 // TODO: would be more memory efficient to release the textures first, but it's possible for the texture setup to create and never use a texture that is then released...
                 self.pending.extend(setup_actions.into_iter());

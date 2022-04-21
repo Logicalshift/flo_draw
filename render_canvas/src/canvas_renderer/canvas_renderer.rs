@@ -449,15 +449,12 @@ impl CanvasRenderer {
             }
         };
 
-        // We need to process the instructions waiting to set up textures
-        let setup_textures = self.core.sync(|core| core.setup_textures(self.viewport_size));
-
         // Start processing the drawing instructions
         let core                = Arc::clone(&self.core);
         let processing          = self.process_drawing(drawing);
 
         // Return a stream of results from processing the drawing
-        RenderStream::new(core, rendering_suspended, processing, viewport_transform, viewport_size, background_vertex_buffer, initialise, setup_textures, finalize)
+        RenderStream::new(core, processing, viewport_transform, viewport_size, background_vertex_buffer, initialise, finalize)
     }
 }
 
