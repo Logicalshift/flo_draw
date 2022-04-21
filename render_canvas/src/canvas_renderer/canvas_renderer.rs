@@ -3,9 +3,7 @@ use crate::renderer_core::*;
 use crate::renderer_worker::*;
 use crate::renderer_stream::*;
 use crate::resource_ids::*;
-use crate::dynamic_texture_state::*;
 use crate::layer_handle::*;
-use crate::texture_render_request::*;
 
 use super::tessellate_build_path::*;
 
@@ -22,7 +20,6 @@ use num_cpus;
 use std::collections::{HashMap};
 use std::ops::{Range};
 use std::sync::*;
-use std::mem;
 
 ///
 /// Changes commands for `flo_canvas` into commands for `flo_render`
@@ -453,75 +450,7 @@ impl CanvasRenderer {
         };
 
         // We need to process the instructions waiting to set up textures
-        let setup_textures = self.core.sync(|core| {
-            let mut textures                        = vec![];
-            let mut actions_for_dynamic_textures    = HashMap::<render::TextureId, Vec<TextureRenderRequest>>::new();
-            let viewport_size                       = self.viewport_size;
-
-            // After performing the pending render instructions, the textures remain loaded until replaced
-            for (_, render_request) in mem::take(&mut core.layer_textures).into_iter() {
-                use self::TextureRenderRequest::*;
-                match &render_request {
-                    CreateBlankTexture(_, _, _) |
-                    FromSprite(_, _, _)         |
-                    CopyTexture(_, _)           => {
-                        // These are always rendered
-                        textures.push(render_request);
-                    },
-
-                    SetBytes(texture_id, _, _, _)   |
-                    CreateMipMaps(texture_id)       |
-                    Filter(texture_id, _)           => {
-                        // These also attach to the actions if the target texture is a dynamic texture
-                        if let Some(dynamic_actions) = actions_for_dynamic_textures.get_mut(texture_id) {
-                            dynamic_actions.push(render_request.clone());
-                        }
-
-                        // These are always rendered
-                        textures.push(render_request);
-                    },
-
-                    DynamicTexture(texture_id, layer_handle, _, _, _, _) => {
-                        let texture_id      = *texture_id;
-                        let current_state   = DynamicTextureState { viewport: viewport_size, sprite_modification_count: core.layer(*layer_handle).state.modification_count };
-
-                        // Clear and start collecting any processing actions for this texture
-                        actions_for_dynamic_textures.insert(texture_id, vec![]);
-
-                        if core.dynamic_texture_state.get(&texture_id) != Some(&current_state) {
-                            // These are rendered if the viewport or sprite has changed since the last time
-                            textures.push(render_request.clone());
-
-                            // Update the viewport data so this isn't re-rendered until it changes
-                            core.dynamic_texture_state.insert(texture_id, current_state);
-                        }
-
-                        // Put back on the request list so we re-render this texture in the next frame
-                        core.layer_textures.push((texture_id, render_request));
-                    }
-                }
-            }
-
-            // The layer_textures now contains the actions that need to be preserved for the next frame
-            // This is mainly dynamic texture rendering, which needs to be amended with the post-processing actions that were applied
-            for (_, render_request) in core.layer_textures.iter_mut() {
-                use self::TextureRenderRequest::*;
-                match render_request {
-                    DynamicTexture(texture_id, _, _, _, _, post_processing) => { 
-                        if let Some(actions) = actions_for_dynamic_textures.remove(texture_id) {
-                            Arc::make_mut(post_processing).extend(actions);
-                        }
-                    }
-
-                    _ => { /* Ignore */}
-                }
-            }
-
-            // The list of texture actions is treated as a stack by the renderer stream, so reverse it
-            textures.reverse();
-
-            textures
-        });
+        let setup_textures = self.core.sync(|core| core.setup_textures(self.viewport_size));
 
         // Start processing the drawing instructions
         let core                = Arc::clone(&self.core);
