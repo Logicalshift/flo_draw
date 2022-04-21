@@ -19,7 +19,7 @@ use lyon::tessellation::{FillRule};
 
 use std::mem;
 use std::sync::*;
-use std::collections::{HashMap};
+use std::collections::{HashMap, HashSet};
 
 ///
 /// Parts of the renderer that are shared with the workers
@@ -146,10 +146,20 @@ impl RenderCore {
     ///
     pub fn free_unused_textures(&mut self) -> Vec<render::RenderAction> {
         // Collect the list of unused textures
-        let unused_textures = self.used_textures.iter()
+        let mut unused_textures = self.used_textures.iter()
             .filter(|(_texture_id, count)| **count <= 0)
             .map(|(texture_id, _count)| *texture_id)
-            .collect::<Vec<_>>();
+            .collect::<HashSet<_>>();
+
+        // Remove any texture that's selected as the fill state from the unused list (these still count as 'used')
+        for layer_handle in self.layers.iter() {
+            let state = &self.layer_readonly(*layer_handle).state;
+            match state.fill_color {
+                FillState::Texture(texture_id, _, _, _) => { }
+
+                _ => { }
+            }
+        }
 
         // Free them
         let mut render_actions = vec![];
@@ -484,6 +494,16 @@ impl RenderCore {
 
         // Result is the layer that was released
         old_layer
+    }
+
+    ///
+    /// Returns a reference to the layer with the specified handle
+    ///
+    #[inline] pub fn layer_readonly(&self, layer_handle: LayerHandle) -> &Layer {
+        let LayerHandle(layer_idx)  = layer_handle;
+        let layer_idx               = layer_idx as usize;
+
+        &self.layer_definitions[layer_idx]
     }
 
     ///
