@@ -365,6 +365,7 @@ impl RenderCore {
                 RenderSpriteWithFilters(sprite_id, transform, _)    => { 
                     let sprite_id           = *sprite_id;
                     let transform           = *transform;
+                    let filters             = if let RenderSpriteWithFilters(_, _, filters) = &layer.render_order[render_idx] { Some(filters.clone()) } else { None };
                     let sprite_layer_handle = self.sprites.get(&sprite_id).cloned();
                     let mut sprite_bounds   = LayerBounds::default();
 
@@ -375,6 +376,13 @@ impl RenderCore {
                         let sprite_layer    = self.layer(sprite_layer_handle);
                         sprite_bounds       = sprite_layer.bounds;
                         sprite_bounds       = sprite_bounds.transform(&transform);
+
+                        // Apply any filter radius that might be needed
+                        if let Some(filters) = filters {
+                            let filter_radius = filters.iter()
+                                .fold(0.0, |radius, filter| f32::max(radius, filter.radius()));
+                            sprite_bounds = sprite_bounds.inflate(filter_radius);
+                        }
                     }
 
                     layer = self.layer(layer_handle);
