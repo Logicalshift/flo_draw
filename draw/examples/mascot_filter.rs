@@ -41,6 +41,13 @@ pub fn main() {
             let y_off = phase_2.sin() * 50.0;
             let blur  = (phase_3.sin() + 0.75) * 40.0;
 
+            let filter = match (iter/97) % 3 {
+                1     => TextureFilter::AlphaBlend(phase_3.sin() + 1.0 / 2.0),
+                2     => TextureFilter::AlphaBlend(phase_3.sin() + 1.0 / 2.0),
+
+                0 | _ => TextureFilter::GaussianBlur(blur.abs()),
+            };
+
             canvas.draw(|gc| {
                 // Draw the mascot as a sprite
                 gc.layer(LayerId(0));
@@ -52,7 +59,7 @@ pub fn main() {
                 gc.sprite_transform(SpriteTransform::Rotate((phase_3.sin()) * 5.0));
                 gc.sprite_transform(SpriteTransform::Translate(512.0, 384.0));
                 gc.sprite_transform(SpriteTransform::Translate(x_off, y_off));
-                gc.draw_sprite_with_filters(SpriteId(0), vec![TextureFilter::GaussianBlur(blur.abs())]);
+                gc.draw_sprite_with_filters(SpriteId(0), vec![filter]);
             });
 
 
