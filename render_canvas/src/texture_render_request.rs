@@ -51,3 +51,22 @@ pub enum TextureRenderRequest {
     /// Applies a filter to the texture
     Filter(render::TextureId, TextureFilterRequest)
 }
+
+impl TextureRenderRequest {
+    ///
+    /// Returns the textures that are used by this render request, other than the target texture
+    ///
+    pub fn used_textures(&self) -> Vec<render::TextureId> {
+        use TextureRenderRequest::*;
+
+        match self {
+            CreateBlankTexture(_, _, _)             => vec![],
+            SetBytes(_, _, _, _)                    => vec![],
+            CreateMipMaps(_)                        => vec![],
+            FromSprite(_, _, _)                     => vec![],
+            DynamicTexture(_, _, _, _, _, requests) => requests.iter().flat_map(|request| request.used_textures()).collect(),
+            CopyTexture(_, copy_to)                 => vec![*copy_to],
+            Filter(_, filter_request)               => filter_request.used_textures(),
+        }
+    }
+}
