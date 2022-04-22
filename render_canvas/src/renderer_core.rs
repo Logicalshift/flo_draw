@@ -290,7 +290,11 @@ impl RenderCore {
         self.used_textures.remove(&texture_id);
 
         // Prevent any rendering to this texture
-        self.layer_textures.retain(|(id, _req)| id != &texture_id);
+        let layer_textures  = mem::take(&mut self.layer_textures);
+        let (kept, removed) = layer_textures.into_iter().partition(|(id, _req)| id != &texture_id);
+        self.layer_textures = kept;
+
+        removed.into_iter().for_each(|(_, request)| self.free_texture_render_request(request));
 
         // Free the resources attached to the texture
         self.dynamic_texture_state.remove(&texture_id);
