@@ -54,10 +54,10 @@ pub fn main() {
             let blur  = (phase_3.sin() + 0.75) * 40.0;
 
             let filter = match (iter/323) % 3 {
-                1     => TextureFilter::AlphaBlend((phase_3.sin() + 1.0) / 2.0),
-                2     => TextureFilter::Mask(TextureId(1)),
+                1     => vec![TextureFilter::AlphaBlend((phase_3.sin() + 1.0) / 2.0)],
+                2     => vec![TextureFilter::Mask(TextureId(1)), TextureFilter::GaussianBlur(blur.abs())],
 
-                0 | _ => TextureFilter::GaussianBlur(blur.abs()),
+                0 | _ => vec![TextureFilter::GaussianBlur(blur.abs())],
             };
 
             canvas.draw(|gc| {
@@ -71,7 +71,7 @@ pub fn main() {
                 gc.sprite_transform(SpriteTransform::Rotate((phase_3.sin()) * 5.0));
                 gc.sprite_transform(SpriteTransform::Translate(512.0, 384.0));
                 gc.sprite_transform(SpriteTransform::Translate(x_off, y_off));
-                gc.draw_sprite_with_filters(SpriteId(0), vec![filter]);
+                gc.draw_sprite_with_filters(SpriteId(0), filter);
             });
 
 
