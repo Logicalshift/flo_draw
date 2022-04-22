@@ -38,4 +38,7 @@ pub enum ShaderUniform {
 
     /// The weights for the gaussian blur shader (when defined as a texture)
     TextureBlurOffsets,
+
+    /// The input texture for a filter that needs one
+    FilterTexture,
 }

@@ -1,3 +1,5 @@
+use super::identities::*;
+
 use std::f32;
 
 ///
@@ -28,6 +30,12 @@ pub enum TextureFilter {
 
     /// Applies a gaussian blur in the vertical direction with the specified sigma, step and kernel size
     GaussianBlurVertical(f32, f32, usize),
+
+    /// Adjusts the transparency of a texture
+    AlphaBlend(f32),
+
+    /// Masks a texture according to the content of another texture
+    Mask(TextureId),
 }
 
 impl TextureFilter {
@@ -49,6 +57,9 @@ impl TextureFilter {
             GaussianBlurVertical61(_, _)        => 31,
             GaussianBlurHorizontal(_, _, size)  => (size-1)/2+1,
             GaussianBlurVertical(_, _, size)    => (size-1)/2+1,
+
+            AlphaBlend(_)                       => 0,
+            Mask(_)                             => 0,
         }
     }
 

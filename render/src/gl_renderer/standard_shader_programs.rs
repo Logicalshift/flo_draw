@@ -87,6 +87,12 @@ pub enum StandardShaderProgram {
 
     /// Arbitrary-length gaussian blur in the vertical direction
     BlurTextureVertical,
+
+    /// Adjusts the alpha for a filtered texture
+    FilterAlphaBlend,
+
+    /// Masks a one texture against another
+    FilterMask,
 }
 
 impl StandardShaderVariant {
@@ -163,6 +169,8 @@ impl StandardShaderProgram {
         let blur29                              = String::from_utf8(include_bytes!["../../shaders/filters/blur_29.glslf"].to_vec()).unwrap();
         let blur61                              = String::from_utf8(include_bytes!["../../shaders/filters/blur_61.glslf"].to_vec()).unwrap();
         let blur_texture                        = String::from_utf8(include_bytes!["../../shaders/filters/blur_texture.glslf"].to_vec()).unwrap();
+        let filter_alpha_blend                  = String::from_utf8(include_bytes!["../../shaders/filters/alpha_blend.glslf"].to_vec()).unwrap();
+        let filter_mask                         = String::from_utf8(include_bytes!["../../shaders/filters/mask.glslf"].to_vec()).unwrap();
 
         // Incorporate them into the shader loader function
         move |program_type| {
@@ -186,6 +194,8 @@ impl StandardShaderProgram {
                 Blur61Vertical                              => { Self::load_shader(&filter_vertex, &vec![], &blur61, &vec![], &vec!["FILTER_VERT"]) }
                 BlurTextureHorizontal                       => { Self::load_shader(&filter_vertex, &vec![], &blur_texture, &vec![], &vec!["FILTER_HORIZ"]) }
                 BlurTextureVertical                         => { Self::load_shader(&filter_vertex, &vec![], &blur_texture, &vec![], &vec!["FILTER_VERT"]) }
+                FilterAlphaBlend                            => { Self::load_shader(&filter_vertex, &vec![], &filter_alpha_blend, &vec![], &vec![]) }
+                FilterMask                                  => { Self::load_shader(&filter_vertex, &vec![], &filter_mask, &vec![], &vec![]) }
             }
         }
     }

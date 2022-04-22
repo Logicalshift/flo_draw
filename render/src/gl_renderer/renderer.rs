@@ -530,6 +530,8 @@ impl GlRenderer {
                 GaussianBlurVertical29(_sigma, _step)           => shaders.program(StandardShaderProgram::Blur29Vertical),
                 GaussianBlurVertical61(_sigma, _step)           => shaders.program(StandardShaderProgram::Blur61Vertical),
                 GaussianBlurVertical(_sigma, _step, _size)      => shaders.program(StandardShaderProgram::BlurTextureVertical),
+                AlphaBlend(_alpha)                              => shaders.program(StandardShaderProgram::FilterAlphaBlend),
+                Mask(_mask)                                     => shaders.program(StandardShaderProgram::FilterMask),
             };
 
             // Set up the uniforms for the filter
@@ -605,10 +607,41 @@ impl GlRenderer {
                         gl::ActiveTexture(gl::TEXTURE0);
                     }
                 }
+
+                AlphaBlend(alpha) => {
+                    unsafe {
+                        shader.uniform_location(ShaderUniform::TextureAlpha, "texture_alpha")
+                            .map(|alpha_uniform| {
+                                gl::Uniform1f(alpha_uniform, alpha);
+                            });
+                    }
+                },
+
+                Mask(mask_texture) => {
+                    let TextureId(mask_texture) = mask_texture;
+                    let mask_texture            = if mask_texture < textures.len() { textures[mask_texture].as_ref() } else { None }; 
+
+                    if let Some(mask_texture) = mask_texture {
+                        unsafe {
+                            // Bind the textures
+                            gl::ActiveTexture(gl::TEXTURE1);
+                            gl::BindTexture(gl::TEXTURE_1D, **mask_texture);
+
+                            shader.uniform_location(ShaderUniform::FilterTexture, "t_FilterTexture")
+                                .map(|filter_texture_uniform| {
+                                    gl::Uniform1i(filter_texture_uniform, 1);
+                                });
+                        }
+                    }
+                }
             }
 
             // Apply the filter to the texture
             panic_on_gl_error("Filter setup");
+            let texture     = textures.get_mut(texture_id);
+            let texture     = if let Some(texture) = texture { texture } else { return; };
+            let texture     = if let Some(texture) = texture { texture } else { return; };
+
             let new_texture = texture.filter(shader);
             if let Some(new_texture) = new_texture {
                 *texture    = new_texture;
