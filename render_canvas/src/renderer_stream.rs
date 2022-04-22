@@ -847,6 +847,9 @@ impl RenderCore {
         use TextureFilterRequest::*;
 
         match request {
+            AlphaBlend(_)                   => 0,
+            Mask(_)                         => 0,
+
             PixelBlur(radius)               => radius.ceil() as _,
             CanvasBlur(radius, transform)   => {
                 let transform   = viewport_transform * *transform;
@@ -868,7 +871,29 @@ impl RenderCore {
                 let y_radius    = viewport_size.1 as f32 * size_h;
 
                 f32::max(x_radius, y_radius).ceil() as _
-            }
+            },
+
+            DisplacementMap(_, x_r, y_r, transform) => {
+                let transform   = viewport_transform * *transform;
+
+                // Convert the radius using the transform
+                let (x1, y1)    = transform.transform_point(0.0, 0.0);
+                let (x2, y2)    = transform.transform_point(*x_r, *y_r);
+
+                let min_x       = f32::min(x1, x2);
+                let min_y       = f32::min(y1, y2);
+                let max_x       = f32::max(x1, x2);
+                let max_y       = f32::max(y1, y2);
+
+                // Size relative to the framebuffer size
+                let size_w      = (max_x - min_x)/2.0;
+                let size_h      = (max_y - min_y)/2.0;
+
+                let x_radius    = viewport_size.0 as f32 * size_w;
+                let y_radius    = viewport_size.1 as f32 * size_h;
+
+                f32::max(x_radius, y_radius).ceil() as _
+            },
         }
     }
 
@@ -902,6 +927,10 @@ impl RenderCore {
                 // Generate the actions to apply the filter
                 Self::filter_gaussian_blur(texture_id, x_radius, y_radius)
             },
+
+            AlphaBlend(alpha)                               => { todo!() }
+            Mask(texture)                                   => { todo!() }
+            DisplacementMap(texture, x_r, y_r, transform)   => { todo!() }
         }
     }
 }

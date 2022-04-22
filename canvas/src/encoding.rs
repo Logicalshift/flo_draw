@@ -314,7 +314,10 @@ impl<'a> CanvasEncoding<String> for &'a TextureFilter {
         use self::TextureFilter::*;
 
         match self {
-            GaussianBlur(radius)    => ('B', *radius).encode_canvas(append_to)
+            GaussianBlur(radius)                => ('B', *radius).encode_canvas(append_to),
+            AlphaBlend(alpha)                   => ('A', *alpha).encode_canvas(append_to),
+            Mask(texture)                       => ('M', texture).encode_canvas(append_to),
+            DisplacementMap(texture, xr, yr)    => ('D', texture, *xr, *yr).encode_canvas(append_to),
         }
     }
 }

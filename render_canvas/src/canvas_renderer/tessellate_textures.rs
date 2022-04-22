@@ -315,7 +315,10 @@ impl CanvasRenderer {
 
         // Dispatch the filter operation
         match filter {
-            GaussianBlur(radius) => self.tes_texture_filter_gaussian_blur(render_texture, radius)
+            GaussianBlur(radius)                            => self.tes_texture_filter_gaussian_blur(render_texture, radius),
+            AlphaBlend(alpha)                               => self.tes_texture_filter_alpha_blend(render_texture, alpha),
+            Mask(mask_texture)                              => self.tes_texture_filter_mask(render_texture, mask_texture),
+            DisplacementMap(displace_texture, x_r, y_r)     => self.tes_texture_filter_displacement_map(render_texture, displace_texture, x_r, y_r),
         }
     }
 
@@ -331,6 +334,41 @@ impl CanvasRenderer {
             } else {
                 // If there's no canvas transform, then the radius is in texture pixels
                 core.layer_textures.push((texture_id, TextureRenderRequest::Filter(texture_id, TextureFilterRequest::PixelBlur(radius))));
+            }
+        });
+    }
+
+    ///
+    /// Applies the alpha blend filter to a texture
+    ///
+    fn tes_texture_filter_alpha_blend(&mut self, texture_id: render::TextureId, alpha: f32) {
+        self.core.sync(|core| {
+            core.layer_textures.push((texture_id, TextureRenderRequest::Filter(texture_id, TextureFilterRequest::AlphaBlend(alpha))));
+        });
+    }
+
+    ///
+    /// Applies the mask filter to a texture
+    ///
+    fn tes_texture_filter_mask(&mut self, texture_id: render::TextureId, mask_texture: canvas::TextureId) {
+        self.core.sync(|core| {
+            if let Some(mask_texture) = core.texture_for_rendering(mask_texture) {
+                core.add_texture_usage(mask_texture);
+                core.layer_textures.push((texture_id, TextureRenderRequest::Filter(texture_id, TextureFilterRequest::Mask(mask_texture))));
+            }
+        });
+    }
+
+    ///
+    /// Applies the displacement map filter to a texture
+    ///
+    fn tes_texture_filter_displacement_map(&mut self, texture_id: render::TextureId, displace_texture: canvas::TextureId, x_radius: f32, y_radius: f32) {
+        self.core.sync(|core| {
+            if let Some(displace_texture) = core.texture_for_rendering(displace_texture) {
+                core.add_texture_usage(displace_texture);
+                let transform = core.texture_transform.get(&texture_id).cloned().unwrap_or(canvas::Transform2D::identity());
+
+                core.layer_textures.push((texture_id, TextureRenderRequest::Filter(texture_id, TextureFilterRequest::DisplacementMap(displace_texture, x_radius, y_radius, transform))));
             }
         });
     }

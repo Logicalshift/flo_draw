@@ -426,6 +426,18 @@ impl RenderCore {
     }
 
     ///
+    /// Adds to the usage count of a texture
+    ///
+    #[inline]
+    pub fn add_texture_usage(&mut self, texture_id: render::TextureId) -> render::TextureId {
+        if let Some(usage_count) = self.used_textures.get_mut(&texture_id) {
+            *usage_count += 1;
+        }
+
+        texture_id
+    }
+
+    ///
     /// Returns a (1D) render texture for a canvas gradient
     ///
     pub fn gradient_for_rendering(&mut self, gradient_id: canvas::GradientId) -> Option<render::TextureId> {

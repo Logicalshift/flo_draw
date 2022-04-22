@@ -45,7 +45,22 @@ pub enum TextureFilter {
     /// Applies a gaussian blur with a given radius
     ///
     /// The radius supplied here is used to calculate the sigma for the blur: a sigma of 0.25 corresponds to a radius of 1.0, 0.5 to a radius of 2.0, etc.
-    GaussianBlur(f32)
+    GaussianBlur(f32),
+
+    ///
+    /// Add transparency to the image, where a value of 1.0 is opaque (leave the image as is), and 0.0 is transparent (no image result)
+    ///
+    AlphaBlend(f32),
+
+    ///
+    /// Use the alpha channel of a source texture as a mask for the input texture
+    ///
+    Mask(TextureId),
+
+    ///
+    /// Use the red and green channels of a source texture as a displacement map. The two other parameters are the scale factors (maximum displacement in canvas units)
+    ///
+    DisplacementMap(TextureId, f32, f32),
 }
 
 ///

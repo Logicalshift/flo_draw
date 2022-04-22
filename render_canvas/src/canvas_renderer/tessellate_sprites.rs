@@ -101,15 +101,24 @@ impl CanvasRenderer {
             layer.update_transform(&self.active_transform);
 
             // Turn the TextureFilters into filter requests
-            let filters = filters.into_iter().map(|filter| {
+            let filters = filters.into_iter().filter_map(|filter| {
                 use canvas::TextureFilter::*;
 
                 match filter {
-                    GaussianBlur(radius)    => TextureFilterRequest::CanvasBlur(radius, self.active_transform)
+                    GaussianBlur(radius)                => Some(TextureFilterRequest::CanvasBlur(radius, self.active_transform)),
+                    AlphaBlend(alpha)                   => Some(TextureFilterRequest::AlphaBlend(alpha)),
+                    Mask(texture)                       => Some(TextureFilterRequest::Mask(core.texture_for_rendering(texture)?)),
+                    DisplacementMap(texture, xr, yr)    => Some(TextureFilterRequest::DisplacementMap(core.texture_for_rendering(texture)?, xr, yr, self.active_transform)),
                 }
-            }).collect();
+            }).collect::<Vec<_>>();
+
+            // Increase the usage count of any referenced textures
+            for texture_id in filters.iter().flat_map(|filter| filter.used_textures()) {
+                core.add_texture_usage(texture_id);
+            }
 
             // Render the sprite
+            let layer = core.layer(self.current_layer);
             layer.render_order.push(RenderEntity::RenderSpriteWithFilters(sprite_id, sprite_matrix, filters));
             layer.state.modification_count += 1;
         })
