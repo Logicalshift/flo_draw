@@ -590,8 +590,14 @@ impl GlRenderer {
                         gl::ActiveTexture(gl::TEXTURE1);
                         gl::BindTexture(gl::TEXTURE_1D, **weight_texture);
 
+                        gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as _);
+                        gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as _);
+
                         gl::ActiveTexture(gl::TEXTURE2);
                         gl::BindTexture(gl::TEXTURE_1D, **offset_texture);
+
+                        gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as _);
+                        gl::TexParameteri(gl::TEXTURE_1D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as _);
 
                         gl::UseProgram(**shader);
 
@@ -629,7 +635,10 @@ impl GlRenderer {
 
                             // Bind the textures
                             gl::ActiveTexture(gl::TEXTURE1);
-                            gl::BindTexture(gl::TEXTURE_1D, **mask_texture);
+                            gl::BindTexture(gl::TEXTURE_2D, **mask_texture);
+
+                            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as _);
+                            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as _);
 
                             shader.uniform_location(ShaderUniform::FilterTexture, "t_FilterTexture")
                                 .map(|filter_texture_uniform| {
