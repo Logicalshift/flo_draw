@@ -610,6 +610,8 @@ impl GlRenderer {
 
                 AlphaBlend(alpha) => {
                     unsafe {
+                        gl::UseProgram(**shader);
+
                         shader.uniform_location(ShaderUniform::TextureAlpha, "texture_alpha")
                             .map(|alpha_uniform| {
                                 gl::Uniform1f(alpha_uniform, alpha);
@@ -623,6 +625,8 @@ impl GlRenderer {
 
                     if let Some(mask_texture) = mask_texture {
                         unsafe {
+                            gl::UseProgram(**shader);
+
                             // Bind the textures
                             gl::ActiveTexture(gl::TEXTURE1);
                             gl::BindTexture(gl::TEXTURE_1D, **mask_texture);
@@ -631,6 +635,8 @@ impl GlRenderer {
                                 .map(|filter_texture_uniform| {
                                     gl::Uniform1i(filter_texture_uniform, 1);
                                 });
+
+                            gl::ActiveTexture(gl::TEXTURE0);
                         }
                     }
                 }
