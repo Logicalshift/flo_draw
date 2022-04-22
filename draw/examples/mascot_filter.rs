@@ -28,7 +28,7 @@ pub fn main() {
 
             gc.draw_list(mascot);
 
-            // Create a texture to use for the mask
+            // Create a texture to use for the mask (this will change in size as the sprite renderer chooses the input size, something that can be controlled by masking a dynamic texture)
             gc.sprite(SpriteId(1));
             gc.clear_sprite();
 
