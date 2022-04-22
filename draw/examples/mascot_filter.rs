@@ -41,9 +41,9 @@ pub fn main() {
             let y_off = phase_2.sin() * 50.0;
             let blur  = (phase_3.sin() + 0.75) * 40.0;
 
-            let filter = match (iter/97) % 3 {
-                1     => TextureFilter::AlphaBlend(phase_3.sin() + 1.0 / 2.0),
-                2     => TextureFilter::AlphaBlend(phase_3.sin() + 1.0 / 2.0),
+            let filter = match (iter/323) % 3 {
+                1     => TextureFilter::AlphaBlend((phase_3.sin() + 1.0) / 2.0),
+                2     => TextureFilter::AlphaBlend((phase_3.sin() + 1.0) / 2.0),
 
                 0 | _ => TextureFilter::GaussianBlur(blur.abs()),
             };
