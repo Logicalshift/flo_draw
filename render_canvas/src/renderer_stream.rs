@@ -928,8 +928,8 @@ impl RenderCore {
                 Self::filter_gaussian_blur(texture_id, x_radius, y_radius)
             },
 
-            AlphaBlend(alpha)                               => { todo!() }
-            Mask(texture)                                   => { todo!() }
+            AlphaBlend(alpha)                               => vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::AlphaBlend(*alpha)])],
+            Mask(texture)                                   => vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::Mask(*texture)])],
             DisplacementMap(texture, x_r, y_r, transform)   => { todo!() }
         }
     }
