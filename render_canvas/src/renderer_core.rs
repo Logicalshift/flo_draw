@@ -149,6 +149,17 @@ impl RenderCore {
     }
 
     ///
+    /// Releases any resources used by a texture render request
+    ///
+    pub fn free_texture_render_request(&mut self, texture_render_request: TextureRenderRequest) {
+        for texture_id in texture_render_request.used_textures() {
+            if let Some(usage_count) = self.used_textures.get_mut(&texture_id) {
+                *usage_count -= 1;
+            }
+        }
+    }
+
+    ///
     /// Finds any render textures that are not in use and marks them as freed
     ///
     pub fn free_unused_textures(&mut self) -> Vec<render::RenderAction> {
