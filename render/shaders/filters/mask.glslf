@@ -6,8 +6,8 @@ void main() {
     ivec2 pos           = ivec2(gl_FragCoord.x, gl_FragCoord.y);
     f_Color             = texelFetch(t_Texture, pos, 0);
 
-    vec2 tex_size       = textureSize(t_Texture);
-    vec2 alpha_pos      = vec2(float(pos[0] / tex_size[0]), float(pos[1]/tex_size[1]));
+    ivec2 tex_size      = textureSize(t_Texture, 0);
+    vec2 alpha_pos      = vec2(float(pos[0]) / float(tex_size[0]), float(pos[1]) / float(tex_size[1]));
     float texture_alpha = texture(t_FilterTexture, alpha_pos)[3];
 
 #ifdef INVERT_COLOUR_ALPHA
