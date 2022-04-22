@@ -27,6 +27,18 @@ pub fn main() {
             gc.clear_sprite();
 
             gc.draw_list(mascot);
+
+            // Create a texture to use for the mask
+            gc.sprite(SpriteId(1));
+            gc.clear_sprite();
+
+            gc.new_path();
+            gc.circle(512.0, 512.0, 400.0);
+            gc.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+            gc.fill();
+
+            gc.layer(LayerId(0));
+            gc.create_dynamic_texture(TextureId(1), SpriteId(1), 0.0, 0.0, 1024.0, 1024.0, 1024.0, 1024.0);
         });
 
         let mut iter = 0;
@@ -43,7 +55,7 @@ pub fn main() {
 
             let filter = match (iter/323) % 3 {
                 1     => TextureFilter::AlphaBlend((phase_3.sin() + 1.0) / 2.0),
-                2     => TextureFilter::AlphaBlend((phase_3.sin() + 1.0) / 2.0),
+                2     => TextureFilter::Mask(TextureId(1)),
 
                 0 | _ => TextureFilter::GaussianBlur(blur.abs()),
             };
