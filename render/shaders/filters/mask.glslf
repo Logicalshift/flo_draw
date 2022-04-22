@@ -10,7 +10,7 @@ void main() {
     vec2 alpha_pos      = vec2(float(pos[0] / tex_size[0]), float(pos[1]/tex_size[1]));
     float texture_alpha = texture(t_FilterTexture, alpha_pos)[3];
 
-#ifdef INVERT_COLOUR_ALPHA§
+#ifdef INVERT_COLOUR_ALPHA
     // Blend towards one as the alpha approaches 0 (used for the multiply blend mode)
     f_Color[0]  = 1 - ((1-f_Color[0]) * (f_Color[3]));
     f_Color[1]  = 1 - ((1-f_Color[1]) * (f_Color[3]));
