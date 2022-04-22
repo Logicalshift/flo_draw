@@ -558,7 +558,9 @@ impl RenderCore {
     ///
     /// Generates the list of texture setup actions that need to be performed before a new frame
     ///
-    pub fn setup_textures(&mut self, viewport_size: (f32, f32)) -> Vec<TextureRenderRequest> {
+    /// The result is a tuple of `(bool, TextureRenderRequest)` where the 'bool' indicates if the request is retired after this action
+    ///
+    pub fn setup_textures(&mut self, viewport_size: (f32, f32)) -> Vec<(bool, TextureRenderRequest)> {
         let mut textures                        = vec![];
         let mut actions_for_dynamic_textures    = HashMap::<render::TextureId, Vec<TextureRenderRequest>>::new();
 
@@ -570,19 +572,22 @@ impl RenderCore {
                 FromSprite(_, _, _)         |
                 CopyTexture(_, _)           => {
                     // These are always rendered
-                    textures.push(render_request);
+                    textures.push((true, render_request));
                 },
 
                 SetBytes(texture_id, _, _, _)   |
                 CreateMipMaps(texture_id)       |
                 Filter(texture_id, _)           => {
+                    let mut retired = true;
+
                     // These also attach to the actions if the target texture is a dynamic texture
                     if let Some(dynamic_actions) = actions_for_dynamic_textures.get_mut(texture_id) {
+                        retired = false;
                         dynamic_actions.push(render_request.clone());
                     }
 
                     // These are always rendered
-                    textures.push(render_request);
+                    textures.push((retired, render_request));
                 },
 
                 DynamicTexture(texture_id, layer_handle, _, _, _, _) => {
@@ -594,7 +599,7 @@ impl RenderCore {
 
                     if self.dynamic_texture_state.get(&texture_id) != Some(&current_state) {
                         // These are rendered if the viewport or sprite has changed since the last time
-                        textures.push(render_request.clone());
+                        textures.push((false, render_request.clone()));
 
                         // Update the viewport data so this isn't re-rendered until it changes
                         self.dynamic_texture_state.insert(texture_id, current_state);

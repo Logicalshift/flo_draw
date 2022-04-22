@@ -81,7 +81,7 @@ pub struct RenderStream<'a> {
     pending: VecDeque<render::RenderAction>,
 
     /// The textures that need to be set up before the layers can be rendered
-    setup_textures: Vec<TextureRenderRequest>,
+    setup_textures: Vec<(bool, TextureRenderRequest)>,
 
     /// The operations to run when the rendering is complete (None if they've already been rendered)
     final_actions: Option<Vec<render::RenderAction>>,
@@ -1108,14 +1108,6 @@ impl<'a> RenderStream<'a> {
 
             CopyTexture(source_texture_id, target_texture_id) => {
                 render_actions.push(render::RenderAction::CopyTexture(*source_texture_id, *target_texture_id));
-
-                // After retiring a copy action, reduce the usage count of the source texture
-                let source_texture_id = *source_texture_id;
-                self.core.desync(move |core| {
-                    if let Some(source_usage_count) = core.used_textures.get_mut(&source_texture_id) {
-                        *source_usage_count -= 1;
-                    }
-                });
             },
 
             Filter(texture_id, filter) => {
@@ -1177,9 +1169,13 @@ impl<'a> Stream for RenderStream<'a> {
         }
 
         // After the vertex buffers are generated, we can render any sprites to textures that are pending
-        if let Some(setup_texture) = self.setup_textures.pop() {
+        if let Some((retired, setup_texture)) = self.setup_textures.pop() {
             let render_requests = self.texture_render_request(&setup_texture);
             self.pending.extend(render_requests);
+
+            if retired {
+                self.core.desync(move |core| core.free_texture_render_request(setup_texture));
+            }
         }
 
         if self.pending.len() > 0 {
