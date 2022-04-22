@@ -1331,6 +1331,31 @@ impl CanvasDecoder {
     }
 
     ///
+    /// Tries to decode a texture ID from a list of characters
+    ///
+    fn try_decode_texture_id(chars: &mut Chars) -> Result<Option<TextureId>, DecoderError> {
+        let mut texture_id = PartialResult::new();
+
+        while let Some(next_chr) = chars.next() {
+            // Add the next character to the result
+            match texture_id {
+                PartialResult::MatchMore(param) => {
+                    texture_id = Self::decode_compact_id(next_chr, param)?;
+                }
+                _ => { panic!() }
+            }
+
+            // Return the texture ID if we have a full match
+            if let PartialResult::FullMatch(texture_id) = texture_id {
+                return Ok(Some(TextureId(texture_id)))
+            }
+        }
+
+        // Did not decode a full texture ID before running out of characters
+        Ok(None)
+    }
+
+    ///
     /// Consumes characters until we have a gradient ID
     ///
     fn decode_gradient_id(next_chr: char, param: String) -> Result<PartialResult<GradientId>, DecoderError> {
@@ -1709,6 +1734,9 @@ impl CanvasDecoder {
     fn try_decode_texture_filter(chars: &mut Chars) -> Result<Option<TextureFilter>, DecoderError> {
          match chars.next() {
             Some('B')   => Self::try_decode_texture_filter_gaussian_blur(chars),
+            Some('A')   => Self::try_decode_texture_filter_alpha_blend(chars),
+            Some('M')   => Self::try_decode_texture_filter_mask(chars),
+            Some('D')   => Self::try_decode_texture_filter_displacement_map(chars),
             Some(other) => Err(DecoderError::InvalidCharacter(other)),
             None        => Ok(None)
          }
@@ -1725,6 +1753,46 @@ impl CanvasDecoder {
         } else {
             Ok(None)
         }
+    }
+
+    ///
+    /// Decodes the parameters for a gaussian blur texture filter
+    ///
+    fn try_decode_texture_filter_alpha_blend(chars: &mut Chars) -> Result<Option<TextureFilter>, DecoderError> {
+        let blend = Self::try_decode_f32(chars)?;
+
+        if let Some(blend) = blend {
+            Ok(Some(TextureFilter::AlphaBlend(blend)))
+        } else {
+            Ok(None)
+        }
+    }
+
+    ///
+    /// Decodes the parameters for a gaussian blur texture filter
+    ///
+    fn try_decode_texture_filter_mask(chars: &mut Chars) -> Result<Option<TextureFilter>, DecoderError> {
+        let texture_id = Self::try_decode_texture_id(chars)?;
+
+        if let Some(texture_id) = texture_id {
+            Ok(Some(TextureFilter::Mask(texture_id)))
+        } else {
+            Ok(None)
+        }
+    }
+
+    ///
+    /// Decodes the parameters for a gaussian blur texture filter
+    ///
+    fn try_decode_texture_filter_displacement_map(chars: &mut Chars) -> Result<Option<TextureFilter>, DecoderError> {
+        let texture_id  = Self::try_decode_texture_id(chars)?;
+        let texture_id  = if let Some(texture_id) = texture_id { texture_id } else { return Ok(None); };
+        let x_radius    = Self::try_decode_f32(chars)?;
+        let x_radius    = if let Some(x_radius) = x_radius { x_radius } else { return Ok(None); };
+        let y_radius    = Self::try_decode_f32(chars)?;
+        let y_radius    = if let Some(y_radius) = y_radius { y_radius } else { return Ok(None); };
+
+        Ok(Some(TextureFilter::DisplacementMap(texture_id, x_radius, y_radius)))
     }
 
     ///
@@ -2391,6 +2459,21 @@ mod test {
     }
 
     #[test]
+    fn decode_texture_filter_alpha_blend() {
+        check_round_trip_single(Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::AlphaBlend(0.6))));
+    }
+
+    #[test]
+    fn decode_texture_filter_mask() {
+        check_round_trip_single(Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::Mask(TextureId(48)))));
+    }
+
+    #[test]
+    fn decode_texture_filter_displacement_map() {
+        check_round_trip_single(Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::DisplacementMap(TextureId(48), 1.0, 2.0))));
+    }
+
+    #[test]
     fn decode_all_iter() {
         check_round_trip(vec![
             Draw::Path(PathOp::NewPath),
@@ -2447,6 +2530,9 @@ mod test {
             Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.5)),
             Draw::Texture(TextureId(46), TextureOp::Copy(TextureId(47))),
             Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::GaussianBlur(23.0))),
+            Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::AlphaBlend(0.6))),
+            Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::Mask(TextureId(48)))),
+            Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::DisplacementMap(TextureId(48), 1.0, 2.0))),
 
             Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
             Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),
@@ -2512,6 +2598,9 @@ mod test {
             Draw::Texture(TextureId(45), TextureOp::FillTransparency(0.5)),
             Draw::Texture(TextureId(46), TextureOp::Copy(TextureId(47))),
             Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::GaussianBlur(23.0))),
+            Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::AlphaBlend(0.6))),
+            Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::Mask(TextureId(48)))),
+            Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::DisplacementMap(TextureId(48), 1.0, 2.0))),
 
             Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
             Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),
