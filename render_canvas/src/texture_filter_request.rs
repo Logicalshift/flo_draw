@@ -1,4 +1,5 @@
 use flo_canvas as canvas;
+use flo_render as render;
 
 ///
 /// Represents a request to perform a filter on a texture (replacing the texture with the filtered version) 
@@ -46,6 +47,18 @@ impl TextureFilterRequest {
 
                 (size_w*size_w + size_h*size_h).sqrt()
             },
+        }
+    }
+
+    ///
+    /// Returns the textures used by this filter
+    ///
+    pub fn used_textures(&self) -> Vec<render::TextureId> {
+        use TextureFilterRequest::*;
+
+        match self {
+            PixelBlur(_)        => vec![],
+            CanvasBlur(_, _)    => vec![],
         }
     }
 }

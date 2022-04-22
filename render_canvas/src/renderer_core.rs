@@ -117,7 +117,6 @@ impl RenderCore {
             SetFlatColor                            => { }
             SetDashPattern(_)                       => { }
             RenderSprite(_, _)                      => { }
-            RenderSpriteWithFilters(_, _, _)        => { }
             DisableClipping                         => { }
 
             SetFillTexture(texture_id, _, _, _)     => { 
@@ -128,6 +127,14 @@ impl RenderCore {
             SetFillGradient(texture_id, _, _, _)    => { 
                 self.used_textures.get_mut(&texture_id)
                     .map(|usage_count| *usage_count -= 1);
+            }
+
+            RenderSpriteWithFilters(_, _, filters)  => { 
+                let textures = filters.iter().flat_map(|filter| filter.used_textures());
+                for texture_id in textures {
+                    self.used_textures.get_mut(&texture_id)
+                        .map(|usage_count| *usage_count -= 1);
+                }   
             }
 
             EnableClipping(render::VertexBufferId(vertex_id), render::IndexBufferId(index_id), _num_vertices)   |
