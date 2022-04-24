@@ -508,7 +508,7 @@ impl GlRenderer {
     ///
     fn filter_texture(&mut self, TextureId(texture_id): TextureId, texture_filter: Vec<TextureFilter>) {
         // All the filters need textures with pre-multiplied alpha, so apply that beforehand
-        if self.is_premultiplied(TextureId(texture_id)) {
+        if !self.is_premultiplied(TextureId(texture_id)) {
             if let Some(Some(texture)) = self.textures.get_mut(texture_id) {
                 let premultiply_shader  = self.shader_programs.program(StandardShaderProgram::PremultiplyAlpha);
                 let premultiplied       = texture.filter(premultiply_shader);
