@@ -78,14 +78,11 @@ pub fn main() {
             let blur  = (phase_3.sin() + 0.75) * 40.0;
 
             let filter = match (iter/(13*20)) % 4 {
-                _ => vec![TextureFilter::DisplacementMap(TextureId(2), 8.0, 8.0)]
-
-                /*
-                1     => vec![TextureFilter::AlphaBlend((phase_3.cos() + 1.0) / 2.0), TextureFilter::GaussianBlur(blur.abs())],
-                2     => vec![TextureFilter::Mask(TextureId(1)), TextureFilter::AlphaBlend((phase_3.cos() + 1.0) / 2.0), TextureFilter::GaussianBlur(blur.abs())],
+                1     => vec![TextureFilter::GaussianBlur(blur.abs()), TextureFilter::DisplacementMap(TextureId(2), 8.0, 8.0)],
+                2     => vec![TextureFilter::AlphaBlend((phase_3.cos() + 1.0) / 2.0), TextureFilter::GaussianBlur(blur.abs()), TextureFilter::DisplacementMap(TextureId(2), 8.0, 8.0)],
+                3     => vec![TextureFilter::Mask(TextureId(1)), TextureFilter::AlphaBlend((phase_3.cos() + 1.0) / 2.0), TextureFilter::GaussianBlur(blur.abs()), TextureFilter::DisplacementMap(TextureId(2), 8.0, 8.0)],
 
                 0 | _ => vec![TextureFilter::GaussianBlur(blur.abs())],
-                */
             };
 
             canvas.draw(|gc| {
