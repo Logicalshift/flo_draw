@@ -13,7 +13,7 @@ void main() {
     displace_col[1]     = displace_col[1] / displace_col[3];
 #endif
 
-    vec2 displacement   = vec2((displace_col[0]-0.5)*2.0, displace_col[1]-0.5)*2.0)*t_Scale;
+    vec2 displacement   = vec2((displace_col[0]-0.5)*2.0, (displace_col[1]-0.5)*2.0)*t_Scale;
     displacement        = displacement * displace_col[3];
 
     f_Color             = texture(t_Texture, pos + displacement, 0);
