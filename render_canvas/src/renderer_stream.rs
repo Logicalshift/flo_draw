@@ -957,8 +957,8 @@ impl RenderCore {
                     let ratio_x = (viewport_size.0 as f32) / (texture_size.0 as f32);
                     let ratio_y = (viewport_size.1 as f32) / (texture_size.1 as f32);
 
-                    let x_radius = (viewport_size.0 as f32) / x_radius_pixels * ratio_x;
-                    let y_radius = (viewport_size.1 as f32) / y_radius_pixels * ratio_y;
+                    let x_radius = x_radius_pixels / (viewport_size.0 as f32) * ratio_x;
+                    let y_radius = y_radius_pixels / (viewport_size.1 as f32) * ratio_y;
 
                     vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::DisplacementMap(*displacement_texture, x_radius, y_radius)])]
                 } else {
