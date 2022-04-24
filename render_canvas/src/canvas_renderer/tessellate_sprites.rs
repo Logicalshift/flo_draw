@@ -108,7 +108,7 @@ impl CanvasRenderer {
                     GaussianBlur(radius)                => Some(TextureFilterRequest::CanvasBlur(radius, self.active_transform)),
                     AlphaBlend(alpha)                   => Some(TextureFilterRequest::AlphaBlend(alpha)),
                     Mask(texture)                       => Some(TextureFilterRequest::Mask(core.texture_for_rendering(texture)?)),
-                    DisplacementMap(texture, xr, yr)    => Some(TextureFilterRequest::DisplacementMap(core.texture_for_rendering(texture)?, xr, yr, self.active_transform)),
+                    DisplacementMap(texture, xr, yr)    => Some(TextureFilterRequest::DisplacementMap(core.texture_for_rendering(texture)?, xr, yr, Some(self.active_transform))),
                 }
             }).collect::<Vec<_>>();
 

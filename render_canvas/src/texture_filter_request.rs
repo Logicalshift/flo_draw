@@ -31,9 +31,10 @@ pub enum TextureFilterRequest {
     Mask(render::TextureId),
 
     ///
-    /// Use the red and green channels of a source texture as a displacement map. The two other parameters are the scale factors (maximum displacement in canvas units)
+    /// Use the red and green channels of a source texture as a displacement map. The two other parameters are the scale factors (maximum displacement in canvas units, or
+    /// pixels if no transform is supplied)
     ///
-    DisplacementMap(render::TextureId, f32, f32, canvas::Transform2D),
+    DisplacementMap(render::TextureId, f32, f32, Option<canvas::Transform2D>),
 }
 
 impl TextureFilterRequest {
@@ -49,7 +50,8 @@ impl TextureFilterRequest {
             AlphaBlend(_)                   => 0.0,
             Mask(_)                         => 0.0,
 
-            DisplacementMap(_, x_r, y_r, transform) => {
+            DisplacementMap(_, _x_r, _y_r, None)            => 0.0,
+            DisplacementMap(_, x_r, y_r, Some(transform))   => {
                 let (x1, y1)    = transform.transform_point(0.0, 0.0);
                 let (x2, y2)    = transform.transform_point(*x_r, *y_r);
 

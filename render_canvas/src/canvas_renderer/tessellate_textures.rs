@@ -366,7 +366,7 @@ impl CanvasRenderer {
         self.core.sync(|core| {
             if let Some(displace_texture) = core.texture_for_rendering(displace_texture) {
                 core.add_texture_usage(displace_texture);
-                let transform = core.texture_transform.get(&texture_id).cloned().unwrap_or(canvas::Transform2D::identity());
+                let transform = core.texture_transform.get(&texture_id).cloned();
 
                 core.layer_textures.push((texture_id, TextureRenderRequest::Filter(texture_id, TextureFilterRequest::DisplacementMap(displace_texture, x_radius, y_radius, transform))));
             }

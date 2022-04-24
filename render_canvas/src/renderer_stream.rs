@@ -873,7 +873,8 @@ impl RenderCore {
                 f32::max(x_radius, y_radius).ceil() as _
             },
 
-            DisplacementMap(_, x_r, y_r, transform) => {
+            DisplacementMap(_, x_r, y_r, None)              => f32::max(*x_r, *y_r) as _,
+            DisplacementMap(_, x_r, y_r, Some(transform))   => {
                 let transform   = viewport_transform * *transform;
 
                 // Convert the radius using the transform
@@ -904,8 +905,11 @@ impl RenderCore {
         use TextureFilterRequest::*;
 
         match request {
-            PixelBlur(radius)               => Self::filter_gaussian_blur(texture_id, *radius, *radius),
-            CanvasBlur(radius, transform)   => {
+            PixelBlur(radius)   => Self::filter_gaussian_blur(texture_id, *radius, *radius),
+            AlphaBlend(alpha)   => vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::AlphaBlend(*alpha)])],
+            Mask(texture)       => vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::Mask(*texture)])],
+
+            CanvasBlur(radius, transform) => {
                 let transform   = viewport_transform * *transform;
 
                 // Convert the radius using the transform
@@ -928,17 +932,24 @@ impl RenderCore {
                 Self::filter_gaussian_blur(texture_id, x_radius, y_radius)
             },
 
-            AlphaBlend(alpha)                               => vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::AlphaBlend(*alpha)])],
-            Mask(texture)                                   => vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::Mask(*texture)])],
             
-            DisplacementMap(displacement_texture, x_radius, y_radius, transform)   => {
-                // TODO: this assumes a dynamic texture or a sprite with a texture rendering, not sure what the behaviour will be when displacing a texture by itself
-                // (should be x_radius, y_radius are just in texture pixels)
-                let transform = viewport_transform * *transform;
+            DisplacementMap(displacement_texture, x_radius, y_radius, None) => {
+                if let Some(texture_size) = self.texture_size.get(&texture_id) {
+                    let x_radius = x_radius / (texture_size.0 as f32);
+                    let y_radius = y_radius / (texture_size.1 as f32);
+
+                    vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::DisplacementMap(*displacement_texture, x_radius, y_radius)])]
+                } else {
+                    vec![]
+                }
+            }
+
+            DisplacementMap(displacement_texture, x_radius, y_radius, Some(transform)) => {
+                let radius_transform   = viewport_transform * *transform;
 
                 // Convert the radius using the transform
-                let (x1, y1)    = transform.transform_point(0.0, 0.0);
-                let (x2, y2)    = transform.transform_point(*x_radius, *y_radius);
+                let (x1, y1)    = radius_transform.transform_point(0.0, 0.0);
+                let (x2, y2)    = radius_transform.transform_point(*x_radius, *y_radius);
 
                 let min_x       = f32::min(x1, x2);
                 let min_y       = f32::min(y1, y2);
@@ -954,6 +965,7 @@ impl RenderCore {
 
                 // Need to convert to a step relative to the input texture size
                 if let Some(texture_size) = self.texture_size.get(&texture_id) {
+                    // x and y radius are in viewport coordinates
                     let ratio_x = (viewport_size.0 as f32) / (texture_size.0 as f32);
                     let ratio_y = (viewport_size.1 as f32) / (texture_size.1 as f32);
 
