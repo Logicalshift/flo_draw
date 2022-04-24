@@ -123,7 +123,7 @@ pub fn main() {
                                     .collect::<Vec<_>>()));
 
                             // Distort the texture with the filter we just created
-                            gc.filter_texture(TextureId(1), TextureFilter::DisplacementMap(TextureId(2), 4.0, 4.0));
+                            gc.filter_texture(TextureId(1), TextureFilter::DisplacementMap(TextureId(2), 8.0, 8.0));
                         }
 
                         _ => { }
