@@ -43,6 +43,7 @@ pub fn main() {
             gc.create_dynamic_texture(TextureId(1), SpriteId(1), 0.0, 0.0, 1024.0, 1024.0, 1024.0, 1024.0);
 
             // Create a displacement map filter
+            // See wibble_mascot.rs for a way to do a purely vector-based displacement
             gc.create_texture(TextureId(2), 1024, 1024, TextureFormat::Rgba);
             gc.set_texture_bytes(TextureId(2), 0, 0, 1024, 1024,
                 Arc::new((0..(1024*1024)).into_iter()
@@ -62,7 +63,7 @@ pub fn main() {
 
                         [(y_seq*255.0) as u8, (x_seq*255.0) as u8, 0, 255]
                     })
-                    .collect::<Vec<_>>()))
+                    .collect::<Vec<_>>()));
         });
 
         let mut iter = 0;
