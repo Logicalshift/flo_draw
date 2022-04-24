@@ -540,7 +540,7 @@ impl RenderCore {
                             // Apply filters
                             filters.iter()
                                 .for_each(|filter| {
-                                    render_order.extend(Self::texture_filter_request(temp_texture, viewport_transform, render_state.viewport_size, filter));
+                                    render_order.extend(core.texture_filter_request(temp_texture, viewport_transform, render_state.viewport_size, filter));
                                 });
 
                             // The texture transform maps viewport coordinates to texture coordinates
@@ -900,7 +900,7 @@ impl RenderCore {
     ///
     /// Applies a filter to a texture
     ///
-    fn texture_filter_request(texture_id: render::TextureId, viewport_transform: canvas::Transform2D, viewport_size: render::Size2D, request: &TextureFilterRequest) -> Vec<render::RenderAction> {
+    fn texture_filter_request(&self, texture_id: render::TextureId, viewport_transform: canvas::Transform2D, viewport_size: render::Size2D, request: &TextureFilterRequest) -> Vec<render::RenderAction> {
         use TextureFilterRequest::*;
 
         match request {
@@ -930,7 +930,42 @@ impl RenderCore {
 
             AlphaBlend(alpha)                               => vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::AlphaBlend(*alpha)])],
             Mask(texture)                                   => vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::Mask(*texture)])],
-            DisplacementMap(texture, x_r, y_r, transform)   => { todo!() }
+            
+            DisplacementMap(displacement_texture, x_radius, y_radius, transform)   => {
+                // TODO: this assumes a dynamic texture or a sprite with a texture rendering, not sure what the behaviour will be when displacing a texture by itself
+                // (should be x_radius, y_radius are just in texture pixels)
+                let transform = viewport_transform * *transform;
+
+                // Convert the radius using the transform
+                let (x1, y1)    = transform.transform_point(0.0, 0.0);
+                let (x2, y2)    = transform.transform_point(*x_radius, *y_radius);
+
+                let min_x       = f32::min(x1, x2);
+                let min_y       = f32::min(y1, y2);
+                let max_x       = f32::max(x1, x2);
+                let max_y       = f32::max(y1, y2);
+
+                // Size relative to the framebuffer size
+                let size_w      = (max_x - min_x)/2.0;
+                let size_h      = (max_y - min_y)/2.0;
+
+                let x_radius_pixels = viewport_size.0 as f32 * size_w;
+                let y_radius_pixels = viewport_size.1 as f32 * size_h;
+
+                // Need to convert to a step relative to the input texture size
+                if let Some(texture_size) = self.texture_size.get(&texture_id) {
+                    let ratio_x = (viewport_size.0 as f32) / (texture_size.0 as f32);
+                    let ratio_y = (viewport_size.1 as f32) / (texture_size.1 as f32);
+
+                    let x_radius = (viewport_size.0 as f32) / x_radius_pixels * ratio_x;
+                    let y_radius = (viewport_size.1 as f32) / y_radius_pixels * ratio_y;
+
+                    vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::DisplacementMap(*displacement_texture, x_radius, y_radius)])]
+                } else {
+                    // Texture size is not known so we can't work out the displacement scale
+                    vec![]
+                }
+            }
         }
     }
 }
@@ -1057,7 +1092,10 @@ impl<'a> RenderStream<'a> {
     /// Applies a filter to a texture
     ///
     fn texture_filter_request(&self, texture_id: render::TextureId, request: &TextureFilterRequest) -> Vec<render::RenderAction> {
-        RenderCore::texture_filter_request(texture_id, self.viewport_transform, self.viewport_size, request)
+        let viewport_transform  = self.viewport_transform;
+        let viewport_size       = self.viewport_size;
+
+        self.core.sync(move |core| core.texture_filter_request(texture_id, viewport_transform, viewport_size, request))
     }
 
     ///
