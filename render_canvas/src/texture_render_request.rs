@@ -65,7 +65,7 @@ impl TextureRenderRequest {
             CreateMipMaps(_)                        => vec![],
             FromSprite(_, _, _)                     => vec![],
             DynamicTexture(_, _, _, _, _, requests) => requests.iter().flat_map(|request| request.used_textures()).collect(),
-            CopyTexture(_, copy_to)                 => vec![*copy_to],
+            CopyTexture(copy_from, _)               => vec![*copy_from],
             Filter(_, filter_request)               => filter_request.used_textures(),
         }
     }
