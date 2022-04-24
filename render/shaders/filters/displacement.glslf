@@ -7,7 +7,14 @@ out vec4            f_Color;
 void main() {
     vec2 pos            = vec2(gl_FragCoord.x, gl_FragCoord.y) / t_TextureSize;
     vec4 displace_col   = texture(t_FilterTexture, pos);
+
+#ifdef PREMULTIPLIED_FILTER_SOURCE
+    displace_col[0]     = displace_col[0] / displace_col[3];
+    displace_col[1]     = displace_col[1] / displace_col[3];
+#endif
+
     vec2 displacement   = vec2((displace_col[0]-0.5)*2.0, displace_col[1]-0.5)*2.0)*t_Scale;
+    displacement        = displacement * displace_col[3];
 
     f_Color             = texture(t_Texture, pos + displacement, 0);
 
