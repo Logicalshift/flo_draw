@@ -76,9 +76,13 @@ pub fn main() {
                     gc.copy_texture(TextureId(0), TextureId(1));
 
                     match filter {
+                        // Gaussian blur
                         0 => gc.filter_texture(TextureId(1), TextureFilter::GaussianBlur(16.0)),
+
+                        // Alpha blend
                         1 => gc.filter_texture(TextureId(1), TextureFilter::AlphaBlend(0.5)),
 
+                        // Mask
                         2 => {
                             let sprite_height = 1000.0*(flo_h as f32)/(flo_w as f32);
 
@@ -99,6 +103,7 @@ pub fn main() {
                             gc.filter_texture(TextureId(1), TextureFilter::Mask(TextureId(2)));
                         }
 
+                        // Displacement map
                         3 => {
                             // Define a texture to use as the displacement map (the red and green channels are the x and y displacement as a proportion of the scaling factor)
                             gc.create_texture(TextureId(2), flo_w as _, flo_h as _, TextureFormat::Rgba);
