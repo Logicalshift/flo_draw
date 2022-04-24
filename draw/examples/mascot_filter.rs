@@ -1,6 +1,7 @@
 use flo_draw::*;
 use flo_draw::canvas::*;
 
+use std::sync::*;
 use std::thread;
 use std::time::{Duration};
 
@@ -39,6 +40,26 @@ pub fn main() {
 
             gc.layer(LayerId(0));
             gc.create_dynamic_texture(TextureId(1), SpriteId(1), 0.0, 0.0, 1024.0, 1024.0, 1024.0, 1024.0);
+
+            // Create a displacement map filter
+            gc.create_texture(TextureId(2), 1024, 1024, TextureFormat::Rgba);
+            gc.set_texture_bytes(TextureId(2), 0, 0, 1024, 1024,
+                Arc::new((0..(1024*1024)).into_iter()
+                    .flat_map(|pixel_num| {
+                        let x_pos       = pixel_num % 1024;
+                        let y_pos       = pixel_num / 1024;
+
+                        let x_factor    = (x_pos as f64) / 1024.0;
+                        let y_factor    = (y_pos as f64) / 1024.0;
+                        let x_factor    = x_factor * 8.0;
+                        let y_factor    = y_factor * 7.0;
+
+                        let x_seq       = (x_factor.sin() + 1.0)/2.0;
+                        let y_seq       = (y_factor.cos() + 1.0)/2.0;
+
+                        [(x_seq*255.0) as u8, (y_seq*255.0) as u8, 0, 255]
+                    })
+                    .collect::<Vec<_>>()))
         });
 
         let mut iter = 0;
@@ -53,11 +74,15 @@ pub fn main() {
             let y_off = phase_2.sin() * 50.0;
             let blur  = (phase_3.sin() + 0.75) * 40.0;
 
-            let filter = match (iter/(13*20)) % 3 {
+            let filter = match (iter/(13*20)) % 4 {
+                _ => vec![TextureFilter::DisplacementMap(TextureId(2), 4.0, 4.0)]
+
+                /*
                 1     => vec![TextureFilter::AlphaBlend((phase_3.cos() + 1.0) / 2.0), TextureFilter::GaussianBlur(blur.abs())],
                 2     => vec![TextureFilter::Mask(TextureId(1)), TextureFilter::AlphaBlend((phase_3.cos() + 1.0) / 2.0), TextureFilter::GaussianBlur(blur.abs())],
 
                 0 | _ => vec![TextureFilter::GaussianBlur(blur.abs())],
+                */
             };
 
             canvas.draw(|gc| {
