@@ -4,6 +4,7 @@ use flo_draw::canvas::*;
 use futures::prelude::*;
 use futures::executor;
 
+use std::f64;
 use std::io;
 use std::sync::*;
 
@@ -73,7 +74,60 @@ pub fn main() {
                     gc.clear_layer();
 
                     gc.copy_texture(TextureId(0), TextureId(1));
-                    gc.filter_texture(TextureId(1), TextureFilter::GaussianBlur(16.0));
+
+                    match filter {
+                        0 => gc.filter_texture(TextureId(1), TextureFilter::GaussianBlur(16.0)),
+                        1 => gc.filter_texture(TextureId(1), TextureFilter::AlphaBlend(0.5)),
+
+                        2 => {
+                            let sprite_height = 1000.0*(flo_h as f32)/(flo_w as f32);
+
+                            // Define sprite 0 as our mask
+                            gc.sprite(SpriteId(0));
+                            gc.clear_sprite();
+                            gc.set_font_size(FontId(1), 200.0);
+                            gc.begin_line_layout(500.0, sprite_height/2.0-100.0, TextAlignment::Center);
+                            gc.layout_text(FontId(1), "MASK".to_string());
+                            gc.draw_text_layout();
+
+                            // Back to layer 0, then render the sprite to a texture that's the same size as our input texture
+                            gc.layer(LayerId(0));
+                            gc.create_texture(TextureId(2), flo_w as _, flo_h as _, TextureFormat::Rgba);
+                            gc.set_texture_from_sprite(TextureId(2), SpriteId(0), 0.0, sprite_height, 1000.0, -sprite_height);
+
+                            // Filter the texture with the stencil we just created
+                            gc.filter_texture(TextureId(1), TextureFilter::Mask(TextureId(2)));
+                        }
+
+                        3 => {
+                            // Define a texture to use as the displacement map (the red and green channels are the x and y displacement as a proportion of the scaling factor)
+                            gc.create_texture(TextureId(2), flo_w as _, flo_h as _, TextureFormat::Rgba);
+                            gc.set_texture_bytes(TextureId(2), 0, 0, flo_w as _, flo_h as _,
+                                Arc::new((0..(flo_w*flo_h)).into_iter()
+                                    .flat_map(|pixel_num| {
+                                        let x_pos       = pixel_num % flo_w;
+                                        let y_pos       = pixel_num / flo_w;
+
+                                        let x_factor    = (x_pos as f64) / (flo_w as f64);
+                                        let y_factor    = (y_pos as f64) / (flo_h as f64);
+                                        let x_factor    = x_factor * 2.0 * f64::consts::PI;
+                                        let y_factor    = y_factor * 2.0 * f64::consts::PI;
+                                        let x_factor    = x_factor * 8.0;
+                                        let y_factor    = y_factor * 7.0;
+
+                                        let x_seq       = (x_factor.sin() + 1.0)/2.0;
+                                        let y_seq       = (y_factor.cos() + 1.0)/2.0;
+
+                                        [(y_seq*255.0) as u8, (x_seq*255.0) as u8, 0, 255]
+                                    })
+                                    .collect::<Vec<_>>()));
+
+                            // Distort the texture with the filter we just created
+                            gc.filter_texture(TextureId(1), TextureFilter::DisplacementMap(TextureId(2), 4.0, 4.0));
+                        }
+
+                        _ => { }
+                    }
 
                     // Draw a rectangle...
                     let ratio   = (flo_w as f32)/(flo_h as f32);
