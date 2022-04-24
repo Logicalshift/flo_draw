@@ -284,6 +284,13 @@ pub trait GraphicsContext {
         self.draw(Draw::Texture(source_texture_id, TextureOp::Copy(target_texture_id)));
     }
 
+    ///
+    /// Applies a filter to a texture (see `TextureFilter` for a list of choices)
+    ///
+    fn filter_texture(&mut self, texture_id: TextureId, filter: TextureFilter) {
+        self.draw(Draw::Texture(texture_id, TextureOp::Filter(filter)));
+    }
+
     /// Applies a gaussian blur to a texture
     ///
     /// The radius is measured in texture units: for a standard texture, this is just pixels but for a dynamic texture, this
