@@ -36,6 +36,9 @@ pub enum TextureFilter {
 
     /// Masks a texture according to the content of another texture
     Mask(TextureId),
+
+    /// Performs a displacement map with the specified texture ID and scale factors (scale factors use the 0-1 coordinate scheme for the whole texture, so need to be transformed into that range)
+    DisplacementMap(TextureId, f32, f32),
 }
 
 impl TextureFilter {
@@ -60,6 +63,7 @@ impl TextureFilter {
 
             AlphaBlend(_)                       => 0,
             Mask(_)                             => 0,
+            DisplacementMap(_, _, _)            => 0,
         }
     }
 

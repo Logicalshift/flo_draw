@@ -42,6 +42,18 @@ pub enum AlphaBlendStep {
 }
 
 ///
+/// The format of the source texture for a filter step
+///
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum FilterSourceFormat {
+    /// Alpha is pre-multiplied
+    PremultipliedAlpha,
+
+    /// Alpha is not pre-multiplied
+    NotPremultiplied,
+}
+
+///
 /// The shader programs that are loaded by default into an OpenGL renderer
 ///
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -93,6 +105,9 @@ pub enum StandardShaderProgram {
 
     /// Masks a one texture against another
     FilterMask,
+
+    /// Performs a displacement map filter
+    FilterDisplacementMap(FilterSourceFormat),
 }
 
 impl StandardShaderVariant {
@@ -119,6 +134,7 @@ impl ColorPostProcessingStep {
         }
     }
 }
+
 impl AlphaBlendStep {
     ///
     /// Returns the #defines to declare in the shader program for this variant
@@ -131,6 +147,17 @@ impl AlphaBlendStep {
     }
 }
 
+impl FilterSourceFormat {
+    ///
+    /// Returns the #defines to declare in the shader program for this variant
+    ///
+    pub fn defines(&self) -> Vec<&str> {
+        match self {
+            FilterSourceFormat::PremultipliedAlpha  => vec!["PREMULTIPLIED_FILTER_SOURCE"],
+            FilterSourceFormat::NotPremultiplied    => vec![]
+        }
+    }
+}
 
 impl Default for StandardShaderProgram {
     fn default() -> Self {
@@ -154,23 +181,24 @@ impl StandardShaderProgram {
     ///
     pub fn create_shader_loader() -> impl Send+Fn(StandardShaderProgram) -> ShaderProgram<ShaderUniform> {
         // Load the GLSL programs into memory
-        let simple_vertex                       = String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap();
-        let simple_fragment                     = String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap();
-        let dashed_line_fragment                = String::from_utf8(include_bytes!["../../shaders/dashed_line/dashed_line.glslf"].to_vec()).unwrap();
-        let texture_vertex                      = String::from_utf8(include_bytes!["../../shaders/texture/texture.glslv"].to_vec()).unwrap();
-        let texture_fragment                    = String::from_utf8(include_bytes!["../../shaders/texture/texture.glslf"].to_vec()).unwrap();
-        let gradient_vertex                     = String::from_utf8(include_bytes!["../../shaders/texture/gradient.glslv"].to_vec()).unwrap();
-        let gradient_fragment                   = String::from_utf8(include_bytes!["../../shaders/texture/gradient.glslf"].to_vec()).unwrap();
-        let msaa_vertex                         = String::from_utf8(include_bytes!["../../shaders/simple/resolve.glslv"].to_vec()).unwrap();
-        let msaa4_resolve                       = String::from_utf8(include_bytes!["../../shaders/simple/multisample_resolve_4.glslf"].to_vec()).unwrap();
-        let filter_vertex                       = String::from_utf8(include_bytes!["../../shaders/simple/resolve.glslv"].to_vec()).unwrap();
-        let premultiply                         = String::from_utf8(include_bytes!["../../shaders/filters/premultiply.glslf"].to_vec()).unwrap();
-        let blur9                               = String::from_utf8(include_bytes!["../../shaders/filters/blur_9.glslf"].to_vec()).unwrap();
-        let blur29                              = String::from_utf8(include_bytes!["../../shaders/filters/blur_29.glslf"].to_vec()).unwrap();
-        let blur61                              = String::from_utf8(include_bytes!["../../shaders/filters/blur_61.glslf"].to_vec()).unwrap();
-        let blur_texture                        = String::from_utf8(include_bytes!["../../shaders/filters/blur_texture.glslf"].to_vec()).unwrap();
-        let filter_alpha_blend                  = String::from_utf8(include_bytes!["../../shaders/filters/alpha_blend.glslf"].to_vec()).unwrap();
-        let filter_mask                         = String::from_utf8(include_bytes!["../../shaders/filters/mask.glslf"].to_vec()).unwrap();
+        let simple_vertex           = String::from_utf8(include_bytes!["../../shaders/simple/simple.glslv"].to_vec()).unwrap();
+        let simple_fragment         = String::from_utf8(include_bytes!["../../shaders/simple/simple.glslf"].to_vec()).unwrap();
+        let dashed_line_fragment    = String::from_utf8(include_bytes!["../../shaders/dashed_line/dashed_line.glslf"].to_vec()).unwrap();
+        let texture_vertex          = String::from_utf8(include_bytes!["../../shaders/texture/texture.glslv"].to_vec()).unwrap();
+        let texture_fragment        = String::from_utf8(include_bytes!["../../shaders/texture/texture.glslf"].to_vec()).unwrap();
+        let gradient_vertex         = String::from_utf8(include_bytes!["../../shaders/texture/gradient.glslv"].to_vec()).unwrap();
+        let gradient_fragment       = String::from_utf8(include_bytes!["../../shaders/texture/gradient.glslf"].to_vec()).unwrap();
+        let msaa_vertex             = String::from_utf8(include_bytes!["../../shaders/simple/resolve.glslv"].to_vec()).unwrap();
+        let msaa4_resolve           = String::from_utf8(include_bytes!["../../shaders/simple/multisample_resolve_4.glslf"].to_vec()).unwrap();
+        let filter_vertex           = String::from_utf8(include_bytes!["../../shaders/simple/resolve.glslv"].to_vec()).unwrap();
+        let premultiply             = String::from_utf8(include_bytes!["../../shaders/filters/premultiply.glslf"].to_vec()).unwrap();
+        let blur9                   = String::from_utf8(include_bytes!["../../shaders/filters/blur_9.glslf"].to_vec()).unwrap();
+        let blur29                  = String::from_utf8(include_bytes!["../../shaders/filters/blur_29.glslf"].to_vec()).unwrap();
+        let blur61                  = String::from_utf8(include_bytes!["../../shaders/filters/blur_61.glslf"].to_vec()).unwrap();
+        let blur_texture            = String::from_utf8(include_bytes!["../../shaders/filters/blur_texture.glslf"].to_vec()).unwrap();
+        let filter_alpha_blend      = String::from_utf8(include_bytes!["../../shaders/filters/alpha_blend.glslf"].to_vec()).unwrap();
+        let filter_mask             = String::from_utf8(include_bytes!["../../shaders/filters/mask.glslf"].to_vec()).unwrap();
+        let filter_displacement_map = String::from_utf8(include_bytes!["../../shaders/filters/displacement.glslf"].to_vec()).unwrap();
 
         // Incorporate them into the shader loader function
         move |program_type| {
@@ -196,6 +224,7 @@ impl StandardShaderProgram {
                 BlurTextureVertical                         => { Self::load_shader(&filter_vertex, &vec![], &blur_texture, &vec![], &vec!["FILTER_VERT"]) }
                 FilterAlphaBlend                            => { Self::load_shader(&filter_vertex, &vec![], &filter_alpha_blend, &vec![], &vec![]) }
                 FilterMask                                  => { Self::load_shader(&filter_vertex, &vec![], &filter_mask, &vec![], &vec![]) }
+                FilterDisplacementMap(source_format)        => { Self::load_shader(&filter_vertex, &vec![], &filter_displacement_map, &vec![], &source_format.defines()) }
             }
         }
     }

@@ -41,4 +41,7 @@ pub enum ShaderUniform {
 
     /// The input texture for a filter that needs one
     FilterTexture,
+
+    /// The scale factor used for a filter
+    FilterScale,
 }

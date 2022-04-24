@@ -490,26 +490,33 @@ impl GlRenderer {
     }
 
     ///
+    /// Returns true if the specified texture is premultiplied
+    ///
+    #[inline]
+    fn is_premultiplied(&self, TextureId(texture_id): TextureId) -> bool {
+        let texture = self.textures.get(texture_id);
+
+        if let Some(Some(texture)) = texture {
+            texture.premultiplied
+        } else {
+            false
+        }
+    }
+
+    ///
     /// Modifies a texture by applying a filter to it
     ///
     fn filter_texture(&mut self, TextureId(texture_id): TextureId, texture_filter: Vec<TextureFilter>) {
-        // Borrow the parameters we need
-        let textures    = &mut self.textures;
-        let shaders     = &mut self.shader_programs;
-
-        // Fetch the texture that we're going to process
-        let texture     = textures.get_mut(texture_id);
-        let texture     = if let Some(texture) = texture { texture } else { return; };
-        let texture     = if let Some(texture) = texture { texture } else { return; };
-
         // All the filters need textures with pre-multiplied alpha, so apply that beforehand
-        if !texture.premultiplied {
-            let premultiply_shader  = shaders.program(StandardShaderProgram::PremultiplyAlpha);
-            let premultiplied       = texture.filter(premultiply_shader);
+        if self.is_premultiplied(TextureId(texture_id)) {
+            if let Some(Some(texture)) = self.textures.get_mut(texture_id) {
+                let premultiply_shader  = self.shader_programs.program(StandardShaderProgram::PremultiplyAlpha);
+                let premultiplied       = texture.filter(premultiply_shader);
 
-            if let Some(mut premultiplied) = premultiplied {
-                premultiplied.premultiplied = true;
-                *texture                    = premultiplied;
+                if let Some(mut premultiplied) = premultiplied {
+                    premultiplied.premultiplied = true;
+                    *texture                    = premultiplied;
+                }
             }
         }
 
@@ -522,16 +529,22 @@ impl GlRenderer {
 
             // Choose a shader for the filter
             let shader = match filter {
-                GaussianBlurHorizontal9(_sigma, _step)          => shaders.program(StandardShaderProgram::Blur9Horizontal),
-                GaussianBlurHorizontal29(_sigma, _step)         => shaders.program(StandardShaderProgram::Blur29Horizontal),
-                GaussianBlurHorizontal61(_sigma, _step)         => shaders.program(StandardShaderProgram::Blur61Horizontal),
-                GaussianBlurHorizontal(_sigma, _step, _size)    => shaders.program(StandardShaderProgram::BlurTextureHorizontal),
-                GaussianBlurVertical9(_sigma, _step)            => shaders.program(StandardShaderProgram::Blur9Vertical),
-                GaussianBlurVertical29(_sigma, _step)           => shaders.program(StandardShaderProgram::Blur29Vertical),
-                GaussianBlurVertical61(_sigma, _step)           => shaders.program(StandardShaderProgram::Blur61Vertical),
-                GaussianBlurVertical(_sigma, _step, _size)      => shaders.program(StandardShaderProgram::BlurTextureVertical),
-                AlphaBlend(_alpha)                              => shaders.program(StandardShaderProgram::FilterAlphaBlend),
-                Mask(_mask)                                     => shaders.program(StandardShaderProgram::FilterMask),
+                GaussianBlurHorizontal9(_sigma, _step)          => self.shader_programs.program(StandardShaderProgram::Blur9Horizontal),
+                GaussianBlurHorizontal29(_sigma, _step)         => self.shader_programs.program(StandardShaderProgram::Blur29Horizontal),
+                GaussianBlurHorizontal61(_sigma, _step)         => self.shader_programs.program(StandardShaderProgram::Blur61Horizontal),
+                GaussianBlurHorizontal(_sigma, _step, _size)    => self.shader_programs.program(StandardShaderProgram::BlurTextureHorizontal),
+                GaussianBlurVertical9(_sigma, _step)            => self.shader_programs.program(StandardShaderProgram::Blur9Vertical),
+                GaussianBlurVertical29(_sigma, _step)           => self.shader_programs.program(StandardShaderProgram::Blur29Vertical),
+                GaussianBlurVertical61(_sigma, _step)           => self.shader_programs.program(StandardShaderProgram::Blur61Vertical),
+                GaussianBlurVertical(_sigma, _step, _size)      => self.shader_programs.program(StandardShaderProgram::BlurTextureVertical),
+                AlphaBlend(_alpha)                              => self.shader_programs.program(StandardShaderProgram::FilterAlphaBlend),
+                Mask(_mask)                                     => self.shader_programs.program(StandardShaderProgram::FilterMask),
+
+                DisplacementMap(texture_id, _xr, _yr)           => if self.is_premultiplied(texture_id) {
+                    self.shader_programs.program(StandardShaderProgram::FilterDisplacementMap(FilterSourceFormat::PremultipliedAlpha))
+                } else {
+                    self.shader_programs.program(StandardShaderProgram::FilterDisplacementMap(FilterSourceFormat::NotPremultiplied))
+                }
             };
 
             // Set up the uniforms for the filter
@@ -627,7 +640,7 @@ impl GlRenderer {
 
                 Mask(mask_texture) => {
                     let TextureId(mask_texture) = mask_texture;
-                    let mask_texture            = if mask_texture < textures.len() { textures[mask_texture].as_ref() } else { None }; 
+                    let mask_texture            = self.textures.get(mask_texture).map(|t| t.as_ref()).unwrap_or(None); 
 
                     if let Some(mask_texture) = mask_texture {
                         unsafe {
@@ -639,6 +652,8 @@ impl GlRenderer {
 
                             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as _);
                             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as _);
+                            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as _);
+                            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as _);
 
                             shader.uniform_location(ShaderUniform::FilterTexture, "t_FilterTexture")
                                 .map(|filter_texture_uniform| {
@@ -649,13 +664,44 @@ impl GlRenderer {
                         }
                     }
                 }
+
+                DisplacementMap(displacement_texture, x_radius, y_radius) => {
+                    unsafe {
+                        let TextureId(displacement_texture) = displacement_texture;
+                        let displacement_texture            = self.textures.get(displacement_texture);
+
+                        if let Some(Some(displacement_texture)) = displacement_texture {
+                            gl::UseProgram(**shader);
+
+                            // Bind the textures
+                            gl::ActiveTexture(gl::TEXTURE1);
+                            gl::BindTexture(gl::TEXTURE_2D, **displacement_texture);
+
+                            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as _);
+                            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as _);
+                            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as _);
+                            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as _);
+
+                            shader.uniform_location(ShaderUniform::FilterTexture, "t_FilterTexture")
+                                .map(|filter_texture_uniform| {
+                                    gl::Uniform1i(filter_texture_uniform, 1);
+                                });
+
+                            gl::ActiveTexture(gl::TEXTURE0);
+
+                            shader.uniform_location(ShaderUniform::FilterScale, "t_Scale")
+                                .map(|scale_uniform| {
+                                    gl::Uniform1fv(scale_uniform, 2, vec![x_radius, y_radius].as_ptr());
+                                });
+                        }
+                    }
+                }
             }
 
             // Apply the filter to the texture
             panic_on_gl_error("Filter setup");
-            let texture     = textures.get_mut(texture_id);
-            let texture     = if let Some(texture) = texture { texture } else { return; };
-            let texture     = if let Some(texture) = texture { texture } else { return; };
+            let texture     = self.textures.get_mut(texture_id);
+            let texture     = if let Some(Some(texture)) = texture { texture } else { return; };
 
             let new_texture = texture.filter(shader);
             if let Some(new_texture) = new_texture {
@@ -680,7 +726,7 @@ impl GlRenderer {
             let active_shader = *active_shader;
             self.use_shader(active_shader);
         } else {
-            shaders.use_program(StandardShaderProgram::default());
+            self.shader_programs.use_program(StandardShaderProgram::default());
         }
         self.blend_mode(self.blend_mode, self.source_is_premultiplied);
     }
