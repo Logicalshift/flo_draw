@@ -26,7 +26,7 @@ pub fn main() {
         let mut flo_h = 0;
         canvas.draw(|gc| {
             // Clear the canvas and set up the coordinates
-            gc.clear_canvas(Color::Rgba(1.0, 1.0, 1.0, 1.0));
+            gc.clear_canvas(Color::Rgba(0.7, 0.9, 1.0, 1.0));
             gc.canvas_height(1000.0);
             gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
@@ -80,7 +80,14 @@ pub fn main() {
                         0 => gc.filter_texture(TextureId(1), TextureFilter::GaussianBlur(16.0)),
 
                         // Alpha blend
-                        1 => gc.filter_texture(TextureId(1), TextureFilter::AlphaBlend(0.5)),
+                        1 => {
+                            gc.new_path();
+                            gc.circle(500.0, 500.0, 100.0);
+                            gc.fill_color(Color::Rgba(0.4, 0.9, 0.1, 1.0));
+                            gc.fill();
+
+                            gc.filter_texture(TextureId(1), TextureFilter::AlphaBlend(0.7))
+                        },
 
                         // Mask
                         2 => {
