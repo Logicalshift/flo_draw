@@ -1,6 +1,7 @@
 use flo_draw::*;
 use flo_draw::canvas::*;
 
+use std::f64;
 use std::sync::*;
 use std::thread;
 use std::time::{Duration};
@@ -51,13 +52,15 @@ pub fn main() {
 
                         let x_factor    = (x_pos as f64) / 1024.0;
                         let y_factor    = (y_pos as f64) / 1024.0;
+                        let x_factor    = x_factor * 2.0 * f64::consts::PI;
+                        let y_factor    = y_factor * 2.0 * f64::consts::PI;
                         let x_factor    = x_factor * 8.0;
                         let y_factor    = y_factor * 7.0;
 
                         let x_seq       = (x_factor.sin() + 1.0)/2.0;
                         let y_seq       = (y_factor.cos() + 1.0)/2.0;
 
-                        [(x_seq*255.0) as u8, (y_seq*255.0) as u8, 0, 255]
+                        [(y_seq*255.0) as u8, (x_seq*255.0) as u8, 0, 255]
                     })
                     .collect::<Vec<_>>()))
         });
@@ -75,7 +78,7 @@ pub fn main() {
             let blur  = (phase_3.sin() + 0.75) * 40.0;
 
             let filter = match (iter/(13*20)) % 4 {
-                _ => vec![TextureFilter::DisplacementMap(TextureId(2), 4.0, 4.0)]
+                _ => vec![TextureFilter::DisplacementMap(TextureId(2), 8.0, 8.0)]
 
                 /*
                 1     => vec![TextureFilter::AlphaBlend((phase_3.cos() + 1.0) / 2.0), TextureFilter::GaussianBlur(blur.abs())],
