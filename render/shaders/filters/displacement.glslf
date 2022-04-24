@@ -1,11 +1,11 @@
 uniform sampler2D   t_Texture;
 uniform sampler2D   t_FilterTexture;
 uniform vec2        t_Scale;
-uniform vec2        t_TextureSize;
 out vec4            f_Color;
 
 void main() {
-    vec2 pos            = vec2(gl_FragCoord.x, gl_FragCoord.y) / t_TextureSize;
+    vec2 texture_size   = vec2(textureSize(t_Texture, 0));
+    vec2 pos            = vec2(gl_FragCoord.x, gl_FragCoord.y) / texture_size;
     vec4 displace_col   = texture(t_FilterTexture, pos);
 
 #ifdef PREMULTIPLIED_FILTER_SOURCE
