@@ -687,12 +687,12 @@ impl GlRenderer {
                                     gl::Uniform1i(filter_texture_uniform, 1);
                                 });
 
-                            gl::ActiveTexture(gl::TEXTURE0);
-
                             shader.uniform_location(ShaderUniform::FilterScale, "t_Scale")
                                 .map(|scale_uniform| {
-                                    gl::Uniform1fv(scale_uniform, 2, vec![x_radius, y_radius].as_ptr());
+                                    gl::Uniform2f(scale_uniform, x_radius, y_radius);
                                 });
+
+                            gl::ActiveTexture(gl::TEXTURE0);
                         }
                     }
                 }
