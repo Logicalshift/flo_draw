@@ -84,6 +84,7 @@ pub fn main() {
 
                         // Mask
                         2 => {
+                            // Make 1000.0 units our width, and define the height based on the size of the image
                             let sprite_height = 1000.0*(flo_h as f32)/(flo_w as f32);
 
                             // Define sprite 0 as our mask
