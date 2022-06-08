@@ -280,8 +280,8 @@ impl Ship {
 
     pub fn draw(&self, gc: &mut dyn GraphicsContext) {
         gc.sprite_transform(SpriteTransform::Identity);
-        gc.sprite_transform(SpriteTransform::Translate(self.x as _, self.y as _));
         gc.sprite_transform(SpriteTransform::Rotate(self.angle as _));
+        gc.sprite_transform(SpriteTransform::Translate(self.x as _, self.y as _));
         gc.draw_sprite(self.sprite);
     }
 }
@@ -322,8 +322,8 @@ impl Roid {
 
     pub fn draw(&self, gc: &mut dyn GraphicsContext) {
         gc.sprite_transform(SpriteTransform::Identity);
-        gc.sprite_transform(SpriteTransform::Translate(self.x as _, self.y as _));
         gc.sprite_transform(SpriteTransform::Rotate(self.angle as _));
+        gc.sprite_transform(SpriteTransform::Translate(self.x as _, self.y as _));
         gc.draw_sprite(self.sprite);
     }
 }
