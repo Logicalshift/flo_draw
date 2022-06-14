@@ -17,6 +17,7 @@ flo_render_gl_offscreen = { path = "./render_gl_offscreen" }
 flo_draw                = { path = "./draw" }
 
 flo_binding             = { git = "https://github.com/Logicalshift/flo_binding", branch = "v2.3" }
+flo_scene               = { git = "https://github.com/Logicalshift/flo_scene", branch = "v0.1" }
 desync                  = { git = "https://github.com/Logicalshift/desync", branch = "v0.9" }
 
 # allsorts is very slow when built for debug, so packages using flo_draw should consider optimising it even in debug builds
