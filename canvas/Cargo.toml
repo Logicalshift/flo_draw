@@ -20,7 +20,7 @@ flo_curves          = "0.6"
 flo_stream          = "0.7"
 
 futures             = "0.3"
-desync              = "0.7"
+desync              = "0.9"
 rust-hsluv          = "0.1"
 itertools           = "0.10"
 serde               = { version = "1.0", features = [ "rc" ] }

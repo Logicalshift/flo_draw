@@ -15,7 +15,7 @@ flo_render  = "0.4"
 flo_canvas  = "0.4"
 flo_stream  = "0.7"
 futures     = "0.3"
-desync      = "0.7"
+desync      = "0.9"
 lyon        = "0.17"
 num_cpus    = "1.13"
 
