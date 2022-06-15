@@ -5,7 +5,7 @@ use std::sync::*;
 ///
 /// A request to a 2D drawing target
 ///
-pub enum DrawRequest {
+pub enum DrawingRequest {
     /// Perform the specified drawing actions
     Draw(Arc<Vec<Draw>>),
 }
