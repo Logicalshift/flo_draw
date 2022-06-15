@@ -63,6 +63,7 @@ mod glutin_runtime;
 mod event_conversion;
 mod window_properties;
 mod glutin_thread_event;
+pub mod draw_scene;
 
 pub use self::events::*;
 pub use self::render_window::*;
