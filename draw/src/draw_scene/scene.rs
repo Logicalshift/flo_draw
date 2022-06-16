@@ -1,16 +1,20 @@
 use super::render_request::*;
 use super::drawing_request::*;
 use super::draw_window_request::*;
+use super::draw_event_request::*;
 
 use crate::glutin_thread::*;
 use crate::glutin_thread_event::*;
 use crate::window_properties::*;
 
 use futures::prelude::*;
+use futures::stream;
 use futures::channel::mpsc;
 
 use flo_scene::*;
 use flo_stream::*;
+use flo_render::*;
+use flo_render_canvas::*;
 
 use std::sync::*;
 
@@ -73,6 +77,53 @@ pub fn create_render_window(context: &Arc<SceneContext>, entity_id: EntityId) ->
             }
 
             response.send(()).ok();
+        }
+    })
+}
+
+///
+/// Creates a drawing window that sends render requests to the specified target
+///
+pub fn create_drawing_window(context: &Arc<SceneContext>, entity_id: EntityId, render_target: impl 'static + EntityChannel<Message=RenderWindowRequest, Response=()>) -> Result<SimpleEntityChannel<DrawingWindowRequest, ()>, CreateEntityError> {
+    // This window can accept a couple of converted messages
+    context.convert_message::<DrawingRequest, DrawingWindowRequest>()?;
+    context.convert_message::<EventWindowRequest, DrawingWindowRequest>()?;
+
+    // Create the window in context
+    context.create_entity(entity_id, move |context, drawing_window_requests| async move {
+        let mut render_target       = render_target;
+
+        // We relay events via our own event publisher
+        // let mut event_publisher = Publisher::new(1000);
+
+        // Set up the renderer and window state
+        let renderer                = CanvasRenderer::new();
+        //let mut window_transform    = None;
+        let mut scale               = 1.0;
+        let mut width               = 1.0;
+        let mut height              = 1.0;
+
+        // Request the events from the render target
+        let (channel, events_receiver)  = SimpleEntityChannel::new(entity_id, 1000);
+        render_target.send(RenderWindowRequest::SendEvents(channel.boxed())).await.ok();
+
+        // Chunk the requests we receive
+        let drawing_window_requests     = drawing_window_requests.chunks(100);
+        let events_receiver             = events_receiver.chunks(100);
+
+        // Combine the two streams (we prioritise events from the window to avoid spending time rendering with out-of-date state)
+        enum DrawingOrEvent {
+            Drawing(Vec<Message<DrawingWindowRequest, ()>>),
+            Event(Vec<Message<DrawEventRequest, ()>>),
+        }
+        let drawing_window_requests     = drawing_window_requests.map(|evt| DrawingOrEvent::Drawing(evt));
+        let events_receiver             = events_receiver.map(|evt| DrawingOrEvent::Event(evt));
+        let messages                    = stream::select_with_strategy(drawing_window_requests, events_receiver, |_: &mut ()| stream::PollNext::Right);
+
+        // Run the main event loop
+        let mut messages = messages;
+        while let Some(message) = messages.next().await {
+
         }
     })
 }
