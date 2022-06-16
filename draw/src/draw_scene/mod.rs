@@ -12,6 +12,8 @@
 //! to obtain the events and rendering event channels for a particular window.
 //!
 
+// TODO: consider moving the messages to flo_canvas_events, so it's easy to define a flo_draw style scene in a different application
+
 mod render_request;
 mod drawing_request;
 mod draw_event_request;
