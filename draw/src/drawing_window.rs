@@ -307,8 +307,9 @@ pub fn create_drawing_window_from_stream<'a, DrawStream: 'static+Send+Unpin+Stre
 ///
 fn handle_window_event<'a, SendFuture, SendRenderActionsFn>(state: &'a mut RendererState, event: DrawEvent, send_render_actions: &'a mut SendRenderActionsFn) -> impl 'a+Send+Future<Output=Vec<DrawEvent>> 
 where 
-SendRenderActionsFn:    Send+FnMut(Vec<RenderAction>) -> SendFuture,
-SendFuture:             Send+Future<Output=()> {
+    SendRenderActionsFn:    Send + FnMut(Vec<RenderAction>) -> SendFuture,
+    SendFuture:             Send + Future<Output=()> 
+{
     async move {
         match event {
             DrawEvent::Redraw                   => { 
