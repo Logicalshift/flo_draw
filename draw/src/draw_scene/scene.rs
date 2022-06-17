@@ -175,6 +175,14 @@ impl RendererState {
         self.window_transform   = Some(window_transform);
         window_transform
     }
+
+    ///
+    /// Performs a drawing action and passes it on to the render target
+    ///
+    async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: &mut (impl 'static + EntityChannel<Message=RenderWindowRequest, Response=()>)) {
+        let render_actions = self.renderer.draw(draw_actions.cloned()).collect::<Vec<_>>().await;
+        render_target.send_without_waiting(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
+    }
 }
 
 ///
@@ -218,12 +226,58 @@ pub fn create_drawing_window(context: &Arc<SceneContext>, entity_id: EntityId, r
         let events_receiver             = events_receiver.map(|evt| DrawingOrEvent::Event(evt));
         let messages                    = stream::select_with_strategy(drawing_window_requests, events_receiver, |_: &mut ()| stream::PollNext::Right);
 
+        // Initially the window is not ready to render (we need to wait for the first 'redraw' event)
+        let mut ready_to_render         = false;
+        let mut closed                  = false;
+
+        // Pause the drawing using a start frame event
+        render_state.draw(vec![Draw::StartFrame].iter(), &mut render_target).await;
+
         // Run the main event loop
         let mut messages = messages;
         while let Some(message) = messages.next().await {
             match message {
                 DrawingOrEvent::Drawing(drawing_list) => {
+                    // Perform all the actions in a single frame
+                    render_state.draw(vec![Draw::StartFrame].iter(), &mut render_target).await;
 
+                    for draw_msg in drawing_list {
+                        // Take the message
+                        let (draw_msg, responder) = draw_msg.take();
+
+                        match draw_msg {
+                            DrawingWindowRequest::Draw(DrawingRequest::Draw(drawing)) => {
+                                // Send the drawing to the renderer
+                                render_state.draw(drawing.iter(), &mut render_target).await;
+
+                                // Send the response once the drawing action has completed
+                                responder.send(()).ok();
+                            }
+
+                            DrawingWindowRequest::SendEvents(event_channel) => {
+                                let mut subscriber = event_publisher.subscribe();
+
+                                context.run_in_background(async move {
+                                    let mut channel_target = event_channel;
+
+                                    // Pass on events to everything that's listening, until the channel starts generating errors
+                                    while let Some(event) = subscriber.next().await {
+                                        let result = channel_target.send_without_waiting(event).await;
+
+                                        if result.is_err() {
+                                            break;
+                                        }
+                                    }
+                                }).ok();
+                            }
+                        }
+                    }
+
+                    // Commit the frame
+                    render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
+
+                    // Update the window transform according to the drawing actions we processed
+                    render_state.update_window_transform();
                 }
 
                 DrawingOrEvent::Event(event_list) => {
@@ -233,6 +287,26 @@ pub fn create_drawing_window(context: &Arc<SceneContext>, entity_id: EntityId, r
 
                         // Publish the event to any subscribers
                         event_publisher.publish(evt_message.clone()).await;
+
+                        match &evt_message {
+                            DrawEvent::Redraw => {
+                                // When a redraw event arrives, we're ready to render from the renderer to the window
+                                if !ready_to_render {
+                                    // Move to the 'ready to render' state
+                                    ready_to_render = true;
+
+                                    // Show the frame from the initial 'StartFrame' request
+                                    render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
+                                }
+                            },
+
+                            DrawEvent::Closed => {
+                                // Close events terminate the loop (after we've finshed processing the events)
+                                closed = true;
+                            }
+
+                            _ => { }
+                        }
 
                         // Handle the next message
                         handle_window_event(&mut render_state, evt_message, &mut |render_actions| {
@@ -244,6 +318,11 @@ pub fn create_drawing_window(context: &Arc<SceneContext>, entity_id: EntityId, r
 
                         // Indicate that the event has been handled
                         responder.send(()).ok();
+                    }
+
+                    // The entity stops when the window is closed
+                    if closed {
+                        break;
                     }
                 }
             }
