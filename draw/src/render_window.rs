@@ -50,7 +50,7 @@ where
             // Request event actions from the renderer
             render_channel.send(RenderWindowRequest::SendEvents(events_channel.boxed())).await.ok();
 
-            // Main loop passes on the render actions
+            // Main loop passes on the render actions (we don't process messages directed at this entity)
             while let Some(render_actions) = render_stream.next().await {
                 let maybe_err = render_channel.send_without_waiting(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await;
 
@@ -61,6 +61,9 @@ where
             }
         }
     }).unwrap();
+
+    // We don't process messages in our background entity, so seal it off
+    scene_context.seal_entity(process_entity).unwrap();
 
     // The events stream is the result
     events_stream.map(|msg| {
