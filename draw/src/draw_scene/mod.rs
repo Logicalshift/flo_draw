@@ -20,6 +20,8 @@ mod draw_event_request;
 
 mod draw_window_request;
 
+mod render_window_entity;
+mod drawing_window_entity;
 mod scene;
 
 pub use self::render_request::*;
@@ -28,4 +30,6 @@ pub use self::draw_event_request::*;
 
 pub use self::draw_window_request::*;
 
+pub use self::render_window_entity::*;
+pub use self::drawing_window_entity::*;
 pub use self::scene::*;
