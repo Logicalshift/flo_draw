@@ -11,7 +11,10 @@ use futures::prelude::*;
 ///
 /// Creates a window that can be rendered to by sending groups of render actions
 ///
-pub fn create_render_window<'a, TProperties: 'a+FloWindowProperties>(properties: TProperties) -> (Publisher<Vec<RenderAction>>, impl Clone+Send+Stream<Item=DrawEvent>) {
+pub fn create_render_window<'a, TProperties>(properties: TProperties) -> (Publisher<Vec<RenderAction>>, impl Send + Stream<Item=DrawEvent>)
+where
+    TProperties: 'a+FloWindowProperties,
+{
     // Create the publisher to send the render actions to the stream
     let mut render_publisher    = Publisher::new(1);
     let event_subscriber        = create_render_window_from_stream(render_publisher.subscribe(), properties);
@@ -23,7 +26,11 @@ pub fn create_render_window<'a, TProperties: 'a+FloWindowProperties>(properties:
 ///
 /// Creates a window that renders a stream of actions
 ///
-pub fn create_render_window_from_stream<'a, RenderStream: 'static+Send+Stream<Item=Vec<RenderAction>>, TProperties: 'a+FloWindowProperties>(render_stream: RenderStream, properties: TProperties) -> impl Clone+Send+Stream<Item=DrawEvent> {
+pub fn create_render_window_from_stream<'a, RenderStream, TProperties>(render_stream: RenderStream, properties: TProperties) -> impl Send + Stream<Item=DrawEvent>
+where
+    RenderStream:   'static + Send + Stream<Item=Vec<RenderAction>>,
+    TProperties:    'a + FloWindowProperties,
+{
     // Create the publisher to send the render actions to the stream
     let window_properties       = WindowProperties::from(&properties);
     let mut event_publisher     = Publisher::new(1000);
