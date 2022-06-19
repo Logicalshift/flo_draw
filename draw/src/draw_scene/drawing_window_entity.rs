@@ -114,7 +114,7 @@ impl RendererState {
 ///
 /// Creates a drawing window that sends render requests to the specified target
 ///
-pub fn create_drawing_window(context: &Arc<SceneContext>, entity_id: EntityId, render_target: impl 'static + EntityChannel<Message=RenderWindowRequest, Response=()>) -> Result<SimpleEntityChannel<DrawingWindowRequest, ()>, CreateEntityError> {
+pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: EntityId, render_target: impl 'static + EntityChannel<Message=RenderWindowRequest, Response=()>) -> Result<SimpleEntityChannel<DrawingWindowRequest, ()>, CreateEntityError> {
     // This window can accept a couple of converted messages
     context.convert_message::<DrawingRequest, DrawingWindowRequest>()?;
     context.convert_message::<EventWindowRequest, DrawingWindowRequest>()?;
