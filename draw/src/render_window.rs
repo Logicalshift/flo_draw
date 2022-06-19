@@ -1,8 +1,8 @@
-use super::events::*;
-use super::glutin_thread::*;
-use super::window_properties::*;
-use super::glutin_thread_event::*;
+use crate::draw_scene::*;
+use crate::events::*;
+use crate::window_properties::*;
 
+use flo_scene::*;
 use flo_stream::*;
 use flo_render::*;
 
@@ -31,16 +31,42 @@ where
     RenderStream:   'static + Send + Stream<Item=Vec<RenderAction>>,
     TProperties:    'a + FloWindowProperties,
 {
-    // Create the publisher to send the render actions to the stream
-    let window_properties       = WindowProperties::from(&properties);
-    let mut event_publisher     = Publisher::new(1000);
+    // Create a new render window entity
+    let render_window_entity    = EntityId::new();
+    let scene_context           = flo_draw_scene_context();
 
-    let event_subscriber        = event_publisher.subscribe();
+    let render_channel          = create_render_window_entity(&scene_context, render_window_entity).unwrap();
 
-    // Create a window that subscribes to the publisher
-    let glutin_thread           = glutin_thread();
-    glutin_thread.send_event(GlutinThreadEvent::CreateRenderWindow(render_stream.boxed(), event_publisher, window_properties));
+    // The events send to a channel
+    let (events_channel, events_stream) = SimpleEntityChannel::new(render_window_entity, 5);
 
-    // Result is the events for the new window
-    event_subscriber
+    // Pass events from the render stream onto the window
+    let process_entity = EntityId::new();
+    scene_context.create_entity::<(), (), _, _>(process_entity, move |_, _| {
+        async move {
+            let mut render_stream   = render_stream.boxed();
+            let mut render_channel  = render_channel;
+
+            // Request event actions from the renderer
+            render_channel.send(RenderWindowRequest::SendEvents(events_channel.boxed())).await.ok();
+
+            // Main loop passes on the render actions
+            while let Some(render_actions) = render_stream.next().await {
+                let maybe_err = render_channel.send_without_waiting(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await;
+
+                if maybe_err.is_err() {
+                    // Stop if the request doesn't go through
+                    break;
+                }
+            }
+        }
+    }).unwrap();
+
+    // The events stream is the result
+    events_stream.map(|msg| {
+        let (evt, response) = msg.take();
+        response.send(()).ok();
+
+        evt
+    })
 }
