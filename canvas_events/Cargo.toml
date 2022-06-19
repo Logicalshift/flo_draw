@@ -10,3 +10,5 @@ categories          = [ "graphics", "rendering", "gui" ]
 
 [dependencies]
 flo_canvas          = "0.4"
+flo_render          = "0.4"
+flo_scene           = "0.1"

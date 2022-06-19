@@ -11,6 +11,18 @@ mod key;
 mod draw_event;
 mod pointer_event;
 
+mod render_request;
+mod drawing_request;
+mod draw_event_request;
+
+mod draw_window_request;
+
 pub use self::key::*;
 pub use self::draw_event::*;
 pub use self::pointer_event::*;
+
+pub use self::render_request::*;
+pub use self::drawing_request::*;
+pub use self::draw_event_request::*;
+
+pub use self::draw_window_request::*;

@@ -1,6 +1,3 @@
-use super::render_request::*;
-use super::draw_window_request::*;
-
 use crate::glutin_thread::*;
 use crate::glutin_thread_event::*;
 use crate::window_properties::*;
@@ -10,6 +7,7 @@ use futures::channel::mpsc;
 
 use flo_scene::*;
 use flo_stream::*;
+use flo_canvas_events::*;
 
 use std::sync::*;
 

@@ -1,8 +1,3 @@
-use super::render_request::*;
-use super::drawing_request::*;
-use super::draw_window_request::*;
-use super::draw_event_request::*;
-
 use futures::prelude::*;
 use futures::stream;
 
