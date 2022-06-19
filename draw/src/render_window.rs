@@ -31,6 +31,8 @@ where
     RenderStream:   'static + Send + Stream<Item=Vec<RenderAction>>,
     TProperties:    'a + FloWindowProperties,
 {
+    // TODO: add a way to follow the window properties
+
     // Create a new render window entity
     let render_window_entity    = EntityId::new();
     let scene_context           = flo_draw_scene_context();
@@ -40,7 +42,7 @@ where
     // The events send to a channel
     let (events_channel, events_stream) = SimpleEntityChannel::new(render_window_entity, 5);
 
-    // Pass events from the render stream onto the window
+    // Pass events from the render stream onto the window using another entity (potentially this could be a background task for the render window entity?)
     let process_entity = EntityId::new();
     scene_context.create_entity::<(), (), _, _>(process_entity, move |_, _| {
         async move {
