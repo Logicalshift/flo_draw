@@ -735,13 +735,25 @@ impl RenderCore {
     fn render_layer_to_texture(&mut self, texture_id: render::TextureId, layer_handle: LayerHandle, sprite_transform: canvas::Transform2D, region: canvas::SpriteBounds) -> Vec<render::RenderAction> {
         let core = self;
 
-        // Allocate a texture and a render target for this operation
-        let offscreen_texture       = core.allocate_texture();
-        let offscreen_render_target = core.allocate_render_target();
-
         // Need to know the texture size to recreate it as a render target
         let texture_size        = core.texture_size.get(&texture_id).cloned();
         let texture_size        = if let Some(texture_size) = texture_size { texture_size } else { return vec![] };
+
+        // If the texture size is 0 in any dimension, then create a blank texture
+        if texture_size.0 < 1 || texture_size.1 < 1 {
+            return vec![
+                CreateRenderTarget(RESOLVE_RENDER_TARGET, texture_id, render::Size2D(1, 1), render::RenderTargetType::Standard),
+                SelectRenderTarget(RESOLVE_RENDER_TARGET),
+                Clear(render::Rgba8([0, 0, 0, 0])),
+
+                SelectRenderTarget(MAIN_RENDER_TARGET),
+                FreeRenderTarget(RESOLVE_RENDER_TARGET),
+            ];
+        }
+
+        // Allocate a texture and a render target for this operation
+        let offscreen_texture       = core.allocate_texture();
+        let offscreen_render_target = core.allocate_render_target();
 
         // Create a viewport transform for the render region (-1.0 - 1.0 will be the texture size, so we just need a transform that maps the appropriate coordinates)
         let canvas::SpriteBounds(canvas::SpritePosition(x, y), canvas::SpriteSize(w, h)) = region;
@@ -768,7 +780,7 @@ impl RenderCore {
         render_state.render_target  = Some(offscreen_render_target);
         render_to_texture.extend(core.render_layer(viewport_transform, layer_handle, offscreen_render_target, &mut render_state));
 
-        // Draw the multi-sample texture to a normal texture
+        // Draw the multi-sample texture to the target texture as a normal texture
         render_to_texture.extend(vec![
             CreateRenderTarget(RESOLVE_RENDER_TARGET, texture_id, texture_size, render::RenderTargetType::Standard),
             SelectRenderTarget(RESOLVE_RENDER_TARGET),
