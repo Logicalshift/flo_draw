@@ -140,8 +140,8 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
         render_target.send(RenderWindowRequest::SendEvents(channel.boxed())).await.ok();
 
         // Chunk the requests we receive
-        let drawing_window_requests     = drawing_window_requests.chunks(100);
-        let events_receiver             = events_receiver.chunks(100);
+        let drawing_window_requests     = drawing_window_requests.ready_chunks(100);
+        let events_receiver             = events_receiver.ready_chunks(100);
 
         // Combine the two streams (we prioritise events from the window to avoid spending time rendering with out-of-date state)
         enum DrawingOrEvent {
