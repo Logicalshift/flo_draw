@@ -1213,11 +1213,6 @@ impl<'a> Stream for RenderStream<'a> {
             }
         }
 
-        // We've generated all the vertex buffers: if frame rendering is suspended, stop here
-        if self.frame_suspended {
-            return Poll::Ready(None);
-        }
-
         // After the vertex buffers are generated, we can render any sprites to textures that are pending
         if let Some((retired, setup_texture)) = self.setup_textures.pop() {
             let render_requests = self.texture_render_request(&setup_texture);
@@ -1226,6 +1221,15 @@ impl<'a> Stream for RenderStream<'a> {
             if retired {
                 self.core.desync(move |core| core.free_texture_render_request(setup_texture));
             }
+
+            if let Some(next) = self.pending.pop_front() {
+                return Poll::Ready(Some(next));
+            }
+        }
+
+        // We've generated all the vertex buffers: if frame rendering is suspended, stop here
+        if self.frame_suspended {
+            return Poll::Ready(None);
         }
 
         if self.pending.len() > 0 {
