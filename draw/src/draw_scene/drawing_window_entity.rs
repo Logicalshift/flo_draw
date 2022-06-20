@@ -209,12 +209,25 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                 DrawingOrEvent::Event(event_list) => {
                     for evt_message in event_list.into_iter() {
                         // Take the message apart
-                        let (evt_message, responder) = evt_message.take();
-
-                        // Publish the event to any subscribers
-                        event_publisher.publish(evt_message.clone()).await;
+                        let (mut evt_message, responder) = evt_message.take();
 
                         match &evt_message {
+                            // TODO: StartFrame/ShowFrame based on the 'NewFrame' event
+                            
+                            DrawEvent::Pointer(action, pointer_id, pointer_state) => {
+                                // Rewrite pointer events before republishing them
+                                let mut pointer_state = pointer_state.clone();
+                                
+                                if let Some(window_transform) = &render_state.window_transform {
+                                    let (x, y)                          = pointer_state.location_in_window;
+                                    let (x, y)                          = (x as _, y as _);
+                                    let (cx, cy)                        = window_transform.transform_point(x, y);
+                                    pointer_state.location_in_canvas    = Some((cx as _, cy as _));
+                                }
+
+                                evt_message = DrawEvent::Pointer(*action, *pointer_id, pointer_state);
+                            }
+
                             DrawEvent::Redraw => {
                                 // When a redraw event arrives, we're ready to render from the renderer to the window
                                 if !ready_to_render {
@@ -233,6 +246,9 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
 
                             _ => { }
                         }
+
+                        // Publish the event to any subscribers
+                        event_publisher.publish(evt_message.clone()).await;
 
                         // Handle the next message
                         handle_window_event(&mut render_state, evt_message, &mut |render_actions| {
