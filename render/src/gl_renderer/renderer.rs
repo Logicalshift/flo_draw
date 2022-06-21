@@ -30,6 +30,9 @@ pub struct GlRenderer {
     /// The shader that's currently set to be used
     active_shader: Option<ShaderType>,
 
+    /// The last selected render target (used when restarting rendering). None if the 'default' framebuffer should be selected instead
+    active_render_target: Option<RenderTargetId>,
+
     /// The currently set blend mode
     blend_mode: BlendMode,
 
@@ -61,6 +64,7 @@ impl GlRenderer {
             index_buffers:                  vec![],
             textures:                       vec![],
             default_render_target:          None,
+            active_render_target:           None,
             active_shader:                  None,
             blend_mode:                     BlendMode::SourceOver,
             source_is_premultiplied:        false,
@@ -98,6 +102,11 @@ impl GlRenderer {
         self.enable_options();
 
         panic_on_gl_error("Enabling options");
+
+        // If the renderer was previously left in a state that had an active render target, select that now
+        if let Some(render_target) = self.active_render_target {
+            self.select_render_target(render_target);
+        }
 
         for action in actions {
             use self::RenderAction::*;
@@ -779,6 +788,8 @@ impl GlRenderer {
     ///
     fn select_render_target(&mut self, RenderTargetId(render_id): RenderTargetId) {
         if let Some(render_target) = &self.render_targets[render_id] {
+            self.active_render_target = Some(RenderTargetId(render_id));
+
             unsafe {
                 let (width, height) = render_target.get_size();
 
@@ -792,6 +803,8 @@ impl GlRenderer {
     /// Sends rendering instructions to the primary frame buffer for display
     ///
     fn select_main_frame_buffer(&mut self) {
+        self.active_render_target = None;
+
         if let Some(default_render_target) = &self.default_render_target {
             unsafe {
                 gl::BindFramebuffer(gl::FRAMEBUFFER, **default_render_target)
