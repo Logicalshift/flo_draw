@@ -70,6 +70,18 @@ pub fn create_render_window_entity(context: &Arc<SceneContext>, entity_id: Entit
 
                 RenderWindowRequest::CloseWindow => {
                     // Just stop running when there's a 'close' request
+                    response.send(()).ok();
+
+                    // The window will close its publisher in response to the events stream being closed
+                    render_sender.close().await.ok();
+
+                    // Shut down the event publisher
+                    use std::mem;
+                    let when_closed = event_publisher.when_closed();
+                    mem::drop(event_publisher);
+
+                    // Finally, wait for the publisher to finish up
+                    when_closed.await;
                     return;
                 }
             }

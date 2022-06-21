@@ -182,8 +182,7 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
 
                             DrawingWindowRequest::CloseWindow => {
                                 // Just stop running when there's a 'close' request
-                                render_target.send_without_waiting(RenderWindowRequest::CloseWindow).await.ok();
-                                return;
+                                closed = true;
                             }
 
                             DrawingWindowRequest::SendEvents(event_channel) => {
@@ -234,12 +233,6 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                                 evt_message = DrawEvent::Pointer(*action, *pointer_id, pointer_state);
                             }
 
-                            DrawEvent::Closed => {
-                                // Just stop running if the window is closed (dropping/closing all the streams will shut down the window in turn)
-                                render_target.send_without_waiting(RenderWindowRequest::CloseWindow).await.ok();
-                                return;
-                            }
-
                             DrawEvent::Redraw => {
                                 // When a redraw event arrives, we're ready to render from the renderer to the window
                                 if !ready_to_render {
@@ -281,5 +274,19 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                 }
             }
         }
+
+        // Shut down
+        render_target.send(RenderWindowRequest::CloseWindow).await.ok();
+
+        use std::mem;
+
+        let when_closed = event_publisher.when_closed();
+
+        // Drop the receivers
+        mem::drop(messages);
+        mem::drop(event_publisher);
+
+        // Wait for the publisher to finish up
+        when_closed.await;
     })
 }
