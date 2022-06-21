@@ -97,10 +97,10 @@ pub (super) async fn send_actions_to_window<RenderStream: Unpin+Stream<Item=Vec<
                     }
 
                     // Perform the rendering actions
-                    window.renderer.as_mut().map(move |renderer| {
+                    if let Some(renderer) = &mut window.renderer {
                         renderer.prepare_to_render_to_active_framebuffer(width, height);
                         renderer.render(next_action);
-                    });
+                    }
 
                     // Swap buffers to finish the drawing
                     if show_frame_buffer {
