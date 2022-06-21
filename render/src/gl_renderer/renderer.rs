@@ -788,11 +788,11 @@ impl GlRenderer {
     /// Sends rendering instructions to the primary frame buffer for display
     ///
     fn select_main_frame_buffer(&mut self) {
-        self.default_render_target.as_ref().map(|render_target| {
+        if let Some(default_render_target) = &self.default_render_target {
             unsafe {
-                gl::BindFramebuffer(gl::FRAMEBUFFER, **render_target)
+                gl::BindFramebuffer(gl::FRAMEBUFFER, **default_render_target)
             }
-        });
+        }
     }
 
     ///
