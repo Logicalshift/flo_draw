@@ -67,6 +67,11 @@ pub fn create_render_window_entity(context: &Arc<SceneContext>, entity_id: Entit
                         }
                     }).ok();
                 }
+
+                RenderWindowRequest::CloseWindow => {
+                    // Just stop running when there's a 'close' request
+                    return;
+                }
             }
 
             response.send(()).ok();

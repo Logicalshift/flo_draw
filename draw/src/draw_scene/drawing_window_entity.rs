@@ -180,6 +180,12 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                                 responder.send(()).ok();
                             }
 
+                            DrawingWindowRequest::CloseWindow => {
+                                // Just stop running when there's a 'close' request
+                                render_target.send_without_waiting(RenderWindowRequest::CloseWindow).await.ok();
+                                return;
+                            }
+
                             DrawingWindowRequest::SendEvents(event_channel) => {
                                 let mut subscriber = event_publisher.subscribe();
 
@@ -226,6 +232,12 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                                 }
 
                                 evt_message = DrawEvent::Pointer(*action, *pointer_id, pointer_state);
+                            }
+
+                            DrawEvent::Closed => {
+                                // Just stop running if the window is closed (dropping/closing all the streams will shut down the window in turn)
+                                render_target.send_without_waiting(RenderWindowRequest::CloseWindow).await.ok();
+                                return;
                             }
 
                             DrawEvent::Redraw => {

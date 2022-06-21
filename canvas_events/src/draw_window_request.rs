@@ -10,6 +10,9 @@ use flo_scene::*;
 pub enum EventWindowRequest {
     /// Adds a channel that events generated for this window is relayed to
     SendEvents(BoxedEntityChannel<'static, DrawEventRequest, ()>),
+
+    /// Closes the window and shuts down the rendering entity
+    CloseWindow,
 }
 
 
@@ -22,6 +25,9 @@ pub enum DrawingWindowRequest {
 
     /// Adds a channel that events generated for this window is relayed to
     SendEvents(BoxedEntityChannel<'static, DrawEventRequest, ()>),
+
+    /// Closes the window and shuts down the rendering entity
+    CloseWindow,
 }
 
 ///
@@ -33,6 +39,9 @@ pub enum RenderWindowRequest {
 
     /// Adds a channel that events generated for this window is relayed to
     SendEvents(BoxedEntityChannel<'static, DrawEventRequest, ()>),
+
+    /// Closes the window and shuts down the rendering entity
+    CloseWindow,
 }
 
 impl From<RenderRequest> for RenderWindowRequest {
@@ -50,7 +59,8 @@ impl From<DrawingRequest> for DrawingWindowRequest {
 impl From<EventWindowRequest> for RenderWindowRequest {
     fn from(req: EventWindowRequest) -> RenderWindowRequest {
         match req {
-            EventWindowRequest::SendEvents(events) => RenderWindowRequest::SendEvents(events)
+            EventWindowRequest::SendEvents(events)  => RenderWindowRequest::SendEvents(events),
+            EventWindowRequest::CloseWindow         => RenderWindowRequest::CloseWindow,
         }
     }
 }
@@ -58,7 +68,8 @@ impl From<EventWindowRequest> for RenderWindowRequest {
 impl From<EventWindowRequest> for DrawingWindowRequest {
     fn from(req: EventWindowRequest) -> DrawingWindowRequest {
         match req {
-            EventWindowRequest::SendEvents(events) => DrawingWindowRequest::SendEvents(events)
+            EventWindowRequest::SendEvents(events)  => DrawingWindowRequest::SendEvents(events),
+            EventWindowRequest::CloseWindow         => DrawingWindowRequest::CloseWindow,
         }
     }
 }
