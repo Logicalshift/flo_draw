@@ -774,14 +774,14 @@ impl GlRenderer {
     /// Chooses which buffer rendering instructions will be sent to
     ///
     fn select_render_target(&mut self, RenderTargetId(render_id): RenderTargetId) {
-        self.render_targets[render_id].as_ref().map(|render_target| {
+        if let Some(render_target) = &self.render_targets[render_id] {
             unsafe {
                 let (width, height) = render_target.get_size();
 
                 gl::BindFramebuffer(gl::FRAMEBUFFER, **render_target);
                 gl::Viewport(0, 0, width as gl::types::GLsizei, height as gl::types::GLsizei);
             }
-        });
+        }
     }
 
     ///
