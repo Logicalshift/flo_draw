@@ -137,6 +137,10 @@ impl GlRenderer {
         // Reset options
         self.disable_options();
 
+        // Always leave on the main frame buffer after rendering 
+        // This is so that a future `prepare_to_render_to_active_framebuffer` doesn't pick up the frame buffer we might have set here
+        self.select_main_frame_buffer();
+
         panic_on_gl_error("Render tidy up");
     }
 
