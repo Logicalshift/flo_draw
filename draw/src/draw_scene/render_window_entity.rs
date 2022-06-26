@@ -15,19 +15,19 @@ use std::sync::*;
 ///
 /// Creates a render window in a scene with the specified entity ID
 ///
-pub fn create_render_window_entity(context: &Arc<SceneContext>, entity_id: EntityId) -> Result<SimpleEntityChannel<RenderWindowRequest, ()>, CreateEntityError> {
+pub fn create_render_window_entity(context: &Arc<SceneContext>, entity_id: EntityId, initial_size: (u64, u64)) -> Result<SimpleEntityChannel<RenderWindowRequest, ()>, CreateEntityError> {
     // This window can accept a couple of converted messages
     context.convert_message::<RenderRequest, RenderWindowRequest>()?;
     context.convert_message::<EventWindowRequest, RenderWindowRequest>()?;
 
     // Create the window in context
-    context.create_entity(entity_id, |context, render_window_requests| async move {
+    context.create_entity(entity_id, move |context, render_window_requests| async move {
         // Create the publisher to send the render actions to the stream
         let title               = bind("title".to_string());
         let fullscreen          = bind(false);
         let has_decorations     = bind(true);
         let mouse_pointer       = bind(MousePointer::SystemDefault);
-        let size                = bind((1024, 768));
+        let size                = bind(initial_size);
 
         let window_properties   = WindowProperties { 
             title:              BindRef::from(title.clone()), 

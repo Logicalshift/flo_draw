@@ -121,7 +121,7 @@ where
     let drawing_window_entity   = EntityId::new();
     let scene_context           = flo_draw_scene_context();
 
-    let render_channel          = create_render_window_entity(&scene_context, render_window_entity).unwrap();
+    let render_channel          = create_render_window_entity(&scene_context, render_window_entity, window_properties.size().get()).unwrap();
     let drawing_channel         = create_drawing_window_entity(&scene_context, drawing_window_entity, render_channel).unwrap();
 
     // The events send to a channel
