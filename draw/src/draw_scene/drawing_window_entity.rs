@@ -201,6 +201,11 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                                     }
                                 }).ok();
                             }
+
+                            DrawingWindowRequest::SetTitle(title)                   => { render_target.send_without_waiting(RenderWindowRequest::SetTitle(title)).await.ok(); },
+                            DrawingWindowRequest::SetFullScreen(fullscreen)         => { render_target.send_without_waiting(RenderWindowRequest::SetFullScreen(fullscreen)).await.ok(); },
+                            DrawingWindowRequest::SetHasDecorations(decorations)    => { render_target.send_without_waiting(RenderWindowRequest::SetHasDecorations(decorations)).await.ok(); },
+                            DrawingWindowRequest::SetMousePointer(mouse_pointer)    => { render_target.send_without_waiting(RenderWindowRequest::SetMousePointer(mouse_pointer)).await.ok(); },
                         }
                     }
 

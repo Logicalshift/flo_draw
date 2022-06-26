@@ -7,6 +7,7 @@ use futures::channel::mpsc;
 
 use flo_scene::*;
 use flo_stream::*;
+use flo_binding::*;
 use flo_canvas_events::*;
 
 use std::sync::*;
@@ -22,7 +23,19 @@ pub fn create_render_window_entity(context: &Arc<SceneContext>, entity_id: Entit
     // Create the window in context
     context.create_entity(entity_id, |context, render_window_requests| async move {
         // Create the publisher to send the render actions to the stream
-        let window_properties   = WindowProperties::from(&());
+        let title               = bind("title".to_string());
+        let fullscreen          = bind(false);
+        let has_decorations     = bind(true);
+        let mouse_pointer       = bind(MousePointer::SystemDefault);
+        let size                = bind((1024, 768));
+
+        let window_properties   = WindowProperties { 
+            title:              BindRef::from(title.clone()), 
+            fullscreen:         BindRef::from(fullscreen.clone()), 
+            has_decorations:    BindRef::from(has_decorations.clone()), 
+            mouse_pointer:      BindRef::from(mouse_pointer.clone()), 
+            size:               BindRef::from(size.clone()),
+        };
         let mut event_publisher = Publisher::new(1000);
 
         // Create a stream for publishing render requests
@@ -84,6 +97,11 @@ pub fn create_render_window_entity(context: &Arc<SceneContext>, entity_id: Entit
                     when_closed.await;
                     return;
                 }
+
+                RenderWindowRequest::SetTitle(new_title)                => { title.set(new_title); },
+                RenderWindowRequest::SetFullScreen(new_fullscreen)      => { fullscreen.set(new_fullscreen); },
+                RenderWindowRequest::SetHasDecorations(new_decorations) => { has_decorations.set(new_decorations); },
+                RenderWindowRequest::SetMousePointer(new_mouse_pointer) => { mouse_pointer.set(new_mouse_pointer); },
             }
 
             response.send(()).ok();

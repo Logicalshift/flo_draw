@@ -5,6 +5,18 @@ use super::draw_event_request::*;
 use flo_scene::*;
 
 ///
+/// The types of mouse pointer that can be displayed in a window
+///
+#[derive(Clone, Copy, PartialEq)]
+pub enum MousePointer {
+    /// No pointer
+    None,
+
+    /// The default pointer for the operating system
+    SystemDefault
+}
+
+///
 /// Messages that can be sent to a flo_draw window that can generate events
 ///
 pub enum EventWindowRequest {
@@ -13,6 +25,18 @@ pub enum EventWindowRequest {
 
     /// Closes the window and shuts down the rendering entity
     CloseWindow,
+
+    /// Sets the title of the window
+    SetTitle(String),
+
+    /// Sets whether or not the window should be full-screen
+    SetFullScreen(bool),
+
+    /// Sets whehter or not the window decorations are shown
+    SetHasDecorations(bool),
+
+    /// Sets the mouse pointer to display for the window
+    SetMousePointer(MousePointer),
 }
 
 
@@ -28,6 +52,18 @@ pub enum DrawingWindowRequest {
 
     /// Closes the window and shuts down the rendering entity
     CloseWindow,
+
+    /// Sets the title of the window
+    SetTitle(String),
+
+    /// Sets whether or not the window should be full-screen
+    SetFullScreen(bool),
+
+    /// Sets whehter or not the window decorations are shown
+    SetHasDecorations(bool),
+
+    /// Sets the mouse pointer to display for the window
+    SetMousePointer(MousePointer),
 }
 
 ///
@@ -42,6 +78,18 @@ pub enum RenderWindowRequest {
 
     /// Closes the window and shuts down the rendering entity
     CloseWindow,
+
+    /// Sets the title of the window
+    SetTitle(String),
+
+    /// Sets whether or not the window should be full-screen
+    SetFullScreen(bool),
+
+    /// Sets whehter or not the window decorations are shown
+    SetHasDecorations(bool),
+
+    /// Sets the mouse pointer to display for the window
+    SetMousePointer(MousePointer),
 }
 
 impl From<RenderRequest> for RenderWindowRequest {
@@ -59,8 +107,12 @@ impl From<DrawingRequest> for DrawingWindowRequest {
 impl From<EventWindowRequest> for RenderWindowRequest {
     fn from(req: EventWindowRequest) -> RenderWindowRequest {
         match req {
-            EventWindowRequest::SendEvents(events)  => RenderWindowRequest::SendEvents(events),
-            EventWindowRequest::CloseWindow         => RenderWindowRequest::CloseWindow,
+            EventWindowRequest::SendEvents(events)              => RenderWindowRequest::SendEvents(events),
+            EventWindowRequest::CloseWindow                     => RenderWindowRequest::CloseWindow,
+            EventWindowRequest::SetTitle(title)                 => RenderWindowRequest::SetTitle(title),
+            EventWindowRequest::SetFullScreen(fullscreen)       => RenderWindowRequest::SetFullScreen(fullscreen),
+            EventWindowRequest::SetHasDecorations(decorations)  => RenderWindowRequest::SetHasDecorations(decorations),
+            EventWindowRequest::SetMousePointer(mouse_pointer)  => RenderWindowRequest::SetMousePointer(mouse_pointer),
         }
     }
 }
@@ -68,8 +120,12 @@ impl From<EventWindowRequest> for RenderWindowRequest {
 impl From<EventWindowRequest> for DrawingWindowRequest {
     fn from(req: EventWindowRequest) -> DrawingWindowRequest {
         match req {
-            EventWindowRequest::SendEvents(events)  => DrawingWindowRequest::SendEvents(events),
-            EventWindowRequest::CloseWindow         => DrawingWindowRequest::CloseWindow,
+            EventWindowRequest::SendEvents(events)              => DrawingWindowRequest::SendEvents(events),
+            EventWindowRequest::CloseWindow                     => DrawingWindowRequest::CloseWindow,
+            EventWindowRequest::SetTitle(title)                 => DrawingWindowRequest::SetTitle(title),
+            EventWindowRequest::SetFullScreen(fullscreen)       => DrawingWindowRequest::SetFullScreen(fullscreen),
+            EventWindowRequest::SetHasDecorations(decorations)  => DrawingWindowRequest::SetHasDecorations(decorations),
+            EventWindowRequest::SetMousePointer(mouse_pointer)  => DrawingWindowRequest::SetMousePointer(mouse_pointer),
         }
     }
 }

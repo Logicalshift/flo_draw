@@ -1,4 +1,5 @@
 use flo_binding::*;
+use flo_canvas_events::*;
 
 ///
 /// Trait implemented by objects that can provide properties for creating/updating a flo_draw window
@@ -31,18 +32,6 @@ pub trait FloWindowProperties {
     /// The mouse pointer to show for a window
     ///
     fn mouse_pointer(&self) -> BindRef<MousePointer>;
-}
-
-///
-/// The types of mouse pointer that can be displayed in a window
-///
-#[derive(Clone, Copy, PartialEq)]
-pub enum MousePointer {
-    /// No pointer
-    None,
-
-    /// The default pointer for the operating system
-    SystemDefault
 }
 
 ///
