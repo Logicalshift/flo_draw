@@ -702,7 +702,7 @@ checksum = "850cff252418298aac6a91d359aac10cb22abbaed32e4fac94ec3b145468ff14"
 [[package]]
 name = "flo_scene"
 version = "0.1.0"
-source = "git+https://github.com/Logicalshift/flo_scene?branch=v0.1#80762eadc8d3580fda86eef80f7e0433558e24e7"
+source = "git+https://github.com/Logicalshift/flo_scene?branch=v0.1#87e85cc4710fdd83ff528442c062ac4d3c453213"
 dependencies = [
  "desync",
  "flo_binding",
@@ -863,9 +863,9 @@ dependencies = [
 
 [[package]]
 name = "gif"
-version = "0.11.3"
+version = "0.11.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3a7187e78088aead22ceedeee99779455b23fc231fe13ec443f99bb71694e5b"
+checksum = "3edd93c6756b4dfaf2709eafcc345ba2636565295c198a9cfbf75fa5e3e00b06"
 dependencies = [
  "color_quant",
  "weezl",
