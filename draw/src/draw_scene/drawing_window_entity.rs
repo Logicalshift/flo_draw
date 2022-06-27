@@ -165,7 +165,8 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
             match message {
                 DrawingOrEvent::Drawing(drawing_list) => {
                     // Perform all the actions in a single frame
-                    render_state.draw(vec![Draw::StartFrame].iter(), &mut render_target).await;
+                    let mut combined_list   = vec![Arc::new(vec![Draw::StartFrame])];
+                    let mut responder_list  = vec![];
 
                     for draw_msg in drawing_list {
                         // Take the message
@@ -174,10 +175,10 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                         match draw_msg {
                             DrawingWindowRequest::Draw(DrawingRequest::Draw(drawing)) => {
                                 // Send the drawing to the renderer
-                                render_state.draw(drawing.iter(), &mut render_target).await;
+                                combined_list.push(drawing);
 
                                 // Send the response once the drawing action has completed
-                                responder.send(()).ok();
+                                responder_list.push(responder);
                             }
 
                             DrawingWindowRequest::CloseWindow => {
@@ -210,7 +211,12 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                     }
 
                     // Commit the frame
-                    render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
+                    combined_list.push(Arc::new(vec![Draw::ShowFrame]));
+                    render_state.draw(combined_list.iter()
+                        .flat_map(|item| item.iter()), &mut render_target).await;
+
+                    // Send to all the responders
+                    responder_list.into_iter().for_each(|responder| { responder.send(()).ok(); });
 
                     // Update the window transform according to the drawing actions we processed
                     render_state.update_window_transform();
