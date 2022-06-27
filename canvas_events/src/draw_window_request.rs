@@ -7,7 +7,7 @@ use flo_scene::*;
 ///
 /// The types of mouse pointer that can be displayed in a window
 ///
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum MousePointer {
     /// No pointer
     None,
@@ -19,6 +19,7 @@ pub enum MousePointer {
 ///
 /// Messages that can be sent to a flo_draw window that can generate events
 ///
+#[derive(Debug)]
 pub enum EventWindowRequest {
     /// Adds a channel that events generated for this window is relayed to
     SendEvents(BoxedEntityChannel<'static, DrawEventRequest, ()>),
@@ -43,6 +44,7 @@ pub enum EventWindowRequest {
 ///
 /// Messages that can be sent to a flo_draw window that processes 2D graphics instructions
 ///
+#[derive(Debug)]
 pub enum DrawingWindowRequest {
     /// Carry out a drawing request
     Draw(DrawingRequest),
