@@ -1,4 +1,5 @@
 use crate::events::*;
+use crate::render_window::*;
 use crate::window_properties::*;
 use crate::draw_scene::*;
 
@@ -114,7 +115,7 @@ where
     DrawStream:  'static + Send + Unpin + Stream<Item=Vec<Draw>>,
     TProperties: 'a + FloWindowProperties,
 {
-    // TODO: add a way to follow the window properties
+    let properties              = WindowProperties::from(&window_properties);
 
     // Create a new render window entity
     let render_window_entity    = EntityId::new();
@@ -129,10 +130,13 @@ where
 
     // Pass events from the render stream onto the window using another entity (potentially this could be a background task for the render window entity?)
     let process_entity = EntityId::new();
-    scene_context.create_entity::<(), (), _, _>(process_entity, move |_, _| {
+    scene_context.create_entity::<(), (), _, _>(process_entity, move |context, _| {
         async move {
             let mut canvas_stream   = canvas_stream;
             let mut drawing_channel = drawing_channel;
+
+            // Send the window properties to the window
+            send_window_properties(&context, properties, drawing_channel.clone()).ok();
 
             // Request event actions from the renderer
             drawing_channel.send(DrawingWindowRequest::SendEvents(events_channel.boxed())).await.ok();

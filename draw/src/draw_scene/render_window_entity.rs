@@ -23,7 +23,7 @@ pub fn create_render_window_entity(context: &Arc<SceneContext>, entity_id: Entit
     // Create the window in context
     context.create_entity(entity_id, move |context, render_window_requests| async move {
         // Create the publisher to send the render actions to the stream
-        let title               = bind("title".to_string());
+        let title               = bind("flo_draw".to_string());
         let fullscreen          = bind(false);
         let has_decorations     = bind(true);
         let mouse_pointer       = bind(MousePointer::SystemDefault);
