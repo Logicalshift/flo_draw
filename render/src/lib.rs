@@ -11,3 +11,6 @@ pub use self::offscreen::*;
 #[cfg(feature="gl")] pub use self::gl_renderer::{GlRenderer};
 #[cfg(feature="osx-metal")] pub use self::metal_renderer::{MetalRenderer};
 // #[cfg(feature="render-wgpu")] pub use self::wgpu_renderer::{WgpuRenderer};
+
+#[cfg(feature="render-wgpu")]
+pub use wgpu;
