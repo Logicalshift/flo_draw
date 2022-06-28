@@ -6,17 +6,17 @@
 #[cfg(feature = "outline-fonts")] use allsorts::tables::{FontTableProvider};
 #[cfg(feature = "outline-fonts")] use ttf_parser;
 
-#[cfg(feature = "outline-fonts")] use std::slice;
 #[cfg(feature = "outline-fonts")] use std::borrow::{Cow};
 
 use serde::de::{Deserialize, Deserializer, Visitor, SeqAccess, MapAccess};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use serde::de;
 
-use std::marker::{PhantomPinned};
 use std::fmt;
 use std::pin::*;
 use std::sync::*;
+
+use ouroboros::self_referencing;
 
 /// allsorts table provider implementation based on a unsafe (based on lifetime) pointer to a TTF parser face
 #[cfg(feature = "outline-fonts")]
@@ -43,15 +43,13 @@ impl<'b> FontTableProvider for CanvasTableProvider<'b> {
 /// This class acquires more features if the `outline-fonts` feature is turned on for
 /// this crate.
 ///
+#[self_referencing]
 pub struct CanvasFontFace {
     /// Data for this font face
     data: Arc<Pin<Box<[u8]>>>,
 
     /// The font face for the data
-    #[cfg(feature = "outline-fonts")] ttf_font: Option<Pin<Box<ttf_parser::Face<'static>>>>,
-
-    /// The font face is pinned: Allsorts and ttf-parser both need to be able to refer to it
-    _pinned: PhantomPinned
+    #[cfg(feature = "outline-fonts")] #[borrows(data)] #[covariant] ttf_font: ttf_parser::Face<'this>,
 }
 
 impl CanvasFontFace {
@@ -74,39 +72,18 @@ impl CanvasFontFace {
     #[cfg(not(feature = "outline-fonts"))]
     fn from_pinned(data: Arc<Pin<Box<[u8]>>>, _font_index: u32) -> CanvasFontFace {
         // Generate the font face
-        CanvasFontFace {
+        CanvasFontFaceBuilder {
             data:       data,
-            _pinned:    PhantomPinned
-        }
+        }.build()
     }
 
     #[cfg(feature = "outline-fonts")]
     fn from_pinned(data: Arc<Pin<Box<[u8]>>>, font_index: u32) -> CanvasFontFace {
-        // Create the data pointer
-        let len             = data.len();
-        let slice           = data.as_ptr();
-
-        // Load into the TTF parser with scary unsafe self-referential data
-        let mut font_face   = CanvasFontFace {
-            data:           data,
-
-            ttf_font:       None,
-            _pinned:        PhantomPinned
-        };
-
-        // TODO: is there a better way? TTF-parser requries a reference to data which either means we need to do this
-        // or reload the font every time we use it (which might be OK for large amounts of layout work but probably
-        // isn't what we want for reading single glyphs)
-        //
-        // This 'should' be safe, I think. We've declared the TTF font as 'static but we've pinned it so that it can't
-        // be moved away from this structure which manages the lifetime of its owning data. Later on, we force it to be
-        // dropped ahead of the data so we're sure that the face no longer exists at the point we drop the data itself.
-        //
-        // (For allsorts, it seems we can probably implement `FontTableProvider` for an Arc<[u8]> quite easily, but for
-        // ttf_parser, it's not really clear how to make a 'static version of FaceTables)
-        let ttf_font        = ttf_parser::Face::from_slice(unsafe { slice::from_raw_parts(slice, len) }, font_index as _).unwrap();
-
-        font_face.ttf_font  = Some(Box::pin(ttf_font));
+        // Load into the TTF parser with scary self-referential data
+        let font_face = CanvasFontFaceBuilder {
+            data:               data,
+            ttf_font_builder:   |data: &Arc<Pin<Box<[u8]>>>| { ttf_parser::Face::from_slice(&**data, font_index as _).unwrap() },
+        }.build();
 
         // Generate the font face
         font_face
@@ -116,7 +93,7 @@ impl CanvasFontFace {
     /// Retrieves the data bytes for this font
     ///
     pub fn font_data<'a>(&'a self) -> &'a [u8] {
-        &**self.data
+        &***self.borrow_data()
     }
 }
 
@@ -136,14 +113,14 @@ pub fn measure_text(font: &Arc<CanvasFontFace>, text: &str, em_size: f32) -> Tex
 
 impl PartialEq for CanvasFontFace {
     fn eq(&self, other: &CanvasFontFace) -> bool {
-        self.data.eq(&other.data)
+        self.borrow_data().eq(other.borrow_data())
     }
 }
 
 impl fmt::Debug for CanvasFontFace {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CanvasFontFace")
-         .field("data", &self.data)
+         .field("data", self.borrow_data())
          .finish()
     }
 }
@@ -153,7 +130,7 @@ impl Serialize for CanvasFontFace {
     where
     S: Serializer {
         let mut s = serializer.serialize_struct("CanvasFontFace", 1)?;
-        s.serialize_field("data", &**self.data)?;
+        s.serialize_field("data", &***self.borrow_data())?;
         s.end()
     }
 }
@@ -233,22 +210,12 @@ impl<'de> Deserialize<'de> for CanvasFontFace {
 }
 
 #[cfg(feature = "outline-fonts")]
-impl Drop for CanvasFontFace {
-    fn drop(&mut self) {
-        // Ensure that the TTF font is dropped before we free the data it's using
-        self.ttf_font       = None;
-
-        // Now safe to drop data as nothing is using it
-    }
-}
-
-#[cfg(feature = "outline-fonts")]
 impl CanvasFontFace {
     ///
     /// Retrieves the TTF font face for this font
     ///
     pub fn ttf_font<'a>(&'a self) -> &'a ttf_parser::Face<'a> {
-        &**self.ttf_font.as_ref().unwrap()
+        self.borrow_ttf_font()
     }
 
     ///
