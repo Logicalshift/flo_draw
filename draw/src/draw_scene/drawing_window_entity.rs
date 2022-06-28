@@ -153,8 +153,10 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
         let messages                    = stream::select_with_strategy(drawing_window_requests, events_receiver, |_: &mut ()| stream::PollNext::Right);
 
         // Initially the window is not ready to render (we need to wait for the first 'redraw' event)
-        let mut ready_to_render         = false;
-        let mut closed                  = false;
+        let mut ready_to_render             = false;
+        let mut waiting_for_new_frame       = false;
+        let mut drawing_since_last_frame    = false;
+        let mut closed                      = false;
 
         // Pause the drawing using a start frame event
         render_state.draw(vec![Draw::StartFrame].iter(), &mut render_target).await;
@@ -167,6 +169,12 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                     // Perform all the actions in a single frame
                     let mut combined_list   = vec![Arc::new(vec![Draw::StartFrame])];
                     let mut responder_list  = vec![];
+
+                    // If we've rendered something and 'NewFrame' hasn't yet been generated, add an extra 'StartFrame' to suspend rendering until the last frame is finished
+                    if waiting_for_new_frame && !drawing_since_last_frame {
+                        drawing_since_last_frame = true;
+                        combined_list.push(Arc::new(vec![Draw::StartFrame]));
+                    }
 
                     for draw_msg in drawing_list {
                         // Take the message
@@ -211,6 +219,8 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                     }
 
                     // Commit the frame
+                    waiting_for_new_frame = true;
+
                     combined_list.push(Arc::new(vec![Draw::ShowFrame]));
                     render_state.draw(combined_list.iter()
                         .flat_map(|item| item.iter()), &mut render_target).await;
@@ -258,6 +268,17 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                             DrawEvent::Closed => {
                                 // Close events terminate the loop (after we've finshed processing the events)
                                 closed = true;
+                            }
+
+                            DrawEvent::NewFrame => {
+                                // A new frame was displayed
+                                waiting_for_new_frame = false;
+
+                                if drawing_since_last_frame {
+                                    // Finalize any drawing that occurred while we were waiting for the new frame to display
+                                    render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
+                                    drawing_since_last_frame = false;
+                                }
                             }
 
                             _ => { }
