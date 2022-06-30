@@ -7,10 +7,15 @@ use crate::action::*;
 use crate::buffer::*;
 
 use wgpu;
+use wgpu::util;
+use wgpu::util::{DeviceExt};
 
+use std::mem;
+use std::slice;
 use std::ops::{Range};
 use std::sync::*;
 use std::collections::{HashMap};
+use std::ffi::{c_void};
 
 ///
 /// Renderer that uses the `wgpu` abstract library as a render target
@@ -147,28 +152,84 @@ impl WgpuRenderer {
     /// Loads a buffer of vertex data to the GPU
     ///
     fn create_vertex_buffer_2d(&mut self, VertexBufferId(vertex_id): VertexBufferId, vertices: Vec<Vertex2D>) {
+        // If there's an existing buffer with this index, drop it
+        if let Some(Some(buffer)) = self.vertex_buffers.get(vertex_id) {
+            buffer.destroy();
+            self.vertex_buffers[vertex_id] = None;
+        }
 
+        // Convert the vertex buffer to a &[u8]
+        let contents_void   = vertices.as_ptr() as *const c_void;
+        let contents_len    = vertices.len() * mem::size_of::<Vertex2D>();
+        let contents_u8     = unsafe { slice::from_raw_parts(contents_void as *const u8, contents_len) };
+
+        // Create a new buffer on the device
+        let vertex_buffer = self.device.create_buffer_init(&util::BufferInitDescriptor {
+            label:      Some("create_vertex_buffer_2d"),
+            contents:   contents_u8,
+            usage:      wgpu::BufferUsages::VERTEX,
+        });
+
+        // Store associated with the vertex ID
+        if vertex_id >= self.vertex_buffers.len() {
+            self.vertex_buffers.extend((self.vertex_buffers.len()..(vertex_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        self.vertex_buffers[vertex_id] = Some(vertex_buffer);
     }
     
     ///
     /// Loads a buffer of index data to the GPU
     ///
     fn create_index_buffer(&mut self, IndexBufferId(index_id): IndexBufferId, indices: Vec<u16>) {
+        // If there's an existing buffer with this index, drop it
+        if let Some(Some(buffer)) = self.index_buffers.get(index_id) {
+            buffer.destroy();
+            self.index_buffers[index_id] = None;
+        }
 
+        // Convert the index buffer to a &[u8]
+        let contents_void   = indices.as_ptr() as *const c_void;
+        let contents_len    = indices.len() * mem::size_of::<u16>();
+        let contents_u8     = unsafe { slice::from_raw_parts(contents_void as *const u8, contents_len) };
+
+        // Create a new buffer on the device
+        let index_buffer = self.device.create_buffer_init(&util::BufferInitDescriptor {
+            label:      Some("create_index_buffer_2d"),
+            contents:   contents_u8,
+            usage:      wgpu::BufferUsages::INDEX,
+        });
+
+        // Store associated with the index ID
+        if index_id >= self.index_buffers.len() {
+            self.index_buffers.extend((self.index_buffers.len()..(index_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        self.index_buffers[index_id] = Some(index_buffer);
     }
     
     ///
     /// Indicates that a vertex buffer is unused
     ///
     fn free_vertex_buffer(&mut self, VertexBufferId(vertex_id): VertexBufferId) {
-
+        if let Some(Some(buffer)) = self.vertex_buffers.get(vertex_id) {
+            buffer.destroy();
+            self.vertex_buffers[vertex_id] = None;
+        }
     }
     
     ///
     /// Indicates that an index buffer is unused
     ///
     fn free_index_buffer(&mut self, IndexBufferId(index_id): IndexBufferId) {
-
+        if let Some(Some(buffer)) = self.index_buffers.get(index_id) {
+            buffer.destroy();
+            self.index_buffers[index_id] = None;
+        }
     }
     
     ///
