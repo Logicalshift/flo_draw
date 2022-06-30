@@ -109,102 +109,177 @@ impl WgpuRenderer {
         }
     }
     
+    ///
+    /// Sets the transform to used with the following render instructions
+    ///
     fn set_transform(&mut self, matrix: Matrix, render_state: &mut RendererState) {
 
     }
     
+    ///
+    /// Loads a buffer of vertex data to the GPU
+    ///
     fn create_vertex_buffer_2d(&mut self, VertexBufferId(vertex_id): VertexBufferId, vertices: Vec<Vertex2D>) {
 
     }
     
+    ///
+    /// Loads a buffer of index data to the GPU
+    ///
     fn create_index_buffer(&mut self, IndexBufferId(index_id): IndexBufferId, indices: Vec<u16>) {
 
     }
     
+    ///
+    /// Indicates that a vertex buffer is unused
+    ///
     fn free_vertex_buffer(&mut self, VertexBufferId(vertex_id): VertexBufferId) {
 
     }
     
+    ///
+    /// Indicates that an index buffer is unused
+    ///
     fn free_index_buffer(&mut self, IndexBufferId(index_id): IndexBufferId) {
 
     }
     
+    ///
+    /// Sets the blend mode for the following render instructions
+    ///
     fn blend_mode(&mut self, blend_mode: BlendMode, state: &mut RendererState) {
 
     }
     
+    ///
+    /// Creates an off-screen render target and its texture
+    ///
     fn create_render_target(&mut self, RenderTargetId(render_id): RenderTargetId, TextureId(texture_id): TextureId, width: usize, height: usize, render_target_type: RenderTargetType) {
 
     }
     
+    ///
+    /// Releases a render target
+    ///
     fn free_render_target(&mut self, RenderTargetId(render_id): RenderTargetId) {
 
     }
     
+    ///
+    /// Picks a render target to use
+    ///
     fn select_render_target(&mut self, RenderTargetId(render_id): RenderTargetId, state: &mut RendererState) {
 
     }
     
+    ///
+    /// Renders to the main frame buffer
+    ///
     fn select_main_frame_buffer(&mut self, state: &mut RendererState) {
 
     }
     
+    ///
+    /// Blits a frame buffer to the current render target
+    ///
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, region: FrameBufferRegion, alpha: f64, state: &mut RendererState) {
 
     }
     
+    ///
+    /// Creates a 2D texture with the BGRA pixel format
+    ///
     fn create_bgra_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
 
     }
     
+    ///
+    /// Creates a 2D monochrome texture
+    ///
     fn create_mono_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
 
     }
     
+    ///
+    /// Creates a 1D BGRA texture
+    ///
     fn create_bgra_1d_texture(&mut self, TextureId(texture_id): TextureId, width: usize) {
 
     }
     
+    ///
+    /// Creates a 1D monochrome texture
+    ///
     fn create_mono_1d_texture(&mut self, TextureId(texture_id): TextureId, width: usize) {
 
     }
     
+    ///
+    /// Writes byte data to a region of a 2D texture
+    ///
     fn write_texture_data_2d(&mut self, TextureId(texture_id): TextureId, x1: usize, y1: usize, x2: usize, y2: usize, data: Arc<Vec<u8>>) {
 
     }
     
+    ///
+    /// Writes bytes data to a region of a 1D texture
+    ///
     fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: Arc<Vec<u8>>) {
 
     }
     
+    ///
+    /// Generates the mipmap textures for a particular texture
+    ///
     fn create_mipmaps(&mut self, TextureId(texture_id): TextureId, state: &mut RendererState) {
 
     }
     
+    ///
+    /// Creates a copy of a texture with a new ID
+    ///
     fn copy_texture(&mut self, TextureId(src_texture_id): TextureId, TextureId(tgt_texture_id): TextureId, state: &mut RendererState) {
 
     }
     
+    ///
+    /// Applies a filter effect to the content of a texture
+    ///
     fn filter_texture(&mut self, TextureId(texture_id): TextureId, filter: Vec<TextureFilter>, state: &mut RendererState) {
 
     }
     
+    ///
+    /// Releases the data associated with a texture
+    ///
     fn free_texture(&mut self, TextureId(texture_id): TextureId) {
 
     }
     
+    ///
+    /// Clears the current render target to a single colour
+    ///
     fn clear(&mut self, color: Rgba8, state: &mut RendererState) {
 
     }
     
+    ///
+    /// Uses a particular shader for future rendering
+    ///
     fn use_shader(&mut self, shader_type: ShaderType, state: &mut RendererState) {
 
     }
     
+    ///
+    /// Renders a set of triangles in a vertex buffer
+    ///
     fn draw_triangles(&mut self, VertexBufferId(vertex_buffer_id): VertexBufferId, range: Range<usize>, state: &mut RendererState) {
 
     }
     
+    ///
+    /// Renders a set of triangles by looking up vertices referenced by an index buffer
+    ///
     fn draw_indexed_triangles(&mut self, VertexBufferId(vertex_buffer_id): VertexBufferId, IndexBufferId(index_buffer_id): IndexBufferId, num_vertices: usize, state: &mut RendererState) {
 
     }
