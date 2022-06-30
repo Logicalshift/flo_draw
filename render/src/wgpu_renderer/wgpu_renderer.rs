@@ -28,6 +28,12 @@ pub struct WgpuRenderer {
     /// The surface that this renderer will target
     target_surface: Arc<wgpu::Surface>,
 
+    /// The width of the target surface
+    width: u32,
+
+    /// The height of the target surface
+    height: u32,
+
     /// The shaders that have been loaded for this renderer
     shaders: HashMap<WgpuShader, Arc<wgpu::ShaderModule>>,
 
@@ -63,13 +69,34 @@ impl WgpuRenderer {
             textures:           vec![],
             render_targets:     vec![],
             pipeline_states:    HashMap::new(),
+            width:              0,
+            height:             0,
         }
     }
 
     ///
-    /// Performs some rendering instructions and returns the resulting command buffer
+    /// Sets up the surface to render at a new size
     ///
-    pub fn render_to_buffer<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions) {
+    pub fn prepare_to_render(&mut self, width: u32, height: u32) {
+        let swapchain_format    = self.target_surface.get_preferred_format(&*self.adapter).expect("Swapchain format");
+        let surface_config      = wgpu::SurfaceConfiguration {
+            usage:          wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format:         swapchain_format,
+            width:          width,
+            height:         height,
+            present_mode:   wgpu::PresentMode::Mailbox
+        };
+
+        self.target_surface.configure(&*self.device, &surface_config);
+
+        self.width  = width;
+        self.height = height;
+    }
+
+    ///
+    /// Performs some rendering actions to this renderer's surface
+    ///
+    pub fn render_to_surface<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions) {
         // Create the render state
         let mut render_state    = RendererState {
         };
