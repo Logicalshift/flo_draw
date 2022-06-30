@@ -1,5 +1,7 @@
 use super::wgpu_shader::*;
 use super::render_target::*;
+use super::renderer_state::*;
+use super::pipeline_configuration::*;
 
 use wgpu;
 
@@ -33,6 +35,9 @@ pub struct WgpuRenderer {
 
     /// The render targets for this renderer
     render_targets: Vec<Option<RenderTarget>>,
+
+    /// The cache of render pipeline states used by this renderer
+    pipeline_states: HashMap<PipelineConfiguration, wgpu::RenderPipelineState>,
 }
 
 impl WgpuRenderer {
@@ -41,14 +46,15 @@ impl WgpuRenderer {
     ///
     pub fn new(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface>) -> WgpuRenderer {
         WgpuRenderer {
-            device:         device,
-            queue:          queue,
-            target_surface: target_surface,
-            shaders:        HashMap::new(),
-            vertex_buffers: vec![],
-            index_buffers:  vec![],
-            textures:       vec![],
-            render_targets: vec![],
+            device:             device,
+            queue:              queue,
+            target_surface:     target_surface,
+            shaders:            HashMap::new(),
+            vertex_buffers:     vec![],
+            index_buffers:      vec![],
+            textures:           vec![],
+            render_targets:     vec![],
+            pipeline_states:    HashMap::new(),
         }
     }
 }
