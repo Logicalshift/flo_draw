@@ -16,6 +16,9 @@ use std::collections::{HashMap};
 /// Renderer that uses the `wgpu` abstract library as a render target
 ///
 pub struct WgpuRenderer {
+    /// A reference to the adapter this will render to
+    adapter: Arc<wgpu::Adapter>,
+
     /// A reference to the device that this will render to
     device: Arc<wgpu::Device>,
 
@@ -48,8 +51,9 @@ impl WgpuRenderer {
     ///
     /// Creates a new WGPU renderer
     ///
-    pub fn new(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface>) -> WgpuRenderer {
+    pub fn new(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer {
         WgpuRenderer {
+            adapter:            target_adapter,
             device:             device,
             queue:              queue,
             target_surface:     target_surface,
