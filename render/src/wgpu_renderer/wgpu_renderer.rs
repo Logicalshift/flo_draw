@@ -83,13 +83,13 @@ impl WgpuRenderer {
     /// Sets up the surface to render at a new size
     ///
     pub fn prepare_to_render(&mut self, width: u32, height: u32) {
-        let swapchain_format    = self.target_surface.get_preferred_format(&*self.adapter).expect("Swapchain format");
+        let swapchain_format    = self.target_surface.get_supported_formats(&*self.adapter)[0];
         let surface_config      = wgpu::SurfaceConfiguration {
             usage:          wgpu::TextureUsages::RENDER_ATTACHMENT,
             format:         swapchain_format,
             width:          width,
             height:         height,
-            present_mode:   wgpu::PresentMode::Mailbox
+            present_mode:   wgpu::PresentMode::Fifo
         };
 
         self.target_surface.configure(&*self.device, &surface_config);

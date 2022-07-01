@@ -8,5 +8,5 @@ resolver    = "2"
 
 [dependencies]
 winit   = "0.26"
-wgpu    = "0.12"
+wgpu    = "0.13"
 futures = "0.3"

@@ -9,15 +9,15 @@ use futures::executor;
 use std::borrow::{Cow};
 
 const SHADER: &'static str = "
-[[stage(vertex)]]
-fn vs_main([[builtin(vertex_index)]] idx: u32) -> [[builtin(position)]] vec4<f32> {
+@vertex
+fn vs_main(@builtin(vertex_index) idx: u32) -> @builtin(position) vec4<f32> {
     let x = f32(i32(idx) - 1);
     let y = f32(i32(idx & 1u) * 2 - 1);
     return vec4<f32>(x, y, 0.0, 1.0);
 }
 
-[[stage(fragment)]]
-fn fs_main() -> [[location(0)]] vec4<f32> {
+@fragment
+fn fs_main() -> @location(0) vec4<f32> {
     return vec4<f32>(1.0, 0.0, 0.0, 1.0);
 }
 ";
@@ -46,13 +46,13 @@ fn main() {
         }, None).await.unwrap();
 
         // Load the shader
-        let shader              = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+        let shader              = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label:  None,
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(SHADER))
         });
 
         // Create the render pipeline
-        let swapchain_format    = surface.get_preferred_format(&adapter).unwrap();
+        let swapchain_format    = surface.get_supported_formats(&adapter)[0];
         let pipeline_layout     = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label:                  None,
             bind_group_layouts:     &[],
@@ -70,7 +70,7 @@ fn main() {
             fragment:       Some(wgpu::FragmentState {
                 module:         &shader,
                 entry_point:    "fs_main",
-                targets:        &[swapchain_format.into()],
+                targets:        &[Some(swapchain_format.into())],
             }),
             primitive:      wgpu::PrimitiveState::default(),
             depth_stencil:  None,
@@ -85,7 +85,7 @@ fn main() {
             format:         swapchain_format,
             width:          size.width,
             height:         size.height,
-            present_mode:   wgpu::PresentMode::Mailbox,
+            present_mode:   wgpu::PresentMode::Fifo,
         };
 
         surface.configure(&device, &surface_config);
@@ -116,14 +116,14 @@ fn main() {
                     {
                         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                             label:                      None,
-                            color_attachments:          &[wgpu::RenderPassColorAttachment {
+                            color_attachments:          &[Some(wgpu::RenderPassColorAttachment {
                                 view:           &view,
                                 resolve_target: None,
                                 ops:            wgpu::Operations {
                                     load:   wgpu::LoadOp::Clear(wgpu::Color::GREEN),
                                     store:  true,
                                 },
-                            }],
+                            })],
                             depth_stencil_attachment:   None,
                         });
 
@@ -148,14 +148,14 @@ fn main() {
                     {
                         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                             label:                      None,
-                            color_attachments:          &[wgpu::RenderPassColorAttachment {
+                            color_attachments:          &[Some(wgpu::RenderPassColorAttachment {
                                 view:           &view,
                                 resolve_target: None,
                                 ops:            wgpu::Operations {
                                     load:   wgpu::LoadOp::Clear(wgpu::Color::GREEN),
                                     store:  true,
                                 },
-                            }],
+                            })],
                             depth_stencil_attachment:   None,
                         });
 
