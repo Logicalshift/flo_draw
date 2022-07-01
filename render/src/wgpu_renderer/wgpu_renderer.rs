@@ -103,8 +103,7 @@ impl WgpuRenderer {
     ///
     pub fn render_to_surface<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions) {
         // Create the render state
-        let mut render_state    = RendererState {
-        };
+        let mut render_state    = RendererState::new(Arc::clone(&self.queue), &*self.device);
 
         // Evaluate the actions
         for action in actions {
@@ -145,7 +144,7 @@ impl WgpuRenderer {
     /// Sets the transform to used with the following render instructions
     ///
     fn set_transform(&mut self, matrix: Matrix, render_state: &mut RendererState) {
-
+        render_state.write_matrix(&matrix);
     }
     
     ///
