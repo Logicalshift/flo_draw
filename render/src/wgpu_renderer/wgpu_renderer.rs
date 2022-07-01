@@ -242,14 +242,43 @@ impl WgpuRenderer {
     /// Creates an off-screen render target and its texture
     ///
     fn create_render_target(&mut self, RenderTargetId(render_id): RenderTargetId, TextureId(texture_id): TextureId, width: usize, height: usize, render_target_type: RenderTargetType) {
+        // Delete the old render target if it exists
+        if let Some(old_render_target) = self.render_targets.get_mut(render_id) {
+            *old_render_target = None;
+        }
 
+        if let Some(old_texture) = self.textures.get_mut(texture_id) {
+            *old_texture = None;
+        }
+
+        // Create a new render target
+        let new_render_target = RenderTarget::new(&*self.device, width as _, height as _, render_target_type);
+
+        // Make space for the render target and the texture
+        if render_id >= self.render_targets.len() {
+            self.render_targets.extend((self.render_targets.len()..(render_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        if texture_id >= self.textures.len() {
+            self.textures.extend((self.textures.len()..(texture_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        // Store the render target and texture
+        self.textures[texture_id]       = Some(new_render_target.texture());
+        self.render_targets[render_id]  = Some(new_render_target);
     }
     
     ///
     /// Releases a render target
     ///
     fn free_render_target(&mut self, RenderTargetId(render_id): RenderTargetId) {
-
+        if let Some(old_render_target) = self.render_targets.get_mut(render_id) {
+            *old_render_target = None;
+        }
     }
     
     ///
@@ -340,7 +369,9 @@ impl WgpuRenderer {
     /// Releases the data associated with a texture
     ///
     fn free_texture(&mut self, TextureId(texture_id): TextureId) {
-
+        if let Some(old_texture) = self.textures.get_mut(texture_id) {
+            *old_texture = None;
+        }
     }
     
     ///
