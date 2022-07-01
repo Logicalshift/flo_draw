@@ -14,13 +14,19 @@ use std::ffi::{c_void};
 ///
 pub (crate) struct RendererState {
     /// The command queue for the device
-    queue:          Arc<wgpu::Queue>,
+    queue:                  Arc<wgpu::Queue>,
+
+    /// The command encoder for this rendering
+    encoder:                Arc<wgpu::CommandEncoder>,
+
+    /// The active render pass, if there is one
+    current_render_pass:    Option<Arc<wgpu::RenderPass<'static>>>,
 
     /// The matrix transform buffer
-    matrix_buffer:  wgpu::Buffer,
+    matrix_buffer:          wgpu::Buffer,
 
     /// The binding group for the matrix buffer
-    matrix_binding: wgpu::BindGroup,
+    matrix_binding:         wgpu::BindGroup,
 }
 
 impl RendererState {
@@ -32,12 +38,15 @@ impl RendererState {
 
         // Create all the state structures
         let (matrix_buffer, matrix_binding) = Self::create_transform_buffer(&device);
+        let encoder                         = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("RendererState::new") });
 
         RendererState {
-            queue:          command_queue,
+            queue:                  command_queue,
+            encoder:                Arc::new(encoder),
+            current_render_pass:    None,
 
-            matrix_buffer:  matrix_buffer,
-            matrix_binding: matrix_binding,
+            matrix_buffer:          matrix_buffer,
+            matrix_binding:         matrix_binding,
         }
     }
 
