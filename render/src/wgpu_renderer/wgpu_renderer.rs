@@ -138,6 +138,9 @@ impl WgpuRenderer {
                 DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)                 => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices, &mut render_state); }
             }
         }
+
+        // Finish any pending render pass in the state
+        render_state.run_render_pass();
     }
     
     ///
