@@ -1,3 +1,4 @@
+mod texture;
 mod wgpu_shader;
 mod render_target;
 mod wgpu_renderer;

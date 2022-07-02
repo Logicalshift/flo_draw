@@ -1,3 +1,4 @@
+use super::texture::*;
 use super::wgpu_shader::*;
 use super::render_target::*;
 use super::renderer_state::*;
@@ -49,7 +50,7 @@ pub struct WgpuRenderer {
     index_buffers: Vec<Option<wgpu::Buffer>>,
 
     /// The textures for this renderer
-    textures: Vec<Option<Arc<wgpu::Texture>>>,
+    textures: Vec<Option<WgpuTexture>>,
 
     /// The render targets for this renderer
     render_targets: Vec<Option<RenderTarget>>,
@@ -270,8 +271,13 @@ impl WgpuRenderer {
                 .map(|_| None));
         }
 
-        // Store the render target and texture
-        self.textures[texture_id]       = Some(new_render_target.texture());
+        // Store the render target and texture. Render target textures have pre-multiplied alphas
+        let new_texture                 = WgpuTexture {
+            texture:            new_render_target.texture(),
+            is_premultiplied:   true,
+        };
+
+        self.textures[texture_id]       = Some(new_texture);
         self.render_targets[render_id]  = Some(new_render_target);
     }
     
