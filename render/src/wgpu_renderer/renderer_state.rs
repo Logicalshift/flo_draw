@@ -1,3 +1,4 @@
+use super::render_pass_resources::*;
 use crate::buffer::*;
 
 use wgpu;
@@ -17,10 +18,13 @@ pub (crate) struct RendererState {
     queue:                  Arc<wgpu::Queue>,
 
     /// The command encoder for this rendering
-    encoder:                Arc<wgpu::CommandEncoder>,
+    encoder:                wgpu::CommandEncoder,
 
-    /// The active render pass, if there is one
-    current_render_pass:    Option<Arc<wgpu::RenderPass<'static>>>,
+    /// The resources for the next render pass
+    render_pass_resources:  RenderPassResources,
+
+    /// The actions for the active render pass (deferred so we can manage the render pass lifetime)
+    current_render_pass:    Vec<Box<dyn for<'a> FnOnce(&'a RenderPassResources, &wgpu::RenderPass<'a>) -> ()>>,
 
     /// The matrix transform buffer
     matrix_buffer:          wgpu::Buffer,
@@ -42,8 +46,9 @@ impl RendererState {
 
         RendererState {
             queue:                  command_queue,
-            encoder:                Arc::new(encoder),
-            current_render_pass:    None,
+            encoder:                encoder,
+            render_pass_resources:  RenderPassResources::default(),
+            current_render_pass:    vec![],
 
             matrix_buffer:          matrix_buffer,
             matrix_binding:         matrix_binding,
@@ -108,5 +113,37 @@ impl RendererState {
         });
 
         (matrix_buffer, matrix_binding)
+    }
+
+    ///
+    /// Runs the pending render pass
+    ///
+    pub fn run_render_pass(&mut self) {
+        // Take the actions and the resources for this render pass
+        let render_actions  = mem::take(&mut self.current_render_pass);
+        let resources       = mem::take(&mut self.render_pass_resources);
+
+        // Keep the current texture view for the next render pass
+        self.render_pass_resources.target_view = resources.target_view.clone();
+
+        // Abort early if there are no render actions
+        if render_actions.is_empty() {
+            return;
+        }
+
+        // Start a new render pass using the encoder
+        if let Some(texture_view) = &resources.target_view {
+            // Start the render pass
+            let render_pass = self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label:                      Some("run_render_pass"),
+                depth_stencil_attachment:   None,
+                color_attachments:          &resources.color_attachments(),
+            });
+
+            // Run all of the actions
+            for action in render_actions.into_iter() {
+                (action)(&resources, &render_pass);
+            }
+        }
     }
 }
