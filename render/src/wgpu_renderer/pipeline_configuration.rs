@@ -17,3 +17,13 @@ pub (crate) struct PipelineConfiguration {
     /// The blending mode for this pipeline configuration
     pub (crate) blending_mode: BlendMode,
 }
+
+impl Default for PipelineConfiguration {
+    fn default() -> PipelineConfiguration {
+        PipelineConfiguration {
+            texture_format: wgpu::TextureFormat::Bgra8Unorm,
+            shader_module:  WgpuShader::default(),
+            blending_mode:  BlendMode::SourceOver,
+        }
+    }
+}
