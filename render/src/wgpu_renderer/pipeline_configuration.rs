@@ -105,15 +105,15 @@ impl PipelineConfiguration {
     /// Creates the colour target states for this pipeline
     ///
     #[inline]
-    pub fn color_targets(&self) -> Vec<wgpu::ColorTargetState> {
+    pub fn color_targets(&self) -> Vec<Option<wgpu::ColorTargetState>> {
         let blend_state = self.blend_state();
 
         vec![
-            wgpu::ColorTargetState {
+            Some(wgpu::ColorTargetState {
                 format:     self.texture_format,
                 blend:      blend_state,
                 write_mask: wgpu::ColorWrites::ALL, 
-            }
+            })
         ]
     }
 
@@ -136,12 +136,18 @@ impl PipelineConfiguration {
     /// Creates the fragment state for this render pipeline
     ///
     #[inline]
-    pub fn fragment_state(&self, shader_cache: &'_ ShaderCache<WgpuShader>) -> Option<wgpu::FragmentState<'_>> {
+    pub fn fragment_state<'a>(&'a self, shader_cache: &'a ShaderCache<WgpuShader>, color_targets: &'a Vec<Option<wgpu::ColorTargetState>>) -> Option<wgpu::FragmentState<'a>> {
         // Color targets depend on the current blending state
         let color_targets = self.color_targets();
 
-        // TODO: needs shader module
-        todo!()
+        // Fetch the shader module
+        let (shader_module, _, fragment_fn) = shader_cache.get_shader(&self.shader_module).unwrap();
+
+        Some(wgpu::FragmentState {
+            module:         shader_module,
+            entry_point:    fragment_fn,
+            targets:        &color_targets,
+        })
     }
 
     ///
