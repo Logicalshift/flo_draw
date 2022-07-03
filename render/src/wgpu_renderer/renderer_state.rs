@@ -15,22 +15,22 @@ use std::ffi::{c_void};
 ///
 pub (crate) struct RendererState {
     /// The command queue for the device
-    queue:                  Arc<wgpu::Queue>,
+    queue:                      Arc<wgpu::Queue>,
 
     /// The command encoder for this rendering
-    encoder:                wgpu::CommandEncoder,
+    encoder:                    wgpu::CommandEncoder,
 
     /// The resources for the next render pass
-    render_pass_resources:  RenderPassResources,
+    pub render_pass_resources:  RenderPassResources,
 
     /// The actions for the active render pass (deferred so we can manage the render pass lifetime)
-    current_render_pass:    Vec<Box<dyn for<'a> FnOnce(&'a RenderPassResources, &wgpu::RenderPass<'a>) -> ()>>,
+    current_render_pass:        Vec<Box<dyn for<'a> FnOnce(&'a RenderPassResources, &wgpu::RenderPass<'a>) -> ()>>,
 
     /// The matrix transform buffer
-    matrix_buffer:          wgpu::Buffer,
+    matrix_buffer:              wgpu::Buffer,
 
     /// The binding group for the matrix buffer
-    matrix_binding:         wgpu::BindGroup,
+    matrix_binding:             wgpu::BindGroup,
 }
 
 impl RendererState {

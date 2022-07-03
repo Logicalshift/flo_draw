@@ -294,14 +294,32 @@ impl WgpuRenderer {
     /// Picks a render target to use
     ///
     fn select_render_target(&mut self, RenderTargetId(render_id): RenderTargetId, state: &mut RendererState) {
+        if let Some(Some(new_render_target)) = self.render_targets.get(render_id) {
+            // Render to the existing render target
+            state.run_render_pass();
 
+            // Switch to rendering to this render target
+            let texture         = new_render_target.texture();
+            let texture_view    = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+            state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
+            state.render_pass_resources.target_texture  = Some(texture);
+        }
     }
     
     ///
     /// Renders to the main frame buffer
     ///
     fn select_main_frame_buffer(&mut self, state: &mut RendererState) {
+        // Finish the current render pass
+        state.run_render_pass();
 
+        // Switch to the surface texture
+        let surface_texture = self.target_surface.get_current_texture().unwrap();
+        let texture_view    = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
+        state.render_pass_resources.target_texture  = None;
     }
     
     ///
