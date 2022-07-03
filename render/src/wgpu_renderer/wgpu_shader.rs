@@ -1,3 +1,7 @@
+use wgpu;
+
+use std::borrow::{Cow};
+
 ///
 /// The variants that every shader must have
 ///
@@ -61,5 +65,30 @@ pub enum WgpuShader {
 impl Default for WgpuShader {
     fn default() -> WgpuShader {
         WgpuShader::Simple(StandardShaderVariant::NoClipping, ColorPostProcessingStep::NoPostProcessing)
+    }
+}
+
+impl WgpuShader {
+    ///
+    /// Loads the appropriate shader, and returns the entry point to use for the fragment and vertex shaders
+    ///
+    pub fn load(&self, device: &wgpu::Device) -> (wgpu::ShaderModule, String, String) {
+        match self {
+            WgpuShader::Simple(variant, color_post_processing)  => {
+                // The base module contains the shader program in terms of the variant and post-procesing functions
+                let base_module = include_str!("../../shaders/simple/simple.wgsl");
+
+                // TODO: amend the base module with the appropriate variant and colour post-processing functions
+                let base_module = format!("{}", base_module);
+
+                // Load the shader
+                let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label:  Some("WgpuShader::Simple"),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(&base_module)),
+                });
+
+                (shader_module, "simple_vertex_shader".to_string(), "simple_fragment_shader".to_string())
+            }
+        }
     }
 }
