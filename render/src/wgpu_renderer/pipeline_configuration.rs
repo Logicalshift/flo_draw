@@ -1,4 +1,5 @@
 use super::wgpu_shader::*;
+use super::shader_cache::*;
 use crate::action::*;
 
 use wgpu;
@@ -120,7 +121,7 @@ impl PipelineConfiguration {
     /// Creates the vertex state for this pipeline
     ///
     #[inline]
-    pub fn vertex_state(&self) -> wgpu::VertexState<'_> {
+    pub fn vertex_state(&self, shader_cache: &mut ShaderCache<WgpuShader>) -> wgpu::VertexState<'_> {
         // TODO: needs the buffer layout and the shader module
         todo!()
     }
@@ -129,7 +130,7 @@ impl PipelineConfiguration {
     /// Creates the fragment state for this render pipeline
     ///
     #[inline]
-    pub fn fragment_state(&self) -> Option<wgpu::FragmentState<'_>> {
+    pub fn fragment_state(&self, shader_cache: &mut ShaderCache<WgpuShader>) -> Option<wgpu::FragmentState<'_>> {
         let color_targets = self.color_targets();
 
         // TODO: needs shader module
@@ -152,12 +153,12 @@ impl PipelineConfiguration {
     /// Creates the render pipeline descriptor for this render pipeline
     ///
     #[inline]
-    pub fn render_pipeline_descriptor<'a>(&'a self, pipeline_layout: &'a wgpu::PipelineLayout) -> wgpu::RenderPipelineDescriptor<'a> {
+    pub fn render_pipeline_descriptor<'a>(&'a self, shader_cache: &mut ShaderCache<WgpuShader>, pipeline_layout: &'a wgpu::PipelineLayout) -> wgpu::RenderPipelineDescriptor<'a> {
         wgpu::RenderPipelineDescriptor {
             label:          Some("render_pipeline_descriptor"),
             layout:         Some(pipeline_layout),
-            vertex:         self.vertex_state(),
-            fragment:       self.fragment_state(),
+            vertex:         self.vertex_state(shader_cache),
+            fragment:       self.fragment_state(shader_cache),
             primitive:      wgpu::PrimitiveState::default(),
             depth_stencil:  None,
             multisample:    wgpu::MultisampleState::default(),
