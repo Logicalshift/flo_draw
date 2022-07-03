@@ -28,7 +28,7 @@ where
 
 impl<TShader> ShaderCache<TShader>
 where
-    TShader: WgpuShaderLoader + Hash + Eq,
+    TShader: WgpuShaderLoader + Hash + Eq + Clone,
 {
     ///
     /// Creates an empty shader cache
@@ -41,17 +41,23 @@ where
     }
 
     ///
-    /// Retrieves the specified shader (caching it if it's not already in the cache)
+    /// Loads the specified shader if it's not in the cache
+    ///
+    pub fn load_shader(&mut self, shader: &TShader) {
+        if !self.shaders.contains_key(shader) {
+            let new_shader = shader.load(&*self.device);
+            self.shaders.insert(shader.clone(), new_shader);
+        }
+    }
+
+    ///
+    /// Retrieves the specified shader, if it's in the cache
     ///
     #[inline]
-    pub fn get_shader(&mut self, shader: TShader) -> (Arc<wgpu::ShaderModule>, String, String) {
-        if let Some(existing_shader) = self.shaders.get(&shader) {
-            existing_shader.clone()
-        } else {
-            let new_shader = shader.load(&*self.device);
-            self.shaders.insert(shader, new_shader.clone());
-
-            new_shader
-        }
+    pub fn get_shader(&self, shader: &TShader) -> Option<(&wgpu::ShaderModule, String, String)> {
+        self.shaders.get(shader)
+            .map(|(shader_ref, vertex_name, fragment_name)| {
+                (&**shader_ref, vertex_name.clone(), fragment_name.clone())
+            })
     }
 }
