@@ -96,4 +96,14 @@ impl RenderTarget {
             RenderTarget::Multisampled { texture, .. }  => Arc::clone(texture),
         }
     }
+
+    ///
+    /// Sets the texture format for this render target
+    ///
+    pub fn texture_format(&self) -> wgpu::TextureFormat {
+        match self {
+            RenderTarget::Texture { texture_format, .. }        => *texture_format,
+            RenderTarget::Multisampled { texture_format, .. }   => *texture_format,
+        }
+    }
 }

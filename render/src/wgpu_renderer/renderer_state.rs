@@ -25,7 +25,7 @@ pub (crate) struct RendererState {
     pub render_pass_resources:          RenderPassResources,
 
     /// The pipeline configuration to use with the current rendering
-    pub current_pipeline_configuration: PipelineConfiguration,
+    pub pipeline_configuration:         PipelineConfiguration,
 
     /// The pipeline configuration that was last activated
     active_pipeline_configuration:      Option<PipelineConfiguration>,
@@ -56,7 +56,7 @@ impl RendererState {
             encoder:                            encoder,
             render_pass_resources:              RenderPassResources::default(),
             current_render_pass:                vec![],
-            current_pipeline_configuration:     PipelineConfiguration::default(),
+            pipeline_configuration:             PipelineConfiguration::default(),
             active_pipeline_configuration:      None,
 
             matrix_buffer:                      matrix_buffer,

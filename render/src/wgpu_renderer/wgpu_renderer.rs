@@ -300,10 +300,12 @@ impl WgpuRenderer {
 
             // Switch to rendering to this render target
             let texture         = new_render_target.texture();
+            let texture_format  = new_render_target.texture_format();
             let texture_view    = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
             state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
             state.render_pass_resources.target_texture  = Some(texture);
+            state.pipeline_configuration.texture_format = texture_format;
         }
     }
     
@@ -315,11 +317,13 @@ impl WgpuRenderer {
         state.run_render_pass();
 
         // Switch to the surface texture
-        let surface_texture = self.target_surface.get_current_texture().unwrap();
-        let texture_view    = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let surface_texture     = self.target_surface.get_current_texture().unwrap();
+        let swapchain_format    = self.target_surface.get_supported_formats(&self.adapter)[0];
+        let texture_view        = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
         state.render_pass_resources.target_texture  = None;
+        state.pipeline_configuration.texture_format = swapchain_format;
     }
     
     ///
