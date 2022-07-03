@@ -250,7 +250,7 @@ impl WgpuRenderer {
     /// Sets the blend mode for the following render instructions
     ///
     fn blend_mode(&mut self, blend_mode: BlendMode, state: &mut RendererState) {
-
+        state.pipeline_configuration.blending_mode = blend_mode;
     }
     
     ///
