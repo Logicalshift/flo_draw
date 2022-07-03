@@ -57,6 +57,9 @@ pub struct WgpuRenderer {
 
     /// The cache of render pipeline states used by this renderer
     pipeline_states: HashMap<PipelineConfiguration, wgpu::RenderPipeline>,
+
+    /// The currently selected render target
+    active_render_target: Option<RenderTargetId>,
 }
 
 impl WgpuRenderer {
@@ -65,18 +68,19 @@ impl WgpuRenderer {
     ///
     pub fn new(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer {
         WgpuRenderer {
-            adapter:            target_adapter,
-            device:             device,
-            queue:              queue,
-            target_surface:     target_surface,
-            shaders:            HashMap::new(),
-            vertex_buffers:     vec![],
-            index_buffers:      vec![],
-            textures:           vec![],
-            render_targets:     vec![],
-            pipeline_states:    HashMap::new(),
-            width:              0,
-            height:             0,
+            adapter:                target_adapter,
+            device:                 device,
+            queue:                  queue,
+            target_surface:         target_surface,
+            shaders:                HashMap::new(),
+            vertex_buffers:         vec![],
+            index_buffers:          vec![],
+            textures:               vec![],
+            render_targets:         vec![],
+            pipeline_states:        HashMap::new(),
+            active_render_target:   None,
+            width:                  0,
+            height:                 0,
         }
     }
 
@@ -105,6 +109,13 @@ impl WgpuRenderer {
     pub fn render_to_surface<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions) {
         // Create the render state
         let mut render_state    = RendererState::new(Arc::clone(&self.queue), &*self.device);
+
+        // Select the most recent render target, or the main frame buffer if the active render target is not set or does not exist
+        self.select_main_frame_buffer(&mut render_state);
+
+        if let Some(active_render_target) = self.active_render_target {
+            self.select_render_target(active_render_target, &mut render_state);
+        }
 
         // Evaluate the actions
         for action in actions {
@@ -295,6 +306,8 @@ impl WgpuRenderer {
     ///
     fn select_render_target(&mut self, RenderTargetId(render_id): RenderTargetId, state: &mut RendererState) {
         if let Some(Some(new_render_target)) = self.render_targets.get(render_id) {
+            self.active_render_target = Some(RenderTargetId(render_id));
+
             // Render to the existing render target
             state.run_render_pass();
 
@@ -313,6 +326,8 @@ impl WgpuRenderer {
     /// Renders to the main frame buffer
     ///
     fn select_main_frame_buffer(&mut self, state: &mut RendererState) {
+        self.active_render_target = None;
+
         // Finish the current render pass
         state.run_render_pass();
 
