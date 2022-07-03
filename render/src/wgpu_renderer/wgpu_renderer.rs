@@ -250,7 +250,8 @@ impl WgpuRenderer {
     /// Sets the blend mode for the following render instructions
     ///
     fn blend_mode(&mut self, blend_mode: BlendMode, state: &mut RendererState) {
-        state.pipeline_configuration.blending_mode = blend_mode;
+        state.pipeline_configuration.blending_mode  = blend_mode;
+        state.pipeline_config_changed               = true;
     }
     
     ///
@@ -319,6 +320,7 @@ impl WgpuRenderer {
             state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
             state.render_pass_resources.target_texture  = Some(texture);
             state.pipeline_configuration.texture_format = texture_format;
+            state.pipeline_config_changed               = true;
         }
     }
     
@@ -339,6 +341,7 @@ impl WgpuRenderer {
         state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
         state.render_pass_resources.target_texture  = None;
         state.pipeline_configuration.texture_format = swapchain_format;
+        state.pipeline_config_changed               = true;
     }
     
     ///

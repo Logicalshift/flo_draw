@@ -1,3 +1,4 @@
+use super::shader_cache::*;
 use super::render_pass_resources::*;
 use super::pipeline_configuration::*;
 use crate::buffer::*;
@@ -26,6 +27,9 @@ pub (crate) struct RendererState {
 
     /// The pipeline configuration to use with the current rendering
     pub pipeline_configuration:         PipelineConfiguration,
+
+    /// Set to true if the pipeline configuration has changed since it was last committed to the render pass
+    pub pipeline_config_changed:        bool,
 
     /// The pipeline configuration that was last activated
     active_pipeline_configuration:      Option<PipelineConfiguration>,
@@ -57,6 +61,7 @@ impl RendererState {
             render_pass_resources:              RenderPassResources::default(),
             current_render_pass:                vec![],
             pipeline_configuration:             PipelineConfiguration::default(),
+            pipeline_config_changed:            true,
             active_pipeline_configuration:      None,
 
             matrix_buffer:                      matrix_buffer,
@@ -137,6 +142,7 @@ impl RendererState {
 
         // This resets the active pipeline configuration
         self.active_pipeline_configuration      = None;
+        self.pipeline_config_changed            = true;
 
         // Abort early if there are no render actions
         if render_actions.is_empty() {
