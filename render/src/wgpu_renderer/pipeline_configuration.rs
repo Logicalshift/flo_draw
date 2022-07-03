@@ -63,6 +63,23 @@ fn create_op_blend_state(rgb_src_factor: wgpu::BlendFactor, rgb_dst_factor: wgpu
     }
 }
 
+///
+/// Annoyingly, the pipeline descriptor borrows its data structures, so we need some temp storage for it to borrow from
+/// (it's not possible to separate creating the descriptor from the pipeline itself without this structure due to this
+/// aspect design of wgpu)
+///
+pub struct PipelineDescriptorTempStorage {
+    color_targets: Vec<Option<wgpu::ColorTargetState>>,
+}
+
+impl Default for PipelineDescriptorTempStorage {
+    fn default() -> PipelineDescriptorTempStorage {
+        PipelineDescriptorTempStorage {
+            color_targets: vec![]
+        }
+    }
+}
+
 impl PipelineConfiguration {
     ///
     /// Retrieves the configured blend state for this pipeline
@@ -133,20 +150,17 @@ impl PipelineConfiguration {
     }
 
     ///
-    /// Creates the fragment state for this render pipeline
+    /// Creates the fragment state for this render pipeline. The temp storage must be initialised with the color targets prior to this call
     ///
     #[inline]
-    pub fn fragment_state<'a>(&'a self, shader_cache: &'a ShaderCache<WgpuShader>, color_targets: &'a Vec<Option<wgpu::ColorTargetState>>) -> Option<wgpu::FragmentState<'a>> {
-        // Color targets depend on the current blending state
-        let color_targets = self.color_targets();
-
+    fn fragment_state<'a>(&'a self, shader_cache: &'a ShaderCache<WgpuShader>, temp_storage: &'a PipelineDescriptorTempStorage) -> Option<wgpu::FragmentState<'a>> {
         // Fetch the shader module
         let (shader_module, _, fragment_fn) = shader_cache.get_shader(&self.shader_module).unwrap();
 
         Some(wgpu::FragmentState {
             module:         shader_module,
             entry_point:    fragment_fn,
-            targets:        &color_targets,
+            targets:        &temp_storage.color_targets,
         })
     }
 
@@ -166,7 +180,10 @@ impl PipelineConfiguration {
     /// Creates the render pipeline descriptor for this render pipeline
     ///
     #[inline]
-    pub fn render_pipeline_descriptor<'a>(&'a self, shader_cache: &'a mut ShaderCache<WgpuShader>, pipeline_layout: &'a wgpu::PipelineLayout) -> wgpu::RenderPipelineDescriptor<'a> {
+    pub fn render_pipeline_descriptor<'a>(&'a self, shader_cache: &'a mut ShaderCache<WgpuShader>, pipeline_layout: &'a wgpu::PipelineLayout, temp_storage: &'a mut PipelineDescriptorTempStorage) -> wgpu::RenderPipelineDescriptor<'a> {
+        // Fill up the temp storage
+        temp_storage.color_targets = self.color_targets();
+
         // Load the shaders so that vertex_state and fragment_state can find them
         shader_cache.load_shader(&self.shader_module);
 
@@ -174,7 +191,7 @@ impl PipelineConfiguration {
             label:          Some("render_pipeline_descriptor"),
             layout:         Some(pipeline_layout),
             vertex:         self.vertex_state(shader_cache),
-            fragment:       self.fragment_state(shader_cache),
+            fragment:       self.fragment_state(shader_cache, temp_storage),
             primitive:      wgpu::PrimitiveState::default(),
             depth_stencil:  None,
             multisample:    wgpu::MultisampleState::default(),
