@@ -1,4 +1,5 @@
 use super::render_pass_resources::*;
+use super::pipeline_configuration::*;
 use crate::buffer::*;
 
 use wgpu;
@@ -15,22 +16,28 @@ use std::ffi::{c_void};
 ///
 pub (crate) struct RendererState {
     /// The command queue for the device
-    queue:                      Arc<wgpu::Queue>,
+    queue:                              Arc<wgpu::Queue>,
 
     /// The command encoder for this rendering
-    encoder:                    wgpu::CommandEncoder,
+    encoder:                            wgpu::CommandEncoder,
 
     /// The resources for the next render pass
-    pub render_pass_resources:  RenderPassResources,
+    pub render_pass_resources:          RenderPassResources,
+
+    /// The pipeline configuration to use with the current rendering
+    pub current_pipeline_configuration: PipelineConfiguration,
+
+    /// The pipeline configuration that was last activated
+    active_pipeline_configuration:      Option<PipelineConfiguration>,
 
     /// The actions for the active render pass (deferred so we can manage the render pass lifetime)
-    current_render_pass:        Vec<Box<dyn for<'a> FnOnce(&'a RenderPassResources, &wgpu::RenderPass<'a>) -> ()>>,
+    current_render_pass:                Vec<Box<dyn for<'a> FnOnce(&'a RenderPassResources, &wgpu::RenderPass<'a>) -> ()>>,
 
     /// The matrix transform buffer
-    matrix_buffer:              wgpu::Buffer,
+    matrix_buffer:                      wgpu::Buffer,
 
     /// The binding group for the matrix buffer
-    matrix_binding:             wgpu::BindGroup,
+    matrix_binding:                     wgpu::BindGroup,
 }
 
 impl RendererState {
@@ -45,13 +52,15 @@ impl RendererState {
         let encoder                         = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("RendererState::new") });
 
         RendererState {
-            queue:                  command_queue,
-            encoder:                encoder,
-            render_pass_resources:  RenderPassResources::default(),
-            current_render_pass:    vec![],
+            queue:                              command_queue,
+            encoder:                            encoder,
+            render_pass_resources:              RenderPassResources::default(),
+            current_render_pass:                vec![],
+            current_pipeline_configuration:     PipelineConfiguration::default(),
+            active_pipeline_configuration:      None,
 
-            matrix_buffer:          matrix_buffer,
-            matrix_binding:         matrix_binding,
+            matrix_buffer:                      matrix_buffer,
+            matrix_binding:                     matrix_binding,
         }
     }
 
@@ -124,7 +133,10 @@ impl RendererState {
         let resources       = mem::take(&mut self.render_pass_resources);
 
         // Keep the current texture view for the next render pass
-        self.render_pass_resources.target_view = resources.target_view.clone();
+        self.render_pass_resources.target_view  = resources.target_view.clone();
+
+        // This resets the active pipeline configuration
+        self.active_pipeline_configuration      = None;
 
         // Abort early if there are no render actions
         if render_actions.is_empty() {

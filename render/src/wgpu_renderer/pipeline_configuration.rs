@@ -6,7 +6,7 @@ use wgpu;
 ///
 /// Description of a WGPU pipeline configuration (used to create the configuration and as a hash key)
 ///
-#[derive(Clone, PartialEq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub (crate) struct PipelineConfiguration {
     /// Format of the texture that this will render against
     pub (crate) texture_format: wgpu::TextureFormat,
