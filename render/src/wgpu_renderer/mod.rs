@@ -1,5 +1,6 @@
 mod texture;
 mod wgpu_shader;
+mod shader_cache;
 mod render_target;
 mod wgpu_renderer;
 mod renderer_state;

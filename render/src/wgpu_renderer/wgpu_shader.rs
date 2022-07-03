@@ -1,5 +1,8 @@
+use super::shader_cache::*;
+
 use wgpu;
 
+use std::sync::*;
 use std::borrow::{Cow};
 
 ///
@@ -68,11 +71,11 @@ impl Default for WgpuShader {
     }
 }
 
-impl WgpuShader {
+impl WgpuShaderLoader for WgpuShader {
     ///
     /// Loads the appropriate shader, and returns the entry point to use for the fragment and vertex shaders
     ///
-    pub fn load(&self, device: &wgpu::Device) -> (wgpu::ShaderModule, String, String) {
+    fn load(&self, device: &wgpu::Device) -> (Arc<wgpu::ShaderModule>, String, String) {
         match self {
             WgpuShader::Simple(variant, color_post_processing)  => {
                 // The base module contains the shader program in terms of the variant and post-procesing functions
@@ -87,7 +90,7 @@ impl WgpuShader {
                     source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(&base_module)),
                 });
 
-                (shader_module, "simple_vertex_shader".to_string(), "simple_fragment_shader".to_string())
+                (Arc::new(shader_module), "simple_vertex_shader".to_string(), "simple_fragment_shader".to_string())
             }
         }
     }
