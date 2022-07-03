@@ -121,16 +121,23 @@ impl PipelineConfiguration {
     /// Creates the vertex state for this pipeline
     ///
     #[inline]
-    pub fn vertex_state(&self, shader_cache: &mut ShaderCache<WgpuShader>) -> wgpu::VertexState<'_> {
-        // TODO: needs the buffer layout and the shader module
-        todo!()
+    pub fn vertex_state<'a>(&'a self, shader_cache: &'a ShaderCache<WgpuShader>) -> wgpu::VertexState<'a> {
+        // Fetch the shader module
+        let (shader_module, vertex_fn, _) = shader_cache.get_shader(&self.shader_module).unwrap();
+
+        wgpu::VertexState {
+            module:         shader_module,
+            entry_point:    vertex_fn,
+            buffers:        &[],
+        }
     }
 
     ///
     /// Creates the fragment state for this render pipeline
     ///
     #[inline]
-    pub fn fragment_state(&self, shader_cache: &mut ShaderCache<WgpuShader>) -> Option<wgpu::FragmentState<'_>> {
+    pub fn fragment_state(&self, shader_cache: &'_ ShaderCache<WgpuShader>) -> Option<wgpu::FragmentState<'_>> {
+        // Color targets depend on the current blending state
         let color_targets = self.color_targets();
 
         // TODO: needs shader module
@@ -153,7 +160,10 @@ impl PipelineConfiguration {
     /// Creates the render pipeline descriptor for this render pipeline
     ///
     #[inline]
-    pub fn render_pipeline_descriptor<'a>(&'a self, shader_cache: &mut ShaderCache<WgpuShader>, pipeline_layout: &'a wgpu::PipelineLayout) -> wgpu::RenderPipelineDescriptor<'a> {
+    pub fn render_pipeline_descriptor<'a>(&'a self, shader_cache: &'a mut ShaderCache<WgpuShader>, pipeline_layout: &'a wgpu::PipelineLayout) -> wgpu::RenderPipelineDescriptor<'a> {
+        // Load the shaders so that vertex_state and fragment_state can find them
+        shader_cache.load_shader(&self.shader_module);
+
         wgpu::RenderPipelineDescriptor {
             label:          Some("render_pipeline_descriptor"),
             layout:         Some(pipeline_layout),

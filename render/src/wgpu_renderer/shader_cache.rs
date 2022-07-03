@@ -54,10 +54,10 @@ where
     /// Retrieves the specified shader, if it's in the cache
     ///
     #[inline]
-    pub fn get_shader(&self, shader: &TShader) -> Option<(&wgpu::ShaderModule, String, String)> {
+    pub fn get_shader<'a>(&'a self, shader: &TShader) -> Option<(&'a wgpu::ShaderModule, &'a str, &'a str)> {
         self.shaders.get(shader)
             .map(|(shader_ref, vertex_name, fragment_name)| {
-                (&**shader_ref, vertex_name.clone(), fragment_name.clone())
+                (&**shader_ref, vertex_name.as_str(), fragment_name.as_str())
             })
     }
 }
