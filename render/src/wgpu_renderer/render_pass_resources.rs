@@ -19,6 +19,9 @@ pub struct RenderPassResources {
     /// The texture view that this render pass will write to
     pub (crate) target_view: Option<Arc<wgpu::TextureView>>,
 
+    /// The render pipelines that this render pass will write to
+    pub (crate) pipelines: Vec<Arc<wgpu::RenderPipeline>>,
+
     /// Cache of the buffers used by the render pass. When adding a buffer to the cache, always add to the end,
     /// assume that rendering operations have cached the location of their own resources.
     pub (crate) buffers: Vec<Arc<wgpu::Buffer>>,
@@ -35,6 +38,7 @@ impl Default for RenderPassResources {
         RenderPassResources {
             target_texture: None,
             target_view:    None,
+            pipelines:      vec![],
             buffers:        vec![],
             bind_groups:    vec![],
             clear:          None,
@@ -53,6 +57,7 @@ impl RenderPassResources {
         RenderPassResources {
             target_texture: Some(texture),
             target_view:    Some(view),
+            pipelines:      vec![],
             buffers:        vec![],
             bind_groups:    vec![],
             clear:          None,
