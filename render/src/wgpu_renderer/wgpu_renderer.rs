@@ -1,4 +1,5 @@
 use super::texture::*;
+use super::shader_cache::*;
 use super::wgpu_shader::*;
 use super::render_target::*;
 use super::renderer_state::*;
@@ -56,7 +57,10 @@ pub struct WgpuRenderer {
     render_targets: Vec<Option<RenderTarget>>,
 
     /// The cache of render pipeline states used by this renderer
-    pipeline_states: HashMap<PipelineConfiguration, wgpu::RenderPipeline>,
+    pipeline_states: HashMap<PipelineConfiguration, Arc<wgpu::RenderPipeline>>,
+
+    /// The cache of shader modules that have been loaded for this render session
+    shader_cache: ShaderCache<WgpuShader>,
 
     /// The currently selected render target
     active_render_target: Option<RenderTargetId>,
@@ -69,7 +73,7 @@ impl WgpuRenderer {
     pub fn new(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer {
         WgpuRenderer {
             adapter:                target_adapter,
-            device:                 device,
+            device:                 device.clone(),
             queue:                  queue,
             target_surface:         target_surface,
             shaders:                HashMap::new(),
@@ -78,6 +82,7 @@ impl WgpuRenderer {
             textures:               vec![],
             render_targets:         vec![],
             pipeline_states:        HashMap::new(),
+            shader_cache:           ShaderCache::empty(device.clone()),
             active_render_target:   None,
             width:                  0,
             height:                 0,
@@ -153,6 +158,51 @@ impl WgpuRenderer {
 
         // Finish any pending render pass in the state
         render_state.run_render_pass();
+    }
+
+    ///
+    /// Updates the render pipeline if necessary
+    ///
+    #[inline]
+    fn update_pipeline_if_needed(&mut self, render_state: &mut RendererState) {
+        if render_state.pipeline_config_changed {
+            // Reset the flag
+            render_state.pipeline_config_changed = false;
+
+            // If the pipeline config is actually different
+            if Some(&render_state.pipeline_configuration) != render_state.active_pipeline_configuration.as_ref() {
+                // Update the pipeline configuration
+                render_state.active_pipeline_configuration = Some(render_state.pipeline_configuration.clone());
+
+                // Borrow bits of the renderer we'll need later (so Rust doesn't complain about borrowing self again)
+                let device          = &self.device;
+                let shader_cache    = &mut self.shader_cache;  
+                let pipeline_states = &mut self.pipeline_states;
+
+                // Retrieve the pipeline from the cache or generate a new one
+                let pipeline = pipeline_states.entry(render_state.pipeline_configuration.clone())
+                    .or_insert_with(|| {
+                        let mut temp_data   = PipelineDescriptorTempStorage::default();
+                        let pipeline_layout = render_state.pipeline_configuration.pipeline_layout();
+                        let pipeline_layout = device.create_pipeline_layout(&pipeline_layout);
+                        let descriptor      = render_state.pipeline_configuration.render_pipeline_descriptor(shader_cache, &pipeline_layout, &mut temp_data);
+
+                        let new_pipeline    = device.create_render_pipeline(&descriptor);
+
+                        Arc::new(new_pipeline)
+                    });
+
+                // Store in the render pass resources and queue up a function to activate it (the render pass must borrow the pipeline and can't use any other kind of
+                // reference, so we need this rather complicated arrangement to borrow it again later)
+                let pipeline        = Arc::clone(pipeline);
+                let pipeline_index  = render_state.render_pass_resources.pipelines.len();
+                render_state.render_pass_resources.pipelines.push(pipeline);
+
+                render_state.render_pass.push(Box::new(move |resources, render_pass| {
+                    render_pass.set_pipeline(&resources.pipelines[pipeline_index])
+                }));
+            }
+        }
     }
     
     ///

@@ -32,10 +32,10 @@ pub (crate) struct RendererState {
     pub pipeline_config_changed:        bool,
 
     /// The pipeline configuration that was last activated
-    active_pipeline_configuration:      Option<PipelineConfiguration>,
+    pub active_pipeline_configuration:  Option<PipelineConfiguration>,
 
     /// The actions for the active render pass (deferred so we can manage the render pass lifetime)
-    current_render_pass:                Vec<Box<dyn for<'a> FnOnce(&'a RenderPassResources, &wgpu::RenderPass<'a>) -> ()>>,
+    pub render_pass:                    Vec<Box<dyn for<'a> FnOnce(&'a RenderPassResources, &mut wgpu::RenderPass<'a>) -> ()>>,
 
     /// The matrix transform buffer
     matrix_buffer:                      wgpu::Buffer,
@@ -59,7 +59,7 @@ impl RendererState {
             queue:                              command_queue,
             encoder:                            encoder,
             render_pass_resources:              RenderPassResources::default(),
-            current_render_pass:                vec![],
+            render_pass:                        vec![],
             pipeline_configuration:             PipelineConfiguration::default(),
             pipeline_config_changed:            true,
             active_pipeline_configuration:      None,
@@ -134,7 +134,7 @@ impl RendererState {
     ///
     pub fn run_render_pass(&mut self) {
         // Take the actions and the resources for this render pass
-        let render_actions  = mem::take(&mut self.current_render_pass);
+        let render_actions  = mem::take(&mut self.render_pass);
         let resources       = mem::take(&mut self.render_pass_resources);
 
         // Keep the current texture view for the next render pass
@@ -152,7 +152,7 @@ impl RendererState {
         // Start a new render pass using the encoder
         if let Some(texture_view) = &resources.target_view {
             // Start the render pass
-            let render_pass = self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let mut render_pass = self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label:                      Some("run_render_pass"),
                 depth_stencil_attachment:   None,
                 color_attachments:          &resources.color_attachments(),
@@ -160,7 +160,7 @@ impl RendererState {
 
             // Run all of the actions
             for action in render_actions.into_iter() {
-                (action)(&resources, &render_pass);
+                (action)(&resources, &mut render_pass);
             }
         }
     }
