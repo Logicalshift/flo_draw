@@ -72,7 +72,7 @@ fn create_op_blend_state(rgb_src_factor: wgpu::BlendFactor, rgb_dst_factor: wgpu
 /// aspect design of wgpu)
 ///
 pub struct PipelineDescriptorTempStorage {
-    color_targets: Vec<Option<wgpu::ColorTargetState>>,
+    color_targets:      Vec<Option<wgpu::ColorTargetState>>,
 }
 
 impl Default for PipelineDescriptorTempStorage {
@@ -140,7 +140,7 @@ impl PipelineConfiguration {
     ///
     /// Returns the vertex buffer layout we'll use for this pipeline configuration
     ///
-    pub fn vertex_buffer_layout(&self) -> wgpu::VertexBufferLayout {
+    fn vertex_buffer_layout(&self) -> wgpu::VertexBufferLayout {
         wgpu::VertexBufferLayout {
             array_stride:   mem::size_of::<Vertex2D>() as _,
             step_mode:      wgpu::VertexStepMode::Vertex,
@@ -173,7 +173,7 @@ impl PipelineConfiguration {
     /// Creates the vertex state for this pipeline
     ///
     #[inline]
-    pub fn vertex_state<'a>(&'a self, shader_cache: &'a ShaderCache<WgpuShader>) -> wgpu::VertexState<'a> {
+    fn vertex_state<'a>(&'a self, shader_cache: &'a ShaderCache<WgpuShader>) -> wgpu::VertexState<'a> {
         // Fetch the shader module
         let (shader_module, vertex_fn, _) = shader_cache.get_shader(&self.shader_module).unwrap();
 
