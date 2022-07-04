@@ -202,13 +202,41 @@ impl PipelineConfiguration {
     }
 
     ///
+    /// Creates the bind group layout descriptor for this configuration
+    ///
+    #[inline]
+    pub fn bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
+        // Rust doesn't seem to be able to do the same trick with &'static here as we do in vertex_buffer_layout so we declare an actual
+        // static here to achieve the same thing (part of the annoying 'complicated structure borrows things recursively' dance wgpu 
+        // makes us do)
+        static JUST_MATRIX: [wgpu::BindGroupLayoutEntry; 1] = [
+            // Matrix
+            wgpu::BindGroupLayoutEntry {
+                binding:            0,
+                visibility:         wgpu::ShaderStages::VERTEX,
+                count:              None,
+                ty:                 wgpu::BindingType::Buffer {
+                    ty:                 wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size:   wgpu::BufferSize::new(64),
+                }
+            },
+        ];
+
+        wgpu::BindGroupLayoutDescriptor {
+            label:      Some("bind_group_layout"),
+            entries:    &JUST_MATRIX,
+        }
+    }
+
+    ///
     /// Creates the pipeline layout for this render pipeline
     ///
     #[inline]
-    pub fn pipeline_layout(&self) -> wgpu::PipelineLayoutDescriptor {
+    pub fn pipeline_layout<'a>(&self, bind_group_layouts: &'a [&'a wgpu::BindGroupLayout]) -> wgpu::PipelineLayoutDescriptor<'a> {
         wgpu::PipelineLayoutDescriptor {
             label:                  Some("pipeline_layout"),
-            bind_group_layouts:     &[],
+            bind_group_layouts:     bind_group_layouts,
             push_constant_ranges:   &[],
         }
     }
