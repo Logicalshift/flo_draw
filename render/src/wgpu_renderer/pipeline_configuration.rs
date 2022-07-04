@@ -1,8 +1,11 @@
 use super::wgpu_shader::*;
 use super::shader_cache::*;
 use crate::action::*;
+use crate::buffer::*;
 
 use wgpu;
+
+use std::mem;
 
 ///
 /// Description of a WGPU pipeline configuration (used to create the configuration and as a hash key)
@@ -132,6 +135,38 @@ impl PipelineConfiguration {
                 write_mask: wgpu::ColorWrites::ALL, 
             })
         ]
+    }
+
+    ///
+    /// Returns the vertex buffer layout we'll use for this pipeline configuration
+    ///
+    pub fn vertex_buffer_layout(&self) -> wgpu::VertexBufferLayout {
+        wgpu::VertexBufferLayout {
+            array_stride:   mem::size_of::<Vertex2D>() as _,
+            step_mode:      wgpu::VertexStepMode::Vertex,
+            attributes:     &[
+                wgpu::VertexAttribute {
+                    // pos
+                    format:             wgpu::VertexFormat::Float32x2,
+                    offset:             0, 
+                    shader_location:    0,
+                },
+
+                wgpu::VertexAttribute {
+                    // tex_coord
+                    format:             wgpu::VertexFormat::Float32x2,
+                    offset:             (mem::size_of::<f32>()*2) as _,
+                    shader_location:    1,
+                },
+
+                wgpu::VertexAttribute {
+                    // color
+                    format:             wgpu::VertexFormat::Float32x4,
+                    offset:             (mem::size_of::<f32>()*2 + mem::size_of::<f32>()*2) as _,
+                    shader_location:    2,
+                },
+            ]
+        }
     }
 
     ///
