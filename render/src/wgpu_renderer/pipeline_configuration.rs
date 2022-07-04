@@ -140,8 +140,8 @@ impl PipelineConfiguration {
     ///
     /// Returns the vertex buffer layout we'll use for this pipeline configuration
     ///
-    fn vertex_buffer_layout(&self) -> wgpu::VertexBufferLayout {
-        wgpu::VertexBufferLayout {
+    fn vertex_buffer_layout(&self) -> &[wgpu::VertexBufferLayout] {
+        let layout: &'static [wgpu::VertexBufferLayout] = &[wgpu::VertexBufferLayout {
             array_stride:   mem::size_of::<Vertex2D>() as _,
             step_mode:      wgpu::VertexStepMode::Vertex,
             attributes:     &[
@@ -166,7 +166,9 @@ impl PipelineConfiguration {
                     shader_location:    2,
                 },
             ]
-        }
+        }];
+
+        layout
     }
 
     ///
@@ -180,7 +182,7 @@ impl PipelineConfiguration {
         wgpu::VertexState {
             module:         shader_module,
             entry_point:    vertex_fn,
-            buffers:        &[],
+            buffers:        self.vertex_buffer_layout(),
         }
     }
 
