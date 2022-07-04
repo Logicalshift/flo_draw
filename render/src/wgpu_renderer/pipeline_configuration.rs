@@ -202,10 +202,10 @@ impl PipelineConfiguration {
     }
 
     ///
-    /// Creates the bind group layout descriptor for this configuration
+    /// Creates the matrix bind group layout descriptor for this configuration
     ///
     #[inline]
-    pub fn bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
+    pub fn matrix_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
         // Rust doesn't seem to be able to do the same trick with &'static here as we do in vertex_buffer_layout so we declare an actual
         // static here to achieve the same thing (part of the annoying 'complicated structure borrows things recursively' dance wgpu 
         // makes us do)
@@ -262,5 +262,24 @@ impl PipelineConfiguration {
             multisample:    wgpu::MultisampleState::default(),
             multiview:      None,
         }
+    }
+
+    ///
+    /// Creates the matrix bind group for this pipeline configuration in a particular state
+    ///
+    /// This is stored in bind group 0
+    ///
+    #[inline]
+    pub fn create_matrix_bind_group<'a>(&self, device: &wgpu::Device, matrix_layout: &wgpu::BindGroupLayout, matrix_buffer: &wgpu::Buffer) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label:      Some("create_matrix_bind_group"),
+            layout:     matrix_layout,
+            entries:    &[
+                wgpu::BindGroupEntry {
+                    binding:    0,
+                    resource:   matrix_buffer.as_entire_binding(),
+                }
+            ]
+        })
     }
 }

@@ -182,15 +182,15 @@ impl WgpuRenderer {
                 // Retrieve the pipeline from the cache or generate a new one
                 let pipeline = pipeline_states.entry(render_state.pipeline_configuration.clone())
                     .or_insert_with(|| {
-                        let mut temp_data   = PipelineDescriptorTempStorage::default();
-                        let bind_layout     = render_state.pipeline_configuration.bind_group_layout();
-                        let bind_layout     = device.create_bind_group_layout(&bind_layout);
-                        let bind_layout     = [&bind_layout];
-                        let pipeline_layout = render_state.pipeline_configuration.pipeline_layout(&bind_layout);
-                        let pipeline_layout = device.create_pipeline_layout(&pipeline_layout);
-                        let descriptor      = render_state.pipeline_configuration.render_pipeline_descriptor(shader_cache, &pipeline_layout, &mut temp_data);
+                        let mut temp_data       = PipelineDescriptorTempStorage::default();
+                        let matrix_bind_layout  = render_state.pipeline_configuration.matrix_bind_group_layout();
+                        let matrix_bind_layout  = device.create_bind_group_layout(&matrix_bind_layout);
+                        let bind_layout         = [&matrix_bind_layout];
+                        let pipeline_layout     = render_state.pipeline_configuration.pipeline_layout(&bind_layout);
+                        let pipeline_layout     = device.create_pipeline_layout(&pipeline_layout);
+                        let descriptor          = render_state.pipeline_configuration.render_pipeline_descriptor(shader_cache, &pipeline_layout, &mut temp_data);
 
-                        let new_pipeline    = device.create_render_pipeline(&descriptor);
+                        let new_pipeline        = device.create_render_pipeline(&descriptor);
 
                         Arc::new(new_pipeline)
                     });
