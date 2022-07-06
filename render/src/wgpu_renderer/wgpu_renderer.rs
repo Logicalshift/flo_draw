@@ -1,6 +1,7 @@
 use super::texture::*;
-use super::shader_cache::*;
+use super::pipeline::*;
 use super::wgpu_shader::*;
+use super::shader_cache::*;
 use super::render_target::*;
 use super::renderer_state::*;
 use super::pipeline_configuration::*;
@@ -57,7 +58,7 @@ pub struct WgpuRenderer {
     render_targets: Vec<Option<RenderTarget>>,
 
     /// The cache of render pipeline states used by this renderer
-    pipeline_states: HashMap<PipelineConfiguration, Arc<wgpu::RenderPipeline>>,
+    pipeline_states: HashMap<PipelineConfiguration, Pipeline>,
 
     /// The cache of shader modules that have been loaded for this render session
     shader_cache: ShaderCache<WgpuShader>,
@@ -182,27 +183,18 @@ impl WgpuRenderer {
                 // Retrieve the pipeline from the cache or generate a new one
                 let pipeline = pipeline_states.entry(render_state.pipeline_configuration.clone())
                     .or_insert_with(|| {
-                        let mut temp_data       = PipelineDescriptorTempStorage::default();
-                        let matrix_bind_layout  = render_state.pipeline_configuration.matrix_bind_group_layout();
-                        let matrix_bind_layout  = device.create_bind_group_layout(&matrix_bind_layout);
-                        let bind_layout         = [&matrix_bind_layout];
-                        let pipeline_layout     = render_state.pipeline_configuration.pipeline_layout(&bind_layout);
-                        let pipeline_layout     = device.create_pipeline_layout(&pipeline_layout);
-                        let descriptor          = render_state.pipeline_configuration.render_pipeline_descriptor(shader_cache, &pipeline_layout, &mut temp_data);
-
-                        let new_pipeline        = device.create_render_pipeline(&descriptor);
-
-                        Arc::new(new_pipeline)
+                        Pipeline::from_configuration(&render_state.pipeline_configuration, device, shader_cache)
                     });
 
                 // Store in the render pass resources and queue up a function to activate it (the render pass must borrow the pipeline and can't use any other kind of
                 // reference, so we need this rather complicated arrangement to borrow it again later)
-                let pipeline        = Arc::clone(pipeline);
+                let pipeline        = Arc::clone(&pipeline.pipeline);
                 let pipeline_index  = render_state.render_pass_resources.pipelines.len();
                 render_state.render_pass_resources.pipelines.push(pipeline);
 
                 render_state.render_pass.push(Box::new(move |resources, render_pass| {
-                    render_pass.set_pipeline(&resources.pipelines[pipeline_index])
+                    // Set the pipeline
+                    render_pass.set_pipeline(&resources.pipelines[pipeline_index]);
                 }));
             }
         }
@@ -337,7 +329,7 @@ impl WgpuRenderer {
         }
 
         // Store the render target and texture. Render target textures have pre-multiplied alphas
-        let new_texture                 = WgpuTexture {
+        let new_texture = WgpuTexture {
             texture:            new_render_target.texture(),
             is_premultiplied:   true,
         };
