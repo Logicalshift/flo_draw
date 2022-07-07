@@ -820,6 +820,7 @@ dependencies = [
 name = "flo_winit_test"
 version = "0.1.0"
 dependencies = [
+ "flo_render",
  "futures",
  "wgpu",
  "winit",
