@@ -161,7 +161,7 @@ impl PipelineConfiguration {
 
                 wgpu::VertexAttribute {
                     // color
-                    format:             wgpu::VertexFormat::Float32x4,
+                    format:             wgpu::VertexFormat::Uint8x4,
                     offset:             (mem::size_of::<f32>()*2 + mem::size_of::<f32>()*2) as _,
                     shader_location:    2,
                 },
