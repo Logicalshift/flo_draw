@@ -1,3 +1,5 @@
+use flo_render::*;
+
 use winit::window;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -6,21 +8,7 @@ use wgpu;
 
 use futures::executor;
 
-use std::borrow::{Cow};
-
-const SHADER: &'static str = "
-@vertex
-fn vs_main(@builtin(vertex_index) idx: u32) -> @builtin(position) vec4<f32> {
-    let x = f32(i32(idx) - 1);
-    let y = f32(i32(idx & 1u) * 2 - 1);
-    return vec4<f32>(x, y, 0.0, 1.0);
-}
-
-@fragment
-fn fs_main() -> @location(0) vec4<f32> {
-    return vec4<f32>(1.0, 0.0, 0.0, 1.0);
-}
-";
+use std::sync::*;
 
 fn main() {
     // Set up an event loop and a window that reports to it
@@ -45,50 +33,17 @@ fn main() {
             limits:     wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits())
         }, None).await.unwrap();
 
-        // Load the shader
-        let shader              = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label:  None,
-            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(SHADER))
-        });
-
-        // Create the render pipeline
-        let swapchain_format    = surface.get_supported_formats(&adapter)[0];
-        let pipeline_layout     = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label:                  None,
-            bind_group_layouts:     &[],
-            push_constant_ranges:   &[],
-        });
-
-        let render_pipeline     = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label:          None,
-            layout:         Some(&pipeline_layout),
-            vertex:         wgpu::VertexState {
-                module:         &shader,
-                entry_point:    "vs_main",
-                buffers:        &[],
-            },
-            fragment:       Some(wgpu::FragmentState {
-                module:         &shader,
-                entry_point:    "fs_main",
-                targets:        &[Some(swapchain_format.into())],
-            }),
-            primitive:      wgpu::PrimitiveState::default(),
-            depth_stencil:  None,
-            multisample:    wgpu::MultisampleState::default(),
-            multiview:      None,
-        });
+        // Create the WGPU renderer
+        let device          = Arc::new(device);
+        let queue           = Arc::new(queue);
+        let surface         = Arc::new(surface);
+        let adapter         = Arc::new(adapter);
+        let mut renderer    = WgpuRenderer::new(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
 
         // Surface configuration
         let size                = window.inner_size();
-        let mut surface_config  = wgpu::SurfaceConfiguration {
-            usage:          wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format:         swapchain_format,
-            width:          size.width,
-            height:         size.height,
-            present_mode:   wgpu::PresentMode::Fifo,
-        };
 
-        surface.configure(&device, &surface_config);
+        renderer.prepare_to_render(size.width, size.height);
 
         // Run the main event loop (which is not async)
         event_loop.run(move |event, _, control_flow| {
@@ -100,72 +55,46 @@ fn main() {
                 }
 
                 Event::WindowEvent { event: WindowEvent::Resized(size), .. } => {
+                    use RenderAction::*;
+
                     // Configure the surface to the new size
-                    surface_config.width    = size.width;
-                    surface_config.height   = size.height;
-                    surface.configure(&device, &surface_config);
+                    renderer.prepare_to_render(size.width, size.height);
 
-                    // Start a frame
-                    let frame   = surface.get_current_texture().unwrap();
-                    let view    = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+                    renderer.render_to_surface(vec![
+                        RenderToFrameBuffer,
 
-                    // Encoder to send commands
-                    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+                        Clear(Rgba8([255, 255, 255, 255])),
+                        CreateVertex2DBuffer(VertexBufferId(0), vec![
+                            Vertex2D::with_pos(-0.5, -0.5).with_color(1.0, 0.0, 0.0, 1.0),
+                            Vertex2D::with_pos(-0.0, 0.5).with_color(1.0, 0.0, 0.0, 1.0),
+                            Vertex2D::with_pos(0.5, -0.5).with_color(1.0, 0.0, 0.0, 1.0),
+                        ]),
+                        DrawTriangles(VertexBufferId(0), 0..3),
 
-                    // Render the triangle
-                    {
-                        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                            label:                      None,
-                            color_attachments:          &[Some(wgpu::RenderPassColorAttachment {
-                                view:           &view,
-                                resolve_target: None,
-                                ops:            wgpu::Operations {
-                                    load:   wgpu::LoadOp::Clear(wgpu::Color::GREEN),
-                                    store:  true,
-                                },
-                            })],
-                            depth_stencil_attachment:   None,
-                        });
+                        ShowFrameBuffer
+                    ]);
 
-                        render_pass.set_pipeline(&render_pipeline);
-                        render_pass.draw(0..3, 0..1);
-                    }
-
-                    // Present the triangle to the screen
-                    queue.submit(Some(encoder.finish()));
-                    frame.present();
+                    surface.get_current_texture().unwrap().present();
                 }
 
                 Event::RedrawRequested(_)   => {
-                    // Start a frame
-                    let frame   = surface.get_current_texture().unwrap();
-                    let view    = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+                    use RenderAction::*;
 
-                    // Encoder to send commands
-                    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+                    renderer.render_to_surface(vec![
+                        RenderToFrameBuffer,
 
-                    // Render the triangle
-                    {
-                        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                            label:                      None,
-                            color_attachments:          &[Some(wgpu::RenderPassColorAttachment {
-                                view:           &view,
-                                resolve_target: None,
-                                ops:            wgpu::Operations {
-                                    load:   wgpu::LoadOp::Clear(wgpu::Color::GREEN),
-                                    store:  true,
-                                },
-                            })],
-                            depth_stencil_attachment:   None,
-                        });
+                        Clear(Rgba8([255, 255, 255, 255])),
+                        CreateVertex2DBuffer(VertexBufferId(0), vec![
+                            Vertex2D::with_pos(-0.5, -0.5).with_color(1.0, 0.0, 0.0, 1.0),
+                            Vertex2D::with_pos(-0.0, 0.5).with_color(1.0, 0.0, 0.0, 1.0),
+                            Vertex2D::with_pos(0.5, -0.5).with_color(1.0, 0.0, 0.0, 1.0),
+                        ]),
+                        DrawTriangles(VertexBufferId(0), 0..3),
 
-                        render_pass.set_pipeline(&render_pipeline);
-                        render_pass.draw(0..3, 0..1);
-                    }
+                        ShowFrameBuffer
+                    ]);
 
-                    // Present the triangle to the screen
-                    queue.submit(Some(encoder.finish()));
-                    frame.present();
+                    surface.get_current_texture().unwrap().present();
                 }
 
                 _ => {}
