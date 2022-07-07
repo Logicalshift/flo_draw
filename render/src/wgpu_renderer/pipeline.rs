@@ -32,7 +32,7 @@ impl Pipeline {
 
         let bind_layout         = [&matrix_bind_layout];
         let pipeline_layout     = wgpu::PipelineLayoutDescriptor {
-            label:                  Some("pipeline_layout"),
+            label:                  Some("Pipeline::from_configuration"),
             bind_group_layouts:     &bind_layout,
             push_constant_ranges:   &[],
         };
@@ -45,6 +45,28 @@ impl Pipeline {
             pipeline:           Arc::new(new_pipeline),
             matrix_layout:      Some(Arc::new(matrix_bind_layout)),
             matrix_binding:     None,
+        }
+    }
+
+    ///
+    /// Binds the transformation matrix buffer for this pipeline (filling in or replacing the `matrix_binding` entry)
+    ///
+    pub fn bind_matrix(&mut self, device: &wgpu::Device, matrix_buffer: &wgpu::Buffer) {
+        if let Some(matrix_layout) = &self.matrix_layout {
+            self.matrix_binding = None;
+
+            let matrix_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label:      Some("bind_matrix"),
+                layout:     &matrix_layout,
+                entries:    &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: matrix_buffer.as_entire_binding(),
+                    }
+                ]
+            });
+
+            self.matrix_binding = Some(Arc::new(matrix_bind_group));
         }
     }
 }

@@ -38,7 +38,7 @@ pub (crate) struct RendererState {
     pub render_pass:                    Vec<Box<dyn for<'a> FnOnce(&'a RenderPassResources, &mut wgpu::RenderPass<'a>) -> ()>>,
 
     /// The matrix transform buffer
-    matrix_buffer:                      wgpu::Buffer,
+    pub matrix_buffer:                      wgpu::Buffer,
 
     /// The binding group for the matrix buffer
     matrix_binding:                     wgpu::BindGroup,

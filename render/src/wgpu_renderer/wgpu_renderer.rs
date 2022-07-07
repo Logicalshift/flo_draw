@@ -183,18 +183,45 @@ impl WgpuRenderer {
                 // Retrieve the pipeline from the cache or generate a new one
                 let pipeline = pipeline_states.entry(render_state.pipeline_configuration.clone())
                     .or_insert_with(|| {
-                        Pipeline::from_configuration(&render_state.pipeline_configuration, device, shader_cache)
+                        // Create the pipeline
+                        let mut pipeline = Pipeline::from_configuration(&render_state.pipeline_configuration, device, shader_cache);
+
+                        // Bind the standard resources to it
+                        pipeline.bind_matrix(device, &render_state.matrix_buffer);
+
+                        pipeline
                     });
 
-                // Store in the render pass resources and queue up a function to activate it (the render pass must borrow the pipeline and can't use any other kind of
-                // reference, so we need this rather complicated arrangement to borrow it again later)
-                let pipeline        = Arc::clone(&pipeline.pipeline);
+                // Store the pipeline itself in the resources
+                let render_pipeline = Arc::clone(&pipeline.pipeline);
                 let pipeline_index  = render_state.render_pass_resources.pipelines.len();
-                render_state.render_pass_resources.pipelines.push(pipeline);
+                render_state.render_pass_resources.pipelines.push(render_pipeline);
 
+                // Set up the bound resources
+                let mut next_group = 0;
+
+                let matrix_index;
+                let matrix_group;
+                if let Some(matrix_binding) = &pipeline.matrix_binding {
+                    matrix_index    = Some(render_state.render_pass_resources.bind_groups.len());
+                    matrix_group    = Some(next_group);
+                    next_group      += 1;
+
+                    render_state.render_pass_resources.bind_groups.push(Arc::clone(matrix_binding));
+                } else {
+                    matrix_index = None;
+                    matrix_group = None;
+                }
+
+                // Add a callback function to actually set up the render pipeline (we have to do it indirectly later on because it borrows its resources)
                 render_state.render_pass.push(Box::new(move |resources, render_pass| {
                     // Set the pipeline
                     render_pass.set_pipeline(&resources.pipelines[pipeline_index]);
+
+                    // Set up the resources it needs
+                    if let (Some(matrix_index), Some(matrix_group)) = (matrix_index, matrix_group) {
+                        render_pass.set_bind_group(matrix_group, &resources.bind_groups[matrix_index], &[]);
+                    }
                 }));
             }
         }
