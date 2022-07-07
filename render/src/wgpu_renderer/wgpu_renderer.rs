@@ -164,7 +164,6 @@ impl WgpuRenderer {
     ///
     /// Updates the render pipeline if necessary
     ///
-    #[inline]
     fn update_pipeline_if_needed(&mut self, render_state: &mut RendererState) {
         if render_state.pipeline_config_changed {
             // Reset the flag
