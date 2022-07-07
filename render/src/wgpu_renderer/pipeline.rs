@@ -15,9 +15,6 @@ pub (crate) struct Pipeline {
 
     /// The bind group layout for the transformation matrix
     pub (crate) matrix_layout: Option<Arc<wgpu::BindGroupLayout>>,
-
-    /// The bind group added to the render pipeline for the matrix binding
-    pub (crate) matrix_binding: Option<Arc<wgpu::BindGroup>>,
 }
 
 impl Pipeline {
@@ -44,17 +41,27 @@ impl Pipeline {
         Pipeline {
             pipeline:           Arc::new(new_pipeline),
             matrix_layout:      Some(Arc::new(matrix_bind_layout)),
-            matrix_binding:     None,
+        }
+    }
+
+    ///
+    /// Returns the index of the matrix binding group
+    ///
+    #[inline]
+    pub fn matrix_group_index(&self) -> Option<u32> {
+        if let Some(matrix_layout) = &self.matrix_layout {
+            Some(0)
+        } else {
+            None
         }
     }
 
     ///
     /// Binds the transformation matrix buffer for this pipeline (filling in or replacing the `matrix_binding` entry)
     ///
-    pub fn bind_matrix(&mut self, device: &wgpu::Device, matrix_buffer: &wgpu::Buffer) {
+    #[inline]
+    pub fn bind_matrix_buffer(&self, device: &wgpu::Device, matrix_buffer: &wgpu::Buffer) -> Option<wgpu::BindGroup> {
         if let Some(matrix_layout) = &self.matrix_layout {
-            self.matrix_binding = None;
-
             let matrix_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label:      Some("bind_matrix"),
                 layout:     &matrix_layout,
@@ -66,7 +73,9 @@ impl Pipeline {
                 ]
             });
 
-            self.matrix_binding = Some(Arc::new(matrix_bind_group));
+            Some(matrix_bind_group)
+        } else {
+            None
         }
     }
 }

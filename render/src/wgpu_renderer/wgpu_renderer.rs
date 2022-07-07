@@ -58,7 +58,7 @@ pub struct WgpuRenderer {
     render_targets: Vec<Option<RenderTarget>>,
 
     /// The cache of render pipeline states used by this renderer
-    pipeline_states: HashMap<PipelineConfiguration, Pipeline>,
+    pipeline_states: HashMap<PipelineConfiguration, Arc<Pipeline>>,
 
     /// The cache of shader modules that have been loaded for this render session
     shader_cache: ShaderCache<WgpuShader>,
@@ -182,14 +182,11 @@ impl WgpuRenderer {
                 // Retrieve the pipeline from the cache or generate a new one
                 let pipeline = pipeline_states.entry(render_state.pipeline_configuration.clone())
                     .or_insert_with(|| {
-                        // Create the pipeline
-                        let mut pipeline = Pipeline::from_configuration(&render_state.pipeline_configuration, device, shader_cache);
-
-                        // Bind the standard resources to it
-                        pipeline.bind_matrix(device, &render_state.matrix_buffer);
-
-                        pipeline
+                        // Create the pipeline if we don't have one matching the configuration already
+                        Arc::new(Pipeline::from_configuration(&render_state.pipeline_configuration, device, shader_cache))
                     });
+
+                render_state.pipeline = Some(Arc::clone(pipeline));
 
                 // Store the pipeline itself in the resources
                 let render_pipeline = Arc::clone(&pipeline.pipeline);
@@ -197,19 +194,15 @@ impl WgpuRenderer {
                 render_state.render_pass_resources.pipelines.push(render_pipeline);
 
                 // Set up the bound resources
-                let mut next_group = 0;
-
+                let matrix_group = pipeline.matrix_group_index();
                 let matrix_index;
-                let matrix_group;
-                if let Some(matrix_binding) = &pipeline.matrix_binding {
-                    matrix_index    = Some(render_state.render_pass_resources.bind_groups.len());
-                    matrix_group    = Some(next_group);
-                    next_group      += 1;
 
-                    render_state.render_pass_resources.bind_groups.push(Arc::clone(matrix_binding));
+                if let Some(matrix_binding) = pipeline.bind_matrix_buffer(device, &*render_state.matrix_buffer) {
+                    matrix_index    = Some(render_state.render_pass_resources.bind_groups.len());
+
+                    render_state.render_pass_resources.bind_groups.push(Arc::new(matrix_binding));
                 } else {
-                    matrix_index = None;
-                    matrix_group = None;
+                    matrix_index    = None;
                 }
 
                 // Add a callback function to actually set up the render pipeline (we have to do it indirectly later on because it borrows its resources)
