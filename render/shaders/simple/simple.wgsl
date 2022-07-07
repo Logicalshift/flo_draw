@@ -11,7 +11,7 @@ var<uniform> transform: mat4x4<f32>;
 fn simple_vertex_shader(
     @location(0) pos:       vec2<f32>,
     @location(1) tex_coord: vec2<f32>,
-    @location(2) color:     vec4<u8>,
+    @location(2) color:     vec4<u32>,
 ) -> RasterData {
     var result: RasterData;
 
