@@ -22,7 +22,7 @@ fn simple_vertex_shader(
     color[3]        /= 255.0;
 
     result.color    = color;
-    result.pos      = pos * transform;
+    result.pos      = vec4<f32>(pos[0], pos[1], 0.0, 1.0) * transform;
 
     return result;
 }
