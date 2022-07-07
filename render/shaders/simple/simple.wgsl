@@ -15,7 +15,7 @@ fn simple_vertex_shader(
 ) -> RasterData {
     var result: RasterData;
 
-    vec4<f32> color = vec4<f32>(f32(color[0]), f32(color[1]), f32(color[2]), f32(color));
+    var color = vec4<f32>(f32(color[0]), f32(color[1]), f32(color[2]), f32(color[3]));
     color[0]        /= 255.0;
     color[1]        /= 255.0;
     color[2]        /= 255.0;
