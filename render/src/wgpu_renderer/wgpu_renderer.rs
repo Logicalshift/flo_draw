@@ -159,6 +159,9 @@ impl WgpuRenderer {
 
         // Finish any pending render pass in the state
         render_state.run_render_pass();
+
+        // Submit the queue
+        self.queue.submit(Some(render_state.encoder.finish()));
     }
 
     ///

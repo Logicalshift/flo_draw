@@ -20,7 +20,7 @@ pub (crate) struct RendererState {
     queue:                              Arc<wgpu::Queue>,
 
     /// The command encoder for this rendering
-    encoder:                            wgpu::CommandEncoder,
+    pub encoder:                        wgpu::CommandEncoder,
 
     /// The resources for the next render pass
     pub render_pass_resources:          RenderPassResources,
