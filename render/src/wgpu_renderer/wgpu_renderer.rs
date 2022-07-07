@@ -46,10 +46,10 @@ pub struct WgpuRenderer {
     shaders: HashMap<WgpuShader, Arc<wgpu::ShaderModule>>,
 
     /// The vertex buffers for this renderer
-    vertex_buffers: Vec<Option<wgpu::Buffer>>,
+    vertex_buffers: Vec<Option<Arc<wgpu::Buffer>>>,
 
     /// The index buffers for this renderer
-    index_buffers: Vec<Option<wgpu::Buffer>>,
+    index_buffers: Vec<Option<Arc<wgpu::Buffer>>>,
 
     /// The textures for this renderer
     textures: Vec<Option<WgpuTexture>>,
@@ -280,7 +280,7 @@ impl WgpuRenderer {
                 .map(|_| None));
         }
 
-        self.vertex_buffers[vertex_id] = Some(vertex_buffer);
+        self.vertex_buffers[vertex_id] = Some(Arc::new(vertex_buffer));
     }
     
     ///
@@ -312,7 +312,7 @@ impl WgpuRenderer {
                 .map(|_| None));
         }
 
-        self.index_buffers[index_id] = Some(index_buffer);
+        self.index_buffers[index_id] = Some(Arc::new(index_buffer));
     }
     
     ///
@@ -530,13 +530,48 @@ impl WgpuRenderer {
     /// Renders a set of triangles in a vertex buffer
     ///
     fn draw_triangles(&mut self, VertexBufferId(vertex_buffer_id): VertexBufferId, range: Range<usize>, state: &mut RendererState) {
+        if let Some(Some(buffer)) = self.vertex_buffers.get(vertex_buffer_id) {
+            let buffer          = Arc::clone(&buffer);
 
+            // Make sure that the pipeline is up to date
+            self.update_pipeline_if_needed(state);
+
+            // Add the buffer to the render pass resources
+            let buffer_index    = state.render_pass_resources.buffers.len();
+            state.render_pass_resources.buffers.push(buffer);
+
+            // Set up a vertex buffer and draw the triangles during the render pass
+            state.render_pass.push(Box::new(move |resources, render_pass| {
+                render_pass.set_vertex_buffer(0, resources.buffers[buffer_index].slice(range.start as u64..range.end as u64));
+                render_pass.draw(0..range.len() as u32, 0..1);
+            }));
+        }
     }
     
     ///
     /// Renders a set of triangles by looking up vertices referenced by an index buffer
     ///
     fn draw_indexed_triangles(&mut self, VertexBufferId(vertex_buffer_id): VertexBufferId, IndexBufferId(index_buffer_id): IndexBufferId, num_vertices: usize, state: &mut RendererState) {
+        if let (Some(Some(vertex_buffer)), Some(Some(index_buffer))) = (self.vertex_buffers.get(vertex_buffer_id), self.index_buffers.get(index_buffer_id)) {
+            let vertex_buffer       = Arc::clone(vertex_buffer);
+            let index_buffer        = Arc::clone(index_buffer);
 
+            // Make sure that the pipeline is up to date
+            self.update_pipeline_if_needed(state);
+
+            // Add the buffers to the render pass resources
+            let vertex_buffer_index = state.render_pass_resources.buffers.len();
+            let index_buffer_index  = state.render_pass_resources.buffers.len()+1;
+
+            state.render_pass_resources.buffers.push(vertex_buffer);
+            state.render_pass_resources.buffers.push(index_buffer);
+
+            // Set up a vertex buffer and draw the triangles during the render pass
+            state.render_pass.push(Box::new(move |resources, render_pass| {
+                render_pass.set_vertex_buffer(0, resources.buffers[vertex_buffer_index].slice(..));
+                render_pass.set_index_buffer(resources.buffers[index_buffer_index].slice(..), wgpu::IndexFormat::Uint16);
+                render_pass.draw_indexed(0..num_vertices as u32, 0, 0..1);
+            }));
+        }
     }
 }
