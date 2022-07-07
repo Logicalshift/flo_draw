@@ -73,12 +73,18 @@ impl RendererState {
     /// Updates the contents of the matrix buffer for this renderer
     ///
     #[inline]
-    pub fn write_matrix(&self, new_matrix: &Matrix) {
+    pub fn write_matrix(&mut self, device: &wgpu::Device, new_matrix: &Matrix) {
         let matrix_void     = new_matrix.0.as_ptr() as *const c_void;
         let matrix_len      = mem::size_of::<[[f32; 4]; 4]>();
         let matrix_u8       = unsafe { slice::from_raw_parts(matrix_void as *const u8, matrix_len) };
 
-        self.queue.write_buffer(&self.matrix_buffer, 0, matrix_u8);
+        let matrix_buffer   = device.create_buffer_init(&util::BufferInitDescriptor {
+            label:      Some("matrix_buffer"),
+            contents:   matrix_u8,
+            usage:      wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        self.matrix_buffer  = Arc::new(matrix_buffer);
     }
 
     ///

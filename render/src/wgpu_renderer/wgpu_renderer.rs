@@ -223,7 +223,32 @@ impl WgpuRenderer {
     /// Sets the transform to used with the following render instructions
     ///
     fn set_transform(&mut self, matrix: Matrix, render_state: &mut RendererState) {
-        render_state.write_matrix(&matrix);
+        // Update the render pipeline
+        self.update_pipeline_if_needed(render_state);
+
+        // Update the render buffer
+        render_state.write_matrix(&*self.device, &matrix);
+
+        // Update the bound resources in the next render pass
+        if let Some(pipeline) = &render_state.pipeline {
+            let matrix_group = pipeline.matrix_group_index();
+            let matrix_index;
+
+            if let Some(matrix_binding) = pipeline.bind_matrix_buffer(&*self.device, &*render_state.matrix_buffer) {
+                // Store the matrix bind group in the resources for the pending render pass
+                matrix_index    = Some(render_state.render_pass_resources.bind_groups.len());
+                render_state.render_pass_resources.bind_groups.push(Arc::new(matrix_binding));
+            } else {
+                matrix_index    = None;
+            }
+
+            // Update the matrix binding group on the next render pass
+            if let (Some(matrix_group), Some(matrix_index)) = (matrix_group, matrix_index) {
+                render_state.render_pass.push(Box::new(move |resources, render_pass| {
+                    render_pass.set_bind_group(matrix_group, &resources.bind_groups[matrix_index], &[]);
+                }));
+            }
+        }
     }
     
     ///
