@@ -36,6 +36,9 @@ pub struct WgpuRenderer {
     /// The surface that this renderer will target
     target_surface: Arc<wgpu::Surface>,
 
+    /// The surface texture that is being written to
+    target_surface_texture: Option<Arc<wgpu::SurfaceTexture>>,
+
     /// The width of the target surface
     width: u32,
 
@@ -77,6 +80,7 @@ impl WgpuRenderer {
             device:                 device.clone(),
             queue:                  queue,
             target_surface:         target_surface,
+            target_surface_texture: None,
             shaders:                HashMap::new(),
             vertex_buffers:         vec![],
             index_buffers:          vec![],
@@ -115,6 +119,9 @@ impl WgpuRenderer {
     pub fn render_to_surface<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions) {
         // Create the render state
         let mut render_state    = RendererState::new(Arc::clone(&self.queue), &*self.device);
+        let surface_texture     = self.target_surface.get_current_texture().unwrap();
+
+        self.target_surface_texture = Some(Arc::new(surface_texture));
 
         // Select the most recent render target, or the main frame buffer if the active render target is not set or does not exist
         self.select_main_frame_buffer(&mut render_state);
@@ -162,6 +169,9 @@ impl WgpuRenderer {
 
         // Submit the queue
         self.queue.submit(Some(render_state.encoder.finish()));
+
+        //self.target_surface_texture.as_ref().unwrap().present();
+        self.target_surface_texture = None;
     }
 
     ///
@@ -426,13 +436,13 @@ impl WgpuRenderer {
         state.run_render_pass();
 
         // Switch to the surface texture
-        let surface_texture     = self.target_surface.get_current_texture().unwrap();
+        let surface_texture     = Arc::clone(self.target_surface_texture.as_ref().unwrap());
         let swapchain_format    = self.target_surface.get_supported_formats(&self.adapter)[0];
         let texture_view        = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
         state.render_pass_resources.target_texture  = None;
-        state.render_pass_resources.surface_texture = Some(Arc::new(surface_texture));
+        state.render_pass_resources.surface_texture = Some(surface_texture);
         state.pipeline_configuration.texture_format = swapchain_format;
         state.pipeline_config_changed               = true;
     }
