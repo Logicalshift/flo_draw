@@ -122,7 +122,7 @@ impl WgpuRenderer {
     ///
     pub fn render_to_surface<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions) {
         // Create the render state
-        let mut render_state    = RendererState::new(Arc::clone(&self.queue), &*self.device);
+        let mut render_state    = RendererState::new(Arc::clone(&self.queue), Arc::clone(&self.device));
 
         // Select the most recent render target, or the main frame buffer if the active render target is not set or does not exist
         self.select_main_frame_buffer(&mut render_state);
@@ -463,12 +463,6 @@ impl WgpuRenderer {
     fn show_frame_buffer(&mut self, render_state: &mut RendererState) {
         // Finish the current render pass
         render_state.run_render_pass();
-
-        // Commit the commands that are pending in the command encoder
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("show_frame_buffer") });
-        mem::swap(&mut encoder, &mut render_state.encoder);
-
-        self.queue.submit(Some(encoder.finish()));
 
         // Present the current frame buffer
         if let Some(surface_texture) = self.target_surface_texture.take() {

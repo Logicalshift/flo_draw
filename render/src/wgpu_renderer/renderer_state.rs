@@ -16,6 +16,9 @@ use std::ffi::{c_void};
 /// State for the WGPU renderer
 ///
 pub (crate) struct RendererState {
+    /// The device this will render to
+    device:                             Arc<wgpu::Device>,
+
     /// The command queue for the device
     queue:                              Arc<wgpu::Queue>,
 
@@ -48,7 +51,7 @@ impl RendererState {
     ///
     /// Creates a default render state
     ///
-    pub fn new(command_queue: Arc<wgpu::Queue>, device: &wgpu::Device) -> RendererState {
+    pub fn new(command_queue: Arc<wgpu::Queue>, device: Arc<wgpu::Device>) -> RendererState {
         // TODO: we can avoid re-creating some of these structures every frame: eg, the binding groups in particular
 
         // Create all the state structures
@@ -56,6 +59,7 @@ impl RendererState {
         let encoder         = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("RendererState::new") });
 
         RendererState {
+            device:                             device,
             queue:                              command_queue,
             encoder:                            encoder,
             render_pass_resources:              RenderPassResources::default(),
@@ -127,7 +131,7 @@ impl RendererState {
             return;
         }
 
-        // Start a new render pass using the encoder
+        // Start a new render pass using the current encoder
         if let Some(texture_view) = &resources.target_view {
             // Start the render pass
             let mut render_pass = self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -141,5 +145,15 @@ impl RendererState {
                 (action)(&resources, &mut render_pass);
             }
         }
+
+        // Commit the commands that are pending in the command encoder
+        // It's probably not the most efficient way to do things, but it simplifies resource management 
+        // a lot (we'll need to hold on to all of the resources from the render pass resources until this
+        // is done otherwise). Might be some advantage to committing some commands to the GPU while we
+        // generate more too.
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("show_frame_buffer") });
+        mem::swap(&mut encoder, &mut self.encoder);
+
+        self.queue.submit(Some(encoder.finish()));
     }
 }
