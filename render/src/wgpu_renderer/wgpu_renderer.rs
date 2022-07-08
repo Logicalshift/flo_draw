@@ -546,7 +546,11 @@ impl WgpuRenderer {
 
             // Set up a vertex buffer and draw the triangles during the render pass
             state.render_pass.push(Box::new(move |resources, render_pass| {
-                render_pass.set_vertex_buffer(0, resources.buffers[buffer_index].slice(range.start as u64..range.end as u64));
+                let vertex_size = mem::size_of::<Vertex2D>();
+                let start_pos   = (range.start * vertex_size) as u64;
+                let end_pos     = (range.end * vertex_size) as u64;
+
+                render_pass.set_vertex_buffer(0, resources.buffers[buffer_index].slice(start_pos..end_pos));
                 render_pass.draw(0..range.len() as u32, 0..1);
             }));
         }
