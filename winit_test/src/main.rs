@@ -11,6 +11,25 @@ use futures::executor;
 use std::sync::*;
 
 fn main() {
+    // The render instructions that we'll send to the window
+    let rendering = {
+        use self::RenderAction::*;
+
+        vec![
+            RenderToFrameBuffer,
+
+            Clear(Rgba8([255, 255, 255, 255])),
+            CreateVertex2DBuffer(VertexBufferId(0), vec![
+                Vertex2D::with_pos(-0.5, -0.5).with_color(1.0, 0.0, 0.0, 1.0),
+                Vertex2D::with_pos(-0.0, 0.5).with_color(1.0, 0.0, 0.0, 1.0),
+                Vertex2D::with_pos(0.5, -0.5).with_color(1.0, 0.0, 0.0, 1.0),
+            ]),
+            DrawTriangles(VertexBufferId(0), 0..3),
+
+            ShowFrameBuffer
+        ]
+    };
+
     // Set up an event loop and a window that reports to it
     let event_loop  = EventLoop::new();
     let window      = window::Window::new(&event_loop).unwrap();
@@ -55,42 +74,13 @@ fn main() {
                 }
 
                 Event::WindowEvent { event: WindowEvent::Resized(size), .. } => {
-                    use RenderAction::*;
-
                     // Configure the surface to the new size
                     renderer.prepare_to_render(size.width, size.height);
-
-                    renderer.render_to_surface(vec![
-                        RenderToFrameBuffer,
-
-                        Clear(Rgba8([255, 255, 255, 255])),
-                        CreateVertex2DBuffer(VertexBufferId(0), vec![
-                            Vertex2D::with_pos(-0.5, -0.5).with_color(1.0, 0.0, 0.0, 1.0),
-                            Vertex2D::with_pos(-0.0, 0.5).with_color(1.0, 0.0, 0.0, 1.0),
-                            Vertex2D::with_pos(0.5, -0.5).with_color(1.0, 0.0, 0.0, 1.0),
-                        ]),
-                        DrawTriangles(VertexBufferId(0), 0..3),
-
-                        ShowFrameBuffer
-                    ]);
+                    renderer.render_to_surface(rendering.clone());
                 }
 
                 Event::RedrawRequested(_)   => {
-                    use RenderAction::*;
-
-                    renderer.render_to_surface(vec![
-                        RenderToFrameBuffer,
-
-                        Clear(Rgba8([255, 255, 255, 255])),
-                        CreateVertex2DBuffer(VertexBufferId(0), vec![
-                            Vertex2D::with_pos(-0.5, -0.5).with_color(1.0, 0.0, 0.0, 1.0),
-                            Vertex2D::with_pos(-0.0, 0.5).with_color(1.0, 0.0, 0.0, 1.0),
-                            Vertex2D::with_pos(0.5, -0.5).with_color(1.0, 0.0, 0.0, 1.0),
-                        ]),
-                        DrawTriangles(VertexBufferId(0), 0..3),
-
-                        ShowFrameBuffer
-                    ]);
+                    renderer.render_to_surface(rendering.clone());
                 }
 
                 _ => {}
