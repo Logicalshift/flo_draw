@@ -98,6 +98,10 @@ impl WgpuRenderer {
     /// Sets up the surface to render at a new size
     ///
     pub fn prepare_to_render(&mut self, width: u32, height: u32) {
+        // Clear the existing surface view
+        self.target_surface_texture = None;
+
+        // Fetch the format
         let swapchain_format    = self.target_surface.get_supported_formats(&*self.adapter)[0];
         let surface_config      = wgpu::SurfaceConfiguration {
             usage:          wgpu::TextureUsages::RENDER_ATTACHMENT,
