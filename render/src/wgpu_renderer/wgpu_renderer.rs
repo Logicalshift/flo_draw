@@ -554,7 +554,19 @@ impl WgpuRenderer {
     /// Clears the current render target to a single colour
     ///
     fn clear(&mut self, color: Rgba8, state: &mut RendererState) {
+        // Commit any existing rendering
+        state.run_render_pass();
 
+        // Set the clear color for the next render pass
+        let Rgba8([r, g, b, a]) = color;
+
+        let r       = (r as f64) / 255.0;
+        let g       = (g as f64) / 255.0;
+        let b       = (b as f64) / 255.0;
+        let a       = (a as f64) / 255.0;
+        let color   = wgpu::Color { r, g, b, a };
+        
+        state.render_pass_resources.clear = Some(color);
     }
     
     ///
