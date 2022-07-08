@@ -415,12 +415,14 @@ impl WgpuRenderer {
             // Switch to rendering to this render target
             let texture         = new_render_target.texture();
             let texture_format  = new_render_target.texture_format();
+            let samples         = new_render_target.sample_count();
             let texture_view    = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-            state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
-            state.render_pass_resources.target_texture  = Some(texture);
-            state.pipeline_configuration.texture_format = texture_format;
-            state.pipeline_config_changed               = true;
+            state.render_pass_resources.target_view             = Some(Arc::new(texture_view));
+            state.render_pass_resources.target_texture          = Some(texture);
+            state.pipeline_configuration.texture_format         = texture_format;
+            state.pipeline_configuration.multisampling_count    = samples;
+            state.pipeline_config_changed                       = true;
         }
     }
     

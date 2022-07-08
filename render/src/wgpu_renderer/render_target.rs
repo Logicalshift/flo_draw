@@ -106,4 +106,14 @@ impl RenderTarget {
             RenderTarget::Multisampled { texture_format, .. }   => *texture_format,
         }
     }
+
+    ///
+    /// The number of samples for this render target, if we're multisampling
+    ///
+    pub fn sample_count(&self) -> Option<u32> {
+        match self {
+            RenderTarget::Texture { .. }        => None,
+            RenderTarget::Multisampled { .. }   => Some(4),
+        }
+    }
 }
