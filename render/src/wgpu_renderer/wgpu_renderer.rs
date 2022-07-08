@@ -560,6 +560,7 @@ impl WgpuRenderer {
     ///
     fn clear(&mut self, color: Rgba8, state: &mut RendererState) {
         // Commit any existing rendering
+        self.update_pipeline_if_needed(state);
         state.run_render_pass();
 
         // Set the clear color for the next render pass
