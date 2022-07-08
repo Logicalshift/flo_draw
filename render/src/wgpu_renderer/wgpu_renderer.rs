@@ -432,6 +432,7 @@ impl WgpuRenderer {
 
         state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
         state.render_pass_resources.target_texture  = None;
+        state.render_pass_resources.surface_texture = Some(Arc::new(surface_texture));
         state.pipeline_configuration.texture_format = swapchain_format;
         state.pipeline_config_changed               = true;
     }

@@ -16,6 +16,9 @@ pub struct RenderPassResources {
     /// The texture that this render pass will write to
     pub (crate) target_texture: Option<Arc<wgpu::Texture>>,
 
+    /// If writing to the surface, the surface texture this will write to
+    pub (crate) surface_texture: Option<Arc<wgpu::SurfaceTexture>>,
+
     /// The texture view that this render pass will write to
     pub (crate) target_view: Option<Arc<wgpu::TextureView>>,
 
@@ -36,12 +39,13 @@ pub struct RenderPassResources {
 impl Default for RenderPassResources {
     fn default() -> RenderPassResources {
         RenderPassResources {
-            target_texture: None,
-            target_view:    None,
-            pipelines:      vec![],
-            buffers:        vec![],
-            bind_groups:    vec![],
-            clear:          None,
+            target_texture:     None,
+            surface_texture:    None,
+            target_view:        None,
+            pipelines:          vec![],
+            buffers:            vec![],
+            bind_groups:        vec![],
+            clear:              None,
         }
     }
 }
@@ -55,12 +59,13 @@ impl RenderPassResources {
         let view = Arc::new(view);
 
         RenderPassResources {
-            target_texture: Some(texture),
-            target_view:    Some(view),
-            pipelines:      vec![],
-            buffers:        vec![],
-            bind_groups:    vec![],
-            clear:          None,
+            target_texture:     Some(texture),
+            surface_texture:    None,
+            target_view:        Some(view),
+            pipelines:          vec![],
+            buffers:            vec![],
+            bind_groups:        vec![],
+            clear:              None,
         }
     }
 
