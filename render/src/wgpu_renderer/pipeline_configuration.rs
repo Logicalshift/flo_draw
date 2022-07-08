@@ -13,21 +13,25 @@ use std::mem;
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub (crate) struct PipelineConfiguration {
     /// Format of the texture that this will render against
-    pub (crate) texture_format: wgpu::TextureFormat,
+    pub (crate) texture_format:         wgpu::TextureFormat,
 
     /// The identifier of the shader module to use (this defines both the vertex and the fragment shader, as well as the pipeline layout to use)
-    pub (crate) shader_module: WgpuShader,
+    pub (crate) shader_module:          WgpuShader,
 
     /// The blending mode for this pipeline configuration
-    pub (crate) blending_mode: BlendMode,
+    pub (crate) blending_mode:          BlendMode,
+
+    /// The number of samples the target texture uses (or None for no multisampling)
+    pub (crate) multisampling_count:    Option<u32>,
 }
 
 impl Default for PipelineConfiguration {
     fn default() -> PipelineConfiguration {
         PipelineConfiguration {
-            texture_format: wgpu::TextureFormat::Bgra8Unorm,
-            shader_module:  WgpuShader::default(),
-            blending_mode:  BlendMode::SourceOver,
+            texture_format:         wgpu::TextureFormat::Bgra8Unorm,
+            shader_module:          WgpuShader::default(),
+            blending_mode:          BlendMode::SourceOver,
+            multisampling_count:    None
         }
     }
 }
@@ -252,6 +256,17 @@ impl PipelineConfiguration {
         // Load the shaders so that vertex_state and fragment_state can find them
         shader_cache.load_shader(&self.shader_module);
 
+        // Decide on the multisampling state
+        let multisampling = if let Some(sample_count) = self.multisampling_count {
+            wgpu::MultisampleState {
+                count:                      sample_count,
+                mask:                       !0,
+                alpha_to_coverage_enabled:  true,
+            }
+        } else {
+            wgpu::MultisampleState::default()
+        };
+
         wgpu::RenderPipelineDescriptor {
             label:          Some("render_pipeline_descriptor"),
             layout:         Some(pipeline_layout),
@@ -259,7 +274,7 @@ impl PipelineConfiguration {
             fragment:       self.fragment_state(shader_cache, temp_storage),
             primitive:      wgpu::PrimitiveState::default(),
             depth_stencil:  None,
-            multisample:    wgpu::MultisampleState::default(),
+            multisample:    multisampling,
             multiview:      None,
         }
     }
