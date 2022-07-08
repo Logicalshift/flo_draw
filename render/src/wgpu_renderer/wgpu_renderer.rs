@@ -423,6 +423,8 @@ impl WgpuRenderer {
             state.pipeline_configuration.texture_format         = texture_format;
             state.pipeline_configuration.multisampling_count    = samples;
             state.pipeline_config_changed                       = true;
+
+            self.update_pipeline_if_needed(state);
         }
     }
     
@@ -446,10 +448,13 @@ impl WgpuRenderer {
         let surface_texture     = self.target_surface_texture.as_ref().unwrap();
         let texture_view        = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
-        state.render_pass_resources.target_texture  = None;
-        state.pipeline_configuration.texture_format = swapchain_format;
-        state.pipeline_config_changed               = true;
+        state.render_pass_resources.target_view             = Some(Arc::new(texture_view));
+        state.render_pass_resources.target_texture          = None;
+        state.pipeline_configuration.texture_format         = swapchain_format;
+        state.pipeline_configuration.multisampling_count    = None;
+        state.pipeline_config_changed                       = true;
+
+        self.update_pipeline_if_needed(state);
     }
     
     ///
