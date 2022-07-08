@@ -54,7 +54,7 @@ impl RenderTarget {
             Multisampled                    |
             MultisampledTexture             => { descriptor.sample_count = 4; }
             Monochrome                      => { descriptor.format = wgpu::TextureFormat::R8Unorm; },
-            MonochromeMultisampledTexture   => { descriptor.format = wgpu::TextureFormat::R8Unorm; descriptor.sample_count = 1; }
+            MonochromeMultisampledTexture   => { descriptor.format = wgpu::TextureFormat::R8Unorm; descriptor.sample_count = 4; }
         }
 
         // Create the texture for this render target
