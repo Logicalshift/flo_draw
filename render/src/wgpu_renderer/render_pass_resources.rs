@@ -48,23 +48,6 @@ impl Default for RenderPassResources {
 
 impl RenderPassResources {
     ///
-    /// Creates a render pass targeting the specified texture
-    ///
-    pub fn with_texture(texture: Arc<wgpu::Texture>) -> RenderPassResources {
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let view = Arc::new(view);
-
-        RenderPassResources {
-            target_texture:     Some(texture),
-            target_view:        Some(view),
-            pipelines:          vec![],
-            buffers:            vec![],
-            bind_groups:        vec![],
-            clear:              None,
-        }
-    }
-
-    ///
     /// Generates the colour attachments for the render pass for these resources
     ///
     #[inline]
