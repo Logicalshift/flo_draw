@@ -143,7 +143,7 @@ impl WgpuRenderer {
                 SelectRenderTarget(render_id)                                                   => { self.select_render_target(render_id, &mut render_state); }
                 RenderToFrameBuffer                                                             => { self.select_main_frame_buffer(&mut render_state); }
                 DrawFrameBuffer(render_id, region, Alpha(alpha))                                => { self.draw_frame_buffer(render_id, region, alpha, &mut render_state); }
-                ShowFrameBuffer                                                                 => { /* This doesn't double-buffer so nothing to do */ }
+                ShowFrameBuffer                                                                 => { self.show_frame_buffer(&mut render_state); }
                 CreateTextureBgra(texture_id, Size2D(width, height))                            => { self.create_bgra_texture(texture_id, width, height); }
                 CreateTextureMono(texture_id, Size2D(width, height))                            => { self.create_mono_texture(texture_id, width, height); }
                 Create1DTextureBgra(texture_id, Size1D(width))                                  => { self.create_bgra_1d_texture(texture_id, width); }
@@ -166,9 +166,6 @@ impl WgpuRenderer {
 
         // Submit the queue
         self.queue.submit(Some(render_state.encoder.finish()));
-
-        //self.target_surface_texture.as_ref().unwrap().present();
-        self.target_surface_texture.take().map(|texture| texture.present());
     }
 
     ///
@@ -429,8 +426,9 @@ impl WgpuRenderer {
     fn select_main_frame_buffer(&mut self, state: &mut RendererState) {
         self.active_render_target = None;
 
+        // Ensure that there's a main frame buffer to render to
         if self.target_surface_texture.is_none() {
-            let surface_texture     = self.target_surface.get_current_texture().unwrap();
+            let surface_texture = self.target_surface.get_current_texture().unwrap();
             self.target_surface_texture = Some(surface_texture);
         }
 
@@ -453,6 +451,31 @@ impl WgpuRenderer {
     ///
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, region: FrameBufferRegion, alpha: f64, state: &mut RendererState) {
 
+    }
+
+    ///
+    /// Displays the current frame buffer to the screen
+    ///
+    fn show_frame_buffer(&mut self, render_state: &mut RendererState) {
+        // Finish the current render pass
+        render_state.run_render_pass();
+
+        // Commit the commands that are pending in the command encoder
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("show_frame_buffer") });
+        mem::swap(&mut encoder, &mut render_state.encoder);
+
+        self.queue.submit(Some(encoder.finish()));
+
+        // Present the current frame buffer
+        if let Some(surface_texture) = self.target_surface_texture.take() {
+            surface_texture.present();
+        }
+
+        // Fetch a new frame buffer
+        if self.target_surface_texture.is_none() {
+            let surface_texture = self.target_surface.get_current_texture().unwrap();
+            self.target_surface_texture = Some(surface_texture);
+        }
     }
     
     ///
