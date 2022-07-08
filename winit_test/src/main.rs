@@ -73,8 +73,6 @@ fn main() {
 
                         ShowFrameBuffer
                     ]);
-
-                    surface.get_current_texture().unwrap().present();
                 }
 
                 Event::RedrawRequested(_)   => {
@@ -93,8 +91,6 @@ fn main() {
 
                         ShowFrameBuffer
                     ]);
-
-                    surface.get_current_texture().unwrap().present();
                 }
 
                 _ => {}
