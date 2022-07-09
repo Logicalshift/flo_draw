@@ -84,6 +84,15 @@ impl ColorPostProcessingStep {
     }
 }
 
+impl StandardShaderVariant {
+    fn shader_function(&self) -> &'static str {
+        match self {
+            StandardShaderVariant::NoClipping   => include_str!("../../shaders/simple/clip_none.wgsl"),
+            StandardShaderVariant::ClippingMask => include_str!("../../shaders/simple/clip_none.wgsl"),
+        }
+    }
+}
+
 impl WgpuShaderLoader for WgpuShader {
     ///
     /// Loads the appropriate shader, and returns the entry point to use for the fragment and vertex shaders
@@ -95,7 +104,7 @@ impl WgpuShaderLoader for WgpuShader {
                 let base_module = include_str!("../../shaders/simple/simple.wgsl");
 
                 // TODO: amend the base module with the appropriate variant and colour post-processing functions
-                let base_module = format!("{}\n\n{}", color_post_processing.shader_function(), base_module);
+                let base_module = format!("{}\n\n{}\n\n{}", variant.shader_function(), color_post_processing.shader_function(), base_module);
 
                 // Load the shader
                 let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
