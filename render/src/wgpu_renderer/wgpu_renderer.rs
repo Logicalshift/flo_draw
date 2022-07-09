@@ -461,7 +461,18 @@ impl WgpuRenderer {
     /// Blits a frame buffer to the current render target
     ///
     fn draw_frame_buffer(&mut self, RenderTargetId(source_buffer): RenderTargetId, region: FrameBufferRegion, alpha: f64, state: &mut RendererState) {
+        // Fetch the corresponding render target
+        let render_target = if let Some(Some(render_target)) = self.render_targets.get(source_buffer) { 
+            render_target
+        } else {
+            return;
+        };
 
+        // Read the information from the render target
+        let texture = render_target.texture();
+        let samples = render_target.sample_count();
+
+        // TODO: need a shader to draw the frame buffer, then switch back to where we were before
     }
 
     ///
