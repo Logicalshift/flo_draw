@@ -71,6 +71,19 @@ impl Default for WgpuShader {
     }
 }
 
+impl ColorPostProcessingStep {
+    ///
+    /// Retrieves the `color_post_process` function for this post-processing step
+    ///
+    fn shader_function(&self) -> &'static str {
+        match self {
+            ColorPostProcessingStep::NoPostProcessing   => include_str!("../../shaders/simple/color_no_post_processing.wgsl"),
+            ColorPostProcessingStep::MultiplyAlpha      => include_str!("../../shaders/simple/color_multiply_alpha.wgsl"),
+            ColorPostProcessingStep::InvertColorAlpha   => include_str!("../../shaders/simple/color_invert_alpha.wgsl"),
+        }
+    }
+}
+
 impl WgpuShaderLoader for WgpuShader {
     ///
     /// Loads the appropriate shader, and returns the entry point to use for the fragment and vertex shaders
@@ -82,7 +95,7 @@ impl WgpuShaderLoader for WgpuShader {
                 let base_module = include_str!("../../shaders/simple/simple.wgsl");
 
                 // TODO: amend the base module with the appropriate variant and colour post-processing functions
-                let base_module = format!("{}", base_module);
+                let base_module = format!("{}\n\n{}", color_post_processing.shader_function(), base_module);
 
                 // Load the shader
                 let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {

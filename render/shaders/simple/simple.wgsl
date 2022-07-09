@@ -21,6 +21,8 @@ fn simple_vertex_shader(
     color[2]        /= 255.0;
     color[3]        /= 255.0;
 
+    color           = color_post_process(color);
+
     result.color    = color;
     result.pos      = vec4<f32>(pos[0], pos[1], 0.0, 1.0) * transform;
 
