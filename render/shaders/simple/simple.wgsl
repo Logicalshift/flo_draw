@@ -21,8 +21,6 @@ fn simple_vertex_shader(
     color[2]        /= 255.0;
     color[3]        /= 255.0;
 
-    color           = color_post_process(color);
-
     result.color    = color;
     result.pos      = vec4<f32>(pos[0], pos[1], 0.0, 1.0) * transform;
 
@@ -31,5 +29,5 @@ fn simple_vertex_shader(
 
 @fragment
 fn simple_fragment_shader(vertex: RasterData) -> @location(0) vec4<f32> {
-    return vertex.color;
+    return color_post_process(vertex.color);
 }
