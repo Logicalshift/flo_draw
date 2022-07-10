@@ -155,7 +155,7 @@ impl Pipeline {
 
                 // Bind to group 2
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    label:      Some("bind_input_texture_multisampled"),
+                    label:      Some("bind_input_texture_sampler"),
                     layout:     &*self.texture_layout,
                     entries:    &[
                         wgpu::BindGroupEntry {
