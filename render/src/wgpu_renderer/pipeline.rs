@@ -94,8 +94,8 @@ impl Pipeline {
             layout:     &*self.matrix_layout,
             entries:    &[
                 wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: matrix_buffer.as_entire_binding(),
+                    binding:    0,
+                    resource:   matrix_buffer.as_entire_binding(),
                 }
             ]
         });
@@ -165,7 +165,11 @@ impl Pipeline {
                         wgpu::BindGroupEntry {
                             binding:    1,
                             resource:   wgpu::BindingResource::Sampler(sampler)
-                        }
+                        },
+                        wgpu::BindGroupEntry {
+                            binding:    2,
+                            resource:   alpha.as_entire_binding()
+                        },
                     ]
                 })
             }
@@ -182,6 +186,10 @@ impl Pipeline {
                         wgpu::BindGroupEntry {
                             binding:    0,
                             resource:   wgpu::BindingResource::TextureView(&view),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding:    1,
+                            resource:   alpha.as_entire_binding()
                         },
                     ]
                 })
