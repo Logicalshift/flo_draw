@@ -29,6 +29,9 @@ pub struct RenderPassResources {
     /// Cache of the bind groups used by the render pass.
     pub (crate) bind_groups: Vec<Arc<wgpu::BindGroup>>,
 
+    /// The textures that this render pass will read from
+    pub (crate) textures: Vec<Arc<wgpu::Texture>>,
+
     /// If set to a colour, sets what the render target will be cleared to at the start of the pass
     pub (crate) clear: Option<wgpu::Color>,
 }
@@ -41,6 +44,7 @@ impl Default for RenderPassResources {
             pipelines:          vec![],
             buffers:            vec![],
             bind_groups:        vec![],
+            textures:           vec![],
             clear:              None,
         }
     }

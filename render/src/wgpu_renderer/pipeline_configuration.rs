@@ -206,7 +206,7 @@ impl PipelineConfiguration {
     }
 
     ///
-    /// Creates the matrix bind group layout descriptor for this configuration
+    /// Creates the matrix bind group layout descriptor for this configuration (this is bind group 0 in the shaders)
     ///
     #[inline]
     pub fn matrix_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
@@ -228,8 +228,46 @@ impl PipelineConfiguration {
         ];
 
         wgpu::BindGroupLayoutDescriptor {
-            label:      Some("bind_group_layout"),
+            label:      Some("matrix_bind_group_layout"),
             entries:    &JUST_MATRIX,
+        }
+    }
+
+    ///
+    /// Creates the bind group layout for the clipping mask bind group (this is bind group 1 in the shaders)
+    ///
+    #[inline]
+    pub fn clip_mask_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
+        // There are two types of binding layout: with and without the clip mask texture
+        static NO_CLIP_MASK:    [wgpu::BindGroupLayoutEntry; 0] = [];
+        static WITH_CLIP_MASK:  [wgpu::BindGroupLayoutEntry; 1] = [
+            wgpu::BindGroupLayoutEntry {
+                binding:            0,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   true,
+                }
+            },
+        ];
+
+        // The type of binding that's in use depends on if the shader module has a clipping mask or not
+        match self.shader_module {
+            WgpuShader::Simple(StandardShaderVariant::ClippingMask, _) => {
+                wgpu::BindGroupLayoutDescriptor {
+                    label:      Some("clip_mask_bind_group_layout_with_clip_mask"),
+                    entries:    &WITH_CLIP_MASK,
+                }
+            }
+
+            WgpuShader::Simple(StandardShaderVariant::NoClipping, _) => {
+                wgpu::BindGroupLayoutDescriptor {
+                    label:      Some("clip_mask_bind_group_layout_no_clip_mask"),
+                    entries:    &NO_CLIP_MASK,
+                }
+            }
         }
     }
 
@@ -277,24 +315,5 @@ impl PipelineConfiguration {
             multisample:    multisampling,
             multiview:      None,
         }
-    }
-
-    ///
-    /// Creates the matrix bind group for this pipeline configuration in a particular state
-    ///
-    /// This is stored in bind group 0
-    ///
-    #[inline]
-    pub fn create_matrix_bind_group<'a>(&self, device: &wgpu::Device, matrix_layout: &wgpu::BindGroupLayout, matrix_buffer: &wgpu::Buffer) -> wgpu::BindGroup {
-        device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label:      Some("create_matrix_bind_group"),
-            layout:     matrix_layout,
-            entries:    &[
-                wgpu::BindGroupEntry {
-                    binding:    0,
-                    resource:   matrix_buffer.as_entire_binding(),
-                }
-            ]
-        })
     }
 }

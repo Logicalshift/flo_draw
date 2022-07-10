@@ -186,6 +186,7 @@ impl WgpuRenderer {
                 render_state.active_pipeline_configuration = Some(render_state.pipeline_configuration.clone());
 
                 // Borrow bits of the renderer we'll need later (so Rust doesn't complain about borrowing self again)
+                let clip_texture    = self.current_clip_texture().map(|clip_texture| Arc::clone(&clip_texture.texture));
                 let device          = &self.device;
                 let shader_cache    = &mut self.shader_cache;  
                 let pipeline_states = &mut self.pipeline_states;
@@ -204,16 +205,21 @@ impl WgpuRenderer {
                 let pipeline_index  = render_state.render_pass_resources.pipelines.len();
                 render_state.render_pass_resources.pipelines.push(render_pipeline);
 
-                // Set up the bound resources
-                let matrix_group = pipeline.matrix_group_index();
-                let matrix_index;
+                // Set up the bound resources (matrix)
+                let matrix_group    = pipeline.matrix_group_index();
+                let matrix_binding  = pipeline.bind_matrix_buffer(device, &*render_state.matrix_buffer);
+                let matrix_index    = render_state.render_pass_resources.bind_groups.len();
 
-                if let Some(matrix_binding) = pipeline.bind_matrix_buffer(device, &*render_state.matrix_buffer) {
-                    matrix_index    = Some(render_state.render_pass_resources.bind_groups.len());
+                render_state.render_pass_resources.bind_groups.push(Arc::new(matrix_binding));
 
-                    render_state.render_pass_resources.bind_groups.push(Arc::new(matrix_binding));
-                } else {
-                    matrix_index    = None;
+                // Set up the bound resources (clip mask)
+                let clip_group      = pipeline.clip_mask_group_index();
+                let clip_binding    = pipeline.bind_clip_mask(device, clip_texture.as_ref().map(|clip_texture| &**clip_texture));
+                let clip_index      = render_state.render_pass_resources.bind_groups.len();
+
+                render_state.render_pass_resources.bind_groups.push(Arc::new(clip_binding));
+                if let Some(clip_texture) = clip_texture {
+                    render_state.render_pass_resources.textures.push(clip_texture);
                 }
 
                 // Add a callback function to actually set up the render pipeline (we have to do it indirectly later on because it borrows its resources)
@@ -222,12 +228,19 @@ impl WgpuRenderer {
                     render_pass.set_pipeline(&resources.pipelines[pipeline_index]);
 
                     // Set up the resources it needs
-                    if let (Some(matrix_index), Some(matrix_group)) = (matrix_index, matrix_group) {
-                        render_pass.set_bind_group(matrix_group, &resources.bind_groups[matrix_index], &[]);
-                    }
+                    render_pass.set_bind_group(matrix_group, &resources.bind_groups[matrix_index], &[]);
+                    render_pass.set_bind_group(clip_group, &resources.bind_groups[clip_index], &[]);
                 }));
             }
         }
+    }
+
+    ///
+    /// If the current shader is using a clip texture (and it exists), returns that texture
+    ///
+    fn current_clip_texture(&self) -> Option<&WgpuTexture> {
+        // TODO: Return the clip texture once we support multiple shaders
+        None
     }
     
     ///
@@ -243,22 +256,16 @@ impl WgpuRenderer {
         // Update the bound resources in the next render pass
         if let Some(pipeline) = &render_state.pipeline {
             let matrix_group = pipeline.matrix_group_index();
-            let matrix_index;
 
-            if let Some(matrix_binding) = pipeline.bind_matrix_buffer(&*self.device, &*render_state.matrix_buffer) {
-                // Store the matrix bind group in the resources for the pending render pass
-                matrix_index    = Some(render_state.render_pass_resources.bind_groups.len());
-                render_state.render_pass_resources.bind_groups.push(Arc::new(matrix_binding));
-            } else {
-                matrix_index    = None;
-            }
+            // Store the matrix bind group in the resources for the pending render pass
+            let matrix_binding  = pipeline.bind_matrix_buffer(&*self.device, &*render_state.matrix_buffer);
+            let matrix_index    = render_state.render_pass_resources.bind_groups.len();
+            render_state.render_pass_resources.bind_groups.push(Arc::new(matrix_binding));
 
             // Update the matrix binding group on the next render pass
-            if let (Some(matrix_group), Some(matrix_index)) = (matrix_group, matrix_index) {
-                render_state.render_pass.push(Box::new(move |resources, render_pass| {
-                    render_pass.set_bind_group(matrix_group, &resources.bind_groups[matrix_index], &[]);
-                }));
-            }
+            render_state.render_pass.push(Box::new(move |resources, render_pass| {
+                render_pass.set_bind_group(matrix_group, &resources.bind_groups[matrix_index], &[]);
+            }));
         }
     }
     
