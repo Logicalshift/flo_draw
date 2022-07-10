@@ -92,6 +92,24 @@ impl RendererState {
     }
 
     ///
+    /// Creates a buffer containing a f32 value
+    ///
+    #[inline]
+    pub fn f32_buffer(&self, value: f32) -> wgpu::Buffer {
+        let f32_void    = [value].as_ptr() as *const c_void;
+        let f32_len     = mem::size_of::<f32>();
+        let f32_u8      = unsafe { slice::from_raw_parts(f32_void as *const u8, f32_len) };
+
+        let f32_buffer  = self.device.create_buffer_init(&util::BufferInitDescriptor {
+            label:      Some("matrix_buffer"),
+            contents:   f32_u8,
+            usage:      wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        f32_buffer
+    }
+
+    ///
     /// Sets up the transform buffer and layout
     ///
     fn create_transform_buffer(device: &wgpu::Device) -> wgpu::Buffer {
