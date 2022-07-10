@@ -80,7 +80,7 @@ impl Pipeline {
     /// Returns the index of the texture binding group
     ///
     #[inline]
-    pub fn texture_group_index(&self) -> u32 {
+    pub fn input_texture_group_index(&self) -> u32 {
         2
     }
 

@@ -222,6 +222,13 @@ impl WgpuRenderer {
                     render_state.render_pass_resources.textures.push(clip_texture);
                 }
 
+                // Set up the bound resources (texture)
+                let texture_group   = pipeline.input_texture_group_index();
+                let texture_binding = pipeline.bind_input_texture(device, None, None, None);
+                let texture_index   = render_state.render_pass_resources.bind_groups.len();
+
+                render_state.render_pass_resources.bind_groups.push(Arc::new(texture_binding));
+
                 // Add a callback function to actually set up the render pipeline (we have to do it indirectly later on because it borrows its resources)
                 render_state.render_pass.push(Box::new(move |resources, render_pass| {
                     // Set the pipeline
@@ -230,6 +237,7 @@ impl WgpuRenderer {
                     // Set up the resources it needs
                     render_pass.set_bind_group(matrix_group, &resources.bind_groups[matrix_index], &[]);
                     render_pass.set_bind_group(clip_group, &resources.bind_groups[clip_index], &[]);
+                    render_pass.set_bind_group(texture_group, &resources.bind_groups[texture_index], &[]);
                 }));
             }
         }
