@@ -278,7 +278,87 @@ impl PipelineConfiguration {
     ///
     #[inline]
     pub fn texture_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
-        unimplemented!()
+        static NO_TEXTURE: [wgpu::BindGroupLayoutEntry; 0]          = [];
+        static WITH_SAMPLER: [wgpu::BindGroupLayoutEntry; 3]        = [
+            wgpu::BindGroupLayoutEntry {
+                binding:            0,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   false,
+                }
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding:            1,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding:            2,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Buffer {
+                    ty:                 wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size:   wgpu::BufferSize::new(4),
+                }
+            },
+        ];
+        static WITH_MULTISAMPLE: [wgpu::BindGroupLayoutEntry; 2]    = [
+            wgpu::BindGroupLayoutEntry {
+                binding:            0,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   false,
+                }
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding:            1,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Buffer {
+                    ty:                 wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size:   wgpu::BufferSize::new(4),
+                }
+            },
+        ];
+
+        match self.shader_module {
+            WgpuShader::Texture(_, InputTextureType::Sampler, _, _) => {
+                wgpu::BindGroupLayoutDescriptor {
+                    label:      Some("texture_bind_group_layout_sampler"),
+                    entries:    &WITH_SAMPLER,
+                }
+            },
+
+            WgpuShader::Texture(_, InputTextureType::Multisampled, _, _) => {
+                wgpu::BindGroupLayoutDescriptor {
+                    label:      Some("texture_bind_group_layout_multisampled"),
+                    entries:    &WITH_MULTISAMPLE,
+                }
+            },
+
+            WgpuShader::Texture(_, InputTextureType::None, _, _) => {
+                wgpu::BindGroupLayoutDescriptor {
+                    label:      Some("texture_bind_group_layout_none"),
+                    entries:    &NO_TEXTURE,
+                }
+            },
+
+            WgpuShader::Simple(_, _) => {
+                wgpu::BindGroupLayoutDescriptor {
+                    label:      Some("texture_bind_group_layout_none"),
+                    entries:    &NO_TEXTURE,
+                }
+            }
+        }
     }
 
     ///
