@@ -1,6 +1,6 @@
 struct RasterData {
     @location(0)        color:      vec4<f32>,
-    @location(1)        tex_coord:  vec4<f32>,
+    @location(1)        tex_coord:  vec2<f32>,
     @builtin(position)  pos:        vec4<f32>
 }
 
