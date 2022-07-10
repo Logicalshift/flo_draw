@@ -67,6 +67,21 @@ impl RendererState {
         let matrix_buffer   = Arc::new(Self::create_transform_buffer(&device));
         let encoder         = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("RendererState::new") });
 
+        let default_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("default_sampler"),
+            address_mode_u:     wgpu::AddressMode::Repeat,
+            address_mode_v:     wgpu::AddressMode::Repeat,
+            address_mode_w:     wgpu::AddressMode::Repeat,
+            mag_filter:         wgpu::FilterMode::Nearest,
+            min_filter:         wgpu::FilterMode::Nearest,
+            mipmap_filter:      wgpu::FilterMode::Nearest,
+            lod_min_clamp:      0.0,
+            lod_max_clamp:      0.0,
+            compare:            None,
+            anisotropy_clamp:   None,
+            border_color:       None,
+        });
+
         RendererState {
             device:                             device,
             queue:                              command_queue,
@@ -80,7 +95,7 @@ impl RendererState {
 
             matrix_buffer:                      matrix_buffer,
             input_texture:                      None,
-            sampler:                            None,
+            sampler:                            Some(Arc::new(default_sampler)),
             texture_alpha:                      None,
         }
     }
