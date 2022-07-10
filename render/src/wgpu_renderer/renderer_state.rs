@@ -43,6 +43,9 @@ pub (crate) struct RendererState {
     /// The actions for the active render pass (deferred so we can manage the render pass lifetime)
     pub render_pass:                    Vec<Box<dyn for<'a> FnOnce(&'a RenderPassResources, &mut wgpu::RenderPass<'a>) -> ()>>,
 
+    /// The size of the current render target
+    pub target_size:                    (u32, u32),
+
     /// The matrix transform buffer
     pub matrix_buffer:                  Arc<wgpu::Buffer>,
 
@@ -93,6 +96,7 @@ impl RendererState {
             pipeline_config_changed:            true,
             active_pipeline_configuration:      None,
 
+            target_size:                        (1, 1),
             matrix_buffer:                      matrix_buffer,
             input_texture:                      None,
             sampler:                            Some(Arc::new(default_sampler)),

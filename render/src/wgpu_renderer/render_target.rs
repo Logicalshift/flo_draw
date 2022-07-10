@@ -98,6 +98,16 @@ impl RenderTarget {
     }
 
     ///
+    /// Retrieves the size of this render target
+    ///
+    pub fn size(&self) -> (u32, u32) {
+        match self {
+            RenderTarget::Texture { width, height, .. }         => (*width, *height),
+            RenderTarget::Multisampled { width, height, .. }    => (*width, *height),
+        }
+    }
+
+    ///
     /// Sets the texture format for this render target
     ///
     pub fn texture_format(&self) -> wgpu::TextureFormat {

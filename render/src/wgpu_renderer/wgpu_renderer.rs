@@ -9,6 +9,8 @@ use super::pipeline_configuration::*;
 use crate::action::*;
 use crate::buffer::*;
 
+use flo_canvas;
+
 use wgpu;
 use wgpu::util;
 use wgpu::util::{DeviceExt};
@@ -441,10 +443,12 @@ impl WgpuRenderer {
 
             // Switch to rendering to this render target
             let texture         = new_render_target.texture();
+            let target_size     = new_render_target.size();
             let texture_format  = new_render_target.texture_format();
             let samples         = new_render_target.sample_count();
             let texture_view    = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
+            state.target_size                                   = target_size;
             state.render_pass_resources.target_view             = Some(Arc::new(texture_view));
             state.render_pass_resources.target_texture          = Some(texture);
             state.pipeline_configuration.texture_format         = texture_format;
@@ -475,6 +479,7 @@ impl WgpuRenderer {
         let surface_texture     = self.target_surface_texture.as_ref().unwrap();
         let texture_view        = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
+        state.target_size                                   = (self.width, self.height);
         state.render_pass_resources.target_view             = Some(Arc::new(texture_view));
         state.render_pass_resources.target_texture          = None;
         state.pipeline_configuration.texture_format         = swapchain_format;
@@ -496,8 +501,11 @@ impl WgpuRenderer {
         };
 
         // Read the information from the render target
-        let texture = render_target.texture();
-        let samples = render_target.sample_count();
+        let texture         = render_target.texture();
+        let samples         = render_target.sample_count();
+        let source_size     = render_target.size();
+        let source_width    = source_size.0 as f32;
+        let source_height   = source_size.1 as f32;
 
         // Copy the values we're going to update
         let old_texture         = state.input_texture.take();
@@ -512,6 +520,34 @@ impl WgpuRenderer {
         state.pipeline_configuration.shader_module  = WgpuShader::Texture(StandardShaderVariant::NoClipping, texture_type, AlphaBlendStep::Premultiply, ColorPostProcessingStep::NoPostProcessing);
         state.pipeline_configuration.blending_mode  = BlendMode::SourceOver;
         state.pipeline_config_changed               = true;
+
+        // Work out a viewport matrix
+        let target_size         = state.target_size;
+        let target_width        = target_size.0 as f32;
+        let target_height       = target_size.1 as f32;
+
+        let scale_transform     = flo_canvas::Transform2D::scale(2.0/target_width, 2.0/target_height);
+        let viewport_transform  = scale_transform * flo_canvas::Transform2D::translate(-(target_width/2.0), -(target_height/2.0));
+
+        let viewport_matrix     = transform_to_matrix(&viewport_transform);
+
+        // (TODO: store in the state, restore the existing matrix later on)
+
+        // Work out the region that's being rendered
+        let min_x                       = region.min_x();
+        let min_y                       = region.min_y();
+        let max_x                       = region.max_x();
+        let max_y                       = region.max_y();
+
+        let min_x                       = (min_x + 1.0)/2.0;
+        let min_y                       = (min_y + 1.0)/2.0;
+        let max_x                       = (max_x + 1.0)/2.0;
+        let max_y                       = (max_y + 1.0)/2.0;
+
+        let min_x                       = min_x * source_width;
+        let min_y                       = min_y * source_height;
+        let max_x                       = max_x * source_width;
+        let max_y                       = max_y * source_height;
 
         // Set up for rendering
         self.update_pipeline_if_needed(state);
@@ -697,4 +733,18 @@ impl WgpuRenderer {
             }));
         }
     }
+}
+
+///
+/// Converts a canvas transform to a rendering matrix
+///
+fn transform_to_matrix(transform: &flo_canvas::Transform2D) -> Matrix {
+    let flo_canvas::Transform2D(t) = transform;
+
+    Matrix([
+        [t[0][0], t[0][1], 0.0, t[0][2]],
+        [t[1][0], t[1][1], 0.0, t[1][2]],
+        [t[2][0], t[2][1], 1.0, t[2][2]],
+        [0.0,     0.0,     0.0, 1.0]
+    ])
 }
