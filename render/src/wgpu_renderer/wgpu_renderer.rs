@@ -499,7 +499,32 @@ impl WgpuRenderer {
         let texture = render_target.texture();
         let samples = render_target.sample_count();
 
-        // TODO: need a shader to draw the frame buffer, then switch back to where we were before
+        // Copy the values we're going to update
+        let old_texture         = state.input_texture.take();
+        let old_alpha           = state.texture_alpha.take();
+        let old_pipeline_config = state.pipeline_configuration.clone();
+
+        // Configure for rendering the frame buffer
+        let texture_type = if samples.is_none() { InputTextureType::Sampler } else { InputTextureType::Multisampled };
+
+        state.input_texture                         = Some(texture);
+        state.texture_alpha                         = Some(state.f32_buffer(alpha as _));
+        state.pipeline_configuration.shader_module  = WgpuShader::Texture(StandardShaderVariant::NoClipping, texture_type, AlphaBlendStep::Premultiply, ColorPostProcessingStep::NoPostProcessing);
+        state.pipeline_configuration.blending_mode  = BlendMode::SourceOver;
+        state.pipeline_config_changed               = true;
+
+        // Set up for rendering
+        self.update_pipeline_if_needed(state);
+
+        // TODO: create the vertex buffer
+
+        // TODO: queue up the render operation
+
+        // Restore the render state
+        state.input_texture             = old_texture;
+        state.texture_alpha             = old_alpha;
+        state.pipeline_configuration    = old_pipeline_config;
+        state.pipeline_config_changed   = true;
     }
 
     ///
