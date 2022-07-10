@@ -186,6 +186,7 @@ impl WgpuRenderer {
                 render_state.active_pipeline_configuration = Some(render_state.pipeline_configuration.clone());
 
                 // Borrow bits of the renderer we'll need later (so Rust doesn't complain about borrowing self again)
+                let (input_texture, sampler, texture_alpha) = self.current_input_texture(render_state);
                 let clip_texture    = self.current_clip_texture(render_state).map(|clip_texture| Arc::clone(&clip_texture.texture));
                 let device          = &self.device;
                 let shader_cache    = &mut self.shader_cache;  
@@ -224,10 +225,13 @@ impl WgpuRenderer {
 
                 // Set up the bound resources (texture)
                 let texture_group   = pipeline.input_texture_group_index();
-                let texture_binding = pipeline.bind_input_texture(device, None, None, None);
+                let texture_binding = pipeline.bind_input_texture(device, input_texture.as_ref().map(|t| &**t), sampler.as_ref().map(|s| &**s), texture_alpha.as_ref().map(|b| &**b));
                 let texture_index   = render_state.render_pass_resources.bind_groups.len();
 
                 render_state.render_pass_resources.bind_groups.push(Arc::new(texture_binding));
+                if let Some(input_texture) = input_texture  { render_state.render_pass_resources.textures.push(input_texture); }
+                if let Some(sampler) = sampler              { render_state.render_pass_resources.samplers.push(sampler); }
+                if let Some(texture_alpha) = texture_alpha  { render_state.render_pass_resources.buffers.push(texture_alpha); }
 
                 // Add a callback function to actually set up the render pipeline (we have to do it indirectly later on because it borrows its resources)
                 render_state.render_pass.push(Box::new(move |resources, render_pass| {
@@ -249,6 +253,14 @@ impl WgpuRenderer {
     fn current_clip_texture(&self, state: &RendererState) -> Option<&WgpuTexture> {
         // TODO: Return the clip texture once we support multiple shaders
         None
+    }
+
+    ///
+    /// If the current shader is using a texture, returns the texture, the sampler, and the buffer containing the alpha value
+    ///
+    #[inline]
+    fn current_input_texture(&self, state: &RendererState) -> (Option<Arc<wgpu::Texture>>, Option<Arc<wgpu::Sampler>>, Option<Arc<wgpu::Buffer>>) {
+        (state.input_texture.clone(), state.sampler.clone(), state.texture_alpha.clone())
     }
     
     ///

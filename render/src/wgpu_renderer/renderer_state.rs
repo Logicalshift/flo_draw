@@ -45,6 +45,15 @@ pub (crate) struct RendererState {
 
     /// The matrix transform buffer
     pub matrix_buffer:                  Arc<wgpu::Buffer>,
+
+    /// The input texture set for the current shader (or none)
+    pub input_texture:                  Option<Arc<wgpu::Texture>>,
+
+    /// The sampler for the current shader (or none)
+    pub sampler:                        Option<Arc<wgpu::Sampler>>,
+
+    /// The buffer containing the alpha value for the current texture
+    pub texture_alpha:                  Option<Arc<wgpu::Buffer>>,
 }
 
 impl RendererState {
@@ -70,6 +79,9 @@ impl RendererState {
             active_pipeline_configuration:      None,
 
             matrix_buffer:                      matrix_buffer,
+            input_texture:                      None,
+            sampler:                            None,
+            texture_alpha:                      None,
         }
     }
 
