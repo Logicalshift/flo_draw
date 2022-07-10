@@ -9,7 +9,7 @@ struct RasterData {
 var<uniform> transform: mat4x4<f32>;
 
 @vertex
-fn simple_vertex_shader(
+fn texture_vertex_shader(
     @location(0) pos:       vec2<f32>,
     @location(1) tex_coord: vec2<f32>,
     @location(2) color:     vec4<u32>,
@@ -30,7 +30,7 @@ fn simple_vertex_shader(
 }
 
 @fragment
-fn simple_fragment_shader(vertex: RasterData) -> @location(0) vec4<f32> {
+fn texture_fragment_shader(vertex: RasterData) -> @location(0) vec4<f32> {
     let color = texture_color(vertex.color, vertex.tex_coord);
 
     let color = clip(color, vertex.pos);
