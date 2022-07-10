@@ -57,12 +57,30 @@ pub enum FilterSourceFormat {
 }
 
 ///
+/// The type of texture used as input for a texture shader
+///
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub enum InputTextureType {
+    /// Using no texture
+    None,
+
+    /// Using a texture sampler
+    Sampler,
+
+    /// Using a multi-sampled texture that needs to be resolved
+    Multisampled,
+}
+
+///
 /// Enumeration of the shaders loaded for the WGPU renderer
 ///
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum WgpuShader {
     /// Flat colour shader
     Simple(StandardShaderVariant, ColorPostProcessingStep),
+
+    /// Renders fragments from a texture input
+    Texture(StandardShaderVariant, InputTextureType, AlphaBlendStep, ColorPostProcessingStep),
 }
 
 impl Default for WgpuShader {
@@ -93,17 +111,36 @@ impl StandardShaderVariant {
     }
 }
 
+impl AlphaBlendStep {
+    fn shader_function(&self) -> &'static str {
+        match self {
+            AlphaBlendStep::NoPremultiply   => include_str!("../../shaders/texture/alpha_no_premultiply.wgsl"),
+            AlphaBlendStep::Premultiply     => include_str!("../../shaders/texture/alpha_premultiplied.wgsl"),
+        }
+    }
+}
+
+impl InputTextureType {
+    fn shader_function(&self) -> &'static str {
+        match self {
+            InputTextureType::None          => include_str!("../../shaders/texture/texture_none.wgsl"),
+            InputTextureType::Sampler       => include_str!("../../shaders/texture/texture_sampler.wgsl"),
+            InputTextureType::Multisampled  => include_str!("../../shaders/texture/texture_multisample.wgsl"),
+        }
+    }
+}
+
 impl WgpuShaderLoader for WgpuShader {
     ///
     /// Loads the appropriate shader, and returns the entry point to use for the fragment and vertex shaders
     ///
     fn load(&self, device: &wgpu::Device) -> (Arc<wgpu::ShaderModule>, String, String) {
         match self {
-            WgpuShader::Simple(variant, color_post_processing)  => {
+            WgpuShader::Simple(variant, color_post_processing) => {
                 // The base module contains the shader program in terms of the variant and post-procesing functions
                 let base_module = include_str!("../../shaders/simple/simple.wgsl");
 
-                // TODO: amend the base module with the appropriate variant and colour post-processing functions
+                // Amend the base module with the appropriate variant and colour post-processing functions
                 let base_module = format!("{}\n\n{}\n\n{}", variant.shader_function(), color_post_processing.shader_function(), base_module);
 
                 // Load the shader
@@ -113,7 +150,23 @@ impl WgpuShaderLoader for WgpuShader {
                 });
 
                 (Arc::new(shader_module), "simple_vertex_shader".to_string(), "simple_fragment_shader".to_string())
-            }
+            },
+
+            WgpuShader::Texture(variant, input_type, alpha_blend, color_post_processing) => {
+                // The base module contains the shader program in terms of the variant and post-procesing functions
+                let base_module = include_str!("../../shaders/texture/texture.wgsl");
+
+                // Amend the base module with the appropriate variant and colour post-processing functions
+                let base_module = format!("{}\n\n{}\n\n{}\n\n{}\n\n{}", variant.shader_function(), alpha_blend.shader_function(), input_type.shader_function(), color_post_processing.shader_function(), base_module);
+
+                // Load the shader
+                let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label:  Some("WgpuShader::Texture"),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(&base_module)),
+                });
+
+                (Arc::new(shader_module), "texture_vertex_shader".to_string(), "texture_fragment_shader".to_string())
+            },
         }
     }
 }

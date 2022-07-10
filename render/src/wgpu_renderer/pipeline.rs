@@ -97,7 +97,8 @@ impl Pipeline {
     ///
     pub fn bind_clip_mask(&self, device: &wgpu::Device, clip_texture: Option<&wgpu::Texture>) -> wgpu::BindGroup {
         match (&self.shader_module, clip_texture) {
-            (WgpuShader::Simple(StandardShaderVariant::ClippingMask, _), Some(clip_texture)) => {
+            (WgpuShader::Texture(StandardShaderVariant::ClippingMask, _, _, _), Some(clip_texture)) |
+            (WgpuShader::Simple(StandardShaderVariant::ClippingMask, _), Some(clip_texture))        => {
                 // Create a view of the texture
                 let view = clip_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -114,8 +115,9 @@ impl Pipeline {
                 })
             }
 
-            (_, None)                                                       |
-            (WgpuShader::Simple(StandardShaderVariant::NoClipping, _), _)   => {
+            (_, None)                                                               |
+            (WgpuShader::Texture(StandardShaderVariant::NoClipping, _, _, _), _)    |
+            (WgpuShader::Simple(StandardShaderVariant::NoClipping, _), _)           => {
                 // Group 1 is bound to an empty set if clipping is off or no texture is defined
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label:      Some("create_clip_mask_bind_group_no_texture"),

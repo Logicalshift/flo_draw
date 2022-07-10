@@ -255,14 +255,16 @@ impl PipelineConfiguration {
 
         // The type of binding that's in use depends on if the shader module has a clipping mask or not
         match self.shader_module {
-            WgpuShader::Simple(StandardShaderVariant::ClippingMask, _) => {
+            WgpuShader::Texture(StandardShaderVariant::ClippingMask, _, _, _)   |
+            WgpuShader::Simple(StandardShaderVariant::ClippingMask, _)          => {
                 wgpu::BindGroupLayoutDescriptor {
                     label:      Some("clip_mask_bind_group_layout_with_clip_mask"),
                     entries:    &WITH_CLIP_MASK,
                 }
             }
 
-            WgpuShader::Simple(StandardShaderVariant::NoClipping, _) => {
+            WgpuShader::Texture(StandardShaderVariant::NoClipping, _, _, _)     |
+            WgpuShader::Simple(StandardShaderVariant::NoClipping, _)            => {
                 wgpu::BindGroupLayoutDescriptor {
                     label:      Some("clip_mask_bind_group_layout_no_clip_mask"),
                     entries:    &NO_CLIP_MASK,
