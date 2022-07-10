@@ -186,7 +186,7 @@ impl WgpuRenderer {
                 render_state.active_pipeline_configuration = Some(render_state.pipeline_configuration.clone());
 
                 // Borrow bits of the renderer we'll need later (so Rust doesn't complain about borrowing self again)
-                let clip_texture    = self.current_clip_texture().map(|clip_texture| Arc::clone(&clip_texture.texture));
+                let clip_texture    = self.current_clip_texture(render_state).map(|clip_texture| Arc::clone(&clip_texture.texture));
                 let device          = &self.device;
                 let shader_cache    = &mut self.shader_cache;  
                 let pipeline_states = &mut self.pipeline_states;
@@ -246,7 +246,7 @@ impl WgpuRenderer {
     ///
     /// If the current shader is using a clip texture (and it exists), returns that texture
     ///
-    fn current_clip_texture(&self) -> Option<&WgpuTexture> {
+    fn current_clip_texture(&self, state: &RendererState) -> Option<&WgpuTexture> {
         // TODO: Return the clip texture once we support multiple shaders
         None
     }
