@@ -88,7 +88,7 @@ impl StandardShaderVariant {
     fn shader_function(&self) -> &'static str {
         match self {
             StandardShaderVariant::NoClipping   => include_str!("../../shaders/simple/clip_none.wgsl"),
-            StandardShaderVariant::ClippingMask => include_str!("../../shaders/simple/clip_none.wgsl"),
+            StandardShaderVariant::ClippingMask => include_str!("../../shaders/simple/clip_mask.wgsl"),
         }
     }
 }
