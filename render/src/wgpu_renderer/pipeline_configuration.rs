@@ -274,6 +274,14 @@ impl PipelineConfiguration {
     }
 
     ///
+    /// Creates the bind group layout descriptor for the texture bind group (this is bind group 2 in the shaders)
+    ///
+    #[inline]
+    pub fn texture_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
+        unimplemented!()
+    }
+
+    ///
     /// Creates the pipeline layout for this render pipeline
     ///
     #[inline]

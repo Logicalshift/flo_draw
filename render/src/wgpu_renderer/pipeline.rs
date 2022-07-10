@@ -21,6 +21,9 @@ pub (crate) struct Pipeline {
 
     /// The bind group layout for the clip mask
     pub (crate) clip_mask_layout: Arc<wgpu::BindGroupLayout>,
+
+    /// The bind group layout for the input texture
+    pub (crate) texture_layout: Arc<wgpu::BindGroupLayout>,
 }
 
 impl Pipeline {
@@ -32,10 +35,12 @@ impl Pipeline {
         
         let matrix_bind_layout  = config.matrix_bind_group_layout();
         let clip_bind_layout    = config.clip_mask_bind_group_layout();
+        let texture_layout      = config.texture_bind_group_layout();
         let matrix_bind_layout  = device.create_bind_group_layout(&matrix_bind_layout);
         let clip_bind_layout    = device.create_bind_group_layout(&clip_bind_layout);
+        let texture_layout      = device.create_bind_group_layout(&texture_layout);
 
-        let bind_layout         = [&matrix_bind_layout, &clip_bind_layout];
+        let bind_layout         = [&matrix_bind_layout, &clip_bind_layout, &texture_layout];
         let pipeline_layout     = wgpu::PipelineLayoutDescriptor {
             label:                  Some("Pipeline::from_configuration"),
             bind_group_layouts:     &bind_layout,
@@ -51,6 +56,7 @@ impl Pipeline {
             pipeline:           Arc::new(new_pipeline),
             matrix_layout:      Arc::new(matrix_bind_layout),
             clip_mask_layout:   Arc::new(clip_bind_layout),
+            texture_layout:     Arc::new(texture_layout),
         }
     }
 
@@ -68,6 +74,14 @@ impl Pipeline {
     #[inline]
     pub fn clip_mask_group_index(&self) -> u32 {
         1
+    }
+
+    ///
+    /// Returns the index of the texture binding group
+    ///
+    #[inline]
+    pub fn texture_group_index(&self) -> u32 {
+        2
     }
 
     ///
@@ -119,6 +133,63 @@ impl Pipeline {
             (WgpuShader::Texture(StandardShaderVariant::NoClipping, _, _, _), _)    |
             (WgpuShader::Simple(StandardShaderVariant::NoClipping, _), _)           => {
                 // Group 1 is bound to an empty set if clipping is off or no texture is defined
+                device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label:      Some("create_clip_mask_bind_group_no_texture"),
+                    layout:     &*self.clip_mask_layout,
+                    entries:    &[]
+                })
+            }
+        }
+    }
+
+    ///
+    /// Creates the texture binding for the current shader
+    ///
+    pub fn bind_input_texture(&self, device: &wgpu::Device, texture: Option<&wgpu::Texture>, sampler: Option<&wgpu::Sampler>, alpha: f32)  -> wgpu::BindGroup {
+        match (&self.shader_module, texture, sampler) {
+            (WgpuShader::Texture(_, InputTextureType::Sampler, _, _), Some(texture), Some(sampler)) => {
+                // Create a view of the texture
+                let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+                // Bind to group 2
+                device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label:      Some("bind_input_texture_multisampled"),
+                    layout:     &*self.texture_layout,
+                    entries:    &[
+                        wgpu::BindGroupEntry {
+                            binding:    0,
+                            resource:   wgpu::BindingResource::TextureView(&view),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding:    1,
+                            resource:   wgpu::BindingResource::Sampler(sampler)
+                        }
+                    ]
+                })
+            }
+
+            (WgpuShader::Texture(_, InputTextureType::Multisampled, _, _), Some(texture), _) => {
+                // Create a view of the texture
+                let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+                // Bind to group 2
+                device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label:      Some("bind_input_texture_multisampled"),
+                    layout:     &*self.texture_layout,
+                    entries:    &[
+                        wgpu::BindGroupEntry {
+                            binding:    0,
+                            resource:   wgpu::BindingResource::TextureView(&view),
+                        },
+                    ]
+                })
+            }
+
+            (_, None, _)                                                        |
+            (WgpuShader::Texture(_, InputTextureType::None, _, _), _, _)        |
+            (WgpuShader::Texture(_, InputTextureType::Sampler, _, _), _, None)  |
+            (WgpuShader::Simple(_, _), _, _)                                    => {
+                // Group 2 is bound to an empty set if no texture is defined
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label:      Some("create_clip_mask_bind_group_no_texture"),
                     layout:     &*self.clip_mask_layout,
