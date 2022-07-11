@@ -554,13 +554,13 @@ impl WgpuRenderer {
 
         // Create the vertex buffer
         let triangles       = vec![
-            Vertex2D::with_pos(min_x, min_y).with_texture_coordinates(min_x, source_height-min_y),
-            Vertex2D::with_pos(min_x, max_y).with_texture_coordinates(min_x, source_height-max_y),
-            Vertex2D::with_pos(max_x, min_y).with_texture_coordinates(max_x, source_height-min_y),
+            Vertex2D::with_pos(min_x, min_y).with_texture_coordinates(min_x/source_width, (source_height-min_y)/source_height),
+            Vertex2D::with_pos(min_x, max_y).with_texture_coordinates(min_x/source_width, (source_height-max_y)/source_height),
+            Vertex2D::with_pos(max_x, min_y).with_texture_coordinates(max_x/source_width, (source_height-min_y)/source_height),
 
-            Vertex2D::with_pos(max_x, min_y).with_texture_coordinates(max_x, source_height-min_y),
-            Vertex2D::with_pos(max_x, max_y).with_texture_coordinates(max_x, source_height-max_y),
-            Vertex2D::with_pos(min_x, max_y).with_texture_coordinates(min_x, source_height-max_y),
+            Vertex2D::with_pos(max_x, min_y).with_texture_coordinates(max_x/source_width, (source_height-min_y)/source_height),
+            Vertex2D::with_pos(max_x, max_y).with_texture_coordinates(max_x/source_width, (source_height-max_y)/source_height),
+            Vertex2D::with_pos(min_x, max_y).with_texture_coordinates(min_x/source_width, (source_height-max_y)/source_height),
         ];
 
         let contents_void   = triangles.as_ptr() as *const c_void;
