@@ -552,9 +552,40 @@ impl WgpuRenderer {
         // Set up for rendering
         self.update_pipeline_if_needed(state);
 
-        // TODO: create the vertex buffer
+        // Create the vertex buffer
+        let triangles       = vec![
+            Vertex2D::with_pos(min_x, min_y).with_texture_coordinates(min_x, source_height-min_y),
+            Vertex2D::with_pos(min_x, max_y).with_texture_coordinates(min_x, source_height-max_y),
+            Vertex2D::with_pos(max_x, min_y).with_texture_coordinates(max_x, source_height-min_y),
 
-        // TODO: queue up the render operation
+            Vertex2D::with_pos(max_x, min_y).with_texture_coordinates(max_x, source_height-min_y),
+            Vertex2D::with_pos(max_x, max_y).with_texture_coordinates(max_x, source_height-max_y),
+            Vertex2D::with_pos(min_x, max_y).with_texture_coordinates(min_x, source_height-max_y),
+        ];
+
+        let contents_void   = triangles.as_ptr() as *const c_void;
+        let contents_len    = triangles.len() * mem::size_of::<Vertex2D>();
+        let contents_u8     = unsafe { slice::from_raw_parts(contents_void as *const u8, contents_len) };
+
+        let vertex_buffer   = self.device.create_buffer_init(&util::BufferInitDescriptor {
+            label:      Some("draw_frame_buffer"),
+            contents:   contents_u8,
+            usage:      wgpu::BufferUsages::VERTEX,
+        });
+        let vertex_buffer   = Arc::new(vertex_buffer);
+
+        // Queue up the render operation
+        let buffer_index    = state.render_pass_resources.buffers.len();
+        state.render_pass_resources.buffers.push(vertex_buffer);
+
+        state.render_pass.push(Box::new(move |resources, render_pass| {
+            let vertex_size = mem::size_of::<Vertex2D>();
+            let start_pos   = 0;
+            let end_pos     = (6 * vertex_size) as u64;
+
+            render_pass.set_vertex_buffer(0, resources.buffers[buffer_index].slice(start_pos..end_pos));
+            render_pass.draw(0..6, 0..1);
+        }));
 
         // Restore the render state
         state.input_texture             = old_texture;
