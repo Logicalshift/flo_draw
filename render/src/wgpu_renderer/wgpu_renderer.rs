@@ -273,7 +273,7 @@ impl WgpuRenderer {
         self.update_pipeline_if_needed(render_state);
 
         // Update the render buffer
-        render_state.write_matrix(&*self.device, &matrix);
+        render_state.write_matrix(&matrix);
 
         // Update the bound resources in the next render pass
         if let Some(pipeline) = &render_state.pipeline {
@@ -510,6 +510,7 @@ impl WgpuRenderer {
         // Copy the values we're going to update
         let old_texture         = state.input_texture.take();
         let old_alpha           = state.texture_alpha.take();
+        let old_matrix_buffer   = Arc::clone(&state.matrix_buffer);
         let old_pipeline_config = state.pipeline_configuration.clone();
 
         // Configure for rendering the frame buffer
@@ -530,8 +531,7 @@ impl WgpuRenderer {
         let viewport_transform  = scale_transform * flo_canvas::Transform2D::translate(-(target_width/2.0), -(target_height/2.0));
 
         let viewport_matrix     = transform_to_matrix(&viewport_transform);
-
-        // (TODO: store in the state, restore the existing matrix later on)
+        state.write_matrix(&viewport_matrix);
 
         // Work out the region that's being rendered
         let min_x                       = region.min_x();
@@ -559,6 +559,7 @@ impl WgpuRenderer {
         // Restore the render state
         state.input_texture             = old_texture;
         state.texture_alpha             = old_alpha;
+        state.matrix_buffer             = old_matrix_buffer;
         state.pipeline_configuration    = old_pipeline_config;
         state.pipeline_config_changed   = true;
     }
