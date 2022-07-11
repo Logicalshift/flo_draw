@@ -21,6 +21,7 @@ use std::ops::{Range};
 use std::sync::*;
 use std::collections::{HashMap};
 use std::ffi::{c_void};
+use std::num::{NonZeroU32};
 
 ///
 /// Renderer that uses the `wgpu` abstract library as a render target
@@ -414,6 +415,7 @@ impl WgpuRenderer {
 
         // Store the render target and texture. Render target textures have pre-multiplied alphas
         let new_texture = WgpuTexture {
+            descriptor:         new_render_target.texture_descriptor(),
             texture:            new_render_target.texture(),
             is_premultiplied:   true,
         };
@@ -618,42 +620,200 @@ impl WgpuRenderer {
     /// Creates a 2D texture with the BGRA pixel format
     ///
     fn create_bgra_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
+        // Free the old texture if there is one
+        if let Some(old_texture) = self.textures.get_mut(texture_id) {
+            *old_texture = None;
+        }
 
+        // Texture is COPY_DST so we can write to it
+        let mut descriptor = wgpu::TextureDescriptor {
+            label:  Some("render_target"),
+            size:   wgpu::Extent3d {
+                width:                  width as _,
+                height:                 height as _,
+                depth_or_array_layers:  1,
+            },
+            mip_level_count:    1,
+            sample_count:       1,
+            dimension:          wgpu::TextureDimension::D2,
+            format:             wgpu::TextureFormat::Bgra8Unorm,
+            usage:              wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+        };
+
+        // Create the texture
+        let new_texture = self.device.create_texture(&descriptor);
+        let new_texture = WgpuTexture {
+            descriptor:         descriptor,
+            texture:            Arc::new(new_texture),
+            is_premultiplied:   false,
+        };
+
+        // Store the texture
+        if texture_id >= self.textures.len() {
+            self.textures.extend((self.textures.len()..(texture_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        self.textures[texture_id] = Some(new_texture);
     }
     
     ///
     /// Creates a 2D monochrome texture
     ///
     fn create_mono_texture(&mut self, TextureId(texture_id): TextureId, width: usize, height: usize) {
+        // Free the old texture if there is one
+        if let Some(old_texture) = self.textures.get_mut(texture_id) {
+            *old_texture = None;
+        }
 
+        // Texture is COPY_DST so we can write to it
+        let mut descriptor = wgpu::TextureDescriptor {
+            label:  Some("render_target"),
+            size:   wgpu::Extent3d {
+                width:                  width as _,
+                height:                 height as _,
+                depth_or_array_layers:  1,
+            },
+            mip_level_count:    1,
+            sample_count:       1,
+            dimension:          wgpu::TextureDimension::D2,
+            format:             wgpu::TextureFormat::R8Unorm,
+            usage:              wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+        };
+
+        // Create the texture
+        let new_texture = self.device.create_texture(&descriptor);
+        let new_texture = WgpuTexture {
+            descriptor:         descriptor,
+            texture:            Arc::new(new_texture),
+            is_premultiplied:   false,
+        };
+
+        // Store the texture
+        if texture_id >= self.textures.len() {
+            self.textures.extend((self.textures.len()..(texture_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        self.textures[texture_id] = Some(new_texture);
     }
     
     ///
     /// Creates a 1D BGRA texture
     ///
     fn create_bgra_1d_texture(&mut self, TextureId(texture_id): TextureId, width: usize) {
+        // Free the old texture if there is one
+        if let Some(old_texture) = self.textures.get_mut(texture_id) {
+            *old_texture = None;
+        }
 
+        // Texture is COPY_DST so we can write to it
+        let mut descriptor = wgpu::TextureDescriptor {
+            label:  Some("render_target"),
+            size:   wgpu::Extent3d {
+                width:                  width as _,
+                height:                 1,
+                depth_or_array_layers:  1,
+            },
+            mip_level_count:    1,
+            sample_count:       1,
+            dimension:          wgpu::TextureDimension::D1,
+            format:             wgpu::TextureFormat::Bgra8Unorm,
+            usage:              wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+        };
+
+        // Create the texture
+        let new_texture = self.device.create_texture(&descriptor);
+        let new_texture = WgpuTexture {
+            descriptor:         descriptor,
+            texture:            Arc::new(new_texture),
+            is_premultiplied:   false,
+        };
+
+        // Store the texture
+        if texture_id >= self.textures.len() {
+            self.textures.extend((self.textures.len()..(texture_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        self.textures[texture_id] = Some(new_texture);
     }
     
     ///
     /// Creates a 1D monochrome texture
     ///
     fn create_mono_1d_texture(&mut self, TextureId(texture_id): TextureId, width: usize) {
+        // Free the old texture if there is one
+        if let Some(old_texture) = self.textures.get_mut(texture_id) {
+            *old_texture = None;
+        }
 
+        // Texture is COPY_DST so we can write to it
+        let mut descriptor = wgpu::TextureDescriptor {
+            label:  Some("render_target"),
+            size:   wgpu::Extent3d {
+                width:                  width as _,
+                height:                 1,
+                depth_or_array_layers:  1,
+            },
+            mip_level_count:    1,
+            sample_count:       1,
+            dimension:          wgpu::TextureDimension::D1,
+            format:             wgpu::TextureFormat::R8Unorm,
+            usage:              wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+        };
+
+        // Create the texture
+        let new_texture = self.device.create_texture(&descriptor);
+        let new_texture = WgpuTexture {
+            descriptor:         descriptor,
+            texture:            Arc::new(new_texture),
+            is_premultiplied:   false,
+        };
+
+        // Store the texture
+        if texture_id >= self.textures.len() {
+            self.textures.extend((self.textures.len()..(texture_id+1))
+                .into_iter()
+                .map(|_| None));
+        }
+
+        self.textures[texture_id] = Some(new_texture);
     }
     
     ///
     /// Writes byte data to a region of a 2D texture
     ///
     fn write_texture_data_2d(&mut self, TextureId(texture_id): TextureId, x1: usize, y1: usize, x2: usize, y2: usize, data: Arc<Vec<u8>>) {
+        if let Some(Some(texture)) = self.textures.get(texture_id) {
+            let bytes_per_pixel = texture.descriptor.format.describe().block_size as u64;
+            let layout          = wgpu::ImageDataLayout {
+                offset:         (y1 as u64) * (texture.descriptor.size.width as u64) * bytes_per_pixel + (x1 as u64) * bytes_per_pixel,
+                bytes_per_row:  Some(NonZeroU32::new(((texture.descriptor.size.width as u64) * bytes_per_pixel) as u32).unwrap()),
+                rows_per_image: None,
+            };
 
+            self.queue.write_texture(texture.texture.as_image_copy(), &*data, layout, wgpu::Extent3d { width: (x2-x1) as u32, height: (y2-y1) as u32, depth_or_array_layers: 1 });
+        }
     }
     
     ///
     /// Writes bytes data to a region of a 1D texture
     ///
     fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: Arc<Vec<u8>>) {
+        if let Some(Some(texture)) = self.textures.get(texture_id) {
+            let bytes_per_pixel = texture.descriptor.format.describe().block_size as u64;
+            let layout          = wgpu::ImageDataLayout {
+                offset:         (x1 as u64) * bytes_per_pixel,
+                bytes_per_row:  Some(NonZeroU32::new(((texture.descriptor.size.width as u64) * bytes_per_pixel) as u32).unwrap()),
+                rows_per_image: None,
+            };
 
+            self.queue.write_texture(texture.texture.as_image_copy(), &*data, layout, wgpu::Extent3d { width: (x2-x1) as u32, height: 1, depth_or_array_layers: 1 });
+        }
     }
     
     ///
