@@ -10,19 +10,19 @@ use std::sync::*;
 pub enum RenderTarget {
     /// Simple texture
     Texture {
-        texture:        Arc<wgpu::Texture>,
-        texture_format: wgpu::TextureFormat,
-        width:          u32,
-        height:         u32,
+        texture:            Arc<wgpu::Texture>,
+        texture_descriptor: wgpu::TextureDescriptor<'static>,
+        width:              u32,
+        height:             u32,
     },
 
     /// Multisampled texture
     Multisampled {
-        texture:        Arc<wgpu::Texture>,
-        texture_format: wgpu::TextureFormat,
-        resolved:       Option<Arc<wgpu::Texture>>,
-        width:          u32,
-        height:         u32,
+        texture:            Arc<wgpu::Texture>,
+        texture_descriptor: wgpu::TextureDescriptor<'static>,
+        resolved:           Option<Arc<wgpu::Texture>>,
+        width:              u32,
+        height:             u32,
     },
 }
 
@@ -66,10 +66,10 @@ impl RenderTarget {
             StandardForReading              |
             Monochrome                      => {
                 RenderTarget::Texture {
-                    texture:        Arc::new(texture),
-                    texture_format: descriptor.format, 
-                    width:          width,
-                    height:         height,
+                    texture:            Arc::new(texture),
+                    texture_descriptor: descriptor, 
+                    width:              width,
+                    height:             height,
                 }
             },
 
@@ -78,7 +78,7 @@ impl RenderTarget {
             MonochromeMultisampledTexture   => {
                 RenderTarget::Multisampled {
                     texture:        Arc::new(texture),
-                    texture_format: descriptor.format,
+                    texture_descriptor: descriptor,
                     resolved:       None,
                     width:          width,
                     height:         height,
@@ -112,8 +112,18 @@ impl RenderTarget {
     ///
     pub fn texture_format(&self) -> wgpu::TextureFormat {
         match self {
-            RenderTarget::Texture { texture_format, .. }        => *texture_format,
-            RenderTarget::Multisampled { texture_format, .. }   => *texture_format,
+            RenderTarget::Texture { texture_descriptor, .. }        => texture_descriptor.format,
+            RenderTarget::Multisampled { texture_descriptor, .. }   => texture_descriptor.format,
+        }
+    }
+
+    ///
+    /// Sets the texture format for this render target
+    ///
+    pub fn texture_descriptor(&self) -> wgpu::TextureDescriptor<'static> {
+        match self {
+            RenderTarget::Texture { texture_descriptor, .. }        => texture_descriptor.clone(),
+            RenderTarget::Multisampled { texture_descriptor, .. }   => texture_descriptor.clone(),
         }
     }
 
