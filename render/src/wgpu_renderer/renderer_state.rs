@@ -52,6 +52,9 @@ pub (crate) struct RendererState {
     /// The input texture set for the current shader (or none)
     pub input_texture:                  Option<Arc<wgpu::Texture>>,
 
+    /// The texture used for clipping the image
+    pub clip_texture:                   Option<Arc<wgpu::Texture>>,
+
     /// The sampler for the current shader (or none)
     pub sampler:                        Option<Arc<wgpu::Sampler>>,
 
@@ -99,6 +102,7 @@ impl RendererState {
             target_size:                        (1, 1),
             matrix_buffer:                      matrix_buffer,
             input_texture:                      None,
+            clip_texture:                       None,
             sampler:                            Some(Arc::new(default_sampler)),
             texture_alpha:                      None,
         }
