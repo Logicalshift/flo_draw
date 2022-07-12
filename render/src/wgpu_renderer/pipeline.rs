@@ -147,7 +147,7 @@ impl Pipeline {
     ///
     /// The alpha buffer here should be a buffer containing a single f32 value
     ///
-    pub fn bind_input_texture(&self, device: &wgpu::Device, texture: Option<&wgpu::Texture>, sampler: Option<&wgpu::Sampler>, alpha: Option<&wgpu::Buffer>)  -> wgpu::BindGroup {
+    pub fn bind_input_texture(&self, device: &wgpu::Device, texture_transform: &wgpu::Buffer, texture: Option<&wgpu::Texture>, sampler: Option<&wgpu::Sampler>, alpha: Option<&wgpu::Buffer>)  -> wgpu::BindGroup {
         match (&self.shader_module, texture, sampler, alpha) {
             (WgpuShader::Texture(_, InputTextureType::Sampler, _, _), Some(texture), Some(sampler), Some(alpha)) => {
                 // Create a view of the texture
@@ -160,14 +160,19 @@ impl Pipeline {
                     entries:    &[
                         wgpu::BindGroupEntry {
                             binding:    0,
+                            resource:   texture_transform.as_entire_binding(),
+                        },
+
+                        wgpu::BindGroupEntry {
+                            binding:    1,
                             resource:   wgpu::BindingResource::TextureView(&view),
                         },
                         wgpu::BindGroupEntry {
-                            binding:    1,
+                            binding:    2,
                             resource:   wgpu::BindingResource::Sampler(sampler)
                         },
                         wgpu::BindGroupEntry {
-                            binding:    2,
+                            binding:    3,
                             resource:   alpha.as_entire_binding()
                         },
                     ]
@@ -185,24 +190,42 @@ impl Pipeline {
                     entries:    &[
                         wgpu::BindGroupEntry {
                             binding:    0,
+                            resource:   texture_transform.as_entire_binding(),
+                        },
+
+                        wgpu::BindGroupEntry {
+                            binding:    1,
                             resource:   wgpu::BindingResource::TextureView(&view),
                         },
                         wgpu::BindGroupEntry {
-                            binding:    1,
+                            binding:    2,
                             resource:   alpha.as_entire_binding()
                         },
                     ]
                 })
             }
 
-            (_, None, _, _)                                                             |
             (WgpuShader::Texture(_, InputTextureType::None, _, _), _, _, _)             |
             (WgpuShader::Texture(_, InputTextureType::Sampler, _, _), _, None, _)       |
-            (WgpuShader::Texture(_, _, _, _), _, _, None)                               |
-            (WgpuShader::Simple(_, _), _, _, _)                                         => {
+            (WgpuShader::Texture(_, _, _, _), _, _, None)                               => {
                 // Group 2 is bound to an empty set if no texture is defined
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    label:      Some("create_clip_mask_bind_group_no_texture"),
+                    label:      Some("bind_input_texture_no_texture"),
+                    layout:     &*self.clip_mask_layout,
+                    entries:    &[
+                        wgpu::BindGroupEntry {
+                            binding:    0,
+                            resource:   texture_transform.as_entire_binding(),
+                        },
+                    ]
+                })
+            }
+
+            (_, None, _, _)                                                             |
+            (WgpuShader::Simple(_, _), _, _, _)                                         => {
+                // Group 2 is bound to an empty set if not using a texture shader
+                device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label:      Some("bind_input_texture_not_texture_shader"),
                     layout:     &*self.clip_mask_layout,
                     entries:    &[]
                 })

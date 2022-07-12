@@ -201,7 +201,7 @@ impl WgpuRenderer {
                 render_state.active_pipeline_configuration = Some(render_state.pipeline_configuration.clone());
 
                 // Borrow bits of the renderer we'll need later (so Rust doesn't complain about borrowing self again)
-                let (input_texture, sampler, texture_alpha) = self.current_input_texture(render_state);
+                let (texture_transform, input_texture, sampler, texture_alpha) = self.current_input_texture(render_state);
                 let clip_texture    = self.current_clip_texture(render_state);
                 let device          = &self.device;
                 let shader_cache    = &mut self.shader_cache;  
@@ -240,7 +240,7 @@ impl WgpuRenderer {
 
                 // Set up the bound resources (texture)
                 let texture_group   = pipeline.input_texture_group_index();
-                let texture_binding = pipeline.bind_input_texture(device, input_texture.as_ref().map(|t| &**t), sampler.as_ref().map(|s| &**s), texture_alpha.as_ref().map(|b| &**b));
+                let texture_binding = pipeline.bind_input_texture(device, &*texture_transform, input_texture.as_ref().map(|t| &**t), sampler.as_ref().map(|s| &**s), texture_alpha.as_ref().map(|b| &**b));
                 let texture_index   = render_state.render_pass_resources.bind_groups.len();
 
                 render_state.render_pass_resources.bind_groups.push(Arc::new(texture_binding));
@@ -270,11 +270,11 @@ impl WgpuRenderer {
     }
 
     ///
-    /// If the current shader is using a texture, returns the texture, the sampler, and the buffer containing the alpha value
+    /// If the current shader is using a texture, returns the texture transform, the texture, the sampler, and the buffer containing the alpha value
     ///
     #[inline]
-    fn current_input_texture(&self, state: &RendererState) -> (Option<Arc<wgpu::Texture>>, Option<Arc<wgpu::Sampler>>, Option<Arc<wgpu::Buffer>>) {
-        (state.input_texture.clone(), state.sampler.clone(), state.texture_alpha.clone())
+    fn current_input_texture(&self, state: &RendererState) -> (Arc<wgpu::Buffer>, Option<Arc<wgpu::Texture>>, Option<Arc<wgpu::Sampler>>, Option<Arc<wgpu::Buffer>>) {
+        (state.texture_transform.clone(), state.input_texture.clone(), state.sampler.clone(), state.texture_alpha.clone())
     }
     
     ///

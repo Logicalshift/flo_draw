@@ -49,6 +49,9 @@ pub (crate) struct RendererState {
     /// The matrix transform buffer
     pub matrix_buffer:                  Arc<wgpu::Buffer>,
 
+    /// The texture transform buffer
+    pub texture_transform:              Arc<wgpu::Buffer>,
+
     /// The input texture set for the current shader (or none)
     pub input_texture:                  Option<Arc<wgpu::Texture>>,
 
@@ -70,8 +73,9 @@ impl RendererState {
         // TODO: we can avoid re-creating some of these structures every frame: eg, the binding groups in particular
 
         // Create all the state structures
-        let matrix_buffer   = Arc::new(Self::create_transform_buffer(&device));
-        let encoder         = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("RendererState::new") });
+        let matrix_buffer       = Arc::new(Self::create_transform_buffer(&device, &Matrix::identity()));
+        let texture_transform   = Arc::new(Self::create_transform_buffer(&device, &Matrix::identity()));
+        let encoder             = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("RendererState::new") });
 
         let default_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("default_sampler"),
@@ -101,6 +105,7 @@ impl RendererState {
 
             target_size:                        (1, 1),
             matrix_buffer:                      matrix_buffer,
+            texture_transform:                  texture_transform,
             input_texture:                      None,
             clip_texture:                       None,
             sampler:                            Some(Arc::new(default_sampler)),
@@ -113,17 +118,15 @@ impl RendererState {
     ///
     #[inline]
     pub fn write_matrix(&mut self, new_matrix: &Matrix) {
-        let matrix_void     = new_matrix.0.as_ptr() as *const c_void;
-        let matrix_len      = mem::size_of::<[[f32; 4]; 4]>();
-        let matrix_u8       = unsafe { slice::from_raw_parts(matrix_void as *const u8, matrix_len) };
+        self.matrix_buffer  = Arc::new(Self::create_transform_buffer(&self.device, new_matrix));
+    }
 
-        let matrix_buffer   = self.device.create_buffer_init(&util::BufferInitDescriptor {
-            label:      Some("matrix_buffer"),
-            contents:   matrix_u8,
-            usage:      wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        });
-
-        self.matrix_buffer  = Arc::new(matrix_buffer);
+    ///
+    /// Updates the contents of the matrix buffer for this renderer
+    ///
+    #[inline]
+    pub fn write_texture_transform(&mut self, new_transform: &Matrix) {
+        self.texture_transform = Arc::new(Self::create_transform_buffer(&self.device, new_transform));
     }
 
     ///
@@ -147,9 +150,8 @@ impl RendererState {
     ///
     /// Sets up the transform buffer and layout
     ///
-    fn create_transform_buffer(device: &wgpu::Device) -> wgpu::Buffer {
+    fn create_transform_buffer(device: &wgpu::Device, matrix: &Matrix) -> wgpu::Buffer {
         // Convert the matrix to a u8 pointer
-        let matrix          = Matrix::identity();
         let matrix_void     = matrix.0.as_ptr() as *const c_void;
         let matrix_len      = mem::size_of::<[[f32; 4]; 4]>();
         let matrix_u8       = unsafe { slice::from_raw_parts(matrix_void as *const u8, matrix_len) };
