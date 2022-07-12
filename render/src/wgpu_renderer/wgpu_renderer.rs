@@ -71,6 +71,12 @@ pub struct WgpuRenderer {
 
     /// The currently selected render target
     active_render_target: Option<RenderTargetId>,
+
+    /// The currently selected shader
+    active_shader: ShaderType,
+
+    /// The currently active blend mode
+    active_blend_mode: BlendMode,
 }
 
 impl WgpuRenderer {
@@ -91,9 +97,11 @@ impl WgpuRenderer {
             render_targets:         vec![],
             pipeline_states:        HashMap::new(),
             shader_cache:           ShaderCache::empty(device.clone()),
-            active_render_target:   None,
             width:                  0,
             height:                 0,
+            active_render_target:   None,
+            active_shader:          ShaderType::Simple { clip_texture: None },
+            active_blend_mode:      BlendMode::SourceOver,
         }
     }
 
@@ -133,6 +141,10 @@ impl WgpuRenderer {
         if let Some(active_render_target) = self.active_render_target {
             self.select_render_target(active_render_target, &mut render_state);
         }
+
+        // Set up the shader type
+        self.blend_mode(self.active_blend_mode, &mut render_state);
+        self.use_shader(self.active_shader, &mut render_state);
 
         // Evaluate the actions
         for action in actions {
@@ -379,8 +391,9 @@ impl WgpuRenderer {
     /// Sets the blend mode for the following render instructions
     ///
     fn blend_mode(&mut self, blend_mode: BlendMode, state: &mut RendererState) {
-        state.pipeline_configuration.blending_mode  = blend_mode;
-        state.pipeline_config_changed               = true;
+        self.active_blend_mode                      = blend_mode;
+
+        self.update_shader(self.active_shader, self.active_blend_mode, state);
     }
     
     ///
@@ -869,7 +882,60 @@ impl WgpuRenderer {
     /// Uses a particular shader for future rendering
     ///
     fn use_shader(&mut self, shader_type: ShaderType, state: &mut RendererState) {
+        self.active_shader = shader_type;
 
+        self.update_shader(self.active_shader, self.active_blend_mode, state);
+    }
+
+    ///
+    /// Updates the render settings for a selected shader
+    ///
+    fn update_shader(&mut self, shader_type: ShaderType, blend_mode: BlendMode, state: &mut RendererState) {
+        use self::ShaderType::*;
+
+        // Set the blend mode in the pipeline
+        state.pipeline_configuration.blending_mode = blend_mode;
+
+        // The post-processing step depends on the blend mode
+        let post_processing = match blend_mode {
+            BlendMode::Multiply     => ColorPostProcessingStep::InvertColorAlpha,
+            BlendMode::Screen       => ColorPostProcessingStep::MultiplyAlpha,
+
+            _                       => ColorPostProcessingStep::NoPostProcessing
+        };
+
+        // Set up the pipeline based on the shader type
+        match shader_type {
+            Simple { clip_texture } => {
+                let clip_texture    = if let Some(TextureId(clip_texture)) = clip_texture {
+                    if let Some(Some(texture)) = self.textures.get(clip_texture) {
+                        Some(Arc::clone(&texture.texture))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                let variant         = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
+
+                state.pipeline_configuration.shader_module = WgpuShader::Simple(variant, post_processing);
+            }
+
+            DashedLine { clip_texture, .. } => {
+                // TODO (this shader doesn't work anyway so should probably be deprecated)
+            }
+
+            Texture { texture, texture_transform, repeat, alpha, clip_texture } => {
+
+            }
+
+            LinearGradient { texture, texture_transform, repeat, alpha, clip_texture } => {
+
+            }
+        }
+
+        // Mark the pipeline configuration as changed
+        state.pipeline_config_changed = true;
     }
     
     ///
