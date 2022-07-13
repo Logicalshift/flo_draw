@@ -926,7 +926,51 @@ impl WgpuRenderer {
             }
 
             Texture { texture, texture_transform, repeat, alpha, clip_texture } => {
+                // Fetch the input texture
+                let TextureId(texture_id)   = texture;
+                let texture                 = if let Some(Some(texture)) = self.textures.get(texture_id) {
+                    Some(texture)
+                } else {
+                    None
+                };
 
+                // Work out which clip texture to use (and the corresponding shader variant)
+                let clip_texture    = if let Some(TextureId(clip_texture)) = clip_texture {
+                    if let Some(Some(texture)) = self.textures.get(clip_texture) {
+                        Some(Arc::clone(&texture.texture))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                let variant         = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
+
+                // Alpha blend step depends on if the texture is pre-multiplied
+                let alpha_blend = if let Some(true) = texture.map(|t| t.is_premultiplied) { 
+                    AlphaBlendStep::Premultiply
+                } else {
+                    AlphaBlendStep::NoPremultiply
+                };
+
+                // See if the texture is multisampled or not
+                let texture_type = match texture.map(|t| t.descriptor.sample_count) {
+                    None    |
+                    Some(0) |
+                    Some(1) => InputTextureType::Sampler,
+                    _       => InputTextureType::Multisampled,
+                };
+
+                // Set up the state
+                state.write_texture_transform(&texture_transform);
+                state.texture_alpha     = Some(state.f32_buffer(alpha as _));
+                state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
+
+                if state.input_texture.is_some() {
+                    state.pipeline_configuration.shader_module = WgpuShader::Texture(variant, texture_type, alpha_blend, post_processing);
+                } else {
+                    state.pipeline_configuration.shader_module = WgpuShader::Simple(variant, post_processing);
+                }
             }
 
             LinearGradient { texture, texture_transform, repeat, alpha, clip_texture } => {
