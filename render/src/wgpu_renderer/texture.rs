@@ -5,6 +5,7 @@ use std::sync::*;
 ///
 /// Representation of a texture stored in the WGPU renderer
 ///
+#[derive(Clone)]
 pub (crate) struct WgpuTexture {
     /// The descriptor used to create the texture
     pub descriptor: wgpu::TextureDescriptor<'static>,

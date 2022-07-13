@@ -843,7 +843,37 @@ impl WgpuRenderer {
     /// Creates a copy of a texture with a new ID
     ///
     fn copy_texture(&mut self, TextureId(src_texture_id): TextureId, TextureId(tgt_texture_id): TextureId, state: &mut RendererState) {
+        if let Some(Some(src_texture)) = self.textures.get(src_texture_id) {
+            // Copy the texture details
+            let src_texture = src_texture.clone();
 
+            // Clear out the destination texture if it already exists
+            if tgt_texture_id >= self.textures.len() {
+                self.textures.extend((self.textures.len()..(tgt_texture_id+1))
+                    .into_iter()
+                    .map(|_| None));
+            }
+
+            self.textures[tgt_texture_id] = None;
+
+            // Create a new texture using the same definition as the original texture
+            let new_texture_descriptor  = src_texture.descriptor.clone();
+            let new_texture             = self.device.create_texture(&new_texture_descriptor);
+            let new_texture             = WgpuTexture {
+                descriptor:         new_texture_descriptor,
+                texture:            Arc::new(new_texture),
+                is_premultiplied:   src_texture.is_premultiplied,
+            };
+
+            // Finish the render pass (especially for the case where the source texture is also the render target)
+            state.run_render_pass();
+
+            // Copy the source texture to the target texture
+            state.encoder.copy_texture_to_texture(src_texture.texture.as_image_copy(), new_texture.texture.as_image_copy(), src_texture.descriptor.size);
+
+            // Store the new texture
+            self.textures[tgt_texture_id] = Some(new_texture);
+        }
     }
     
     ///
