@@ -525,6 +525,7 @@ impl WgpuRenderer {
         let old_texture         = state.input_texture.take();
         let old_alpha           = state.texture_alpha.take();
         let old_matrix_buffer   = Arc::clone(&state.matrix_buffer);
+        let old_transform       = Arc::clone(&state.texture_transform);
         let old_pipeline_config = state.pipeline_configuration.clone();
 
         // Configure for rendering the frame buffer
@@ -535,6 +536,7 @@ impl WgpuRenderer {
         state.pipeline_configuration.shader_module  = WgpuShader::Texture(StandardShaderVariant::NoClipping, texture_type, AlphaBlendStep::Premultiply, ColorPostProcessingStep::NoPostProcessing);
         state.pipeline_configuration.blending_mode  = BlendMode::SourceOver;
         state.pipeline_config_changed               = true;
+        state.write_texture_transform(&Matrix::identity());
 
         // Work out a viewport matrix
         let target_size         = state.target_size;
@@ -605,6 +607,7 @@ impl WgpuRenderer {
         state.input_texture             = old_texture;
         state.texture_alpha             = old_alpha;
         state.matrix_buffer             = old_matrix_buffer;
+        state.texture_transform         = old_transform;
         state.pipeline_configuration    = old_pipeline_config;
         state.pipeline_config_changed   = true;
     }
