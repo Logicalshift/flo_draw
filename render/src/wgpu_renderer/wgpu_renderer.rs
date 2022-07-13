@@ -244,6 +244,7 @@ impl WgpuRenderer {
                 let texture_index   = render_state.render_pass_resources.bind_groups.len();
 
                 render_state.render_pass_resources.bind_groups.push(Arc::new(texture_binding));
+                render_state.render_pass_resources.buffers.push(texture_transform);
                 if let Some(input_texture) = input_texture  { render_state.render_pass_resources.textures.push(input_texture); }
                 if let Some(sampler) = sampler              { render_state.render_pass_resources.samplers.push(sampler); }
                 if let Some(texture_alpha) = texture_alpha  { render_state.render_pass_resources.buffers.push(texture_alpha); }
