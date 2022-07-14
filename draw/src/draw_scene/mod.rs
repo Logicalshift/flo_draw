@@ -16,6 +16,9 @@ mod render_window_entity;
 mod drawing_window_entity;
 mod scene;
 
+mod glutin_render_window_entity;
+mod glutin_scene;
+
 pub use self::render_window_entity::*;
 pub use self::drawing_window_entity::*;
 pub use self::scene::*;
