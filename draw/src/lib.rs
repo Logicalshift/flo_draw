@@ -63,6 +63,8 @@ mod glutin_runtime;
 mod event_conversion;
 mod window_properties;
 mod glutin_thread_event;
+
+/// The 'Scene' API provides a framework for building more complex software out of message-passing components
 pub mod draw_scene;
 
 pub use self::events::*;
