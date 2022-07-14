@@ -16,7 +16,9 @@ mod render_window_entity;
 mod drawing_window_entity;
 mod scene;
 
+#[cfg(feature="render-opengl")]
 mod glutin_render_window_entity;
+#[cfg(feature="render-opengl")]
 mod glutin_scene;
 
 pub use self::render_window_entity::*;

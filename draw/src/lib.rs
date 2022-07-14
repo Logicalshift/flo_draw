@@ -60,7 +60,12 @@ mod drawing_window;
 mod window_properties;
 
 /// The 'glutin' module provides an OpenGL implementation of the canvas using glutin for window management
+#[cfg(feature="render-opengl")]
 pub mod glutin;
+
+/// The 'wgpu' module provides a winit-based wgpu implementation of a renderer
+#[cfg(feature="render-wgpu")]
+pub mod wgpu;
 
 /// The 'Scene' API provides a framework for building more complex software out of message-passing components
 pub mod draw_scene;
