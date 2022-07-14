@@ -1,3 +1,4 @@
+#[cfg(feature="render-opengl")]
 use super::glutin_render_window_entity::*;
 
 use flo_scene::*;

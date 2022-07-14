@@ -63,16 +63,20 @@ mod window_properties;
 #[cfg(feature="render-opengl")]
 pub mod glutin;
 
+#[cfg(feature="render-opengl")]
+pub use self::glutin::{with_2d_graphics};
+
 /// The 'wgpu' module provides a winit-based wgpu implementation of a renderer
 #[cfg(feature="render-wgpu")]
 pub mod wgpu;
+
+#[cfg(all(feature="render-wgpu", not(feature="render-opengl")))]
+pub use self::wgpu::{with_2d_graphics};
 
 /// The 'Scene' API provides a framework for building more complex software out of message-passing components
 pub mod draw_scene;
 
 pub use self::events::*;
-pub use self::glutin::*;
 pub use self::render_window::*;
 pub use self::drawing_window::*;
-pub use self::glutin::{with_2d_graphics};
 pub use self::window_properties::*;
