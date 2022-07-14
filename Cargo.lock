@@ -741,6 +741,8 @@ dependencies = [
  "num-complex",
  "rand",
  "rayon",
+ "wgpu",
+ "winit",
 ]
 
 [[package]]

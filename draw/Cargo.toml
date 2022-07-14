@@ -11,6 +11,11 @@ categories          = [ "graphics", "rendering", "gui" ]
 
 include             = [ "Cargo.toml", "src/**/*", "examples/**/*", "images/**/*", "guide_images/**/*", "GUIDE.md", "README.md" ]
 
+[features]
+default             = [ "render-opengl" ]
+render-opengl       = [ "gl", "glutin", "flo_render/opengl" ]
+render-wgpu         = [ "winit", "wgpu", "flo_render/render-wgpu" ]
+
 [dependencies]
 flo_canvas          = { version = "0.4", features = [ "outline-fonts", "image-loading" ] }
 flo_canvas_events   = { version = "0.4" }
@@ -21,10 +26,14 @@ flo_binding         = "3.0"
 flo_scene           = "0.1"
 desync              = "0.9"
 
-glutin              = "0.28.0"
 lazy_static         = "1.2"
 futures             = "0.3"
-gl                  = "0.14"
+
+glutin              = { optional = true, version = "0.28.0" }
+gl                  = { optional = true, version = "0.14" }
+
+winit               = { optional = true, version = "0.26" }
+wgpu                = { optional = true, version = "0.13" }
 
 [dev-dependencies]
 flo_curves          = "0.6"
