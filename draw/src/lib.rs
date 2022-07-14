@@ -56,19 +56,18 @@ pub use flo_render::{initialize_offscreen_rendering};
 pub use flo_render_canvas::{render_canvas_offscreen};
 
 mod render_window;
-mod glutin_thread;
-mod glutin_window;
 mod drawing_window;
-mod glutin_runtime;
-mod event_conversion;
 mod window_properties;
-mod glutin_thread_event;
+
+/// The 'glutin' module provides an OpenGL implementation of the canvas using glutin for window management
+pub mod glutin;
 
 /// The 'Scene' API provides a framework for building more complex software out of message-passing components
 pub mod draw_scene;
 
 pub use self::events::*;
+pub use self::glutin::*;
 pub use self::render_window::*;
 pub use self::drawing_window::*;
-pub use self::glutin_thread::{with_2d_graphics};
+pub use self::glutin::{with_2d_graphics};
 pub use self::window_properties::*;

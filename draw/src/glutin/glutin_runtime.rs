@@ -1,8 +1,9 @@
-use super::events::*;
+use crate::events::*;
+use crate::window_properties::*;
+
 use super::glutin_window::*;
 use super::glutin_thread::*;
 use super::event_conversion::*;
-use super::window_properties::*;
 use super::glutin_thread_event::*;
 
 use flo_stream::*;

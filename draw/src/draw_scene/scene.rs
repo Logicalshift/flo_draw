@@ -1,5 +1,4 @@
-use crate::glutin_thread::*;
-use crate::glutin_thread_event::*;
+use crate::glutin::*;
 
 use futures::prelude::*;
 
