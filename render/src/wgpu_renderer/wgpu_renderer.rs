@@ -373,7 +373,6 @@ impl WgpuRenderer {
     ///
     fn free_vertex_buffer(&mut self, VertexBufferId(vertex_id): VertexBufferId) {
         if let Some(Some(buffer)) = self.vertex_buffers.get(vertex_id) {
-            buffer.destroy();
             self.vertex_buffers[vertex_id] = None;
         }
     }
@@ -383,7 +382,6 @@ impl WgpuRenderer {
     ///
     fn free_index_buffer(&mut self, IndexBufferId(index_id): IndexBufferId) {
         if let Some(Some(buffer)) = self.index_buffers.get(index_id) {
-            buffer.destroy();
             self.index_buffers[index_id] = None;
         }
     }
