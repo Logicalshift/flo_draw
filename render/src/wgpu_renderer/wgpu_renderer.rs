@@ -42,6 +42,9 @@ pub struct WgpuRenderer {
     /// The surface texture that is being written to
     target_surface_texture: Option<wgpu::SurfaceTexture>,
 
+    /// The format of the target surface
+    target_format: Option<wgpu::TextureFormat>,
+
     /// The width of the target surface
     width: u32,
 
@@ -89,6 +92,7 @@ impl WgpuRenderer {
             device:                 device.clone(),
             queue:                  queue,
             target_surface:         target_surface,
+            target_format:          None,
             target_surface_texture: None,
             shaders:                HashMap::new(),
             vertex_buffers:         vec![],
@@ -109,14 +113,27 @@ impl WgpuRenderer {
     /// Sets up the surface to render at a new size
     ///
     pub fn prepare_to_render(&mut self, width: u32, height: u32) {
+        // Leave the settings as-is if the width and height are the same
+        if width == self.width && height == self.height && self.target_format.is_some() {
+            return;
+        }
+
         // Clear the existing surface view
         self.target_surface_texture = None;
 
         // Fetch the format
-        let swapchain_format    = self.target_surface.get_supported_formats(&*self.adapter)[0];
+        let possible_formats    = self.target_surface.get_supported_formats(&*self.adapter);
+        let actual_format       = if possible_formats.contains(&wgpu::TextureFormat::Bgra8Unorm) {
+            wgpu::TextureFormat::Bgra8Unorm
+        } else if possible_formats.contains(&wgpu::TextureFormat::Rgba8Unorm) {
+            wgpu::TextureFormat::Rgba8Unorm
+        } else {
+            possible_formats[0]
+        };
+
         let surface_config      = wgpu::SurfaceConfiguration {
             usage:          wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format:         swapchain_format,
+            format:         actual_format,
             width:          width,
             height:         height,
             present_mode:   wgpu::PresentMode::Fifo
@@ -124,8 +141,9 @@ impl WgpuRenderer {
 
         self.target_surface.configure(&*self.device, &surface_config);
 
-        self.width  = width;
-        self.height = height;
+        self.width          = width;
+        self.height         = height;
+        self.target_format  = Some(actual_format);
     }
 
     ///
@@ -495,7 +513,7 @@ impl WgpuRenderer {
         state.target_size                                   = (self.width, self.height);
         state.render_pass_resources.target_view             = Some(Arc::new(texture_view));
         state.render_pass_resources.target_texture          = None;
-        state.pipeline_configuration.texture_format         = swapchain_format;
+        state.pipeline_configuration.texture_format         = self.target_format.expect("prepare_to_render must be called before rendering");
         state.pipeline_configuration.multisampling_count    = None;
         state.pipeline_config_changed                       = true;
 
