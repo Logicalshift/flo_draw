@@ -13,25 +13,29 @@ use std::mem;
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub (crate) struct PipelineConfiguration {
     /// Format of the texture that this will render against
-    pub (crate) texture_format:         wgpu::TextureFormat,
+    pub (crate) texture_format:             wgpu::TextureFormat,
 
     /// The identifier of the shader module to use (this defines both the vertex and the fragment shader, as well as the pipeline layout to use)
-    pub (crate) shader_module:          WgpuShader,
+    pub (crate) shader_module:              WgpuShader,
 
     /// The blending mode for this pipeline configuration
-    pub (crate) blending_mode:          BlendMode,
+    pub (crate) blending_mode:              BlendMode,
+
+    /// True if the source image (or shader) produces pre-multiplied colour values
+    pub (crate) source_is_premultiplied:    bool,
 
     /// The number of samples the target texture uses (or None for no multisampling)
-    pub (crate) multisampling_count:    Option<u32>,
+    pub (crate) multisampling_count:        Option<u32>,
 }
 
 impl Default for PipelineConfiguration {
     fn default() -> PipelineConfiguration {
         PipelineConfiguration {
-            texture_format:         wgpu::TextureFormat::Bgra8Unorm,
-            shader_module:          WgpuShader::default(),
-            blending_mode:          BlendMode::SourceOver,
-            multisampling_count:    None
+            texture_format:             wgpu::TextureFormat::Bgra8Unorm,
+            shader_module:              WgpuShader::default(),
+            blending_mode:              BlendMode::SourceOver,
+            source_is_premultiplied:    false,
+            multisampling_count:        None
         }
     }
 }
@@ -97,31 +101,55 @@ impl PipelineConfiguration {
         use wgpu::BlendFactor::*;
         use wgpu::BlendOperation::*;
 
-        match self.blending_mode {
-            SourceOver          => Some(create_add_blend_state(SrcAlpha, OneMinusSrcAlpha, One, OneMinusSrcAlpha)),
-            DestinationOver     => Some(create_add_blend_state(OneMinusDstAlpha, DstAlpha, OneMinusDstAlpha, One)),
-            SourceIn            => Some(create_add_blend_state(DstAlpha, Zero, DstAlpha, Zero)),
-            DestinationIn       => Some(create_add_blend_state(Zero, SrcAlpha, Zero, SrcAlpha)),
-            SourceOut           => Some(create_add_blend_state(Zero, OneMinusDstAlpha, Zero, OneMinusDstAlpha)),
-            DestinationOut      => Some(create_add_blend_state(Zero, OneMinusSrcAlpha, Zero, OneMinusSrcAlpha)),
-            SourceATop          => Some(create_add_blend_state(OneMinusDstAlpha, SrcAlpha, OneMinusDstAlpha, SrcAlpha)),
-            DestinationATop     => Some(create_add_blend_state(OneMinusDstAlpha, OneMinusSrcAlpha, OneMinusDstAlpha, OneMinusSrcAlpha)),
+        if !self.source_is_premultiplied {
+            // Shader output is not pre-multipled (texture output will be, though)
+            match self.blending_mode {
+                SourceOver          => Some(create_add_blend_state(SrcAlpha, OneMinusSrcAlpha, One, OneMinusSrcAlpha)),
+                DestinationOver     => Some(create_add_blend_state(OneMinusDstAlpha, DstAlpha, OneMinusDstAlpha, One)),
+                SourceIn            => Some(create_add_blend_state(DstAlpha, Zero, DstAlpha, Zero)),
+                DestinationIn       => Some(create_add_blend_state(Zero, SrcAlpha, Zero, SrcAlpha)),
+                SourceOut           => Some(create_add_blend_state(Zero, OneMinusDstAlpha, Zero, OneMinusDstAlpha)),
+                DestinationOut      => Some(create_add_blend_state(Zero, OneMinusSrcAlpha, Zero, OneMinusSrcAlpha)),
+                SourceATop          => Some(create_add_blend_state(OneMinusDstAlpha, SrcAlpha, OneMinusDstAlpha, SrcAlpha)),
+                DestinationATop     => Some(create_add_blend_state(OneMinusDstAlpha, OneMinusSrcAlpha, OneMinusDstAlpha, OneMinusSrcAlpha)),
 
-            // Multiply is a*b. Here we multiply the source colour by the destination colour, then blend the destination back in again to take account of
-            // alpha in the source layer (this version of multiply has no effect on the target alpha value: a more strict version might multiply those too)
-            //
-            // The source side is precalculated so that an alpha of 0 produces a colour of 1,1,1 to take account of transparency in the source.
-            Multiply            => Some(create_add_blend_state(Dst, Zero, Zero, One)),
+                // Multiply is a*b. Here we multiply the source colour by the destination colour, then blend the destination back in again to take account of
+                // alpha in the source layer (this version of multiply has no effect on the target alpha value: a more strict version might multiply those too)
+                //
+                // The source side is precalculated so that an alpha of 0 produces a colour of 1,1,1 to take account of transparency in the source.
+                Multiply            => Some(create_add_blend_state(Dst, Zero, Zero, One)),
 
-            // TODO: screen is 1-(1-a)*(1-b) which I think is harder to fake. If we precalculate (1-a) as the src in the shader
-            // then can multiply by ONE_MINUS_DST_COLOR to get (1-a)*(1-b). Can use One as our target colour, and then a 
-            // reverse subtraction to get 1-(1-a)*(1-b)
-            // (This implementation doesn't work: the One is 1*DST_COLOR and not 1 so this is currently 1*b-(1-a)*(1-b)
-            // with shader support)
-            Screen              => Some(create_op_blend_state(OneMinusDst, One, Zero, One, ReverseSubtract, Add)),
+                // TODO: screen is 1-(1-a)*(1-b) which I think is harder to fake. If we precalculate (1-a) as the src in the shader
+                // then can multiply by OneMinusDstColor to get (1-a)*(1-b). Can use One as our target colour, and then a 
+                // reverse subtraction to get 1-(1-a)*(1-b)
+                // (This implementation doesn't work: the One is 1*DstColor and not 1 so this is currently 1*b-(1-a)*(1-b)
+                // with shader support)
+                Screen              => Some(create_op_blend_state(OneMinusDst, One, Zero, One, ReverseSubtract, Add)),
 
-            AllChannelAlphaSourceOver       => Some(create_add_blend_state(One, OneMinusDst, One, OneMinusSrcAlpha)),
-            AllChannelAlphaDestinationOver  => Some(create_add_blend_state(OneMinusDst, One, OneMinusDstAlpha, One)),
+                AllChannelAlphaSourceOver       => Some(create_add_blend_state(One, OneMinusDst, One, OneMinusSrcAlpha)),
+                AllChannelAlphaDestinationOver  => Some(create_add_blend_state(OneMinusDst, One, OneMinusDstAlpha, One)),
+            }
+        } else {
+            // Shader output is pre-multiplied
+            match self.blending_mode {
+                SourceOver          => Some(create_add_blend_state(One, OneMinusSrcAlpha, One, OneMinusSrcAlpha)),
+                DestinationOver     => Some(create_add_blend_state(OneMinusDstAlpha, DstAlpha, OneMinusDstAlpha, One)),
+                SourceIn            => Some(create_add_blend_state(DstAlpha, Zero, DstAlpha, Zero)),
+                DestinationIn       => Some(create_add_blend_state(Zero, One, Zero, SrcAlpha)),
+                SourceOut           => Some(create_add_blend_state(Zero, OneMinusDstAlpha, Zero, OneMinusDstAlpha)),
+                DestinationOut      => Some(create_add_blend_state(Zero, OneMinusSrcAlpha, Zero, OneMinusSrcAlpha)),
+                SourceATop          => Some(create_add_blend_state(OneMinusDstAlpha, SrcAlpha, OneMinusDstAlpha, SrcAlpha)),
+                DestinationATop     => Some(create_add_blend_state(OneMinusDstAlpha, OneMinusSrcAlpha, OneMinusDstAlpha, OneMinusSrcAlpha)),
+
+                Multiply            => Some(create_add_blend_state(Dst, Zero, Zero, One)),
+
+                // TODO: see above
+                Screen              => Some(create_op_blend_state(OneMinusDst, One, Zero, One, ReverseSubtract, Add)),
+
+                AllChannelAlphaSourceOver       => Some(create_add_blend_state(One, OneMinusSrc, One, OneMinusSrcAlpha)),
+                AllChannelAlphaDestinationOver  => Some(create_add_blend_state(OneMinusDst, One, OneMinusDstAlpha, One)),
+            }
+
         }
     }
 

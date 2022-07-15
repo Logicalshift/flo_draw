@@ -548,11 +548,12 @@ impl WgpuRenderer {
         // Configure for rendering the frame buffer
         let texture_type = if samples.is_none() { InputTextureType::Sampler } else { InputTextureType::Multisampled };
 
-        state.input_texture                         = Some(texture);
-        state.texture_alpha                         = Some(state.f32_buffer(alpha as _));
-        state.pipeline_configuration.shader_module  = WgpuShader::Texture(StandardShaderVariant::NoClipping, texture_type, AlphaBlendStep::Premultiply, ColorPostProcessingStep::NoPostProcessing);
-        state.pipeline_configuration.blending_mode  = BlendMode::SourceOver;
-        state.pipeline_config_changed               = true;
+        state.input_texture                                     = Some(texture);
+        state.texture_alpha                                     = Some(state.f32_buffer(alpha as _));
+        state.pipeline_configuration.shader_module              = WgpuShader::Texture(StandardShaderVariant::NoClipping, texture_type, AlphaBlendStep::Premultiply, ColorPostProcessingStep::NoPostProcessing);
+        state.pipeline_configuration.blending_mode              = BlendMode::SourceOver;
+        state.pipeline_configuration.source_is_premultiplied    = true;
+        state.pipeline_config_changed                           = true;
         state.write_texture_transform(&Matrix::identity());
 
         // Work out a viewport matrix
@@ -968,7 +969,8 @@ impl WgpuRenderer {
                 };
                 let variant         = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
 
-                state.pipeline_configuration.shader_module = WgpuShader::Simple(variant, post_processing);
+                state.pipeline_configuration.shader_module              = WgpuShader::Simple(variant, post_processing);
+                state.pipeline_configuration.source_is_premultiplied    = false;
             }
 
             DashedLine { clip_texture, .. } => {
@@ -1016,10 +1018,12 @@ impl WgpuRenderer {
                 state.texture_alpha     = Some(state.f32_buffer(alpha as _));
                 state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
 
-                if state.input_texture.is_some() {
-                    state.pipeline_configuration.shader_module = WgpuShader::Texture(variant, texture_type, alpha_blend, post_processing);
+                if let Some(texture) = &texture {
+                    state.pipeline_configuration.shader_module              = WgpuShader::Texture(variant, texture_type, alpha_blend, post_processing);
+                    state.pipeline_configuration.source_is_premultiplied    = texture.is_premultiplied;
                 } else {
-                    state.pipeline_configuration.shader_module = WgpuShader::Simple(variant, post_processing);
+                    state.pipeline_configuration.shader_module              = WgpuShader::Simple(variant, post_processing);
+                    state.pipeline_configuration.source_is_premultiplied    = false;
                 }
             }
 
