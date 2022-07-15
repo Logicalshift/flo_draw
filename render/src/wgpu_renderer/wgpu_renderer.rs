@@ -123,13 +123,8 @@ impl WgpuRenderer {
 
         // Fetch the format
         let possible_formats    = self.target_surface.get_supported_formats(&*self.adapter);
-        let actual_format       = if possible_formats.contains(&wgpu::TextureFormat::Bgra8Unorm) {
-            wgpu::TextureFormat::Bgra8Unorm
-        } else if possible_formats.contains(&wgpu::TextureFormat::Rgba8Unorm) {
-            wgpu::TextureFormat::Rgba8Unorm
-        } else {
-            possible_formats[0]
-        };
+        let actual_format       = possible_formats.iter().filter(|format| !format.describe().srgb).next().copied();
+        let actual_format       = actual_format.unwrap_or(possible_formats[0]);
 
         let surface_config      = wgpu::SurfaceConfiguration {
             usage:          wgpu::TextureUsages::RENDER_ATTACHMENT,
