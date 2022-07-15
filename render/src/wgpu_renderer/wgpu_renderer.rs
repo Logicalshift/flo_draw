@@ -180,7 +180,7 @@ impl WgpuRenderer {
                 CreateTextureMono(texture_id, Size2D(width, height))                            => { self.create_mono_texture(texture_id, width, height); }
                 Create1DTextureBgra(texture_id, Size1D(width))                                  => { self.create_bgra_1d_texture(texture_id, width); }
                 Create1DTextureMono(texture_id, Size1D(width))                                  => { self.create_mono_1d_texture(texture_id, width); }
-                WriteTextureData(texture_id, Position2D(x1, y1), Position2D(x2, y2), data)      => { self.write_texture_data_2d(texture_id, x1, y1, x2, y2, data); }
+                WriteTextureData(texture_id, Position2D(x1, y1), Position2D(x2, y2), data)      => { self.write_texture_data_2d(texture_id, x1, y1, x2, y2, data, &mut render_state); }
                 WriteTexture1D(texture_id, Position1D(x1), Position1D(x2), data)                => { self.write_texture_data_1d(texture_id, x1, x2, data); }
                 CreateMipMaps(texture_id)                                                       => { self.create_mipmaps(texture_id, &mut render_state); }
                 CopyTexture(src_texture, tgt_texture)                                           => { self.copy_texture(src_texture, tgt_texture, &mut render_state); }
@@ -815,12 +815,20 @@ impl WgpuRenderer {
     ///
     /// Writes byte data to a region of a 2D texture
     ///
-    fn write_texture_data_2d(&mut self, TextureId(texture_id): TextureId, x1: usize, y1: usize, x2: usize, y2: usize, data: Arc<Vec<u8>>) {
+    fn write_texture_data_2d(&mut self, TextureId(texture_id): TextureId, x1: usize, y1: usize, x2: usize, y2: usize, data: Arc<Vec<u8>>, state: &mut RendererState) {
         if let Some(Some(texture)) = self.textures.get(texture_id) {
+            let (x1, x2)        = if x1 > x2 { (x2, x1) } else { (x1, x2) };
+            let (y1, y2)        = if y1 > y2 { (y2, y1) } else { (y1, y2) };
+
             let bytes_per_pixel = texture.descriptor.format.describe().block_size as u64;
+
+            let line_offset     = (y1 as u64) * (texture.descriptor.size.width as u64) * bytes_per_pixel;
+            let pixel_offset    = (x1 as u64) * bytes_per_pixel;
+            let bytes_per_row   = (texture.descriptor.size.width as u64) * bytes_per_pixel;
+
             let layout          = wgpu::ImageDataLayout {
-                offset:         (y1 as u64) * (texture.descriptor.size.width as u64) * bytes_per_pixel + (x1 as u64) * bytes_per_pixel,
-                bytes_per_row:  Some(NonZeroU32::new(((texture.descriptor.size.width as u64) * bytes_per_pixel) as u32).unwrap()),
+                offset:         line_offset + pixel_offset,
+                bytes_per_row:  Some(NonZeroU32::new(bytes_per_row as u32).unwrap()),
                 rows_per_image: None,
             };
 
