@@ -72,6 +72,7 @@ where
             WindowUpdate::Render(next_action)   => {
                 // Do nothing if there are no actions
                 if next_action.len() == 0 {
+                    events.publish(DrawEvent::NewFrame).await;
                     continue;
                 }
 
