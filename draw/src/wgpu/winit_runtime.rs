@@ -14,6 +14,7 @@ use winit::event_loop::{ControlFlow, EventLoopWindowTarget};
 use winit::window::{WindowId, Fullscreen};
 use futures::task;
 use futures::prelude::*;
+use futures::channel::oneshot;
 use futures::future::{LocalBoxFuture};
 
 use std::sync::*;
@@ -31,6 +32,9 @@ pub (super) struct WinitRuntime {
 
     /// Maps future IDs to running futures
     pub (super) futures: HashMap<u64, LocalBoxFuture<'static, ()>>,
+
+    /// Yield events waiting for an indication that all events have been processed
+    pub (super) pending_yields: Vec<oneshot::Sender<()>>,
 
     /// Set to true if this runtime will stop when all the windows are closed
     pub (super) will_stop_when_no_windows: bool,
@@ -106,7 +110,13 @@ impl WinitRuntime {
                     *control_flow = ControlFlow::Exit;
                 }
             }
-            RedrawEventsCleared                     => { }
+            RedrawEventsCleared                     => {
+                // Clear any pending yield requests
+                for yield_sender in self.pending_yields.drain(..) {
+                    yield_sender.send(()).ok();
+                }
+            }
+
             LoopDestroyed                           => { }
         }
     }
@@ -333,7 +343,7 @@ impl WinitRuntime {
             },
 
             Yield(sender) => {
-                sender.send(()).ok();
+                self.pending_yields.push(sender);
             },
 
             StopWhenAllWindowsClosed => {

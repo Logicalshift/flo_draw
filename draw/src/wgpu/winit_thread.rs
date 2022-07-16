@@ -140,6 +140,7 @@ fn run_winit_thread(send_proxy: mpsc::Sender<EventLoopProxy<WinitThreadEvent>>) 
     let mut runtime = WinitRuntime { 
         window_events:              HashMap::new(),
         futures:                    HashMap::new(),
+        pending_yields:             vec![],
         will_stop_when_no_windows:  false,
         will_exit:                  false,
         pointer_id:                 HashMap::new(),
