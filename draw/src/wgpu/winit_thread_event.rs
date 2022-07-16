@@ -9,6 +9,9 @@ use futures::stream::{BoxStream};
 
 use winit::window::{WindowId};
 
+use std::fmt;
+use std::fmt::*;
+
 ///
 /// Event that can be sent to a winit thread
 ///
@@ -27,4 +30,18 @@ pub enum WinitThreadEvent {
 
     /// Tells the UI thread to stop when there are no more windows open
     StopWhenAllWindowsClosed,
+}
+
+impl Debug for WinitThreadEvent {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        use self::WinitThreadEvent::*;
+
+        match self {
+            CreateRenderWindow(_, _, _)     => write!(f, "CreateRenderWindow(...)"),
+            RunProcess(_)                   => write!(f, "RunProcess(...)"),
+            WakeFuture(id)                  => write!(f, "WakeFuture({})", id),
+            StopSendingToWindow(id)         => write!(f, "StopSendingToWindow({:?})", id),
+            StopWhenAllWindowsClosed        => write!(f, "StopWhenAllWindowsClosed"),
+        }
+    }
 }
