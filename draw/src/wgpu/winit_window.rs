@@ -73,7 +73,6 @@ where
     let mut window_actions  = window_actions.ready_chunks(100);
 
     while let Some(next_action_set) = window_actions.next().await {
-        println!("Action set");
         let mut send_new_frame = false;
 
         for next_action in next_action_set {
@@ -93,8 +92,6 @@ where
                         // Search harder if it's not the last instruction
                         next_action.iter().any(|item| item == &RenderAction::ShowFrameBuffer)
                     };
-
-                    println!("  Render ({:?})", show_frame_buffer);
 
                     // Create the renderer if it doesn't already exist
                     if let (Some(winit_window), None) = (&window.window, &window.renderer) {
@@ -146,11 +143,6 @@ where
                         if show_frame_buffer {
                             send_new_frame = true;
                         }
-
-                        // Yield to process events
-                        let (yield_send, yield_recv) = oneshot::channel();
-                        winit_thread().send_event(WinitThreadEvent::Yield(yield_send));
-                        yield_recv.await.ok();
                     }
                 }
 
@@ -198,6 +190,11 @@ where
             // We only send one of these per batch, in case multiple frames are displayed during one batch of events for any reason (this reduces the
             // amount that the rendering can get behind)
             events.publish(DrawEvent::NewFrame).await;
+
+            // Yield to process events
+            let (yield_send, yield_recv) = oneshot::channel();
+            winit_thread().send_event(WinitThreadEvent::Yield(yield_send));
+            yield_recv.await.ok();
         }
     }
 
