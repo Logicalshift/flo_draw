@@ -276,6 +276,7 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
 
                                 if drawing_since_last_frame {
                                     // Finalize any drawing that occurred while we were waiting for the new frame to display
+                                    waiting_for_new_frame = true;
                                     render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
                                     drawing_since_last_frame = false;
                                 }
