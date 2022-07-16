@@ -151,7 +151,7 @@ impl WgpuRenderer {
         // Select the most recent render target, or the main frame buffer if the active render target is not set or does not exist
         self.select_main_frame_buffer(&mut render_state);
 
-        if let Some(active_render_target) = self.active_render_target {
+        if let Some(active_render_target) = self.active_render_target.take() {
             self.select_render_target(active_render_target, &mut render_state);
         }
 
@@ -462,6 +462,11 @@ impl WgpuRenderer {
     ///
     fn select_render_target(&mut self, RenderTargetId(render_id): RenderTargetId, state: &mut RendererState) {
         if let Some(Some(new_render_target)) = self.render_targets.get(render_id) {
+            // Do nothing if the render target is already selected
+            if Some(RenderTargetId(render_id)) == self.active_render_target {
+                return;
+            }
+
             self.active_render_target = Some(RenderTargetId(render_id));
 
             // Render to the existing render target
@@ -936,6 +941,10 @@ impl WgpuRenderer {
     /// Uses a particular shader for future rendering
     ///
     fn use_shader(&mut self, shader_type: ShaderType, state: &mut RendererState) {
+        if shader_type == self.active_shader {
+            return;
+        }
+
         self.active_shader = shader_type;
 
         self.update_shader(self.active_shader, self.active_blend_mode, state);
