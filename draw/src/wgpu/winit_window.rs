@@ -14,6 +14,8 @@ use futures::task::{Poll, Context};
 use std::pin::*;
 use std::sync::*;
 
+use std::fmt;
+
 ///
 /// Manages the state of a Winit window
 ///
@@ -168,6 +170,21 @@ enum WindowUpdate {
     SetFullscreen(bool),
     SetHasDecorations(bool),
     SetMousePointer(MousePointer)
+}
+
+impl fmt::Debug for WindowUpdate {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use self::WindowUpdate::*;
+
+        match self {
+            Render(actions)             => write!(f, "Render({} actions)", actions.len()),
+            SetTitle(title)             => write!(f, "SetTitle({})", title),
+            SetSize(sz)                 => write!(f, "SetSize({:?})", sz),
+            SetFullscreen(val)          => write!(f, "SetFullscreen({:?})", val),
+            SetHasDecorations(val)      => write!(f, "SetHasDecorations({:?})", val),
+            SetMousePointer(ptr)        => write!(f, "SetMousePointer({:?})", ptr),
+        }
+    }
 }
 
 ///
