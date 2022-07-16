@@ -23,8 +23,6 @@ use std::collections::{HashMap};
 use std::ffi::{c_void};
 use std::num::{NonZeroU32};
 
-use std::time::{Instant};
-
 ///
 /// Renderer that uses the `wgpu` abstract library as a render target
 ///
@@ -133,7 +131,7 @@ impl WgpuRenderer {
             format:         actual_format,
             width:          width,
             height:         height,
-            present_mode:   wgpu::PresentMode::AutoVsync,
+            present_mode:   wgpu::PresentMode::AutoNoVsync,
         };
 
         self.target_surface.configure(&*self.device, &surface_config);
@@ -165,15 +163,9 @@ impl WgpuRenderer {
             self.use_shader(shader, &mut render_state);
         }
 
-        let start_time      = Instant::now();
-        let mut last_time   = Instant::now();
-
         // Evaluate the actions
         for action in actions {
             use self::RenderAction::*;
-
-            println!("  {} {}: {:?}", Instant::now().duration_since(start_time).as_micros(), Instant::now().duration_since(last_time).as_micros(), action.short_description());
-            last_time   = Instant::now();
 
             match action {
                 SetTransform(matrix)                                                            => { self.set_transform(matrix, &mut render_state); }

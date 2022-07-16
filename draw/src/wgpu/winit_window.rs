@@ -19,7 +19,6 @@ use std::pin::*;
 use std::sync::*;
 
 use std::fmt;
-use std::time::{Duration, Instant};
 
 ///
 /// Manages the state of a Winit window
@@ -135,15 +134,10 @@ where
                         let width   = size.width;
                         let height  = size.height;
 
-                        let start_time = Instant::now();
                         renderer.prepare_to_render(width, height);
-                        let prepare_time = Instant::now().duration_since(start_time);
 
                         // Send the commands to the renderer
                         renderer.render_to_surface(next_action);
-                        let render_time = Instant::now().duration_since(start_time);
-
-                        println!("Render time: {} {}", prepare_time.as_millis(), render_time.as_millis());
 
                         // Notify that a new frame has been drawn if show_frame_buffer is set
                         if show_frame_buffer {
