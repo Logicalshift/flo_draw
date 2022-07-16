@@ -332,6 +332,10 @@ impl WinitRuntime {
                 self.poll_future(future_id);
             },
 
+            Yield(sender) => {
+                sender.send(()).ok();
+            },
+
             StopWhenAllWindowsClosed => {
                 self.will_stop_when_no_windows = true;
 

@@ -1,3 +1,6 @@
+use super::winit_thread::*;
+use super::winit_thread_event::*;
+
 use crate::events::*;
 use crate::window_properties::*;
 
@@ -9,6 +12,7 @@ use wgpu;
 use winit::dpi::{LogicalSize};
 use winit::window::{Window, Fullscreen};
 use futures::prelude::*;
+use futures::channel::oneshot;
 use futures::task::{Poll, Context};
 
 use std::pin::*;
@@ -112,6 +116,11 @@ where
 
                     // Send the commands to the renderer
                     renderer.render_to_surface(next_action);
+
+                    // Yield to process events
+                    let (yield_send, yield_recv) = oneshot::channel();
+                    winit_thread().send_event(WinitThreadEvent::Yield(yield_send));
+                    yield_recv.await.ok();
 
                     // Notify that a new frame has been drawn
                     events.publish(DrawEvent::NewFrame).await;

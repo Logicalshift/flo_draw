@@ -6,6 +6,7 @@ use flo_render::*;
 
 use futures::future::{LocalBoxFuture};
 use futures::stream::{BoxStream};
+use futures::channel::oneshot;
 
 use winit::window::{WindowId};
 
@@ -25,6 +26,9 @@ pub enum WinitThreadEvent {
     /// Polls the future with the specified ID
     WakeFuture(u64),
 
+    /// Resolves a yield request by sending an empty message (used to yield to process events)
+    Yield(oneshot::Sender<()>),
+
     /// Stop sending events for the specified window
     StopSendingToWindow(WindowId),
 
@@ -40,6 +44,7 @@ impl Debug for WinitThreadEvent {
             CreateRenderWindow(_, _, _)     => write!(f, "CreateRenderWindow(...)"),
             RunProcess(_)                   => write!(f, "RunProcess(...)"),
             WakeFuture(id)                  => write!(f, "WakeFuture({})", id),
+            Yield(_)                        => write!(f, "Yield(...)"),
             StopSendingToWindow(id)         => write!(f, "StopSendingToWindow({:?})", id),
             StopWhenAllWindowsClosed        => write!(f, "StopWhenAllWindowsClosed"),
         }
