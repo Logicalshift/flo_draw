@@ -355,8 +355,8 @@ impl WinitRuntime {
         // Store in the runtime
         self.futures.insert(future_id, future);
 
-        // Perform the initial polling operation on the future
-        self.poll_future(future_id);
+        // Wake the future as soon as possible
+        winit_thread().send_event(WinitThreadEvent::WakeFuture(future_id));
     }
 
     ///
