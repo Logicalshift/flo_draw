@@ -206,7 +206,7 @@ impl RendererState {
         // a lot (we'll need to hold on to all of the resources from the render pass resources until this
         // is done otherwise). Might be some advantage to committing some commands to the GPU while we
         // generate more too.
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("show_frame_buffer") });
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("run_render_pass") });
         mem::swap(&mut encoder, &mut self.encoder);
 
         self.queue.submit(Some(encoder.finish()));
