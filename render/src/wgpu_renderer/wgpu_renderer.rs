@@ -76,10 +76,10 @@ pub struct WgpuRenderer {
     active_render_target: Option<RenderTargetId>,
 
     /// The currently selected shader
-    active_shader: ShaderType,
+    active_shader: Option<ShaderType>,
 
     /// The currently active blend mode
-    active_blend_mode: BlendMode,
+    active_blend_mode: Option<BlendMode>,
 }
 
 impl WgpuRenderer {
@@ -104,8 +104,8 @@ impl WgpuRenderer {
             width:                  0,
             height:                 0,
             active_render_target:   None,
-            active_shader:          ShaderType::Simple { clip_texture: None },
-            active_blend_mode:      BlendMode::SourceOver,
+            active_shader:          Some(ShaderType::Simple { clip_texture: None }),
+            active_blend_mode:      Some(BlendMode::SourceOver),
         }
     }
 
@@ -156,8 +156,12 @@ impl WgpuRenderer {
         }
 
         // Set up the shader type
-        self.blend_mode(self.active_blend_mode, &mut render_state);
-        self.use_shader(self.active_shader, &mut render_state);
+        if let Some(blend_mode) = self.active_blend_mode.take() {
+            self.blend_mode(blend_mode, &mut render_state);
+        }
+        if let Some(shader) = self.active_shader.take() {
+            self.use_shader(shader, &mut render_state);
+        }
 
         // Evaluate the actions
         for action in actions {
@@ -403,8 +407,11 @@ impl WgpuRenderer {
     /// Sets the blend mode for the following render instructions
     ///
     fn blend_mode(&mut self, blend_mode: BlendMode, state: &mut RendererState) {
-        self.active_blend_mode                      = blend_mode;
+        if self.active_blend_mode == Some(blend_mode) {
+            return;
+        }
 
+        self.active_blend_mode = Some(blend_mode);
         self.update_shader(self.active_shader, self.active_blend_mode, state);
     }
     
@@ -941,20 +948,22 @@ impl WgpuRenderer {
     /// Uses a particular shader for future rendering
     ///
     fn use_shader(&mut self, shader_type: ShaderType, state: &mut RendererState) {
-        if shader_type == self.active_shader {
+        if Some(shader_type) == self.active_shader {
             return;
         }
 
-        self.active_shader = shader_type;
-
+        self.active_shader = Some(shader_type);
         self.update_shader(self.active_shader, self.active_blend_mode, state);
     }
 
     ///
     /// Updates the render settings for a selected shader
     ///
-    fn update_shader(&mut self, shader_type: ShaderType, blend_mode: BlendMode, state: &mut RendererState) {
+    fn update_shader(&mut self, shader_type: Option<ShaderType>, blend_mode: Option<BlendMode>, state: &mut RendererState) {
         use self::ShaderType::*;
+
+        let shader_type = if let Some(shader_type) = shader_type { shader_type } else { return; };
+        let blend_mode  = if let Some(blend_mode) = blend_mode { blend_mode } else { return; };
 
         // Set the blend mode in the pipeline
         state.pipeline_configuration.blending_mode = blend_mode;
