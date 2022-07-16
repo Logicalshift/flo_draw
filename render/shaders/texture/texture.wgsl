@@ -26,10 +26,10 @@ fn texture_vertex_shader(
     color[2] /= 255.0;
     color[3] /= 255.0;
 
-    let tex_coord       = vec4<f32>(tex_coord[0], tex_coord[1], 0.0, 1.0) * texture_transform;
+    let tex_coord       = texture_position(pos, tex_coord, texture_transform);
 
     result.color        = color;
-    result.tex_coord    = vec2<f32>(tex_coord[0], tex_coord[1]);
+    result.tex_coord    = tex_coord;
     result.pos          = vec4<f32>(pos[0], pos[1], 0.0, 1.0) * transform;
 
     return result;

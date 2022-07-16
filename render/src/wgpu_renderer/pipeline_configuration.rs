@@ -283,16 +283,16 @@ impl PipelineConfiguration {
 
         // The type of binding that's in use depends on if the shader module has a clipping mask or not
         match self.shader_module {
-            WgpuShader::Texture(StandardShaderVariant::ClippingMask, _, _, _)   |
-            WgpuShader::Simple(StandardShaderVariant::ClippingMask, _)          => {
+            WgpuShader::Texture(StandardShaderVariant::ClippingMask, _, _, _, _)    |
+            WgpuShader::Simple(StandardShaderVariant::ClippingMask, _)              => {
                 wgpu::BindGroupLayoutDescriptor {
                     label:      Some("clip_mask_bind_group_layout_with_clip_mask"),
                     entries:    &WITH_CLIP_MASK,
                 }
             }
 
-            WgpuShader::Texture(StandardShaderVariant::NoClipping, _, _, _)     |
-            WgpuShader::Simple(StandardShaderVariant::NoClipping, _)            => {
+            WgpuShader::Texture(StandardShaderVariant::NoClipping, _, _, _, _)      |
+            WgpuShader::Simple(StandardShaderVariant::NoClipping, _)                => {
                 wgpu::BindGroupLayoutDescriptor {
                     label:      Some("clip_mask_bind_group_layout_no_clip_mask"),
                     entries:    &NO_CLIP_MASK,
@@ -404,21 +404,21 @@ impl PipelineConfiguration {
         ];
 
         match self.shader_module {
-            WgpuShader::Texture(_, InputTextureType::Sampler, _, _) => {
+            WgpuShader::Texture(_, InputTextureType::Sampler, _, _, _) => {
                 wgpu::BindGroupLayoutDescriptor {
                     label:      Some("texture_bind_group_layout_sampler"),
                     entries:    &WITH_SAMPLER,
                 }
             },
 
-            WgpuShader::Texture(_, InputTextureType::Multisampled, _, _) => {
+            WgpuShader::Texture(_, InputTextureType::Multisampled, _, _, _) => {
                 wgpu::BindGroupLayoutDescriptor {
                     label:      Some("texture_bind_group_layout_multisampled"),
                     entries:    &WITH_MULTISAMPLE,
                 }
             },
 
-            WgpuShader::Texture(_, InputTextureType::None, _, _) => {
+            WgpuShader::Texture(_, InputTextureType::None, _, _, _) => {
                 wgpu::BindGroupLayoutDescriptor {
                     label:      Some("texture_bind_group_layout_none"),
                     entries:    &NO_TEXTURE,

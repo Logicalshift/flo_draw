@@ -111,8 +111,8 @@ impl Pipeline {
     ///
     pub fn bind_clip_mask(&self, device: &wgpu::Device, clip_texture: Option<&wgpu::Texture>) -> wgpu::BindGroup {
         match (&self.shader_module, clip_texture) {
-            (WgpuShader::Texture(StandardShaderVariant::ClippingMask, _, _, _), Some(clip_texture)) |
-            (WgpuShader::Simple(StandardShaderVariant::ClippingMask, _), Some(clip_texture))        => {
+            (WgpuShader::Texture(StandardShaderVariant::ClippingMask, _, _, _, _), Some(clip_texture))  |
+            (WgpuShader::Simple(StandardShaderVariant::ClippingMask, _), Some(clip_texture))            => {
                 // Create a view of the texture
                 let view = clip_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -130,7 +130,7 @@ impl Pipeline {
             }
 
             (_, None)                                                               |
-            (WgpuShader::Texture(StandardShaderVariant::NoClipping, _, _, _), _)    |
+            (WgpuShader::Texture(StandardShaderVariant::NoClipping, _, _, _, _), _) |
             (WgpuShader::Simple(StandardShaderVariant::NoClipping, _), _)           => {
                 // Group 1 is bound to an empty set if clipping is off or no texture is defined
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -149,7 +149,7 @@ impl Pipeline {
     ///
     pub fn bind_input_texture(&self, device: &wgpu::Device, texture_transform: &wgpu::Buffer, texture: Option<&wgpu::Texture>, sampler: Option<&wgpu::Sampler>, alpha: Option<&wgpu::Buffer>)  -> wgpu::BindGroup {
         match (&self.shader_module, texture, sampler, alpha) {
-            (WgpuShader::Texture(_, InputTextureType::Sampler, _, _), Some(texture), Some(sampler), Some(alpha)) => {
+            (WgpuShader::Texture(_, InputTextureType::Sampler, _, _, _), Some(texture), Some(sampler), Some(alpha)) => {
                 // Create a view of the texture
                 let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -179,7 +179,7 @@ impl Pipeline {
                 })
             }
 
-            (WgpuShader::Texture(_, InputTextureType::Multisampled, _, _), Some(texture), _, Some(alpha)) => {
+            (WgpuShader::Texture(_, InputTextureType::Multisampled, _, _, _), Some(texture), _, Some(alpha)) => {
                 // Create a view of the texture
                 let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -205,9 +205,9 @@ impl Pipeline {
                 })
             }
 
-            (WgpuShader::Texture(_, InputTextureType::None, _, _), _, _, _)             |
-            (WgpuShader::Texture(_, InputTextureType::Sampler, _, _), _, None, _)       |
-            (WgpuShader::Texture(_, _, _, _), _, _, None)                               => {
+            (WgpuShader::Texture(_, InputTextureType::None, _, _, _), _, _, _)          |
+            (WgpuShader::Texture(_, InputTextureType::Sampler, _, _, _), _, None, _)    |
+            (WgpuShader::Texture(_, _, _, _, _), _, _, None)                            => {
                 // Group 2 is bound to an empty set if no texture is defined
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label:      Some("bind_input_texture_no_texture"),

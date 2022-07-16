@@ -57,6 +57,18 @@ pub enum FilterSourceFormat {
 }
 
 ///
+/// How the texture points are determined by the shader
+///
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TexturePosition {
+    /// Input position multiplied by texture transform
+    InputPosition,
+
+    /// Stored in the tex_coord parameter in the vertex buffer
+    Separate,
+}
+
+///
 /// The type of texture used as input for a texture shader
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -80,7 +92,7 @@ pub enum WgpuShader {
     Simple(StandardShaderVariant, ColorPostProcessingStep),
 
     /// Renders fragments from a texture input
-    Texture(StandardShaderVariant, InputTextureType, AlphaBlendStep, ColorPostProcessingStep),
+    Texture(StandardShaderVariant, InputTextureType, TexturePosition, AlphaBlendStep, ColorPostProcessingStep),
 }
 
 impl Default for WgpuShader {
@@ -130,6 +142,16 @@ impl InputTextureType {
     }
 }
 
+impl TexturePosition {
+    fn shader_function(&self) -> &'static str {
+        match self {
+            TexturePosition::InputPosition  => include_str!("../../shaders/texture/texture_pos_input.wgsl"),
+            TexturePosition::Separate       => include_str!("../../shaders/texture/texture_pos_separate.wgsl"),
+        }
+    }
+}
+
+
 impl WgpuShaderLoader for WgpuShader {
     ///
     /// Loads the appropriate shader, and returns the entry point to use for the fragment and vertex shaders
@@ -152,12 +174,17 @@ impl WgpuShaderLoader for WgpuShader {
                 (Arc::new(shader_module), "simple_vertex_shader".to_string(), "simple_fragment_shader".to_string())
             },
 
-            WgpuShader::Texture(variant, input_type, alpha_blend, color_post_processing) => {
+            WgpuShader::Texture(variant, input_type, texture_position, alpha_blend, color_post_processing) => {
                 // The base module contains the shader program in terms of the variant and post-procesing functions
                 let base_module = include_str!("../../shaders/texture/texture.wgsl");
 
                 // Amend the base module with the appropriate variant and colour post-processing functions
-                let base_module = format!("{}\n\n{}\n\n{}\n\n{}\n\n{}", variant.shader_function(), alpha_blend.shader_function(), input_type.shader_function(), color_post_processing.shader_function(), base_module);
+                let base_module = format!("{}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}", 
+                    variant.shader_function(), 
+                    texture_position.shader_function(), 
+                    alpha_blend.shader_function(), 
+                    input_type.shader_function(), 
+                    color_post_processing.shader_function(), base_module);
 
                 // Load the shader
                 let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {

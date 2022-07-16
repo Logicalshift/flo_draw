@@ -545,7 +545,7 @@ impl WgpuRenderer {
 
         state.input_texture                                     = Some(texture);
         state.texture_alpha                                     = Some(state.f32_buffer(alpha as _));
-        state.pipeline_configuration.shader_module              = WgpuShader::Texture(StandardShaderVariant::NoClipping, texture_type, AlphaBlendStep::Premultiply, ColorPostProcessingStep::NoPostProcessing);
+        state.pipeline_configuration.shader_module              = WgpuShader::Texture(StandardShaderVariant::NoClipping, texture_type, TexturePosition::Separate, AlphaBlendStep::Premultiply, ColorPostProcessingStep::NoPostProcessing);
         state.pipeline_configuration.blending_mode              = BlendMode::SourceOver;
         state.pipeline_configuration.source_is_premultiplied    = true;
         state.pipeline_config_changed                           = true;
@@ -1022,7 +1022,7 @@ impl WgpuRenderer {
                 state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
 
                 if let Some(texture) = &texture {
-                    state.pipeline_configuration.shader_module              = WgpuShader::Texture(variant, texture_type, alpha_blend, post_processing);
+                    state.pipeline_configuration.shader_module              = WgpuShader::Texture(variant, texture_type, TexturePosition::InputPosition, alpha_blend, post_processing);
                     state.pipeline_configuration.source_is_premultiplied    = texture.is_premultiplied;
                 } else {
                     state.pipeline_configuration.shader_module              = WgpuShader::Simple(variant, post_processing);
