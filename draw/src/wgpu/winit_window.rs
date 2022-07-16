@@ -128,11 +128,6 @@ where
                     winit_thread().send_event(WinitThreadEvent::Yield(yield_send));
                     yield_recv.await.ok();
 
-                    // Poll the device
-                    if let Some(device) = &window.device {
-                        device.poll(wgpu::Maintain::Wait);
-                    }
-
                     // Notify that a new frame has been drawn
                     events.publish(DrawEvent::NewFrame).await;
                 }
