@@ -74,6 +74,7 @@ where
 
     while let Some(next_action_set) = window_actions.next().await {
         println!("Action set");
+        let mut send_new_frame = false;
 
         for next_action in next_action_set {
             match next_action {
@@ -127,7 +128,7 @@ where
                         window.renderer     = Some(renderer);
 
                         // First frame has been displayed
-                        events.publish(DrawEvent::NewFrame).await;
+                        send_new_frame = true;
                     }
 
                     if let (Some(winit_window), Some(renderer)) = (&window.window, &mut window.renderer) {
@@ -143,7 +144,7 @@ where
 
                         // Notify that a new frame has been drawn if show_frame_buffer is set
                         if show_frame_buffer {
-                            events.publish(DrawEvent::NewFrame).await;
+                            send_new_frame = true;
                         }
 
                         // Yield to process events
@@ -190,6 +191,13 @@ where
                     }
                 }
             }
+        }
+
+        // If any rendering occurred in the last batch of events, send the new frame result
+        if send_new_frame {
+            // We only send one of these per batch, in case multiple frames are displayed during one batch of events for any reason (this reduces the
+            // amount that the rendering can get behind)
+            events.publish(DrawEvent::NewFrame).await;
         }
     }
 
