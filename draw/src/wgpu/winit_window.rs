@@ -62,7 +62,7 @@ where
     // Read events from the render actions list
     let mut window          = window;
     let mut events          = events;
-    let mut window_actions  = WindowUpdateStream { 
+    let window_actions      = WindowUpdateStream { 
         render_stream:      render_actions, 
         title_stream:       follow(window_properties.title),
         size:               follow(window_properties.size),
@@ -70,117 +70,124 @@ where
         has_decorations:    follow(window_properties.has_decorations),
         mouse_pointer:      follow(window_properties.mouse_pointer)
     };
+    let mut window_actions  = window_actions.ready_chunks(100);
 
-    while let Some(next_action) = window_actions.next().await {
-        match next_action {
-            WindowUpdate::Render(next_action)   => {
-                // Do nothing if there are no actions
-                if next_action.len() == 0 {
-                    events.publish(DrawEvent::NewFrame).await;
-                    continue;
-                }
+    while let Some(next_action_set) = window_actions.next().await {
+        println!("Action set");
 
-                // See if the rendering action will show the frame buffer
-                let show_frame_buffer = if next_action[next_action.len() - 1] == RenderAction::ShowFrameBuffer {
-                    // Typically this is the last instruction
-                    true
-                } else {
-                    // Search harder if it's not the last instruction
-                    next_action.iter().any(|item| item == &RenderAction::ShowFrameBuffer)
-                };
+        for next_action in next_action_set {
+            match next_action {
+                WindowUpdate::Render(next_action)   => {
+                    // Do nothing if there are no actions
+                    if next_action.len() == 0 {
+                        events.publish(DrawEvent::NewFrame).await;
+                        continue;
+                    }
 
-                // Create the renderer if it doesn't already exist
-                if let (Some(winit_window), None) = (&window.window, &window.renderer) {
-                    // Create a new WGPU instance, surface and adapter
-                    let winit_window    = &**winit_window;
+                    // See if the rendering action will show the frame buffer
+                    let show_frame_buffer = if next_action[next_action.len() - 1] == RenderAction::ShowFrameBuffer {
+                        // Typically this is the last instruction
+                        true
+                    } else {
+                        // Search harder if it's not the last instruction
+                        next_action.iter().any(|item| item == &RenderAction::ShowFrameBuffer)
+                    };
 
-                    let instance        = wgpu::Instance::new(wgpu::Backends::all());
-                    let surface         = unsafe { instance.create_surface(winit_window) };
-                    let adapter         = instance.request_adapter(&wgpu::RequestAdapterOptions {
-                        power_preference:       wgpu::PowerPreference::default(),
-                        force_fallback_adapter: false,
-                        compatible_surface:     Some(&surface),
-                    }).await.unwrap();
+                    println!("  Render ({:?})", show_frame_buffer);
 
-                    // Fetch the device and the queue
-                    let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
-                        label:      None,
-                        features:   wgpu::Features::empty(),
-                        limits:     wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits())
-                    }, None).await.unwrap();
+                    // Create the renderer if it doesn't already exist
+                    if let (Some(winit_window), None) = (&window.window, &window.renderer) {
+                        // Create a new WGPU instance, surface and adapter
+                        let winit_window    = &**winit_window;
 
-                    // Create the WGPU renderer
-                    let device          = Arc::new(device);
-                    let queue           = Arc::new(queue);
-                    let surface         = Arc::new(surface);
-                    let adapter         = Arc::new(adapter);
-                    let renderer        = WgpuRenderer::new(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
+                        let instance        = wgpu::Instance::new(wgpu::Backends::all());
+                        let surface         = unsafe { instance.create_surface(winit_window) };
+                        let adapter         = instance.request_adapter(&wgpu::RequestAdapterOptions {
+                            power_preference:       wgpu::PowerPreference::default(),
+                            force_fallback_adapter: false,
+                            compatible_surface:     Some(&surface),
+                        }).await.unwrap();
 
-                    window.device       = Some(device);
-                    window.instance     = Some(instance);
-                    window.renderer     = Some(renderer);
+                        // Fetch the device and the queue
+                        let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
+                            label:      None,
+                            features:   wgpu::Features::empty(),
+                            limits:     wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits())
+                        }, None).await.unwrap();
 
-                    // First frame has been displayed
-                    events.publish(DrawEvent::NewFrame).await;
-                }
+                        // Create the WGPU renderer
+                        let device          = Arc::new(device);
+                        let queue           = Arc::new(queue);
+                        let surface         = Arc::new(surface);
+                        let adapter         = Arc::new(adapter);
+                        let renderer        = WgpuRenderer::new(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
 
-                if let (Some(winit_window), Some(renderer)) = (&window.window, &mut window.renderer) {
-                    // Set up to render at the current size
-                    let size    = winit_window.inner_size();
-                    let width   = size.width;
-                    let height  = size.height;
+                        window.device       = Some(device);
+                        window.instance     = Some(instance);
+                        window.renderer     = Some(renderer);
 
-                    renderer.prepare_to_render(width, height);
-
-                    // Send the commands to the renderer
-                    renderer.render_to_surface(next_action);
-
-                    // Notify that a new frame has been drawn if show_frame_buffer is set
-                    if show_frame_buffer {
+                        // First frame has been displayed
                         events.publish(DrawEvent::NewFrame).await;
                     }
 
-                    // Yield to process events
-                    let (yield_send, yield_recv) = oneshot::channel();
-                    winit_thread().send_event(WinitThreadEvent::Yield(yield_send));
-                    yield_recv.await.ok();
-                }
-            }
+                    if let (Some(winit_window), Some(renderer)) = (&window.window, &mut window.renderer) {
+                        // Set up to render at the current size
+                        let size    = winit_window.inner_size();
+                        let width   = size.width;
+                        let height  = size.height;
 
-            WindowUpdate::SetTitle(new_title)   => {
-                if let Some(winit_window) = &window.window {
-                    winit_window.set_title(&new_title);
-                }
-            }
+                        renderer.prepare_to_render(width, height);
 
-            WindowUpdate::SetSize((size_x, size_y)) => {
-                if let Some(winit_window) = &window.window {
-                    winit_window.set_inner_size(LogicalSize::new(size_x as f64, size_y as _));
-                }
-            }
+                        // Send the commands to the renderer
+                        renderer.render_to_surface(next_action);
 
-            WindowUpdate::SetFullscreen(is_fullscreen) => {
-                let fullscreen = if is_fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
-                if let Some(winit_window) = &window.window {
-                    winit_window.set_fullscreen(fullscreen);
-                }
-            }
+                        // Notify that a new frame has been drawn if show_frame_buffer is set
+                        if show_frame_buffer {
+                            events.publish(DrawEvent::NewFrame).await;
+                        }
 
-            WindowUpdate::SetHasDecorations(decorations) => {
-                if let Some(winit_window) = &window.window {
-                    winit_window.set_decorations(decorations);
+                        // Yield to process events
+                        let (yield_send, yield_recv) = oneshot::channel();
+                        winit_thread().send_event(WinitThreadEvent::Yield(yield_send));
+                        yield_recv.await.ok();
+                    }
                 }
-            }
 
-            WindowUpdate::SetMousePointer(MousePointer::None) => {
-                if let Some(winit_window) = &window.window {
-                    winit_window.set_cursor_visible(false);
+                WindowUpdate::SetTitle(new_title)   => {
+                    if let Some(winit_window) = &window.window {
+                        winit_window.set_title(&new_title);
+                    }
                 }
-            }
 
-            WindowUpdate::SetMousePointer(MousePointer::SystemDefault) => {
-                if let Some(winit_window) = &window.window {
-                    winit_window.set_cursor_visible(true);
+                WindowUpdate::SetSize((size_x, size_y)) => {
+                    if let Some(winit_window) = &window.window {
+                        winit_window.set_inner_size(LogicalSize::new(size_x as f64, size_y as _));
+                    }
+                }
+
+                WindowUpdate::SetFullscreen(is_fullscreen) => {
+                    let fullscreen = if is_fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
+                    if let Some(winit_window) = &window.window {
+                        winit_window.set_fullscreen(fullscreen);
+                    }
+                }
+
+                WindowUpdate::SetHasDecorations(decorations) => {
+                    if let Some(winit_window) = &window.window {
+                        winit_window.set_decorations(decorations);
+                    }
+                }
+
+                WindowUpdate::SetMousePointer(MousePointer::None) => {
+                    if let Some(winit_window) = &window.window {
+                        winit_window.set_cursor_visible(false);
+                    }
+                }
+
+                WindowUpdate::SetMousePointer(MousePointer::SystemDefault) => {
+                    if let Some(winit_window) = &window.window {
+                        winit_window.set_cursor_visible(true);
+                    }
                 }
             }
         }
