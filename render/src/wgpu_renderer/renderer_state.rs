@@ -136,7 +136,7 @@ impl RendererState {
     pub fn f32_buffer(&self, value: f32) -> Arc<wgpu::Buffer> {
         let f32_buf     = [value];
         let f32_void    = f32_buf.as_ptr() as *const c_void;
-        let f32_len     = mem::size_of::<f32>();
+        let f32_len     = mem::size_of::<[f32; 1]>();
         let f32_u8      = unsafe { slice::from_raw_parts(f32_void as *const u8, f32_len) };
 
         let f32_buffer  = self.device.create_buffer_init(&util::BufferInitDescriptor {
