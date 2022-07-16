@@ -185,7 +185,7 @@ impl WgpuRenderer {
                 Create1DTextureBgra(texture_id, Size1D(width))                                  => { self.create_bgra_1d_texture(texture_id, width); }
                 Create1DTextureMono(texture_id, Size1D(width))                                  => { self.create_mono_1d_texture(texture_id, width); }
                 WriteTextureData(texture_id, Position2D(x1, y1), Position2D(x2, y2), data)      => { self.write_texture_data_2d(texture_id, x1, y1, x2, y2, data, &mut render_state); }
-                WriteTexture1D(texture_id, Position1D(x1), Position1D(x2), data)                => { self.write_texture_data_1d(texture_id, x1, x2, data); }
+                WriteTexture1D(texture_id, Position1D(x1), Position1D(x2), data)                => { self.write_texture_data_1d(texture_id, x1, x2, data, &mut render_state); }
                 CreateMipMaps(texture_id)                                                       => { self.create_mipmaps(texture_id, &mut render_state); }
                 CopyTexture(src_texture, tgt_texture)                                           => { self.copy_texture(src_texture, tgt_texture, &mut render_state); }
                 FilterTexture(texture, filter)                                                  => { self.filter_texture(texture, filter, &mut render_state); }
@@ -653,6 +653,14 @@ impl WgpuRenderer {
         if self.target_surface_texture.is_none() {
             let surface_texture = self.target_surface.get_current_texture().unwrap();
             self.target_surface_texture = Some(surface_texture);
+
+            if self.active_render_target.is_none() {
+                let surface_texture     = self.target_surface_texture.as_ref().unwrap();
+                let texture_view        = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+                render_state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
+                render_state.render_pass_resources.target_texture  = None;
+            }
         }
     }
     
@@ -829,6 +837,8 @@ impl WgpuRenderer {
     ///
     fn write_texture_data_2d(&mut self, TextureId(texture_id): TextureId, x1: usize, y1: usize, x2: usize, y2: usize, data: Arc<Vec<u8>>, state: &mut RendererState) {
         if let Some(Some(texture)) = self.textures.get(texture_id) {
+            state.run_render_pass();
+
             let (x1, x2)        = if x1 > x2 { (x2, x1) } else { (x1, x2) };
             let (y1, y2)        = if y1 > y2 { (y2, y1) } else { (y1, y2) };
 
@@ -845,13 +855,14 @@ impl WgpuRenderer {
             };
 
             self.queue.write_texture(texture.texture.as_image_copy(), &*data, layout, wgpu::Extent3d { width: (x2-x1) as u32, height: (y2-y1) as u32, depth_or_array_layers: 1 });
+            state.render_pass_resources.textures.push(Arc::clone(&texture.texture));
         }
     }
     
     ///
     /// Writes bytes data to a region of a 1D texture
     ///
-    fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: Arc<Vec<u8>>) {
+    fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: Arc<Vec<u8>>, state: &mut RendererState) {
         if let Some(Some(texture)) = self.textures.get(texture_id) {
             let bytes_per_pixel = texture.descriptor.format.describe().block_size as u64;
             let layout          = wgpu::ImageDataLayout {
@@ -861,6 +872,7 @@ impl WgpuRenderer {
             };
 
             self.queue.write_texture(texture.texture.as_image_copy(), &*data, layout, wgpu::Extent3d { width: (x2-x1) as u32, height: 1, depth_or_array_layers: 1 });
+            state.render_pass_resources.textures.push(Arc::clone(&texture.texture));
         }
     }
     
