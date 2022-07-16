@@ -131,7 +131,7 @@ impl WgpuRenderer {
             format:         actual_format,
             width:          width,
             height:         height,
-            present_mode:   wgpu::PresentMode::AutoNoVsync,
+            present_mode:   wgpu::PresentMode::AutoVsync,
         };
 
         self.target_surface.configure(&*self.device, &surface_config);
