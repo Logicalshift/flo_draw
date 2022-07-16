@@ -27,6 +27,9 @@ pub struct WinitWindow {
     /// The window that this is acting for
     window: Option<Arc<Window>>,
 
+    /// The device that this is acting for
+    device: Option<Arc<wgpu::Device>>,
+
     /// The WGPU instance used by this window
     instance: Option<wgpu::Instance>,
 
@@ -41,6 +44,7 @@ impl WinitWindow {
     pub fn new(window: Arc<Window>) -> WinitWindow {
         WinitWindow {
             window:     Some(window),
+            device:     None,
             instance:   None,
             renderer:   None,
         }
@@ -103,6 +107,7 @@ where
                     let adapter         = Arc::new(adapter);
                     let renderer        = WgpuRenderer::new(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
 
+                    window.device       = Some(device);
                     window.instance     = Some(instance);
                     window.renderer     = Some(renderer);
                 }
@@ -122,6 +127,11 @@ where
                     let (yield_send, yield_recv) = oneshot::channel();
                     winit_thread().send_event(WinitThreadEvent::Yield(yield_send));
                     yield_recv.await.ok();
+
+                    // Poll the device
+                    if let Some(device) = &window.device {
+                        device.poll(wgpu::Maintain::Wait);
+                    }
 
                     // Notify that a new frame has been drawn
                     events.publish(DrawEvent::NewFrame).await;
