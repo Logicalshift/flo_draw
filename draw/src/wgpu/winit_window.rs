@@ -80,6 +80,15 @@ where
                     continue;
                 }
 
+                // See if the rendering action will show the frame buffer
+                let show_frame_buffer = if next_action[next_action.len() - 1] == RenderAction::ShowFrameBuffer {
+                    // Typically this is the last instruction
+                    true
+                } else {
+                    // Search harder if it's not the last instruction
+                    next_action.iter().any(|item| item == &RenderAction::ShowFrameBuffer)
+                };
+
                 // Create the renderer if it doesn't already exist
                 if let (Some(winit_window), None) = (&window.window, &window.renderer) {
                     // Create a new WGPU instance, surface and adapter
@@ -110,6 +119,9 @@ where
                     window.device       = Some(device);
                     window.instance     = Some(instance);
                     window.renderer     = Some(renderer);
+
+                    // First frame has been displayed
+                    events.publish(DrawEvent::NewFrame).await;
                 }
 
                 if let (Some(winit_window), Some(renderer)) = (&window.window, &mut window.renderer) {
@@ -123,13 +135,15 @@ where
                     // Send the commands to the renderer
                     renderer.render_to_surface(next_action);
 
+                    // Notify that a new frame has been drawn if show_frame_buffer is set
+                    if show_frame_buffer {
+                        events.publish(DrawEvent::NewFrame).await;
+                    }
+
                     // Yield to process events
                     let (yield_send, yield_recv) = oneshot::channel();
                     winit_thread().send_event(WinitThreadEvent::Yield(yield_send));
                     yield_recv.await.ok();
-
-                    // Notify that a new frame has been drawn
-                    events.publish(DrawEvent::NewFrame).await;
                 }
             }
 
