@@ -844,7 +844,7 @@ impl WgpuRenderer {
     /// Generates the mipmap textures for a particular texture
     ///
     fn create_mipmaps(&mut self, TextureId(texture_id): TextureId, state: &mut RendererState) {
-
+        // TODO
     }
     
     ///
@@ -888,7 +888,7 @@ impl WgpuRenderer {
     /// Applies a filter effect to the content of a texture
     ///
     fn filter_texture(&mut self, TextureId(texture_id): TextureId, filter: Vec<TextureFilter>, state: &mut RendererState) {
-
+        // TODO
     }
     
     ///
@@ -1024,7 +1024,7 @@ impl WgpuRenderer {
             }
 
             LinearGradient { texture, texture_transform, repeat, alpha, clip_texture } => {
-
+                // TODO
             }
         }
 
