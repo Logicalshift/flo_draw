@@ -1,6 +1,11 @@
 use wgpu;
+use wgpu::util;
+use wgpu::util::{DeviceExt};
 
+use std::mem;
+use std::slice;
 use std::sync::*;
+use std::ffi::{c_void};
 
 ///
 /// Resources used for the current render pass (required for lifetime bookkeeping due to the design of WGPU)
@@ -37,6 +42,12 @@ pub struct RenderPassResources {
 
     /// If set to a colour, sets what the render target will be cleared to at the start of the pass
     pub (crate) clear: Option<wgpu::Color>,
+
+    /// The matrices that will be loaded into the matrix buffer for this render pass
+    pub (crate) matrices: Vec<[[f32; 4]; 4]>,
+
+    /// Once the render pass is running, the buffer containing the matrices that were previously in 'matrices'
+    pub (crate) matrix_buffer: Option<wgpu::Buffer>,
 }
 
 impl Default for RenderPassResources {
@@ -49,7 +60,9 @@ impl Default for RenderPassResources {
             bind_groups:        vec![],
             textures:           vec![],
             samplers:           vec![],
+            matrices:           vec![],
             clear:              None,
+            matrix_buffer:      None,
         }
     }
 }
@@ -77,5 +90,28 @@ impl RenderPassResources {
         } else {
             vec![]
         }
+    }
+
+    ///
+    /// Loads the matrices in this render pass into the matrix_buffer object
+    ///
+    pub fn fill_matrix_buffer(&mut self, device: &wgpu::Device) {
+        // Take the matrices in preparation to load them into the buffer
+        let matrices = mem::take(&mut self.matrices);
+
+        // Convert the matrix to a u8 pointer
+        let matrix_void     = matrices.as_ptr() as *const c_void;
+        let matrix_len      = mem::size_of::<[[f32; 4]; 4]>() * matrices.len();
+        let matrix_u8       = unsafe { slice::from_raw_parts(matrix_void as *const u8, matrix_len) };
+
+        // Load into a buffer
+        let matrix_buffer   = device.create_buffer_init(&util::BufferInitDescriptor {
+            label:      Some("fill_matrix_buffer"),
+            contents:   matrix_u8,
+            usage:      wgpu::BufferUsages::UNIFORM,
+        });
+
+        // Store the matrix buffer for use during the render pass
+        self.matrix_buffer = Some(matrix_buffer);
     }
 }

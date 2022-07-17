@@ -251,7 +251,7 @@ impl RendererState {
     pub fn run_render_pass(&mut self) {
         // Take the actions and the resources for this render pass
         let render_actions  = mem::take(&mut self.render_pass);
-        let resources       = mem::take(&mut self.render_pass_resources);
+        let mut resources   = mem::take(&mut self.render_pass_resources);
 
         // Keep the current texture view for the next render pass
         self.render_pass_resources.target_view  = resources.target_view.clone();
@@ -267,6 +267,9 @@ impl RendererState {
 
         // Start a new render pass using the current encoder
         if let Some(texture_view) = &resources.target_view {
+            // Create any buffers required
+            resources.fill_matrix_buffer(&*self.device);
+
             // Start the render pass
             let mut render_pass = self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label:                      Some("run_render_pass"),
