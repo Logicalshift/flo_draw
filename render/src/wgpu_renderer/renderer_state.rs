@@ -49,8 +49,8 @@ pub (crate) struct RendererState {
     /// The size of the current render target
     pub target_size:                    (u32, u32),
 
-    /// The matrix transform buffer
-    pub matrix_buffer:                  Arc<wgpu::Buffer>,
+    /// The last transform matrix set
+    pub active_matrix:                  Matrix,
 
     /// The texture transform buffer
     pub texture_transform:              Arc<wgpu::Buffer>,
@@ -76,7 +76,6 @@ impl RendererState {
         // TODO: we can avoid re-creating some of these structures every frame: eg, the binding groups in particular
 
         // Create all the state structures
-        let matrix_buffer       = Arc::new(Self::create_transform_buffer(&device, &Matrix::identity()));
         let texture_transform   = Arc::new(Self::create_transform_buffer(&device, &Matrix::identity()));
         let encoder             = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("RendererState::new") });
 
@@ -108,8 +107,8 @@ impl RendererState {
             active_pipeline_configuration:      None,
 
             target_size:                        (1, 1),
-            matrix_buffer:                      matrix_buffer,
             texture_transform:                  texture_transform,
+            active_matrix:                      Matrix::identity(),
             input_texture:                      None,
             clip_texture:                       None,
             sampler:                            Some(Arc::new(default_sampler)),
@@ -122,7 +121,7 @@ impl RendererState {
     ///
     #[inline]
     pub fn write_matrix(&mut self, new_matrix: &Matrix) {
-        self.matrix_buffer  = Arc::new(Self::create_transform_buffer(&self.device, new_matrix));
+        self.active_matrix = *new_matrix;
     }
 
     ///
@@ -176,17 +175,14 @@ impl RendererState {
     ///
     pub fn bind_current_matrix(&mut self) {
         if let Some(pipeline) = &self.pipeline {
-            // Create a matrix binding
-            let matrix_group    = pipeline.matrix_group_index();
-            let matrix_binding  = pipeline.bind_matrix_buffer(&*self.device, &*self.matrix_buffer);
-            let matrix_index    = self.render_pass_resources.bind_groups.len();
-
-            // The matrix buffer ends up in the render pass resources
-            self.render_pass_resources.bind_groups.push(Arc::new(matrix_binding));
+            // Add the matrix to the buffer
+            let matrix_buffer_index     = self.render_pass_resources.matrices.len();
+            let matrix_group            = pipeline.matrix_group_index();
+            self.render_pass_resources.matrices.push(self.active_matrix.0);
 
             // Bind the matrix as the next step in the pending render pass
             self.render_pass.push(Box::new(move |resources, render_pass| {
-                render_pass.set_bind_group(matrix_group, &resources.bind_groups[matrix_index], &[]);
+                render_pass.set_bind_group(matrix_group, &resources.matrix_bind_groups[matrix_buffer_index], &[]);
             }));
         }
     }
@@ -268,7 +264,7 @@ impl RendererState {
         // Start a new render pass using the current encoder
         if let Some(texture_view) = &resources.target_view {
             // Create any buffers required
-            resources.fill_matrix_buffer(&*self.device);
+            resources.fill_matrix_buffer(&*self.device, self.pipeline.as_ref().unwrap());
 
             // Start the render pass
             let mut render_pass = self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

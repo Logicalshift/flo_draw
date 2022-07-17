@@ -250,7 +250,7 @@ impl WgpuRenderer {
         // Refresh the bindings if they're marked as changed
         if render_state.pipeline_bindings_changed {
             render_state.pipeline_bindings_changed = false;
-            
+
             render_state.bind_current_matrix();
             render_state.bind_current_clip_mask();
             render_state.bind_current_texture();
@@ -495,7 +495,7 @@ impl WgpuRenderer {
         // Copy the values we're going to update
         let old_texture         = state.input_texture.take();
         let old_alpha           = state.texture_alpha.take();
-        let old_matrix_buffer   = Arc::clone(&state.matrix_buffer);
+        let old_matrix          = state.active_matrix;
         let old_transform       = Arc::clone(&state.texture_transform);
         let old_pipeline_config = state.pipeline_configuration.clone();
 
@@ -578,10 +578,11 @@ impl WgpuRenderer {
         // Restore the render state
         state.input_texture             = old_texture;
         state.texture_alpha             = old_alpha;
-        state.matrix_buffer             = old_matrix_buffer;
+        state.active_matrix             = old_matrix;
         state.texture_transform         = old_transform;
         state.pipeline_configuration    = old_pipeline_config;
         state.pipeline_config_changed   = true;
+        state.pipeline_bindings_changed = true;
     }
 
     ///

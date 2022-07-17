@@ -4,7 +4,9 @@ use super::pipeline_configuration::*;
 
 use wgpu;
 
+use std::mem;
 use std::sync::*;
+use std::num::{NonZeroU64};
 
 ///
 /// A render pipeline and its binding groups
@@ -88,14 +90,21 @@ impl Pipeline {
     /// Binds the transformation matrix buffer for this pipeline (filling in or replacing the `matrix_binding` entry)
     ///
     #[inline]
-    pub fn bind_matrix_buffer(&self, device: &wgpu::Device, matrix_buffer: &wgpu::Buffer) -> wgpu::BindGroup {
+    pub fn bind_matrix_buffer(&self, device: &wgpu::Device, matrix_buffer: &wgpu::Buffer, offset: usize) -> wgpu::BindGroup {
+        let buffer_binding = wgpu::BufferBinding {
+            buffer: matrix_buffer,
+            offset: (mem::size_of::<[[f32; 4]; 4]>() * offset) as u64,
+            size:   NonZeroU64::new(mem::size_of::<[[f32; 4]; 4]>() as u64)
+        };
+        let buffer_binding = wgpu::BindingResource::Buffer(buffer_binding);
+
         let matrix_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label:      Some("bind_matrix"),
+            label:      Some("bind_matrix_buffer"),
             layout:     &*self.matrix_layout,
             entries:    &[
                 wgpu::BindGroupEntry {
                     binding:    0,
-                    resource:   matrix_buffer.as_entire_binding(),
+                    resource:   buffer_binding,
                 }
             ]
         });

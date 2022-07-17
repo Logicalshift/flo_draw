@@ -1,3 +1,5 @@
+use super::pipeline::*;
+
 use wgpu;
 use wgpu::util;
 use wgpu::util::{DeviceExt};
@@ -48,6 +50,9 @@ pub struct RenderPassResources {
 
     /// Once the render pass is running, the buffer containing the matrices that were previously in 'matrices'
     pub (crate) matrix_buffer: Option<wgpu::Buffer>,
+
+    /// The bind groups for each of the matrices in the matrix buffer (corresponding to the original index in the matrices Vec)
+    pub (crate) matrix_bind_groups: Vec<wgpu::BindGroup>,
 }
 
 impl Default for RenderPassResources {
@@ -63,6 +68,7 @@ impl Default for RenderPassResources {
             matrices:           vec![],
             clear:              None,
             matrix_buffer:      None,
+            matrix_bind_groups: vec![],
         }
     }
 }
@@ -95,7 +101,7 @@ impl RenderPassResources {
     ///
     /// Loads the matrices in this render pass into the matrix_buffer object
     ///
-    pub fn fill_matrix_buffer(&mut self, device: &wgpu::Device) {
+    pub (crate) fn fill_matrix_buffer(&mut self, device: &wgpu::Device, pipeline: &Pipeline) {
         // Take the matrices in preparation to load them into the buffer
         let matrices = mem::take(&mut self.matrices);
 
@@ -111,7 +117,13 @@ impl RenderPassResources {
             usage:      wgpu::BufferUsages::UNIFORM,
         });
 
+        // Create bind groups for each of the matrices in the buffer
+        let bind_groups = (0..matrices.len()).into_iter()
+            .map(|offset| pipeline.bind_matrix_buffer(device, &matrix_buffer, offset))
+            .collect();
+
         // Store the matrix buffer for use during the render pass
-        self.matrix_buffer = Some(matrix_buffer);
+        self.matrix_buffer      = Some(matrix_buffer);
+        self.matrix_bind_groups = bind_groups;
     }
 }
