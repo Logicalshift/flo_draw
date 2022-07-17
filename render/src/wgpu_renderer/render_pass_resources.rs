@@ -103,23 +103,41 @@ impl RenderPassResources {
     ///
     pub (crate) fn fill_matrix_buffer(&mut self, device: &wgpu::Device, pipeline: &Pipeline) {
         // Take the matrices in preparation to load them into the buffer
-        let matrices = mem::take(&mut self.matrices);
+        let matrices    = mem::take(&mut self.matrices);
+        let matrix_size = mem::size_of::<[[f32; 4]; 4]>();
 
-        // Convert the matrix to a u8 pointer
-        let matrix_void     = matrices.as_ptr() as *const c_void;
-        let matrix_len      = mem::size_of::<[[f32; 4]; 4]>() * matrices.len();
-        let matrix_u8       = unsafe { slice::from_raw_parts(matrix_void as *const u8, matrix_len) };
+        // Convert the matrix list to a u8 pointer
+        let matrices_void     = matrices.as_ptr() as *const c_void;
+        let matrices_len      = matrix_size * matrices.len();
+        let matrices_u8       = unsafe { slice::from_raw_parts(matrices_void as *const u8, matrices_len) };
+
+        // Need to make another buffer from this where everything is aligned according to the min_uniform_buffer_offset_alignment
+        let limits              = device.limits();
+        let mut group_offset    = 0;
+
+        while group_offset < mem::size_of::<[[f32; 4]; 4]>() {
+            group_offset += limits.min_uniform_buffer_offset_alignment as usize;
+        }
+
+        // Copy the matrices aligned at group_offset bytes
+        let mut aligned_matrices = vec![0; group_offset * matrices.len()];
+        for matrix_num in 0..matrices.len() {
+            let original_offset = matrix_size * matrix_num;
+            let new_offset      = group_offset * matrix_num;
+
+            aligned_matrices[new_offset..(new_offset + matrix_size)].copy_from_slice(&matrices_u8[original_offset..(original_offset + matrix_size)]);
+        }
 
         // Load into a buffer
         let matrix_buffer   = device.create_buffer_init(&util::BufferInitDescriptor {
             label:      Some("fill_matrix_buffer"),
-            contents:   matrix_u8,
+            contents:   &aligned_matrices,
             usage:      wgpu::BufferUsages::UNIFORM,
         });
 
         // Create bind groups for each of the matrices in the buffer
         let bind_groups = (0..matrices.len()).into_iter()
-            .map(|offset| pipeline.bind_matrix_buffer(device, &matrix_buffer, offset))
+            .map(|offset| pipeline.bind_matrix_buffer(device, &matrix_buffer, offset * group_offset))
             .collect();
 
         // Store the matrix buffer for use during the render pass

@@ -93,8 +93,8 @@ impl Pipeline {
     pub fn bind_matrix_buffer(&self, device: &wgpu::Device, matrix_buffer: &wgpu::Buffer, offset: usize) -> wgpu::BindGroup {
         let buffer_binding = wgpu::BufferBinding {
             buffer: matrix_buffer,
-            offset: (mem::size_of::<[[f32; 4]; 4]>() * offset) as u64,
-            size:   NonZeroU64::new(mem::size_of::<[[f32; 4]; 4]>() as u64)
+            offset: offset as u64,
+            size:   NonZeroU64::new(mem::size_of::<[[f32 ; 4]; 4]>() as u64)
         };
         let buffer_binding = wgpu::BindingResource::Buffer(buffer_binding);
 
