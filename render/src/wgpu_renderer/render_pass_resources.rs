@@ -1,4 +1,5 @@
 use super::pipeline::*;
+use super::texture_settings::*;
 
 use wgpu;
 use wgpu::util;
@@ -51,24 +52,36 @@ pub struct RenderPassResources {
     /// Once the render pass is running, the buffer containing the matrices that were previously in 'matrices'
     pub (crate) matrix_buffer: Option<wgpu::Buffer>,
 
-    /// The bind groups for each of the matrices in the matrix buffer (corresponding to the original index in the matrices Vec)
+    /// Once the render pass is running, the bind groups for each of the matrices in the matrix buffer (corresponding to the original index in the matrices Vec)
     pub (crate) matrix_bind_groups: Vec<wgpu::BindGroup>,
+
+    /// The texture settings that will be loaded into the texture settings buffer for this render pass
+    pub (crate) texture_settings: Vec<(Arc<Pipeline>, TextureSettings, Option<Arc<wgpu::Texture>>, Option<Arc<wgpu::Sampler>>)>,
+
+    /// Once the render pass is running, the buffer containing all of the texture settings from the texture_settings Vec
+    pub (crate) texture_settings_buffer: Option<wgpu::Buffer>,
+
+    /// Once the render pass is running, the bind groups for each of the texture settings in the texture settings buffer (corresponding to the original index in the texture_settings Vec)
+    pub (crate) texture_settings_bind_groups: Vec<wgpu::BindGroup>,
 }
 
 impl Default for RenderPassResources {
     fn default() -> RenderPassResources {
         RenderPassResources {
-            target_texture:     None,
-            target_view:        None,
-            pipelines:          vec![],
-            buffers:            vec![],
-            bind_groups:        vec![],
-            textures:           vec![],
-            samplers:           vec![],
-            matrices:           vec![],
-            clear:              None,
-            matrix_buffer:      None,
-            matrix_bind_groups: vec![],
+            target_texture:                 None,
+            target_view:                    None,
+            pipelines:                      vec![],
+            buffers:                        vec![],
+            bind_groups:                    vec![],
+            textures:                       vec![],
+            samplers:                       vec![],
+            matrices:                       vec![],
+            texture_settings:               vec![],
+            clear:                          None,
+            matrix_buffer:                  None,
+            matrix_bind_groups:             vec![],
+            texture_settings_buffer:        None,
+            texture_settings_bind_groups:   vec![],
         }
     }
 }
@@ -143,5 +156,55 @@ impl RenderPassResources {
         // Store the matrix buffer for use during the render pass
         self.matrix_buffer      = Some(matrix_buffer);
         self.matrix_bind_groups = bind_groups;
+    }
+
+    ///
+    /// Loads the texture settings in this render pass into the texture_settings_buffer object
+    ///
+    pub (crate) fn fill_texture_settings_buffer(&mut self, device: &wgpu::Device) {
+        // Take the matrices in preparation to load them into the buffer
+        let settings        = mem::take(&mut self.texture_settings);
+        let settings_size   = mem::size_of::<TextureSettings>();
+
+        // Need to make another buffer from this where everything is aligned according to the min_uniform_buffer_offset_alignment
+        let limits              = device.limits();
+        let mut group_offset    = 0;
+
+        while group_offset < settings_size {
+            group_offset += limits.min_uniform_buffer_offset_alignment as usize;
+        }
+
+        // Copy the texture settings aligned at group_offset bytes
+        let mut aligned_settings = vec![0; group_offset * settings.len()];
+        for setting_num in 0..settings.len() {
+            // Create a buffer containing the setting
+            let (_, texture_setting, _, _) = &settings[setting_num];
+
+            let settings_void   = texture_setting as *const _ as *const c_void;
+            let settings_u8     = unsafe { slice::from_raw_parts(settings_void as *const u8, settings_size) };
+
+            // Copy the setting into the aligned settings
+            let new_offset      = group_offset * setting_num;
+            aligned_settings[new_offset..(new_offset + settings_size)].copy_from_slice(&settings_u8[..]);
+        }
+
+        // Load into a buffer
+        let settings_buffer = device.create_buffer_init(&util::BufferInitDescriptor {
+            label:      Some("fill_texture_settings_buffer"),
+            contents:   &aligned_settings,
+            usage:      wgpu::BufferUsages::UNIFORM,
+        });
+
+        // Create bind groups for each of the texture settings in the buffer
+        let bind_groups = (0..settings.len()).into_iter()
+            .map(|setting_num| {
+                let (pipeline, _, texture, sampler) = &settings[setting_num];
+                pipeline.bind_input_texture(device, &settings_buffer, setting_num * group_offset, texture.as_ref().map(|t| &**t), sampler.as_ref().map(|s| &**s))
+            })
+            .collect();
+
+        // Store the settings buffer for use during the render pass
+        self.texture_settings_buffer        = Some(settings_buffer);
+        self.texture_settings_bind_groups   = bind_groups;
     }
 }

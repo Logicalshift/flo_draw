@@ -86,7 +86,7 @@ pub enum InputTextureType {
 ///
 /// Enumeration of the shaders loaded for the WGPU renderer
 ///
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum WgpuShader {
     /// Flat colour shader
     Simple(StandardShaderVariant, ColorPostProcessingStep),

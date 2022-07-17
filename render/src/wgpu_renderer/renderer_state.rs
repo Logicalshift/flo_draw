@@ -237,23 +237,18 @@ impl RendererState {
     pub fn bind_current_texture(&mut self) {
         if let Some(pipeline) = &self.pipeline {
             // Fetch the texture state
-            let texture_transform   = Arc::new(Self::create_texture_settings_buffer(&*self.device, &self.texture_settings));
+            let texture_settings    = self.texture_settings;
             let input_texture       = self.input_texture.clone();
             let sampler             = self.sampler.clone();
 
             // Set up the texture binding
-            let texture_group   = pipeline.input_texture_group_index();
-            let texture_binding = pipeline.bind_input_texture(&*self.device, &*texture_transform, input_texture.as_ref().map(|t| &**t), sampler.as_ref().map(|s| &**s));
-            let texture_index   = self.render_pass_resources.bind_groups.len();
-
-            self.render_pass_resources.bind_groups.push(Arc::new(texture_binding));
-            self.render_pass_resources.buffers.push(texture_transform);
-            if let Some(input_texture) = input_texture  { self.render_pass_resources.textures.push(input_texture); }
-            if let Some(sampler) = sampler              { self.render_pass_resources.samplers.push(sampler); }
+            let settings_buffer_index   = self.render_pass_resources.texture_settings.len();
+            let texture_group           = pipeline.input_texture_group_index();
+            self.render_pass_resources.texture_settings.push((pipeline.clone(), texture_settings, input_texture, sampler));
 
             // Add a callback function to actually set up the render pipeline (we have to do it indirectly later on because it borrows its resources)
             self.render_pass.push(Box::new(move |resources, render_pass| {
-                render_pass.set_bind_group(texture_group, &resources.bind_groups[texture_index], &[]);
+                render_pass.set_bind_group(texture_group, &resources.texture_settings_bind_groups[settings_buffer_index], &[]);
             }));
         }
     }
@@ -282,6 +277,7 @@ impl RendererState {
         if let Some(texture_view) = &resources.target_view {
             // Create any buffers required
             resources.fill_matrix_buffer(&*self.device, self.pipeline.as_ref().unwrap());
+            resources.fill_texture_settings_buffer(&*self.device);
 
             // Start the render pass
             let mut render_pass = self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

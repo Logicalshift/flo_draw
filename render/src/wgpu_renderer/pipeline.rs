@@ -1,5 +1,6 @@
 use super::wgpu_shader::*;
 use super::shader_cache::*;
+use super::texture_settings::*;
 use super::pipeline_configuration::*;
 
 use wgpu;
@@ -154,8 +155,15 @@ impl Pipeline {
     ///
     /// Creates the texture binding for the current shader
     ///
-    pub fn bind_input_texture(&self, device: &wgpu::Device, texture_settings: &wgpu::Buffer, texture: Option<&wgpu::Texture>, sampler: Option<&wgpu::Sampler>)  -> wgpu::BindGroup {
-        match (&self.shader_module, texture, sampler) {
+    pub fn bind_input_texture(&self, device: &wgpu::Device, texture_settings: &wgpu::Buffer, texture_settings_offset: usize, texture: Option<&wgpu::Texture>, sampler: Option<&wgpu::Sampler>)  -> wgpu::BindGroup {
+        let texture_settings_binding = wgpu::BufferBinding {
+            buffer: texture_settings,
+            offset: texture_settings_offset as u64,
+            size:   NonZeroU64::new(mem::size_of::<TextureSettings>() as u64)
+        };
+        let texture_settings_binding = wgpu::BindingResource::Buffer(texture_settings_binding);
+
+        match (self.shader_module, texture, sampler) {
             (WgpuShader::Texture(_, InputTextureType::Sampler, _, _, _), Some(texture), Some(sampler)) => {
                 // Create a view of the texture
                 let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -167,7 +175,7 @@ impl Pipeline {
                     entries:    &[
                         wgpu::BindGroupEntry {
                             binding:    0,
-                            resource:   texture_settings.as_entire_binding(),
+                            resource:   texture_settings_binding,
                         },
 
                         wgpu::BindGroupEntry {
@@ -193,7 +201,7 @@ impl Pipeline {
                     entries:    &[
                         wgpu::BindGroupEntry {
                             binding:    0,
-                            resource:   texture_settings.as_entire_binding(),
+                            resource:   texture_settings_binding,
                         },
 
                         wgpu::BindGroupEntry {
@@ -213,7 +221,7 @@ impl Pipeline {
                     entries:    &[
                         wgpu::BindGroupEntry {
                             binding:    0,
-                            resource:   texture_settings.as_entire_binding(),
+                            resource:   texture_settings_binding,
                         },
                     ]
                 })
