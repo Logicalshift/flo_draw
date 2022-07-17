@@ -25,6 +25,7 @@ pub fn main() {
         canvas.draw(|gc| {
             gc.clear_canvas(Color::Rgba(1.0, 0.9, 0.8, 1.0));
             gc.canvas_height(1000.0);
+            gc.transform(Transform2D::scale(1.0, -1.0));
             gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
             // Draw the mascot to a sprite
