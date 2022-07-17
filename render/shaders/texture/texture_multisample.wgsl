@@ -2,10 +2,6 @@
 @binding(1)
 var f_texture: texture_multisampled_2d<f32>;
 
-@group(2)
-@binding(2)
-var<uniform> f_alpha: f32;
-
 fn texture_color(vertex_color: vec4<f32>, texture_pos: vec2<f32>) -> vec4<f32> {
     let size            = vec2<f32>(textureDimensions(f_texture));
     let num_samples     = textureNumSamples(f_texture);
@@ -18,7 +14,6 @@ fn texture_color(vertex_color: vec4<f32>, texture_pos: vec2<f32>) -> vec4<f32> {
     }
 
     let sample_col      = sample_totals / f32(num_samples);
-    let alpha_blended   = alpha_blend(sample_col, f_alpha);
 
-    return alpha_blended;
+    return sample_col
 }

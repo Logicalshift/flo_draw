@@ -4,13 +4,18 @@ struct RasterData {
     @builtin(position)  pos:        vec4<f32>
 }
 
+struct TextureSettings {
+    @location(0)    transform:  mat4x4<f32>,
+    @location(1)    alpha:      f32
+}
+
 @group(0)
 @binding(0)
 var<uniform> transform: mat4x4<f32>;
 
 @group(2)
 @binding(0)
-var<uniform> texture_transform: mat4x4<f32>;
+var<uniform> texture_settings: TextureSettings;
 
 @vertex
 fn texture_vertex_shader(
@@ -26,7 +31,7 @@ fn texture_vertex_shader(
     color[2] /= 255.0;
     color[3] /= 255.0;
 
-    let tex_coord       = texture_position(pos, tex_coord, texture_transform);
+    let tex_coord       = texture_position(pos, tex_coord, texture_settings.transform);
 
     result.color        = color;
     result.tex_coord    = tex_coord;
@@ -38,6 +43,7 @@ fn texture_vertex_shader(
 @fragment
 fn texture_fragment_shader(vertex: RasterData) -> @location(0) vec4<f32> {
     let color = texture_color(vertex.color, vertex.tex_coord);
+    let color = alpha_blend(color, texture_settings.alpha);
 
     let color = clip(color, vertex.pos);
     let color = color_post_process(color);
