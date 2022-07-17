@@ -168,6 +168,80 @@ impl RendererState {
     }
 
     ///
+    /// Adds a step to the render pass to update to the currently set matrix
+    ///
+    pub fn bind_current_matrix(&mut self) {
+        if let Some(pipeline) = &self.pipeline {
+            // Create a matrix binding
+            let matrix_group    = pipeline.matrix_group_index();
+            let matrix_binding  = pipeline.bind_matrix_buffer(&*self.device, &*self.matrix_buffer);
+            let matrix_index    = self.render_pass_resources.bind_groups.len();
+
+            // The matrix buffer ends up in the render pass resources
+            self.render_pass_resources.bind_groups.push(Arc::new(matrix_binding));
+
+            // Bind the matrix as the next step in the pending render pass
+            self.render_pass.push(Box::new(move |resources, render_pass| {
+                render_pass.set_bind_group(matrix_group, &resources.bind_groups[matrix_index], &[]);
+            }));
+        }
+    }
+
+    ///
+    /// Adds a step to the render pass to update to the current set clip mask
+    ///
+    pub fn bind_current_clip_mask(&mut self) {
+        if let Some(pipeline) = &self.pipeline {
+            let clip_texture    = self.clip_texture.clone();
+
+            // Set up the clip binding
+            let clip_group      = pipeline.clip_mask_group_index();
+            let clip_binding    = pipeline.bind_clip_mask(&*self.device, clip_texture.as_ref().map(|clip_texture| &**clip_texture));
+            let clip_index      = self.render_pass_resources.bind_groups.len();
+
+            // Store in the render pass resources so it's not freed before then
+            self.render_pass_resources.bind_groups.push(Arc::new(clip_binding));
+            if let Some(clip_texture) = clip_texture {
+                self.render_pass_resources.textures.push(clip_texture);
+            }
+
+            // Bind as the next step in the pending render pass
+            self.render_pass.push(Box::new(move |resources, render_pass| {
+                render_pass.set_bind_group(clip_group, &resources.bind_groups[clip_index], &[]);
+            }));
+        }
+    }
+
+    ///
+    /// Adds a step to the render pass to update to the currently set texture
+    ///
+    pub fn bind_current_texture(&mut self) {
+        if let Some(pipeline) = &self.pipeline {
+            // Fetch the texture state
+            let texture_transform   = self.texture_transform.clone();
+            let input_texture       = self.input_texture.clone();
+            let sampler             = self.sampler.clone();
+            let texture_alpha       = self.texture_alpha.clone();
+
+            // Set up the texture binding
+            let texture_group   = pipeline.input_texture_group_index();
+            let texture_binding = pipeline.bind_input_texture(&*self.device, &*texture_transform, input_texture.as_ref().map(|t| &**t), sampler.as_ref().map(|s| &**s), texture_alpha.as_ref().map(|b| &**b));
+            let texture_index   = self.render_pass_resources.bind_groups.len();
+
+            self.render_pass_resources.bind_groups.push(Arc::new(texture_binding));
+            self.render_pass_resources.buffers.push(texture_transform);
+            if let Some(input_texture) = input_texture  { self.render_pass_resources.textures.push(input_texture); }
+            if let Some(sampler) = sampler              { self.render_pass_resources.samplers.push(sampler); }
+            if let Some(texture_alpha) = texture_alpha  { self.render_pass_resources.buffers.push(texture_alpha); }
+
+            // Add a callback function to actually set up the render pipeline (we have to do it indirectly later on because it borrows its resources)
+            self.render_pass.push(Box::new(move |resources, render_pass| {
+                render_pass.set_bind_group(texture_group, &resources.bind_groups[texture_index], &[]);
+            }));
+        }
+    }
+
+    ///
     /// Runs the pending render pass
     ///
     pub fn run_render_pass(&mut self) {
