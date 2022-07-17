@@ -1,4 +1,5 @@
 use super::pipeline::*;
+use super::texture_settings::*;
 use super::render_pass_resources::*;
 use super::pipeline_configuration::*;
 use crate::buffer::*;
@@ -55,8 +56,8 @@ pub (crate) struct RendererState {
     /// The last transform matrix set
     pub active_matrix:                  Matrix,
 
-    /// The texture transform buffer
-    pub texture_transform:              Arc<wgpu::Buffer>,
+    /// The current texture settings
+    pub texture_settings:               TextureSettings,
 
     /// The input texture set for the current shader (or none)
     pub input_texture:                  Option<Arc<wgpu::Texture>>,
@@ -66,9 +67,6 @@ pub (crate) struct RendererState {
 
     /// The sampler for the current shader (or none)
     pub sampler:                        Option<Arc<wgpu::Sampler>>,
-
-    /// The buffer containing the alpha value for the current texture
-    pub texture_alpha:                  Option<Arc<wgpu::Buffer>>,
 }
 
 impl RendererState {
@@ -79,7 +77,6 @@ impl RendererState {
         // TODO: we can avoid re-creating some of these structures every frame: eg, the binding groups in particular
 
         // Create all the state structures
-        let texture_transform   = Arc::new(Self::create_transform_buffer(&device, &Matrix::identity()));
         let encoder             = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("RendererState::new") });
 
         let default_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -111,12 +108,11 @@ impl RendererState {
             active_pipeline_configuration:      None,
 
             target_size:                        (1, 1),
-            texture_transform:                  texture_transform,
             active_matrix:                      Matrix::identity(),
+            texture_settings:                   TextureSettings { transform: Matrix::identity().0, alpha: 1.0 },
             input_texture:                      None,
             clip_texture:                       None,
             sampler:                            Some(Arc::new(default_sampler)),
-            texture_alpha:                      None,
         }
     }
 
@@ -133,7 +129,7 @@ impl RendererState {
     ///
     #[inline]
     pub fn write_texture_transform(&mut self, new_transform: &Matrix) {
-        self.texture_transform = Arc::new(Self::create_transform_buffer(&self.device, new_transform));
+        self.texture_settings.transform = new_transform.0;
     }
 
     ///
@@ -172,6 +168,25 @@ impl RendererState {
         });
 
         matrix_buffer
+    }
+
+    ///
+    /// Sets up the transform buffer and layout
+    ///
+    fn create_texture_settings_buffer(device: &wgpu::Device, texture_settings: &TextureSettings) -> wgpu::Buffer {
+        // Convert the matrix to a u8 pointer
+        let settings_void   = texture_settings as *const _ as *const c_void;
+        let settings_len    = mem::size_of::<TextureSettings>();
+        let settings_u8     = unsafe { slice::from_raw_parts(settings_void as *const u8, settings_len) };
+
+        // Load into a buffer
+        let settings_buffer = device.create_buffer_init(&util::BufferInitDescriptor {
+            label:      Some("texture_settings_buffer"),
+            contents:   settings_u8,
+            usage:      wgpu::BufferUsages::UNIFORM,
+        });
+
+        settings_buffer
     }
 
     ///
@@ -222,21 +237,19 @@ impl RendererState {
     pub fn bind_current_texture(&mut self) {
         if let Some(pipeline) = &self.pipeline {
             // Fetch the texture state
-            let texture_transform   = self.texture_transform.clone();
+            let texture_transform   = Arc::new(Self::create_texture_settings_buffer(&*self.device, &self.texture_settings));
             let input_texture       = self.input_texture.clone();
             let sampler             = self.sampler.clone();
-            let texture_alpha       = self.texture_alpha.clone();
 
             // Set up the texture binding
             let texture_group   = pipeline.input_texture_group_index();
-            let texture_binding = pipeline.bind_input_texture(&*self.device, &*texture_transform, input_texture.as_ref().map(|t| &**t), sampler.as_ref().map(|s| &**s), texture_alpha.as_ref().map(|b| &**b));
+            let texture_binding = pipeline.bind_input_texture(&*self.device, &*texture_transform, input_texture.as_ref().map(|t| &**t), sampler.as_ref().map(|s| &**s));
             let texture_index   = self.render_pass_resources.bind_groups.len();
 
             self.render_pass_resources.bind_groups.push(Arc::new(texture_binding));
             self.render_pass_resources.buffers.push(texture_transform);
             if let Some(input_texture) = input_texture  { self.render_pass_resources.textures.push(input_texture); }
             if let Some(sampler) = sampler              { self.render_pass_resources.samplers.push(sampler); }
-            if let Some(texture_alpha) = texture_alpha  { self.render_pass_resources.buffers.push(texture_alpha); }
 
             // Add a callback function to actually set up the render pipeline (we have to do it indirectly later on because it borrows its resources)
             self.render_pass.push(Box::new(move |resources, render_pass| {

@@ -154,11 +154,9 @@ impl Pipeline {
     ///
     /// Creates the texture binding for the current shader
     ///
-    /// The alpha buffer here should be a buffer containing a single f32 value
-    ///
-    pub fn bind_input_texture(&self, device: &wgpu::Device, texture_transform: &wgpu::Buffer, texture: Option<&wgpu::Texture>, sampler: Option<&wgpu::Sampler>, alpha: Option<&wgpu::Buffer>)  -> wgpu::BindGroup {
-        match (&self.shader_module, texture, sampler, alpha) {
-            (WgpuShader::Texture(_, InputTextureType::Sampler, _, _, _), Some(texture), Some(sampler), Some(alpha)) => {
+    pub fn bind_input_texture(&self, device: &wgpu::Device, texture_settings: &wgpu::Buffer, texture: Option<&wgpu::Texture>, sampler: Option<&wgpu::Sampler>)  -> wgpu::BindGroup {
+        match (&self.shader_module, texture, sampler) {
+            (WgpuShader::Texture(_, InputTextureType::Sampler, _, _, _), Some(texture), Some(sampler)) => {
                 // Create a view of the texture
                 let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -169,7 +167,7 @@ impl Pipeline {
                     entries:    &[
                         wgpu::BindGroupEntry {
                             binding:    0,
-                            resource:   texture_transform.as_entire_binding(),
+                            resource:   texture_settings.as_entire_binding(),
                         },
 
                         wgpu::BindGroupEntry {
@@ -180,15 +178,11 @@ impl Pipeline {
                             binding:    2,
                             resource:   wgpu::BindingResource::Sampler(sampler)
                         },
-                        wgpu::BindGroupEntry {
-                            binding:    3,
-                            resource:   alpha.as_entire_binding()
-                        },
                     ]
                 })
             }
 
-            (WgpuShader::Texture(_, InputTextureType::Multisampled, _, _, _), Some(texture), _, Some(alpha)) => {
+            (WgpuShader::Texture(_, InputTextureType::Multisampled, _, _, _), Some(texture), _) => {
                 // Create a view of the texture
                 let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -199,39 +193,34 @@ impl Pipeline {
                     entries:    &[
                         wgpu::BindGroupEntry {
                             binding:    0,
-                            resource:   texture_transform.as_entire_binding(),
+                            resource:   texture_settings.as_entire_binding(),
                         },
 
                         wgpu::BindGroupEntry {
                             binding:    1,
                             resource:   wgpu::BindingResource::TextureView(&view),
                         },
-                        wgpu::BindGroupEntry {
-                            binding:    2,
-                            resource:   alpha.as_entire_binding()
-                        },
                     ]
                 })
             }
 
-            (WgpuShader::Texture(_, InputTextureType::None, _, _, _), _, _, _)          |
-            (WgpuShader::Texture(_, InputTextureType::Sampler, _, _, _), _, None, _)    |
-            (WgpuShader::Texture(_, _, _, _, _), _, _, None)                            => {
-                // Group 2 is bound to an empty set if no texture is defined
+            (WgpuShader::Texture(_, InputTextureType::None, _, _, _), _, _)         |
+            (WgpuShader::Texture(_, InputTextureType::Sampler, _, _, _), _, None)   => {
+                // Group 2 is bound to an empty set if no texture is defined (or the sampler is missing when it was expected)
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label:      Some("bind_input_texture_no_texture"),
                     layout:     &*self.clip_mask_layout,
                     entries:    &[
                         wgpu::BindGroupEntry {
                             binding:    0,
-                            resource:   texture_transform.as_entire_binding(),
+                            resource:   texture_settings.as_entire_binding(),
                         },
                     ]
                 })
             }
 
-            (_, None, _, _)                                                             |
-            (WgpuShader::Simple(_, _), _, _, _)                                         => {
+            (_, None, _)                        |
+            (WgpuShader::Simple(_, _), _, _)    => {
                 // Group 2 is bound to an empty set if not using a texture shader
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label:      Some("bind_input_texture_not_texture_shader"),

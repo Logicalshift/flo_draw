@@ -4,6 +4,7 @@ use super::wgpu_shader::*;
 use super::shader_cache::*;
 use super::render_target::*;
 use super::renderer_state::*;
+use super::texture_settings::*;
 use super::pipeline_configuration::*;
 
 use crate::action::*;
@@ -498,22 +499,20 @@ impl WgpuRenderer {
         let source_height   = source_size.1 as f32;
 
         // Copy the values we're going to update
-        let old_texture         = state.input_texture.take();
-        let old_alpha           = state.texture_alpha.take();
-        let old_matrix          = state.active_matrix;
-        let old_transform       = Arc::clone(&state.texture_transform);
-        let old_pipeline_config = state.pipeline_configuration.clone();
+        let old_texture             = state.input_texture.take();
+        let old_matrix              = state.active_matrix;
+        let old_texture_settings    = state.texture_settings;
+        let old_pipeline_config     = state.pipeline_configuration.clone();
 
         // Configure for rendering the frame buffer
         let texture_type = if samples.is_none() { InputTextureType::Sampler } else { InputTextureType::Multisampled };
 
         state.input_texture                                     = Some(texture);
-        state.texture_alpha                                     = Some(state.f32_buffer(alpha as _));
         state.pipeline_configuration.shader_module              = WgpuShader::Texture(StandardShaderVariant::NoClipping, texture_type, TexturePosition::Separate, AlphaBlendStep::Premultiply, ColorPostProcessingStep::NoPostProcessing);
         state.pipeline_configuration.blending_mode              = BlendMode::SourceOver;
         state.pipeline_configuration.source_is_premultiplied    = true;
         state.pipeline_config_changed                           = true;
-        state.write_texture_transform(&Matrix::identity());
+        state.texture_settings                                  = TextureSettings { transform: Matrix::identity().0, alpha: alpha as _ };
 
         // Work out a viewport matrix
         let target_size         = state.target_size;
@@ -582,9 +581,8 @@ impl WgpuRenderer {
 
         // Restore the render state
         state.input_texture             = old_texture;
-        state.texture_alpha             = old_alpha;
         state.active_matrix             = old_matrix;
-        state.texture_transform         = old_transform;
+        state.texture_settings          = old_texture_settings;
         state.pipeline_configuration    = old_pipeline_config;
         state.pipeline_config_changed   = true;
         state.pipeline_bindings_changed = true;
@@ -1000,8 +998,7 @@ impl WgpuRenderer {
                 };
 
                 // Set up the state
-                state.write_texture_transform(&texture_transform);
-                state.texture_alpha     = Some(state.f32_buffer(alpha as _));
+                state.texture_settings  = TextureSettings { transform: texture_transform.0, alpha: alpha as _ };
                 state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
 
                 if let Some(texture) = &texture {
