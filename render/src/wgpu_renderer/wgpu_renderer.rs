@@ -243,10 +243,17 @@ impl WgpuRenderer {
                 }));
 
                 // Rebind everything else
-                render_state.bind_current_matrix();
-                render_state.bind_current_clip_mask();
-                render_state.bind_current_texture();
+                render_state.pipeline_bindings_changed = true;
             }
+        }
+
+        // Refresh the bindings if they're marked as changed
+        if render_state.pipeline_bindings_changed {
+            render_state.pipeline_bindings_changed = false;
+            
+            render_state.bind_current_matrix();
+            render_state.bind_current_clip_mask();
+            render_state.bind_current_texture();
         }
     }
     
@@ -254,26 +261,11 @@ impl WgpuRenderer {
     /// Sets the transform to used with the following render instructions
     ///
     fn set_transform(&mut self, matrix: Matrix, render_state: &mut RendererState) {
-        // Update the render pipeline
-        self.update_pipeline_if_needed(render_state);
-
         // Update the render buffer
         render_state.write_matrix(&matrix);
 
         // Update the bound resources in the next render pass
-        if let Some(pipeline) = &render_state.pipeline {
-            let matrix_group = pipeline.matrix_group_index();
-
-            // Store the matrix bind group in the resources for the pending render pass
-            let matrix_binding  = pipeline.bind_matrix_buffer(&*self.device, &*render_state.matrix_buffer);
-            let matrix_index    = render_state.render_pass_resources.bind_groups.len();
-            render_state.render_pass_resources.bind_groups.push(Arc::new(matrix_binding));
-
-            // Update the matrix binding group on the next render pass
-            render_state.render_pass.push(Box::new(move |resources, render_pass| {
-                render_pass.set_bind_group(matrix_group, &resources.bind_groups[matrix_index], &[]);
-            }));
-        }
+        render_state.bind_current_matrix();
     }
     
     ///
@@ -1021,12 +1013,8 @@ impl WgpuRenderer {
         }
 
         // Mark the pipeline configuration as changed
-        state.pipeline_config_changed = true;
-
-        // Update the resources
-        self.update_pipeline_if_needed(state);
-        state.bind_current_clip_mask();
-        state.bind_current_texture();
+        state.pipeline_config_changed   = true;
+        state.pipeline_bindings_changed = true;
     }
     
     ///

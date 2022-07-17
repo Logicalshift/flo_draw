@@ -37,6 +37,9 @@ pub (crate) struct RendererState {
     /// Set to true if the pipeline configuration has changed since it was last committed to the render pass
     pub pipeline_config_changed:        bool,
 
+    /// True if the pipeline bindings have been updated since they were last written
+    pub pipeline_bindings_changed:      bool,
+
     /// The pipeline configuration that was last activated
     pub active_pipeline_configuration:  Option<PipelineConfiguration>,
 
@@ -101,6 +104,7 @@ impl RendererState {
             pipeline_configuration:             PipelineConfiguration::default(),
             pipeline:                           None,
             pipeline_config_changed:            true,
+            pipeline_bindings_changed:          true,
             active_pipeline_configuration:      None,
 
             target_size:                        (1, 1),
