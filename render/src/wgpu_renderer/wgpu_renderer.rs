@@ -248,10 +248,15 @@ impl WgpuRenderer {
         }
 
         // Refresh the bindings if they're marked as changed
+        if render_state.pipeline_bindings_changed || render_state.pipeline_matrix_changed {
+            render_state.pipeline_matrix_changed = false;
+
+            render_state.bind_current_matrix();
+        }
+
         if render_state.pipeline_bindings_changed {
             render_state.pipeline_bindings_changed = false;
 
-            render_state.bind_current_matrix();
             render_state.bind_current_clip_mask();
             render_state.bind_current_texture();
         }
@@ -264,8 +269,8 @@ impl WgpuRenderer {
         // Update the render buffer
         render_state.write_matrix(&matrix);
 
-        // Update the bound resources in the next render pass
-        render_state.bind_current_matrix();
+        // Set the matrix as ready to update at the next update_pipeline_if_needed call
+        render_state.pipeline_matrix_changed = true;
     }
     
     ///
