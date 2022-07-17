@@ -15,5 +15,5 @@ fn texture_color(vertex_color: vec4<f32>, texture_pos: vec2<f32>) -> vec4<f32> {
 
     let sample_col      = sample_totals / f32(num_samples);
 
-    return sample_col
+    return sample_col;
 }

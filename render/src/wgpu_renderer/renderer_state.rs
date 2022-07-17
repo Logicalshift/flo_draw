@@ -109,7 +109,7 @@ impl RendererState {
 
             target_size:                        (1, 1),
             active_matrix:                      Matrix::identity(),
-            texture_settings:                   TextureSettings { transform: Matrix::identity().0, alpha: 1.0 },
+            texture_settings:                   TextureSettings { transform: Matrix::identity().0, alpha: 1.0, ..Default::default() },
             input_texture:                      None,
             clip_texture:                       None,
             sampler:                            Some(Arc::new(default_sampler)),

@@ -512,7 +512,7 @@ impl WgpuRenderer {
         state.pipeline_configuration.blending_mode              = BlendMode::SourceOver;
         state.pipeline_configuration.source_is_premultiplied    = true;
         state.pipeline_config_changed                           = true;
-        state.texture_settings                                  = TextureSettings { transform: Matrix::identity().0, alpha: alpha as _ };
+        state.texture_settings                                  = TextureSettings { transform: Matrix::identity().0, alpha: alpha as _, ..Default::default() };
 
         // Work out a viewport matrix
         let target_size         = state.target_size;
@@ -998,7 +998,7 @@ impl WgpuRenderer {
                 };
 
                 // Set up the state
-                state.texture_settings  = TextureSettings { transform: texture_transform.0, alpha: alpha as _ };
+                state.texture_settings  = TextureSettings { transform: texture_transform.0, alpha: alpha as _, ..Default::default() };
                 state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
 
                 if let Some(texture) = &texture {
