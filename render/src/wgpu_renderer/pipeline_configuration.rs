@@ -25,6 +25,9 @@ pub (crate) struct PipelineConfiguration {
     /// True if the source image (or shader) produces pre-multiplied colour values
     pub (crate) source_is_premultiplied:    bool,
 
+    /// True if the coordinate scheme should be flipped vertically
+    pub (crate) flip_vertical: bool,
+
     /// The number of samples the target texture uses (or None for no multisampling)
     pub (crate) multisampling_count:        Option<u32>,
 }
@@ -36,6 +39,7 @@ impl Default for PipelineConfiguration {
             shader_module:              WgpuShader::default(),
             blending_mode:              BlendMode::SourceOver,
             source_is_premultiplied:    false,
+            flip_vertical:              false,
             multisampling_count:        None
         }
     }

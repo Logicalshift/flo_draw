@@ -16,6 +16,9 @@ pub (crate) struct Pipeline {
     /// The shader module for this pipeline
     pub (crate) shader_module: WgpuShader,
 
+    /// Set to true if the coordinates should be flipped vertically
+    pub (crate) flip_vertical: bool,
+
     /// The render pipeline
     pub (crate) pipeline: Arc<wgpu::RenderPipeline>,
 
@@ -56,6 +59,7 @@ impl Pipeline {
 
         Pipeline {
             shader_module:      config.shader_module.clone(),
+            flip_vertical:      config.flip_vertical,
             pipeline:           Arc::new(new_pipeline),
             matrix_layout:      Arc::new(matrix_bind_layout),
             clip_mask_layout:   Arc::new(clip_bind_layout),

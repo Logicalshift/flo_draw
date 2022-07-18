@@ -444,7 +444,9 @@ impl WgpuRenderer {
             state.render_pass_resources.target_texture          = Some(texture);
             state.pipeline_configuration.texture_format         = texture_format;
             state.pipeline_configuration.multisampling_count    = samples;
+            state.pipeline_configuration.flip_vertical          = true;
             state.pipeline_config_changed                       = true;
+            state.pipeline_bindings_changed                     = true;
 
             self.update_pipeline_if_needed(state);
         }
@@ -474,7 +476,9 @@ impl WgpuRenderer {
         state.render_pass_resources.target_texture          = None;
         state.pipeline_configuration.texture_format         = self.target_format.expect("prepare_to_render must be called before rendering");
         state.pipeline_configuration.multisampling_count    = None;
+        state.pipeline_configuration.flip_vertical          = false;
         state.pipeline_config_changed                       = true;
+        state.pipeline_bindings_changed                     = true;
 
         self.update_pipeline_if_needed(state);
     }
