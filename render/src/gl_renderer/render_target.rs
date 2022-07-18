@@ -200,7 +200,7 @@ impl RenderTarget {
     /// (This won't be freed when the render target is dropped. It also has no way to know how
     /// long the current framebuffer will exist for, so is marked as 'unsafe')
     ///
-    pub unsafe fn reference_to_current() -> RenderTarget {
+    pub unsafe fn reference_to_current(width: u16, height: u16) -> RenderTarget {
         let mut current_frame_buffer = 0;
         gl::GetIntegerv(gl::DRAW_FRAMEBUFFER_BINDING, &mut current_frame_buffer);
 
@@ -210,7 +210,7 @@ impl RenderTarget {
             render_buffer:      None,
             drop_frame_buffer:  false,
             _render_type:       RenderTargetType::Standard,
-            size:               (0, 0)
+            size:               (width, height)
         }
     }
 

@@ -82,7 +82,7 @@ impl GlRenderer {
             panic_on_gl_error("Preparing to render");
 
             // Set the default render target to be a reference to the current render target
-            self.default_render_target = Some(RenderTarget::reference_to_current());
+            self.default_render_target = Some(RenderTarget::reference_to_current(width as _, height as _));
 
             // Set the viewport to the specified width and height
             gl::Viewport(0, 0, width as gl::types::GLsizei, height as gl::types::GLsizei);
@@ -807,7 +807,10 @@ impl GlRenderer {
 
         if let Some(default_render_target) = &self.default_render_target {
             unsafe {
-                gl::BindFramebuffer(gl::FRAMEBUFFER, **default_render_target)
+                let (width, height) = default_render_target.get_size();
+
+                gl::BindFramebuffer(gl::FRAMEBUFFER, **default_render_target);
+                gl::Viewport(0, 0, width as gl::types::GLsizei, height as gl::types::GLsizei);
             }
         }
     }
