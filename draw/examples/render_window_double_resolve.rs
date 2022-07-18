@@ -23,6 +23,7 @@ pub fn main() {
                 // Create a couple of multisampled targets
                 RenderAction::CreateRenderTarget(RenderTargetId(0), TextureId(0), Size2D(768, 768), RenderTargetType::Multisampled),
                 RenderAction::CreateRenderTarget(RenderTargetId(1), TextureId(1), Size2D(768, 768), RenderTargetType::Multisampled),
+                RenderAction::CreateRenderTarget(RenderTargetId(2), TextureId(2), Size2D(768, 768), RenderTargetType::Standard),
 
                 RenderAction::SetTransform(Matrix([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0]])),
                 RenderAction::BlendMode(render::BlendMode::SourceOver),
@@ -44,6 +45,11 @@ pub fn main() {
                 Clear(Rgba8([255, 255, 255, 255])),
                 RenderAction::DrawFrameBuffer(RenderTargetId(0), FrameBufferRegion::default(), Alpha(1.0)),              
 
+                // Resolve render target 0 to 2
+                SelectRenderTarget(RenderTargetId(2)),
+                Clear(Rgba8([255, 255, 255, 255])),
+                RenderAction::DrawFrameBuffer(RenderTargetId(0), FrameBufferRegion::default(), Alpha(1.0)),              
+
                 // Resolve render target 1 to the framebuffer
                 RenderToFrameBuffer,
                 Clear(Rgba8([255, 255, 255, 255])),
@@ -51,18 +57,20 @@ pub fn main() {
                 RenderAction::DrawFrameBuffer(RenderTargetId(0), FrameBufferRegion::default(), Alpha(1.0)),              
                 RenderAction::DrawFrameBuffer(RenderTargetId(1), FrameBufferRegion::default(), Alpha(0.5)),
 
-                // Draw a triangle for reference
+                // Draw texture 2
+                CreateMipMaps(TextureId(2)),
                 RenderAction::SetTransform(Matrix([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0]])),
                 RenderAction::BlendMode(render::BlendMode::SourceOver),
-                RenderAction::UseShader(ShaderType::Simple { clip_texture: None }),
+                RenderAction::UseShader(ShaderType::Texture { texture: TextureId(2), texture_transform: transform_to_matrix(&canvas::Transform2D::translate(0.5, 0.5)), repeat: false, alpha: 1.0, clip_texture: None }),
 
                 CreateVertex2DBuffer(VertexBufferId(2), vec![
                     Vertex2D::with_pos(-0.5, -0.5).with_color(0.0, 0.0, 1.0, 1.0),
-                    Vertex2D::with_pos(-0.0, 0.5).with_color(0.0, 0.0, 1.0, 1.0),
+                    Vertex2D::with_pos(-0.5, 0.5).with_color(0.0, 0.0, 1.0, 1.0),
+                    Vertex2D::with_pos(0.5, 0.5).with_color(0.0, 0.0, 1.0, 1.0),
                     Vertex2D::with_pos(0.5, -0.5).with_color(0.0, 0.0, 1.0, 1.0),
                 ]),
-                RenderAction::CreateIndexBuffer(IndexBufferId(2), vec![0, 1, 2]),
-                DrawIndexedTriangles(VertexBufferId(2), IndexBufferId(1), 3),
+                RenderAction::CreateIndexBuffer(IndexBufferId(2), vec![0, 1, 2, 0, 2, 3]),
+                DrawIndexedTriangles(VertexBufferId(2), IndexBufferId(2), 6),
 
                 ShowFrameBuffer,
             ];
@@ -83,4 +91,18 @@ pub fn main() {
             }
         });
     });
+}
+
+///
+/// Converts a canvas transform to a rendering matrix
+///
+pub fn transform_to_matrix(transform: &canvas::Transform2D) -> Matrix {
+    let canvas::Transform2D(t) = transform;
+
+    Matrix([
+        [t[0][0], t[0][1], 0.0, t[0][2]],
+        [t[1][0], t[1][1], 0.0, t[1][2]],
+        [t[2][0], t[2][1], 1.0, t[2][2]],
+        [0.0,     0.0,     0.0, 1.0]
+    ])
 }
