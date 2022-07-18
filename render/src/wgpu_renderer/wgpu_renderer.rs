@@ -525,7 +525,7 @@ impl WgpuRenderer {
         let target_height       = target_size.1 as f32;
 
         let scale_transform     = flo_canvas::Transform2D::scale(2.0/target_width, 2.0/target_height);
-        let viewport_transform  = scale_transform * flo_canvas::Transform2D::translate(-(target_width/2.0), (target_height/2.0));
+        let viewport_transform  = scale_transform * flo_canvas::Transform2D::translate(-(target_width/2.0), -(target_height/2.0));
 
         let viewport_matrix     = transform_to_matrix(&viewport_transform);
         state.write_matrix(&viewport_matrix);
