@@ -519,19 +519,7 @@ impl WgpuRenderer {
         let target_width        = target_size.0 as f32;
         let target_height       = target_size.1 as f32;
 
-        let scale_transform     = if render_target.texture_descriptor().sample_count > 1 && self.active_render_target.is_some() {
-            // TODO: seems that this is replicating a bug in the opengl/metal renderers? Ie, we flip the rendering if we're resolving a
-            // multisample texture to anything other than the main view, which is pretty arbitrary. Things like wibble_dynamic_mascot do
-            // seem to expect an 'upside down' texture rendering vs texture. Possibly need to figure out why this happens, does seem
-            // to make more sense without this. The mascot_filter example seems to have some issues that might need to be corrected if
-            // this were fixed.
-            //
-            // TODO: Can possibly test if OpenGL is flipping textures over by resolving everything twice (ie, resolve to another multisample
-            // buffer then resolve again)
-            flo_canvas::Transform2D::scale(2.0/target_width, -2.0/target_height)
-        } else { 
-            flo_canvas::Transform2D::scale(2.0/target_width, 2.0/target_height)
-        };
+        let scale_transform     = flo_canvas::Transform2D::scale(2.0/target_width, 2.0/target_height);
         let viewport_transform  = scale_transform * flo_canvas::Transform2D::translate(-(target_width/2.0), -(target_height/2.0));
 
         let viewport_matrix     = transform_to_matrix(&viewport_transform);
