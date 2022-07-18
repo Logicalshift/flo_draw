@@ -48,8 +48,21 @@ pub fn main() {
                 RenderToFrameBuffer,
                 Clear(Rgba8([255, 255, 255, 255])),
 
-                //RenderAction::DrawFrameBuffer(RenderTargetId(0), FrameBufferRegion::default(), Alpha(1.0)),              
-                RenderAction::DrawFrameBuffer(RenderTargetId(1), FrameBufferRegion::default(), Alpha(1.0)),              
+                RenderAction::DrawFrameBuffer(RenderTargetId(0), FrameBufferRegion::default(), Alpha(1.0)),              
+                RenderAction::DrawFrameBuffer(RenderTargetId(1), FrameBufferRegion::default(), Alpha(0.5)),
+
+                // Draw a triangle for reference
+                RenderAction::SetTransform(Matrix([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0]])),
+                RenderAction::BlendMode(render::BlendMode::SourceOver),
+                RenderAction::UseShader(ShaderType::Simple { clip_texture: None }),
+
+                CreateVertex2DBuffer(VertexBufferId(2), vec![
+                    Vertex2D::with_pos(-0.5, -0.5).with_color(0.0, 0.0, 1.0, 1.0),
+                    Vertex2D::with_pos(-0.0, 0.5).with_color(0.0, 0.0, 1.0, 1.0),
+                    Vertex2D::with_pos(0.5, -0.5).with_color(0.0, 0.0, 1.0, 1.0),
+                ]),
+                RenderAction::CreateIndexBuffer(IndexBufferId(2), vec![0, 1, 2]),
+                DrawIndexedTriangles(VertexBufferId(2), IndexBufferId(1), 3),
 
                 ShowFrameBuffer,
             ];
