@@ -50,6 +50,15 @@ pub fn main() {
                 Clear(Rgba8([255, 255, 255, 255])),
                 RenderAction::DrawFrameBuffer(RenderTargetId(0), FrameBufferRegion::default(), Alpha(1.0)),              
 
+                // Draw another triangle (inside the rendering we just made)
+                CreateVertex2DBuffer(VertexBufferId(1), vec![
+                    Vertex2D::with_pos(-0.2, -0.2).with_color(1.0, 1.0, 0.0, 1.0),
+                    Vertex2D::with_pos(-0.0, 0.2).with_color(1.0, 1.0, 0.0, 1.0),
+                    Vertex2D::with_pos(0.2, -0.2).with_color(1.0, 1.0, 0.0, 1.0),
+                ]),
+                RenderAction::CreateIndexBuffer(IndexBufferId(1), vec![0, 1, 2]),
+                DrawIndexedTriangles(VertexBufferId(1), IndexBufferId(1), 3),
+
                 // Resolve render target 1 to the framebuffer
                 RenderToFrameBuffer,
                 Clear(Rgba8([255, 255, 255, 255])),
