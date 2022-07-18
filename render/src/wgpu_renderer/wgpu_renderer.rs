@@ -342,8 +342,8 @@ impl WgpuRenderer {
     /// Indicates that a vertex buffer is unused
     ///
     fn free_vertex_buffer(&mut self, VertexBufferId(vertex_id): VertexBufferId) {
-        if let Some(Some(buffer)) = self.vertex_buffers.get(vertex_id) {
-            self.vertex_buffers[vertex_id] = None;
+        if let Some(buffer) = self.vertex_buffers.get_mut(vertex_id) {
+            *buffer = None;
         }
     }
     
@@ -351,8 +351,8 @@ impl WgpuRenderer {
     /// Indicates that an index buffer is unused
     ///
     fn free_index_buffer(&mut self, IndexBufferId(index_id): IndexBufferId) {
-        if let Some(Some(buffer)) = self.index_buffers.get(index_id) {
-            self.index_buffers[index_id] = None;
+        if let Some(buffer) = self.index_buffers.get_mut(index_id) {
+            *buffer = None;
         }
     }
     
@@ -466,7 +466,6 @@ impl WgpuRenderer {
         state.run_render_pass();
 
         // Switch to the surface texture
-        let swapchain_format    = self.target_surface.get_supported_formats(&self.adapter)[0];
         let surface_texture     = self.target_surface_texture.as_ref().unwrap();
         let texture_view        = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -638,7 +637,7 @@ impl WgpuRenderer {
         }
 
         // Texture is COPY_DST so we can write to it
-        let mut descriptor = wgpu::TextureDescriptor {
+        let descriptor = wgpu::TextureDescriptor {
             label:  Some("render_target"),
             size:   wgpu::Extent3d {
                 width:                  width as _,
@@ -680,7 +679,7 @@ impl WgpuRenderer {
         }
 
         // Texture is COPY_DST so we can write to it
-        let mut descriptor = wgpu::TextureDescriptor {
+        let descriptor = wgpu::TextureDescriptor {
             label:  Some("render_target"),
             size:   wgpu::Extent3d {
                 width:                  width as _,
@@ -722,7 +721,7 @@ impl WgpuRenderer {
         }
 
         // Texture is COPY_DST so we can write to it
-        let mut descriptor = wgpu::TextureDescriptor {
+        let descriptor = wgpu::TextureDescriptor {
             label:  Some("render_target"),
             size:   wgpu::Extent3d {
                 width:                  width as _,
@@ -764,7 +763,7 @@ impl WgpuRenderer {
         }
 
         // Texture is COPY_DST so we can write to it
-        let mut descriptor = wgpu::TextureDescriptor {
+        let descriptor = wgpu::TextureDescriptor {
             label:  Some("render_target"),
             size:   wgpu::Extent3d {
                 width:                  width as _,
@@ -970,7 +969,7 @@ impl WgpuRenderer {
                 state.pipeline_configuration.source_is_premultiplied    = false;
             }
 
-            DashedLine { clip_texture, .. } => {
+            DashedLine { .. } => {
                 // TODO (this shader doesn't work anyway so should probably be deprecated)
             }
 

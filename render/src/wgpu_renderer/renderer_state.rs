@@ -5,13 +5,9 @@ use super::pipeline_configuration::*;
 use crate::buffer::*;
 
 use wgpu;
-use wgpu::util;
-use wgpu::util::{DeviceExt};
 
 use std::mem;
-use std::slice;
 use std::sync::*;
-use std::ffi::{c_void};
 
 ///
 /// State for the WGPU renderer
@@ -209,7 +205,7 @@ impl RendererState {
         }
 
         // Start a new render pass using the current encoder
-        if let Some(texture_view) = &resources.target_view {
+        if resources.target_view.is_some() {
             // Create any buffers required
             resources.fill_matrix_buffer(&*self.device, self.pipeline.as_ref().unwrap());
             resources.fill_texture_settings_buffer(&*self.device);

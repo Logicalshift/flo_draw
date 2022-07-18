@@ -412,18 +412,6 @@ impl PipelineConfiguration {
     }
 
     ///
-    /// Creates the pipeline layout for this render pipeline
-    ///
-    #[inline]
-    pub fn pipeline_layout<'a>(&self, bind_group_layouts: &'a [&'a wgpu::BindGroupLayout]) -> wgpu::PipelineLayoutDescriptor<'a> {
-        wgpu::PipelineLayoutDescriptor {
-            label:                  Some("pipeline_layout"),
-            bind_group_layouts:     bind_group_layouts,
-            push_constant_ranges:   &[],
-        }
-    }
-
-    ///
     /// Creates the render pipeline descriptor for this render pipeline
     ///
     #[inline]
