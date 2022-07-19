@@ -288,14 +288,16 @@ impl PipelineConfiguration {
 
         // The type of binding that's in use depends on if the shader module has a clipping mask or not
         match self.shader_module {
-            WgpuShader::Texture(StandardShaderVariant::ClippingMask, _, _, _, _)    |
-            WgpuShader::Simple(StandardShaderVariant::ClippingMask, _)              => {
+            WgpuShader::LinearGradient(StandardShaderVariant::ClippingMask, _, _, _)    |
+            WgpuShader::Texture(StandardShaderVariant::ClippingMask, _, _, _, _)        |
+            WgpuShader::Simple(StandardShaderVariant::ClippingMask, _)                  => {
                 wgpu::BindGroupLayoutDescriptor {
                     label:      Some("clip_mask_bind_group_layout_with_clip_mask"),
                     entries:    &WITH_CLIP_MASK,
                 }
             }
 
+            WgpuShader::LinearGradient(StandardShaderVariant::NoClipping, _, _, _)  |
             WgpuShader::Texture(StandardShaderVariant::NoClipping, _, _, _, _)      |
             WgpuShader::Simple(StandardShaderVariant::NoClipping, _)                => {
                 wgpu::BindGroupLayoutDescriptor {
@@ -406,7 +408,66 @@ impl PipelineConfiguration {
                 }
             },
 
-            WgpuShader::Simple(_, _) => {
+            WgpuShader::LinearGradient(_, _, _, _)  |
+            WgpuShader::Simple(_, _)                => {
+                wgpu::BindGroupLayoutDescriptor {
+                    label:      Some("texture_bind_group_layout_not_texture_shader"),
+                    entries:    &NOT_TEXTURE_SHADER,
+                }
+            }
+        }
+    }
+
+    ///
+    /// Creates the bind group layout descriptor for the linear gradient bind group (this is bind group 2 in the shaders)
+    ///
+    #[inline]
+    pub fn linear_gradient_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
+        static NOT_TEXTURE_SHADER: [wgpu::BindGroupLayoutEntry; 0]  = [];
+        static WITH_SAMPLER: [wgpu::BindGroupLayoutEntry; 3]        = [
+            // Texture settings
+            wgpu::BindGroupLayoutEntry {
+                binding:            0,
+                visibility:         wgpu::ShaderStages::VERTEX_FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Buffer {
+                    ty:                 wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size:   wgpu::BufferSize::new(mem::size_of::<TextureSettings>() as _),
+                }
+            },
+
+            // Texture
+            wgpu::BindGroupLayoutEntry {
+                binding:            1,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   false,
+                }
+            },
+
+            // Sampler
+            wgpu::BindGroupLayoutEntry {
+                binding:            2,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+            },
+        ];
+
+        match self.shader_module {
+            WgpuShader::LinearGradient(_, _, _, _) => {
+                wgpu::BindGroupLayoutDescriptor {
+                    label:      Some("texture_bind_group_layout_sampler"),
+                    entries:    &WITH_SAMPLER,
+                }
+            },
+
+            WgpuShader::Texture(_, _, _, _, _)  |
+            WgpuShader::Simple(_, _)            => {
                 wgpu::BindGroupLayoutDescriptor {
                     label:      Some("texture_bind_group_layout_not_texture_shader"),
                     entries:    &NOT_TEXTURE_SHADER,

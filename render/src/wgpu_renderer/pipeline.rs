@@ -30,6 +30,9 @@ pub (crate) struct Pipeline {
 
     /// The bind group layout for the input texture
     pub (crate) texture_layout: Arc<wgpu::BindGroupLayout>,
+
+    /// The bind group layout for a linear gradient
+    pub (crate) linear_gradient_layout: Arc<wgpu::BindGroupLayout>,
 }
 
 impl Pipeline {
@@ -37,33 +40,40 @@ impl Pipeline {
     /// Creates a pipeline from a pipline configuration
     ///
     pub fn from_configuration(config: &PipelineConfiguration, device: &wgpu::Device, shader_cache: &mut ShaderCache<WgpuShader>) -> Pipeline {
-        let mut temp_data       = PipelineDescriptorTempStorage::default();
+        let mut temp_data           = PipelineDescriptorTempStorage::default();
         
-        let matrix_bind_layout  = config.matrix_bind_group_layout();
-        let clip_bind_layout    = config.clip_mask_bind_group_layout();
-        let texture_layout      = config.texture_bind_group_layout();
-        let matrix_bind_layout  = device.create_bind_group_layout(&matrix_bind_layout);
-        let clip_bind_layout    = device.create_bind_group_layout(&clip_bind_layout);
-        let texture_layout      = device.create_bind_group_layout(&texture_layout);
+        let matrix_bind_layout      = config.matrix_bind_group_layout();
+        let clip_bind_layout        = config.clip_mask_bind_group_layout();
+        let texture_layout          = config.texture_bind_group_layout();
+        let linear_gradient_layout  = config.linear_gradient_bind_group_layout();
+        let matrix_bind_layout      = device.create_bind_group_layout(&matrix_bind_layout);
+        let clip_bind_layout        = device.create_bind_group_layout(&clip_bind_layout);
+        let texture_layout          = device.create_bind_group_layout(&texture_layout);
+        let linear_gradient_layout  = device.create_bind_group_layout(&linear_gradient_layout);
 
-        let bind_layout         = [&matrix_bind_layout, &clip_bind_layout, &texture_layout];
-        let pipeline_layout     = wgpu::PipelineLayoutDescriptor {
+        let bind_layout             = match config.shader_module {
+            WgpuShader::LinearGradient(..)  => vec![&matrix_bind_layout, &clip_bind_layout, &linear_gradient_layout],
+            WgpuShader::Texture(..)         => vec![&matrix_bind_layout, &clip_bind_layout, &texture_layout],
+            WgpuShader::Simple(..)          => vec![&matrix_bind_layout, &clip_bind_layout],
+        };
+        let pipeline_layout         = wgpu::PipelineLayoutDescriptor {
             label:                  Some("Pipeline::from_configuration"),
             bind_group_layouts:     &bind_layout,
             push_constant_ranges:   &[],
         };
-        let pipeline_layout     = device.create_pipeline_layout(&pipeline_layout);
+        let pipeline_layout         = device.create_pipeline_layout(&pipeline_layout);
 
-        let descriptor          = config.render_pipeline_descriptor(shader_cache, &pipeline_layout, &mut temp_data);
-        let new_pipeline        = device.create_render_pipeline(&descriptor);
+        let descriptor              = config.render_pipeline_descriptor(shader_cache, &pipeline_layout, &mut temp_data);
+        let new_pipeline            = device.create_render_pipeline(&descriptor);
 
         Pipeline {
-            shader_module:      config.shader_module.clone(),
-            flip_vertical:      config.flip_vertical,
-            pipeline:           Arc::new(new_pipeline),
-            matrix_layout:      Arc::new(matrix_bind_layout),
-            clip_mask_layout:   Arc::new(clip_bind_layout),
-            texture_layout:     Arc::new(texture_layout),
+            shader_module:              config.shader_module.clone(),
+            flip_vertical:              config.flip_vertical,
+            pipeline:                   Arc::new(new_pipeline),
+            matrix_layout:              Arc::new(matrix_bind_layout),
+            clip_mask_layout:           Arc::new(clip_bind_layout),
+            texture_layout:             Arc::new(texture_layout),
+            linear_gradient_layout:     Arc::new(linear_gradient_layout),
         }
     }
 
@@ -125,8 +135,9 @@ impl Pipeline {
     ///
     pub fn bind_clip_mask(&self, device: &wgpu::Device, clip_texture: Option<&wgpu::Texture>) -> wgpu::BindGroup {
         match (&self.shader_module, clip_texture) {
-            (WgpuShader::Texture(StandardShaderVariant::ClippingMask, _, _, _, _), Some(clip_texture))  |
-            (WgpuShader::Simple(StandardShaderVariant::ClippingMask, _), Some(clip_texture))            => {
+            (WgpuShader::LinearGradient(StandardShaderVariant::ClippingMask, _, _, _), Some(clip_texture))  |
+            (WgpuShader::Texture(StandardShaderVariant::ClippingMask, _, _, _, _), Some(clip_texture))      |
+            (WgpuShader::Simple(StandardShaderVariant::ClippingMask, _), Some(clip_texture))                => {
                 // Create a view of the texture
                 let view = clip_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -143,9 +154,10 @@ impl Pipeline {
                 })
             }
 
-            (_, None)                                                               |
-            (WgpuShader::Texture(StandardShaderVariant::NoClipping, _, _, _, _), _) |
-            (WgpuShader::Simple(StandardShaderVariant::NoClipping, _), _)           => {
+            (_, None)                                                                   |
+            (WgpuShader::LinearGradient(StandardShaderVariant::NoClipping, _, _, _), _) |
+            (WgpuShader::Texture(StandardShaderVariant::NoClipping, _, _, _, _), _)     |
+            (WgpuShader::Simple(StandardShaderVariant::NoClipping, _), _)               => {
                 // Group 1 is bound to an empty set if clipping is off or no texture is defined
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label:      Some("create_clip_mask_bind_group_no_texture"),
@@ -168,6 +180,32 @@ impl Pipeline {
         let texture_settings_binding = wgpu::BindingResource::Buffer(texture_settings_binding);
 
         match (self.shader_module, texture, sampler) {
+            (WgpuShader::LinearGradient(..), Some(texture), Some(sampler)) => {
+                // Create a view of the texture
+                let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+                // Bind to group 2
+                device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label:      Some("bind_input_linear_gradient_sampler"),
+                    layout:     &*self.linear_gradient_layout,
+                    entries:    &[
+                        wgpu::BindGroupEntry {
+                            binding:    0,
+                            resource:   texture_settings_binding,
+                        },
+
+                        wgpu::BindGroupEntry {
+                            binding:    1,
+                            resource:   wgpu::BindingResource::TextureView(&view),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding:    2,
+                            resource:   wgpu::BindingResource::Sampler(sampler)
+                        },
+                    ]
+                })
+            },
+
             (WgpuShader::Texture(_, InputTextureType::Sampler, _, _, _), Some(texture), Some(sampler)) => {
                 // Create a view of the texture
                 let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -216,6 +254,7 @@ impl Pipeline {
                 })
             }
 
+            (WgpuShader::LinearGradient(..), _, None)                               |
             (WgpuShader::Texture(_, InputTextureType::None, _, _, _), _, _)         |
             (WgpuShader::Texture(_, InputTextureType::Sampler, _, _, _), _, None)   => {
                 // Group 2 is bound to an empty set if no texture is defined (or the sampler is missing when it was expected)

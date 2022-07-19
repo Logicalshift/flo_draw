@@ -93,6 +93,9 @@ pub enum WgpuShader {
 
     /// Renders fragments from a texture input
     Texture(StandardShaderVariant, InputTextureType, TexturePosition, AlphaBlendStep, ColorPostProcessingStep),
+
+    /// Renders a linear gradient
+    LinearGradient(StandardShaderVariant, TexturePosition, AlphaBlendStep, ColorPostProcessingStep),
 }
 
 impl Default for WgpuShader {
@@ -184,7 +187,8 @@ impl WgpuShaderLoader for WgpuShader {
                     texture_position.shader_function(), 
                     alpha_blend.shader_function(), 
                     input_type.shader_function(), 
-                    color_post_processing.shader_function(), base_module);
+                    color_post_processing.shader_function(),
+                    base_module);
 
                 // Load the shader
                 let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -193,6 +197,27 @@ impl WgpuShaderLoader for WgpuShader {
                 });
 
                 (Arc::new(shader_module), "texture_vertex_shader".to_string(), "texture_fragment_shader".to_string())
+            },
+
+            WgpuShader::LinearGradient(variant, texture_position, alpha_blend, color_post_processing) => {
+                // The base module contains the shader program in terms of the variant and post-procesing functions
+                let base_module = include_str!("../../shaders/texture/gradient.wgsl");
+
+                // Amend the base module with the appropriate variant and colour post-processing functions
+                let base_module = format!("{}\n\n{}\n\n{}\n\n{}\n\n{}", 
+                    variant.shader_function(), 
+                    texture_position.shader_function(), 
+                    alpha_blend.shader_function(), 
+                    color_post_processing.shader_function(),
+                    base_module);
+
+                // Load the shader
+                let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label:  Some("WgpuShader::LinearGradient"),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(&base_module)),
+                });
+
+                (Arc::new(shader_module), "gradient_vertex_shader".to_string(), "gradient_fragment_shader".to_string())
             },
         }
     }

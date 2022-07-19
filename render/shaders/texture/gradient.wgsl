@@ -26,7 +26,7 @@ var f_texture: texture_1d<f32>;
 var f_sampler: sampler;
 
 @vertex
-fn texture_vertex_shader(
+fn gradient_vertex_shader(
     @location(0) pos:       vec2<f32>,
     @location(1) tex_coord: vec2<f32>,
     @location(2) color:     vec4<u32>,
@@ -49,7 +49,7 @@ fn texture_vertex_shader(
 }
 
 @fragment
-fn texture_fragment_shader(vertex: RasterData) -> @location(0) vec4<f32> {
+fn gradient_fragment_shader(vertex: RasterData) -> @location(0) vec4<f32> {
     let color = textureSample(f_texture, f_sampler, vertex.tex_coord[0]);
     let color = alpha_blend(color, texture_settings.alpha);
 
