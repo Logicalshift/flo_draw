@@ -75,21 +75,6 @@ impl RendererState {
         // Create all the state structures
         let encoder             = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("RendererState::new") });
 
-        let default_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("default_sampler"),
-            address_mode_u:     wgpu::AddressMode::Repeat,
-            address_mode_v:     wgpu::AddressMode::Repeat,
-            address_mode_w:     wgpu::AddressMode::Repeat,
-            mag_filter:         wgpu::FilterMode::Nearest,
-            min_filter:         wgpu::FilterMode::Nearest,
-            mipmap_filter:      wgpu::FilterMode::Nearest,
-            lod_min_clamp:      0.0,
-            lod_max_clamp:      0.0,
-            compare:            None,
-            anisotropy_clamp:   None,
-            border_color:       None,
-        });
-
         RendererState {
             device:                             device,
             queue:                              command_queue,
@@ -108,7 +93,7 @@ impl RendererState {
             texture_settings:                   TextureSettings { transform: Matrix::identity().0, alpha: 1.0, ..Default::default() },
             input_texture:                      None,
             clip_texture:                       None,
-            sampler:                            Some(Arc::new(default_sampler)),
+            sampler:                            None,
         }
     }
 

@@ -1,4 +1,5 @@
 use super::texture::*;
+use super::samplers::*;
 use super::pipeline::*;
 use super::wgpu_shader::*;
 use super::shader_cache::*;
@@ -81,6 +82,9 @@ pub struct WgpuRenderer {
 
     /// The currently active blend mode
     active_blend_mode: Option<BlendMode>,
+
+    /// The texture samplers used by this renderer
+    samplers: Samplers,
 }
 
 impl WgpuRenderer {
@@ -107,6 +111,7 @@ impl WgpuRenderer {
             active_render_target:   None,
             active_shader:          Some(ShaderType::Simple { clip_texture: None }),
             active_blend_mode:      Some(BlendMode::SourceOver),
+            samplers:               Samplers::new(&*device),
         }
     }
 
@@ -1005,6 +1010,7 @@ impl WgpuRenderer {
                 // Set up the state
                 state.texture_settings  = TextureSettings { transform: texture_transform.0, alpha: alpha as _, ..Default::default() };
                 state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
+                state.sampler           = Some(self.samplers.default_sampler());
 
                 if let Some(texture) = &texture {
                     state.pipeline_configuration.shader_module              = WgpuShader::Texture(variant, texture_type, TexturePosition::InputPosition, alpha_blend, post_processing);

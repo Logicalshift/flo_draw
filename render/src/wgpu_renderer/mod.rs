@@ -1,5 +1,6 @@
 mod texture;
 mod pipeline;
+mod samplers;
 mod wgpu_shader;
 mod shader_cache;
 mod render_target;
