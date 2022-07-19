@@ -444,7 +444,7 @@ impl PipelineConfiguration {
                 count:              None,
                 ty:                 wgpu::BindingType::Texture {
                     sample_type:    wgpu::TextureSampleType::Float { filterable: true },
-                    view_dimension: wgpu::TextureViewDimension::D2,
+                    view_dimension: wgpu::TextureViewDimension::D1,
                     multisampled:   false,
                 }
             },
