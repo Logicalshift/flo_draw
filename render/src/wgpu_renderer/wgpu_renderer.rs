@@ -1051,7 +1051,7 @@ impl WgpuRenderer {
                 // Set up the state
                 state.texture_settings  = TextureSettings { transform: texture_transform.0, alpha: alpha as _, ..Default::default() };
                 state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
-                state.sampler           = Some(self.samplers.default_sampler());
+                state.sampler           = Some(self.samplers.gradient_sampler());
 
                 if let Some(texture) = &texture {
                     state.pipeline_configuration.shader_module              = WgpuShader::LinearGradient(variant, TexturePosition::InputPosition, alpha_blend, post_processing);
