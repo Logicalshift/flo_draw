@@ -1022,7 +1022,44 @@ impl WgpuRenderer {
             }
 
             LinearGradient { texture, texture_transform, repeat, alpha, clip_texture } => {
-                // TODO
+                let TextureId(texture_id)   = texture;
+                let texture                 = if let Some(Some(texture)) = self.textures.get(texture_id) {
+                    Some(texture)
+                } else {
+                    None
+                };
+
+                // Work out which clip texture to use (and the corresponding shader variant)
+                let clip_texture    = if let Some(TextureId(clip_texture)) = clip_texture {
+                    if let Some(Some(texture)) = self.textures.get(clip_texture) {
+                        Some(Arc::clone(&texture.texture))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                let variant         = if clip_texture.is_some() { StandardShaderVariant::ClippingMask } else { StandardShaderVariant::NoClipping };
+
+                // Alpha blend step depends on if the texture is pre-multiplied
+                let alpha_blend = if let Some(true) = texture.map(|t| t.is_premultiplied) { 
+                    AlphaBlendStep::Premultiply
+                } else {
+                    AlphaBlendStep::NoPremultiply
+                };
+
+                // Set up the state
+                state.texture_settings  = TextureSettings { transform: texture_transform.0, alpha: alpha as _, ..Default::default() };
+                state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
+                state.sampler           = Some(self.samplers.default_sampler());
+
+                if let Some(texture) = &texture {
+                    state.pipeline_configuration.shader_module              = WgpuShader::LinearGradient(variant, TexturePosition::InputPosition, alpha_blend, post_processing);
+                    state.pipeline_configuration.source_is_premultiplied    = texture.is_premultiplied;
+                } else {
+                    state.pipeline_configuration.shader_module              = WgpuShader::Simple(variant, post_processing);
+                    state.pipeline_configuration.source_is_premultiplied    = false;
+                }
             }
         }
 
