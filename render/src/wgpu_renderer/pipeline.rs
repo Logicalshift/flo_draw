@@ -52,9 +52,10 @@ impl Pipeline {
         let linear_gradient_layout  = device.create_bind_group_layout(&linear_gradient_layout);
 
         let bind_layout             = match config.shader_module {
-            WgpuShader::LinearGradient(..)  => vec![&matrix_bind_layout, &clip_bind_layout, &linear_gradient_layout],
-            WgpuShader::Texture(..)         => vec![&matrix_bind_layout, &clip_bind_layout, &texture_layout],
-            WgpuShader::Simple(..)          => vec![&matrix_bind_layout, &clip_bind_layout],
+            WgpuShader::LinearGradient(..)                      => vec![&matrix_bind_layout, &clip_bind_layout, &linear_gradient_layout],
+            WgpuShader::Texture(..)                             => vec![&matrix_bind_layout, &clip_bind_layout, &texture_layout],
+            WgpuShader::Simple(..)                              => vec![&matrix_bind_layout, &clip_bind_layout],
+            WgpuShader::Filter(FilterShader::AlphaBlend(..))    => vec![],
         };
         let pipeline_layout         = wgpu::PipelineLayoutDescriptor {
             label:                  Some("Pipeline::from_configuration"),
@@ -155,6 +156,7 @@ impl Pipeline {
             }
 
             (_, None)                                                                   |
+            (WgpuShader::Filter(_), _)                                                  |
             (WgpuShader::LinearGradient(StandardShaderVariant::NoClipping, _, _, _), _) |
             (WgpuShader::Texture(StandardShaderVariant::NoClipping, _, _, _, _), _)     |
             (WgpuShader::Simple(StandardShaderVariant::NoClipping, _), _)               => {
@@ -270,8 +272,9 @@ impl Pipeline {
                 })
             }
 
-            (_, None, _)                        |
-            (WgpuShader::Simple(_, _), _, _)    => {
+            (_, None, _)                    |
+            (WgpuShader::Filter(_), _, _)   |
+            (WgpuShader::Simple(..), _, _)  => {
                 // Group 2 is bound to an empty set if not using a texture shader
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label:      Some("bind_input_texture_not_texture_shader"),

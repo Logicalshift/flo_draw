@@ -84,6 +84,16 @@ pub enum InputTextureType {
 }
 
 ///
+/// The filter shaders are all special-purpose with a unique set of parameters, but they also always
+/// act on the whole of a texture (and in general between two textures of the same size)
+///
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FilterShader {
+    /// Outputs a version of the image with a different alpha value
+    AlphaBlend(FilterSourceFormat),
+}
+
+///
 /// Enumeration of the shaders loaded for the WGPU renderer
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -96,6 +106,9 @@ pub enum WgpuShader {
 
     /// Renders a linear gradient
     LinearGradient(StandardShaderVariant, TexturePosition, AlphaBlendStep, ColorPostProcessingStep),
+
+    /// Runs a texture-to-texture filter
+    Filter(FilterShader),
 }
 
 impl Default for WgpuShader {
@@ -219,6 +232,23 @@ impl WgpuShaderLoader for WgpuShader {
 
                 (Arc::new(shader_module), "gradient_vertex_shader".to_string(), "gradient_fragment_shader".to_string())
             },
+
+            WgpuShader::Filter(FilterShader::AlphaBlend(source_format)) => {
+                // The base module contains the shader program in terms of the variant and post-procesing functions
+                let base_module = include_str!("../../shaders/filters/alpha_blend.wgsl");
+
+                // Amend the base module with the appropriate variant and colour post-processing functions
+                let base_module = format!("{}", 
+                    base_module);
+
+                // Load the shader
+                let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label:  Some("WgpuShader::FilterAlphaBlend"),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(&base_module)),
+                });
+
+                (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader".to_string())
+            }
         }
     }
 }

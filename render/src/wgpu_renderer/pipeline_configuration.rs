@@ -297,6 +297,7 @@ impl PipelineConfiguration {
                 }
             }
 
+            WgpuShader::Filter(_)                                                   |
             WgpuShader::LinearGradient(StandardShaderVariant::NoClipping, _, _, _)  |
             WgpuShader::Texture(StandardShaderVariant::NoClipping, _, _, _, _)      |
             WgpuShader::Simple(StandardShaderVariant::NoClipping, _)                => {
@@ -408,6 +409,7 @@ impl PipelineConfiguration {
                 }
             },
 
+            WgpuShader::Filter(_)                   |
             WgpuShader::LinearGradient(_, _, _, _)  |
             WgpuShader::Simple(_, _)                => {
                 wgpu::BindGroupLayoutDescriptor {
@@ -466,6 +468,7 @@ impl PipelineConfiguration {
                 }
             },
 
+            WgpuShader::Filter(_)               |
             WgpuShader::Texture(_, _, _, _, _)  |
             WgpuShader::Simple(_, _)            => {
                 wgpu::BindGroupLayoutDescriptor {
@@ -474,6 +477,14 @@ impl PipelineConfiguration {
                 }
             }
         }
+    }
+
+    ///
+    /// Returns the layout for the alpha blend filter shader
+    ///
+    #[inline]
+    pub fn filter_alpha_blend_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
+        unimplemented!()
     }
 
     ///
