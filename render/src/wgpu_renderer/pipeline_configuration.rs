@@ -484,7 +484,36 @@ impl PipelineConfiguration {
     ///
     #[inline]
     pub fn filter_alpha_blend_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
-        unimplemented!()
+        static ALPHA_BLEND_LAYOUT: [wgpu::BindGroupLayoutEntry; 2]  = [
+            // Texture
+            wgpu::BindGroupLayoutEntry {
+                binding:            0,
+                visibility:         wgpu::ShaderStages::VERTEX_FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   false,
+                }
+            },
+
+            // Alpha value (single f32 value)
+            wgpu::BindGroupLayoutEntry {
+                binding:            1,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Buffer {
+                    ty:                 wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size:   wgpu::BufferSize::new(4),
+                }
+            },
+        ];
+
+        wgpu::BindGroupLayoutDescriptor {
+            label:      Some("texture_bind_group_layout_sampler"),
+            entries:    &ALPHA_BLEND_LAYOUT,
+        }
     }
 
     ///
