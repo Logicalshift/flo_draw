@@ -51,11 +51,14 @@ impl Pipeline {
         let texture_layout          = device.create_bind_group_layout(&texture_layout);
         let linear_gradient_layout  = device.create_bind_group_layout(&linear_gradient_layout);
 
+        let alpha_blend_layout      = config.filter_alpha_blend_bind_group_layout();
+        let alpha_blend_layout      = device.create_bind_group_layout(&alpha_blend_layout);
+
         let bind_layout             = match config.shader_module {
             WgpuShader::LinearGradient(..)                      => vec![&matrix_bind_layout, &clip_bind_layout, &linear_gradient_layout],
             WgpuShader::Texture(..)                             => vec![&matrix_bind_layout, &clip_bind_layout, &texture_layout],
             WgpuShader::Simple(..)                              => vec![&matrix_bind_layout, &clip_bind_layout],
-            WgpuShader::Filter(FilterShader::AlphaBlend(..))    => vec![],
+            WgpuShader::Filter(FilterShader::AlphaBlend(..))    => vec![&alpha_blend_layout],
         };
         let pipeline_layout         = wgpu::PipelineLayoutDescriptor {
             label:                  Some("Pipeline::from_configuration"),
