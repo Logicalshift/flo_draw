@@ -896,7 +896,16 @@ impl WgpuRenderer {
                         }
                     }
 
-                    _ => { }
+                    TextureFilter::GaussianBlurHorizontal9(sigma, step)             => { /* TODO */ }
+                    TextureFilter::GaussianBlurHorizontal29(sigma, step)            => { /* TODO */ }
+                    TextureFilter::GaussianBlurHorizontal61(sigma, step)            => { /* TODO */ }
+                    TextureFilter::GaussianBlurVertical9(sigma, step)               => { /* TODO */ }
+                    TextureFilter::GaussianBlurVertical29(sigma, step)              => { /* TODO */ }
+                    TextureFilter::GaussianBlurVertical61(sigma, step)              => { /* TODO */ }
+                    TextureFilter::GaussianBlurHorizontal(sigma, step, kernel_size) => { /* TODO */ }
+                    TextureFilter::GaussianBlurVertical(sigma, step, kernel_size)   => { /* TODO */ }
+                    TextureFilter::Mask(texture)                                    => { /* TODO */ }
+                    TextureFilter::DisplacementMap(texture, x, y)                   => { /* TODO */ }
                 }
             }
 
