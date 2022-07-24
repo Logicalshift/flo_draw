@@ -1,6 +1,7 @@
 use super::texture::*;
 use super::samplers::*;
 use super::pipeline::*;
+use super::to_buffer::*;
 use super::wgpu_shader::*;
 use super::shader_cache::*;
 use super::render_target::*;
@@ -289,17 +290,8 @@ impl WgpuRenderer {
             self.vertex_buffers[vertex_id] = None;
         }
 
-        // Convert the vertex buffer to a &[u8]
-        let contents_void   = vertices.as_ptr() as *const c_void;
-        let contents_len    = vertices.len() * mem::size_of::<Vertex2D>();
-        let contents_u8     = unsafe { slice::from_raw_parts(contents_void as *const u8, contents_len) };
-
-        // Create a new buffer on the device
-        let vertex_buffer = self.device.create_buffer_init(&util::BufferInitDescriptor {
-            label:      Some("create_vertex_buffer_2d"),
-            contents:   contents_u8,
-            usage:      wgpu::BufferUsages::VERTEX,
-        });
+        // Create the buffer
+        let vertex_buffer = vertices.to_buffer(&*self.device, wgpu::BufferUsages::VERTEX);
 
         // Store associated with the vertex ID
         if vertex_id >= self.vertex_buffers.len() {
@@ -321,17 +313,8 @@ impl WgpuRenderer {
             self.index_buffers[index_id] = None;
         }
 
-        // Convert the index buffer to a &[u8]
-        let contents_void   = indices.as_ptr() as *const c_void;
-        let contents_len    = indices.len() * mem::size_of::<u16>();
-        let contents_u8     = unsafe { slice::from_raw_parts(contents_void as *const u8, contents_len) };
-
-        // Create a new buffer on the device
-        let index_buffer = self.device.create_buffer_init(&util::BufferInitDescriptor {
-            label:      Some("create_index_buffer_2d"),
-            contents:   contents_u8,
-            usage:      wgpu::BufferUsages::INDEX,
-        });
+        // Create the buffer
+        let index_buffer = indices.to_buffer(&*self.device, wgpu::BufferUsages::INDEX);
 
         // Store associated with the index ID
         if index_id >= self.index_buffers.len() {
