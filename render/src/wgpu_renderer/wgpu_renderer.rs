@@ -880,7 +880,7 @@ impl WgpuRenderer {
         if let Some(Some(texture)) = self.textures.get(texture_id) {
             let mut final_texture = texture.clone();
 
-            // Finish the current render pass
+            // Finish the current render pass (in case it's updating the current texture)
             state.run_render_pass();
 
             // Run the filters
@@ -900,13 +900,7 @@ impl WgpuRenderer {
                 }
             }
 
-            // Commit the encoder to finish the filter
-            let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("run_render_pass") });
-            mem::swap(&mut state.encoder, &mut encoder);
-
-            state.queue.submit(Some(encoder.finish()));
-
-            // No pipline is set
+            // No pipeline is set
             state.pipeline_config_changed       = true;
             state.active_pipeline_configuration = None;
 
