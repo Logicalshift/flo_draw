@@ -82,6 +82,7 @@ pub (crate) fn alpha_blend(device: &wgpu::Device, encoder: &mut wgpu::CommandEnc
     let start_pos   = (0 * vertex_size) as u64;
     let end_pos     = (6 * vertex_size) as u64;
 
+    render_pass.set_pipeline(&*alpha_blend_pipeline.pipeline);
     render_pass.set_vertex_buffer(0, vertices.slice(start_pos..end_pos));
     render_pass.draw(0..6, 0..1);
 
