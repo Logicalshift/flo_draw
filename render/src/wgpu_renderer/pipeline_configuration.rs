@@ -1,3 +1,4 @@
+use super::texture::*;
 use super::wgpu_shader::*;
 use super::shader_cache::*;
 use super::texture_settings::*;
@@ -97,6 +98,16 @@ impl Default for PipelineDescriptorTempStorage {
 }
 
 impl PipelineConfiguration {
+    ///
+    /// Creates a pipeline configuration targeting the specified texture
+    ///
+    pub fn for_texture(texture: &WgpuTexture) -> PipelineConfiguration {
+        let mut config          = Self::default();
+        config.texture_format   = texture.descriptor.format;
+
+        config
+    }
+
     ///
     /// Retrieves the configured blend state for this pipeline
     ///

@@ -17,7 +17,7 @@ pub (crate) struct RendererState {
     device:                             Arc<wgpu::Device>,
 
     /// The command queue for the device
-    queue:                              Arc<wgpu::Queue>,
+    pub queue:                          Arc<wgpu::Queue>,
 
     /// The command encoder for this rendering
     pub encoder:                        wgpu::CommandEncoder,

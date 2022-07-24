@@ -9,6 +9,8 @@ use super::renderer_state::*;
 use super::texture_settings::*;
 use super::pipeline_configuration::*;
 
+use super::alpha_blend_filter::*;
+
 use crate::action::*;
 use crate::buffer::*;
 
@@ -212,6 +214,23 @@ impl WgpuRenderer {
     }
 
     ///
+    /// Loads a pipeline from a configuration object
+    ///
+    fn pipeline_for_configuration(&mut self, config: PipelineConfiguration) -> Arc<Pipeline> {
+        let device          = &self.device;
+        let shader_cache    = &mut self.shader_cache;  
+        let pipeline_states = &mut self.pipeline_states;
+
+        let pipeline        = pipeline_states.entry(config.clone())
+            .or_insert_with(|| {
+                // Create the pipeline if we don't have one matching the configuration already
+                Arc::new(Pipeline::from_configuration(&config, device, shader_cache))
+            });
+
+        Arc::clone(pipeline)
+    }
+
+    ///
     /// Updates the render pipeline if necessary
     ///
     fn update_pipeline_if_needed(&mut self, render_state: &mut RendererState) {
@@ -224,19 +243,9 @@ impl WgpuRenderer {
                 // Update the pipeline configuration
                 render_state.active_pipeline_configuration = Some(render_state.pipeline_configuration.clone());
 
-                // Borrow bits of the renderer we'll need later (so Rust doesn't complain about borrowing self again)
-                let device          = &self.device;
-                let shader_cache    = &mut self.shader_cache;  
-                let pipeline_states = &mut self.pipeline_states;
-
                 // Retrieve the pipeline from the cache or generate a new one
-                let pipeline = pipeline_states.entry(render_state.pipeline_configuration.clone())
-                    .or_insert_with(|| {
-                        // Create the pipeline if we don't have one matching the configuration already
-                        Arc::new(Pipeline::from_configuration(&render_state.pipeline_configuration, device, shader_cache))
-                    });
-
-                render_state.pipeline = Some(Arc::clone(pipeline));
+                let pipeline            = self.pipeline_for_configuration(render_state.pipeline_configuration.clone());
+                render_state.pipeline   = Some(Arc::clone(&pipeline));
 
                 // Store the pipeline itself in the resources
                 let render_pipeline = Arc::clone(&pipeline.pipeline);
@@ -867,8 +876,36 @@ impl WgpuRenderer {
     ///
     /// Applies a filter effect to the content of a texture
     ///
-    fn filter_texture(&mut self, TextureId(texture_id): TextureId, filter: Vec<TextureFilter>, state: &mut RendererState) {
-        // TODO
+    fn filter_texture(&mut self, TextureId(texture_id): TextureId, texture_filters: Vec<TextureFilter>, state: &mut RendererState) {
+        if let Some(Some(texture)) = self.textures.get(texture_id) {
+            let mut final_texture = texture.clone();
+
+            // Finish the current render pass
+            state.run_render_pass();
+
+            // Run the filters
+            for filter in texture_filters {
+                match filter {
+                    TextureFilter::AlphaBlend(alpha_amount) => {
+                        let mut alpha_blend_pipeline        = PipelineConfiguration::for_texture(&final_texture);
+                        alpha_blend_pipeline.shader_module  = WgpuShader::Filter(FilterShader::AlphaBlend(FilterSourceFormat::from_texture(&final_texture)));
+                        let alpha_blend_pipeline            = self.pipeline_for_configuration(alpha_blend_pipeline);
+
+                        if alpha_amount < 1.0 {
+                            final_texture = alpha_blend(&*self.device, &mut state.encoder, &*alpha_blend_pipeline, &final_texture, alpha_amount);
+                        }
+                    }
+
+                    _ => { }
+                }
+            }
+
+            // Commit the encoder to finish the filter
+            let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("run_render_pass") });
+            mem::swap(&mut state.encoder, &mut encoder);
+
+            state.queue.submit(Some(encoder.finish()));
+        }
     }
     
     ///

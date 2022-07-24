@@ -1,3 +1,4 @@
+use super::texture::*;
 use super::shader_cache::*;
 
 use wgpu;
@@ -167,6 +168,15 @@ impl TexturePosition {
     }
 }
 
+impl FilterSourceFormat {
+    pub (crate) fn from_texture(texture: &WgpuTexture) -> FilterSourceFormat {
+        if texture.is_premultiplied {
+            FilterSourceFormat::PremultipliedAlpha
+        } else {
+            FilterSourceFormat::NotPremultiplied
+        }
+    }
+}
 
 impl WgpuShaderLoader for WgpuShader {
     ///
