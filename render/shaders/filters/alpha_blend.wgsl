@@ -20,7 +20,7 @@ fn filter_vertex_shader(
     var result: RasterData;
 
     let texture_size    = vec2<f32>(textureDimensions(input_texture));
-    let texture_pos     = vec2<f32>((pos[0]+1.0)/2.0, 1.0-(pos[1]+1.0/2.0));
+    let texture_pos     = vec2<f32>((pos[0]+1.0)/2.0, 1.0-((pos[1]+1.0)/2.0));
     let texture_pos     = vec2<f32>(texture_size * texture_pos);
 
     result.pos          = vec4<f32>(pos[0], pos[1], 0.0, 1.0);
