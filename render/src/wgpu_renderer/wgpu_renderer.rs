@@ -638,7 +638,7 @@ impl WgpuRenderer {
             sample_count:       1,
             dimension:          wgpu::TextureDimension::D2,
             format:             wgpu::TextureFormat::Rgba8Unorm,
-            usage:              wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
+            usage:              wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
         };
 
         // Create the texture
@@ -680,7 +680,7 @@ impl WgpuRenderer {
             sample_count:       1,
             dimension:          wgpu::TextureDimension::D2,
             format:             wgpu::TextureFormat::R8Unorm,
-            usage:              wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
+            usage:              wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
         };
 
         // Create the texture
@@ -722,7 +722,7 @@ impl WgpuRenderer {
             sample_count:       1,
             dimension:          wgpu::TextureDimension::D1,
             format:             wgpu::TextureFormat::Rgba8Unorm,
-            usage:              wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
+            usage:              wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
         };
 
         // Create the texture
@@ -764,7 +764,7 @@ impl WgpuRenderer {
             sample_count:       1,
             dimension:          wgpu::TextureDimension::D1,
             format:             wgpu::TextureFormat::R8Unorm,
-            usage:              wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
+            usage:              wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
         };
 
         // Create the texture
