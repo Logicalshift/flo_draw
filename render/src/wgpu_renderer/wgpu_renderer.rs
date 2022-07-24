@@ -909,6 +909,9 @@ impl WgpuRenderer {
             // No pipline is set
             state.pipeline_config_changed       = true;
             state.active_pipeline_configuration = None;
+
+            // Update the texture to the output version
+            self.textures[texture_id] = Some(final_texture);
         }
     }
     
