@@ -11,4 +11,6 @@ mod texture_settings;
 mod render_pass_resources;
 mod pipeline_configuration;
 
+mod alpha_blend_filter;
+
 pub use self::wgpu_renderer::*;

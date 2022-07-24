@@ -33,6 +33,9 @@ pub (crate) struct Pipeline {
 
     /// The bind group layout for a linear gradient
     pub (crate) linear_gradient_layout: Arc<wgpu::BindGroupLayout>,
+
+    /// Bind group layout for the alpha blend filter
+    pub (crate) alpha_blend_layout: Arc<wgpu::BindGroupLayout>,
 }
 
 impl Pipeline {
@@ -78,6 +81,7 @@ impl Pipeline {
             clip_mask_layout:           Arc::new(clip_bind_layout),
             texture_layout:             Arc::new(texture_layout),
             linear_gradient_layout:     Arc::new(linear_gradient_layout),
+            alpha_blend_layout:         Arc::new(alpha_blend_layout),
         }
     }
 
