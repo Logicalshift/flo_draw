@@ -905,6 +905,10 @@ impl WgpuRenderer {
             mem::swap(&mut state.encoder, &mut encoder);
 
             state.queue.submit(Some(encoder.finish()));
+
+            // No pipline is set
+            state.pipeline_config_changed       = true;
+            state.active_pipeline_configuration = None;
         }
     }
     
