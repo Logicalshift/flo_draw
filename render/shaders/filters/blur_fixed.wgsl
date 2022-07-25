@@ -50,7 +50,7 @@ fn weight(i: i32) -> f32 {
 
 @fragment
 fn filter_fragment_shader_blur_9_horiz(vertex: RasterData) -> @location(0) vec4<f32> {
-    let color = textureSample(input_texture, f_sampler, vertex.texture_pos) * weight[0];
+    let color = textureSample(input_texture, f_sampler, vertex.texture_pos) * weight(0);
     let color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_horiz(1)) * weight(1);
     let color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_horiz(2)) * weight(2);
 
@@ -59,7 +59,7 @@ fn filter_fragment_shader_blur_9_horiz(vertex: RasterData) -> @location(0) vec4<
 
 @fragment
 fn filter_fragment_shader_blur_9_vert(vertex: RasterData) -> @location(0) vec4<f32> {
-    let color = textureSample(input_texture, f_sampler, vertex.texture_pos) * weight[0];
+    let color = textureSample(input_texture, f_sampler, vertex.texture_pos) * weight(0);
     let color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_vert(1)) * weight(1);
     let color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_vert(2)) * weight(2);
 
