@@ -92,6 +92,9 @@ pub enum InputTextureType {
 pub enum FilterShader {
     /// Outputs a version of the image with a different alpha value
     AlphaBlend(FilterSourceFormat),
+
+    /// 9x9 fixed size gaussian blur filter
+    BlurFixed9,
 }
 
 ///
@@ -261,6 +264,23 @@ impl WgpuShaderLoader for WgpuShader {
                     FilterSourceFormat::PremultipliedAlpha  => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_premultiply".to_string()),
                     FilterSourceFormat::NotPremultiplied    => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_not_premultiplied".to_string())
                 }
+            }
+
+            WgpuShader::Filter(FilterShader::BlurFixed9) => {
+                // The base module contains the shader program in terms of the variant and post-procesing functions
+                let base_module = include_str!("../../shaders/filters/blur_fixed.wgsl");
+
+                // Amend the base module with the appropriate variant and colour post-processing functions
+                let base_module = format!("{}", 
+                    base_module);
+
+                // Load the shader
+                let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label:  Some("WgpuShader::FilterBlurFixed9"),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(&base_module)),
+                });
+
+                (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_horiz".to_string())
             }
         }
     }

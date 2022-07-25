@@ -9,6 +9,7 @@ use super::renderer_state::*;
 use super::texture_settings::*;
 use super::pipeline_configuration::*;
 
+use super::blur_filter::*;
 use super::alpha_blend_filter::*;
 
 use crate::action::*;
@@ -896,10 +897,21 @@ impl WgpuRenderer {
                         }
                     }
 
-                    TextureFilter::GaussianBlurHorizontal9(sigma, step)             => { /* TODO */ }
+                    TextureFilter::GaussianBlurHorizontal9(sigma, step)             => {
+                        let mut blur_pipeline       = PipelineConfiguration::for_texture(&final_texture);
+                        blur_pipeline.shader_module = WgpuShader::Filter(FilterShader::BlurFixed9);
+                        let blur_pipeline           = self.pipeline_for_configuration(blur_pipeline);
+
+                        let kernel_size             = filter.kernel_size();
+                        let weights                 = TextureFilter::weights_for_gaussian_blur(sigma, step, kernel_size);
+                        let (weights, offsets)      = TextureFilter::weights_and_offsets_for_gaussian_blur(weights);
+
+                        final_texture = blur_fixed(&*self.device, &mut state.encoder, &*blur_pipeline, &final_texture, weights, offsets);
+                    }
+                    TextureFilter::GaussianBlurVertical9(sigma, step)               => { /* TODO */ }
+
                     TextureFilter::GaussianBlurHorizontal29(sigma, step)            => { /* TODO */ }
                     TextureFilter::GaussianBlurHorizontal61(sigma, step)            => { /* TODO */ }
-                    TextureFilter::GaussianBlurVertical9(sigma, step)               => { /* TODO */ }
                     TextureFilter::GaussianBlurVertical29(sigma, step)              => { /* TODO */ }
                     TextureFilter::GaussianBlurVertical61(sigma, step)              => { /* TODO */ }
                     TextureFilter::GaussianBlurHorizontal(sigma, step, kernel_size) => { /* TODO */ }

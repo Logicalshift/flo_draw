@@ -522,8 +522,53 @@ impl PipelineConfiguration {
         ];
 
         wgpu::BindGroupLayoutDescriptor {
-            label:      Some("texture_bind_group_layout_sampler"),
+            label:      Some("filter_alpha_blend_bind_group_layout"),
             entries:    &ALPHA_BLEND_LAYOUT,
+        }
+    }
+
+    ///
+    /// Returns the layout for the fixed-sized blur filter shaders
+    ///
+    #[inline]
+    pub fn filter_fixed_blur_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
+        static FIXED_BLUR_LAYOUT: [wgpu::BindGroupLayoutEntry; 3]  = [
+            // Texture
+            wgpu::BindGroupLayoutEntry {
+                binding:            0,
+                visibility:         wgpu::ShaderStages::VERTEX_FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   false,
+                }
+            },
+
+            // The sampler
+            wgpu::BindGroupLayoutEntry {
+                binding:            1,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering)
+            },
+
+            // Weights & offsets
+            wgpu::BindGroupLayoutEntry {
+                binding:            2,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Buffer {
+                    ty:                 wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size:   wgpu::BufferSize::new(4 * 30),
+                }
+            },
+        ];
+
+        wgpu::BindGroupLayoutDescriptor {
+            label:      Some("filter_fixed_blur_bind_group_layout"),
+            entries:    &FIXED_BLUR_LAYOUT,
         }
     }
 
