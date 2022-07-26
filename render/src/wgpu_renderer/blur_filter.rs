@@ -27,7 +27,7 @@ pub (crate) fn blur_fixed(device: &wgpu::Device, encoder: &mut wgpu::CommandEnco
         Vertex2D::with_pos(1.0, 1.0),
     ].to_buffer(device, wgpu::BufferUsages::VERTEX);
 
-    let offset_factor = source_texture.descriptor.size.width as f32;
+    let offset_factor   = match blur_pipeline.blur_filter_direction() { BlurDirection::Horizontal => source_texture.descriptor.size.width as f32, BlurDirection::Vertical => source_texture.descriptor.size.height as f32 };
 
     // Offsets are in a 30 entry array (15 weights, 15 offsets)
     let offsets_weights = (0..30)
@@ -144,7 +144,7 @@ pub (crate) fn blur_texture(device: &wgpu::Device, queue: &wgpu::Queue, encoder:
         Vertex2D::with_pos(1.0, 1.0),
     ].to_buffer(device, wgpu::BufferUsages::VERTEX);
 
-    let offset_factor   = source_texture.descriptor.size.width as f32;
+    let offset_factor   = match blur_pipeline.blur_filter_direction() { BlurDirection::Horizontal => source_texture.descriptor.size.width as f32, BlurDirection::Vertical => source_texture.descriptor.size.height as f32 };
     let offsets         = offsets.into_iter().map(|offset| offset / offset_factor).collect::<Vec<_>>();
 
     // Create a target texture

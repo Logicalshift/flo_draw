@@ -124,6 +124,19 @@ impl Pipeline {
     }
 
     ///
+    /// If this pipeline is using a blur filter, returns the direction of that filter
+    ///
+    #[inline]
+    pub fn blur_filter_direction(&self) -> BlurDirection {
+        match self.shader_module {
+            WgpuShader::Filter(FilterShader::BlurFixed(direction, ..))  => direction,
+            WgpuShader::Filter(FilterShader::BlurTexture(direction))    => direction,
+
+            _ => BlurDirection::Horizontal
+        }
+    }
+
+    ///
     /// Binds the transformation matrix buffer for this pipeline (filling in or replacing the `matrix_binding` entry)
     ///
     #[inline]
