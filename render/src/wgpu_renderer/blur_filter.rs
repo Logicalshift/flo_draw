@@ -26,14 +26,16 @@ pub (crate) fn blur_fixed(device: &wgpu::Device, encoder: &mut wgpu::CommandEnco
         Vertex2D::with_pos(1.0, 1.0),
     ].to_buffer(device, wgpu::BufferUsages::VERTEX);
 
+    let offset_factor = source_texture.descriptor.size.width as f32;
+
     // Offsets are in a 30 entry array (15 weights, 15 offsets)
     let offsets_weights = (0..30)
         .into_iter()
         .flat_map(|p| {
             if p < 15 {
-                [*(weights.get(p).unwrap_or(&0.0)), 0.0, 0.0, 0.0]
+                [*(offsets.get(p).unwrap_or(&0.0)) / offset_factor, 0.0, 0.0, 0.0]
             } else {
-                [*(offsets.get(p-15).unwrap_or(&0.0)), 0.0, 0.0, 0.0]
+                [*(weights.get(p-15).unwrap_or(&0.0)), 0.0, 0.0, 0.0]
             }
         })
         .collect::<Vec<_>>();
