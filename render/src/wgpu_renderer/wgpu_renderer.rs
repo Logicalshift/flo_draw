@@ -510,7 +510,7 @@ impl WgpuRenderer {
 
         state.input_texture                                     = Some(texture);
         state.pipeline_configuration.shader_module              = WgpuShader::Texture(StandardShaderVariant::NoClipping, texture_type, TexturePosition::Separate, AlphaBlendStep::Premultiply, ColorPostProcessingStep::NoPostProcessing);
-        state.pipeline_configuration.blending_mode              = BlendMode::SourceOver;
+        state.pipeline_configuration.blending_mode              = Some(BlendMode::SourceOver);
         state.pipeline_configuration.source_is_premultiplied    = true;
         state.pipeline_config_changed                           = true;
         state.pipeline_bindings_changed                         = true;
@@ -889,6 +889,7 @@ impl WgpuRenderer {
                 match filter {
                     TextureFilter::AlphaBlend(alpha_amount) => {
                         let mut alpha_blend_pipeline        = PipelineConfiguration::for_texture(&final_texture);
+                        alpha_blend_pipeline.blending_mode  = None;
                         alpha_blend_pipeline.shader_module  = WgpuShader::Filter(FilterShader::AlphaBlend(FilterSourceFormat::from_texture(&final_texture)));
                         let alpha_blend_pipeline            = self.pipeline_for_configuration(alpha_blend_pipeline);
 
@@ -899,6 +900,7 @@ impl WgpuRenderer {
 
                     TextureFilter::GaussianBlurHorizontal9(sigma, step)             => {
                         let mut blur_pipeline       = PipelineConfiguration::for_texture(&final_texture);
+                        blur_pipeline.blending_mode = None;
                         blur_pipeline.shader_module = WgpuShader::Filter(FilterShader::BlurFixed9);
                         let blur_pipeline           = self.pipeline_for_configuration(blur_pipeline);
 
@@ -981,7 +983,7 @@ impl WgpuRenderer {
         let blend_mode  = if let Some(blend_mode) = blend_mode { blend_mode } else { return; };
 
         // Set the blend mode in the pipeline
-        state.pipeline_configuration.blending_mode = blend_mode;
+        state.pipeline_configuration.blending_mode = Some(blend_mode);
 
         // The post-processing step depends on the blend mode
         let post_processing = match blend_mode {
