@@ -67,7 +67,7 @@ impl Pipeline {
             WgpuShader::Texture(..)                             => vec![&matrix_bind_layout, &clip_bind_layout, &texture_layout],
             WgpuShader::Simple(..)                              => vec![&matrix_bind_layout, &clip_bind_layout],
             WgpuShader::Filter(FilterShader::AlphaBlend(..))    => vec![&alpha_blend_layout],
-            WgpuShader::Filter(FilterShader::BlurFixed9)        => vec![&blur_fixed_layout],
+            WgpuShader::Filter(FilterShader::BlurFixed(..))     => vec![&blur_fixed_layout],
         };
         let pipeline_layout         = wgpu::PipelineLayoutDescriptor {
             label:                  Some("Pipeline::from_configuration"),

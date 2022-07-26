@@ -85,6 +85,25 @@ pub enum InputTextureType {
 }
 
 ///
+/// Size of a fixed-size shader kernel
+///
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub enum BlurFixedSize {
+    Size9,
+    Size29,
+    Size61,
+}
+
+///
+/// Direction of a Gaussian blur operation
+///
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub enum BlurDirection {
+    Horizontal,
+    Vertical,
+}
+
+///
 /// The filter shaders are all special-purpose with a unique set of parameters, but they also always
 /// act on the whole of a texture (and in general between two textures of the same size)
 ///
@@ -94,7 +113,7 @@ pub enum FilterShader {
     AlphaBlend(FilterSourceFormat),
 
     /// 9x9 fixed size gaussian blur filter
-    BlurFixed9,
+    BlurFixed(BlurDirection, BlurFixedSize),
 }
 
 ///
@@ -266,7 +285,7 @@ impl WgpuShaderLoader for WgpuShader {
                 }
             }
 
-            WgpuShader::Filter(FilterShader::BlurFixed9) => {
+            WgpuShader::Filter(FilterShader::BlurFixed(direction, size)) => {
                 // The base module contains the shader program in terms of the variant and post-procesing functions
                 let base_module = include_str!("../../shaders/filters/blur_fixed.wgsl");
 
@@ -280,7 +299,16 @@ impl WgpuShaderLoader for WgpuShader {
                     source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(&base_module)),
                 });
 
-                (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_horiz".to_string())
+                match (direction, size) {
+                    (BlurDirection::Horizontal, BlurFixedSize::Size9)   => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_horiz".to_string()),
+                    (BlurDirection::Vertical, BlurFixedSize::Size9)     => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_vert".to_string()),
+
+                    (BlurDirection::Horizontal, BlurFixedSize::Size29)  => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_horiz".to_string()),
+                    (BlurDirection::Vertical, BlurFixedSize::Size29)    => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_vert".to_string()),
+
+                    (BlurDirection::Horizontal, BlurFixedSize::Size61)  => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_horiz".to_string()),
+                    (BlurDirection::Vertical, BlurFixedSize::Size61)    => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_vert".to_string()),
+                }
             }
         }
     }

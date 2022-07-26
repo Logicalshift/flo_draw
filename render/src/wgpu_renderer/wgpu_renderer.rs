@@ -898,10 +898,24 @@ impl WgpuRenderer {
                         }
                     }
 
+                    TextureFilter::GaussianBlurHorizontal29(sigma, step)            |
+                    TextureFilter::GaussianBlurVertical29(sigma, step)              |
+                    TextureFilter::GaussianBlurHorizontal61(sigma, step)            |
+                    TextureFilter::GaussianBlurVertical61(sigma, step)              |
+                    TextureFilter::GaussianBlurVertical9(sigma, step)               |
                     TextureFilter::GaussianBlurHorizontal9(sigma, step)             => {
                         let mut blur_pipeline       = PipelineConfiguration::for_texture(&final_texture);
                         blur_pipeline.blending_mode = None;
-                        blur_pipeline.shader_module = WgpuShader::Filter(FilterShader::BlurFixed9);
+                        blur_pipeline.shader_module = match filter {
+                            TextureFilter::GaussianBlurVertical9(..)    => WgpuShader::Filter(FilterShader::BlurFixed(BlurDirection::Horizontal, BlurFixedSize::Size9)),
+                            TextureFilter::GaussianBlurHorizontal9(..)  => WgpuShader::Filter(FilterShader::BlurFixed(BlurDirection::Vertical, BlurFixedSize::Size9)),
+                            TextureFilter::GaussianBlurHorizontal29(..) => WgpuShader::Filter(FilterShader::BlurFixed(BlurDirection::Horizontal, BlurFixedSize::Size29)),
+                            TextureFilter::GaussianBlurVertical29(..)   => WgpuShader::Filter(FilterShader::BlurFixed(BlurDirection::Vertical, BlurFixedSize::Size29)),
+                            TextureFilter::GaussianBlurHorizontal61(..) => WgpuShader::Filter(FilterShader::BlurFixed(BlurDirection::Horizontal, BlurFixedSize::Size61)),
+                            TextureFilter::GaussianBlurVertical61(..)   => WgpuShader::Filter(FilterShader::BlurFixed(BlurDirection::Vertical, BlurFixedSize::Size61)),
+
+                            _ => WgpuShader::Filter(FilterShader::BlurFixed(BlurDirection::Horizontal, BlurFixedSize::Size9)),
+                        };
                         let blur_pipeline           = self.pipeline_for_configuration(blur_pipeline);
 
                         let kernel_size             = filter.kernel_size();
@@ -910,12 +924,7 @@ impl WgpuRenderer {
 
                         final_texture = blur_fixed(&*self.device, &mut state.encoder, &*blur_pipeline, &final_texture, weights, offsets);
                     }
-                    TextureFilter::GaussianBlurVertical9(sigma, step)               => { /* TODO */ }
 
-                    TextureFilter::GaussianBlurHorizontal29(sigma, step)            => { /* TODO */ }
-                    TextureFilter::GaussianBlurHorizontal61(sigma, step)            => { /* TODO */ }
-                    TextureFilter::GaussianBlurVertical29(sigma, step)              => { /* TODO */ }
-                    TextureFilter::GaussianBlurVertical61(sigma, step)              => { /* TODO */ }
                     TextureFilter::GaussianBlurHorizontal(sigma, step, kernel_size) => { /* TODO */ }
                     TextureFilter::GaussianBlurVertical(sigma, step, kernel_size)   => { /* TODO */ }
                     TextureFilter::Mask(texture)                                    => { /* TODO */ }
