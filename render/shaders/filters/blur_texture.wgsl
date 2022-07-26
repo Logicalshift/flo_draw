@@ -58,8 +58,8 @@ fn filter_fragment_shader_blur_texture_horiz(vertex: RasterData) -> @location(0)
     var color   = textureSample(input_texture, f_sampler, vertex.texture_pos) * weight(0);
 
     for (var idx=1; idx<len; idx++) {
-        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_horiz(1)) * weight(1);
-        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_horiz(2)) * weight(2);
+        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_horiz(idx)) * weight(idx);
+        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos - offset_horiz(idx)) * weight(idx);
     }
 
     return color;
@@ -71,8 +71,8 @@ fn filter_fragment_shader_blur_texture_vert(vertex: RasterData) -> @location(0) 
     var color   = textureSample(input_texture, f_sampler, vertex.texture_pos) * weight(0);
 
     for (var idx=1; idx<len; idx++) {
-        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_vert(1)) * weight(1);
-        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_vert(2)) * weight(2);
+        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_vert(idx)) * weight(idx);
+        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos - offset_vert(idx)) * weight(idx);
     }
 
     return color;
