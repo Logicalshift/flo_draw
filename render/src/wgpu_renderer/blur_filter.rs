@@ -38,7 +38,7 @@ pub (crate) fn blur_fixed(device: &wgpu::Device, encoder: &mut wgpu::CommandEnco
                 [*(weights.get(p-15).unwrap_or(&0.0)), 0.0, 0.0, 0.0]
             }
         })
-        .collect::<Vec<_>>();
+        .collect::<Vec<f32>>();
     let offsets_weights = offsets_weights.to_buffer(device, wgpu::BufferUsages::UNIFORM);
 
     // Create a target texture
@@ -48,7 +48,7 @@ pub (crate) fn blur_fixed(device: &wgpu::Device, encoder: &mut wgpu::CommandEnco
 
     // Create the blur sampler
     let blur_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-        label: Some("gradient_sampler"),
+        label: Some("blur_sampler"),
         address_mode_u:     wgpu::AddressMode::ClampToEdge,
         address_mode_v:     wgpu::AddressMode::ClampToEdge,
         address_mode_w:     wgpu::AddressMode::ClampToEdge,
