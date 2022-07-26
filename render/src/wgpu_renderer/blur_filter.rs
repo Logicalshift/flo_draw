@@ -144,20 +144,8 @@ pub (crate) fn blur_texture(device: &wgpu::Device, queue: &wgpu::Queue, encoder:
         Vertex2D::with_pos(1.0, 1.0),
     ].to_buffer(device, wgpu::BufferUsages::VERTEX);
 
-    let offset_factor = source_texture.descriptor.size.width as f32;
-
-    // Offsets are in a 30 entry array (15 weights, 15 offsets)
-    let offsets_weights = (0..30)
-        .into_iter()
-        .flat_map(|p| {
-            if p < 15 {
-                [*(offsets.get(p).unwrap_or(&0.0)) / offset_factor, 0.0, 0.0, 0.0]
-            } else {
-                [*(weights.get(p-15).unwrap_or(&0.0)), 0.0, 0.0, 0.0]
-            }
-        })
-        .collect::<Vec<f32>>();
-    let offsets_weights = offsets_weights.to_buffer(device, wgpu::BufferUsages::UNIFORM);
+    let offset_factor   = source_texture.descriptor.size.width as f32;
+    let offsets         = offsets.into_iter().map(|offset| offset / offset_factor).collect::<Vec<_>>();
 
     // Create a target texture
     let mut target_descriptor   = source_texture.descriptor.clone();
