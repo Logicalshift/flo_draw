@@ -14,7 +14,7 @@ use std::sync::*;
 ///
 /// Runs one of the fixed-size blur filters on a source texture
 ///
-pub (crate) fn blur_fixed(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, alpha_blend_pipeline: &Pipeline, source_texture: &WgpuTexture, weights: Vec<f32>, offsets: Vec<f32>) -> WgpuTexture {
+pub (crate) fn blur_fixed(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, blur_pipeline: &Pipeline, source_texture: &WgpuTexture, weights: Vec<f32>, offsets: Vec<f32>) -> WgpuTexture {
     // Set up buffers
     let vertices = vec![
         Vertex2D::with_pos(-1.0, -1.0),
@@ -29,11 +29,11 @@ pub (crate) fn blur_fixed(device: &wgpu::Device, encoder: &mut wgpu::CommandEnco
     // Offsets are in a 30 entry array (15 weights, 15 offsets)
     let offsets_weights = (0..30)
         .into_iter()
-        .map(|p| {
+        .flat_map(|p| {
             if p < 15 {
-                *(weights.get(p).unwrap_or(&0.0))
+                [*(weights.get(p).unwrap_or(&0.0)), 0.0, 0.0, 0.0]
             } else {
-                *(offsets.get(p-15).unwrap_or(&0.0))
+                [*(offsets.get(p-15).unwrap_or(&0.0)), 0.0, 0.0, 0.0]
             }
         })
         .collect::<Vec<_>>();
@@ -62,16 +62,16 @@ pub (crate) fn blur_fixed(device: &wgpu::Device, encoder: &mut wgpu::CommandEnco
 
     // Bind the resources
     let source_view             = source_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
-    let layout                  = &*alpha_blend_pipeline.alpha_blend_layout;
+    let layout                  = &*blur_pipeline.blur_fixed_layout;
     let offsets_weights_binding = wgpu::BufferBinding {
         buffer: &offsets_weights,
         offset: 0,
-        size:   NonZeroU64::new(30*mem::size_of::<f32>() as u64)
+        size:   NonZeroU64::new(30*4*mem::size_of::<f32>() as u64)
     };
     let offsets_weights_binding = wgpu::BindingResource::Buffer(offsets_weights_binding);
 
     let filter_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label:      Some("alpha_blend"),
+        label:      Some("blur_fixed"),
         layout:     &layout,
         entries:    &[
             wgpu::BindGroupEntry {
@@ -102,7 +102,7 @@ pub (crate) fn blur_fixed(device: &wgpu::Device, encoder: &mut wgpu::CommandEnco
             })
         ];
         let mut render_pass     = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label:                      Some("alpha_blend"),
+            label:                      Some("blur_fixed"),
             depth_stencil_attachment:   None,
             color_attachments:          &color_attachments,
         });
@@ -112,7 +112,7 @@ pub (crate) fn blur_fixed(device: &wgpu::Device, encoder: &mut wgpu::CommandEnco
         let start_pos   = (0 * vertex_size) as u64;
         let end_pos     = (6 * vertex_size) as u64;
 
-        render_pass.set_pipeline(&*alpha_blend_pipeline.pipeline);
+        render_pass.set_pipeline(&*blur_pipeline.pipeline);
         render_pass.set_bind_group(0, &filter_bind_group, &[]);
         render_pass.set_vertex_buffer(0, vertices.slice(start_pos..end_pos));
         render_pass.draw(0..6, 0..1);
