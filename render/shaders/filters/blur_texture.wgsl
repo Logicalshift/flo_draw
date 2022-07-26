@@ -37,7 +37,7 @@ fn filter_vertex_shader(
 }
 
 fn offset(i: i32) -> f32 {
-    return textureLoad(offset_texture, i, 0);
+    return textureLoad(offset_texture, i, 0)[0];
 }
 
 fn offset_horiz(i: i32) -> vec2<f32> {
@@ -49,7 +49,7 @@ fn offset_vert(i: i32) -> vec2<f32> {
 }
 
 fn weight(i: i32) -> f32 {
-    return textureLoad(weight_texture, i, 0);
+    return textureLoad(weight_texture, i, 0)[0];
 }
 
 @fragment
@@ -57,7 +57,7 @@ fn filter_fragment_shader_blur_texture_horiz(vertex: RasterData) -> @location(0)
     let len     = textureDimensions(offset_texture);
     var color   = textureSample(input_texture, f_sampler, vertex.texture_pos) * weight(0);
 
-    for (int idx=1; idx<len; idx++) {
+    for (var idx=1; idx<len; idx++) {
         color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_horiz(1)) * weight(1);
         color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_horiz(2)) * weight(2);
     }
@@ -70,7 +70,7 @@ fn filter_fragment_shader_blur_texture_vert(vertex: RasterData) -> @location(0) 
     let len     = textureDimensions(offset_texture);
     var color   = textureSample(input_texture, f_sampler, vertex.texture_pos) * weight(0);
 
-    for (int idx=1; idx<len; idx++) {
+    for (var idx=1; idx<len; idx++) {
         color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_vert(1)) * weight(1);
         color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_vert(2)) * weight(2);
     }
