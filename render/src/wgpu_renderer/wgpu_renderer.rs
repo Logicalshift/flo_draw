@@ -925,8 +925,27 @@ impl WgpuRenderer {
                         final_texture = blur_fixed(&*self.device, &mut state.encoder, &*blur_pipeline, &final_texture, weights, offsets);
                     }
 
-                    TextureFilter::GaussianBlurHorizontal(sigma, step, kernel_size) => { /* TODO */ }
-                    TextureFilter::GaussianBlurVertical(sigma, step, kernel_size)   => { /* TODO */ }
+                    TextureFilter::GaussianBlurHorizontal(sigma, step, kernel_size) |
+                    TextureFilter::GaussianBlurVertical(sigma, step, kernel_size)   => {
+                        let mut blur_pipeline       = PipelineConfiguration::for_texture(&final_texture);
+                        blur_pipeline.blending_mode = None;
+                        blur_pipeline.shader_module = match filter {
+                            TextureFilter::GaussianBlurVertical(..)     => WgpuShader::Filter(FilterShader::BlurTexture(BlurDirection::Horizontal)),
+                            TextureFilter::GaussianBlurHorizontal(..)   => WgpuShader::Filter(FilterShader::BlurTexture(BlurDirection::Vertical)),
+
+                            _ => WgpuShader::Filter(FilterShader::BlurTexture(BlurDirection::Horizontal)),
+                        };
+                        let blur_pipeline           = self.pipeline_for_configuration(blur_pipeline);
+
+                        let kernel_size             = filter.kernel_size();
+                        let weights                 = TextureFilter::weights_for_gaussian_blur(sigma, step, kernel_size);
+                        let (weights, offsets)      = TextureFilter::weights_and_offsets_for_gaussian_blur(weights);
+
+                        let queue   = &state.queue;
+                        let encoder = &mut state.encoder;
+
+                        final_texture = blur_texture(&*self.device, queue, encoder, &*blur_pipeline, &final_texture, weights, offsets);
+                    }
                     TextureFilter::Mask(texture)                                    => { /* TODO */ }
                     TextureFilter::DisplacementMap(texture, x, y)                   => { /* TODO */ }
                 }
