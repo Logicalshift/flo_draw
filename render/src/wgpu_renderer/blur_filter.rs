@@ -185,7 +185,7 @@ pub (crate) fn blur_texture(device: &wgpu::Device, queue: &wgpu::Queue, encoder:
         label:              Some("blur_texture"),
         size:               wgpu::Extent3d { width: weights.len() as _, ..Default::default() },
         mip_level_count:    1,
-        sample_count:       0,
+        sample_count:       1,
         dimension:          wgpu::TextureDimension::D1,
         format:             wgpu::TextureFormat::R32Float,
         usage:              wgpu::TextureUsages::TEXTURE_BINDING,
