@@ -11,13 +11,9 @@ var input_texture: texture_2d<f32>;
 @binding(1)
 var f_sampler: sampler;
 
-struct f32_align_16 {
-    @size(16) elem: f32
-}
-
 @group(0)
 @binding(2)
-var<uniform> f_offsets_weights: array<f32_align_16, 30>;
+var<uniform> f_offsets_weights: array<vec4<f32>, 30>;
 
 @vertex
 fn filter_vertex_shader(
@@ -37,7 +33,7 @@ fn filter_vertex_shader(
 }
 
 fn offset(i: i32) -> f32 {
-    return f_offsets_weights[i + 0].elem;
+    return f_offsets_weights[i + 0][0];
 }
 
 fn offset_horiz(i: i32) -> vec2<f32> {
@@ -49,7 +45,7 @@ fn offset_vert(i: i32) -> vec2<f32> {
 }
 
 fn weight(i: i32) -> f32 {
-    return f_offsets_weights[i + 15].elem;
+    return f_offsets_weights[i + 15][0];
 }
 
 @fragment
