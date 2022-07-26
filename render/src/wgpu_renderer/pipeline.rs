@@ -39,6 +39,9 @@ pub (crate) struct Pipeline {
 
     /// Bind group layout for the fixed kernel size gaussian blur filter
     pub (crate) blur_fixed_layout: Arc<wgpu::BindGroupLayout>,
+
+    /// Bind group layout for the fixed kernel size gaussian blur filter
+    pub (crate) blur_texture_layout: Arc<wgpu::BindGroupLayout>,
 }
 
 impl Pipeline {
@@ -61,6 +64,8 @@ impl Pipeline {
         let alpha_blend_layout      = device.create_bind_group_layout(&alpha_blend_layout);
         let blur_fixed_layout       = config.filter_fixed_blur_bind_group_layout();
         let blur_fixed_layout       = device.create_bind_group_layout(&blur_fixed_layout);
+        let blur_texture_layout     = config.filter_texture_blur_bind_group_layout();
+        let blur_texture_layout     = device.create_bind_group_layout(&blur_texture_layout);
 
         let bind_layout             = match config.shader_module {
             WgpuShader::LinearGradient(..)                      => vec![&matrix_bind_layout, &clip_bind_layout, &linear_gradient_layout],
@@ -68,6 +73,7 @@ impl Pipeline {
             WgpuShader::Simple(..)                              => vec![&matrix_bind_layout, &clip_bind_layout],
             WgpuShader::Filter(FilterShader::AlphaBlend(..))    => vec![&alpha_blend_layout],
             WgpuShader::Filter(FilterShader::BlurFixed(..))     => vec![&blur_fixed_layout],
+            WgpuShader::Filter(FilterShader::BlurTexture(..))   => vec![&blur_texture_layout],
         };
         let pipeline_layout         = wgpu::PipelineLayoutDescriptor {
             label:                  Some("Pipeline::from_configuration"),
@@ -89,6 +95,7 @@ impl Pipeline {
             linear_gradient_layout:     Arc::new(linear_gradient_layout),
             alpha_blend_layout:         Arc::new(alpha_blend_layout),
             blur_fixed_layout:          Arc::new(blur_fixed_layout),
+            blur_texture_layout:        Arc::new(blur_texture_layout),
         }
     }
 

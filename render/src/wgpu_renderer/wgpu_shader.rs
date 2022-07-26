@@ -112,8 +112,11 @@ pub enum FilterShader {
     /// Outputs a version of the image with a different alpha value
     AlphaBlend(FilterSourceFormat),
 
-    /// 9x9 fixed size gaussian blur filter
+    /// 9x9, 29x29 or 61x61 fixed size gaussian blur filter
     BlurFixed(BlurDirection, BlurFixedSize),
+
+    /// Gaussian blur filter with the kernel size defined by a texture
+    BlurTexture(BlurDirection),
 }
 
 ///
@@ -295,7 +298,7 @@ impl WgpuShaderLoader for WgpuShader {
 
                 // Load the shader
                 let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                    label:  Some("WgpuShader::FilterBlurFixed9"),
+                    label:  Some("WgpuShader::FilterBlurFixed"),
                     source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(&base_module)),
                 });
 
@@ -308,6 +311,26 @@ impl WgpuShaderLoader for WgpuShader {
 
                     (BlurDirection::Horizontal, BlurFixedSize::Size61)  => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_61_horiz".to_string()),
                     (BlurDirection::Vertical, BlurFixedSize::Size61)    => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_61_vert".to_string()),
+                }
+            }
+
+            WgpuShader::Filter(FilterShader::BlurTexture(direction)) => {
+                // The base module contains the shader program in terms of the variant and post-procesing functions
+                let base_module = include_str!("../../shaders/filters/blur_texture.wgsl");
+
+                // Amend the base module with the appropriate variant and colour post-processing functions
+                let base_module = format!("{}", 
+                    base_module);
+
+                // Load the shader
+                let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label:  Some("WgpuShader::FilterBlurTexture"),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(&base_module)),
+                });
+
+                match direction {
+                    BlurDirection::Horizontal   => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_texture_horiz".to_string()),
+                    BlurDirection::Vertical     => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_texture_vert".to_string()),
                 }
             }
         }

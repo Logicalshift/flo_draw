@@ -577,6 +577,63 @@ impl PipelineConfiguration {
     }
 
     ///
+    /// Returns the layout for the texture-sized blur filter shaders
+    ///
+    #[inline]
+    pub fn filter_texture_blur_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
+        static TEXTURE_BLUR_LAYOUT: [wgpu::BindGroupLayoutEntry; 4]  = [
+            // Texture
+            wgpu::BindGroupLayoutEntry {
+                binding:            0,
+                visibility:         wgpu::ShaderStages::VERTEX_FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   false,
+                }
+            },
+
+            // The sampler
+            wgpu::BindGroupLayoutEntry {
+                binding:            1,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering)
+            },
+
+            // Offsets
+            wgpu::BindGroupLayoutEntry {
+                binding:            2,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D1,
+                    multisampled:   false,
+                }
+            },
+
+            // Weights
+            wgpu::BindGroupLayoutEntry {
+                binding:            3,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D1,
+                    multisampled:   false,
+                }
+            },
+        ];
+
+        wgpu::BindGroupLayoutDescriptor {
+            label:      Some("filter_texture_blur_bind_group_layout"),
+            entries:    &TEXTURE_BLUR_LAYOUT,
+        }
+    }
+
+    ///
     /// Creates the render pipeline descriptor for this render pipeline
     ///
     #[inline]
