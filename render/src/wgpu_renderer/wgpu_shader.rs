@@ -303,11 +303,11 @@ impl WgpuShaderLoader for WgpuShader {
                     (BlurDirection::Horizontal, BlurFixedSize::Size9)   => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_horiz".to_string()),
                     (BlurDirection::Vertical, BlurFixedSize::Size9)     => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_vert".to_string()),
 
-                    (BlurDirection::Horizontal, BlurFixedSize::Size29)  => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_horiz".to_string()),
-                    (BlurDirection::Vertical, BlurFixedSize::Size29)    => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_vert".to_string()),
+                    (BlurDirection::Horizontal, BlurFixedSize::Size29)  => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_29_horiz".to_string()),
+                    (BlurDirection::Vertical, BlurFixedSize::Size29)    => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_29_vert".to_string()),
 
-                    (BlurDirection::Horizontal, BlurFixedSize::Size61)  => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_horiz".to_string()),
-                    (BlurDirection::Vertical, BlurFixedSize::Size61)    => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_9_vert".to_string()),
+                    (BlurDirection::Horizontal, BlurFixedSize::Size61)  => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_61_horiz".to_string()),
+                    (BlurDirection::Vertical, BlurFixedSize::Size61)    => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_61_vert".to_string()),
                 }
             }
         }

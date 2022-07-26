@@ -73,3 +73,51 @@ fn filter_fragment_shader_blur_9_vert(vertex: RasterData) -> @location(0) vec4<f
 
     return color;
 }
+
+@fragment
+fn filter_fragment_shader_blur_29_horiz(vertex: RasterData) -> @location(0) vec4<f32> {
+    var color = textureSample(input_texture, f_sampler, vertex.texture_pos) * weight(0);
+
+    for (var idx=1; idx<7; idx++) {
+        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_horiz(idx)) * weight(idx);
+        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos - offset_horiz(idx)) * weight(idx);
+    }
+
+    return color;
+}
+
+@fragment
+fn filter_fragment_shader_blur_29_vert(vertex: RasterData) -> @location(0) vec4<f32> {
+    var color = textureSample(input_texture, f_sampler, vertex.texture_pos) * weight(0);
+
+    for (var idx=1; idx<7; idx++) {
+        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_vert(idx)) * weight(idx);
+        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos - offset_vert(idx)) * weight(idx);
+    }
+
+    return color;
+}
+
+@fragment
+fn filter_fragment_shader_blur_61_horiz(vertex: RasterData) -> @location(0) vec4<f32> {
+    var color = textureSample(input_texture, f_sampler, vertex.texture_pos) * weight(0);
+
+    for (var idx=1; idx<15; idx++) {
+        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_horiz(idx)) * weight(idx);
+        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos - offset_horiz(idx)) * weight(idx);
+    }
+
+    return color;
+}
+
+@fragment
+fn filter_fragment_shader_blur_61_vert(vertex: RasterData) -> @location(0) vec4<f32> {
+    var color = textureSample(input_texture, f_sampler, vertex.texture_pos) * weight(0);
+
+    for (var idx=1; idx<15; idx++) {
+        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos + offset_vert(idx)) * weight(idx);
+        color = color + textureSample(input_texture, f_sampler, vertex.texture_pos - offset_vert(idx)) * weight(idx);
+    }
+
+    return color;
+}
