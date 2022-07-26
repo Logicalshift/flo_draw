@@ -204,12 +204,12 @@ pub (crate) fn blur_texture(device: &wgpu::Device, queue: &wgpu::Queue, encoder:
 
             wgpu::BindGroupEntry {
                 binding:    2,
-                resource:   wgpu::BindingResource::TextureView(&weights_view),
+                resource:   wgpu::BindingResource::TextureView(&offsets_view),
             },
 
             wgpu::BindGroupEntry {
                 binding:    3,
-                resource:   wgpu::BindingResource::TextureView(&offsets_view),
+                resource:   wgpu::BindingResource::TextureView(&weights_view),
             },
         ]
     });
