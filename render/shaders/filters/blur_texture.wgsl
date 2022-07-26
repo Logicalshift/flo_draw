@@ -19,10 +19,6 @@ var offset_texture: texture_1d<f32>;
 @binding(3)
 var weight_texture: texture_1d<f32>;
 
-@group(0)
-@binding(4)
-var<uniform> f_offsets_weights: array<vec4<f32>, 30>;
-
 @vertex
 fn filter_vertex_shader(
     @location(0) pos:       vec2<f32>,
