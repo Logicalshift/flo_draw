@@ -15,6 +15,13 @@ pub (crate) trait ToWgpuBuffer {
     fn to_buffer(&self, device: &wgpu::Device, usage: wgpu::BufferUsages) -> wgpu::Buffer;
 }
 
+///
+/// Converts a value to a [u8] slice
+///
+pub (crate) trait ToU8Slice {
+    fn to_u8_slice(&self) -> &[u8];
+}
+
 impl ToWgpuBuffer for Vec<Vertex2D> {
     #[inline]
     fn to_buffer(&self, device: &wgpu::Device, usage: wgpu::BufferUsages) -> wgpu::Buffer {
@@ -42,6 +49,17 @@ impl ToWgpuBuffer for Vec<u16> {
             contents:   contents_u8,
             usage:      usage,
         })
+    }
+}
+
+impl ToU8Slice for Vec<f32> {
+    #[inline]
+    fn to_u8_slice(&self) -> &[u8] {
+        let contents_void   = self.as_ptr() as *const f32;
+        let contents_len    = self.len() * mem::size_of::<f32>();
+        let contents_u8     = unsafe { slice::from_raw_parts(contents_void as *const u8, contents_len) };
+
+        contents_u8
     }
 }
 
