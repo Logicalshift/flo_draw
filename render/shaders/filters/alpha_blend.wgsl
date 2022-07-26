@@ -33,9 +33,9 @@ fn filter_vertex_shader(
 fn filter_fragment_shader_premultiply(vertex: RasterData) -> @location(0) vec4<f32> {
     let texture_pos     = vec2<i32>(vertex.texture_pos);
 
-    var color           = textureLoad(input_texture, texture_pos, 0);
-    color[3]            *= f_alpha;
-
+    let color           = textureLoad(input_texture, texture_pos, 0);
+    let color           = color * f_alpha;
+    
     return color;
 }
 
