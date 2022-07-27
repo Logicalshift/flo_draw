@@ -501,6 +501,7 @@ impl WgpuRenderer {
 
         // Copy the values we're going to update
         let old_texture             = state.input_texture.take();
+        let old_sampler             = state.sampler.take();
         let old_matrix              = state.active_matrix;
         let old_texture_settings    = state.texture_settings;
         let old_pipeline_config     = state.pipeline_configuration.clone();
@@ -509,6 +510,7 @@ impl WgpuRenderer {
         let texture_type = if samples.is_none() { InputTextureType::Sampler } else { InputTextureType::Multisampled };
 
         state.input_texture                                     = Some(texture);
+        state.sampler                                           = Some(self.samplers.default_sampler());
         state.pipeline_configuration.shader_module              = WgpuShader::Texture(StandardShaderVariant::NoClipping, texture_type, TexturePosition::Separate, AlphaBlendStep::Premultiply, ColorPostProcessingStep::NoPostProcessing);
         state.pipeline_configuration.blending_mode              = Some(BlendMode::SourceOver);
         state.pipeline_configuration.source_is_premultiplied    = true;
@@ -584,6 +586,7 @@ impl WgpuRenderer {
 
         // Restore the render state
         state.input_texture             = old_texture;
+        state.sampler                   = old_sampler;
         state.active_matrix             = old_matrix;
         state.texture_settings          = old_texture_settings;
         state.pipeline_configuration    = old_pipeline_config;

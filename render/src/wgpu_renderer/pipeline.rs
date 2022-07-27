@@ -290,12 +290,26 @@ impl Pipeline {
                 })
             }
 
-            (WgpuShader::LinearGradient(..), _, None)                               |
-            (WgpuShader::Texture(_, InputTextureType::None, _, _, _), _, _)         |
-            (WgpuShader::Texture(_, InputTextureType::Sampler, _, _, _), _, None)   => {
+            (WgpuShader::Texture(_, InputTextureType::None, ..), _, _)          => {
                 // Group 2 is bound to an empty set if no texture is defined (or the sampler is missing when it was expected)
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label:      Some("bind_input_texture_no_texture"),
+                    layout:     &*self.clip_mask_layout,
+                    entries:    &[
+                        wgpu::BindGroupEntry {
+                            binding:    0,
+                            resource:   texture_settings_binding,
+                        },
+                    ]
+                })
+            }
+
+            (WgpuShader::LinearGradient(..), _, None)                           |
+            (WgpuShader::Texture(_, InputTextureType::None, ..), _, _)          |
+            (WgpuShader::Texture(_, InputTextureType::Sampler, ..), _, None)    => {
+                // Group 2 is bound to an empty set if no texture is defined (or the sampler is missing when it was expected)
+                device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label:      Some("bind_input_texture_no_sampler"),
                     layout:     &*self.clip_mask_layout,
                     entries:    &[
                         wgpu::BindGroupEntry {
