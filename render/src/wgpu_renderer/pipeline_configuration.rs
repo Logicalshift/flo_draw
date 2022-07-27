@@ -649,7 +649,7 @@ impl PipelineConfiguration {
             wgpu::MultisampleState {
                 count:                      sample_count,
                 mask:                       !0,
-                alpha_to_coverage_enabled:  true,
+                alpha_to_coverage_enabled:  false,
             }
         } else {
             wgpu::MultisampleState::default()
