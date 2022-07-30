@@ -42,6 +42,15 @@ pub (crate) struct Pipeline {
 
     /// Bind group layout for the fixed kernel size gaussian blur filter
     pub (crate) blur_texture_layout: Arc<wgpu::BindGroupLayout>,
+
+    /// Bind group layout for the mask filter
+    pub (crate) mask_layout: Arc<wgpu::BindGroupLayout>,
+
+    /// Bind group layout for the displacement map filter
+    pub (crate) displacement_map_layout: Arc<wgpu::BindGroupLayout>,
+
+    /// Bind group layout for the reduce filter
+    pub (crate) reduce_layout: Arc<wgpu::BindGroupLayout>,
 }
 
 impl Pipeline {
@@ -67,6 +76,13 @@ impl Pipeline {
         let blur_texture_layout     = config.filter_texture_blur_bind_group_layout();
         let blur_texture_layout     = device.create_bind_group_layout(&blur_texture_layout);
 
+        let mask_layout             = config.filter_mask_bind_group_layout();
+        let mask_layout             = device.create_bind_group_layout(&mask_layout);
+        let displacement_map_layout = config.filter_displacement_map_bind_group_layout();
+        let displacement_map_layout = device.create_bind_group_layout(&displacement_map_layout);
+        let reduce_layout           = config.filter_reduce_bind_group_layout();
+        let reduce_layout           = device.create_bind_group_layout(&reduce_layout);
+
         let bind_layout             = match config.shader_module {
             WgpuShader::LinearGradient(..)                      => vec![&matrix_bind_layout, &clip_bind_layout, &linear_gradient_layout],
             WgpuShader::Texture(..)                             => vec![&matrix_bind_layout, &clip_bind_layout, &texture_layout],
@@ -74,9 +90,9 @@ impl Pipeline {
             WgpuShader::Filter(FilterShader::AlphaBlend(..))    => vec![&alpha_blend_layout],
             WgpuShader::Filter(FilterShader::BlurFixed(..))     => vec![&blur_fixed_layout],
             WgpuShader::Filter(FilterShader::BlurTexture(..))   => vec![&blur_texture_layout],
-            WgpuShader::Filter(FilterShader::Mask(..))          => { unimplemented!() },
-            WgpuShader::Filter(FilterShader::DisplacementMap)   => { unimplemented!() },
-            WgpuShader::Filter(FilterShader::Reduce)            => { unimplemented!() },
+            WgpuShader::Filter(FilterShader::Mask(..))          => vec![&mask_layout],
+            WgpuShader::Filter(FilterShader::DisplacementMap)   => vec![&displacement_map_layout],
+            WgpuShader::Filter(FilterShader::Reduce)            => vec![&reduce_layout],
         };
         let pipeline_layout         = wgpu::PipelineLayoutDescriptor {
             label:                  Some("Pipeline::from_configuration"),
@@ -99,6 +115,9 @@ impl Pipeline {
             alpha_blend_layout:         Arc::new(alpha_blend_layout),
             blur_fixed_layout:          Arc::new(blur_fixed_layout),
             blur_texture_layout:        Arc::new(blur_texture_layout),
+            mask_layout:                Arc::new(mask_layout),
+            displacement_map_layout:    Arc::new(displacement_map_layout),
+            reduce_layout:              Arc::new(reduce_layout),
         }
     }
 

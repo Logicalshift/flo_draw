@@ -634,6 +634,129 @@ impl PipelineConfiguration {
     }
 
     ///
+    /// Returns the layout for the mask filter shader
+    ///
+    #[inline]
+    pub fn filter_mask_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
+        static MASK_LAYOUT: [wgpu::BindGroupLayoutEntry; 3]  = [
+            // Input texture
+            wgpu::BindGroupLayoutEntry {
+                binding:            0,
+                visibility:         wgpu::ShaderStages::VERTEX_FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   false,
+                }
+            },
+
+            // Mask texture
+            wgpu::BindGroupLayoutEntry {
+                binding:            1,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   false,
+                }
+            },
+
+            // The sampler
+            wgpu::BindGroupLayoutEntry {
+                binding:            2,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering)
+            },
+        ];
+
+        wgpu::BindGroupLayoutDescriptor {
+            label:      Some("filter_mask_bind_group_layout"),
+            entries:    &MASK_LAYOUT,
+        }
+    }
+
+    ///
+    /// Returns the layout for the displacement map filter shader
+    ///
+    #[inline]
+    pub fn filter_displacement_map_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
+        static DISPLACEMENT_MAP_LAYOUT: [wgpu::BindGroupLayoutEntry; 3]  = [
+            // Input texture
+            wgpu::BindGroupLayoutEntry {
+                binding:            0,
+                visibility:         wgpu::ShaderStages::VERTEX_FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   false,
+                }
+            },
+
+            // Displacement texture
+            wgpu::BindGroupLayoutEntry {
+                binding:            1,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   false,
+                }
+            },
+
+            // The sampler
+            wgpu::BindGroupLayoutEntry {
+                binding:            2,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering)
+            },
+        ];
+
+        wgpu::BindGroupLayoutDescriptor {
+            label:      Some("filter_displacement_map_bind_group_layout"),
+            entries:    &DISPLACEMENT_MAP_LAYOUT,
+        }
+    }
+
+    ///
+    /// Returns the layout for the reduce filter shader
+    ///
+    #[inline]
+    pub fn filter_reduce_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
+        static REDUCE_LAYOUT: [wgpu::BindGroupLayoutEntry; 2]  = [
+            // Input texture
+            wgpu::BindGroupLayoutEntry {
+                binding:            0,
+                visibility:         wgpu::ShaderStages::VERTEX_FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   false,
+                }
+            },
+
+            // The sampler
+            wgpu::BindGroupLayoutEntry {
+                binding:            1,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering)
+            },
+        ];
+
+        wgpu::BindGroupLayoutDescriptor {
+            label:      Some("filter_reduce_bind_group_layout"),
+            entries:    &REDUCE_LAYOUT,
+        }
+    }
+
+    ///
     /// Creates the render pipeline descriptor for this render pipeline
     ///
     #[inline]
