@@ -117,6 +117,15 @@ pub enum FilterShader {
 
     /// Gaussian blur filter with the kernel size defined by a texture
     BlurTexture(BlurDirection),
+
+    /// Uses the alpha value from another texture to mask a source texture
+    Mask(FilterSourceFormat),
+
+    /// Moves the pixels from a
+    DisplacementMap,
+
+    /// Generate a version of a texture at 50% of the size of the original (used when generating mipmaps)
+    Reduce,
 }
 
 ///
@@ -272,14 +281,10 @@ impl WgpuShaderLoader for WgpuShader {
                 // The base module contains the shader program in terms of the variant and post-procesing functions
                 let base_module = include_str!("../../shaders/filters/alpha_blend.wgsl");
 
-                // Amend the base module with the appropriate variant and colour post-processing functions
-                let base_module = format!("{}", 
-                    base_module);
-
                 // Load the shader
                 let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
                     label:  Some("WgpuShader::FilterAlphaBlend"),
-                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(&base_module)),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(base_module)),
                 });
 
                 match source_format {
@@ -292,14 +297,10 @@ impl WgpuShaderLoader for WgpuShader {
                 // The base module contains the shader program in terms of the variant and post-procesing functions
                 let base_module = include_str!("../../shaders/filters/blur_fixed.wgsl");
 
-                // Amend the base module with the appropriate variant and colour post-processing functions
-                let base_module = format!("{}", 
-                    base_module);
-
                 // Load the shader
                 let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
                     label:  Some("WgpuShader::FilterBlurFixed"),
-                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(&base_module)),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(base_module)),
                 });
 
                 match (direction, size) {
@@ -318,20 +319,55 @@ impl WgpuShaderLoader for WgpuShader {
                 // The base module contains the shader program in terms of the variant and post-procesing functions
                 let base_module = include_str!("../../shaders/filters/blur_texture.wgsl");
 
-                // Amend the base module with the appropriate variant and colour post-processing functions
-                let base_module = format!("{}", 
-                    base_module);
-
                 // Load the shader
                 let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
                     label:  Some("WgpuShader::FilterBlurTexture"),
-                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(&base_module)),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(base_module)),
                 });
 
                 match direction {
                     BlurDirection::Horizontal   => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_texture_horiz".to_string()),
                     BlurDirection::Vertical     => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_blur_texture_vert".to_string()),
                 }
+            }
+
+            WgpuShader::Filter(FilterShader::Mask(source_format)) => {
+                let base_module = include_str!("../../shaders/filters/mask.wgsl");
+
+                // Load the shader
+                let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label:  Some("WgpuShader::FilterMask"),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(base_module)),
+                });
+
+                match source_format {
+                    FilterSourceFormat::PremultipliedAlpha  => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_premultiply".to_string()),
+                    FilterSourceFormat::NotPremultiplied    => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_not_premultiplied".to_string())
+                }
+            }
+            
+            WgpuShader::Filter(FilterShader::DisplacementMap) => { 
+                let base_module = include_str!("../../shaders/filters/mask.wgsl");
+
+                // Load the shader
+                let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label:  Some("WgpuShader::FilterDisplacement"),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(base_module)),
+                });
+
+                (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader".to_string())
+            }
+            
+            WgpuShader::Filter(FilterShader::Reduce) => { 
+                let base_module = include_str!("../../shaders/filters/reduce.wgsl");
+
+                // Load the shader
+                let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label:  Some("WgpuShader::FilterReduce"),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(base_module)),
+                });
+
+                (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader".to_string())
             }
         }
     }
