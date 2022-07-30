@@ -12,6 +12,9 @@ mod render_pass_resources;
 mod pipeline_configuration;
 
 mod blur_filter;
+mod mask_filter;
+mod reduce_filter;
 mod alpha_blend_filter;
+mod displacement_map_filter;
 
 pub use self::wgpu_renderer::*;

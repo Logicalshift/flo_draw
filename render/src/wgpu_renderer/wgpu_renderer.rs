@@ -10,7 +10,9 @@ use super::texture_settings::*;
 use super::pipeline_configuration::*;
 
 use super::blur_filter::*;
+use super::mask_filter::*;
 use super::alpha_blend_filter::*;
+use super::displacement_map_filter::*;
 
 use crate::action::*;
 use crate::buffer::*;
@@ -949,9 +951,23 @@ impl WgpuRenderer {
 
                         final_texture = blur_texture(&*self.device, queue, encoder, &*blur_pipeline, &final_texture, weights, offsets);
                     }
-                    TextureFilter::Mask(texture)                                    => { /* TODO */ }
+                    
+                    TextureFilter::Mask(TextureId(mask_texture)) => { 
+                        let mut mask_pipeline       = PipelineConfiguration::for_texture(&final_texture);
+                        mask_pipeline.blending_mode = None;
+                        mask_pipeline.shader_module = WgpuShader::Filter(FilterShader::Mask(FilterSourceFormat::from_texture(&final_texture)));
+                        let mask_pipeline           = self.pipeline_for_configuration(mask_pipeline);
+
+                        if let Some(Some(mask_texture)) = self.textures.get(mask_texture) {
+                            let queue       = &state.queue;
+                            let encoder     = &mut state.encoder;
+
+                            final_texture   = mask(&*self.device, encoder, &*mask_pipeline, &final_texture, mask_texture);
+                        }
+                    }
+
                     TextureFilter::DisplacementMap(texture, x, y)                   => { /* TODO */ }
-                }
+                } 
             }
 
             // No pipeline is set

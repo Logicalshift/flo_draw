@@ -342,7 +342,7 @@ impl WgpuShaderLoader for WgpuShader {
 
                 match source_format {
                     FilterSourceFormat::PremultipliedAlpha  => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_premultiply".to_string()),
-                    FilterSourceFormat::NotPremultiplied    => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_not_premultiplied".to_string())
+                    FilterSourceFormat::NotPremultiplied    => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_no_premultiply".to_string())
                 }
             }
             
