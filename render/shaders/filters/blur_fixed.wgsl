@@ -1,3 +1,8 @@
+///
+/// Assorted fixed kernel size 1-dimensional gaussian blur implementations, combines with a sampler to reduce the number 
+/// of texture reads required
+///
+
 struct RasterData {
     @location(0)        texture_pos:    vec2<f32>,
     @builtin(position)  pos:            vec4<f32>
