@@ -347,7 +347,7 @@ impl WgpuShaderLoader for WgpuShader {
             }
             
             WgpuShader::Filter(FilterShader::DisplacementMap) => { 
-                let base_module = include_str!("../../shaders/filters/mask.wgsl");
+                let base_module = include_str!("../../shaders/filters/displacement.wgsl");
 
                 // Load the shader
                 let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {

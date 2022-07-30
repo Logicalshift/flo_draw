@@ -14,7 +14,7 @@ var displace_texture: texture_2d<f32>;
 
 @group(0)
 @binding(2)
-var sampler: sampler;
+var displace_sampler: sampler;
 
 @group(0)
 @binding(3)
@@ -43,10 +43,10 @@ fn filter_vertex_shader(
 fn filter_fragment_shader(vertex: RasterData) -> @location(0) vec4<f32> {
     let displace_pos    = vertex.displace_pos;
 
-    let displacement    = textureSample(mask_texture, sampler, displace_pos);
-    let displacement    = vec2<f32>((displacement[0]-0.5)*2.0, (displacement[1]-0.5)*2.0)*scale;
+    let displacement    = textureSample(displace_texture, displace_sampler, displace_pos);
+    let displacement    = vec2<f32>((displacement[0] - 0.5) * 2.0, (displacement[1] - 0.5) * 2.0)*scale;
 
-    let color           = textureSample(input_texture, sampler, displace_pos + displacement);
+    let color           = textureSample(input_texture, displace_sampler, displace_pos + displacement);
 
     return color;
 }

@@ -683,7 +683,7 @@ impl PipelineConfiguration {
     ///
     #[inline]
     pub fn filter_displacement_map_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
-        static DISPLACEMENT_MAP_LAYOUT: [wgpu::BindGroupLayoutEntry; 3]  = [
+        static DISPLACEMENT_MAP_LAYOUT: [wgpu::BindGroupLayoutEntry; 4]  = [
             // Input texture
             wgpu::BindGroupLayoutEntry {
                 binding:            0,
@@ -714,6 +714,18 @@ impl PipelineConfiguration {
                 visibility:         wgpu::ShaderStages::FRAGMENT,
                 count:              None,
                 ty:                 wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering)
+            },
+            
+            // Scale factor
+            wgpu::BindGroupLayoutEntry {
+                binding:            3,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Buffer {
+                    ty:                 wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size:   wgpu::BufferSize::new(8),
+                }
             },
         ];
 

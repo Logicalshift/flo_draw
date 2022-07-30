@@ -966,7 +966,19 @@ impl WgpuRenderer {
                         }
                     }
 
-                    TextureFilter::DisplacementMap(texture, x, y)                   => { /* TODO */ }
+                    TextureFilter::DisplacementMap(TextureId(displacement_texture), x, y)                   => {
+                        let mut displacement_pipeline       = PipelineConfiguration::for_texture(&final_texture);
+                        displacement_pipeline.blending_mode = None;
+                        displacement_pipeline.shader_module = WgpuShader::Filter(FilterShader::DisplacementMap);
+                        let displacement_pipeline           = self.pipeline_for_configuration(displacement_pipeline);
+
+                        if let Some(Some(displacement_texture)) = self.textures.get(displacement_texture) {
+                            let queue       = &state.queue;
+                            let encoder     = &mut state.encoder;
+
+                            final_texture   = displacement_map(&*self.device, encoder, &*displacement_pipeline, &final_texture, displacement_texture, (x, y));
+                        }
+                    }
                 } 
             }
 
