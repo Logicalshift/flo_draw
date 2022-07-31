@@ -59,9 +59,6 @@ pub struct WgpuRenderer {
     /// The height of the target surface
     height: u32,
 
-    /// The shaders that have been loaded for this renderer
-    shaders: HashMap<WgpuShader, Arc<wgpu::ShaderModule>>,
-
     /// The vertex buffers for this renderer
     vertex_buffers: Vec<Option<Arc<wgpu::Buffer>>>,
 
@@ -105,7 +102,6 @@ impl WgpuRenderer {
             target_surface:         target_surface,
             target_format:          None,
             target_surface_texture: None,
-            shaders:                HashMap::new(),
             vertex_buffers:         vec![],
             index_buffers:          vec![],
             textures:               vec![],
