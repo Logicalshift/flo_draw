@@ -129,7 +129,7 @@ pub (crate) fn create_mipmaps(device: &wgpu::Device, encoder: &mut wgpu::Command
     }, source_texture.descriptor.size);
 
     // Create the new texture
-    let target_texture          = WgpuTexture {
+    let target_texture = WgpuTexture {
         descriptor:         target_descriptor,
         texture:            Arc::new(target_texture),
         is_premultiplied:   source_texture.is_premultiplied,

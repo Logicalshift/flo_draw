@@ -27,7 +27,7 @@ impl Samplers {
             min_filter:         wgpu::FilterMode::Linear,
             mipmap_filter:      wgpu::FilterMode::Linear,
             lod_min_clamp:      0.0,
-            lod_max_clamp:      0.0,
+            lod_max_clamp:      8.0,
             compare:            None,
             anisotropy_clamp:   None,
             border_color:       None,
