@@ -15,7 +15,7 @@ use std::sync::*;
 ///
 /// Runs tha reduce filter against a texture (designed to filter it to half its current size)
 ///
-pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, reduce_pipeline: &Pipeline, source_texture: &WgpuTexture) -> WgpuTexture {
+pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, reduce_pipeline: &Pipeline, source_texture: &WgpuTexture, target_texture: &WgpuTexture, mip_level: u32) {
     // Set up buffers
     let vertices = vec![
         Vertex2D::with_pos(-1.0, -1.0),
@@ -26,11 +26,6 @@ pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandE
         Vertex2D::with_pos(1.0, -1.0),
         Vertex2D::with_pos(1.0, 1.0),
     ].to_buffer(device, wgpu::BufferUsages::VERTEX);
-
-    // Create a target texture
-    let mut target_descriptor   = source_texture.descriptor.clone();
-    target_descriptor.usage |= wgpu::TextureUsages::RENDER_ATTACHMENT;
-    let target_texture          = device.create_texture(&target_descriptor);
 
     // Create the reduce sampler
     let reduce_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -70,7 +65,17 @@ pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandE
 
     // Run a render pass to apply the filter
     {
-        let target_view         = target_texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view_descriptor     = wgpu::TextureViewDescriptor {
+            label:              Some("reduce_filter"),
+            format:             None,
+            dimension:          None,
+            aspect:             wgpu::TextureAspect::All,
+            base_mip_level:     mip_level,
+            mip_level_count:    NonZeroU32::new(1),
+            base_array_layer:   0,
+            array_layer_count:  None
+        };
+        let target_view         = target_texture.texture.create_view(&view_descriptor);
         let color_attachments   = vec![
             Some(wgpu::RenderPassColorAttachment {
                 view:           &target_view,
@@ -94,11 +99,47 @@ pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandE
         render_pass.set_vertex_buffer(0, vertices.slice(start_pos..end_pos));
         render_pass.draw(0..6, 0..1);
     }
+}
 
-    // Result is the new texture
-    WgpuTexture {
+///
+/// Creates a mip-mapped texture from another texture
+///
+pub (crate) fn create_mipmaps(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, reduce_pipeline: &Pipeline, source_texture: &WgpuTexture) -> WgpuTexture {
+    let num_mips = ((source_texture.descriptor.size.width.min(source_texture.descriptor.size.height)) as f32).log2();
+    let num_mips = if num_mips < 2.0 { 1.0 } else { num_mips - 1.0 };
+    let num_mips = num_mips as u32;
+
+    // Create a target texture
+    let mut target_descriptor           = source_texture.descriptor.clone();
+    target_descriptor.usage             |= wgpu::TextureUsages::RENDER_ATTACHMENT;
+    target_descriptor.mip_level_count   = num_mips;
+    let target_texture                  = device.create_texture(&target_descriptor);
+
+    // Copy the top-level of the source texture to the top level of the new texture
+    encoder.copy_texture_to_texture(wgpu::ImageCopyTexture {
+        texture:    &source_texture.texture,
+        mip_level:  0,
+        origin:     wgpu::Origin3d::default(),
+        aspect:     wgpu::TextureAspect::All
+    }, wgpu::ImageCopyTexture {
+        texture:    &target_texture,
+        mip_level:  0,
+        origin:     wgpu::Origin3d::default(),
+        aspect:     wgpu::TextureAspect::All
+    }, source_texture.descriptor.size);
+
+    // Create the new texture
+    let target_texture          = WgpuTexture {
         descriptor:         target_descriptor,
         texture:            Arc::new(target_texture),
         is_premultiplied:   source_texture.is_premultiplied,
+    };
+
+    // Reduce the original texture repeatedly to the taget texture
+    for mip_level in 1..num_mips {
+        reduce_filter(device, encoder, reduce_pipeline, source_texture, &target_texture, mip_level);
     }
+
+    // Return the resulting texture
+    target_texture
 }
