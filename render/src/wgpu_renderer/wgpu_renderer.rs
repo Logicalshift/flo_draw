@@ -1118,7 +1118,11 @@ impl WgpuRenderer {
                 // Set up the state
                 state.texture_settings  = TextureSettings { transform: texture_transform.0, alpha: alpha as _, ..Default::default() };
                 state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
-                state.sampler           = Some(self.samplers.default_sampler());
+                if repeat {
+                    state.sampler       = Some(self.samplers.default_sampler());
+                } else {
+                    state.sampler       = Some(self.samplers.non_repeating_sampler());    
+                }
 
                 if let Some(texture) = &texture {
                     state.pipeline_configuration.shader_module              = WgpuShader::Texture(variant, texture_type, TexturePosition::InputPosition, alpha_blend, post_processing);
@@ -1159,7 +1163,11 @@ impl WgpuRenderer {
                 // Set up the state
                 state.texture_settings  = TextureSettings { transform: texture_transform.0, alpha: alpha as _, ..Default::default() };
                 state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
-                state.sampler           = Some(self.samplers.gradient_sampler());
+                if repeat {
+                    state.sampler       = Some(self.samplers.gradient_sampler());
+                } else {
+                    state.sampler       = Some(self.samplers.non_repeating_gradient_sampler());    
+                }
 
                 if let Some(texture) = &texture {
                     state.pipeline_configuration.shader_module              = WgpuShader::LinearGradient(variant, TexturePosition::InputPosition, alpha_blend, post_processing);
