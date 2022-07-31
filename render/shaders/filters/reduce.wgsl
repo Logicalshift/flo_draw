@@ -22,10 +22,10 @@ fn filter_vertex_shader(
     let texture_size    = vec2<f32>(textureDimensions(input_texture));
     
     let top_left        = vec2<f32>(1.0, 1.0);
-    let bottom_right    = vec2<f32>(texture_size[0]-1.0, texture_size[1]-1.0);
+    let bottom_right    = vec2<f32>(texture_size[0] - 1.0, texture_size[1] - 1.0);
 
     // Convert the range of the position to a value betwen 0-1
-    let texture_pos     = vec2<f32>((pos[0]+1.0)/2.0, 1.0-((pos[1]+1.0)/2.0));
+    let texture_pos     = vec2<f32>((pos[0] + 1.0) / 2.0, 1.0 - ((pos[1] + 1.0) / 2.0));
 
     // Convert to a position on the texture. We want to half the size of the texture, so start at (1.0, 1.0) - between the first four pixels of the texture
     let texture_pos     = (bottom_right-top_left) * texture_pos + top_left;
