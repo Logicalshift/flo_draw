@@ -838,15 +838,17 @@ impl WgpuRenderer {
         if let Some(Some(src_texture)) = self.textures.get(texture_id) {
             let src_texture                 = src_texture.clone();
 
-            // We use the reduce filter to generate the mipmaps
-            let mut reduce_pipeline         = PipelineConfiguration::for_texture(&src_texture);
-            reduce_pipeline.blending_mode   = None;
-            reduce_pipeline.shader_module   = WgpuShader::Filter(FilterShader::Reduce);
-            let reduce_pipeline             = self.pipeline_for_configuration(reduce_pipeline);
+            if src_texture.descriptor.dimension == wgpu::TextureDimension::D2 {
+                // We use the reduce filter to generate the mipmaps
+                let mut reduce_pipeline         = PipelineConfiguration::for_texture(&src_texture);
+                reduce_pipeline.blending_mode   = None;
+                reduce_pipeline.shader_module   = WgpuShader::Filter(FilterShader::Reduce);
+                let reduce_pipeline             = self.pipeline_for_configuration(reduce_pipeline);
 
-            // Create the mipmaps from the texture
-            let mipmapped_texture       = create_mipmaps(&*self.device, &mut state.encoder, &*reduce_pipeline, &src_texture);
-            self.textures[texture_id]   = Some(mipmapped_texture);
+                // Create the mipmaps from the texture
+                let mipmapped_texture       = create_mipmaps(&*self.device, &mut state.encoder, &*reduce_pipeline, &src_texture);
+                self.textures[texture_id]   = Some(mipmapped_texture);
+            }
         }
     }
     
