@@ -116,7 +116,7 @@ pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandE
 ///
 pub (crate) fn create_mipmaps(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, reduce_pipeline: &Pipeline, source_texture: &WgpuTexture) -> WgpuTexture {
     let num_mips = ((source_texture.descriptor.size.width.min(source_texture.descriptor.size.height)) as f32).log2();
-    let num_mips = if num_mips < 2.0 { 1.0 } else { num_mips - 1.0 };
+    let num_mips = if num_mips < 3.0 { 1.0 } else { num_mips - 2.0 };
     let num_mips = num_mips as u32;
 
     // Create a target texture
