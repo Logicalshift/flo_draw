@@ -15,7 +15,7 @@ use std::sync::*;
 ///
 /// Runs tha reduce filter against a texture (designed to filter it to half its current size)
 ///
-pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, reduce_pipeline: &Pipeline, source_texture: &WgpuTexture, target_texture: &WgpuTexture, mip_level: u32) {
+pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, reduce_pipeline: &Pipeline, source_texture: &WgpuTexture, source_mip_level: u32, target_texture: &WgpuTexture, mip_level: u32) {
     // Set up buffers
     let vertices = vec![
         Vertex2D::with_pos(-1.0, -1.0),
@@ -44,7 +44,17 @@ pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandE
     });
 
     // Bind the resources
-    let source_view             = source_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
+    let source_view_descriptor  = wgpu::TextureViewDescriptor {
+        label:              Some("reduce_filter"),
+        format:             None,
+        dimension:          None,
+        aspect:             wgpu::TextureAspect::All,
+        base_mip_level:     source_mip_level,
+        mip_level_count:    NonZeroU32::new(1),
+        base_array_layer:   0,
+        array_layer_count:  None
+    };
+    let source_view             = source_texture.texture.create_view(&source_view_descriptor);
     let layout                  = &*reduce_pipeline.reduce_layout;
 
     let filter_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -137,7 +147,7 @@ pub (crate) fn create_mipmaps(device: &wgpu::Device, encoder: &mut wgpu::Command
 
     // Reduce the original texture repeatedly to the taget texture
     for mip_level in 1..num_mips {
-        reduce_filter(device, encoder, reduce_pipeline, source_texture, &target_texture, mip_level);
+        reduce_filter(device, encoder, reduce_pipeline, &target_texture, mip_level-1, &target_texture, mip_level);
     }
 
     // Return the resulting texture
