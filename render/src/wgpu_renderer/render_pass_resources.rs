@@ -40,9 +40,6 @@ pub struct RenderPassResources {
     /// The textures that this render pass will read from
     pub (crate) textures: Vec<Arc<wgpu::Texture>>,
 
-    /// The samplers that this render pass will read from
-    pub (crate) samplers: Vec<Arc<wgpu::Sampler>>,
-
     /// If set to a colour, sets what the render target will be cleared to at the start of the pass
     pub (crate) clear: Option<wgpu::Color>,
 
@@ -74,7 +71,6 @@ impl Default for RenderPassResources {
             buffers:                        vec![],
             bind_groups:                    vec![],
             textures:                       vec![],
-            samplers:                       vec![],
             matrices:                       vec![],
             texture_settings:               vec![],
             clear:                          None,
