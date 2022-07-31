@@ -74,9 +74,6 @@ pub enum TexturePosition {
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InputTextureType {
-    /// Using no texture
-    None,
-
     /// Using a texture sampler
     Sampler,
 
@@ -186,7 +183,6 @@ impl AlphaBlendStep {
 impl InputTextureType {
     fn shader_function(&self) -> &'static str {
         match self {
-            InputTextureType::None          => include_str!("../../shaders/texture/texture_none.wgsl"),
             InputTextureType::Sampler       => include_str!("../../shaders/texture/texture_sampler.wgsl"),
             InputTextureType::Multisampled  => include_str!("../../shaders/texture/texture_multisample.wgsl"),
         }

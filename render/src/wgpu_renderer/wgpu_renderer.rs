@@ -518,7 +518,6 @@ impl WgpuRenderer {
         state.texture_settings                                  = TextureSettings { transform: Matrix::identity().0, alpha: alpha as _, ..Default::default() };
 
         // Work out a viewport matrix
-        let target_flipped      = state.pipeline_configuration.flip_vertical;
         let target_size         = state.target_size;
         let target_width        = target_size.0 as f32;
         let target_height       = target_size.1 as f32;
@@ -951,7 +950,6 @@ impl WgpuRenderer {
                         };
                         let blur_pipeline           = self.pipeline_for_configuration(blur_pipeline);
 
-                        let kernel_size             = filter.kernel_size();
                         let weights                 = TextureFilter::weights_for_gaussian_blur(sigma, step, kernel_size);
                         let (weights, offsets)      = TextureFilter::weights_and_offsets_for_gaussian_blur(weights);
 
@@ -968,7 +966,6 @@ impl WgpuRenderer {
                         let mask_pipeline           = self.pipeline_for_configuration(mask_pipeline);
 
                         if let Some(Some(mask_texture)) = self.textures.get(mask_texture) {
-                            let queue       = &state.queue;
                             let encoder     = &mut state.encoder;
 
                             final_texture   = mask(&*self.device, encoder, &*mask_pipeline, &final_texture, mask_texture);
@@ -982,7 +979,6 @@ impl WgpuRenderer {
                         let displacement_pipeline           = self.pipeline_for_configuration(displacement_pipeline);
 
                         if let Some(Some(displacement_texture)) = self.textures.get(displacement_texture) {
-                            let queue       = &state.queue;
                             let encoder     = &mut state.encoder;
 
                             final_texture   = displacement_map(&*self.device, encoder, &*displacement_pipeline, &final_texture, displacement_texture, (x, y));

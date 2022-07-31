@@ -1,12 +1,10 @@
 use super::texture::*;
 use super::pipeline::*;
 use super::to_buffer::*;
-use super::wgpu_shader::*;
 
 use crate::buffer::*;
 
 use wgpu;
-use wgpu::util::{DeviceExt};
 
 use std::mem;
 use std::num::*;

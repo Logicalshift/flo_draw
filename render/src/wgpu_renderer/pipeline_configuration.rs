@@ -330,19 +330,6 @@ impl PipelineConfiguration {
     #[inline]
     pub fn texture_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
         static NOT_TEXTURE_SHADER: [wgpu::BindGroupLayoutEntry; 0]  = [];
-        static NO_TEXTURE: [wgpu::BindGroupLayoutEntry; 1]          = [
-            // Texture settings
-            wgpu::BindGroupLayoutEntry {
-                binding:            0,
-                visibility:         wgpu::ShaderStages::VERTEX_FRAGMENT,
-                count:              None,
-                ty:                 wgpu::BindingType::Buffer {
-                    ty:                 wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size:   wgpu::BufferSize::new(mem::size_of::<TextureSettings>() as _),
-                }
-            },
-        ];
         static WITH_SAMPLER: [wgpu::BindGroupLayoutEntry; 3]        = [
             // Texture settings
             wgpu::BindGroupLayoutEntry {
@@ -414,13 +401,6 @@ impl PipelineConfiguration {
                 wgpu::BindGroupLayoutDescriptor {
                     label:      Some("texture_bind_group_layout_multisampled"),
                     entries:    &WITH_MULTISAMPLE,
-                }
-            },
-
-            WgpuShader::Texture(_, InputTextureType::None, _, _, _) => {
-                wgpu::BindGroupLayoutDescriptor {
-                    label:      Some("texture_bind_group_layout_no_texture"),
-                    entries:    &NO_TEXTURE,
                 }
             },
 
