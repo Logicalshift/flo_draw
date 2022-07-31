@@ -121,7 +121,7 @@ pub (crate) fn create_mipmaps(device: &wgpu::Device, encoder: &mut wgpu::Command
 
     // Create a target texture
     let mut target_descriptor           = source_texture.descriptor.clone();
-    target_descriptor.usage             |= wgpu::TextureUsages::RENDER_ATTACHMENT;
+    target_descriptor.usage             |= wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_DST;
     target_descriptor.mip_level_count   = num_mips;
     let target_texture                  = device.create_texture(&target_descriptor);
 
