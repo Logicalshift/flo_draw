@@ -514,8 +514,7 @@ impl WgpuRenderer {
             state.run_render_pass();
 
             // Switch to the target texture
-            let texture_view        = target_texture.create_view(&wgpu::TextureViewDescriptor::default());
-            let surface_texture     = self.target_surface_texture.as_ref().unwrap();
+            let texture_view = target_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
             state.target_size                                   = (self.width, self.height);
             state.render_pass_resources.target_view             = Some(Arc::new(texture_view));
