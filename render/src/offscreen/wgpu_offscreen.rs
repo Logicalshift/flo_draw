@@ -116,8 +116,9 @@ impl OffscreenRenderTarget for WgpuOffscreenRenderTarget {
     ///
     /// Sends render actions to this offscreen render target
     ///
+    #[inline]
     fn render<ActionIter: IntoIterator<Item=RenderAction>>(&mut self, actions: ActionIter) {
-        unimplemented!("render")
+        self.renderer.render_to_surface(actions);
     }
 
     ///
