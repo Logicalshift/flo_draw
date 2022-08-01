@@ -509,6 +509,22 @@ impl WgpuRenderer {
             state.pipeline_configuration.flip_vertical          = false;
             state.pipeline_config_changed                       = true;
             state.pipeline_bindings_changed                     = true;
+        } else if let Some(target_texture) = &self.target_texture {
+            // Finish the current render pass
+            state.run_render_pass();
+
+            // Switch to the target texture
+            let texture_view        = target_texture.create_view(&wgpu::TextureViewDescriptor::default());
+            let surface_texture     = self.target_surface_texture.as_ref().unwrap();
+
+            state.target_size                                   = (self.width, self.height);
+            state.render_pass_resources.target_view             = Some(Arc::new(texture_view));
+            state.render_pass_resources.target_texture          = None;
+            state.pipeline_configuration.texture_format         = self.target_format.expect("prepare_to_render must be called before rendering");
+            state.pipeline_configuration.multisampling_count    = None;
+            state.pipeline_configuration.flip_vertical          = false;
+            state.pipeline_config_changed                       = true;
+            state.pipeline_bindings_changed                     = true;
         }
 
         self.update_pipeline_if_needed(state);
