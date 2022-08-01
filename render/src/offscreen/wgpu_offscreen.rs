@@ -166,7 +166,7 @@ impl OffscreenRenderTarget for WgpuOffscreenRenderTarget {
         let row_len = (self.size.0 * 4) as usize;
         for row in 0..self.size.1 {
             let buffer_row_start    = (row * bytes_per_row) as usize;
-            let row_start           = (row * self.size.0 * 4) as usize;
+            let row_start           = ((self.size.1 - 1 - row) * self.size.0 * 4) as usize;
 
             result[row_start..(row_start+row_len)].copy_from_slice(&mapped_buffer[buffer_row_start..(buffer_row_start+row_len)]);
         }
