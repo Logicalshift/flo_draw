@@ -26,7 +26,11 @@ struct WgpuOffscreenRenderContext {
 }
 
 struct WgpuOffscreenRenderTarget {
-
+    texture:    Arc<wgpu::Texture>,
+    device:     Arc<wgpu::Device>,
+    queue:      Arc<wgpu::Queue>,
+    renderer:   WgpuRenderer,
+    size:       (u32, u32),
 }
 
 ///
@@ -81,7 +85,30 @@ impl OffscreenRenderContext for WgpuOffscreenRenderContext {
     /// Creates a new render target for this context
     ///
     fn create_render_target(&mut self, width: usize, height: usize) -> Self::RenderTarget {
-        unimplemented!("create_render_target")
+        // Create a texture to render on
+        let target_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label:              Some("WgpuOffscreenRenderTarget"),
+            size:               wgpu::Extent3d { width: width as _, height: height as _, depth_or_array_layers: 1 },
+            mip_level_count:    1,
+            sample_count:       1,
+            dimension:          wgpu::TextureDimension::D2,
+            format:             wgpu::TextureFormat::Rgba8Unorm,
+            usage:              wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::RENDER_ATTACHMENT
+        });
+
+        let target_texture = Arc::new(target_texture);
+
+        // Create a renderer that will write to this texture
+        let renderer = WgpuRenderer::from_texture(Arc::clone(&self.device), Arc::clone(&self.queue), Arc::clone(&target_texture), Arc::clone(&self.adapter), wgpu::TextureFormat::Rgba8Unorm, (width as _, height as _));
+
+        // Build the render target
+        WgpuOffscreenRenderTarget {
+            device:     Arc::clone(&self.device),
+            queue:      Arc::clone(&self.queue),
+            size:       (width as _, height as _),
+            texture:    target_texture,
+            renderer:   renderer,
+        }
     }
 }
 
