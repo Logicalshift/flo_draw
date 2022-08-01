@@ -46,10 +46,13 @@ pub struct WgpuRenderer {
     queue: Arc<wgpu::Queue>,
 
     /// The surface that this renderer will target
-    target_surface: Arc<wgpu::Surface>,
+    target_surface: Option<Arc<wgpu::Surface>>,
 
     /// The surface texture that is being written to
     target_surface_texture: Option<wgpu::SurfaceTexture>,
+
+    /// If we're rendering to an off-screen texture, this is the texture that should be used
+    target_texture: Option<Arc<wgpu::Texture>>,
 
     /// The format of the target surface
     target_format: Option<wgpu::TextureFormat>,
@@ -100,9 +103,10 @@ impl WgpuRenderer {
             adapter:                target_adapter,
             device:                 device.clone(),
             queue:                  queue,
-            target_surface:         target_surface,
+            target_surface:         Some(target_surface),
             target_format:          None,
             target_surface_texture: None,
+            target_texture:         None,
             vertex_buffers:         vec![],
             index_buffers:          vec![],
             textures:               vec![],
@@ -130,24 +134,26 @@ impl WgpuRenderer {
         // Clear the existing surface view
         self.target_surface_texture = None;
 
-        // Fetch the format
-        let possible_formats    = self.target_surface.get_supported_formats(&*self.adapter);
-        let actual_format       = possible_formats.iter().filter(|format| !format.describe().srgb).next().copied();
-        let actual_format       = actual_format.unwrap_or(possible_formats[0]);
+        if let Some(target_surface) = &self.target_surface {
+            // Fetch the format
+            let possible_formats    = target_surface.get_supported_formats(&*self.adapter);
+            let actual_format       = possible_formats.iter().filter(|format| !format.describe().srgb).next().copied();
+            let actual_format       = actual_format.unwrap_or(possible_formats[0]);
 
-        let surface_config      = wgpu::SurfaceConfiguration {
-            usage:          wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format:         actual_format,
-            width:          width,
-            height:         height,
-            present_mode:   wgpu::PresentMode::AutoVsync,
-        };
+            let surface_config      = wgpu::SurfaceConfiguration {
+                usage:          wgpu::TextureUsages::RENDER_ATTACHMENT,
+                format:         actual_format,
+                width:          width,
+                height:         height,
+                present_mode:   wgpu::PresentMode::AutoVsync,
+            };
 
-        self.target_surface.configure(&*self.device, &surface_config);
+            target_surface.configure(&*self.device, &surface_config);
 
-        self.width          = width;
-        self.height         = height;
-        self.target_format  = Some(actual_format);
+            self.width          = width;
+            self.height         = height;
+            self.target_format  = Some(actual_format);
+        }
     }
 
     ///
@@ -455,27 +461,29 @@ impl WgpuRenderer {
     fn select_main_frame_buffer(&mut self, state: &mut RendererState) {
         self.active_render_target = None;
 
-        // Ensure that there's a main frame buffer to render to
-        if self.target_surface_texture.is_none() {
-            let surface_texture = self.target_surface.get_current_texture().unwrap();
-            self.target_surface_texture = Some(surface_texture);
+        if let Some(target_surface) = &self.target_surface {
+            // Ensure that there's a main frame buffer to render to
+            if self.target_surface_texture.is_none() {
+                let surface_texture = target_surface.get_current_texture().unwrap();
+                self.target_surface_texture = Some(surface_texture);
+            }
+
+            // Finish the current render pass
+            state.run_render_pass();
+
+            // Switch to the surface texture
+            let surface_texture     = self.target_surface_texture.as_ref().unwrap();
+            let texture_view        = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+            state.target_size                                   = (self.width, self.height);
+            state.render_pass_resources.target_view             = Some(Arc::new(texture_view));
+            state.render_pass_resources.target_texture          = None;
+            state.pipeline_configuration.texture_format         = self.target_format.expect("prepare_to_render must be called before rendering");
+            state.pipeline_configuration.multisampling_count    = None;
+            state.pipeline_configuration.flip_vertical          = false;
+            state.pipeline_config_changed                       = true;
+            state.pipeline_bindings_changed                     = true;
         }
-
-        // Finish the current render pass
-        state.run_render_pass();
-
-        // Switch to the surface texture
-        let surface_texture     = self.target_surface_texture.as_ref().unwrap();
-        let texture_view        = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-        state.target_size                                   = (self.width, self.height);
-        state.render_pass_resources.target_view             = Some(Arc::new(texture_view));
-        state.render_pass_resources.target_texture          = None;
-        state.pipeline_configuration.texture_format         = self.target_format.expect("prepare_to_render must be called before rendering");
-        state.pipeline_configuration.multisampling_count    = None;
-        state.pipeline_configuration.flip_vertical          = false;
-        state.pipeline_config_changed                       = true;
-        state.pipeline_bindings_changed                     = true;
 
         self.update_pipeline_if_needed(state);
     }
@@ -604,17 +612,19 @@ impl WgpuRenderer {
             surface_texture.present();
         }
 
-        // Fetch a new frame buffer
-        if self.target_surface_texture.is_none() {
-            let surface_texture = self.target_surface.get_current_texture().unwrap();
-            self.target_surface_texture = Some(surface_texture);
+        if let Some(target_surface) = &self.target_surface {
+            // Fetch a new frame buffer
+            if self.target_surface_texture.is_none() {
+                let surface_texture = target_surface.get_current_texture().unwrap();
+                self.target_surface_texture = Some(surface_texture);
 
-            if self.active_render_target.is_none() {
-                let surface_texture     = self.target_surface_texture.as_ref().unwrap();
-                let texture_view        = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
+                if self.active_render_target.is_none() {
+                    let surface_texture     = self.target_surface_texture.as_ref().unwrap();
+                    let texture_view        = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-                render_state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
-                render_state.render_pass_resources.target_texture  = None;
+                    render_state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
+                    render_state.render_pass_resources.target_texture  = None;
+                }
             }
         }
     }
