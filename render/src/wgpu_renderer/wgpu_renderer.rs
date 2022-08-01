@@ -98,7 +98,7 @@ impl WgpuRenderer {
     ///
     /// Creates a new WGPU renderer
     ///
-    pub fn new(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer {
+    pub fn from_surface(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer {
         WgpuRenderer {
             adapter:                target_adapter,
             device:                 device.clone(),
@@ -115,6 +115,32 @@ impl WgpuRenderer {
             shader_cache:           ShaderCache::empty(device.clone()),
             width:                  0,
             height:                 0,
+            active_render_target:   None,
+            active_shader:          Some(ShaderType::Simple { clip_texture: None }),
+            active_blend_mode:      Some(BlendMode::SourceOver),
+            samplers:               Samplers::new(&*device),
+        }
+    }
+    ///
+    /// Creates a new WGPU renderer
+    ///
+    pub fn from_texture(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_texture: Arc<wgpu::Texture>, target_adapter: Arc<wgpu::Adapter>, texture_format: wgpu::TextureFormat, texture_size: (u32, u32)) -> WgpuRenderer {
+        WgpuRenderer {
+            adapter:                target_adapter,
+            device:                 device.clone(),
+            queue:                  queue,
+            target_surface:         None,
+            target_format:          Some(texture_format),
+            target_surface_texture: None,
+            target_texture:         Some(target_texture),
+            vertex_buffers:         vec![],
+            index_buffers:          vec![],
+            textures:               vec![],
+            render_targets:         vec![],
+            pipeline_states:        HashMap::new(),
+            shader_cache:           ShaderCache::empty(device.clone()),
+            width:                  texture_size.0,
+            height:                 texture_size.1,
             active_render_target:   None,
             active_shader:          Some(ShaderType::Simple { clip_texture: None }),
             active_blend_mode:      Some(BlendMode::SourceOver),

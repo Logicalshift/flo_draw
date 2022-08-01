@@ -118,7 +118,7 @@ where
                         let queue           = Arc::new(queue);
                         let surface         = Arc::new(surface);
                         let adapter         = Arc::new(adapter);
-                        let renderer        = WgpuRenderer::new(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
+                        let renderer        = WgpuRenderer::from_surface(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
 
                         window.device       = Some(device);
                         window.instance     = Some(instance);

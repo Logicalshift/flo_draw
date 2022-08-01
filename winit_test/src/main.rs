@@ -93,7 +93,7 @@ fn main() {
         let queue           = Arc::new(queue);
         let surface         = Arc::new(surface);
         let adapter         = Arc::new(adapter);
-        let mut renderer    = WgpuRenderer::new(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
+        let mut renderer    = WgpuRenderer::from_surface(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
 
         // Surface configuration
         let size                = window.inner_size();
