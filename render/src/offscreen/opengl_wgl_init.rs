@@ -39,7 +39,7 @@ struct WglOffscreenRenderContext {
 ///
 /// This version is the WGL version for Windows
 ///
-pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+pub fn opengl_initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     // See also https://www.khronos.org/opengl/wiki/Creating_an_OpenGL_Context_(WGL)
     unsafe {
         // Set up the window class

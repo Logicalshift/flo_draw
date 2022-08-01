@@ -14,7 +14,7 @@ include     = [ "Cargo.toml", "src/**/*", "shaders/**/*", "bindings/**/*", "buil
 [features]
 opengl      = [ "gl", "libc", "flo_render_gl_offscreen" ]
 osx-metal   = [ "metal", "cocoa", "flo_canvas" ]
-render-wgpu = [ "wgpu", "flo_canvas" ]
+render-wgpu = [ "wgpu", "flo_canvas", "lazy_static", "desync", "futures" ]
 
 [build-dependencies]
 bindgen = "0.59"
@@ -27,6 +27,9 @@ cocoa                   = { version = "0.24", optional = true }
 libc                    = { version = "0.2", optional = true }
 flo_canvas              = { version = "0.4", optional = true }
 flo_render_gl_offscreen = { version = "0.4", optional = true }
+desync                  = { version = "0.9", optional = true }
+lazy_static             = { version = "1.2", optional = true }
+futures                 = { version = "0.3", optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation         = "0.9"

@@ -57,7 +57,7 @@ fn to_render_error(error: cgl::CGLError) -> Result<(), RenderInitError> {
 ///
 /// This version is the CGL version for Mac OS X
 ///
-pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+pub fn opengl_initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     unsafe {
         // Try to select a pixel format
         let pixel_attributes        = vec![

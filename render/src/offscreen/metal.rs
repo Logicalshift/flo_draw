@@ -31,7 +31,7 @@ struct MetalOffscreenRenderTarget {
 ///
 /// This version is the Metal version for Mac OS X
 ///
-pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+pub fn metal_initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     // Get the default metal device for the current system
     let device = metal::Device::system_default();
     let device = if let Some(device) = device { device } else { Err(RenderInitError::CannotOpenGraphicsDevice)? };

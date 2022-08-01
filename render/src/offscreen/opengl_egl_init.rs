@@ -33,7 +33,7 @@ struct EglOffscreenRenderContext {
 ///
 /// This version is the EGL version for Linux
 ///
-pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+pub fn opengl_initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     unsafe {
         // Open the card0 file descriptor
         let card0_file = CString::new("/dev/dri/card0").unwrap();
