@@ -9,6 +9,7 @@ use ::desync::*;
 use wgpu;
 use futures::prelude::*;
 
+use std::num::*;
 use std::sync::*;
 
 lazy_static! {
@@ -125,6 +126,51 @@ impl OffscreenRenderTarget for WgpuOffscreenRenderTarget {
     /// Consumes this render target and returns the realized pixels as a byte array
     ///
     fn realize(self) -> Vec<u8> {
-        unimplemented!("realize")
+        // Create a buffer to store the result
+        let bytes_per_row   = (((self.size.0 * 4 - 1) / 256) + 1) * 256;
+        let buffer          = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label:              Some("WgpuOffscreenRenderTarget::realize"),
+            size:               (bytes_per_row as u64) * (self.size.1 as u64),
+            usage:              wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+
+        // Copy the texture to the buffer
+        let mut encoder     = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("WgpuOffscreenRenderTarget::realize") });
+        let buffer_copy     = wgpu::ImageCopyBuffer { buffer: &buffer, layout: wgpu::ImageDataLayout { offset: 0, bytes_per_row: NonZeroU32::new(bytes_per_row), rows_per_image: None } };
+        encoder.copy_texture_to_buffer(self.texture.as_image_copy(), buffer_copy, wgpu::Extent3d { width: self.size.0, height: self.size.1, depth_or_array_layers: 1 });
+        self.queue.submit(Some(encoder.finish()));
+
+        // Take the whole buffer as a slice
+        let buffer_slice    = buffer.slice(..);
+
+        // Create the final target
+        let ready           = Arc::new(Mutex::new(false));
+
+        // Map the buffer to memory, with a callback that writes the result
+        let ready_clone     = Arc::clone(&ready);
+        buffer_slice.map_async(wgpu::MapMode::Read, move |_err| { *ready_clone.lock().unwrap() = true; });
+
+        // Poll until the buffer is ready
+        while *ready.lock().unwrap() == false {
+            self.device.poll(wgpu::Maintain::Wait);
+        }
+
+        // Prepare to write the buffer
+        let mut result      = vec![0; (self.size.0 * self.size.1 * 4) as usize];
+
+        // Poll for the result
+        let mapped_buffer   = buffer_slice.get_mapped_range();
+
+        // Copy to a Vec<u8>
+        let row_len = (self.size.0 * 4) as usize;
+        for row in 0..self.size.1 {
+            let buffer_row_start    = (row * bytes_per_row) as usize;
+            let row_start           = (row * self.size.0 * 4) as usize;
+
+            result[row_start..(row_start+row_len)].copy_from_slice(&mapped_buffer[buffer_row_start..(buffer_row_start+row_len)]);
+        }
+
+        result
     }
 }
