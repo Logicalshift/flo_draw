@@ -75,6 +75,7 @@ pub async fn wgpu_initialize_offscreen_rendering() -> Result<impl OffscreenRende
 ///
 /// This version is the Metal version for Mac OS X
 ///
+#[cfg(not(any(feature="opengl", feature="osx-metal")))]
 pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     WGPU_BACKGROUND.future_desync(|_| async { wgpu_initialize_offscreen_rendering().await }.boxed()).sync().unwrap()
 }
