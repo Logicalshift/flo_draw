@@ -7,7 +7,6 @@ use crate::wgpu_renderer::*;
 use ::desync::*;
 
 use wgpu;
-use futures::prelude::*;
 
 use std::num::*;
 use std::sync::*;
@@ -20,7 +19,6 @@ lazy_static! {
 /// A WGPU offscreen render context
 ///
 struct WgpuOffscreenRenderContext {
-    instance:   Arc<wgpu::Instance>,
     device:     Arc<wgpu::Device>,
     adapter:    Arc<wgpu::Adapter>,
     queue:      Arc<wgpu::Queue>,
@@ -60,7 +58,6 @@ pub async fn wgpu_initialize_offscreen_rendering() -> Result<impl OffscreenRende
 
     // Result is a WGPU offscreen render context
     Ok(WgpuOffscreenRenderContext {
-        instance:   Arc::new(instance),
         device:     Arc::new(device),
         adapter:    Arc::new(adapter),
         queue:      Arc::new(queue),
