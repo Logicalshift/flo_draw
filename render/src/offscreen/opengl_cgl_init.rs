@@ -57,7 +57,7 @@ fn to_render_error(error: cgl::CGLError) -> Result<(), RenderInitError> {
 ///
 /// This version is the CGL version for Mac OS X
 ///
-pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+pub fn opengl_initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     unsafe {
         // Try to select a pixel format
         let pixel_attributes        = vec![
@@ -105,6 +105,19 @@ pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, R
             context:        context
         })
     }
+}
+
+///
+/// Performs on-startup initialisation steps for offscreen rendering
+///
+/// Only required if not using a toolkit renderer (eg, in an HTTP renderer or command-line tool). Will likely replace
+/// the bindings for any GUI toolkit, so this is not appropriate for desktop-type apps.
+///
+/// This version is the Metal version for Mac OS X
+///
+#[cfg(not(feature="osx-metal"))]
+pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+    opengl_initialize_offscreen_rendering()
 }
 
 impl OffscreenRenderContext for CglOffscreenRenderContext {

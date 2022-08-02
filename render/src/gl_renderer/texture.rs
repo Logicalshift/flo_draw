@@ -473,7 +473,7 @@ impl Texture {
                 });
 
             // Create a render target for the new texture
-            let original_render_target  = RenderTarget::reference_to_current();
+            let original_render_target  = RenderTarget::reference_to_current(0, 0);
             let filter_render_target    = RenderTarget::from_texture(&new_texture)?;
 
             let mut original_viewport: [gl::types::GLint; 4] = [0, 0, 0, 0];

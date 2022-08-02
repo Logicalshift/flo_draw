@@ -100,7 +100,7 @@ fragment float4 texture_multisample_fragment_invert_color_alpha(
 
     float4 color                = float4(color_totals);
     color /= float(num_samples);
-    color[3]                    *= *texture_alpha;
+    color[3]                    *= *texture_alpha;                // TODO: multisample textures are usually pre-multiplied
 
     return invert_color_alpha(color);
 }

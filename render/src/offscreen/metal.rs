@@ -31,7 +31,7 @@ struct MetalOffscreenRenderTarget {
 ///
 /// This version is the Metal version for Mac OS X
 ///
-pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+pub fn metal_initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     // Get the default metal device for the current system
     let device = metal::Device::system_default();
     let device = if let Some(device) = device { device } else { Err(RenderInitError::CannotOpenGraphicsDevice)? };
@@ -40,6 +40,18 @@ pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, R
     Ok(MetalOffscreenRenderContext {
         device: device
     })
+}
+
+///
+/// Performs on-startup initialisation steps for offscreen rendering
+///
+/// Only required if not using a toolkit renderer (eg, in an HTTP renderer or command-line tool). Will likely replace
+/// the bindings for any GUI toolkit, so this is not appropriate for desktop-type apps.
+///
+/// This version is the Metal version for Mac OS X
+///
+pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+    metal_initialize_offscreen_rendering()
 }
 
 impl OffscreenRenderContext for MetalOffscreenRenderContext {

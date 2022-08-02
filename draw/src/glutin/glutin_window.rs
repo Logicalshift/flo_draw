@@ -1,5 +1,5 @@
-use super::events::*;
-use super::window_properties::*;
+use crate::events::*;
+use crate::window_properties::*;
 
 use flo_stream::*;
 use flo_render::*;

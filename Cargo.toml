@@ -1,11 +1,13 @@
 [workspace]
-members = [
+resolver    = "2"
+members     = [
     "canvas", 
     "canvas_events",
     "render", 
     "render_canvas",
     "render_gl_offscreen",
-    "draw"
+    "draw",
+    "winit_test"
 ]
 
 [patch.crates-io]

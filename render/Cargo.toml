@@ -7,23 +7,29 @@ edition     = "2018"
 repository  = "https://github.com/Logicalshift/flowbetween"
 description = "Streaming API for rendering graphics on hardware"
 categories  = [ "graphics", "rendering", "rendering::graphics-api" ]
+resolver    = "2"
 
 include     = [ "Cargo.toml", "src/**/*", "shaders/**/*", "bindings/**/*", "build.rs" ]
 
 [features]
 opengl      = [ "gl", "libc", "flo_render_gl_offscreen" ]
 osx-metal   = [ "metal", "cocoa", "flo_canvas" ]
+render-wgpu = [ "wgpu", "flo_canvas", "lazy_static", "desync", "futures" ]
 
 [build-dependencies]
 bindgen = "0.59"
 
 [dependencies]
 gl                      = { version = "0.14", optional = true }
+wgpu                    = { version = "0.13", optional = true }
 metal                   = { version = "0.23", optional = true }
 cocoa                   = { version = "0.24", optional = true }
 libc                    = { version = "0.2", optional = true }
 flo_canvas              = { version = "0.4", optional = true }
 flo_render_gl_offscreen = { version = "0.4", optional = true }
+desync                  = { version = "0.9", optional = true }
+lazy_static             = { version = "1.2", optional = true }
+futures                 = { version = "0.3", optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation         = "0.9"

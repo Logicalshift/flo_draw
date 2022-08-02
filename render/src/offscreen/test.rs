@@ -25,6 +25,8 @@ mod test {
         let image           = renderer.realize();
 
         assert!(image.len() == 100*100*4);
+        println!("{} {} {} {}", image[0], image[1], image[2], image[3]);
+        println!("{} {} {} {}", image[16], image[17], image[18], image[19]);
 
         assert!(image[0] == 128);
         assert!(image[1] == 128);
@@ -68,6 +70,8 @@ mod test {
         let image           = renderer.realize();
 
         assert!(image.len() == 100*100*4);
+        println!("{} {} {} {}", image[0], image[1], image[2], image[3]);
+        println!("{} {} {} {}", image[16], image[17], image[18], image[19]);
 
         assert!(image[0] == 128);
         assert!(image[1] == 129);

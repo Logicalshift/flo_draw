@@ -33,7 +33,7 @@ struct EglOffscreenRenderContext {
 ///
 /// This version is the EGL version for Linux
 ///
-pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+pub fn opengl_initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     unsafe {
         // Open the card0 file descriptor
         let card0_file = CString::new("/dev/dri/card0").unwrap();
@@ -101,6 +101,19 @@ pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, R
             context: context
         })
     }
+}
+
+///
+/// Performs on-startup initialisation steps for offscreen rendering
+///
+/// Only required if not using a toolkit renderer (eg, in an HTTP renderer or command-line tool). Will likely replace
+/// the bindings for any GUI toolkit, so this is not appropriate for desktop-type apps.
+///
+/// This version is the Metal version for Mac OS X
+///
+#[cfg(not(feature="osx-metal"))]
+pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+    opengl_initialize_offscreen_rendering()
 }
 
 impl OffscreenRenderContext for EglOffscreenRenderContext {
