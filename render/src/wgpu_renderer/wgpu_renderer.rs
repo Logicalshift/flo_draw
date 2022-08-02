@@ -1076,6 +1076,9 @@ impl WgpuRenderer {
         let color   = wgpu::Color { r, g, b, a };
         
         state.render_pass_resources.clear = Some(color);
+
+        // Having an action in the render pass will ensure that the clear action is rendered even if there are no other actions to do
+        state.render_pass.push(Box::new(|_, _| { }));
     }
     
     ///
