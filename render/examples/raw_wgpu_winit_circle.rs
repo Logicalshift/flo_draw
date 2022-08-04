@@ -18,24 +18,6 @@ fn main() {
 #[cfg(feature="render-wgpu")]
 fn main() {
     // The render instructions that we'll send to the window
-    let triangle = {
-        use self::RenderAction::*;
-
-        vec![
-            RenderToFrameBuffer,
-
-            Clear(Rgba8([255, 255, 255, 255])),
-            CreateVertex2DBuffer(VertexBufferId(0), vec![
-                Vertex2D::with_pos(-0.5, -0.5).with_color(1.0, 0.0, 0.0, 1.0),
-                Vertex2D::with_pos(-0.0, 0.5).with_color(1.0, 0.0, 0.0, 1.0),
-                Vertex2D::with_pos(0.5, -0.5).with_color(1.0, 0.0, 0.0, 1.0),
-            ]),
-            DrawTriangles(VertexBufferId(0), 0..3),
-
-            ShowFrameBuffer,
-        ]
-    };
-
     let circle = {
         use self::RenderAction::*;
 
