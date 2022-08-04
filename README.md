@@ -144,6 +144,9 @@ See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` su
 * [`cargo run --example show_text_tessellation`](./draw/examples/show_text_tessellation.rs) - tessellating text rendered from a font
 * [`cargo run --example guide_illustrations`](./render_canvas/examples/guide_illustrations.rs) - regenerate the png files used in the [guide](./draw/GUIDE.md)
 
+ * [`cargo run --example raw_wgpu_winit`](./render_canvas/examples/raw_wgpu_winit.rs) - canvas rendering directly using winit without the supporting functions in `flo_draw`
+ * [`cargo run --example raw_wgpu_winit_triangle`](./render/examples/raw_wgpu_winit_triangle.rs) - direct rendering using winit without the supporting functions in `flo_render_canvas`
+
 ![Wibble](./images/wibble.png) ![Mandelbrot](./images/mandelbrot.png)
 ![Gradient](./images/gradient.png) ![Text layout](./images/textlayout.png)
 
