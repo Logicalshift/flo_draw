@@ -1,11 +1,10 @@
 ///
-/// Demonstrates initialising and using the flo_render crate directly via winit.
+/// Demonstrates initialising and using the flo_render and flo_render_canvas crates directly via winit.
 ///
-/// This demonstrates the instructions required for rendering a basic triangle, created manually and similar to the
-/// 'hello triangle' demonstrations that are common in other graphics libraries.
-///
-/// The flo_render_canvas and flo_draw crates both provide higher-level access to the API, but flo_render does provide a
-/// more concise API for its supported subset of operations than a raw WGPU implementation.
+/// This demonstrates rendering the mascot example, without the support of the `flo_draw` crate. `flo_draw` provides
+/// support for event handling and allows for things like animation using only a single thread, saving a considerable
+/// amount of boilerplate code. Manual initialisation like this is useful when integrating with other UI libraries,
+/// however.
 ///
 fn main() {
     use flo_canvas::*;
