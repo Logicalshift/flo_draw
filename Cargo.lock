@@ -777,6 +777,7 @@ dependencies = [
  "lyon",
  "num_cpus",
  "png 0.17.5",
+ "winit",
 ]
 
 [[package]]
