@@ -7,7 +7,6 @@ members     = [
     "render_canvas",
     "render_gl_offscreen",
     "draw",
-    "winit_test"
 ]
 
 [patch.crates-io]

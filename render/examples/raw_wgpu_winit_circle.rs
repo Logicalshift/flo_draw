@@ -10,6 +10,12 @@ use futures::executor;
 
 use std::sync::*;
 
+#[cfg(not(feature="render-wgpu"))]
+fn main() {
+    panic!("This example requires the render-wgpu feature to be set");
+}
+
+#[cfg(feature="render-wgpu")]
 fn main() {
     // The render instructions that we'll send to the window
     let triangle = {

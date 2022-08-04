@@ -761,6 +761,7 @@ dependencies = [
  "libc 0.2.126",
  "metal 0.23.1",
  "wgpu",
+ "winit",
 ]
 
 [[package]]
@@ -819,16 +820,6 @@ dependencies = [
  "futures",
  "lazy_static",
  "smallvec",
-]
-
-[[package]]
-name = "flo_winit_test"
-version = "0.1.0"
-dependencies = [
- "flo_render",
- "futures",
- "wgpu",
- "winit",
 ]
 
 [[package]]
