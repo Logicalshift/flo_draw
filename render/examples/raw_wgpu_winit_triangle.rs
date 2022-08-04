@@ -1,25 +1,32 @@
-use flo_render::*;
-
-use winit::window;
-use winit::event::{Event, WindowEvent};
-use winit::event_loop::{ControlFlow, EventLoop};
-
-use wgpu;
-
-use futures::executor;
-
-use std::sync::*;
 
 #[cfg(not(feature="render-wgpu"))]
 fn main() {
     panic!("This example requires the render-wgpu feature to be set");
 }
 
+///
+/// Demonstrates initialising and using the flo_render crate directly via winit.
+///
+/// This demonstrates the instructions required for rendering a basic triangle, created manually and similar to the
+/// 'hello triangle' demonstrations that are common in other graphics libraries.
+///
+/// The flo_render_canvas and flo_draw crates both provide higher-level access to the API, but flo_render does provide a
+/// more concise API for its supported subset of operations than a raw WGPU implementation.
+///
 #[cfg(feature="render-wgpu")]
 fn main() {
+    use flo_render::*;
+
+    use winit::window;
+    use winit::event::{Event, WindowEvent};
+    use winit::event_loop::{ControlFlow, EventLoop};
+
+    use futures::executor;
+    use std::sync::*;
+
     // The render instructions that we'll send to the window
     let triangle = {
-        use self::RenderAction::*;
+        use flo_render::RenderAction::*;
 
         vec![
             RenderToFrameBuffer,
