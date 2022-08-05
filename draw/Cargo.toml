@@ -29,10 +29,10 @@ desync              = "0.9"
 lazy_static         = "1.2"
 futures             = "0.3"
 
-glutin              = { optional = true, version = "0.28.0" }
+glutin              = { optional = true, version = "0.29.0" }
 gl                  = { optional = true, version = "0.14" }
 
-winit               = { optional = true, version = "0.26" }
+winit               = { optional = true, version = "0.27" }
 wgpu                = { optional = true, version = "0.13" }
 
 [dev-dependencies]

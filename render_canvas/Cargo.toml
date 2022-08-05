@@ -16,10 +16,10 @@ flo_canvas  = "0.4"
 flo_stream  = "0.7"
 futures     = "0.3"
 desync      = "0.9"
-lyon        = "0.17"
+lyon        = "1.0"
 num_cpus    = "1.13"
 
 [dev-dependencies]
 png         = "0.17"
 lazy_static = "1.2"
-winit       = "0.26"
+winit       = "0.27"
