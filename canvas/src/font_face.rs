@@ -7,6 +7,7 @@
 #[cfg(feature = "outline-fonts")] use ttf_parser;
 
 #[cfg(feature = "outline-fonts")] use std::borrow::{Cow};
+use ouroboros::self_referencing;
 
 use serde::de::{Deserialize, Deserializer, Visitor, SeqAccess, MapAccess};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
@@ -15,8 +16,6 @@ use serde::de;
 use std::fmt;
 use std::pin::*;
 use std::sync::*;
-
-use ouroboros::self_referencing;
 
 /// allsorts table provider implementation based on a unsafe (based on lifetime) pointer to a TTF parser face
 #[cfg(feature = "outline-fonts")]
@@ -37,90 +36,222 @@ impl<'b> FontTableProvider for CanvasTableProvider<'b> {
     }
 }
 
-///
-/// Representation of a font face
-///
-/// This class acquires more features if the `outline-fonts` feature is turned on for
-/// this crate.
-///
-#[self_referencing]
-pub struct CanvasFontFace {
-    /// Data for this font face
-    data: Arc<Pin<Box<[u8]>>>,
+// Ouroborus doesn't work with #cfg(feature) so we have to duplicate the entire implementation in two modules
+#[cfg(not(feature = "outline-fonts"))]
+mod canvas_font_face {
+    use serde::de::{Deserialize, Deserializer, Visitor, SeqAccess, MapAccess};
+    use serde::ser::{Serialize, SerializeStruct, Serializer};
+    use serde::de;
 
-    /// The font face for the data
-    #[cfg(feature = "outline-fonts")] #[borrows(data)] #[covariant] ttf_font: ttf_parser::Face<'this>,
+    use std::fmt;
+    use std::pin::*;
+    use std::sync::*;
+
+    ///
+    /// Representation of a font face
+    ///
+    /// This class acquires more features if the `outline-fonts` feature is turned on for
+    /// this crate.
+    ///
+    pub struct CanvasFontFace {
+        /// Data for this font face
+        data: Arc<Pin<Box<[u8]>>>,
+    }
+
+    impl CanvasFontFace {
+        #[cfg(not(feature = "outline-fonts"))] 
+        #[inline]
+        fn borrow_data(&self) -> &Arc<Pin<Box<[u8]>>> {
+            &self.data
+        }
+
+        ///
+        /// Creates a new font by loading the fonts from a slice
+        ///
+        pub fn from_slice(bytes: &[u8]) -> Arc<CanvasFontFace> {
+            Self::from_bytes(Vec::from(bytes))
+        }
+
+        ///
+        /// Creates a new font by loading the fonts from a byte array
+        ///
+        pub fn from_bytes(bytes: Vec<u8>) -> Arc<CanvasFontFace> {
+            // Pin the data for this font face
+            let data = bytes.into_boxed_slice();
+            Arc::new(Self::from_pinned(Arc::new(data.into()), 0))
+        }
+
+        pub (crate) fn from_pinned(data: Arc<Pin<Box<[u8]>>>, _font_index: u32) -> CanvasFontFace {
+            // Generate the font face
+            CanvasFontFace {
+                data:       data,
+            }
+        }
+
+        ///
+        /// Retrieves the data bytes for this font
+        ///
+        pub fn font_data<'a>(&'a self) -> &'a [u8] {
+            &***self.borrow_data()
+        }
+    }
 }
 
-impl CanvasFontFace {
+#[cfg(feature = "outline-fonts")] 
+mod canvas_font_face {
+    use super::*;
+
+    use crate::font::*;
+    use crate::font_line_layout::*;
+
+    use allsorts;
+    use allsorts::error::{ParseError};
+    use allsorts::tables::{FontTableProvider};
+    use ttf_parser;
+
+    use std::borrow::{Cow};
+    use ouroboros::self_referencing;
+
+    use serde::de::{Deserialize, Deserializer, Visitor, SeqAccess, MapAccess};
+    use serde::ser::{Serialize, SerializeStruct, Serializer};
+    use serde::de;
+
+    use std::fmt;
+    use std::pin::*;
+    use std::sync::*;
+
     ///
-    /// Creates a new font by loading the fonts from a slice
+    /// Representation of a font face
     ///
-    pub fn from_slice(bytes: &[u8]) -> Arc<CanvasFontFace> {
-        Self::from_bytes(Vec::from(bytes))
+    /// This class acquires more features if the `outline-fonts` feature is turned on for
+    /// this crate.
+    ///
+    #[self_referencing]
+    pub struct CanvasFontFace {
+        /// Data for this font face
+        data: Arc<Pin<Box<[u8]>>>,
+
+        /// The font face for the data
+        #[borrows(data)] #[covariant] ttf_font: ttf_parser::Face<'this>,
+    }
+
+    impl CanvasFontFace {
+        ///
+        /// Creates a new font by loading the fonts from a slice
+        ///
+        pub fn from_slice(bytes: &[u8]) -> Arc<CanvasFontFace> {
+            Self::from_bytes(Vec::from(bytes))
+        }
+
+        ///
+        /// Creates a new font by loading the fonts from a byte array
+        ///
+        pub fn from_bytes(bytes: Vec<u8>) -> Arc<CanvasFontFace> {
+            // Pin the data for this font face
+            let data = bytes.into_boxed_slice();
+            Arc::new(Self::from_pinned(Arc::new(data.into()), 0))
+        }
+
+        #[cfg(feature = "outline-fonts")]
+        pub (crate) fn from_pinned(data: Arc<Pin<Box<[u8]>>>, font_index: u32) -> CanvasFontFace {
+            // Load into the TTF parser with scary self-referential data
+            let font_face = CanvasFontFaceBuilder {
+                data:               data,
+                ttf_font_builder:   |data: &Arc<Pin<Box<[u8]>>>| { ttf_parser::Face::from_slice(&**data, font_index as _).unwrap() },
+            }.build();
+
+            // Generate the font face
+            font_face
+        }
+
+        ///
+        /// Retrieves the data bytes for this font
+        ///
+        pub fn font_data<'a>(&'a self) -> &'a [u8] {
+            &***self.borrow_data()
+        }
     }
 
     ///
-    /// Creates a new font by loading the fonts from a byte array
+    /// Measures some text in this font
     ///
-    pub fn from_bytes(bytes: Vec<u8>) -> Arc<CanvasFontFace> {
-        // Pin the data for this font face
-        let data = bytes.into_boxed_slice();
-        Arc::new(Self::from_pinned(Arc::new(data.into()), 0))
-    }
+    #[cfg(feature = "outline-fonts")]
+    pub fn measure_text(font: &Arc<CanvasFontFace>, text: &str, em_size: f32) -> TextLayoutMetrics {
+        // Create a layout for the text
+        let mut layout = CanvasFontLineLayout::new(font, em_size);
 
-    #[cfg(not(feature = "outline-fonts"))]
-    fn from_pinned(data: Arc<Pin<Box<[u8]>>>, _font_index: u32) -> CanvasFontFace {
-        // Generate the font face
-        CanvasFontFaceBuilder {
-            data:       data,
-        }.build()
+        // Layout the text and return the measurements
+        layout.add_text(text);
+        layout.measure()
     }
 
     #[cfg(feature = "outline-fonts")]
-    fn from_pinned(data: Arc<Pin<Box<[u8]>>>, font_index: u32) -> CanvasFontFace {
-        // Load into the TTF parser with scary self-referential data
-        let font_face = CanvasFontFaceBuilder {
-            data:               data,
-            ttf_font_builder:   |data: &Arc<Pin<Box<[u8]>>>| { ttf_parser::Face::from_slice(&**data, font_index as _).unwrap() },
-        }.build();
+    impl CanvasFontFace {
+        ///
+        /// Retrieves the TTF font face for this font
+        ///
+        pub fn ttf_font<'a>(&'a self) -> &'a ttf_parser::Face<'a> {
+            self.borrow_ttf_font()
+        }
 
-        // Generate the font face
-        font_face
+        ///
+        /// Retrieves the base font metrics for this font (None if they can't be determined for this font)
+        ///
+        pub fn base_font_metrics(&self) -> Option<FontMetrics> {
+            let font = self.ttf_font();
+
+            // Result is 'None' if the font has no 'units_per_em' value, as that means we don't know how to scale this font
+            Some(FontMetrics {
+                em_size:            font.units_per_em() as _,
+                ascender:           font.ascender() as _,
+                descender:          font.descender() as _,
+                height:             font.height() as _,
+                line_gap:           font.line_gap() as _,
+                capital_height:     font.capital_height().map(|h| h as _),
+                underline_position: font.underline_metrics().map(|pos| FontLinePosition { offset: pos.position as _, thickness: pos.thickness as _}),
+                strikeout_position: font.strikeout_metrics().map(|pos| FontLinePosition { offset: pos.position as _, thickness: pos.thickness as _}),
+            })
+        }
+
+        ///
+        /// Retrieves the font metrics for this font for a given em-size
+        ///
+        pub fn font_metrics(&self, em_size: f32) -> Option<FontMetrics> {
+            Some(self.base_font_metrics()?.with_size(em_size))
+        }
     }
 
     ///
-    /// Retrieves the data bytes for this font
+    /// See `allsorts` for what these functions do
     ///
-    pub fn font_data<'a>(&'a self) -> &'a [u8] {
-        &***self.borrow_data()
+    #[cfg(feature = "outline-fonts")]
+    impl CanvasFontFace {
+        ///
+        /// Creates a TTF font face for this font
+        ///
+        pub fn allsorts_font<'a>(&'a self) -> allsorts::Font<CanvasTableProvider<'a>> {
+            let face            = self.ttf_font();
+            let table_provider  = CanvasTableProvider(face);
+
+            allsorts::Font::new(table_provider)
+                .expect("unable to load font tables")
+                .expect("unable to find suitable cmap sub-table")
+        }
     }
 }
 
-///
-/// Measures some text in this font
-///
-#[cfg(feature = "outline-fonts")]
-pub fn measure_text(font: &Arc<CanvasFontFace>, text: &str, em_size: f32) -> TextLayoutMetrics {
-    // Create a layout for the text
-    let mut layout = CanvasFontLineLayout::new(font, em_size);
-
-    // Layout the text and return the measurements
-    layout.add_text(text);
-    layout.measure()
-}
-
+pub use self::canvas_font_face::*;
 
 impl PartialEq for CanvasFontFace {
     fn eq(&self, other: &CanvasFontFace) -> bool {
-        self.borrow_data().eq(other.borrow_data())
+        self.font_data().eq(other.font_data())
     }
 }
 
 impl fmt::Debug for CanvasFontFace {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CanvasFontFace")
-         .field("data", self.borrow_data())
+         .field("data", &self.font_data())
          .finish()
     }
 }
@@ -130,7 +261,7 @@ impl Serialize for CanvasFontFace {
     where
     S: Serializer {
         let mut s = serializer.serialize_struct("CanvasFontFace", 1)?;
-        s.serialize_field("data", &***self.borrow_data())?;
+        s.serialize_field("data", self.font_data())?;
         s.end()
     }
 }
@@ -206,60 +337,6 @@ impl<'de> Deserialize<'de> for CanvasFontFace {
 
         // Deserialize the structure
         deserializer.deserialize_struct("CanvasFontFace", FIELDS, CanvasFontFaceVisitor)
-    }
-}
-
-#[cfg(feature = "outline-fonts")]
-impl CanvasFontFace {
-    ///
-    /// Retrieves the TTF font face for this font
-    ///
-    pub fn ttf_font<'a>(&'a self) -> &'a ttf_parser::Face<'a> {
-        self.borrow_ttf_font()
-    }
-
-    ///
-    /// Retrieves the base font metrics for this font (None if they can't be determined for this font)
-    ///
-    pub fn base_font_metrics(&self) -> Option<FontMetrics> {
-        let font = self.ttf_font();
-
-        // Result is 'None' if the font has no 'units_per_em' value, as that means we don't know how to scale this font
-        Some(FontMetrics {
-            em_size:            font.units_per_em() as _,
-            ascender:           font.ascender() as _,
-            descender:          font.descender() as _,
-            height:             font.height() as _,
-            line_gap:           font.line_gap() as _,
-            capital_height:     font.capital_height().map(|h| h as _),
-            underline_position: font.underline_metrics().map(|pos| FontLinePosition { offset: pos.position as _, thickness: pos.thickness as _}),
-            strikeout_position: font.strikeout_metrics().map(|pos| FontLinePosition { offset: pos.position as _, thickness: pos.thickness as _}),
-        })
-    }
-
-    ///
-    /// Retrieves the font metrics for this font for a given em-size
-    ///
-    pub fn font_metrics(&self, em_size: f32) -> Option<FontMetrics> {
-        Some(self.base_font_metrics()?.with_size(em_size))
-    }
-}
-
-///
-/// See `allsorts` for what these functions do
-///
-#[cfg(feature = "outline-fonts")]
-impl CanvasFontFace {
-    ///
-    /// Creates a TTF font face for this font
-    ///
-    pub fn allsorts_font<'a>(&'a self) -> allsorts::Font<CanvasTableProvider<'a>> {
-        let face            = self.ttf_font();
-        let table_provider  = CanvasTableProvider(face);
-
-        allsorts::Font::new(table_provider)
-            .expect("unable to load font tables")
-            .expect("unable to find suitable cmap sub-table")
     }
 }
 
