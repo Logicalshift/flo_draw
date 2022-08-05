@@ -186,7 +186,7 @@ impl CanvasWorker {
         tessellator.tessellate_path(&path, &stroke_options,
             &mut BuffersBuilder::new(&mut geometry, move |point: StrokeVertex| {
                 let advancement = point.advancement();
-                let side        = match point.side() { Side::Left => 0.0, Side::Right => 1.0 };
+                let side        = match point.side() { Side::Negative => 0.0, Side::Positive => 1.0 };
 
                 render::Vertex2D {
                     pos:        point.position().to_array(),
