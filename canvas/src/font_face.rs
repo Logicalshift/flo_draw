@@ -1,20 +1,12 @@
-#[cfg(feature = "outline-fonts")] use super::font::*;
-#[cfg(feature = "outline-fonts")] use super::font_line_layout::*;
-
-#[cfg(feature = "outline-fonts")] use allsorts;
 #[cfg(feature = "outline-fonts")] use allsorts::error::{ParseError};
 #[cfg(feature = "outline-fonts")] use allsorts::tables::{FontTableProvider};
-#[cfg(feature = "outline-fonts")] use ttf_parser;
-
 #[cfg(feature = "outline-fonts")] use std::borrow::{Cow};
-use ouroboros::self_referencing;
 
 use serde::de::{Deserialize, Deserializer, Visitor, SeqAccess, MapAccess};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use serde::de;
 
 use std::fmt;
-use std::pin::*;
 use std::sync::*;
 
 /// allsorts table provider implementation based on a unsafe (based on lifetime) pointer to a TTF parser face
@@ -39,11 +31,6 @@ impl<'b> FontTableProvider for CanvasTableProvider<'b> {
 // Ouroborus doesn't work with #cfg(feature) so we have to duplicate the entire implementation in two modules
 #[cfg(not(feature = "outline-fonts"))]
 mod canvas_font_face {
-    use serde::de::{Deserialize, Deserializer, Visitor, SeqAccess, MapAccess};
-    use serde::ser::{Serialize, SerializeStruct, Serializer};
-    use serde::de;
-
-    use std::fmt;
     use std::pin::*;
     use std::sync::*;
 
@@ -105,20 +92,11 @@ mod canvas_font_face {
     use crate::font_line_layout::*;
 
     use allsorts;
-    use allsorts::error::{ParseError};
-    use allsorts::tables::{FontTableProvider};
     use ttf_parser;
 
-    use std::borrow::{Cow};
     use ouroboros::self_referencing;
 
-    use serde::de::{Deserialize, Deserializer, Visitor, SeqAccess, MapAccess};
-    use serde::ser::{Serialize, SerializeStruct, Serializer};
-    use serde::de;
-
-    use std::fmt;
     use std::pin::*;
-    use std::sync::*;
 
     ///
     /// Representation of a font face
