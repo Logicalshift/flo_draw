@@ -22,4 +22,4 @@ num_cpus    = "1.13"
 [dev-dependencies]
 png         = "0.17"
 lazy_static = "1.2"
-winit       = "0.27"
+winit       = "0.26"
