@@ -200,9 +200,63 @@ where
             .collect::<Vec<_>>();
         let action_times = all_actions.join("\n");
 
-        format!("\n\n{}\n\n{}\n\n{}\n",
+        // Draw a graph of the recent frame times/idle times
+        let mut times       = vec![];
+        let mut last_time   = self.rolling_frame_times.iter().next().map(|(start, _end)| *start).unwrap();
+
+        for (start, end) in self.rolling_frame_times.iter() {
+            // Figure out the idle time (time spent waiting since the last frame) and frame time for this frame
+            let idle_time   = start.duration_since(last_time);
+            let frame_time  = end.duration_since(*start);
+
+            // Add to the list of times
+            times.push((idle_time, frame_time));
+
+            // Store the last time a frame ended
+            last_time = *end;
+        }
+
+        // Work out the time for the longest frame
+        let longest_frame_time      = times.iter().map(|(idle, frame)| *idle + *frame).max().unwrap_or(Duration::default());
+        let longest_frame_micros    = (longest_frame_time.as_micros() as f64).max(1.0);
+
+        // Make a graph of all the frames, except the first which will have bad idle time
+        let graph = times.into_iter().skip(1).map(|(idle, frame)| {
+            let idle    = idle.as_micros() as f64;
+            let frame   = frame.as_micros() as f64;
+            let idle    = (idle / longest_frame_micros * 10.0) as usize;
+            let frame   = (frame / longest_frame_micros * 10.0) as usize;
+
+            let idle    = "|".repeat(idle);
+            let frame   = "#".repeat(frame);
+
+            idle + &frame
+        }).collect::<Vec<_>>();
+
+        // Flip the graph from horizontal to vertical
+        let graph_len   = graph.len();
+        let graph       = (0..10).into_iter()
+            .map(|row| {
+                let mut graph_row = vec![' '; graph_len];
+
+                for column in 0..graph.len() {
+                    let ypos = 9-row;
+                    if graph[column].len() > ypos {
+                        graph_row[column] = graph[column].chars().nth(ypos).unwrap_or(' ');
+                    }
+                }
+
+                graph_row.into_iter().collect::<String>()
+            });
+        let graph       = graph.map(|row| format!("    |{}", row)).collect::<Vec<_>>().join("\n");
+        let graph_xaxis = format!("    +{}", "-".repeat(graph_len));
+
+        // Stick together into a summary string
+        format!("\n\n{}\n\n{}\n\n{}\n\n{}\n{}\n",
             header,
             num_primitives,
-            action_times)
+            action_times,
+            graph,
+            graph_xaxis)
     }
 }
