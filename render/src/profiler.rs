@@ -171,12 +171,15 @@ where
         let idle_millis     = (idle_time.as_micros() as f64) / 1_000.0;
 
         // Header indicates the frame number, total time and FPS and frame generation time info
-        let header = format!("==== FRAME {} @ {}s === {:.1} fps === {:.2}ms = {:.2}ms idle ===",
+        let header = format!("==== FRAME {} @ {:.2}s === {:.1} fps === {:.2}ms = {:.2}ms idle ===",
             self.frame_count,
             total_seconds,
             rolling_fps,
             frame_millis,
             idle_millis);
+
+        // Number of primitives
+        let num_primitives = format!("    {} primitives", self.frame_primitive_count);
 
         // Action time summary for the frame, sorted by slowest action
         let mut all_actions     = self.frame_action_times.iter().collect::<Vec<_>>();
@@ -197,8 +200,9 @@ where
             .collect::<Vec<_>>();
         let action_times = all_actions.join("\n");
 
-        format!("\n\n{}\n\n{}\n",
+        format!("\n\n{}\n\n{}\n\n{}\n",
             header,
+            num_primitives,
             action_times)
     }
 }

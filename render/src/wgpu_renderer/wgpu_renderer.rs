@@ -1275,6 +1275,9 @@ impl WgpuRenderer {
     ///
     fn draw_triangles(&mut self, VertexBufferId(vertex_buffer_id): VertexBufferId, range: Range<usize>, state: &mut RendererState) {
         if let Some(Some(buffer)) = self.vertex_buffers.get(vertex_buffer_id) {
+            #[cfg(feature="profile")]
+            self.profiler.count_primitives(range.len());
+
             let buffer          = Arc::clone(&buffer);
 
             // Make sure that the pipeline is up to date
@@ -1301,6 +1304,9 @@ impl WgpuRenderer {
     ///
     fn draw_indexed_triangles(&mut self, VertexBufferId(vertex_buffer_id): VertexBufferId, IndexBufferId(index_buffer_id): IndexBufferId, num_vertices: usize, state: &mut RendererState) {
         if let (Some(Some(vertex_buffer)), Some(Some(index_buffer))) = (self.vertex_buffers.get(vertex_buffer_id), self.index_buffers.get(index_buffer_id)) {
+            #[cfg(feature="profile")]
+            self.profiler.count_primitives(num_vertices);
+
             let vertex_buffer       = Arc::clone(vertex_buffer);
             let index_buffer        = Arc::clone(index_buffer);
 
