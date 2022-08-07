@@ -15,6 +15,7 @@ include             = [ "Cargo.toml", "src/**/*", "examples/**/*", "images/**/*"
 default             = [ "render-wgpu" ]
 render-opengl       = [ "gl", "glutin", "flo_render/opengl" ]
 render-wgpu         = [ "winit", "wgpu", "flo_render/render-wgpu" ]
+profile             = [ "flo_render/profile" ]
 
 [dependencies]
 flo_canvas          = { version = "0.4", features = [ "outline-fonts", "image-loading" ] }

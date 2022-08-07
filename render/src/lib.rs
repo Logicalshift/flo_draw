@@ -7,6 +7,9 @@ mod buffer;
 #[cfg(feature="render-wgpu")] mod wgpu_renderer;
 mod offscreen;
 
+#[cfg(feature="profile")]
+mod profiler;
+
 pub use self::action::*;
 pub use self::buffer::*;
 pub use self::offscreen::*;
