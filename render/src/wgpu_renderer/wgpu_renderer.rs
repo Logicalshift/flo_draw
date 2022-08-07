@@ -15,6 +15,9 @@ use super::reduce_filter::*;
 use super::alpha_blend_filter::*;
 use super::displacement_map_filter::*;
 
+#[cfg(feature="profile")]
+use crate::profiler::*;
+
 use crate::action::*;
 use crate::buffer::*;
 
@@ -92,6 +95,9 @@ pub struct WgpuRenderer {
 
     /// The texture samplers used by this renderer
     samplers: Samplers,
+
+    #[cfg(feature="profile")]
+    profiler: RenderProfiler<RenderActionType>,
 }
 
 impl WgpuRenderer {
@@ -119,6 +125,9 @@ impl WgpuRenderer {
             active_shader:          Some(ShaderType::Simple { clip_texture: None }),
             active_blend_mode:      Some(BlendMode::SourceOver),
             samplers:               Samplers::new(&*device),
+
+            #[cfg(feature="profile")]
+            profiler:               RenderProfiler::new(),
         }
     }
     ///
@@ -145,6 +154,9 @@ impl WgpuRenderer {
             active_shader:          Some(ShaderType::Simple { clip_texture: None }),
             active_blend_mode:      Some(BlendMode::SourceOver),
             samplers:               Samplers::new(&*device),
+
+            #[cfg(feature="profile")]
+            profiler:               RenderProfiler::new(),
         }
     }
 
@@ -186,6 +198,9 @@ impl WgpuRenderer {
     /// Performs some rendering actions to this renderer's surface
     ///
     pub fn render_to_surface<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions) {
+        #[cfg(feature="profile")]
+        self.profiler.start_frame();
+
         // Create the render state
         let mut render_state    = RendererState::new(Arc::clone(&self.queue), Arc::clone(&self.device));
 
@@ -207,6 +222,12 @@ impl WgpuRenderer {
         // Evaluate the actions
         for action in actions {
             use self::RenderAction::*;
+
+            #[cfg(feature="profile")]
+            let action_type = RenderActionType::from(&action);
+
+            #[cfg(feature="profile")]
+            self.profiler.start_action(action_type);
 
             match action {
                 SetTransform(matrix)                                                            => { self.set_transform(matrix, &mut render_state); }
@@ -236,6 +257,9 @@ impl WgpuRenderer {
                 DrawTriangles(buffer_id, buffer_range)                                          => { self.draw_triangles(buffer_id, buffer_range, &mut render_state); }
                 DrawIndexedTriangles(vertex_buffer, index_buffer, num_vertices)                 => { self.draw_indexed_triangles(vertex_buffer, index_buffer, num_vertices, &mut render_state); }
             }
+
+            #[cfg(feature="profile")]
+            self.profiler.finish_action(action_type);
         }
 
         // Finish any pending render pass in the state
@@ -243,6 +267,12 @@ impl WgpuRenderer {
 
         // Submit the queue
         self.queue.submit(Some(render_state.encoder.finish()));
+
+        #[cfg(feature="profile")]
+        {
+            self.profiler.finish_frame();
+            println!("{}", self.profiler.summary_string())
+        }
     }
 
     ///
