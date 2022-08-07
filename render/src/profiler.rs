@@ -167,12 +167,16 @@ where
         let frame_time      = if let (Some(start), Some(end)) = (self.frame_start, self.frame_finish) { end.duration_since(start) } else { Duration::default() };
         let frame_millis    = (frame_time.as_micros() as f64) / 1_000.0;
 
+        let idle_time       = if let (Some(start), Some(end)) = (self.last_frame_finish, self.frame_start) { end.duration_since(start) } else { Duration::default() };
+        let idle_millis     = (idle_time.as_micros() as f64) / 1_000.0;
+
         // Header indicates the frame number, total time and FPS and frame generation time info
-        let header = format!("==== FRAME {} @ {}s === {:.1} fps === {:.2} ms ===",
+        let header = format!("==== FRAME {} @ {}s === {:.1} fps === {:.2}ms = {:.2}ms idle ===",
             self.frame_count,
             total_seconds,
             rolling_fps,
-            frame_millis);
+            frame_millis,
+            idle_millis);
 
         // Action time summary for the frame, sorted by slowest action
         let mut all_actions     = self.frame_action_times.iter().collect::<Vec<_>>();
