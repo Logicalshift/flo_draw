@@ -143,6 +143,8 @@ impl GlutinRuntime {
             TouchpadPressure { device_id: _, pressure: _, stage: _ }        => vec![],
             AxisMotion { device_id: _, axis: _, value: _ }                  => vec![],
             Touch(_touch)                                                   => vec![],
+            Ime(_)                                                          => vec![],
+            Occluded(_)                                                     => vec![],
             ScaleFactorChanged { scale_factor, new_inner_size }             => vec![DrawEvent::Scale(scale_factor), DrawEvent::Resize(new_inner_size.width as f64, new_inner_size.height as f64)],
             ThemeChanged(_theme)                                            => vec![],
 
