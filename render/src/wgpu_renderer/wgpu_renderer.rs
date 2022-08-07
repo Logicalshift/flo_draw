@@ -271,7 +271,7 @@ impl WgpuRenderer {
         #[cfg(feature="profile")]
         {
             self.profiler.finish_frame();
-            println!("{}", self.profiler.summary_string())
+            println!("\n\n= WGPU {}", self.profiler.summary_string())
         }
     }
 

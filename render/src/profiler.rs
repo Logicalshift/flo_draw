@@ -252,7 +252,7 @@ where
         let graph_xaxis = format!("    +{}", "-".repeat(graph_len));
 
         // Stick together into a summary string
-        format!("\n\n{}\n\n{}\n\n{}\n\n{}\n{}\n",
+        format!("{}\n\n{}\n\n{}\n\n{}\n{}\n",
             header,
             num_primitives,
             action_times,
