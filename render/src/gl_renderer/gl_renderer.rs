@@ -10,6 +10,9 @@ use super::standard_shader_programs::*;
 use crate::action::*;
 use crate::buffer::*;
 
+#[cfg(feature="profile")]
+use crate::profiler::*;
+
 use std::mem;
 use std::ptr;
 use std::ops::{Range};
@@ -50,6 +53,9 @@ pub struct GlRenderer {
 
     /// The shader programs
     shader_programs: ShaderCollection<StandardShaderProgram, ShaderUniform>,
+
+    #[cfg(feature="profile")]
+    profiler: RenderProfiler<RenderActionType>,
 }
 
 impl GlRenderer {
@@ -71,6 +77,9 @@ impl GlRenderer {
             transform_matrix:               None,
             render_targets:                 vec![],
             shader_programs:                shader_programs,
+
+            #[cfg(feature="profile")]
+            profiler:                       RenderProfiler::new(),
         }
     }
 
@@ -98,6 +107,9 @@ impl GlRenderer {
     /// Performs rendering of the specified actions to this device target
     ///
     pub fn render<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions) {
+        #[cfg(feature="profile")]
+        self.profiler.start_frame();
+
         // Enable options
         self.enable_options();
 
@@ -110,6 +122,12 @@ impl GlRenderer {
 
         for action in actions {
             use self::RenderAction::*;
+
+            #[cfg(feature="profile")]
+            let action_type = RenderActionType::from(&action);
+
+            #[cfg(feature="profile")]
+            self.profiler.start_action(action_type);
 
             match action {
                 SetTransform(matrix)                                                            => { self.set_transform(matrix); }
@@ -141,6 +159,9 @@ impl GlRenderer {
             }
 
             panic_on_gl_error("Post-action");
+
+            #[cfg(feature="profile")]
+            self.profiler.finish_action(action_type);
         }
 
         // Reset options
@@ -151,6 +172,12 @@ impl GlRenderer {
         self.select_main_frame_buffer();
 
         panic_on_gl_error("Render tidy up");
+
+        #[cfg(feature="profile")]
+        {
+            self.profiler.finish_frame();
+            println!("\n\n= OPENGL {}", self.profiler.summary_string())
+        }
     }
 
     ///
@@ -1132,6 +1159,9 @@ impl GlRenderer {
     fn draw_triangles(&mut self, VertexBufferId(buffer_id): VertexBufferId, buffer_range: Range<usize>) {
         unsafe {
             if let Some((vertex_array, _buffer)) = &self.buffers[buffer_id] {
+                #[cfg(feature="profile")]
+                self.profiler.count_primitives(buffer_range.len());
+
                 // Draw the triangles
                 gl::BindVertexArray(**vertex_array);
                 gl::DrawArrays(gl::TRIANGLES, buffer_range.start as gl::types::GLint, buffer_range.len() as gl::types::GLsizei);
@@ -1154,6 +1184,9 @@ impl GlRenderer {
             }
 
             if let (Some((vertex_array, _buffer)), Some(index_buffer)) = (&self.buffers[vertex_buffer], &self.index_buffers[index_buffer]) {
+                #[cfg(feature="profile")]
+                self.profiler.count_primitives(num_vertices);
+
                 let num_vertices = num_vertices as gl::types::GLsizei;
 
                 // Draw the triangles
