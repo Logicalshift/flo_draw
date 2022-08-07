@@ -160,7 +160,7 @@ where
         let total_seconds   = (total_time.as_micros() as f64) / 1_000_000.0;
 
         let rolling_start   = self.rolling_frame_times.iter().next().map(|(start_time, _end_time)| *start_time);
-        let rolling_end     = self.rolling_frame_times.iter().next().map(|(_start_time, end_time)| *end_time);
+        let rolling_end     = self.rolling_frame_times.iter().last().map(|(_start_time, end_time)| *end_time);
         let rolling_time    = if let (Some(start), Some(end)) = (rolling_start, rolling_end) { end.duration_since(start) } else { Duration::default() };
         let rolling_fps     = (self.rolling_frame_times.len() as f64) / ((rolling_time.as_micros() as f64) / 1_000_000.0);
 
