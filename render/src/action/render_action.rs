@@ -115,7 +115,7 @@ pub enum RenderAction {
     ///
     /// Creates an 8-bit BGRA 2D texture of the specified size
     ///
-    CreateTextureBgra(TextureId, Size2D),           // TODO: I think everything except WGPU seems to wind up working as an RGBA texture
+    CreateTextureBgra(TextureId, Size2D),           // TODO: I think everything except WGPU seems to wind up working as an RGBA texture (actually, this is determined by WriteTextureData: textures are BGRA but are read as RGBA)
 
     ///
     /// Creates an 8-bit monochrome 2D texture of the specified size
@@ -184,7 +184,7 @@ pub enum RenderAction {
     ///
     /// Renders triangles using an index buffer
     ///
-    DrawIndexedTriangles(VertexBufferId, IndexBufferId, usize)
+    DrawIndexedTriangles(VertexBufferId, IndexBufferId, usize),
 }
 
 impl Default for FrameBufferRegion {
