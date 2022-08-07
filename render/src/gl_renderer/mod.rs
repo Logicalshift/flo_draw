@@ -1,4 +1,4 @@
-mod renderer;
+mod gl_renderer;
 
 mod error;
 mod vertex_array;
@@ -12,7 +12,7 @@ mod shader_uniforms;
 mod shader_collection;
 mod standard_shader_programs;
 
-pub use self::renderer::*;
+pub use self::gl_renderer::*;
 
 pub use self::error::*;
 pub use self::vertex_array::*;
