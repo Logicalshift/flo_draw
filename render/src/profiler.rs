@@ -150,4 +150,50 @@ where
             }
         }
     }
+
+    ///
+    /// Generates a summary for the last frame (called after finish_frame)
+    ///
+    pub fn summary_string(&self) -> String {
+        // Calculate some time values
+        let total_time      = self.frame_finish.map(|frame_finish| frame_finish.duration_since(self.start_time)).unwrap_or(Duration::default());
+        let total_seconds   = (total_time.as_micros() as f64) / 1_000_000.0;
+
+        let rolling_start   = self.rolling_frame_times.iter().next().map(|(start_time, _end_time)| *start_time);
+        let rolling_end     = self.rolling_frame_times.iter().next().map(|(_start_time, end_time)| *end_time);
+        let rolling_time    = if let (Some(start), Some(end)) = (rolling_start, rolling_end) { end.duration_since(start) } else { Duration::default() };
+        let rolling_fps     = (self.rolling_frame_times.len() as f64) / ((rolling_time.as_micros() as f64) / 1_000_000.0);
+
+        let frame_time      = if let (Some(start), Some(end)) = (self.frame_start, self.frame_finish) { end.duration_since(start) } else { Duration::default() };
+        let frame_millis    = (frame_time.as_micros() as f64) / 1_000.0;
+
+        // Header indicates the frame number, total time and FPS and frame generation time info
+        let header = format!("==== FRAME {} @ {}s === {:.1} fps === {:.2} ms ===",
+            self.frame_count,
+            total_seconds,
+            rolling_fps,
+            frame_millis);
+
+        // Action time summary for the frame, sorted by slowest action
+        let mut all_actions     = self.frame_action_times.iter().collect::<Vec<_>>();
+        all_actions.sort_by_key(|(_act, time)| time.time);
+        all_actions.reverse();
+
+        let slowest_time        = all_actions.iter().next().map(|(_, slowest_time)| slowest_time.time).unwrap_or(Duration::default());
+        let slowest_micros      = slowest_time.as_micros() as f64;
+        let all_actions         = all_actions.into_iter()
+            .map(|(action, time)| {
+                let micros      = time.time.as_micros() as f64;
+                let graph_len   = 32.0*(micros/slowest_micros);
+                let graph       = "#".repeat(graph_len as _);
+
+                format!("   {: <10?} | {: <10}µs | {: <10} | {}", action, time.time.as_micros(), time.count, graph)
+            })
+            .collect::<Vec<_>>();
+        let action_times = all_actions.join("\n");
+
+        format!("\n\n{}\n\n{}\n",
+            header,
+            action_times)
+    }
 }
