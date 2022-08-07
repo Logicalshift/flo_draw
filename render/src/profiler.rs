@@ -184,10 +184,11 @@ where
         let all_actions         = all_actions.into_iter()
             .map(|(action, time)| {
                 let micros      = time.time.as_micros() as f64;
-                let graph_len   = 32.0*(micros/slowest_micros);
+                let graph_len   = 16.0*(micros/slowest_micros);
                 let graph       = "#".repeat(graph_len as _);
+                let action      = format!("{:?}", action);
 
-                format!("   {: <10?} | {: <10}µs | {: <10} | {}", action, time.time.as_micros(), time.count, graph)
+                format!("   {: <20.20} | {: >8.8}µs | {: >7.7} | {}", action, time.time.as_micros(), time.count, graph)
             })
             .collect::<Vec<_>>();
         let action_times = all_actions.join("\n");
