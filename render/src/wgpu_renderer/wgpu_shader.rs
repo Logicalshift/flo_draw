@@ -60,7 +60,7 @@ pub enum FilterSourceFormat {
 ///
 /// How the texture points are determined by the shader
 ///
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum TexturePosition {
     /// Input position multiplied by texture transform
     InputPosition,
@@ -72,7 +72,7 @@ pub enum TexturePosition {
 ///
 /// The type of texture used as input for a texture shader
 ///
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum InputTextureType {
     /// Using a texture sampler
     Sampler,
@@ -84,7 +84,7 @@ pub enum InputTextureType {
 ///
 /// Size of a fixed-size shader kernel
 ///
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum BlurFixedSize {
     Size9,
     Size29,
@@ -94,7 +94,7 @@ pub enum BlurFixedSize {
 ///
 /// Direction of a Gaussian blur operation
 ///
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum BlurDirection {
     Horizontal,
     Vertical,
@@ -104,7 +104,7 @@ pub enum BlurDirection {
 /// The filter shaders are all special-purpose with a unique set of parameters, but they also always
 /// act on the whole of a texture (and in general between two textures of the same size)
 ///
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum FilterShader {
     /// Outputs a version of the image with a different alpha value
     AlphaBlend(FilterSourceFormat),
@@ -128,7 +128,7 @@ pub enum FilterShader {
 ///
 /// Enumeration of the shaders loaded for the WGPU renderer
 ///
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum WgpuShader {
     /// Flat colour shader
     Simple(StandardShaderVariant, ColorPostProcessingStep),
