@@ -1,6 +1,8 @@
-use super::draw::*;
-use super::path::*;
-use super::context::*;
+use crate::draw::*;
+use crate::path::*;
+use crate::context::*;
+use crate::transform2d::*;
+use crate::conversion_streams::*;
 
 use flo_curves::*;
 use flo_curves::arc;
@@ -8,6 +10,7 @@ use flo_curves::bezier::{BezierCurve};
 use flo_curves::bezier::path::{BezierPath};
 
 use std::iter;
+use smallvec::*;
 
 #[cfg(feature = "image-loading")] use super::texture::*;
 #[cfg(feature = "image-loading")] use image;
@@ -40,14 +43,68 @@ pub trait GraphicsPrimitives : GraphicsContext {
     ///
     /// Draws a bezier path
     ///
-    fn bezier_path<TPath: BezierPath>(&mut self, path: &TPath)
-    where TPath::Point: Coordinate2D {
+    fn bezier_path<TPath>(&mut self, path: &TPath)
+    where 
+        TPath:          BezierPath,
+        TPath::Point:   Coordinate2D
+    {
         let start_point = path.start_point();
 
         self.move_to(start_point.x() as _, start_point.y() as _);
         for (cp1, cp2, end) in path.points() {
             self.bezier_curve_to(end.x() as _, end.y() as _, cp1.x() as _, cp1.y() as _, cp2.x() as _, cp2.y() as _);
         }
+    }
+
+    ///
+    /// Renders the current path using a set of path attributes
+    ///
+    fn render_with_attributes<'a>(&'a mut self, attributes: impl 'a + IntoIterator<Item=&'a PathAttribute>) {
+        self.draw_list(attributes.into_iter()
+            .flat_map(|attr| -> SmallVec<[Draw; 4]> {
+                match attr {
+                    PathAttribute::Fill(color)                  => smallvec![
+                        Draw::FillColor(*color),
+                        Draw::Fill,
+                    ],
+
+                    PathAttribute::Stroke(width, color)         => smallvec![
+                        Draw::LineWidth(*width),
+                        Draw::StrokeColor(*color),
+                        Draw::Stroke,
+                    ],
+
+                    PathAttribute::StrokePixels(width, color)   => smallvec![
+                        Draw::LineWidthPixels(*width),
+                        Draw::StrokeColor(*color),
+                        Draw::Stroke,
+                    ],
+
+                    PathAttribute::FillGradient(gradient, (x1, y1), (x2, y2), Some(transform)) => smallvec![
+                        Draw::FillGradient(*gradient, (*x1, *y1), (*x2, *y2)),
+                        Draw::FillTransform(*transform),
+                        Draw::Fill,
+                    ],
+
+                    PathAttribute::FillGradient(gradient, (x1, y1), (x2, y2), None) => smallvec![
+                        Draw::FillGradient(*gradient, (*x1, *y1), (*x2, *y2)),
+                        Draw::FillTransform(Transform2D::identity()),
+                        Draw::Fill,
+                    ],
+
+                    PathAttribute::FillTexture(texture, (x1, y1), (x2, y2), Some(transform)) => smallvec![
+                        Draw::FillTexture(*texture, (*x1, *y1), (*x2, *y2)),
+                        Draw::FillTransform(*transform),
+                        Draw::Fill,
+                    ],
+
+                    PathAttribute::FillTexture(texture, (x1, y1), (x2, y2), None) => smallvec![
+                        Draw::FillTexture(*texture, (*x1, *y1), (*x2, *y2)),
+                        Draw::FillTransform(Transform2D::identity()),
+                        Draw::Fill,
+                    ],
+                }
+            }));
     }
 
     ///
@@ -64,7 +121,7 @@ pub trait GraphicsPrimitives : GraphicsContext {
     ///
     /// Draws a series of instructions
     ///
-    fn draw_list<'a, DrawIter: 'a+IntoIterator<Item=Draw>>(&'a mut self, drawing: DrawIter) {
+    fn draw_list<'a>(&'a mut self, drawing: impl 'a + IntoIterator<Item=Draw>) {
         for d in drawing.into_iter() {
             self.draw(d);
         }
