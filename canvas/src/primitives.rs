@@ -46,7 +46,7 @@ pub trait GraphicsPrimitives : GraphicsContext {
     fn bezier_path<TPath>(&mut self, path: &TPath)
     where 
         TPath:          BezierPath,
-        TPath::Point:   Coordinate2D
+        TPath::Point:   Coordinate2D,
     {
         let start_point = path.start_point();
 
@@ -105,6 +105,25 @@ pub trait GraphicsPrimitives : GraphicsContext {
                     ],
                 }
             }));
+    }
+
+    ///
+    /// Renders a bezier shape described by one or more paths and a set of attributes
+    ///
+    /// This can be used to quickly render the output of `drawing_to_attributed_paths()`
+    ///
+    fn render_bezier_shape<'a, TPath>(&'a mut self, attributes: impl 'a + IntoIterator<Item=&'a PathAttribute>, path_set: impl 'a  + IntoIterator<Item = &'a TPath>)
+    where
+        TPath:          'a + BezierPath,
+        TPath::Point:   Coordinate2D,
+    {
+        self.new_path();
+
+        for path in path_set {
+            self.bezier_path(path);
+        }
+
+        self.render_with_attributes(attributes);
     }
 
     ///

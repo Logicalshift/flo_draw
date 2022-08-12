@@ -123,13 +123,7 @@ pub fn main() {
                 gc.sprite(SpriteId(0));
                 gc.clear_sprite();
                 for (attributes, path_set) in distorted_mascot {
-                    gc.new_path();
-
-                    for path in path_set {
-                        gc.bezier_path(&path);
-                    }
-
-                    gc.render_with_attributes(attributes);
+                    gc.render_bezier_shape(attributes, &path_set);
                 }
             });
 
