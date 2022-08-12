@@ -8,6 +8,12 @@ use std::ops::{Mul};
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Transform2D(pub [[f32; 3]; 3]);
 
+impl Default for Transform2D {
+    fn default() -> Transform2D {
+        Self::identity()
+    }
+}
+
 impl Transform2D {
     ///
     /// Applies this transformation to a point, returning the transformed point
@@ -24,7 +30,8 @@ impl Transform2D {
     ///
     /// Creates the identity transform
     ///
-    pub fn identity() -> Transform2D {
+    #[inline]
+    pub const fn identity() -> Transform2D {
         Transform2D([
             [1.0, 0.0, 0.0], 
             [0.0, 1.0, 0.0], 
@@ -34,6 +41,7 @@ impl Transform2D {
     ///
     /// Creates a translation transformation
     ///
+    #[inline]
     pub fn translate(x: f32, y: f32) -> Transform2D {
         Transform2D([
             [1.0, 0.0, x    ], 
@@ -45,6 +53,7 @@ impl Transform2D {
     ///
     /// Creates a scaling transformation
     ///
+    #[inline]
     pub fn scale(scale_x: f32, scale_y: f32) -> Transform2D {
         Transform2D([
             [scale_x,   0.0,        0.0], 
@@ -55,6 +64,7 @@ impl Transform2D {
     ///
     /// Creates a transformation that's a rotation in degrees
     ///
+    #[inline]
     pub fn rotate_degrees(degrees: f32) -> Transform2D {
         Self::rotate(f32::consts::PI * degrees / 180.0)
     }
@@ -62,6 +72,7 @@ impl Transform2D {
     ///
     /// Creates a rotation transformation
     ///
+    #[inline]
     pub fn rotate(radians: f32) -> Transform2D {
         let cos = f32::cos(radians);
         let sin = f32::sin(radians);
@@ -76,6 +87,7 @@ impl Transform2D {
     ///
     /// Computes the determinant of a 2x2 matrix
     ///
+    #[inline]
     fn det2(matrix: &[[f32; 2]; 2]) -> f32 {
         matrix[0][0]*matrix[1][1] - matrix[0][1]*matrix[1][0]
     }
@@ -83,6 +95,7 @@ impl Transform2D {
     ///
     /// Computes the minor of a 3x3 matrix
     ///
+    #[inline]
     fn minor3(matrix: &[[f32; 3]; 3], row: usize, col: usize) -> f32 {
         let (x1, x2)    = match row { 0 => (1, 2), 1 => (0, 2), 2 => (0, 1), _ => (0, 1) };
         let (y1, y2)    = match col { 0 => (1, 2), 1 => (0, 2), 2 => (0, 1), _ => (0, 1) };
@@ -98,6 +111,7 @@ impl Transform2D {
     ///
     /// Computes the cofactor of an element in a 3x3 matrix
     ///
+    #[inline]
     fn cofactor3(matrix: &[[f32; 3]; 3], row: usize, col: usize) -> f32 {
         let minor   = Self::minor3(matrix, row, col);
         let sign    = (col&1) ^ (row&1);
@@ -137,6 +151,7 @@ impl Transform2D {
     ///
     /// Returns an inverted Transform2D
     ///
+    #[inline]
     pub fn invert(&self) -> Option<Transform2D> {
         let Transform2D(matrix) = self;
 
