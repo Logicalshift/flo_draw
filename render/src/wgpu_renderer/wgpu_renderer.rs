@@ -678,6 +678,11 @@ impl WgpuRenderer {
         // Finish the current render pass
         render_state.run_render_pass();
 
+        // Submit the queue
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("run_render_pass") });
+        mem::swap(&mut encoder, &mut render_state.encoder);
+        self.queue.submit(Some(encoder.finish()));
+
         // Present the current frame buffer
         if let Some(surface_texture) = self.target_surface_texture.take() {
             surface_texture.present();
