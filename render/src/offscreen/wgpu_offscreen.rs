@@ -5,6 +5,7 @@ use crate::action::*;
 use crate::wgpu_renderer::*;
 
 use ::desync::*;
+use futures::prelude::*;
 
 use wgpu;
 
