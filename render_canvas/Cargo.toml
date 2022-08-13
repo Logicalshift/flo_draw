@@ -10,6 +10,12 @@ categories  = [ "graphics", "rendering", "rendering::engine" ]
 
 include     = [ "Cargo.toml", "src/**/*", "svg/**/*" ]
 
+[features]
+opengl      = [ "flo_render/opengl" ]
+osx-metal   = [ "flo_render/osx-metal" ]
+render-wgpu = [ "flo_render/render-wgpu" ]
+profile     = [ "flo_render/profile" ]
+
 [dependencies]
 flo_render  = "0.4"
 flo_canvas  = "0.4"
