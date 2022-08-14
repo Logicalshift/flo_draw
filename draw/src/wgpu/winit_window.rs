@@ -54,6 +54,9 @@ impl WinitWindow {
 ///
 /// Sends render actions to a window
 ///
+/// Render actions are sent via the stream in `render_actions`. When a new frame is presented, a `DrawEvent::NewFrame` is sent to the event publisher. Finally the window 
+/// properties are watched and used to update the window properties.
+///
 pub (super) async fn send_actions_to_window<RenderStream, EventPublisher>(window: WinitWindow, render_actions: RenderStream, events: EventPublisher, window_properties: WindowProperties)
 where
     RenderStream:   Unpin + Stream<Item=Vec<RenderAction>>,
