@@ -291,7 +291,8 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                     }
 
                     // Commit the frame
-                    waiting_for_new_frame = true;
+                    waiting_for_new_frame           = true;
+                    messages.waiting_for_new_frame  = true;
 
                     combined_list.push(Arc::new(vec![Draw::ShowFrame]));
                     render_state.draw(combined_list.iter()
@@ -352,6 +353,8 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                                     render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
                                     drawing_since_last_frame = false;
                                 }
+
+                                messages.waiting_for_new_frame = waiting_for_new_frame;
                             }
 
                             _ => { }
