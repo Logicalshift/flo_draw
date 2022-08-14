@@ -135,7 +135,16 @@ where
 
                         // Notify that a new frame has been drawn if show_frame_buffer is set
                         if let Some(next_frame) = maybe_next_frame {
-                            next_frame.present();
+                            // Request that the runtime present the next frame
+                            let (yield_send, yield_recv)    = oneshot::channel();
+                            let window_id                   = winit_window.id();
+
+                            winit_thread().send_event(WinitThreadEvent::PresentSurface(window_id, next_frame, yield_send));
+
+                            // Wait for the frame to be displayed (or cancelled) before processing any other events
+                            yield_recv.await.ok();
+
+                            // Trigger the 'NewFrame' event when done
                             send_new_frame = true;
                         }
                     }
@@ -186,10 +195,12 @@ where
             // amount that the rendering can get behind)
             events.publish(DrawEvent::NewFrame).await;
 
+            /* -- TODO
             // Yield to process events
             let (yield_send, yield_recv) = oneshot::channel();
             winit_thread().send_event(WinitThreadEvent::Yield(yield_send));
             yield_recv.await.ok();
+            */
         }
     }
 

@@ -9,9 +9,10 @@ use super::winit_thread_event::*;
 use flo_stream::*;
 use flo_binding::*;
 
+use wgpu;
 use winit::event::{DeviceId, Event, WindowEvent, ElementState};
 use winit::event_loop::{ControlFlow, EventLoopWindowTarget};
-use winit::window::{WindowId, Fullscreen};
+use winit::window::{Window, WindowId, Fullscreen};
 use futures::task;
 use futures::prelude::*;
 use futures::channel::oneshot;
@@ -23,15 +24,23 @@ use std::collections::{HashMap};
 
 static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 
+pub (super) struct WindowData {
+    window: Arc<Window>,
+    event_publisher: Publisher<DrawEvent>,
+}
+
 ///
 /// Represents the state of the Winit runtime
 ///
 pub (super) struct WinitRuntime {
     /// The event publishers for the windows being managed by the runtime
-    pub (super) window_events: HashMap<WindowId, Publisher<DrawEvent>>,
+    pub (super) window_events: HashMap<WindowId, WindowData>,
 
     /// Maps future IDs to running futures
     pub (super) futures: HashMap<u64, LocalBoxFuture<'static, ()>>,
+
+    /// Redraws that are pending for a particular window (the texture that's waiting to be displayed and the sender to be informed once the 'events cleared' event has arrived)
+    pub (super) pending_redraws: HashMap<WindowId, (wgpu::SurfaceTexture, oneshot::Sender<()>)>,
 
     /// Yield events waiting for an indication that all events have been processed
     pub (super) pending_yields: Vec<oneshot::Sender<()>>,
@@ -101,7 +110,17 @@ impl WinitRuntime {
             UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target); }
             Suspended                               => { }
             Resumed                                 => { }
-            RedrawRequested(window_id)              => { self.request_redraw(window_id); }
+            RedrawRequested(window_id)              => { 
+                if let Some((pending_surface, redraw_finished)) = self.pending_redraws.remove(&window_id) {
+                    // Present the surface
+                    pending_surface.present();
+
+                    // Signal the 'finished' event when the redraw events are all clear
+                    self.pending_yields.push(redraw_finished);
+                } else {
+                    // self.request_redraw(window_id); 
+                }
+            }
             
             MainEventsCleared                       => {
                 // Winit doesn't always respond to ControlFlow::Exit requests, setting it after the other events have cleared is an attempt
@@ -245,11 +264,11 @@ impl WinitRuntime {
             MouseWheel { device_id: _, delta: _, phase: _, .. }             => vec![],
         };
 
-        if let Some(window_events) = self.window_events.get_mut(&window_id) {
+        if let Some(window_data) = self.window_events.get_mut(&window_id) {
             // Dispatch the draw events using a process
             if draw_events.len() > 0 {
                 // Need to republish the window events so we can share with the process
-                let mut window_events = window_events.republish();
+                let mut window_events = window_data.event_publisher.republish();
 
                 self.run_process(async move {
                     for evt in draw_events {
@@ -264,9 +283,9 @@ impl WinitRuntime {
     /// Sends a redraw request to a window
     ///
     fn request_redraw(&mut self, window_id: WindowId) {
-        if let Some(window_events) = self.window_events.get_mut(&window_id) {
+        if let Some(window_data) = self.window_events.get_mut(&window_id) {
             // Need to republish the window events so we can share with the process
-            let mut window_events = window_events.republish();
+            let mut window_events = window_data.event_publisher.republish();
 
             self.run_process(async move {
                 window_events.publish(DrawEvent::Redraw).await;
@@ -303,11 +322,15 @@ impl WinitRuntime {
                 let window_id           = window.id();
                 let size                = window.inner_size();
                 let scale               = window.scale_factor();
-                let window              = WinitWindow::new(window);
 
                 // Store the publisher for the events for this window
                 let mut initial_events  = events.republish_weak();
-                self.window_events.insert(window_id, events);
+                let window_data         = WindowData {
+                    window:             Arc::clone(&window),
+                    event_publisher:    events,
+                };
+                let window              = WinitWindow::new(window);
+                self.window_events.insert(window_id, window_data);
 
                 // Run the window as a process on this thread
                 self.run_process(async move { 
@@ -328,6 +351,7 @@ impl WinitRuntime {
 
             StopSendingToWindow(window_id) => {
                 self.window_events.remove(&window_id);
+                self.pending_redraws.remove(&window_id);
 
                 if self.window_events.len() == 0 && self.will_stop_when_no_windows {
                     self.will_exit = true;
@@ -342,8 +366,18 @@ impl WinitRuntime {
                 self.poll_future(future_id);
             },
 
-            PresentSurface(window_id, surface_texture, sender) => {
-                // TODO
+            PresentSurface(window_id, surface_texture, completed) => {
+                // Store this present event
+                self.pending_redraws.insert(window_id, (surface_texture, completed));
+
+                // Trigger a redraw on the window
+                if let Some(window_data) = self.window_events.get(&window_id) {
+                    // Queue up a redraw for this window
+                    window_data.window.request_redraw();
+                } else {
+                    // Window doesn't exist, so just cancel the pending redraw
+                    self.pending_redraws.remove(&window_id);
+                }
             },
 
             Yield(sender) => {
