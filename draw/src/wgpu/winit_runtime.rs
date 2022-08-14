@@ -342,6 +342,10 @@ impl WinitRuntime {
                 self.poll_future(future_id);
             },
 
+            PresentSurface(window_id, surface_texture, sender) => {
+                // TODO
+            },
+
             Yield(sender) => {
                 self.pending_yields.push(sender);
             },
