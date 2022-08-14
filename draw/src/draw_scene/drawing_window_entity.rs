@@ -101,7 +101,6 @@ where
     }
 }
 
-
 ///
 /// Handles an event from the window
 ///
@@ -219,7 +218,11 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
         // Combine the two streams (we prioritise events from the window to avoid spending time rendering with out-of-date state)
         let drawing_window_requests     = drawing_window_requests.map(|evt| DrawingOrEvent::Drawing(evt));
         let events_receiver             = events_receiver.map(|evt| DrawingOrEvent::Event(evt));
-        let messages                    = stream::select_with_strategy(drawing_window_requests, events_receiver, |_: &mut ()| stream::PollNext::Right);
+        let messages                    = DrawingEventStream {
+            waiting_for_new_frame:  false,
+            draw_stream:            Some(drawing_window_requests),
+            event_stream:           Some(events_receiver),
+        };
 
         // Initially the window is not ready to render (we need to wait for the first 'redraw' event)
         let mut ready_to_render             = false;
