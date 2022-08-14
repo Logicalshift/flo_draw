@@ -194,13 +194,6 @@ where
             // We only send one of these per batch, in case multiple frames are displayed during one batch of events for any reason (this reduces the
             // amount that the rendering can get behind)
             events.publish(DrawEvent::NewFrame).await;
-
-            /* -- TODO
-            // Yield to process events
-            let (yield_send, yield_recv) = oneshot::channel();
-            winit_thread().send_event(WinitThreadEvent::Yield(yield_send));
-            yield_recv.await.ok();
-            */
         }
     }
 
