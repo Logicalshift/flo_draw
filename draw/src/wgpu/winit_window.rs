@@ -92,7 +92,7 @@ where
                         // Create a new WGPU instance, surface and adapter
                         let winit_window    = &**winit_window;
 
-                        let instance        = wgpu::Instance::new(wgpu::Backends::VULKAN);
+                        let instance        = wgpu::Instance::new(wgpu::Backends::all());
                         let surface         = unsafe { instance.create_surface(winit_window) };
                         let adapter         = instance.request_adapter(&wgpu::RequestAdapterOptions {
                             power_preference:       wgpu::PowerPreference::default(),
