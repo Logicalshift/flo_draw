@@ -197,7 +197,10 @@ impl WgpuRenderer {
     ///
     /// Performs some rendering actions to this renderer's surface
     ///
-    pub fn render_to_surface<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions) {
+    /// If the rendering needs to be presented to the display, this will return the surface texture, ready for `present()` to be called
+    /// on it.
+    ///
+    pub fn render_to_surface<Actions: IntoIterator<Item=RenderAction>>(&mut self, actions: Actions) -> Option<wgpu::SurfaceTexture> {
         #[cfg(feature="profile")]
         self.profiler.start_frame();
 
@@ -273,6 +276,9 @@ impl WgpuRenderer {
             self.profiler.finish_frame();
             println!("\n\n= WGPU {}", self.profiler.summary_string())
         }
+
+        // Result is the surface texture that was last presented
+        render_state.present.take()
     }
 
     ///
@@ -685,23 +691,15 @@ impl WgpuRenderer {
 
         // Present the current frame buffer
         if let Some(surface_texture) = self.target_surface_texture.take() {
-            surface_texture.present();
+            // The current surface texture is what becomes the frame that we return as the 'to present' frame
+            render_state.present = Some(surface_texture);
         }
 
-        if let Some(target_surface) = &self.target_surface {
-            // Fetch a new frame buffer
-            if self.target_surface_texture.is_none() {
-                let surface_texture = target_surface.get_current_texture().unwrap();
-                self.target_surface_texture = Some(surface_texture);
-
-                if self.active_render_target.is_none() {
-                    let surface_texture     = self.target_surface_texture.as_ref().unwrap();
-                    let texture_view        = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-                    render_state.render_pass_resources.target_view     = Some(Arc::new(texture_view));
-                    render_state.render_pass_resources.target_texture  = None;
-                }
-            }
+        // Can't render to the main surface any more
+        if self.active_render_target.is_none() && self.target_surface.is_some() {
+            // Will be targeting nothing for future rendering instructions
+            render_state.render_pass_resources.target_view     = None;
+            render_state.render_pass_resources.target_texture  = None;
         }
     }
     

@@ -84,15 +84,6 @@ where
                         continue;
                     }
 
-                    // See if the rendering action will show the frame buffer
-                    let show_frame_buffer = if next_action[next_action.len() - 1] == RenderAction::ShowFrameBuffer {
-                        // Typically this is the last instruction
-                        true
-                    } else {
-                        // Search harder if it's not the last instruction
-                        next_action.iter().any(|item| item == &RenderAction::ShowFrameBuffer)
-                    };
-
                     // Create the renderer if it doesn't already exist
                     if let (Some(winit_window), None) = (&window.window, &window.renderer) {
                         // Create a new WGPU instance, surface and adapter
@@ -137,10 +128,11 @@ where
                         renderer.prepare_to_render(width, height);
 
                         // Send the commands to the renderer
-                        renderer.render_to_surface(next_action);
+                        let maybe_next_frame = renderer.render_to_surface(next_action);
 
                         // Notify that a new frame has been drawn if show_frame_buffer is set
-                        if show_frame_buffer {
+                        if let Some(next_frame) = maybe_next_frame {
+                            next_frame.present();
                             send_new_frame = true;
                         }
                     }

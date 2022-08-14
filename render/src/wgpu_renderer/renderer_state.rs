@@ -63,6 +63,9 @@ pub (crate) struct RendererState {
 
     /// The sampler for the current shader (or none)
     pub sampler:                        Option<Arc<wgpu::Sampler>>,
+
+    /// The texture to present to the surface once the rendering is done
+    pub present:                        Option<wgpu::SurfaceTexture>,
 }
 
 impl RendererState {
@@ -94,6 +97,7 @@ impl RendererState {
             input_texture:                      None,
             clip_texture:                       None,
             sampler:                            None,
+            present:                            None,
         }
     }
 
