@@ -153,7 +153,6 @@ where
 
                             #[cfg(feature="profile")]
                             println!("WINIT: time to present frame {}µs", Instant::now().duration_since(start_time).as_micros());
-                            let start_time = Instant::now();
 
                             // Trigger the 'NewFrame' event when done
                             send_new_frame = true;
