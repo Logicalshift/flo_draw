@@ -20,6 +20,9 @@ use std::sync::*;
 
 use std::fmt;
 
+#[cfg(feature="profile")]
+use std::time::{Duration, Instant};
+
 ///
 /// Manages the state of a Winit window
 ///
@@ -136,6 +139,9 @@ where
 
                         // Notify that a new frame has been drawn if show_frame_buffer is set
                         if let Some(next_frame) = maybe_next_frame {
+                            #[cfg(feature="profile")]
+                            let start_time = Instant::now();
+
                             // Request that the runtime present the next frame
                             let (yield_send, yield_recv)    = oneshot::channel();
                             let window_id                   = winit_window.id();
@@ -144,6 +150,10 @@ where
 
                             // Wait for the frame to be displayed (or cancelled) before processing any other events
                             yield_recv.await.ok();
+
+                            #[cfg(feature="profile")]
+                            println!("WINIT: time to present frame {}µs", Instant::now().duration_since(start_time).as_micros());
+                            let start_time = Instant::now();
 
                             // Trigger the 'NewFrame' event when done
                             send_new_frame = true;
