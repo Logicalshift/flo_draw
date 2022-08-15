@@ -5,6 +5,9 @@ use super::render_action::*;
 ///
 #[derive(Copy, Clone, PartialEq, Debug, Eq, Hash)]
 pub enum RenderActionType {
+    RunRenderPass,
+    SubmitQueue,
+
     SetTransform,
     CreateVertex2DBuffer,
     CreateIndexBuffer,

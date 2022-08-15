@@ -266,10 +266,14 @@ impl WgpuRenderer {
         }
 
         // Finish any pending render pass in the state
+        #[cfg(feature="profile")] self.profiler.start_action(RenderActionType::RunRenderPass);
         render_state.run_render_pass();
+        #[cfg(feature="profile")] self.profiler.finish_action(RenderActionType::RunRenderPass);
 
         // Submit the queue
+        #[cfg(feature="profile")] self.profiler.start_action(RenderActionType::SubmitQueue);
         self.queue.submit(Some(render_state.encoder.finish()));
+        #[cfg(feature="profile")] self.profiler.finish_action(RenderActionType::SubmitQueue);
 
         #[cfg(feature="profile")]
         {
@@ -495,7 +499,9 @@ impl WgpuRenderer {
             self.active_render_target = Some(RenderTargetId(render_id));
 
             // Render to the existing render target
+            #[cfg(feature="profile")] self.profiler.start_action(RenderActionType::RunRenderPass);
             state.run_render_pass();
+            #[cfg(feature="profile")] self.profiler.finish_action(RenderActionType::RunRenderPass);
 
             // Switch to rendering to this render target
             let texture         = new_render_target.texture();
@@ -531,7 +537,9 @@ impl WgpuRenderer {
             }
 
             // Finish the current render pass
+            #[cfg(feature="profile")] self.profiler.start_action(RenderActionType::RunRenderPass);
             state.run_render_pass();
+            #[cfg(feature="profile")] self.profiler.finish_action(RenderActionType::RunRenderPass);
 
             // Switch to the surface texture
             let surface_texture     = self.target_surface_texture.as_ref().unwrap();
@@ -547,7 +555,9 @@ impl WgpuRenderer {
             state.pipeline_bindings_changed                     = true;
         } else if let Some(target_texture) = &self.target_texture {
             // Finish the current render pass
+            #[cfg(feature="profile")] self.profiler.start_action(RenderActionType::RunRenderPass);
             state.run_render_pass();
+            #[cfg(feature="profile")] self.profiler.finish_action(RenderActionType::RunRenderPass);
 
             // Switch to the target texture
             let texture_view = target_texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -682,10 +692,12 @@ impl WgpuRenderer {
     ///
     fn show_frame_buffer(&mut self, render_state: &mut RendererState) {
         // Finish the current render pass
+        #[cfg(feature="profile")] self.profiler.start_action(RenderActionType::RunRenderPass);
         render_state.run_render_pass();
+        #[cfg(feature="profile")] self.profiler.finish_action(RenderActionType::RunRenderPass);
 
         // Submit the queue
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("run_render_pass") });
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("show_frame_buffer") });
         mem::swap(&mut encoder, &mut render_state.encoder);
         self.queue.submit(Some(encoder.finish()));
 
@@ -876,7 +888,9 @@ impl WgpuRenderer {
     ///
     fn write_texture_data_2d(&mut self, TextureId(texture_id): TextureId, x1: usize, y1: usize, x2: usize, y2: usize, data: Arc<Vec<u8>>, state: &mut RendererState) {
         if let Some(Some(texture)) = self.textures.get(texture_id) {
+            #[cfg(feature="profile")] self.profiler.start_action(RenderActionType::RunRenderPass);
             state.run_render_pass();
+            #[cfg(feature="profile")] self.profiler.finish_action(RenderActionType::RunRenderPass);
 
             let (x1, x2)        = if x1 > x2 { (x2, x1) } else { (x1, x2) };
             let (y1, y2)        = if y1 > y2 { (y2, y1) } else { (y1, y2) };
@@ -963,7 +977,9 @@ impl WgpuRenderer {
             };
 
             // Finish the render pass (especially for the case where the source texture is also the render target)
+            #[cfg(feature="profile")] self.profiler.start_action(RenderActionType::RunRenderPass);
             state.run_render_pass();
+            #[cfg(feature="profile")] self.profiler.finish_action(RenderActionType::RunRenderPass);
 
             // Copy the source texture to the target texture
             state.encoder.copy_texture_to_texture(src_texture.texture.as_image_copy(), new_texture.texture.as_image_copy(), src_texture.descriptor.size);
@@ -981,7 +997,9 @@ impl WgpuRenderer {
             let mut final_texture = texture.clone();
 
             // Finish the current render pass (in case it's updating the current texture)
+            #[cfg(feature="profile")] self.profiler.start_action(RenderActionType::RunRenderPass);
             state.run_render_pass();
+            #[cfg(feature="profile")] self.profiler.finish_action(RenderActionType::RunRenderPass);
 
             // Run the filters
             for filter in texture_filters {
@@ -1097,7 +1115,10 @@ impl WgpuRenderer {
     fn clear(&mut self, color: Rgba8, state: &mut RendererState) {
         // Commit any existing rendering
         self.update_pipeline_if_needed(state);
+
+        #[cfg(feature="profile")] self.profiler.start_action(RenderActionType::RunRenderPass);
         state.run_render_pass();
+        #[cfg(feature="profile")] self.profiler.finish_action(RenderActionType::RunRenderPass);
 
         // Set the clear color for the next render pass
         let Rgba8([r, g, b, a]) = color;
