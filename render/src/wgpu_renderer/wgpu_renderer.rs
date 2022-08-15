@@ -691,15 +691,10 @@ impl WgpuRenderer {
     /// Displays the current frame buffer to the screen
     ///
     fn show_frame_buffer(&mut self, render_state: &mut RendererState) {
-        // Finish the current render pass
+        // Finish the current render pass (this also submits the queue, which is required before presenting the frame buffer)
         #[cfg(feature="profile")] self.profiler.start_action(RenderActionType::RunRenderPass);
         render_state.run_render_pass();
         #[cfg(feature="profile")] self.profiler.finish_action(RenderActionType::RunRenderPass);
-
-        // Submit the queue
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("show_frame_buffer") });
-        mem::swap(&mut encoder, &mut render_state.encoder);
-        self.queue.submit(Some(encoder.finish()));
 
         // Present the current frame buffer
         if let Some(surface_texture) = self.target_surface_texture.take() {
