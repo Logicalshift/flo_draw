@@ -92,13 +92,14 @@ where
                         // Create a new WGPU instance, surface and adapter
                         let winit_window    = &**winit_window;
 
-                        let instance        = wgpu::Instance::new(wgpu::Backends::all());
+                        let backend         = wgpu::util::backend_bits_from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
+                        let instance        = wgpu::Instance::new(backend);
                         let surface         = unsafe { instance.create_surface(winit_window) };
                         let adapter         = instance.request_adapter(&wgpu::RequestAdapterOptions {
                             power_preference:       wgpu::PowerPreference::default(),
                             force_fallback_adapter: false,
                             compatible_surface:     Some(&surface),
-                        }).await.unwrap();
+                        }).await.expect("Could not acquire an adapter for winit/wgpu");
 
                         // Fetch the device and the queue
                         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
