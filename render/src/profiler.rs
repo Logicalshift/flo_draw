@@ -44,6 +44,9 @@ where
     /// The times when each action was started
     action_start: HashMap<TAction, Instant>,
 
+    /// Time spent in sub-actions
+    reentrant_time: HashMap<TAction, Duration>,
+
     /// The actions that have been started in the current frame
     action_stack: Vec<TAction>,
 
@@ -72,6 +75,7 @@ where
             frame_finish:           None,
             action_stack:           vec![],
             action_start:           HashMap::new(),
+            reentrant_time:         HashMap::new(),
             frame_action_times:     HashMap::new(), 
             rolling_frame_times:    VecDeque::new(),
         }
@@ -114,18 +118,24 @@ where
 
         if self.action_stack.last() == Some(&action) {
             self.action_stack.pop();
-        } else {
-            panic!("Bleh");
         }
 
-        if let Some(action_start_time) = self.action_start.get(&action) {
+        if let Some(action_start_time) = self.action_start.remove(&action) {
             // Work out how long the action has taken
-            let duration = now.duration_since(*action_start_time);
+            let duration = now.duration_since(action_start_time);
 
             // Add to the time for this action
             let time = self.frame_action_times
                 .entry(action)
                 .or_insert_with(|| ActionTime { count: 0, time: Duration::default() });
+
+            // Add as recursive time to the action on top of the stack
+            if let Some(parent_action) = self.action_stack.last() {
+                let parent_time = self.reentrant_time
+                    .entry(*parent_action)
+                    .or_insert_with(|| Duration::default());
+                *parent_time += duration;
+            }
 
             time.count  += 1;
             time.time   += duration;
