@@ -330,9 +330,14 @@ impl WgpuRenderer {
                 render_state.render_pass_resources.pipelines.push(render_pipeline);
 
                 // Add a callback function to actually set up the render pipeline (we have to do it indirectly later on because it borrows its resources)
+                #[cfg(feature="profile")] let profiler = self.profiler.clone();
                 render_state.render_pass.push(Box::new(move |resources, render_pass| {
+                    #[cfg(feature="profile")] profiler.borrow_mut().start_action(RenderActionType::RenderPassSetPipeline);
+
                     // Set the pipeline
                     render_pass.set_pipeline(&resources.pipelines[pipeline_index]);
+
+                    #[cfg(feature="profile")] profiler.borrow_mut().finish_action(RenderActionType::RenderPassSetPipeline);
                 }));
 
                 // Rebind everything else
@@ -673,13 +678,18 @@ impl WgpuRenderer {
         let buffer_index    = state.render_pass_resources.buffers.len();
         state.render_pass_resources.buffers.push(vertex_buffer);
 
+        #[cfg(feature="profile")] let profiler = self.profiler.clone();
         state.render_pass.push(Box::new(move |resources, render_pass| {
+            #[cfg(feature="profile")] profiler.borrow_mut().start_action(RenderActionType::RenderPassDrawFramebuffer);
+
             let vertex_size = mem::size_of::<Vertex2D>();
             let start_pos   = 0;
             let end_pos     = (6 * vertex_size) as u64;
 
             render_pass.set_vertex_buffer(0, resources.buffers[buffer_index].slice(start_pos..end_pos));
             render_pass.draw(0..6, 0..1);
+
+            #[cfg(feature="profile")] profiler.borrow_mut().finish_action(RenderActionType::RenderPassDrawFramebuffer);
         }));
 
         // Restore the render state
@@ -1312,13 +1322,19 @@ impl WgpuRenderer {
             state.render_pass_resources.buffers.push(buffer);
 
             // Set up a vertex buffer and draw the triangles during the render pass
+            #[cfg(feature="profile")] let profiler = self.profiler.clone();
+
             state.render_pass.push(Box::new(move |resources, render_pass| {
+                #[cfg(feature="profile")] profiler.borrow_mut().start_action(RenderActionType::RenderPassDrawTriangles);
+
                 let vertex_size = mem::size_of::<Vertex2D>();
                 let start_pos   = (range.start * vertex_size) as u64;
                 let end_pos     = (range.end * vertex_size) as u64;
 
                 render_pass.set_vertex_buffer(0, resources.buffers[buffer_index].slice(start_pos..end_pos));
                 render_pass.draw(0..range.len() as u32, 0..1);
+
+                #[cfg(feature="profile")] profiler.borrow_mut().finish_action(RenderActionType::RenderPassDrawTriangles);
             }));
         }
     }
@@ -1345,10 +1361,15 @@ impl WgpuRenderer {
             state.render_pass_resources.buffers.push(index_buffer);
 
             // Set up a vertex buffer and draw the triangles during the render pass
+            #[cfg(feature="profile")] let profiler = self.profiler.clone();
             state.render_pass.push(Box::new(move |resources, render_pass| {
+                #[cfg(feature="profile")] profiler.borrow_mut().start_action(RenderActionType::RenderPassDrawIndexedTriangles);
+
                 render_pass.set_vertex_buffer(0, resources.buffers[vertex_buffer_index].slice(..));
                 render_pass.set_index_buffer(resources.buffers[index_buffer_index].slice(..), wgpu::IndexFormat::Uint16);
                 render_pass.draw_indexed(0..num_vertices as u32, 0, 0..1);
+
+                #[cfg(feature="profile")] profiler.borrow_mut().finish_action(RenderActionType::RenderPassDrawIndexedTriangles);
             }));
         }
     }

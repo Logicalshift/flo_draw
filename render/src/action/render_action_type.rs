@@ -34,6 +34,11 @@ pub enum RenderActionType {
     UseShader,
     DrawTriangles,
     DrawIndexedTriangles,
+
+    RenderPassSetPipeline,
+    RenderPassDrawFramebuffer,
+    RenderPassDrawTriangles,
+    RenderPassDrawIndexedTriangles,
 }
 
 impl From<&RenderAction> for RenderActionType {
