@@ -9,8 +9,9 @@ const ROLLING_WINDOW_SIZE: usize = 30;
 /// Time accumulated for a profiled action
 ///
 struct ActionTime {
-    count:  usize,
-    time:   Duration,
+    count:          usize,
+    time:           Duration,
+    reentrant_time: Duration,
 }
 
 ///
@@ -127,7 +128,7 @@ where
             // Add to the time for this action
             let time = self.frame_action_times
                 .entry(action)
-                .or_insert_with(|| ActionTime { count: 0, time: Duration::default() });
+                .or_insert_with(|| ActionTime { count: 0, time: Duration::default(), reentrant_time: Duration::default() });
 
             // Add as recursive time to the action on top of the stack
             if let Some(parent_action) = self.action_stack.last() {
@@ -139,6 +140,10 @@ where
 
             time.count  += 1;
             time.time   += duration;
+
+            if let Some(reentrant_time) = self.reentrant_time.remove(&action) {
+                time.reentrant_time += reentrant_time;
+            }
         }
     }
 
@@ -205,17 +210,20 @@ where
 
         // Action time summary for the frame, sorted by slowest action
         let mut all_actions     = self.frame_action_times.iter().collect::<Vec<_>>();
-        all_actions.sort_by_key(|(_act, time)| time.time);
+        all_actions.sort_by_key(|(_act, time)| time.time - time.reentrant_time);
         all_actions.reverse();
 
         let slowest_time        = all_actions.iter().next().map(|(_, slowest_time)| slowest_time.time).unwrap_or(Duration::default());
         let slowest_micros      = slowest_time.as_micros() as f64;
         let all_actions         = all_actions.into_iter()
             .map(|(action, time)| {
-                let micros      = time.time.as_micros() as f64;
-                let graph_len   = 16.0*(micros/slowest_micros);
-                let graph       = "#".repeat(graph_len as _);
-                let action      = format!("{:?}", action);
+                let reentrant       = time.reentrant_time.as_micros() as f64;
+                let micros          = time.time.as_micros() as f64;
+                let micros          = micros - reentrant;
+                let graph_len       = 16.0*(micros/slowest_micros);
+                let reentrant_len   = 16.0*(reentrant/slowest_micros);
+                let graph           = format!("{}{}", "#".repeat(graph_len as _), "-".repeat(reentrant_len as _));
+                let action          = format!("{:?}", action);
 
                 format!("   {: <20.20} | {: >8.8}µs | {: >7.7} | {}", action, time.time.as_micros(), time.count, graph)
             })
