@@ -44,6 +44,9 @@ where
     /// The times when each action was started
     action_start: HashMap<TAction, Instant>,
 
+    /// The actions that have been started in the current frame
+    action_stack: Vec<TAction>,
+
     /// The counts and accumulated time for the actions in the current frame
     frame_action_times: HashMap<TAction, ActionTime>,
 
@@ -67,6 +70,7 @@ where
             last_frame_start:       None,
             last_frame_finish:      None,
             frame_finish:           None,
+            action_stack:           vec![],
             action_start:           HashMap::new(),
             frame_action_times:     HashMap::new(), 
             rolling_frame_times:    VecDeque::new(),
@@ -82,6 +86,7 @@ where
         self.last_frame_start   = self.frame_start;
         self.last_frame_finish  = self.frame_finish;
         self.frame_start        = Some(Instant::now());
+        self.action_stack       = vec![];
 
         // No actions have been run this frame, so reset the actions
         self.frame_action_times.clear();
@@ -97,6 +102,7 @@ where
     #[inline]
     pub fn start_action(&mut self, action: TAction) {
         self.action_start.insert(action, Instant::now());
+        self.action_stack.push(action);
     }
 
     ///
@@ -105,6 +111,12 @@ where
     #[inline]
     pub fn finish_action(&mut self, action: TAction) {
         let now = Instant::now();
+
+        if self.action_stack.last() == Some(&action) {
+            self.action_stack.pop();
+        } else {
+            panic!("Bleh");
+        }
 
         if let Some(action_start_time) = self.action_start.get(&action) {
             // Work out how long the action has taken
