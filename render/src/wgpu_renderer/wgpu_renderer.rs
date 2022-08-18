@@ -712,6 +712,14 @@ impl WgpuRenderer {
         render_state.run_render_pass();
         #[cfg(feature="profile")] self.profiler.borrow_mut().finish_action(RenderActionType::RunRenderPass);
 
+        // Submit the queue
+        #[cfg(feature="profile")] self.profiler.borrow_mut().start_action(RenderActionType::SubmitQueue);
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("run_render_pass") });
+        mem::swap(&mut encoder, &mut  render_state.encoder);
+
+        self.queue.submit(Some(encoder.finish()));
+        #[cfg(feature="profile")] self.profiler.borrow_mut().finish_action(RenderActionType::SubmitQueue);
+
         // Present the current frame buffer
         if let Some(surface_texture) = self.target_surface_texture.take() {
             // The current surface texture is what becomes the frame that we return as the 'to present' frame

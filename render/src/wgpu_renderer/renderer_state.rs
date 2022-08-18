@@ -221,15 +221,5 @@ impl RendererState {
                 (action)(&resources, &mut render_pass);
             }
         }
-
-        // Commit the commands that are pending in the command encoder
-        // It's probably not the most efficient way to do things, but it simplifies resource management 
-        // a lot (we'll need to hold on to all of the resources from the render pass resources until this
-        // is done otherwise). Might be some advantage to committing some commands to the GPU while we
-        // generate more too.
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("run_render_pass") });
-        mem::swap(&mut encoder, &mut self.encoder);
-
-        self.queue.submit(Some(encoder.finish()));
     }
 }
