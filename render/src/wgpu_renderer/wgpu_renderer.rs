@@ -101,6 +101,7 @@ pub struct WgpuRenderer {
     /// The texture samplers used by this renderer
     samplers: Samplers,
 
+    /// Profiler is used to display a breakdown of the time spent during a render pass
     #[cfg(feature="profile")]
     profiler: Rc<RefCell<RenderProfiler<RenderActionType>>>,
 }
