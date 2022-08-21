@@ -232,6 +232,9 @@ impl WgpuRenderer {
         // Create the render state
         let mut render_state    = RendererState::new(Arc::clone(&self.queue), Arc::clone(&self.device));
 
+        // If wgpu-profiler is enabled, then start a new scope
+        #[cfg(feature="wgpu-profiler")] self.wgpu_profiler.begin_scope("render_to_surface", &mut render_state.encoder, &*self.device);
+
         // Select the most recent render target, or the main frame buffer if the active render target is not set or does not exist
         self.select_main_frame_buffer(&mut render_state);
 
@@ -297,6 +300,7 @@ impl WgpuRenderer {
 
         // Submit the queue
         #[cfg(feature="wgpu-profiler")] self.wgpu_profiler.resolve_queries(&mut render_state.encoder);
+        #[cfg(feature="wgpu-profiler")] self.wgpu_profiler.end_scope(&mut render_state.encoder);
         #[cfg(feature="profile")] self.profiler.borrow_mut().start_action(RenderActionType::SubmitQueue);
 
         self.queue.submit(Some(render_state.encoder.finish()));
@@ -740,6 +744,8 @@ impl WgpuRenderer {
         mem::swap(&mut encoder, &mut  render_state.encoder);
 
         #[cfg(feature="wgpu-profiler")] self.wgpu_profiler.resolve_queries(&mut encoder);
+        #[cfg(feature="wgpu-profiler")] self.wgpu_profiler.end_scope(&mut encoder);
+        #[cfg(feature="wgpu-profiler")] self.wgpu_profiler.begin_scope("after_show_frame_buffer", &mut render_state.encoder, &*self.device);
 
         self.queue.submit(Some(encoder.finish()));
         #[cfg(feature="profile")] self.profiler.borrow_mut().finish_action(RenderActionType::SubmitQueue);
