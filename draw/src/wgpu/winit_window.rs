@@ -114,7 +114,7 @@ where
                             label:      None,
                             features:   features,
                             limits:     wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits())
-                        }, None).await.unwrap();
+                        }, None).await.expect("Create WGPU device and queue");
 
                         // Create the WGPU renderer
                         let device          = Arc::new(device);
