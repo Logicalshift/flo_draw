@@ -170,6 +170,8 @@ There are a couple of feature flags that can be used to choose rendering engines
     (See the vectoroids example for a way to use a generator stream as a game clock)
 * `desync` provides a simpler way to write asynchronous code than traditional threads
 * `flo_binding` provides a way to convert between state changes and message streams, used in `flo_draw` to update the window configuration
+* `flo_scene` is a toolkit for building larger pieces of software from components that communicate by exchanging messages or monitoring
+  properties.
 
 # Version 0.4
 
