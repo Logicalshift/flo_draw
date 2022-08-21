@@ -108,7 +108,10 @@ For more information, you may be interested in the [guide](GUIDE.md), or the [ex
 * [`cargo run --example mandelbrot`](./examples/mandelbrot.rs) - an interactive mandelbrot set program
 * [`cargo run --example wibble`](./examples/wibble.rs) - render text to vectors and distort it in real time
 * [`cargo run --example mascot`](./examples/mascot.rs) - render FlowBetween's mascot from some pre-encoded vector instructions
+* [`cargo run --example mascot_sprite`](./examples/mascot_sprite.rs) - use a sprite to render the mascot
+* [`cargo run --example mascot_filter`](./examples/mascot_filter.rs) - render the mascot with some filters applied to it
 * [`cargo run --example texture`](./examples/texture.rs) - bitmap rendering
+* [`cargo run --example texture_filter`](./examples/texture_filter.rs) - applying filters to bitmaps
 * [`cargo run --example texture_sprites`](./examples/texture_sprites.rs) - bouncing balls with bitmap images
 * [`cargo run --example texture_spin`](./examples/texture_spin.rs) - bitmap rendering with an animated transformation applied
 * [`cargo run --example texture_from_sprite`](./examples/texture_from_sprite.rs) - demonstrates rendering to a texture
@@ -116,6 +119,7 @@ For more information, you may be interested in the [guide](GUIDE.md), or the [ex
 * [`cargo run --example gradient`](./examples/gradient.rs) - gradient rendering
 * [`cargo run --example mascot_shadow`](./examples/mascot_shadow.rs) - reprocess the mascot rendering to add some extra shading
 * [`cargo run --example wibble_mascot`](./examples/wibble_mascot.rs) - reprocess the mascot rendering to make it wobble
+* [`cargo run --example wibble_dynamic_mascot`](./examples/wibble_dynamic_mascot.rs) - wobbly mascot rendered multiple times using a dynamic texture
 * [`cargo run --example text_layout`](./examples/text_layout.rs) - some effects that can be acheived with the text layout engine
 * [`cargo run --example show_tessellation`](./examples/show_tessellation.rs) - demonstrates how 2D graphics are tessellated for display using a GPU (and how to perform this manually and intercept the results)
 * [`cargo run --example show_text_tessellation`](./examples/show_text_tessellation.rs) - tessellating text rendered from a font
