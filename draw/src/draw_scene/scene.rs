@@ -10,7 +10,7 @@ use std::sync::*;
 ///
 /// Retrieves or creates a scene context for flo_draw
 ///
-#[cfg(feature="render-opengl")]
+#[cfg(all(feature="render-opengl", not(feature="render-wgpu")))]
 pub fn flo_draw_scene_context() -> Arc<SceneContext> {
     flo_draw_glutin_scene_context()
 }
@@ -18,7 +18,7 @@ pub fn flo_draw_scene_context() -> Arc<SceneContext> {
 ///
 /// Retrieves or creates a scene context for flo_draw
 ///
-#[cfg(all(feature="render-wgpu", not(feature="render-opengl")))]
+#[cfg(all(feature="render-wgpu"))]
 pub fn flo_draw_scene_context() -> Arc<SceneContext> {
     flo_draw_wgpu_scene_context()
 }

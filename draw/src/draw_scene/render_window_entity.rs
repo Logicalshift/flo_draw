@@ -12,7 +12,7 @@ use std::sync::*;
 ///
 /// Creates a render window in a scene with the specified entity ID
 ///
-#[cfg(feature="render-opengl")]
+#[cfg(all(feature="render-opengl", not(feature="render-wgpu")))]
 pub fn create_render_window_entity(context: &Arc<SceneContext>, entity_id: EntityId, initial_size: (u64, u64)) -> Result<SimpleEntityChannel<RenderWindowRequest, ()>, CreateEntityError> {
     create_glutin_render_window_entity(context, entity_id, initial_size)
 }
@@ -20,7 +20,7 @@ pub fn create_render_window_entity(context: &Arc<SceneContext>, entity_id: Entit
 ///
 /// Retrieves or creates a scene context for flo_draw
 ///
-#[cfg(all(feature="render-wgpu", not(feature="render-opengl")))]
+#[cfg(all(feature="render-wgpu"))]
 pub fn create_render_window_entity(context: &Arc<SceneContext>, entity_id: EntityId, initial_size: (u64, u64)) -> Result<SimpleEntityChannel<RenderWindowRequest, ()>, CreateEntityError> {
     create_wgpu_render_window_entity(context, entity_id, initial_size)
 }
