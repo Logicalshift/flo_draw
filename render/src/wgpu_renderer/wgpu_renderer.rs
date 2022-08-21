@@ -296,8 +296,11 @@ impl WgpuRenderer {
         #[cfg(feature="profile")] self.profiler.borrow_mut().finish_action(RenderActionType::RunRenderPass);
 
         // Submit the queue
+        #[cfg(feature="wgpu-profiler")] self.wgpu_profiler.resolve_queries(&mut render_state.encoder);
         #[cfg(feature="profile")] self.profiler.borrow_mut().start_action(RenderActionType::SubmitQueue);
+
         self.queue.submit(Some(render_state.encoder.finish()));
+
         #[cfg(feature="profile")] self.profiler.borrow_mut().finish_action(RenderActionType::SubmitQueue);
 
         #[cfg(feature="profile")]
@@ -735,6 +738,8 @@ impl WgpuRenderer {
         #[cfg(feature="profile")] self.profiler.borrow_mut().start_action(RenderActionType::SubmitQueue);
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("run_render_pass") });
         mem::swap(&mut encoder, &mut  render_state.encoder);
+
+        #[cfg(feature="wgpu-profiler")] self.wgpu_profiler.resolve_queries(&mut encoder);
 
         self.queue.submit(Some(encoder.finish()));
         #[cfg(feature="profile")] self.profiler.borrow_mut().finish_action(RenderActionType::SubmitQueue);
