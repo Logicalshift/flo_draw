@@ -40,6 +40,9 @@ use std::cell::*;
 #[cfg(feature="profile")]
 use std::rc::*;
 
+#[cfg(feature="wgpu-profiler")]
+use wgpu_profiler::{wgpu_profiler, GpuProfiler};
+
 ///
 /// Renderer that uses the `wgpu` abstract library as a render target
 ///
@@ -104,6 +107,10 @@ pub struct WgpuRenderer {
     /// Profiler is used to display a breakdown of the time spent during a render pass
     #[cfg(feature="profile")]
     profiler: Rc<RefCell<RenderProfiler<RenderActionType>>>,
+
+    /// The WGPU profiler can also be used to generate flo_draw_profile.json files
+    #[cfg(feature="wgpu-profiler")]
+    wgpu_profiler: GpuProfiler,
 }
 
 impl WgpuRenderer {
@@ -111,6 +118,9 @@ impl WgpuRenderer {
     /// Creates a new WGPU renderer
     ///
     pub fn from_surface(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer {
+        #[cfg(feature="wgpu-profiler")]
+        let wgpu_profiler = GpuProfiler::new(4, queue.get_timestamp_period(), GpuProfiler::ALL_WGPU_TIMER_FEATURES);
+
         WgpuRenderer {
             adapter:                target_adapter,
             device:                 device.clone(),
@@ -134,12 +144,18 @@ impl WgpuRenderer {
 
             #[cfg(feature="profile")]
             profiler:               Rc::new(RefCell::new(RenderProfiler::new())),
+
+            #[cfg(feature="wgpu-profiler")]
+            wgpu_profiler:          wgpu_profiler,
         }
     }
     ///
     /// Creates a new WGPU renderer
     ///
     pub fn from_texture(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_texture: Arc<wgpu::Texture>, target_adapter: Arc<wgpu::Adapter>, texture_format: wgpu::TextureFormat, texture_size: (u32, u32)) -> WgpuRenderer {
+        #[cfg(feature="wgpu-profiler")]
+        let wgpu_profiler = GpuProfiler::new(4, queue.get_timestamp_period(), GpuProfiler::ALL_WGPU_TIMER_FEATURES);
+
         WgpuRenderer {
             adapter:                target_adapter,
             device:                 device.clone(),
@@ -163,6 +179,9 @@ impl WgpuRenderer {
 
             #[cfg(feature="profile")]
             profiler:               Rc::new(RefCell::new(RenderProfiler::new())),
+
+            #[cfg(feature="wgpu-profiler")]
+            wgpu_profiler:          wgpu_profiler,
         }
     }
 
