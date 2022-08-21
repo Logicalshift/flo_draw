@@ -853,6 +853,7 @@ dependencies = [
  "libc 0.2.132",
  "metal",
  "wgpu",
+ "wgpu-profiler",
  "winit 0.26.1",
 ]
 
@@ -2973,6 +2974,15 @@ dependencies = [
  "web-sys",
  "wgpu-types",
  "winapi",
+]
+
+[[package]]
+name = "wgpu-profiler"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "efa3376576d940dfe47d1ea2dc840feb1e8f15a5c7130e7bb085a261db7f836a"
+dependencies = [
+ "wgpu",
 ]
 
 [[package]]

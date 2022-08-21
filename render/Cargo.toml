@@ -31,6 +31,7 @@ flo_render_gl_offscreen = { version = "0.4", optional = true }
 desync                  = { version = "0.9", optional = true }
 lazy_static             = { version = "1.2", optional = true }
 futures                 = { version = "0.3", optional = true }
+wgpu-profiler           = { version = "0.9", optional = true }
 
 [dev-dependencies]
 winit                   = "0.26"
