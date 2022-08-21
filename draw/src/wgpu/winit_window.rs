@@ -23,6 +23,9 @@ use std::fmt;
 #[cfg(feature="profile")]
 use std::time::{Duration, Instant};
 
+#[cfg(feature="wgpu-profiler")]
+use wgpu_profiler::{GpuProfiler};
+
 ///
 /// Manages the state of a Winit window
 ///
@@ -105,9 +108,11 @@ where
                         }).await.expect("Could not acquire an adapter for winit/wgpu");
 
                         // Fetch the device and the queue
+                        let features        = wgpu::Features::empty();
+                        #[cfg(feature="wgpu-profiler")] let features = features | GpuProfiler::ALL_WGPU_TIMER_FEATURES;
                         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
                             label:      None,
-                            features:   wgpu::Features::empty(),
+                            features:   features,
                             limits:     wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits())
                         }, None).await.unwrap();
 

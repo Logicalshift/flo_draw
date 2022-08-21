@@ -834,6 +834,7 @@ dependencies = [
  "rand",
  "rayon",
  "wgpu",
+ "wgpu-profiler",
  "winit 0.26.1",
 ]
 

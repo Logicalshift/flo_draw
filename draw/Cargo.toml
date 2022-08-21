@@ -16,6 +16,7 @@ default             = [ "render-wgpu" ]
 render-opengl       = [ "gl", "glutin", "flo_render/opengl" ]
 render-wgpu         = [ "winit", "wgpu", "flo_render/render-wgpu" ]
 profile             = [ "flo_render/profile" ]
+wgpu-profiler       = [ "dep:wgpu-profiler", "flo_render/wgpu-profiler" ]
 
 [dependencies]
 flo_canvas          = { version = "0.4", features = [ "outline-fonts", "image-loading" ] }
@@ -35,6 +36,7 @@ gl                  = { optional = true, version = "0.14" }
 
 winit               = { optional = true, version = "0.26" }
 wgpu                = { optional = true, version = "0.13" }
+wgpu-profiler       = { version = "0.9", optional = true }
 
 [dev-dependencies]
 flo_curves          = "0.6"
