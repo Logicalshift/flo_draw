@@ -42,6 +42,8 @@ use std::rc::*;
 
 #[cfg(feature="wgpu-profiler")]
 use wgpu_profiler::{wgpu_profiler, GpuProfiler};
+#[cfg(feature="wgpu-profiler")]
+use std::path::{Path};
 
 ///
 /// Renderer that uses the `wgpu` abstract library as a render target
@@ -307,12 +309,19 @@ impl WgpuRenderer {
 
         #[cfg(feature="profile")] self.profiler.borrow_mut().finish_action(RenderActionType::SubmitQueue);
 
+        // Display the profiler information
         #[cfg(feature="profile")]
         {
             self.profiler.borrow_mut().finish_frame();
             println!("\n\n= WGPU {}", self.profiler.borrow_mut().summary_string())
         }
 
+        // Rewrite the chrometrace file every frame (TODO: some other cadence/write multiple files)
+        #[cfg(feature="wgpu-profiler")]
+        if let Some(profiling_data) = self.wgpu_profiler.process_finished_frame() {
+            wgpu_profiler::chrometrace::write_chrometrace(Path::new("flo_draw_profile.json"), &profiling_data);
+        }
+        
         // Result is the surface texture that was last presented
         render_state.present.take()
     }
