@@ -150,6 +150,17 @@ See the [examples](./draw/examples/) folder in the `draw` and `render_canvas` su
 ![Wibble](./images/wibble.png) ![Mandelbrot](./images/mandelbrot.png)
 ![Gradient](./images/gradient.png) ![Text layout](./images/textlayout.png)
 
+## Feature flags
+
+There are a couple of feature flags that can be used to choose rendering engines or enable or disable features:
+
+* `render-opengl` - the default renderer, using the OpenGL API. Right now this provides the highest performance on the
+  widest range of possible hardware.
+* `render-wgpu` - uses WGPU instead of OpenGL. WGPU can use a wide range of backends but is currently quite low performing
+  on several systems
+* `profile` - output some performance metrics to the console on each frame
+* `wgpu-profiler` - add in the WGPU profiler (somewhat unreliable)
+
 # Companion crates
 
 `flo_draw` was developed alongside several other crates, which may be of interest when developing software that uses the canvas:

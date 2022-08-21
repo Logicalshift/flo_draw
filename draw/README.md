@@ -120,6 +120,17 @@ For more information, you may be interested in the [guide](GUIDE.md), or the [ex
 * [`cargo run --example show_tessellation`](./examples/show_tessellation.rs) - demonstrates how 2D graphics are tessellated for display using a GPU (and how to perform this manually and intercept the results)
 * [`cargo run --example show_text_tessellation`](./examples/show_text_tessellation.rs) - tessellating text rendered from a font
 
+## Feature flags
+
+There are a couple of feature flags that can be used to choose rendering engines or enable or disable features:
+
+* `render-opengl` - the default renderer, using the OpenGL API. Right now this provides the highest performance on the
+  widest range of possible hardware.
+* `render-wgpu` - uses WGPU instead of OpenGL. WGPU can use a wide range of backends but is currently quite low performing
+  on several systems
+* `profile` - output some performance metrics to the console on each frame
+* `wgpu-profiler` - add in the WGPU profiler (somewhat unreliable)
+
 ## --
 
 ![Wibble](./images/wibble.png) ![Mandelbrot](./images/mandelbrot.png)
