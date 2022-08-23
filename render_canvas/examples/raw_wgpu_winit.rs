@@ -1,3 +1,9 @@
+
+#[cfg(not(feature="render-wgpu"))]
+fn main() {
+    panic!("This example requires the render-wgpu feature to be set");
+}
+
 ///
 /// Demonstrates initialising and using the flo_render and flo_render_canvas crates directly via winit.
 ///
@@ -6,6 +12,7 @@
 /// amount of boilerplate code. Manual initialisation like this is useful when integrating with other UI libraries,
 /// however.
 ///
+#[cfg(feature="render-wgpu")]
 fn main() {
     use flo_canvas::*;
     use flo_render::*;
