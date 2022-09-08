@@ -3,7 +3,7 @@ use super::glutin_thread_event::*;
 
 use ::desync::*;
 
-use glutin::event_loop::{EventLoop, EventLoopProxy};
+use glutin::event_loop::{EventLoopBuilder, EventLoopProxy};
 
 use std::mem;
 use std::sync::*;
@@ -128,7 +128,7 @@ fn create_glutin_thread() -> Arc<GlutinThread> {
 ///
 fn run_glutin_thread(send_proxy: mpsc::Sender<EventLoopProxy<GlutinThreadEvent>>) {
     // Create the event loop
-    let event_loop  = EventLoop::with_user_event();
+    let event_loop  = EventLoopBuilder::with_user_event().build();
 
     // We communicate with the event loop via the proxy
     let proxy       = event_loop.create_proxy();
