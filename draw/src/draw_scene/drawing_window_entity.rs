@@ -15,8 +15,8 @@ use std::sync::*;
 /// Combines rendering and event messages into one enum
 ///
 enum DrawingOrEvent {
-    Drawing(Vec<Message<DrawingWindowRequest, ()>>),
-    Event(Vec<Message<DrawEventRequest, ()>>),
+    Drawing(Vec<DrawingWindowRequest>),
+    Event(Vec<DrawEventRequest>),
 }
 
 ///
@@ -177,7 +177,7 @@ impl RendererState {
     ///
     /// Performs a drawing action and passes it on to the render target
     ///
-    async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: &mut (impl 'static + EntityChannel<Message=RenderWindowRequest, Response=()>)) {
+    async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: &mut (impl 'static + EntityChannel<Message=RenderWindowRequest>)) {
         let render_actions = self.renderer.draw(draw_actions.cloned()).collect::<Vec<_>>().await;
         render_target.send_without_waiting(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
     }
@@ -186,7 +186,7 @@ impl RendererState {
 ///
 /// Creates a drawing window that sends render requests to the specified target
 ///
-pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: EntityId, render_target: impl 'static + EntityChannel<Message=RenderWindowRequest, Response=()>) -> Result<SimpleEntityChannel<DrawingWindowRequest, ()>, CreateEntityError> {
+pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: EntityId, render_target: impl 'static + EntityChannel<Message=RenderWindowRequest>) -> Result<SimpleEntityChannel<DrawingWindowRequest>, CreateEntityError> {
     // This window can accept a couple of converted messages
     context.convert_message::<DrawingRequest, DrawingWindowRequest>()?;
     context.convert_message::<EventWindowRequest, DrawingWindowRequest>()?;
@@ -209,7 +209,7 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
 
         // Request the events from the render target
         let (channel, events_receiver)  = SimpleEntityChannel::new(entity_id, 1000);
-        render_target.send(RenderWindowRequest::SendEvents(channel.boxed())).await.ok();
+        render_target.send_without_waiting(RenderWindowRequest::SendEvents(channel.boxed())).await.ok();
 
         // Chunk the requests we receive
         let drawing_window_requests     = drawing_window_requests.ready_chunks(100);
@@ -240,7 +240,6 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                 DrawingOrEvent::Drawing(drawing_list) => {
                     // Perform all the actions in a single frame
                     let mut combined_list   = vec![Arc::new(vec![Draw::StartFrame])];
-                    let mut responder_list  = vec![];
 
                     // If we've rendered something and 'NewFrame' hasn't yet been generated, add an extra 'StartFrame' to suspend rendering until the last frame is finished
                     if waiting_for_new_frame && !drawing_since_last_frame {
@@ -249,16 +248,10 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                     }
 
                     for draw_msg in drawing_list {
-                        // Take the message
-                        let (draw_msg, responder) = draw_msg.take();
-
                         match draw_msg {
                             DrawingWindowRequest::Draw(DrawingRequest::Draw(drawing)) => {
                                 // Send the drawing to the renderer
                                 combined_list.push(drawing);
-
-                                // Send the response once the drawing action has completed
-                                responder_list.push(responder);
                             }
 
                             DrawingWindowRequest::CloseWindow => {
@@ -298,17 +291,13 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                     render_state.draw(combined_list.iter()
                         .flat_map(|item| item.iter()), &mut render_target).await;
 
-                    // Send to all the responders
-                    responder_list.into_iter().for_each(|responder| { responder.send(()).ok(); });
-
                     // Update the window transform according to the drawing actions we processed
                     render_state.update_window_transform();
                 }
 
                 DrawingOrEvent::Event(event_list) => {
                     for evt_message in event_list.into_iter() {
-                        // Take the message apart
-                        let (mut evt_message, responder) = evt_message.take();
+                        let mut evt_message = evt_message;
 
                         match &evt_message {
                             // TODO: StartFrame/ShowFrame based on the 'NewFrame' event
@@ -370,9 +359,6 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                                 send_rendering.await.ok();
                             }
                         }).await;
-
-                        // Indicate that the event has been handled
-                        responder.send(()).ok();
                     }
 
                     // The entity stops when the window is closed
@@ -384,7 +370,7 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
         }
 
         // Shut down
-        render_target.send(RenderWindowRequest::CloseWindow).await.ok();
+        render_target.send_without_waiting(RenderWindowRequest::CloseWindow).await.ok();
 
         use std::mem;
 

@@ -130,7 +130,7 @@ where
 
     // Pass events from the render stream onto the window using another entity (potentially this could be a background task for the render window entity?)
     let process_entity = EntityId::new();
-    scene_context.create_entity::<(), (), _, _>(process_entity, move |context, _| {
+    scene_context.create_entity::<(), _, _>(process_entity, move |context, _| {
         async move {
             let mut canvas_stream   = canvas_stream;
             let mut drawing_channel = drawing_channel;
@@ -139,7 +139,7 @@ where
             send_window_properties(&context, properties, drawing_channel.clone()).ok();
 
             // Request event actions from the renderer
-            drawing_channel.send(DrawingWindowRequest::SendEvents(events_channel.boxed())).await.ok();
+            drawing_channel.send_without_waiting(DrawingWindowRequest::SendEvents(events_channel.boxed())).await.ok();
 
             // Main loop passes on the render actions (we don't process messages directed at this entity)
             while let Some(drawing_actions) = canvas_stream.next().await {
@@ -157,12 +157,7 @@ where
     scene_context.seal_entity(process_entity).unwrap();
 
     // The events stream is the result
-    events_stream.map(|msg| {
-        let (evt, response) = msg.take();
-        response.send(()).ok();
-
-        evt
-    })
+    events_stream
 }
 
 ///

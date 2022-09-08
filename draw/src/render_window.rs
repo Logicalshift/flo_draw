@@ -30,7 +30,7 @@ where
 ///
 /// Sends the events for changing the properties in a set of WindowProperties
 ///
-pub (crate) fn send_window_properties<TRequest>(context: &Arc<SceneContext>, window_properties: WindowProperties, channel: impl 'static + Send + EntityChannel<Message=TRequest, Response=()>) -> Result<(), EntityFutureError>
+pub (crate) fn send_window_properties<TRequest>(context: &Arc<SceneContext>, window_properties: WindowProperties, channel: impl 'static + Send + EntityChannel<Message=TRequest>) -> Result<(), EntityFutureError>
 where
     TRequest: Send + From<EventWindowRequest>
 {
@@ -85,7 +85,7 @@ where
 
     // Pass events from the render stream onto the window using another entity (potentially this could be a background task for the render window entity?)
     let process_entity = EntityId::new();
-    scene_context.create_entity::<(), (), _, _>(process_entity, move |context, _| {
+    scene_context.create_entity::<(), _, _>(process_entity, move |context, _| {
         async move {
             let mut render_stream   = render_stream.boxed();
             let mut render_channel  = render_channel;
@@ -93,7 +93,7 @@ where
             send_window_properties(&context, properties, render_channel.clone()).ok();
 
             // Request event actions from the renderer
-            render_channel.send(RenderWindowRequest::SendEvents(events_channel.boxed())).await.ok();
+            render_channel.send_without_waiting(RenderWindowRequest::SendEvents(events_channel.boxed())).await.ok();
 
             // Main loop passes on the render actions (we don't process messages directed at this entity)
             while let Some(render_actions) = render_stream.next().await {
@@ -111,10 +111,5 @@ where
     scene_context.seal_entity(process_entity).unwrap();
 
     // The events stream is the result
-    events_stream.map(|msg| {
-        let (evt, response) = msg.take();
-        response.send(()).ok();
-
-        evt
-    })
+    events_stream
 }

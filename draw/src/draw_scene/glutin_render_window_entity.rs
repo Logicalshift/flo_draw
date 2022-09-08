@@ -14,7 +14,7 @@ use std::sync::*;
 ///
 /// Creates a render window in a scene with the specified entity ID
 ///
-pub fn create_glutin_render_window_entity(context: &Arc<SceneContext>, entity_id: EntityId, initial_size: (u64, u64)) -> Result<SimpleEntityChannel<RenderWindowRequest, ()>, CreateEntityError> {
+pub fn create_glutin_render_window_entity(context: &Arc<SceneContext>, entity_id: EntityId, initial_size: (u64, u64)) -> Result<SimpleEntityChannel<RenderWindowRequest>, CreateEntityError> {
     // This window can accept a couple of converted messages
     context.convert_message::<RenderRequest, RenderWindowRequest>()?;
     context.convert_message::<EventWindowRequest, RenderWindowRequest>()?;
@@ -49,10 +49,7 @@ pub fn create_glutin_render_window_entity(context: &Arc<SceneContext>, entity_id
         let mut render_sender           = render_sender;
 
         while let Some(request) = render_window_requests.next().await {
-            let request: Message::<RenderWindowRequest, ()> = request;
-
-            // Take the request so we can send the contained data directly
-            let (request, response) = request.take();
+            let request: RenderWindowRequest = request;
 
             match request {
                 RenderWindowRequest::Render(RenderRequest::Render(render)) => {
@@ -81,9 +78,6 @@ pub fn create_glutin_render_window_entity(context: &Arc<SceneContext>, entity_id
                 }
 
                 RenderWindowRequest::CloseWindow => {
-                    // Just stop running when there's a 'close' request
-                    response.send(()).ok();
-
                     // The window will close its publisher in response to the events stream being closed
                     render_sender.close().await.ok();
 
@@ -102,8 +96,6 @@ pub fn create_glutin_render_window_entity(context: &Arc<SceneContext>, entity_id
                 RenderWindowRequest::SetHasDecorations(new_decorations) => { has_decorations.set(new_decorations); },
                 RenderWindowRequest::SetMousePointer(new_mouse_pointer) => { mouse_pointer.set(new_mouse_pointer); },
             }
-
-            response.send(()).ok();
         }
     })
 }
