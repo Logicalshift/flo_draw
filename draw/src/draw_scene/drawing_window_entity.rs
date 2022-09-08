@@ -1,6 +1,5 @@
 use futures::prelude::*;
 use futures::task::{Poll, Context};
-use futures::stream;
 
 use flo_scene::*;
 use flo_stream::*;

@@ -1,4 +1,4 @@
-#[cfg(feature="render-opengl")]
+#[cfg(all(feature="render-opengl", not(feature="render-wgpu")))]
 use super::glutin_render_window_entity::*;
 
 #[cfg(feature="render-wgpu")]
