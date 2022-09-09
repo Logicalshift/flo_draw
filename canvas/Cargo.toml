@@ -17,7 +17,7 @@ image-loading       = [ "image" ]
 scenery             = [ "flo_scene" ]
 
 [dependencies]
-flo_curves          = "0.6"
+flo_curves          = "0.7"
 flo_stream          = "0.7"
 flo_scene           = { version = "0.1", optional = true }
 

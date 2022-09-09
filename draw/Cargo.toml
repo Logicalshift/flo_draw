@@ -39,7 +39,7 @@ wgpu                = { optional = true, version = "0.13" }
 wgpu-profiler       = { version = "0.9", optional = true }
 
 [dev-dependencies]
-flo_curves          = "0.6"
+flo_curves          = "0.7"
 rand                = "0.8"
 futures-timer       = "3.0"
 num-complex         = "0.4"
