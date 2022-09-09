@@ -61,6 +61,7 @@ mod drawing_target;
 mod conversion_streams;
 
 #[cfg(feature = "outline-fonts")] mod font_line_layout;
+#[cfg(feature = "scenery")] pub mod scenery;
 
 pub use self::draw::*;
 pub use self::path::*;
