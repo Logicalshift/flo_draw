@@ -19,7 +19,7 @@ profile             = [ "flo_render/profile" ]
 wgpu-profiler       = [ "dep:wgpu-profiler", "flo_render/wgpu-profiler" ]
 
 [dependencies]
-flo_canvas          = { version = "0.4", features = [ "outline-fonts", "image-loading" ] }
+flo_canvas          = { version = "0.4", features = [ "outline-fonts", "image-loading", "scenery" ] }
 flo_canvas_events   = { version = "0.4" }
 flo_render          = { version = "0.4", features = [ "opengl" ] }
 flo_render_canvas   = "0.4"

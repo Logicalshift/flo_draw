@@ -763,6 +763,7 @@ dependencies = [
  "allsorts",
  "desync",
  "flo_curves",
+ "flo_scene",
  "flo_stream",
  "futures",
  "image",

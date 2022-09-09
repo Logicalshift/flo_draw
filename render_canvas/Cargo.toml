@@ -16,6 +16,8 @@ osx-metal   = [ "flo_render/osx-metal" ]
 render-wgpu = [ "flo_render/render-wgpu" ]
 profile     = [ "flo_render/profile" ]
 
+scenery     = [ "flo_canvas/scenery" ]
+
 [dependencies]
 flo_render  = "0.4"
 flo_canvas  = "0.4"
