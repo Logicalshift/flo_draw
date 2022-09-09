@@ -9,6 +9,6 @@ description         = "User input events for a flo_draw canvas"
 categories          = [ "graphics", "rendering", "gui" ]
 
 [dependencies]
-flo_canvas          = "0.4"
+flo_canvas          = { version = "0.4", features = [ "scenery" ] }
 flo_render          = "0.4"
 flo_scene           = "0.1"

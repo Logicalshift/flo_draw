@@ -4,6 +4,7 @@ use futures::task::{Poll, Context};
 use flo_scene::*;
 use flo_stream::*;
 use flo_canvas::*;
+use flo_canvas::scenery::*;
 use flo_canvas_events::*;
 use flo_render_canvas::*;
 

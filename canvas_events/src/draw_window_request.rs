@@ -1,8 +1,8 @@
 use super::render_request::*;
-use super::drawing_request::*;
 use super::draw_event_request::*;
 
 use flo_scene::*;
+use flo_canvas::scenery::*;
 
 ///
 /// The types of mouse pointer that can be displayed in a window

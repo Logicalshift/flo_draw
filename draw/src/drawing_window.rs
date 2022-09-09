@@ -4,6 +4,7 @@ use crate::window_properties::*;
 use crate::draw_scene::*;
 
 use flo_canvas::*;
+use flo_canvas::scenery::*;
 use flo_binding::*;
 use flo_scene::*;
 
