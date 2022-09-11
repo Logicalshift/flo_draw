@@ -14,12 +14,13 @@ include             = [ "Cargo.toml", "src/**/*", "test_data/**/*", "README.md" 
 [features]
 outline-fonts       = [ "allsorts", "ttf-parser", "pathfinder_geometry" ]
 image-loading       = [ "image" ]
-scenery             = [ "flo_scene" ]
+scenery             = [ "flo_scene", "uuid" ]
 
 [dependencies]
 flo_curves          = "0.7"
 flo_stream          = "0.7"
 flo_scene           = { version = "0.1", optional = true }
+uuid                = { version = "1.0", features = [ "v4" ], optional = true }
 
 futures             = "0.3"
 desync              = "0.9"

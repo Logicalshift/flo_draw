@@ -776,6 +776,7 @@ dependencies = [
  "serde_json",
  "smallvec",
  "ttf-parser",
+ "uuid",
 ]
 
 [[package]]
@@ -790,7 +791,7 @@ dependencies = [
 [[package]]
 name = "flo_curves"
 version = "0.7.0"
-source = "git+https://github.com/Logicalshift/flo_curves?branch=v0.7#881977fca92fb13ee043d6539a75601522dbcf7c"
+source = "git+https://github.com/Logicalshift/flo_curves?branch=v0.7#13cca2fbed9a69dee8d79c81796ffa2c2fbdf0c9"
 dependencies = [
  "itertools 0.10.3",
  "roots",
@@ -1342,9 +1343,9 @@ dependencies = [
 
 [[package]]
 name = "inplace_it"
-version = "0.3.4"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67f0347836f3f6362c1e7efdadde2b1c4b4556d211310b70631bae7eb692070b"
+checksum = "e567468c50f3d4bc7397702e09b380139f9b9288b4e909b070571007f8b5bf78"
 
 [[package]]
 name = "instant"
@@ -1544,9 +1545,9 @@ dependencies = [
 
 [[package]]
 name = "lyon_tessellation"
-version = "1.0.3"
+version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17f6e98315d70232b11ca9a81146ce718bce7d45fd9fba1792144a975df5d560"
+checksum = "374efef3047dc01cc86b32058d1dd0f675aba80d3d63df82cdeb160c69c4e903"
 dependencies = [
  "float_next_after",
  "lyon_path",
