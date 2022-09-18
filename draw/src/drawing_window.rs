@@ -140,11 +140,11 @@ where
             send_window_properties(&context, properties, drawing_channel.clone()).ok();
 
             // Request event actions from the renderer
-            drawing_channel.send_without_waiting(DrawingWindowRequest::SendEvents(events_channel.boxed())).await.ok();
+            drawing_channel.send(DrawingWindowRequest::SendEvents(events_channel.boxed())).await.ok();
 
             // Main loop passes on the render actions (we don't process messages directed at this entity)
             while let Some(drawing_actions) = canvas_stream.next().await {
-                let maybe_err = drawing_channel.send_without_waiting(DrawingWindowRequest::Draw(DrawingRequest::Draw(Arc::new(drawing_actions)))).await;
+                let maybe_err = drawing_channel.send(DrawingWindowRequest::Draw(DrawingRequest::Draw(Arc::new(drawing_actions)))).await;
 
                 if maybe_err.is_err() {
                     // Stop if the request doesn't go through

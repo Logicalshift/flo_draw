@@ -86,8 +86,8 @@ pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContex
         let (sprite_definitions_sender, sprite_definitions) = SimpleEntityChannel::new(entity_id, 10);
         let (sprite_transforms_sender, sprite_transforms)   = SimpleEntityChannel::new(entity_id, 10);
 
-        let sprite_definitions  = drawing_properties.send_without_waiting(PropertyRequest::TrackPropertiesWithName(String::from("SpriteDefinition"), sprite_definitions_sender.boxed())).await.ok();
-        let sprite_transforms   = drawing_properties.send_without_waiting(PropertyRequest::TrackPropertiesWithName(String::from("SpriteTransform"), sprite_transforms_sender.boxed())).await.ok();
+        let sprite_definitions  = drawing_properties.send(PropertyRequest::TrackPropertiesWithName(String::from("SpriteDefinition"), sprite_definitions_sender.boxed())).await.ok();
+        let sprite_transforms   = drawing_properties.send(PropertyRequest::TrackPropertiesWithName(String::from("SpriteTransform"), sprite_transforms_sender.boxed())).await.ok();
 
         // Receive messages in batches
         let mut messages = messages.ready_chunks(50);

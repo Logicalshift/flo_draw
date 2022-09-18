@@ -57,7 +57,7 @@ where
         // Pass the requests on to the underlying window
         let mut channel     = channel;
         while let Some(request) = requests.next().await {
-            channel.send_without_waiting(request.into()).await.ok();
+            channel.send(request.into()).await.ok();
         }
     })?;
 
@@ -93,11 +93,11 @@ where
             send_window_properties(&context, properties, render_channel.clone()).ok();
 
             // Request event actions from the renderer
-            render_channel.send_without_waiting(RenderWindowRequest::SendEvents(events_channel.boxed())).await.ok();
+            render_channel.send(RenderWindowRequest::SendEvents(events_channel.boxed())).await.ok();
 
             // Main loop passes on the render actions (we don't process messages directed at this entity)
             while let Some(render_actions) = render_stream.next().await {
-                let maybe_err = render_channel.send_without_waiting(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await;
+                let maybe_err = render_channel.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await;
 
                 if maybe_err.is_err() {
                     // Stop if the request doesn't go through

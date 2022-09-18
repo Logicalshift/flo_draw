@@ -179,7 +179,7 @@ impl RendererState {
     ///
     async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: &mut (impl 'static + EntityChannel<Message=RenderWindowRequest>)) {
         let render_actions = self.renderer.draw(draw_actions.cloned()).collect::<Vec<_>>().await;
-        render_target.send_without_waiting(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
+        render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
     }
 }
 
@@ -209,7 +209,7 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
 
         // Request the events from the render target
         let (channel, events_receiver)  = SimpleEntityChannel::new(entity_id, 1000);
-        render_target.send_without_waiting(RenderWindowRequest::SendEvents(channel.boxed())).await.ok();
+        render_target.send(RenderWindowRequest::SendEvents(channel.boxed())).await.ok();
 
         // Chunk the requests we receive
         let drawing_window_requests     = drawing_window_requests.ready_chunks(100);
@@ -267,7 +267,7 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
 
                                     // Pass on events to everything that's listening, until the channel starts generating errors
                                     while let Some(event) = subscriber.next().await {
-                                        let result = channel_target.send_without_waiting(event).await;
+                                        let result = channel_target.send(event).await;
 
                                         if result.is_err() {
                                             break;
@@ -276,10 +276,10 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
                                 }).ok();
                             }
 
-                            DrawingWindowRequest::SetTitle(title)                   => { render_target.send_without_waiting(RenderWindowRequest::SetTitle(title)).await.ok(); },
-                            DrawingWindowRequest::SetFullScreen(fullscreen)         => { render_target.send_without_waiting(RenderWindowRequest::SetFullScreen(fullscreen)).await.ok(); },
-                            DrawingWindowRequest::SetHasDecorations(decorations)    => { render_target.send_without_waiting(RenderWindowRequest::SetHasDecorations(decorations)).await.ok(); },
-                            DrawingWindowRequest::SetMousePointer(mouse_pointer)    => { render_target.send_without_waiting(RenderWindowRequest::SetMousePointer(mouse_pointer)).await.ok(); },
+                            DrawingWindowRequest::SetTitle(title)                   => { render_target.send(RenderWindowRequest::SetTitle(title)).await.ok(); },
+                            DrawingWindowRequest::SetFullScreen(fullscreen)         => { render_target.send(RenderWindowRequest::SetFullScreen(fullscreen)).await.ok(); },
+                            DrawingWindowRequest::SetHasDecorations(decorations)    => { render_target.send(RenderWindowRequest::SetHasDecorations(decorations)).await.ok(); },
+                            DrawingWindowRequest::SetMousePointer(mouse_pointer)    => { render_target.send(RenderWindowRequest::SetMousePointer(mouse_pointer)).await.ok(); },
                         }
                     }
 
@@ -354,7 +354,7 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
 
                         // Handle the next message
                         handle_window_event(&mut render_state, evt_message, &mut |render_actions| {
-                            let send_rendering = render_target.send_without_waiting(RenderWindowRequest::Render(RenderRequest::Render(render_actions)));
+                            let send_rendering = render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions)));
                             async move {
                                 send_rendering.await.ok();
                             }
@@ -370,7 +370,7 @@ pub fn create_drawing_window_entity(context: &Arc<SceneContext>, entity_id: Enti
         }
 
         // Shut down
-        render_target.send_without_waiting(RenderWindowRequest::CloseWindow).await.ok();
+        render_target.send(RenderWindowRequest::CloseWindow).await.ok();
 
         use std::mem;
 

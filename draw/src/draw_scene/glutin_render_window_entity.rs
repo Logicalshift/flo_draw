@@ -68,7 +68,7 @@ pub fn create_glutin_render_window_entity(context: &Arc<SceneContext>, entity_id
 
                         // Pass on events to everything that's listening, until the channel starts generating errors
                         while let Some(event) = subscriber.next().await {
-                            let result = channel_target.send_without_waiting(event).await;
+                            let result = channel_target.send(event).await;
 
                             if result.is_err() {
                                 break;
