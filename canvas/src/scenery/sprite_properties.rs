@@ -5,6 +5,7 @@ use flo_scene::*;
 
 use uuid::*;
 use futures::prelude::*;
+use futures::stream;
 
 use std::time::{Duration};
 use std::sync::*;
@@ -48,6 +49,15 @@ enum InternalSpriteLayerRequest {
 
     /// Changes the refresh rate (time between an invalidatation and a canvas update) of the sprite layer
     SetRefreshRate(Duration),
+
+    /// Sets the sprite definition for an entity
+    SetSpriteDefinition(EntityId, Arc<Vec<Draw>>),
+
+    /// Sets the sprite transforms for an entity (sprite is drawn at all of these positions)
+    SetSpriteTransform(EntityId, Vec<Transform2D>),
+
+    /// The sprite for an entity was removed
+    DeleteSprite(EntityId),
 }
 
 impl From<SpriteLayerRequest> for InternalSpriteLayerRequest {
@@ -64,7 +74,7 @@ impl From<SpriteLayerRequest> for InternalSpriteLayerRequest {
 ///
 /// Creates a sprite layer entity in a scene
 ///
-/// This will monitor the properties for all other entities in a scene for the `SpriteDefinition` property (of type `Vec<Draw>`) and
+/// This will monitor the properties for all other entities in a scene for the `SpriteDefinition` property (of type `Arc<Vec<Draw>>`) and
 /// `SpriteTransform` property (of type `Vec<SpriteTransform>`). The SpriteDefinition is used to define and update a sprite in the 
 /// canvas, and the sprite is then drawn on the sprite layer at the position(s) specified by the sprite transform.
 ///
@@ -74,33 +84,45 @@ impl From<SpriteLayerRequest> for InternalSpriteLayerRequest {
 ///
 pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContext>, initial_sprite_id: SpriteId, sprite_layer: LayerId, canvas: impl EntityChannel<Message=DrawingRequest>) -> Result<impl EntityChannel<Message=SpriteLayerRequest>, CreateEntityError> {
     // Convert between the internal request and the external request type
-    context.convert_message::<SpriteLayerRequest, InternalSpriteLayerRequest>();
+    context.convert_message::<SpriteLayerRequest, InternalSpriteLayerRequest>()?;
 
     // Create the entity
     context.create_entity(entity_id, move |context, messages| async move {
-        // Fetch the properties channels
-        let mut drawing_properties      = properties_channel::<Vec<Draw>>(PROPERTIES, &context).await.unwrap();
-        let mut transform_properties    = properties_channel::<Vec<SpriteTransform>>(PROPERTIES, &context).await.unwrap();
+        // Track sprite definitions and turn them into SetSpriteDefinition requests
+        let sprite_definitions = properties_follow_all::<Arc<Vec<Draw>>>(&context, "SpriteDefinition").flat_map(|msg| {
+            match msg {
+                FollowAll::NewValue(entity_id, sprite_definition)   => stream::iter(Some(InternalSpriteLayerRequest::SetSpriteDefinition(entity_id, sprite_definition))),
+                FollowAll::Destroyed(entity_id)                     => stream::iter(Some(InternalSpriteLayerRequest::DeleteSprite(entity_id))),
+                FollowAll::Error(_)                                 => stream::iter(None),
+            }
+        });
 
-        // Track the entities declaring particular properties
-        let (sprite_definitions_sender, sprite_definitions) = SimpleEntityChannel::new(entity_id, 10);
-        let (sprite_transforms_sender, sprite_transforms)   = SimpleEntityChannel::new(entity_id, 10);
+        // Track sprite translations
+        let sprite_transforms = properties_follow_all::<Vec<Transform2D>>(&context, "SpriteTransform").flat_map(|msg| {
+            match msg {
+                FollowAll::NewValue(entity_id, sprite_transform)    => stream::iter(Some(InternalSpriteLayerRequest::SetSpriteTransform(entity_id, sprite_transform))),
+                FollowAll::Destroyed(entity_id)                     => stream::iter(None),
+                FollowAll::Error(_)                                 => stream::iter(None),
+            }
+        });
 
-        let sprite_definitions  = drawing_properties.send(PropertyRequest::TrackPropertiesWithName(String::from("SpriteDefinition"), sprite_definitions_sender.boxed())).await.ok();
-        let sprite_transforms   = drawing_properties.send(PropertyRequest::TrackPropertiesWithName(String::from("SpriteTransform"), sprite_transforms_sender.boxed())).await.ok();
-
-        // Receive messages in batches
-        let mut messages = messages.ready_chunks(50);
+        // Mix in the definition updates and the 
+        let messages        = stream::select_all(vec![messages.boxed(), sprite_definitions.boxed(), sprite_transforms.boxed()]);
+        let mut messages    = messages.ready_chunks(50);
 
         while let Some(msg_chunk) = messages.next().await {
             for msg in msg_chunk.into_iter() {
                 use InternalSpriteLayerRequest::*;
 
                 match msg {
-                    SetTransform(new_transform)     => { todo!() }
-                    SetLayer(new_layer)             => { todo!() }
-                    SetBaseSpriteId(new_sprite)     => { todo!() }
-                    SetRefreshRate(refresh_rate)    => { todo!() }
+                    SetTransform(new_transform)     => { todo!() },
+                    SetLayer(new_layer)             => { todo!() },
+                    SetBaseSpriteId(new_sprite)     => { todo!() },
+                    SetRefreshRate(refresh_rate)    => { todo!() },
+
+                    SetSpriteDefinition(entity_id, drawing)     => { todo!() },
+                    SetSpriteTransform(entity_id, transform)    => { todo!() },
+                    DeleteSprite(entity_id)                     => { todo!() },
                 }
             }
         }
