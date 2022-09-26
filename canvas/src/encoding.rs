@@ -526,6 +526,8 @@ impl CanvasEncoding<String> for Draw {
             Sprite(sprite_id)                           => ('N', 's', sprite_id).encode_canvas(append_to),
             ClearSprite                                 => ('s', 'C').encode_canvas(append_to),
             SpriteTransform(sprite_transform)           => ('s', 'T', sprite_transform).encode_canvas(append_to),
+            CopySpriteFrom(sprite_id)                   => ('s', 'c', sprite_id).encode_canvas(append_to),
+            MoveSpriteFrom(sprite_id)                   => ('s', 'm', sprite_id).encode_canvas(append_to),
             DrawSprite(sprite_id)                       => ('s', 'D', sprite_id).encode_canvas(append_to),
             DrawSpriteWithFilters(sprite_id, filters)   => ('s', 'F', sprite_id, filters).encode_canvas(append_to),
             Texture(texture_id, ref op)                 => ('B', texture_id, op).encode_canvas(append_to),
@@ -640,6 +642,10 @@ mod test {
     fn encode_clear_all_layers() { assert!(&encode_draw(Draw::ClearAllLayers) == "Na"); }
     #[test]
     fn encode_swap_layers() { assert!(&encode_draw(Draw::SwapLayers(LayerId(1), LayerId(2))) == "NXBC"); }
+    #[test]
+    fn encode_copy_sprite() { assert!(&encode_draw(Draw::CopySpriteFrom(SpriteId(1))) == "scB"); }
+    #[test]
+    fn encode_move_sprite() { assert!(&encode_draw(Draw::MoveSpriteFrom(SpriteId(1))) == "smB"); }
     #[test]
     fn encode_nonzero_winding_rule() { assert!(&encode_draw(Draw::WindingRule(WindingRule::NonZero)) == "Wn") }
     #[test]

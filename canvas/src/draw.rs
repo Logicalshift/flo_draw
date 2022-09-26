@@ -260,6 +260,12 @@ pub enum Draw {
     /// sprites.
     Sprite(SpriteId),
 
+    /// Replaces the definition of the current sprite with a copy of the definition of the specified sprite
+    CopySpriteFrom(SpriteId),
+
+    /// Makes the current sprite have the same definition as the specified sprite
+    MoveSpriteFrom(SpriteId),
+
     /// Releases the resources used by the current sprite
     ClearSprite,
 

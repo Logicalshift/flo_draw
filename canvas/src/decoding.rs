@@ -402,10 +402,12 @@ enum DecoderState {
     SpriteDraw(String),                         // 'sD' (id)
     SpriteDrawWithFilters(String),              // 'sF' (id) (len) (filters)
     SpriteDrawWithFiltersId(SpriteId, String),  // 'sF' (id) (len) (filters)
+    SpriteCopyFrom(String),                     // 'sc' (id)
+    SpriteMoveFrom(String),                     // 'sm' (id)
     SpriteTransform,                            // 'sT' (transform)
     SpriteTransformTranslate(String),           // 'sTt' (x, y)
     SpriteTransformScale(String),               // 'sTs' (x, y)
-    SpriteTransformRotate(String),              // 'sTr' (degrees)
+    SpriteTransformRotate(String),              // 'sTr' (degr ees)
     SpriteTransformTransform(String),           // 'sTT' (transform)
 
     FontDrawing,                                                        // 't'
@@ -537,6 +539,8 @@ impl CanvasDecoder {
             SpriteDraw(param)                   => Self::decode_sprite_draw(next_chr, param)?,
             SpriteDrawWithFilters(param)        => Self::decode_sprite_draw_with_filters(next_chr, param)?,
             SpriteDrawWithFiltersId(id, param)  => Self::decode_sprite_draw_with_filters_id(next_chr, id, param)?,
+            SpriteCopyFrom(param)               => Self::decode_sprite_move_from(next_chr, param)?,
+            SpriteMoveFrom(param)               => Self::decode_sprite_copy_from(next_chr, param)?,
             SpriteTransform                     => Self::decode_sprite_transform(next_chr)?,
             SpriteTransformTranslate(param)     => Self::decode_sprite_transform_translate(next_chr, param)?,
             SpriteTransformScale(param)         => Self::decode_sprite_transform_scale(next_chr, param)?,
@@ -683,6 +687,8 @@ impl CanvasDecoder {
             'F'     => Ok((DecoderState::SpriteDrawWithFilters(String::new()), None)),
             'C'     => Ok((DecoderState::None, Some(Draw::ClearSprite))),
             'T'     => Ok((DecoderState::SpriteTransform, None)),
+            'c'     => Ok((DecoderState::SpriteCopyFrom(String::new()), None)),
+            'm'     => Ok((DecoderState::SpriteMoveFrom(String::new()), None)),
 
             _       => Err(DecoderError::InvalidCharacter(next_chr))
         }
@@ -1112,6 +1118,20 @@ impl CanvasDecoder {
         match Self::decode_sprite_id(next_chr, param)? {
             PartialResult::FullMatch(sprite_id) => Ok((DecoderState::None, Some(Draw::DrawSprite(sprite_id)))),
             PartialResult::MatchMore(param)     => Ok((DecoderState::SpriteDraw(param), None))
+        }
+    }
+
+    #[inline] fn decode_sprite_move_from(next_chr: char, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match Self::decode_sprite_id(next_chr, param)? {
+            PartialResult::FullMatch(sprite_id) => Ok((DecoderState::None, Some(Draw::MoveSpriteFrom(sprite_id)))),
+            PartialResult::MatchMore(param)     => Ok((DecoderState::SpriteMoveFrom(param), None))
+        }
+    }
+
+    #[inline] fn decode_sprite_copy_from(next_chr: char, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        match Self::decode_sprite_id(next_chr, param)? {
+            PartialResult::FullMatch(sprite_id) => Ok((DecoderState::None, Some(Draw::CopySpriteFrom(sprite_id)))),
+            PartialResult::MatchMore(param)     => Ok((DecoderState::SpriteCopyFrom(param), None))
         }
     }
 
@@ -2474,6 +2494,16 @@ mod test {
     }
 
     #[test]
+    fn decode_copy_sprite_from() {
+        check_round_trip_single(Draw::CopySpriteFrom(SpriteId(47)));
+    }
+
+    #[test]
+    fn decode_move_sprite_from() {
+        check_round_trip_single(Draw::MoveSpriteFrom(SpriteId(48)));
+    }
+
+    #[test]
     fn decode_all_iter() {
         check_round_trip(vec![
             Draw::Path(PathOp::NewPath),
@@ -2517,6 +2547,8 @@ mod test {
             Draw::ClearSprite,
             Draw::SpriteTransform(SpriteTransform::Translate(4.0, 5.0)),
             Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))),
+            Draw::CopySpriteFrom(SpriteId(47)),
+            Draw::MoveSpriteFrom(SpriteId(48)),
             Draw::DrawSprite(SpriteId(1300)),
             Draw::DrawSpriteWithFilters(SpriteId(10), vec![]),
             Draw::DrawSpriteWithFilters(SpriteId(10), vec![TextureFilter::GaussianBlur(4.0)]),
@@ -2586,6 +2618,8 @@ mod test {
             Draw::ClearSprite,
             Draw::SpriteTransform(SpriteTransform::Translate(4.0, 5.0)),
             Draw::SpriteTransform(SpriteTransform::Transform2D(Transform2D::scale(3.0, 4.0))),
+            Draw::CopySpriteFrom(SpriteId(47)),
+            Draw::MoveSpriteFrom(SpriteId(48)),
             Draw::DrawSprite(SpriteId(1300)),
             Draw::DrawSpriteWithFilters(SpriteId(10), vec![]),
             Draw::DrawSpriteWithFilters(SpriteId(10), vec![TextureFilter::GaussianBlur(4.0)]),
