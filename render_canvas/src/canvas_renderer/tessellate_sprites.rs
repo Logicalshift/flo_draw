@@ -123,4 +123,30 @@ impl CanvasRenderer {
             layer.state.modification_count += 1;
         })
     }
+
+    ///
+    /// Moves a definition from a different sprite ID to this one
+    ///
+    pub (super) fn tes_move_sprite_from(&mut self, sprite_id: canvas::SpriteId, path_state: &mut PathState) {
+        // TODO: get the current sprite
+        // TODO: no-op if the sprite we're moving from is the same as the sprite we're moving to
+
+        // Clear the current layer
+        self.tes_clear_layer(path_state);
+
+        self.core.sync(|core| {
+            // Remove the definition from the existing sprite
+            if let Some(sprite_layer_handle) = core.sprites.remove(&sprite_id) {
+                // Set the current sprite to use the layer we just removed
+                todo!()
+            }
+        })
+    }
+
+    ///
+    /// Copies a definition from a different sprite ID
+    ///
+    pub (super) fn tes_copy_sprite_from(&mut self, sprite_id: canvas::SpriteId, path_state: &mut PathState) {
+        todo!()
+    }
 }

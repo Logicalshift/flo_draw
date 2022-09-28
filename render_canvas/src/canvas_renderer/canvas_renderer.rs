@@ -322,8 +322,8 @@ impl CanvasRenderer {
                     SpriteTransform(transform)                  => self.tes_sprite_transform(transform),
                     DrawSprite(sprite_id)                       => self.tes_draw_sprite(sprite_id),
                     DrawSpriteWithFilters(sprite_id, filters)   => self.tes_draw_sprite_with_filters(sprite_id, filters),
-                    CopySpriteFrom(sprite_id)                   => { unimplemented!() },
-                    MoveSpriteFrom(sprite_id)                   => { unimplemented!() },
+                    CopySpriteFrom(sprite_id)                   => self.tes_copy_sprite_from(sprite_id, &mut path_state),
+                    MoveSpriteFrom(sprite_id)                   => self.tes_move_sprite_from(sprite_id, &mut path_state),
 
                     Texture(texture_id, texture_op)             => self.tes_texture(texture_id, texture_op),
                     Gradient(gradient_id, gradient_op)          => self.tes_gradient(gradient_id, gradient_op),
