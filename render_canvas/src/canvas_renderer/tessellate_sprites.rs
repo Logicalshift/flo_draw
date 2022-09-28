@@ -127,18 +127,23 @@ impl CanvasRenderer {
     ///
     /// Moves a definition from a different sprite ID to this one
     ///
-    pub (super) fn tes_move_sprite_from(&mut self, sprite_id: canvas::SpriteId, path_state: &mut PathState) {
-        // TODO: get the current sprite
-        // TODO: no-op if the sprite we're moving from is the same as the sprite we're moving to
+    pub (super) fn tes_move_sprite_from(&mut self, move_from_sprite_id: canvas::SpriteId, path_state: &mut PathState) {
+        // Fetch the current sprite, or do nothing if a sprite is not selected
+        let current_sprite_id = if let Some(sprite_id) = self.current_sprite { sprite_id } else { return; };
+
+        // Moving a sprite to itself is also a no-op
+        if current_sprite_id == move_from_sprite_id {
+            return;
+        }
 
         // Clear the current layer
         self.tes_clear_layer(path_state);
 
         self.core.sync(|core| {
             // Remove the definition from the existing sprite
-            if let Some(sprite_layer_handle) = core.sprites.remove(&sprite_id) {
+            if let Some(sprite_layer_handle) = core.sprites.remove(&move_from_sprite_id) {
                 // Set the current sprite to use the layer we just removed
-                todo!()
+                core.sprites.insert(current_sprite_id, sprite_layer_handle);
             }
         })
     }
