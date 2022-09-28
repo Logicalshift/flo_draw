@@ -54,7 +54,7 @@ impl CanvasRenderer {
         // Update the active transform: it's applied next time we draw something
         self.active_transform = self.active_transform * transform;
 
-        if self.current_layer_is_sprite {
+        if self.current_sprite.is_some() {
             // For sprite layers: apply the transform immediately
             // (Sprites do this because they have a default transform of 1.0 and aren't affected by center_region or canvas_height)
             self.core.sync(|core| {

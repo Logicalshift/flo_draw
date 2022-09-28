@@ -37,8 +37,8 @@ pub struct CanvasRenderer {
     /// The layer that the next drawing instruction will apply to
     pub (super) current_layer: LayerHandle,
 
-    /// True if the current layer is a sprite
-    pub (super) current_layer_is_sprite: bool,
+    /// The ID of the sprite that is currently selected (or None if a normal layer is selected)
+    pub (super) current_sprite: Option<canvas::SpriteId>,
 
     /// The viewport transformation (this makes for rectangular pixels with the bottom of the window at 0, -1 and the top at 0, 1)
     viewport_transform: canvas::Transform2D,
@@ -122,7 +122,7 @@ impl CanvasRenderer {
             core:                       core,
             background_vertex_buffer:   None,
             current_layer:              initial_layer,
-            current_layer_is_sprite:    false,
+            current_sprite:             None,
             viewport_transform:         canvas::Transform2D::identity(),
             inverse_viewport_transform: canvas::Transform2D::identity(),
             active_transform:           canvas::Transform2D::identity(),
@@ -253,11 +253,11 @@ impl CanvasRenderer {
             // Create the default layer if one doesn't already exist
             core.sync(|core| {
                 if core.layers.len() == 0 {
-                    let layer0                      = Self::create_default_layer();
-                    let layer0                      = core.allocate_layer_handle(layer0);
-                    core.layers                     = vec![layer0];
-                    self.current_layer              = layer0;
-                    self.current_layer_is_sprite    = false;
+                    let layer0          = Self::create_default_layer();
+                    let layer0          = core.allocate_layer_handle(layer0);
+                    core.layers         = vec![layer0];
+                    self.current_layer  = layer0;
+                    self.current_sprite = None;
                 }
             });
 
