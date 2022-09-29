@@ -147,11 +147,4 @@ impl CanvasRenderer {
             }
         })
     }
-
-    ///
-    /// Copies a definition from a different sprite ID
-    ///
-    pub (super) fn tes_copy_sprite_from(&mut self, sprite_id: canvas::SpriteId, path_state: &mut PathState) {
-        todo!()
-    }
 }

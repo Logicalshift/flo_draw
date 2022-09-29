@@ -205,11 +205,8 @@ pub trait GraphicsContext {
     /// (Unlike a dynamic texture, the texture isn't retained and the effect is reapplied every time the scene is rendered)
     fn draw_sprite_with_filters(&mut self, sprite_id: SpriteId, filters: Vec<TextureFilter>) { self.draw(Draw::DrawSpriteWithFilters(sprite_id, filters)); }
 
-    /// Creates a copy of the specified sprite in the currently selected one (does nothing if a sprite is not selected)
-    fn copy_sprite_from(&mut self, source_sprite_id: SpriteId)  { self.draw(Draw::CopySpriteFrom(source_sprite_id)); }
-
     /// Moves the definition from the specified sprite to this one (faster than copying)
-    fn move_sprite_from(&mut self, source_sprite_id: SpriteId)  { self.draw(Draw::CopySpriteFrom(source_sprite_id)); }
+    fn move_sprite_from(&mut self, source_sprite_id: SpriteId)  { self.draw(Draw::MoveSpriteFrom(source_sprite_id)); }
 
 
 
