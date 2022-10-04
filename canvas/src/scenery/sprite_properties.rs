@@ -84,7 +84,7 @@ impl From<SpriteLayerRequest> for InternalSpriteLayerRequest {
 ///
 /// The sprite layer uses its own transform for rendering, which can be adjusted by sending commands to the sprite layer entity.
 ///
-pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContext>, initial_sprite_id: SpriteId, sprite_layer: LayerId, canvas: impl EntityChannel<Message=DrawingRequest>) -> Result<impl EntityChannel<Message=SpriteLayerRequest>, CreateEntityError> {
+pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContext>, initial_sprite_id: SpriteId, sprite_layer: LayerId, canvas: impl 'static + EntityChannel<Message=DrawingRequest>) -> Result<impl EntityChannel<Message=SpriteLayerRequest>, CreateEntityError> {
     // Convert between the internal request and the external request type
     context.convert_message::<SpriteLayerRequest, InternalSpriteLayerRequest>()?;
 
@@ -112,14 +112,16 @@ pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContex
         let mut layer_transform         = Transform2D::identity();
         let mut sprite_layer            = LayerId(1);
         let mut base_sprite_id          = 10000;
-        //let mut sprite_for_entity       = HashMap::new();
-        //let mut transforms_for_entity   = HashMap::new();
-        //let mut free_sprite_offsets     = vec![];
+        let mut sprite_for_entity       = HashMap::new();
+        let mut transforms_for_entity   = HashMap::new();
+        let mut next_offset             = 0;
+        let mut free_sprite_offsets     = vec![];
         let mut refresh_rate            = Duration::from_nanos(1_000_000_000 / 120);
 
         // Mix in the definition updates with the other messages
         let messages        = stream::select_all(vec![messages.boxed(), sprite_definitions.boxed(), sprite_transforms.boxed()]);
         let mut messages    = messages.ready_chunks(50);
+        let mut canvas      = canvas;
 
         while let Some(msg_chunk) = messages.next().await {
             for msg in msg_chunk.into_iter() {
@@ -131,9 +133,60 @@ pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContex
                     SetBaseSpriteId(SpriteId(new_sprite))   => { base_sprite_id = new_sprite; },            // TODO: renumber sprites, 
                     SetRefreshRate(new_refresh_rate)        => { refresh_rate = new_refresh_rate },
 
-                    SetSpriteDefinition(entity_id, drawing)     => { todo!() },                         // TODO: allocate sprite ID, send sprite definition to rendering
-                    SetSpriteTransform(entity_id, transform)    => { todo!() },                         // TODO: update transform, trigger redraw
-                    DeleteSprite(entity_id)                     => { todo!() },                         // TODO: delete sprites/transforms for entity, trigger redraw
+                    SetSpriteDefinition(entity_id, drawing)     => {
+                        // Allocate a sprite ID
+                        let sprite_offset = if let Some(allocated_offset) = sprite_for_entity.get(&entity_id) {
+                            *allocated_offset
+                        } else if let Some(offset) = free_sprite_offsets.pop() {
+                            sprite_for_entity.insert(entity_id, offset);
+                            offset
+                        } else {
+                            let offset  = next_offset;
+                            sprite_for_entity.insert(entity_id, offset);
+                            next_offset += 1;
+                            offset
+                        };
+
+                        // Send the definition for this sprite so it's ready to draw
+                        canvas.send(DrawingRequest::Draw(Arc::new(vec![
+                            Draw::PushState,
+                            Draw::Sprite(SpriteId(base_sprite_id + sprite_offset)),
+                            Draw::ClearSprite,
+                        ]))).await.ok();
+                        canvas.send(DrawingRequest::Draw(Arc::clone(&drawing)));
+                        canvas.send(DrawingRequest::Draw(Arc::new(vec![
+                            Draw::PopState,
+                        ]))).await.ok();
+
+                        // TODO: trigger redraw
+                    },
+
+                    SetSpriteTransform(entity_id, transform)    => {
+                        let transform_changed = if let Some(old_transform) = transforms_for_entity.get(&entity_id) {
+                            &transform == old_transform
+                        } else {
+                            true
+                        };
+
+                        // Update the transform for this sprite
+                        transforms_for_entity.insert(entity_id, transform);
+
+                        // TODO: trigger redraw
+                        if transform_changed {
+
+                        }
+                    },
+
+                    DeleteSprite(entity_id)                     => {
+                        // Remove the transform and the sprite
+                        let removed_sprite      = sprite_for_entity.remove(&entity_id).is_some();
+                        let removed_transforms  = transforms_for_entity.remove(&entity_id).is_some();
+
+                        // TODO: trigger redraw, if they existed
+                        if removed_sprite || removed_transforms {
+
+                        }
+                    },
                 }
             }
         }
