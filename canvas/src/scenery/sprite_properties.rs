@@ -23,7 +23,7 @@ pub const SPRITE_LAYERS: EntityId = EntityId::well_known(uuid!["E025F272-D3E7-44
 #[derive(Clone, Debug)]
 pub enum SpriteLayerRequest {
     /// Sets the transform applied to the sprites layer
-    SetTransform(Transform2D),
+    SetTransform(Option<Transform2D>),
 
     /// Changes the sprite layer, and re-renders the sprites onto that layer. The original layer is left unchanged.
     SetLayer(LayerId),
@@ -36,12 +36,24 @@ pub enum SpriteLayerRequest {
 }
 
 ///
+/// Represents the position of a sprite
+///
+#[derive(Clone, PartialEq, Debug)]
+pub struct SpriteTransform {
+    /// The transform for this sprite
+    pub transform: Transform2D,
+
+    /// Sprites with a lower z-index are drawn behind sprites with a higher z-index
+    pub zindex: f64,
+}
+
+///
 /// Request for the sprite properties layer, including messages that are only delivered internally
 ///
 #[derive(Clone, Debug)]
 enum InternalSpriteLayerRequest {
-    /// Sets the transform applied to the sprites layer
-    SetTransform(Transform2D),
+    /// Sets the transform applied to the sprites layer (or None to use whatever transform is left on the )
+    SetTransform(Option<Transform2D>),
 
     /// Changes the sprite layer, and re-renders the sprites onto that layer. The original layer is left unchanged.
     SetLayer(LayerId),
@@ -56,7 +68,7 @@ enum InternalSpriteLayerRequest {
     SetSpriteDefinition(EntityId, Arc<Vec<Draw>>),
 
     /// Sets the sprite transforms for an entity (sprite is drawn at all of these positions)
-    SetSpriteTransform(EntityId, Vec<Transform2D>),
+    SetSpriteTransform(EntityId, Vec<SpriteTransform>),
 
     /// The sprite for an entity was removed
     DeleteSprite(EntityId),
@@ -100,7 +112,7 @@ pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContex
         });
 
         // Track sprite translations
-        let sprite_transforms = properties_follow_all::<Vec<Transform2D>>(&context, "SpriteTransform").flat_map(|msg| {
+        let sprite_transforms = properties_follow_all::<Vec<SpriteTransform>>(&context, "SpriteTransform").flat_map(|msg| {
             match msg {
                 FollowAll::NewValue(entity_id, sprite_transform)    => stream::iter(Some(InternalSpriteLayerRequest::SetSpriteTransform(entity_id, sprite_transform))),
                 FollowAll::Destroyed(entity_id)                     => stream::iter(None),
@@ -109,7 +121,7 @@ pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContex
         });
 
         // Entity state variables
-        let mut layer_transform         = Transform2D::identity();
+        let mut layer_transform         = None;
         let mut sprite_layer            = LayerId(1);
         let mut base_sprite_id          = 10000;
         let mut sprite_for_entity       = HashMap::new();
@@ -124,6 +136,7 @@ pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContex
         let mut canvas      = canvas;
 
         while let Some(msg_chunk) = messages.next().await {
+            // Messages are read in chunks (so we don't redraw while messages are waiting)
             for msg in msg_chunk.into_iter() {
                 use InternalSpriteLayerRequest::*;
 
@@ -133,7 +146,7 @@ pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContex
                     SetBaseSpriteId(SpriteId(new_sprite))   => { base_sprite_id = new_sprite; },            // TODO: renumber sprites, 
                     SetRefreshRate(new_refresh_rate)        => { refresh_rate = new_refresh_rate },
 
-                    SetSpriteDefinition(entity_id, drawing)     => {
+                    SetSpriteDefinition(entity_id, drawing) => {
                         // Allocate a sprite ID
                         let sprite_offset = if let Some(allocated_offset) = sprite_for_entity.get(&entity_id) {
                             *allocated_offset
@@ -161,7 +174,7 @@ pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContex
                         // TODO: trigger redraw
                     },
 
-                    SetSpriteTransform(entity_id, transform)    => {
+                    SetSpriteTransform(entity_id, transform) => {
                         let transform_changed = if let Some(old_transform) = transforms_for_entity.get(&entity_id) {
                             &transform == old_transform
                         } else {
@@ -177,7 +190,7 @@ pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContex
                         }
                     },
 
-                    DeleteSprite(entity_id)                     => {
+                    DeleteSprite(entity_id) => {
                         // Remove the transform and the sprite
                         let removed_sprite      = sprite_for_entity.remove(&entity_id).is_some();
                         let removed_transforms  = transforms_for_entity.remove(&entity_id).is_some();
