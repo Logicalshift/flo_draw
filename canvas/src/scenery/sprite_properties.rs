@@ -92,8 +92,6 @@ impl From<SpriteLayerRequest> for InternalSpriteLayerRequest {
 /// `SpriteTransform` property (of type `Vec<SpriteTransform>`). The SpriteDefinition is used to define and update a sprite in the 
 /// canvas, and the sprite is then drawn on the sprite layer at the position(s) specified by the sprite transform.
 ///
-/// Optionally the property `SpriteZIndex`, of type `f64` can be used for sorting purposes.
-///
 /// The sprite layer uses its own transform for rendering, which can be adjusted by sending commands to the sprite layer entity.
 ///
 pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContext>, initial_sprite_id: SpriteId, sprite_layer: LayerId, canvas: impl 'static + EntityChannel<Message=DrawingRequest>) -> Result<impl EntityChannel<Message=SpriteLayerRequest>, CreateEntityError> {
