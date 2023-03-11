@@ -510,10 +510,12 @@ impl Stream for DrawStream {
             Poll::Ready(self.buffer.pop_front())
         } else {
             // Attempt to load the buffer from the core. If it's still empty, create a notification
-            let (new_buffer, closed) = self.core.sync(|core| {
+            let waker = context.waker().clone();
+
+            let (new_buffer, closed) = self.core.sync(move |core| {
                 if core.pending_drawing.len() == 0 {
                     // No drawing is waiting, so set the task and return an empty buffer (will be no items in the result)
-                    core.waiting_task = Some(context.waker().clone());
+                    core.waiting_task = Some(waker);
 
                     (VecDeque::new(), core.closed)
                 } else {
