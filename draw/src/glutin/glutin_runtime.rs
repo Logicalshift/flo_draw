@@ -290,12 +290,6 @@ impl GlutinRuntime {
                     .with_decorations(decorations);
                 let display_builder     = DisplayBuilder::new()
                     .with_window_builder(Some(window_builder));
-                    /*
-                    .with_gl(GlRequest::Specific(Api::OpenGl, (3, 3)))
-                    .with_vsync(false)
-                    .build_windowed(window_builder, &window_target)
-                    .unwrap();
-                    */
                 let template            = ConfigTemplateBuilder::new()
                     .prefer_hardware_accelerated(Some(true))
                     .with_alpha_size(8);
