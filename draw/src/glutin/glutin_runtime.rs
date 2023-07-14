@@ -332,7 +332,7 @@ impl GlutinRuntime {
                 let window_id           = window.id();
                 let size                = window.inner_size();
                 let scale               = window.scale_factor();
-                let window              = GlutinWindow::new(windowed_context);
+                let window              = GlutinWindow::new(windowed_context, gl_config, window);
 
                 // Store the publisher for the events for this window
                 let mut initial_events  = events.republish_weak();

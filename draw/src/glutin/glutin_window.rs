@@ -5,9 +5,13 @@ use flo_stream::*;
 use flo_render::*;
 use flo_binding::*;
 
-use glutin::{WindowedContext, NotCurrent};
-use glutin::dpi::{LogicalSize};
-use glutin::window::{Fullscreen};
+use glutin::context::{NotCurrentContext, NotCurrentGlContextSurfaceAccessor};
+use glutin::display::{GetGlDisplay, GlDisplay};
+use glutin::prelude::{GlConfig};
+use glutin::surface::{GlSurface};
+use glutin_winit::{self, GlWindow};
+use winit::dpi::{LogicalSize};
+use winit::window::{Window, Fullscreen};
 use futures::prelude::*;
 use futures::task::{Poll, Context};
 use gl;
@@ -17,21 +21,39 @@ use std::pin::*;
 ///
 /// Manages the state of a Glutin window
 ///
-pub struct GlutinWindow {
+pub struct GlutinWindow<TConfig> 
+where
+    TConfig: GlConfig + GetGlDisplay,
+{
     /// The context for this window
-    context: Option<WindowedContext<NotCurrent>>,
+    context: Option<NotCurrentContext>,
+
+    /// The configuration from when the context was create
+    gl_config: TConfig,
+
+    /// The surface for the window
+    surface: Option<<TConfig::Target as GlDisplay>::WindowSurface>,
+
+    /// The window the context is attached to
+    window: Option<Window>,
 
     /// The renderer for this window (or none if there isn't one yet)
     renderer: Option<GlRenderer>
 }
 
-impl GlutinWindow {
+impl<TConfig> GlutinWindow<TConfig> 
+where
+    TConfig: GlConfig + GetGlDisplay,
+{
     ///
     /// Creates a new glutin window
     ///
-    pub fn new(context: WindowedContext<NotCurrent>) -> GlutinWindow {
+    pub fn new(context: NotCurrentContext, gl_config: TConfig, window: Window) -> GlutinWindow<TConfig> {
         GlutinWindow {
             context:    Some(context),
+            gl_config:  gl_config,
+            surface:    None,
+            window:     Some(window),
             renderer:   None
         }
     }
@@ -40,7 +62,10 @@ impl GlutinWindow {
 ///
 /// Sends render actions to a window
 ///
-pub (super) async fn send_actions_to_window<RenderStream: Unpin+Stream<Item=Vec<RenderAction>>, EventPublisher: MessagePublisher<Message=DrawEvent>>(window: GlutinWindow, render_actions: RenderStream, events: EventPublisher, window_properties: WindowProperties) {
+pub (super) async fn send_actions_to_window<RenderStream: Unpin+Stream<Item=Vec<RenderAction>>, EventPublisher: MessagePublisher<Message=DrawEvent>, TConfig>(window: GlutinWindow<TConfig>, render_actions: RenderStream, events: EventPublisher, window_properties: WindowProperties) 
+where
+    TConfig: GlConfig + GetGlDisplay,
+{
     // Read events from the render actions list
     let mut window          = window;
     let mut events          = events;
@@ -74,7 +99,12 @@ pub (super) async fn send_actions_to_window<RenderStream: Unpin+Stream<Item=Vec<
 
                     // Make the current context current
                     let current_context = window.context.take().expect("Window context");
-                    let current_context = current_context.make_current();
+                    let current_surface = window.surface.take().unwrap_or_else(|| {
+                        let surface_attributes = window.window.as_ref().unwrap().build_surface_attributes(<_>::default());
+                        window.gl_config.display().create_window_surface(&window.gl_config, &surface_attributes).expect("Create new window surface")
+                    });
+
+                    let current_context = current_context.make_current(&current_surface);
                     let current_context = if let Ok(context) = current_context { context } else { break; };
 
                     // Get informtion about the current context
@@ -111,6 +141,7 @@ pub (super) async fn send_actions_to_window<RenderStream: Unpin+Stream<Item=Vec<
                     let context     = current_context.make_not_current();
                     let context     = if let Ok(context) = context { context } else { break; };
                     window.context  = Some(context);
+                    window.surface  = Some(surface);
 
                     // Notify that a new frame has been drawn
                     events.publish(DrawEvent::NewFrame).await;
