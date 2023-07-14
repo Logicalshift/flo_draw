@@ -8,7 +8,6 @@ use flo_binding::*;
 use glutin::context::{NotCurrentContext, NotCurrentGlContextSurfaceAccessor};
 use glutin::display::{GetGlDisplay, GlDisplay};
 use glutin::prelude::{GlConfig};
-use glutin::surface::{GlSurface};
 use glutin_winit::{self, GlWindow};
 use winit::dpi::{LogicalSize};
 use winit::window::{Window, Fullscreen};
@@ -80,6 +79,11 @@ where
 
     while let Some(next_action) = window_actions.next().await {
         match next_action {
+            WindowUpdate::Resumed => {
+                // TODO: finalize window
+                // TODO: create surface
+            }
+
             WindowUpdate::Render(next_action)   => {
                 // Do nothing if there are no actions
                 if next_action.len() == 0 {
@@ -182,6 +186,7 @@ where
 /// The list of update events that can occur to a window
 ///
 enum WindowUpdate {
+    Resumed,
     Render(Vec<RenderAction>),
     SetTitle(String),
     SetSize((u64, u64)),
