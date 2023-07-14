@@ -9,10 +9,15 @@ use super::glutin_thread_event::*;
 use flo_stream::*;
 use flo_binding::*;
 
-use glutin::{GlRequest, Api};
-use glutin::event::{DeviceId, Event, WindowEvent, ElementState};
-use glutin::event_loop::{ControlFlow, EventLoopWindowTarget};
-use glutin::window::{WindowId, Fullscreen};
+use glutin::config::{ConfigTemplateBuilder, GlConfig};
+use glutin::context::{ContextApi, ContextAttributesBuilder, Version};
+use glutin::display::{GetGlDisplay, GlDisplay};
+use glutin_winit::{DisplayBuilder};
+use winit::event::{DeviceId, Event, WindowEvent, ElementState};
+use winit::event_loop::{ControlFlow, EventLoopWindowTarget};
+use winit::window::{WindowId, Fullscreen}; 
+use raw_window_handle::{HasRawWindowHandle};
+
 use futures::task;
 use futures::prelude::*;
 use futures::future::{LocalBoxFuture};
@@ -278,21 +283,55 @@ impl GlutinRuntime {
                 let fullscreen          = if fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
 
                 // Create a window
-                let window_builder      = glutin::window::WindowBuilder::new()
+                let window_builder      = winit::window::WindowBuilder::new()
                     .with_title(title)
-                    .with_inner_size(glutin::dpi::LogicalSize::new(size_x as f64, size_y as _))
+                    .with_inner_size(winit::dpi::LogicalSize::new(size_x as f64, size_y as _))
                     .with_fullscreen(fullscreen)
                     .with_decorations(decorations);
-                let windowed_context    = glutin::ContextBuilder::new()
+                let display_builder     = DisplayBuilder::new()
+                    .with_window_builder(Some(window_builder));
+                    /*
                     .with_gl(GlRequest::Specific(Api::OpenGl, (3, 3)))
                     .with_vsync(false)
                     .build_windowed(window_builder, &window_target)
                     .unwrap();
+                    */
+                let template            = ConfigTemplateBuilder::new()
+                    .prefer_hardware_accelerated(Some(true))
+                    .with_alpha_size(8);
+
+                let (window, gl_config) = display_builder
+                    .build(window_target, template, |configs| configs.reduce(|a, b| {
+                        if a.num_samples() > b.num_samples() {
+                            a
+                        } else {
+                            b
+                        }
+                    }).unwrap())
+                    .unwrap();
+                let window = window.unwrap();
+
+                let raw_window_handle           = Some(window.raw_window_handle());
+                let gl_display                  = gl_config.display();
+                let context_attributes          = ContextAttributesBuilder::new().build(raw_window_handle);
+                let fallback_context_attributes = ContextAttributesBuilder::new().with_context_api(ContextApi::Gles(None)).build(raw_window_handle);
+                let legacy_context_attributes   = ContextAttributesBuilder::new().with_context_api(ContextApi::OpenGl(Some(Version::new(3, 3)))).build(raw_window_handle);
+                let mut windowed_context        = unsafe {
+                    gl_display.create_context(&gl_config, &context_attributes).unwrap_or_else(|_| {
+                        gl_display.create_context(&gl_config, &fallback_context_attributes).unwrap_or_else(
+                            |_| {
+                                gl_display
+                                    .create_context(&gl_config, &legacy_context_attributes)
+                                    .expect("failed to create context")
+                            },
+                        )
+                    })
+                };
 
                 // Store the window context in a new glutin window
-                let window_id           = windowed_context.window().id();
-                let size                = windowed_context.window().inner_size();
-                let scale               = windowed_context.window().scale_factor();
+                let window_id           = window.id();
+                let size                = window.inner_size();
+                let scale               = window.scale_factor();
                 let window              = GlutinWindow::new(windowed_context);
 
                 // Store the publisher for the events for this window

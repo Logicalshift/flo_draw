@@ -13,7 +13,7 @@ include             = [ "Cargo.toml", "src/**/*", "examples/**/*", "images/**/*"
 
 [features]
 default             = [ "render-opengl" ]
-render-opengl       = [ "gl", "glutin", "flo_render/opengl" ]
+render-opengl       = [ "gl", "glutin", "winit", "glutin-winit", "raw-window-handle", "flo_render/opengl" ]
 render-wgpu         = [ "winit", "wgpu", "flo_render/render-wgpu" ]
 profile             = [ "flo_render/profile" ]
 wgpu-profiler       = [ "dep:wgpu-profiler", "flo_render/wgpu-profiler" ]
@@ -32,6 +32,8 @@ lazy_static         = "1.2"
 futures             = "0.3"
 
 glutin              = { optional = true, version = "0.30.0" }
+glutin-winit        = { optional = true, version = "0.3.0" }
+raw-window-handle   = { optional = true, version = "0.5" }
 gl                  = { optional = true, version = "0.14" }
 
 winit               = { optional = true, version = "0.28" }
