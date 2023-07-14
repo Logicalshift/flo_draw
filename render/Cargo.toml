@@ -18,7 +18,7 @@ render-wgpu = [ "wgpu", "flo_canvas", "lazy_static", "desync", "futures" ]
 profile     = [ ]
 
 [build-dependencies]
-bindgen = "0.60"
+bindgen = "0.66"
 
 [dependencies]
 gl                      = { version = "0.14", optional = true }
