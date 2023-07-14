@@ -11,7 +11,7 @@ description = "Re-exports platform-appropriate libraries for initialising offscr
 # 'gtk' on linux), so we need a separate crate to re-export egl/wgl/cgl based on the platform we're compiling on
 
 [target.'cfg(target_os = "linux")'.build-dependencies]
-bindgen = "0.60"
+bindgen = "0.66"
 
 [dependencies]
 
