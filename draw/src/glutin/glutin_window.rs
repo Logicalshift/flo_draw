@@ -9,7 +9,6 @@ use glutin::context::{NotCurrentContext, PossiblyCurrentGlContext, NotCurrentGlC
 use glutin::display::{GetGlDisplay, GlDisplay};
 use glutin::surface::{Surface, SurfaceTypeTrait};
 use glutin::prelude::{GlConfig, GlSurface};
-use glutin_winit::{self, GlWindow};
 use winit::dpi::{LogicalSize};
 use winit::window::{Window, Fullscreen};
 use futures::prelude::*;
