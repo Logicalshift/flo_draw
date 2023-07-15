@@ -259,12 +259,12 @@ impl GlutinRuntime {
     /// Sends a redraw request to a window
     ///
     fn request_resumed(&mut self) {
-        for window_events in self.window_events.values() {
-            // Need to republish the window events so we can share with the process
-            let mut window_events = window_events.republish();
+        // Need to republish the window events so we can share with the process
+        let window_events = self.window_events.values().map(|events| events.republish()).collect::<Vec<_>>();
 
+        for mut events in window_events {
             self.run_process(async move {
-                window_events.publish(DrawEvent::Redraw).await;
+                events.publish(DrawEvent::Redraw).await;
             });
         }
     }
@@ -273,10 +273,10 @@ impl GlutinRuntime {
     /// Sends a redraw request to a window
     ///
     fn request_suspended(&mut self) {
-        for window_events in self.window_events.values() {
-            // Need to republish the window events so we can share with the process
-            let mut window_events = window_events.republish();
+        // Need to republish the window events so we can share with the process
+        let window_events = self.window_events.values().map(|events| events.republish()).collect::<Vec<_>>();
 
+        for mut events in window_events {
             self.run_process(async move {
                 // TODO
             });
