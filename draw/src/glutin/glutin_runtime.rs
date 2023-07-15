@@ -101,8 +101,8 @@ impl GlutinRuntime {
             WindowEvent { window_id, event }        => { self.handle_window_event(window_id, event); }
             DeviceEvent { device_id: _, event: _ }  => { }
             UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target); }
-            Suspended                               => { }
-            Resumed                                 => { }
+            Suspended                               => { self.request_suspended(); }
+            Resumed                                 => { self.request_resumed(); }
             RedrawRequested(window_id)              => { self.request_redraw(window_id); }
             
             MainEventsCleared                       => {
@@ -249,6 +249,34 @@ impl GlutinRuntime {
                     }
                 });
             }
+        }
+    }
+
+    ///
+    /// Sends a redraw request to a window
+    ///
+    fn request_resumed(&mut self) {
+        for window_events in self.window_events.values() {
+            // Need to republish the window events so we can share with the process
+            let mut window_events = window_events.republish();
+
+            self.run_process(async move {
+                window_events.publish(DrawEvent::Redraw).await;
+            });
+        }
+    }
+
+    ///
+    /// Sends a redraw request to a window
+    ///
+    fn request_suspended(&mut self) {
+        for window_events in self.window_events.values() {
+            // Need to republish the window events so we can share with the process
+            let mut window_events = window_events.republish();
+
+            self.run_process(async move {
+                // TODO
+            });
         }
     }
 
