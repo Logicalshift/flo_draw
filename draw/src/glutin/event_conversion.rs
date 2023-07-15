@@ -1,9 +1,9 @@
 use flo_canvas_events::*;
 
-use glutin::event::{VirtualKeyCode};
+use winit::event::{VirtualKeyCode};
 
-pub (crate) fn button_from_glutin(mouse_button: &glutin::event::MouseButton) -> Button {
-    use glutin::event::MouseButton;
+pub (crate) fn button_from_glutin(mouse_button: &winit::event::MouseButton) -> Button {
+    use winit::event::MouseButton;
 
     match mouse_button {
         MouseButton::Left           => Button::Left,
