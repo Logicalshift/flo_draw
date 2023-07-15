@@ -221,12 +221,13 @@ struct WindowUpdateStream<TRenderStream, TTitleStream, TSizeStream, TFullscreenS
 
 impl<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> Stream for WindowUpdateStream<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream>
 where
-TRenderStream:          Unpin+Stream<Item=Vec<RenderAction>>,
-TTitleStream:           Unpin+Stream<Item=String>,
-TSizeStream:            Unpin+Stream<Item=(u64, u64)>,
-TFullscreenStream:      Unpin+Stream<Item=bool>,
-TDecorationStream:      Unpin+Stream<Item=bool>,
-TMousePointerStream:    Unpin+Stream<Item=MousePointer> {
+    TRenderStream:          Unpin+Stream<Item=Vec<RenderAction>>,
+    TTitleStream:           Unpin+Stream<Item=String>,
+    TSizeStream:            Unpin+Stream<Item=(u64, u64)>,
+    TFullscreenStream:      Unpin+Stream<Item=bool>,
+    TDecorationStream:      Unpin+Stream<Item=bool>,
+    TMousePointerStream:    Unpin+Stream<Item=MousePointer> 
+{
     type Item = WindowUpdate;
 
     fn poll_next(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<Self::Item>> {
