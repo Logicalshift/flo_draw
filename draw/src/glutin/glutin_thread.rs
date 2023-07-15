@@ -3,7 +3,7 @@ use super::glutin_thread_event::*;
 
 use ::desync::*;
 
-use glutin::event_loop::{EventLoopBuilder, EventLoopProxy};
+use winit::event_loop::{EventLoopBuilder, EventLoopProxy};
 
 use std::mem;
 use std::sync::*;
