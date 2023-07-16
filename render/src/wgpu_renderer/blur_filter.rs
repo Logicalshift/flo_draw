@@ -177,6 +177,7 @@ pub (crate) fn blur_texture(device: &wgpu::Device, queue: &wgpu::Queue, encoder:
         dimension:          wgpu::TextureDimension::D1,
         format:             wgpu::TextureFormat::R32Float,
         usage:              wgpu::TextureUsages::TEXTURE_BINDING,
+        view_formats:       &[],
     };
 
     let weights_texture = device.create_texture_with_data(queue, &weights_offsets_descriptor, weights.to_u8_slice());

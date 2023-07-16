@@ -44,13 +44,14 @@ impl RenderTarget {
             dimension:          wgpu::TextureDimension::D2,
             format:             wgpu::TextureFormat::Bgra8Unorm,
             usage:              wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats:       &[],
         };
 
         // Adjust according to the render target type
         use self::RenderTargetType::*;
         match render_target_type {
             Standard                        => { }
-            StandardForReading              => { }
+            StandardForReading              => { descriptor.view_formats = &[wgpu::TextureFormat::Bgra8Unorm] }
             Multisampled                    |
             MultisampledTexture             => { descriptor.sample_count = 4; }
             Monochrome                      => { descriptor.format = wgpu::TextureFormat::R8Unorm; },
