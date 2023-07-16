@@ -40,10 +40,10 @@ fn filter_fragment_shader_premultiply(vertex: RasterData) -> @location(0) vec4<f
     let texture_pos     = vec2<i32>(vertex.texture_pos);
     let clip_pos        = vertex.clip_pos;
 
-    let color           = textureLoad(input_texture, texture_pos, 0);
+    var color           = textureLoad(input_texture, texture_pos, 0);
     let clip_color      = textureSample(mask_texture, mask_sampler, clip_pos);
 
-    let color           = color * clip_color[3];
+    color               = color * clip_color[3];
     
     return color;
 }
@@ -53,10 +53,10 @@ fn filter_fragment_shader_no_premultiply(vertex: RasterData) -> @location(0) vec
     let texture_pos     = vec2<i32>(vertex.texture_pos);
     let clip_pos        = vertex.clip_pos;
 
-    let color           = textureLoad(input_texture, texture_pos, 0);
+    var color           = textureLoad(input_texture, texture_pos, 0);
     let clip_color      = textureSample(mask_texture, mask_sampler, clip_pos);
 
-    let color           = vec4<f32>(color[0], color[1], color[2], color[3] * clip_color[3]);
+    color               = vec4<f32>(color[0], color[1], color[2], color[3] * clip_color[3]);
     
     return color;
 }

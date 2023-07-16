@@ -20,8 +20,8 @@ fn filter_vertex_shader(
     var result: RasterData;
 
     let texture_size    = vec2<f32>(textureDimensions(input_texture));
-    let texture_pos     = vec2<f32>((pos[0]+1.0)/2.0, 1.0-((pos[1]+1.0)/2.0));
-    let texture_pos     = vec2<f32>(texture_size * texture_pos);
+    let texture_pos_1   = vec2<f32>((pos[0]+1.0)/2.0, 1.0-((pos[1]+1.0)/2.0));
+    let texture_pos     = vec2<f32>(texture_size * texture_pos_1);
 
     result.pos          = vec4<f32>(pos[0], pos[1], 0.0, 1.0);
     result.texture_pos  = texture_pos;
@@ -34,7 +34,7 @@ fn filter_fragment_shader_premultiply(vertex: RasterData) -> @location(0) vec4<f
     let texture_pos     = vec2<i32>(vertex.texture_pos);
 
     let color           = textureLoad(input_texture, texture_pos, 0);
-    let color           = color * f_alpha;
+    color               = color * f_alpha;
     
     return color;
 }
