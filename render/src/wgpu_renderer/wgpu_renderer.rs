@@ -210,6 +210,8 @@ impl WgpuRenderer {
                 width:          width,
                 height:         height,
                 present_mode:   wgpu::PresentMode::AutoVsync,
+                alpha_mode:     wgpu::CompositeAlphaMode::Auto,
+                view_formats:   &[actual_format]
             };
 
             target_surface.configure(&*self.device, &surface_config);
