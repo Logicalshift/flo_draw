@@ -9,6 +9,7 @@ use glutin::context::{NotCurrentContext, PossiblyCurrentGlContext, NotCurrentGlC
 use glutin::display::{GetGlDisplay, GlDisplay};
 use glutin::surface::{Surface, SurfaceTypeTrait};
 use glutin::prelude::{GlConfig, GlSurface};
+use glutin_winit::GlWindow;
 use winit::dpi::{LogicalSize};
 use winit::window::{Window, Fullscreen};
 use futures::prelude::*;
@@ -46,6 +47,9 @@ where
     /// The window the context is attached to
     window: Option<Window>,
 
+    /// True if the window has been finalized
+    window_finalized: bool,
+
     /// The renderer for this window (or none if there isn't one yet)
     renderer: Option<GlRenderer>
 }
@@ -59,11 +63,12 @@ where
     ///
     pub fn new(context: NotCurrentContext, gl_config: TConfig, window: Window) -> GlutinWindow<TConfig> {
         GlutinWindow {
-            context:    Some(context),
-            gl_config:  gl_config,
-            surface:    None,
-            window:     Some(window),
-            renderer:   None
+            context:            Some(context),
+            gl_config:          gl_config,
+            surface:            None,
+            window:             Some(window),
+            window_finalized:   false,
+            renderer:           None
         }
     }
 }
@@ -77,7 +82,7 @@ where
     SuspendResumeStream:    Unpin + Stream<Item=SuspendResume>,
     DrawEventPublisher:     MessagePublisher<Message=DrawEvent>,
     TConfig:                GlConfig + GetGlDisplay,
-    TConfig::Target:        GlDisplay<WindowSurface=Surface<TSurfaceType>>,
+    TConfig::Target:        GlDisplay<WindowSurface=Surface<TSurfaceType>, Config=TConfig>,
     TSurfaceType:           SurfaceTypeTrait,
 {
     // Read events from the render actions list
@@ -96,8 +101,13 @@ where
     while let Some(next_action) = window_actions.next().await {
         match next_action {
             WindowUpdate::Resumed => {
-                // TODO: finalize window
-                // TODO: create surface
+                // TODO: finalize window (except we *can't* because it requires a bunch of setup stuff we hadn't previously planned on... GAH)
+
+                // Create surface
+                let surface_attributes  = window.window.as_ref().unwrap().build_surface_attributes(<_>::default());
+                window.surface          = unsafe {
+                    Some(window.gl_config.display().create_window_surface(&window.gl_config, &surface_attributes).unwrap())
+                };
             }
 
             WindowUpdate::Suspended => {
