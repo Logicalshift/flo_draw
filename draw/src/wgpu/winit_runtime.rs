@@ -176,9 +176,13 @@ impl WinitRuntime {
             Focused(_focused)                                               => vec![],
             ModifiersChanged(_state)                                        => vec![],
             TouchpadPressure { device_id: _, pressure: _, stage: _ }        => vec![],
+            TouchpadMagnify { .. }                                          => vec![],
+            TouchpadRotate { .. }                                           => vec![],
+            SmartMagnify { .. }                                             => vec![],
             AxisMotion { device_id: _, axis: _, value: _ }                  => vec![],
             Touch(_touch)                                                   => vec![],
             ThemeChanged(_theme)                                            => vec![],
+            Occluded(_)                                                     => vec![],
 
             // Keyboard events
             KeyboardInput { device_id: _, input, is_synthetic: _, }         => {
@@ -262,6 +266,7 @@ impl WinitRuntime {
             },
 
             MouseWheel { device_id: _, delta: _, phase: _, .. }             => vec![],
+            Ime(_)                                                          => vec![],
         };
 
         if let Some(window_data) = self.window_events.get_mut(&window_id) {
