@@ -25,7 +25,7 @@ lazy_static! {
 /// The main use case for namespaces is for when a rendering target has many clients: a client can use its own namespace
 /// to avoid needing to coordinate with other clients over which resources it can use.
 ///
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct NamespaceId {
     /// The local ID of this namespace, which is used to compare the namespace inside the process
     local_id: usize,

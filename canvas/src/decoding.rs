@@ -6,6 +6,7 @@ use crate::sprite::*;
 use crate::texture::*;
 use crate::gradient::*;
 use crate::font_face::*;
+use crate::namespace::*;
 use crate::transform2d::*;
 
 use futures::*;
@@ -13,6 +14,7 @@ use futures::stream;
 use futures::task::{Poll};
 
 use itertools::*;
+use uuid::*;
 
 use std::mem;
 use std::str::*;
@@ -409,6 +411,8 @@ enum DecoderState {
     SpriteTransformRotate(String),              // 'sTr' (degr ees)
     SpriteTransformTransform(String),           // 'sTT' (transform)
 
+    NewNamespace(String),                       // 'NN' (GUID as two u64s)
+
     FontDrawing,                                                        // 't'
     FontDrawText(DecodeFontId, DecodeString, String),                   // 'tT' (font_id, string, x, y)
     FontBeginLayout(String),                                            // 'tl' (x, y, align)
@@ -545,6 +549,8 @@ impl CanvasDecoder {
             SpriteTransformRotate(param)        => Self::decode_sprite_transform_rotate(next_chr, param)?,
             SpriteTransformTransform(param)     => Self::decode_sprite_transform_transform(next_chr, param)?,
 
+            NewNamespace(param)                 => Self::decode_namespace(next_chr, param)?,
+
             FontDrawing                                             => Self::decode_font_drawing(next_chr)?,
             FontDrawText(font_id, string_decode, coords)            => Self::decode_font_draw_text(next_chr, font_id, string_decode, coords)?,
             FontBeginLayout(param)                                  => Self::decode_font_begin_layout(next_chr, param)?,
@@ -632,6 +638,7 @@ impl CanvasDecoder {
             't'     => Ok((DecoderState::NewLayerAlpha(PartialResult::MatchMore(String::new()), String::new()), None)),
             'X'     => Ok((DecoderState::SwapLayers(None, String::new()), None)),
             's'     => Ok((DecoderState::NewSprite(String::new()), None)),
+            'N'     => Ok((DecoderState::NewNamespace(String::new()), None)),
 
             'F'     => Ok((DecoderState::None, Some(Draw::StartFrame))),
             'f'     => Ok((DecoderState::None, Some(Draw::ShowFrame))),
@@ -1903,6 +1910,28 @@ impl CanvasDecoder {
     }
 
     ///
+    /// Decodes the Namespace instruction
+    ///
+    fn decode_namespace(next_chr: char, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        let mut param = param;
+
+        if param.len() < 21 {
+            param.push(next_chr);
+            Ok((DecoderState::NewNamespace(param), None))
+        } else {
+            param.push(next_chr);
+
+            let mut param   = param.chars();
+            let id_a        = Self::decode_u64(&mut param)?;
+            let id_b        = Self::decode_u64(&mut param)?;
+
+            let global_id   = Uuid::from_u64_pair(id_a, id_b);
+
+            Ok((DecoderState::None, Some(Draw::Namespace(NamespaceId::with_id(global_id)))))
+        }
+    }
+
+    ///
     /// Consumes 6 characters to decode a f32
     ///
     fn try_decode_f32(chrs: &mut Chars) -> Result<Option<f32>, DecoderError> {
@@ -1957,6 +1986,22 @@ impl CanvasDecoder {
         }
 
         Ok(Some(result))
+    }
+
+    ///
+    /// Consumes 11 characters to decode a u64
+    ///
+    fn decode_u64(chrs: &mut Chars) -> Result<u64, DecoderError> {
+        let mut result  = 0;
+        let mut shift   = 0;
+
+        for _ in 0..11 {
+            let next_chr    = chrs.next().ok_or(DecoderError::BadNumber)?;
+            result          |= (Self::decode_base64(next_chr)? as u64) << shift;
+            shift           += 6;
+        }
+
+        Ok(result)
     }
 
     ///
@@ -2489,6 +2534,11 @@ mod test {
     }
 
     #[test]
+    fn decode_namespace() {
+        check_round_trip_single(Draw::Namespace(NamespaceId::default()));
+    }
+
+    #[test]
     fn decode_all_iter() {
         check_round_trip(vec![
             Draw::Path(PathOp::NewPath),
@@ -2523,6 +2573,7 @@ mod test {
             Draw::PushState,
             Draw::PopState,
             Draw::ClearCanvas(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
+            Draw::Namespace(NamespaceId::default()),
             Draw::Layer(LayerId(21)),
             Draw::ClearLayer,
             Draw::ClearAllLayers,
@@ -2591,6 +2642,7 @@ mod test {
             Draw::PushState,
             Draw::PopState,
             Draw::ClearCanvas(Color::Rgba(0.1, 0.2, 0.3, 0.4)),
+            Draw::Namespace(NamespaceId::default()),
             Draw::Layer(LayerId(21)),
             Draw::LayerBlend(LayerId(22), BlendMode::DestinationOut),
             Draw::LayerAlpha(LayerId(23), 0.4),

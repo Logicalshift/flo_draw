@@ -3,6 +3,7 @@
 //!
 
 use crate::transform2d::*;
+use crate::namespace::*;
 use crate::gradient::*;
 use crate::texture::*;
 use crate::sprite::*;
@@ -294,4 +295,7 @@ pub enum Draw {
 
     /// Updates a gradient definition
     Gradient(GradientId, GradientOp),
+
+    /// Chooses a different namespace for the resource IDs (layers, sprites, textures, fonts, gradients)
+    Namespace(NamespaceId),
 }

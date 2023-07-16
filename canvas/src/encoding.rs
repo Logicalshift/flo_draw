@@ -5,6 +5,7 @@ use crate::color::*;
 use crate::sprite::*;
 use crate::texture::*;
 use crate::gradient::*;
+use crate::namespace::*;
 use crate::transform2d::*;
 
 ///
@@ -61,6 +62,22 @@ impl CanvasEncoding<String> for u32 {
         let mut remaining = *self;
 
         for _ in 0..6 {
+            let next_part = remaining & 0x3f;
+            let next_char = ENCODING_CHAR_SET[next_part as usize];
+            append_to.push(next_char);
+
+            remaining >>= 6;
+        }
+    }
+}
+
+impl CanvasEncoding<String> for u64 {
+    #[inline]
+    fn encode_canvas(&self, append_to: &mut String) {
+        // Base-64 wastes some bits but requires 2 less characters than hex for a 32-bit number
+        let mut remaining = *self;
+
+        for _ in 0..11 {
             let next_part = remaining & 0x3f;
             let next_char = ENCODING_CHAR_SET[next_part as usize];
             append_to.push(next_char);
@@ -475,6 +492,15 @@ impl<'a> CanvasEncoding<String> for &'a Vec<GlyphPosition> {
     }
 }
 
+impl<'a> CanvasEncoding<String> for &NamespaceId {
+    fn encode_canvas(&self, append_to: &mut String) {
+        let global_id               = self.global_id();
+        let (global_a, global_b)    = global_id.as_u64_pair();
+
+        (global_a, global_b).encode_canvas(append_to)
+    }
+}
+
 impl CanvasEncoding<String> for Draw {
     fn encode_canvas(&self, append_to: &mut String) {
         use self::Draw::*;
@@ -534,7 +560,8 @@ impl CanvasEncoding<String> for Draw {
             DrawText(font_id, ref string, x, y)         => ('t', 'T', font_id, string, x, y).encode_canvas(append_to),
             BeginLineLayout(x, y, align)                => ('t', 'l', x, y, align).encode_canvas(append_to),
             DrawLaidOutText                             => ('t', 'R').encode_canvas(append_to),
-            Gradient(gradient_id, ref gradient_op)      => ('G', gradient_id, gradient_op).encode_canvas(append_to)
+            Gradient(gradient_id, ref gradient_op)      => ('G', gradient_id, gradient_op).encode_canvas(append_to),
+            Namespace(namespace_id)                     => ('N', 'N', namespace_id).encode_canvas(append_to),
         }
     }
 }
@@ -647,4 +674,6 @@ mod test {
     fn encode_nonzero_winding_rule() { assert!(&encode_draw(Draw::WindingRule(WindingRule::NonZero)) == "Wn") }
     #[test]
     fn encode_evenodd_winding_rule() { assert!(&encode_draw(Draw::WindingRule(WindingRule::EvenOdd)) == "We") }
+    #[test]
+    fn encode_default_namespace() { assert!(&encode_draw(Draw::Namespace(NamespaceId::default())) == "NNAAAAAAAAAAAAAAAAAAAAAA", "{}", encode_draw(Draw::Namespace(NamespaceId::default()))) }
 }
