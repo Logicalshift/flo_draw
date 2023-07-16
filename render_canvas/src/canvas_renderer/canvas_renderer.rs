@@ -271,6 +271,8 @@ impl CanvasRenderer {
                     ShowFrame                                   => self.tes_show_frame(),
                     ResetFrame                                  => self.tes_reset_frame(),
 
+                    Namespace(new_namespace)                    => todo!(),
+
                     Path(NewPath)                               => path_state.tes_new_path(),
                     Path(Move(x, y))                            => path_state.tes_move(x, y),
                     Path(Line(x, y))                            => path_state.tes_line(x, y),
