@@ -47,9 +47,6 @@ where
     /// The window the context is attached to
     window: Option<Window>,
 
-    /// True if the window has been finalized
-    window_finalized: bool,
-
     /// The renderer for this window (or none if there isn't one yet)
     renderer: Option<GlRenderer>
 }
@@ -67,7 +64,6 @@ where
             gl_config:          gl_config,
             surface:            None,
             window:             Some(window),
-            window_finalized:   false,
             renderer:           None
         }
     }
