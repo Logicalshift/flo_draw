@@ -54,6 +54,7 @@ impl CanvasRenderer {
     ///
     pub (super) fn tes_push_state(&mut self) {
         self.transform_stack.push(self.active_transform);
+        self.namespace_stack.push(self.current_namespace);
 
         self.core.sync(|core| {
             let all_layers = core.layers.iter().cloned()
@@ -73,6 +74,7 @@ impl CanvasRenderer {
         // The current transform is applied globally
         self.transform_stack.pop()
             .map(|transform| self.active_transform = transform);
+        if let Some(namespace) = self.namespace_stack.pop() { self.current_namespace = namespace;  };
 
         self.core.sync(|core| {
             core.layer(self.current_layer).update_transform(&self.active_transform);

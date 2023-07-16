@@ -37,6 +37,9 @@ pub struct CanvasRenderer {
     /// The ID of the currently selected namespace
     pub (super) current_namespace: usize,
 
+    /// The namespaces pushed to the stack when PushState was called
+    pub (super) namespace_stack: Vec<usize>,
+
     /// The layer that the next drawing instruction will apply to
     pub (super) current_layer: LayerHandle,
 
@@ -131,6 +134,7 @@ impl CanvasRenderer {
             inverse_viewport_transform: canvas::Transform2D::identity(),
             active_transform:           canvas::Transform2D::identity(),
             transform_stack:            vec![],
+            namespace_stack:            vec![],
             next_entity_id:             0,
             window_size:                (1.0, 1.0),
             window_scale:               1.0,
