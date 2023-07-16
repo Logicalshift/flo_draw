@@ -200,7 +200,7 @@ impl WgpuRenderer {
 
         if let Some(target_surface) = &self.target_surface {
             // Fetch the format
-            let possible_formats    = target_surface.get_supported_formats(&*self.adapter);
+            let possible_formats    = target_surface.get_capabilities(&*self.adapter).formats;
             let actual_format       = possible_formats.iter().filter(|format| !format.describe().srgb).next().copied();
             let actual_format       = actual_format.unwrap_or(possible_formats[0]);
 
@@ -211,7 +211,7 @@ impl WgpuRenderer {
                 height:         height,
                 present_mode:   wgpu::PresentMode::AutoVsync,
                 alpha_mode:     wgpu::CompositeAlphaMode::Auto,
-                view_formats:   &[actual_format]
+                view_formats:   vec![actual_format]
             };
 
             target_surface.configure(&*self.device, &surface_config);
