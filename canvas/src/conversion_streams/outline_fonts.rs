@@ -1,6 +1,7 @@
 use crate::draw::*;
 use crate::path::*;
 use crate::font::*;
+use crate::namespace::*;
 
 use flo_stream::*;
 
@@ -88,29 +89,49 @@ impl<'a> ttf_parser::OutlineBuilder for FontOutliner<'a> {
 /// Along with `drawing_with_laid_out_text`, this can be used to render text to a render target that does not have any font 
 /// support of its own.
 ///
-pub fn drawing_with_text_as_paths<InStream: 'static+Send+Unpin+Stream<Item=Draw>>(draw_stream: InStream) -> impl Send+Unpin+Stream<Item=Draw> {
+pub fn drawing_with_text_as_paths<InStream>(draw_stream: InStream) -> impl Send+Unpin+Stream<Item=Draw> 
+where
+    InStream: 'static + Send + Unpin + Stream<Item=Draw>,
+{
     generator_stream(move |yield_value| async move {
         // Set up
-        let mut draw_stream = draw_stream;
-        let mut font_map    = HashMap::new();
+        let mut namespace_id    = NamespaceId::default().local_id();
+        let mut namespace_stack = vec![];
+        let mut draw_stream     = draw_stream;
+        let mut font_map        = HashMap::new();
 
         // Pass through the drawing instructions, and process any font instructions that we may come across
         while let Some(draw) = draw_stream.next().await {
             match draw {
                 Draw::ClearCanvas(_) => {
                     font_map.clear();
+                    namespace_id = NamespaceId::default().local_id();
 
                     yield_value(draw).await;
                 }
 
+                Draw::Namespace(new_namespace) => {
+                    namespace_id = new_namespace.local_id();
+                }
+
+                Draw::PushState => {
+                    namespace_stack.push(namespace_id);
+                }
+
+                Draw::PopState => {
+                    if let Some(new_namespace) = namespace_stack.pop() {
+                        namespace_id = new_namespace;
+                    }
+                }
+
                 Draw::Font(font_id, FontOp::UseFontDefinition(data)) => {
                     // Store the font to use for this ID
-                    font_map.insert(font_id, Arc::clone(&data));
+                    font_map.insert((namespace_id, font_id), Arc::clone(&data));
                     yield_value(Draw::Font(font_id, FontOp::UseFontDefinition(data))).await;
                 }
 
                 Draw::Font(font_id, FontOp::DrawGlyphs(glyphs)) => {
-                    if let Some(font) = font_map.get(&font_id) {
+                    if let Some(font) = font_map.get(&(namespace_id, font_id)) {
                         // Use this font to generate the glyphs
                         let ttf_font        = font.ttf_font();
                         let units_per_em    = ttf_font.units_per_em() as f32;

@@ -1,5 +1,6 @@
 use crate::draw::*;
 use crate::font::*;
+use crate::namespace::*;
 use crate::font_line_layout::*;
 
 use flo_stream::*;
@@ -15,11 +16,16 @@ use std::collections::{HashMap};
 /// Given a stream with font instructions, replaces any layout instruction (eg, `Draw::DrawText()`) with glyph
 /// rendering instructions
 ///
-pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>>(draw_stream: InStream) -> impl Send+Unpin+Stream<Item=Draw> {
+pub fn drawing_with_laid_out_text<InStream>(draw_stream: InStream) -> impl Send+Unpin+Stream<Item=Draw> 
+where
+    InStream: 'static + Send + Unpin + Stream<Item=Draw>,
+{
     generator_stream(move |yield_value| async move {
         let mut draw_stream         = draw_stream;
 
         // State of this stream
+        let mut namespace_id        = NamespaceId::default().local_id();
+        let mut namespace_stack     = vec![];
         let mut font_map            = HashMap::new();
         let mut font_size           = HashMap::new();
         let mut current_line        = None;
@@ -30,13 +36,27 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
         // Read from the drawing stream
         while let Some(draw) = draw_stream.next().await {
             match draw {
+                Draw::Namespace(new_namespace) => {
+                    namespace_id = new_namespace.local_id();
+                }
+
+                Draw::PushState => {
+                    namespace_stack.push(namespace_id);
+                }
+
+                Draw::PopState => {
+                    if let Some(new_namespace) = namespace_stack.pop() {
+                        namespace_id = new_namespace;
+                    }
+                }
+
                 Draw::Font(font_id, FontOp::UseFontDefinition(font_defn)) => {
                     // Defining new fonts interrupts any existing text layout
                     current_line = None;
                     current_font = None;
 
                     // Store this font definition
-                    font_map.insert(font_id, Arc::clone(&font_defn));
+                    font_map.insert((namespace_id, font_id), Arc::clone(&font_defn));
                     font_size.insert(font_id, 12.0);
 
                     // Send the font to the next part of the stream
@@ -73,7 +93,7 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                 Draw::Font(font_id, FontOp::LayoutText(text)) => {
                     // Update the current font
                     if current_font != Some(font_id) {
-                        if let (Some(new_font), Some(font_size)) = (font_map.get(&font_id), font_size.get(&font_id)) {
+                        if let (Some(new_font), Some(font_size)) = (font_map.get(&(namespace_id, font_id)), font_size.get(&font_id)) {
                             let last_font   = current_font.unwrap_or(FontId(0));
                             let new_font    = Arc::clone(new_font);
                             let font_size   = *font_size;
@@ -119,7 +139,7 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                 },
 
                 Draw::DrawText(font_id, text, x, y) => {
-                    if let (Some(font), Some(font_size)) = (font_map.get(&font_id), font_size.get(&font_id)) {
+                    if let (Some(font), Some(font_size)) = (font_map.get(&(namespace_id, font_id)), font_size.get(&font_id)) {
                         // This is just a straightforward immediate layout of the text as glyphs
                         let mut layout = CanvasFontLineLayout::new(font, *font_size);
 
@@ -166,6 +186,7 @@ pub fn drawing_with_laid_out_text<InStream: 'static+Send+Unpin+Stream<Item=Draw>
                     font_map        = HashMap::new();
                     current_line    = None;
                     current_font    = None;
+                    namespace_id    = NamespaceId::default().local_id();
 
                     yield_value(draw).await;
                 }
