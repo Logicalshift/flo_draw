@@ -56,7 +56,7 @@ pub fn main() {
             // Render the current frame
             canvas.draw(|gc| {
                 // Clear the canvas
-                gc.clear_canvas(Color::Rgba(0.7, 0.9, 0.9, 1.0));
+                gc.clear_canvas(Color::Rgba(0.56, 0.72, 0.72, 1.0));
                 gc.canvas_height(768.0);
                 gc.transform(Transform2D::scale(1.0, -1.0));
                 gc.center_region(0.0, 0.0, 1024.0, 768.0);
