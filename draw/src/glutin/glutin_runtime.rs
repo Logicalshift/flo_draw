@@ -33,7 +33,7 @@ static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 ///
 pub (super) struct GlutinRuntime {
     /// The event publishers for the windows being managed by the runtime
-    pub (super) window_events: HashMap<WindowId, Publisher<DrawEvent>>,
+    pub (super) window_events: HashMap<WindowId, (Publisher<DrawEvent>, Publisher<SuspendResume>)>,
 
     /// Maps future IDs to running futures
     pub (super) futures: HashMap<u64, LocalBoxFuture<'static, ()>>,
@@ -244,7 +244,7 @@ impl GlutinRuntime {
             // Dispatch the draw events using a process
             if draw_events.len() > 0 {
                 // Need to republish the window events so we can share with the process
-                let mut window_events = window_events.republish();
+                let mut window_events = window_events.0.republish();
 
                 self.run_process(async move {
                     for evt in draw_events {
@@ -260,11 +260,12 @@ impl GlutinRuntime {
     ///
     fn request_resumed(&mut self) {
         // Need to republish the window events so we can share with the process
-        let window_events = self.window_events.values().map(|events| events.republish()).collect::<Vec<_>>();
+        let window_events = self.window_events.values().map(|(draw, suspend)| (draw.republish(), suspend.republish())).collect::<Vec<_>>();
 
-        for mut events in window_events {
+        for (mut draw_events, mut suspend_events) in window_events {
             self.run_process(async move {
-                events.publish(DrawEvent::Redraw).await;
+                suspend_events.publish(SuspendResume::Resumed).await;
+                draw_events.publish(DrawEvent::Redraw).await;
             });
         }
     }
@@ -274,11 +275,11 @@ impl GlutinRuntime {
     ///
     fn request_suspended(&mut self) {
         // Need to republish the window events so we can share with the process
-        let window_events = self.window_events.values().map(|events| events.republish()).collect::<Vec<_>>();
+        let window_events = self.window_events.values().map(|(_, suspend)| suspend.republish()).collect::<Vec<_>>();
 
-        for mut events in window_events {
+        for mut suspend_events in window_events {
             self.run_process(async move {
-                // TODO
+                suspend_events.publish(SuspendResume::Suspended).await;
             });
         }
     }
@@ -289,7 +290,7 @@ impl GlutinRuntime {
     fn request_redraw(&mut self, window_id: WindowId) {
         if let Some(window_events) = self.window_events.get_mut(&window_id) {
             // Need to republish the window events so we can share with the process
-            let mut window_events = window_events.republish();
+            let mut window_events = window_events.0.republish();
 
             self.run_process(async move {
                 window_events.publish(DrawEvent::Redraw).await;
@@ -354,6 +355,9 @@ impl GlutinRuntime {
                 };
 
                 // Store the window context in a new glutin window
+                let mut suspend_resume          = Publisher::new(1);
+                let suspend_resume_subscriber   = suspend_resume.subscribe();
+
                 let window_id           = window.id();
                 let size                = window.inner_size();
                 let scale               = window.scale_factor();
@@ -361,7 +365,7 @@ impl GlutinRuntime {
 
                 // Store the publisher for the events for this window
                 let mut initial_events  = events.republish_weak();
-                self.window_events.insert(window_id, events);
+                self.window_events.insert(window_id, (events, suspend_resume));
 
                 // Run the window as a process on this thread
                 self.run_process(async move { 
@@ -373,7 +377,7 @@ impl GlutinRuntime {
                     let window_events = initial_events;
 
                     // Process the actions for the window
-                    send_actions_to_window(window, actions, window_events, window_properties).await;
+                    send_actions_to_window(window, suspend_resume_subscriber, actions, window_events, window_properties).await;
 
                     // Stop processing events for the window once there are no more actions
                     glutin_thread().send_event(GlutinThreadEvent::StopSendingToWindow(window_id));
