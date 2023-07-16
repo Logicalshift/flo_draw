@@ -48,7 +48,10 @@ pub (super) struct GlutinRuntime {
     pub (super) pointer_state: HashMap<DeviceId, PointerState>,
 
     /// Set to true when we'll set the control flow to 'Exit' once the current set of events have finished processing
-    pub (super) will_exit: bool
+    pub (super) will_exit: bool,
+
+    /// Set to true if the runtime is suspended
+    pub (super) suspended: bool,
 }
 
 ///
@@ -259,6 +262,8 @@ impl GlutinRuntime {
     /// Sends a redraw request to a window
     ///
     fn request_resumed(&mut self) {
+        self.suspended = false;
+
         // Need to republish the window events so we can share with the process
         let window_events = self.window_events.values().map(|(draw, suspend)| (draw.republish(), suspend.republish())).collect::<Vec<_>>();
 
@@ -274,6 +279,8 @@ impl GlutinRuntime {
     /// Sends a redraw request to a window
     ///
     fn request_suspended(&mut self) {
+        self.suspended = true;
+
         // Need to republish the window events so we can share with the process
         let window_events = self.window_events.values().map(|(_, suspend)| suspend.republish()).collect::<Vec<_>>();
 
@@ -354,6 +361,11 @@ impl GlutinRuntime {
                     })
                 };
 
+                // Finalize the window (might be unsafe under operating systems like Android, but adding this to the window itself requires considerable extra state...)
+                let window_builder = winit::window::WindowBuilder::new();
+                glutin_winit::finalize_window(window_target, window_builder, &gl_config)
+                    .unwrap();
+
                 // Store the window context in a new glutin window
                 let mut suspend_resume          = Publisher::new(1);
                 let suspend_resume_subscriber   = suspend_resume.subscribe();
@@ -362,6 +374,14 @@ impl GlutinRuntime {
                 let size                = window.inner_size();
                 let scale               = window.scale_factor();
                 let window              = GlutinWindow::new(windowed_context, gl_config, window);
+
+                // Immediately resume the window if we're not in a suspended state
+                if !self.suspended {
+                    let mut suspend_resume = suspend_resume.republish_weak();
+                    self.run_process(async move {
+                        suspend_resume.publish(SuspendResume::Resumed);
+                    })
+                }
 
                 // Store the publisher for the events for this window
                 let mut initial_events  = events.republish_weak();

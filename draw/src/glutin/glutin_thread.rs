@@ -143,7 +143,8 @@ fn run_glutin_thread(send_proxy: mpsc::Sender<EventLoopProxy<GlutinThreadEvent>>
         will_stop_when_no_windows:  false,
         will_exit:                  false,
         pointer_id:                 HashMap::new(),
-        pointer_state:              HashMap::new()
+        pointer_state:              HashMap::new(),
+        suspended:                  true,
     };
 
     // Run the glutin event loop

@@ -101,8 +101,6 @@ where
     while let Some(next_action) = window_actions.next().await {
         match next_action {
             WindowUpdate::Resumed => {
-                // TODO: finalize window (except we *can't* because it requires a bunch of setup stuff we hadn't previously planned on... GAH)
-
                 // Create surface
                 let surface_attributes  = window.window.as_ref().unwrap().build_surface_attributes(<_>::default());
                 window.surface          = unsafe {
