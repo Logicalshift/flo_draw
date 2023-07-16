@@ -33,10 +33,10 @@ pub enum RenderEntity {
     DrawIndexed(render::VertexBufferId, render::IndexBufferId, usize),
 
     /// Render the sprite layer with the specified ID
-    RenderSprite(canvas::SpriteId, canvas::Transform2D),
+    RenderSprite(usize, canvas::SpriteId, canvas::Transform2D),
 
     /// Render a sprite to an off-screen texture and then apply a filter to it
-    RenderSpriteWithFilters(canvas::SpriteId, canvas::Transform2D, Vec<TextureFilterRequest>),
+    RenderSpriteWithFilters(usize, canvas::SpriteId, canvas::Transform2D, Vec<TextureFilterRequest>),
 
     /// Updates the transformation matrix for the layer
     SetTransform(canvas::Transform2D),

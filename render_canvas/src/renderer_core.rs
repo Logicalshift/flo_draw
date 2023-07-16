@@ -38,7 +38,7 @@ pub struct RenderCore {
     pub background_color: render::Rgba8,
 
     /// The definition for the sprites
-    pub sprites: HashMap<canvas::SpriteId, LayerHandle>,
+    pub sprites: HashMap<(usize, canvas::SpriteId), LayerHandle>,
 
     /// The number of times each render texture is being used by the layers or by the canvas itself (0 = ready to free)
     pub used_textures: HashMap<render::TextureId, usize>,
@@ -59,13 +59,13 @@ pub struct RenderCore {
     pub layer_textures: Vec<(render::TextureId, TextureRenderRequest)>,
 
     /// Maps canvas textures to render textures
-    pub canvas_textures: HashMap<canvas::TextureId, RenderTexture>,
+    pub canvas_textures: HashMap<(usize, canvas::TextureId), RenderTexture>,
 
     /// Maps canvas gradients to render gradients
-    pub canvas_gradients: HashMap<canvas::GradientId, RenderGradient>,
+    pub canvas_gradients: HashMap<(usize, canvas::GradientId), RenderGradient>,
 
     /// The alpha value to use for each texture, next time it's used
-    pub texture_alpha: HashMap<canvas::TextureId, f32>,
+    pub texture_alpha: HashMap<(usize, canvas::TextureId), f32>,
 
     /// The actual layer definitions
     pub layer_definitions: Vec<Layer>,
@@ -116,7 +116,7 @@ impl RenderCore {
             SetBlendMode(_)                         => { }
             SetFlatColor                            => { }
             SetDashPattern(_)                       => { }
-            RenderSprite(_, _)                      => { }
+            RenderSprite(_, _, _)                   => { }
             DisableClipping                         => { }
 
             SetFillTexture(texture_id, _, _, _)     => { 
@@ -129,7 +129,7 @@ impl RenderCore {
                     .map(|usage_count| *usage_count -= 1);
             }
 
-            RenderSpriteWithFilters(_, _, filters)  => { 
+            RenderSpriteWithFilters(_, _, _, filters) => { 
                 let textures = filters.iter().flat_map(|filter| filter.used_textures());
                 for texture_id in textures {
                     self.used_textures.get_mut(&texture_id)
@@ -383,12 +383,13 @@ impl RenderCore {
                     layer = self.layer(layer_handle);
                 },
 
-                RenderSprite(sprite_id, transform)                  |
-                RenderSpriteWithFilters(sprite_id, transform, _)    => { 
+                RenderSprite(namespace_id, sprite_id, transform)                  |
+                RenderSpriteWithFilters(namespace_id, sprite_id, transform, _)    => { 
                     let sprite_id           = *sprite_id;
                     let transform           = *transform;
-                    let filters             = if let RenderSpriteWithFilters(_, _, filters) = &layer.render_order[render_idx] { Some(filters.clone()) } else { None };
-                    let sprite_layer_handle = self.sprites.get(&sprite_id).cloned();
+                    let namespace_id        = *namespace_id;
+                    let filters             = if let RenderSpriteWithFilters(_, _, _, filters) = &layer.render_order[render_idx] { Some(filters.clone()) } else { None };
+                    let sprite_layer_handle = self.sprites.get(&(namespace_id, sprite_id)).cloned();
                     let mut sprite_bounds   = LayerBounds::default();
 
                     if let Some(sprite_layer_handle) = sprite_layer_handle {
@@ -421,9 +422,9 @@ impl RenderCore {
     ///
     /// Returns a render texture for a canvas texture
     ///
-    pub fn texture_for_rendering(&mut self, texture_id: canvas::TextureId) -> Option<render::TextureId> {
+    pub fn texture_for_rendering(&mut self, namespace_id: usize, texture_id: canvas::TextureId) -> Option<render::TextureId> {
         // 'Ready' textures are set up for rendering: 'Loading' textures need to be finished to render
-        match self.canvas_textures.get(&texture_id)? {
+        match self.canvas_textures.get(&(namespace_id, texture_id))? {
             RenderTexture::Ready(render_texture)    => Some(*render_texture),
             RenderTexture::Loading(render_texture)  => {
                 let render_texture = *render_texture;
@@ -432,8 +433,9 @@ impl RenderCore {
                 self.layer_textures.push((render_texture, TextureRenderRequest::CreateMipMaps(render_texture)));
 
                 // Mark as finished
-                self.canvas_textures.get_mut(&texture_id)
-                    .map(|texture| *texture = RenderTexture::Ready(render_texture));
+                if let Some(texture) = self.canvas_textures.get_mut(&(namespace_id, texture_id)) {
+                    *texture = RenderTexture::Ready(render_texture);
+                }
 
                 Some(render_texture)
             }
@@ -455,8 +457,8 @@ impl RenderCore {
     ///
     /// Returns a (1D) render texture for a canvas gradient
     ///
-    pub fn gradient_for_rendering(&mut self, gradient_id: canvas::GradientId) -> Option<render::TextureId> {
-        match self.canvas_gradients.get(&gradient_id)? {
+    pub fn gradient_for_rendering(&mut self, namespace_id: usize, gradient_id: canvas::GradientId) -> Option<render::TextureId> {
+        match self.canvas_gradients.get(&(namespace_id, gradient_id))? {
             RenderGradient::Ready(gradient_texture, _)  => Some(*gradient_texture),
             RenderGradient::Defined(definition)         => {
                 // Define a new texture
@@ -478,7 +480,7 @@ impl RenderCore {
                 ]);
 
                 // Update the texture to 'ready'
-                self.canvas_gradients.insert(gradient_id, RenderGradient::Ready(texture_id, definition));
+                self.canvas_gradients.insert((namespace_id, gradient_id), RenderGradient::Ready(texture_id, definition));
 
                 // The new texture is the one that will be used for rendering
                 Some(texture_id)

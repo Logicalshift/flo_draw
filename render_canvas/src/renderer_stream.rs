@@ -447,11 +447,12 @@ impl RenderCore {
                     render_order.push(render::RenderAction::DrawIndexedTriangles(*vertex_buffer, *index_buffer, *num_items));
                 },
 
-                RenderSprite(sprite_id, sprite_transform) => { 
+                RenderSprite(namespace_id, sprite_id, sprite_transform) => { 
                     let sprite_id           = *sprite_id;
                     let sprite_transform    = *sprite_transform;
+                    let namespace_id        = *namespace_id;
 
-                    if let Some(sprite_layer_handle) = core.sprites.get(&sprite_id) {
+                    if let Some(sprite_layer_handle) = core.sprites.get(&(namespace_id, sprite_id)) {
                         let sprite_layer_handle = *sprite_layer_handle;
 
                         // The sprite transform is appended to the viewport transform
@@ -481,12 +482,13 @@ impl RenderCore {
                     layer                   = core.layer(layer_handle);
                 },
 
-                RenderSpriteWithFilters(sprite_id, sprite_transform, filters) => {
+                RenderSpriteWithFilters(namespace_id, sprite_id, sprite_transform, filters) => {
                     let sprite_id           = *sprite_id;
                     let sprite_transform    = *sprite_transform;
+                    let namespace_id        = *namespace_id;
                     let filters             = filters.clone();
 
-                    if let Some(sprite_layer_handle) = core.sprites.get(&sprite_id) {
+                    if let Some(sprite_layer_handle) = core.sprites.get(&(namespace_id, sprite_id)) {
                         let sprite_layer_handle     = *sprite_layer_handle;
 
                         // Figure out the sprite size in pixels

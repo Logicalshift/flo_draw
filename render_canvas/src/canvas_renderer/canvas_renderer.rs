@@ -299,8 +299,8 @@ impl CanvasRenderer {
                     DashLength(length)                          => self.tes_dash_length(length),
                     DashOffset(offset)                          => self.tes_dash_offset(offset),
                     FillColor(color)                            => self.tes_fill_color(color),
-                    FillTexture(texture_id, min, max)           => self.tes_fill_texture(texture_id, min, max),
-                    FillGradient(gradient_id, min, max)         => self.tes_fill_gradient(gradient_id, min, max),
+                    FillTexture(texture_id, min, max)           => self.tes_fill_texture(self.current_namespace, texture_id, min, max),
+                    FillGradient(gradient_id, min, max)         => self.tes_fill_gradient(self.current_namespace, gradient_id, min, max),
                     FillTransform(transform)                    => self.tes_fill_transform(transform),
                     StrokeColor(color)                          => self.tes_stroke_color(color),
                     BlendMode(blend_mode)                       => self.tes_blend_mode(blend_mode),
@@ -328,14 +328,14 @@ impl CanvasRenderer {
                     SwapLayers(layer1, layer2)                  => self.tes_swap_layers(layer1, layer2),
 
                     ClearSprite                                 => self.tes_clear_sprite(&mut path_state), 
-                    Sprite(sprite_id)                           => self.tes_sprite(sprite_id), 
+                    Sprite(sprite_id)                           => self.tes_sprite(self.current_namespace, sprite_id), 
                     SpriteTransform(transform)                  => self.tes_sprite_transform(transform),
-                    DrawSprite(sprite_id)                       => self.tes_draw_sprite(sprite_id),
-                    DrawSpriteWithFilters(sprite_id, filters)   => self.tes_draw_sprite_with_filters(sprite_id, filters),
-                    MoveSpriteFrom(sprite_id)                   => self.tes_move_sprite_from(sprite_id, &mut path_state),
+                    DrawSprite(sprite_id)                       => self.tes_draw_sprite(self.current_namespace, sprite_id),
+                    DrawSpriteWithFilters(sprite_id, filters)   => self.tes_draw_sprite_with_filters(self.current_namespace, sprite_id, filters),
+                    MoveSpriteFrom(sprite_id)                   => self.tes_move_sprite_from(self.current_namespace, sprite_id, &mut path_state),
 
-                    Texture(texture_id, texture_op)             => self.tes_texture(texture_id, texture_op),
-                    Gradient(gradient_id, gradient_op)          => self.tes_gradient(gradient_id, gradient_op),
+                    Texture(texture_id, texture_op)             => self.tes_texture(self.current_namespace, texture_id, texture_op),
+                    Gradient(gradient_id, gradient_op)          => self.tes_gradient(self.current_namespace, gradient_id, gradient_op),
 
                     // Fonts aren't directly rendered by the canvas renderer (use a helper to convert to textures or outlines)
                     Font(font_id, font_op)                      => self.tes_font(font_id, font_op),

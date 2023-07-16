@@ -101,13 +101,13 @@ impl CanvasRenderer {
 
     /// Set a fill texture
     #[inline]
-    pub (super) fn tes_fill_texture(&mut self, texture_id: canvas::TextureId, (x1, y1): (f32, f32), (x2, y2): (f32, f32)) {
+    pub (super) fn tes_fill_texture(&mut self, namespace_id: usize, texture_id: canvas::TextureId, (x1, y1): (f32, f32), (x2, y2): (f32, f32)) {
         self.core.sync(|core| {
             // Check that the texture is ready for rendering (this also commits it at the point it's selected)
-            let render_texture  = core.texture_for_rendering(texture_id);
+            let render_texture  = core.texture_for_rendering(namespace_id, texture_id);
             if let Some(render_texture) = render_texture {
                 // Choose this texture
-                let alpha               = core.texture_alpha.get(&texture_id).cloned().unwrap_or(1.0);
+                let alpha               = core.texture_alpha.get(&(namespace_id, texture_id)).cloned().unwrap_or(1.0);
                 let layer               = core.layer(self.current_layer);
 
                 layer.state.fill_color  = FillState::texture_fill(render_texture, texture_id, x1, y1, x2, y2, alpha)
@@ -117,10 +117,10 @@ impl CanvasRenderer {
 
     /// Set a fill gradient
     #[inline]
-    pub (super) fn tes_fill_gradient(&mut self, gradient_id: canvas::GradientId, (x1, y1): (f32, f32), (x2, y2): (f32, f32)) {
+    pub (super) fn tes_fill_gradient(&mut self, namespace_id: usize, gradient_id: canvas::GradientId, (x1, y1): (f32, f32), (x2, y2): (f32, f32)) {
         self.core.sync(|core| {
             // Check that the texture is ready for rendering (this also commits it at the point it's selected)
-            let render_gradient  = core.gradient_for_rendering(gradient_id);
+            let render_gradient  = core.gradient_for_rendering(namespace_id, gradient_id);
             if let Some(render_gradient) = render_gradient {
                 // Choose this gradient
                 let layer               = core.layer(self.current_layer);
