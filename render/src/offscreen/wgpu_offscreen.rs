@@ -93,7 +93,8 @@ impl OffscreenRenderContext for WgpuOffscreenRenderContext {
             sample_count:       1,
             dimension:          wgpu::TextureDimension::D2,
             format:             wgpu::TextureFormat::Rgba8Unorm,
-            usage:              wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::RENDER_ATTACHMENT
+            usage:              wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats:       &[wgpu::TextureFormat::Rgba8Unorm],
         });
 
         let target_texture = Arc::new(target_texture);
@@ -136,7 +137,7 @@ impl OffscreenRenderTarget for WgpuOffscreenRenderTarget {
 
         // Copy the texture to the buffer
         let mut encoder     = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("WgpuOffscreenRenderTarget::realize") });
-        let buffer_copy     = wgpu::ImageCopyBuffer { buffer: &buffer, layout: wgpu::ImageDataLayout { offset: 0, bytes_per_row: NonZeroU32::new(bytes_per_row), rows_per_image: None } };
+        let buffer_copy     = wgpu::ImageCopyBuffer { buffer: &buffer, layout: wgpu::ImageDataLayout { offset: 0, bytes_per_row: Some(bytes_per_row), rows_per_image: None } };
         encoder.copy_texture_to_buffer(self.texture.as_image_copy(), buffer_copy, wgpu::Extent3d { width: self.size.0, height: self.size.1, depth_or_array_layers: 1 });
         self.queue.submit(Some(encoder.finish()));
 
