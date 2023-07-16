@@ -28,7 +28,7 @@ use std::time::{Duration};
 ///
 /// The `flo_curves` crate has path arithmetic operations that can be used to manipulate vector paths
 /// in a wide variety of ways: here we just add up the paths we just extracted from the rendering,
-/// turning them into a single silouette path.
+/// turning them into a single silhouette path.
 ///
 /// Then, all we need to do is render this over the top of the existing image to add a shading effect.
 /// (It could also be used as a clip path for more complicated effects). It's then rendered again on 
@@ -45,10 +45,10 @@ pub fn main() {
         let mascot_paths    = drawing_to_paths::<SimpleBezierPath, _>(render_mascot);
         let mascot_paths    = executor::block_on(async move { mascot_paths.collect::<Vec<_>>().await });
 
-        // Add the paths together to create a silouette
-        let mut silouette   = mascot_paths[0].clone();
+        // Add the paths together to create a silhouette
+        let mut silhouette   = mascot_paths[0].clone();
         for path in mascot_paths.iter().skip(1) {
-            silouette = path_add(&silouette, path, 0.1);
+            silhouette = path_add(&silhouette, path, 0.1);
         }
 
         // Render to a window
@@ -62,7 +62,7 @@ pub fn main() {
                 gc.clear_layer();
                 gc.draw_list(mascot.iter().cloned());
 
-                // Draw the silouette over the top with a gradient
+                // Draw the silhouette over the top with a gradient
                 match shading_mode % 4 {
                     1 => { 
                         // With the multiply blend mode we can use no transparency as the colours are multiplied
@@ -86,8 +86,9 @@ pub fn main() {
                 }
                 gc.fill_gradient(GradientId(1), 200.0, 200.0, 800.0, 600.0);
 
+                gc.winding_rule(WindingRule::EvenOdd);
                 gc.new_path();
-                silouette.iter().for_each(|path| gc.bezier_path(path));
+                silhouette.iter().for_each(|path| gc.bezier_path(path));
 
                 gc.fill();
                 gc.blend_mode(BlendMode::SourceOver);
@@ -104,9 +105,10 @@ pub fn main() {
                     gc.fill();
                 }
 
-                // Draw another siloutte on a lower layer
+                // Draw another silhouette on a lower layer
                 gc.sprite(SpriteId(0));
                 gc.clear_sprite();
+                gc.winding_rule(WindingRule::EvenOdd);
                 gc.create_gradient(GradientId(1), Color::Rgba(0.1, 0.1, 0.1, 0.05));
                 gc.gradient_stop(GradientId(1), 1.0, Color::Rgba(0.0, 0.1, 0.2, 0.6));
 
@@ -115,7 +117,7 @@ pub fn main() {
                 gc.fill_gradient(GradientId(1), 200.0, 200.0, 800.0, 600.0);
 
                 gc.new_path();
-                silouette.iter().for_each(|path| gc.bezier_path(path));
+                silhouette.iter().for_each(|path| gc.bezier_path(path));
 
                 gc.blend_mode(BlendMode::SourceOver);
                 gc.fill_gradient(GradientId(1), 200.0, 200.0, 200.0, 600.0);
