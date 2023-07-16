@@ -38,16 +38,19 @@ where
             match draw {
                 Draw::Namespace(new_namespace) => {
                     namespace_id = new_namespace.local_id();
+                    yield_value(draw).await;
                 }
 
                 Draw::PushState => {
                     namespace_stack.push(namespace_id);
+                    yield_value(draw).await;
                 }
 
                 Draw::PopState => {
                     if let Some(new_namespace) = namespace_stack.pop() {
                         namespace_id = new_namespace;
                     }
+                    yield_value(draw).await;
                 }
 
                 Draw::Font(font_id, FontOp::UseFontDefinition(font_defn)) => {
