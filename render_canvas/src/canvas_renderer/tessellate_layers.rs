@@ -89,8 +89,9 @@ impl CanvasRenderer {
             let layer0 = core.allocate_layer_handle(layer0);
             core.layers.push(layer0);
 
-            self.current_layer  = layer0;
-            self.current_sprite = None;
+            self.current_layer      = layer0;
+            self.current_sprite     = None;
+            self.current_namespace  = canvas::NamespaceId::default().local_id();
         });
 
         self.active_transform   = canvas::Transform2D::identity();
