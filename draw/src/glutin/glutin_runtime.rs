@@ -341,7 +341,7 @@ impl GlutinRuntime {
                 let context_attributes          = ContextAttributesBuilder::new().build(raw_window_handle);
                 let fallback_context_attributes = ContextAttributesBuilder::new().with_context_api(ContextApi::Gles(None)).build(raw_window_handle);
                 let legacy_context_attributes   = ContextAttributesBuilder::new().with_context_api(ContextApi::OpenGl(Some(Version::new(3, 3)))).build(raw_window_handle);
-                let mut windowed_context        = unsafe {
+                let windowed_context            = unsafe {
                     gl_display.create_context(&gl_config, &context_attributes).unwrap_or_else(|_| {
                         gl_display.create_context(&gl_config, &fallback_context_attributes).unwrap_or_else(
                             |_| {
