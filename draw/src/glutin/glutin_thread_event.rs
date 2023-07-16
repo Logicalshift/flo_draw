@@ -7,7 +7,7 @@ use flo_render::*;
 use futures::future::{LocalBoxFuture};
 use futures::stream::{BoxStream};
 
-use glutin::window::{WindowId};
+use winit::window::{WindowId};
 
 ///
 /// Event that can be sent to a glutin thread

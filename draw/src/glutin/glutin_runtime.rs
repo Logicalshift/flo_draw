@@ -33,7 +33,7 @@ static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 ///
 pub (super) struct GlutinRuntime {
     /// The event publishers for the windows being managed by the runtime
-    pub (super) window_events: HashMap<WindowId, Publisher<DrawEvent>>,
+    pub (super) window_events: HashMap<WindowId, (Publisher<DrawEvent>, Publisher<SuspendResume>)>,
 
     /// Maps future IDs to running futures
     pub (super) futures: HashMap<u64, LocalBoxFuture<'static, ()>>,
@@ -48,7 +48,10 @@ pub (super) struct GlutinRuntime {
     pub (super) pointer_state: HashMap<DeviceId, PointerState>,
 
     /// Set to true when we'll set the control flow to 'Exit' once the current set of events have finished processing
-    pub (super) will_exit: bool
+    pub (super) will_exit: bool,
+
+    /// Set to true if the runtime is suspended
+    pub (super) suspended: bool,
 }
 
 ///
@@ -101,8 +104,8 @@ impl GlutinRuntime {
             WindowEvent { window_id, event }        => { self.handle_window_event(window_id, event); }
             DeviceEvent { device_id: _, event: _ }  => { }
             UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target); }
-            Suspended                               => { }
-            Resumed                                 => { }
+            Suspended                               => { self.request_suspended(); }
+            Resumed                                 => { self.request_resumed(); }
             RedrawRequested(window_id)              => { self.request_redraw(window_id); }
             
             MainEventsCleared                       => {
@@ -146,6 +149,9 @@ impl GlutinRuntime {
             Focused(_focused)                                               => vec![],
             ModifiersChanged(_state)                                        => vec![],
             TouchpadPressure { device_id: _, pressure: _, stage: _ }        => vec![],
+            TouchpadMagnify { device_id: _, delta: _, phase: _ }            => vec![],
+            TouchpadRotate { device_id: _, delta: _, phase: _ }             => vec![],
+            SmartMagnify { device_id: _ }                                   => vec![],
             AxisMotion { device_id: _, axis: _, value: _ }                  => vec![],
             Touch(_touch)                                                   => vec![],
             Ime(_)                                                          => vec![],
@@ -241,7 +247,7 @@ impl GlutinRuntime {
             // Dispatch the draw events using a process
             if draw_events.len() > 0 {
                 // Need to republish the window events so we can share with the process
-                let mut window_events = window_events.republish();
+                let mut window_events = window_events.0.republish();
 
                 self.run_process(async move {
                     for evt in draw_events {
@@ -255,10 +261,43 @@ impl GlutinRuntime {
     ///
     /// Sends a redraw request to a window
     ///
+    fn request_resumed(&mut self) {
+        self.suspended = false;
+
+        // Need to republish the window events so we can share with the process
+        let window_events = self.window_events.values().map(|(draw, suspend)| (draw.republish(), suspend.republish())).collect::<Vec<_>>();
+
+        for (mut draw_events, mut suspend_events) in window_events {
+            self.run_process(async move {
+                suspend_events.publish(SuspendResume::Resumed).await;
+                draw_events.publish(DrawEvent::Redraw).await;
+            });
+        }
+    }
+
+    ///
+    /// Sends a redraw request to a window
+    ///
+    fn request_suspended(&mut self) {
+        self.suspended = true;
+
+        // Need to republish the window events so we can share with the process
+        let window_events = self.window_events.values().map(|(_, suspend)| suspend.republish()).collect::<Vec<_>>();
+
+        for mut suspend_events in window_events {
+            self.run_process(async move {
+                suspend_events.publish(SuspendResume::Suspended).await;
+            });
+        }
+    }
+
+    ///
+    /// Sends a redraw request to a window
+    ///
     fn request_redraw(&mut self, window_id: WindowId) {
         if let Some(window_events) = self.window_events.get_mut(&window_id) {
             // Need to republish the window events so we can share with the process
-            let mut window_events = window_events.republish();
+            let mut window_events = window_events.0.republish();
 
             self.run_process(async move {
                 window_events.publish(DrawEvent::Redraw).await;
@@ -310,7 +349,7 @@ impl GlutinRuntime {
                 let context_attributes          = ContextAttributesBuilder::new().build(raw_window_handle);
                 let fallback_context_attributes = ContextAttributesBuilder::new().with_context_api(ContextApi::Gles(None)).build(raw_window_handle);
                 let legacy_context_attributes   = ContextAttributesBuilder::new().with_context_api(ContextApi::OpenGl(Some(Version::new(3, 3)))).build(raw_window_handle);
-                let mut windowed_context        = unsafe {
+                let windowed_context            = unsafe {
                     gl_display.create_context(&gl_config, &context_attributes).unwrap_or_else(|_| {
                         gl_display.create_context(&gl_config, &fallback_context_attributes).unwrap_or_else(
                             |_| {
@@ -322,15 +361,31 @@ impl GlutinRuntime {
                     })
                 };
 
+                // Finalize the window (might be unsafe under operating systems like Android, but adding this to the window itself requires considerable extra state...)
+                let window_builder = winit::window::WindowBuilder::new();
+                glutin_winit::finalize_window(window_target, window_builder, &gl_config)
+                    .unwrap();
+
                 // Store the window context in a new glutin window
+                let mut suspend_resume          = Publisher::new(1);
+                let suspend_resume_subscriber   = suspend_resume.subscribe();
+
                 let window_id           = window.id();
                 let size                = window.inner_size();
                 let scale               = window.scale_factor();
                 let window              = GlutinWindow::new(windowed_context, gl_config, window);
 
+                // Immediately resume the window if we're not in a suspended state
+                if !self.suspended {
+                    let mut suspend_resume = suspend_resume.republish_weak();
+                    self.run_process(async move {
+                        suspend_resume.publish(SuspendResume::Resumed).await;
+                    })
+                }
+
                 // Store the publisher for the events for this window
                 let mut initial_events  = events.republish_weak();
-                self.window_events.insert(window_id, events);
+                self.window_events.insert(window_id, (events, suspend_resume));
 
                 // Run the window as a process on this thread
                 self.run_process(async move { 
@@ -342,7 +397,7 @@ impl GlutinRuntime {
                     let window_events = initial_events;
 
                     // Process the actions for the window
-                    send_actions_to_window(window, actions, window_events, window_properties).await;
+                    send_actions_to_window(window, suspend_resume_subscriber, actions, window_events, window_properties).await;
 
                     // Stop processing events for the window once there are no more actions
                     glutin_thread().send_event(GlutinThreadEvent::StopSendingToWindow(window_id));

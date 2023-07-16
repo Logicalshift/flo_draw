@@ -3,7 +3,7 @@ use super::glutin_thread_event::*;
 
 use ::desync::*;
 
-use glutin::event_loop::{EventLoopBuilder, EventLoopProxy};
+use winit::event_loop::{EventLoopBuilder, EventLoopProxy};
 
 use std::mem;
 use std::sync::*;
@@ -143,7 +143,8 @@ fn run_glutin_thread(send_proxy: mpsc::Sender<EventLoopProxy<GlutinThreadEvent>>
         will_stop_when_no_windows:  false,
         will_exit:                  false,
         pointer_id:                 HashMap::new(),
-        pointer_state:              HashMap::new()
+        pointer_state:              HashMap::new(),
+        suspended:                  true,
     };
 
     // Run the glutin event loop
