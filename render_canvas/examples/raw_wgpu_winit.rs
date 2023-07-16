@@ -100,6 +100,7 @@ fn main() {
 }
 
 /// Mascot in canvas encoding form
+#[cfg(feature="render-wgpu")]
 const MASCOT: &'static str = "
     NARdyJn+A+2bP/AHaoB/AAAAg/A
     ThAAAQEB
