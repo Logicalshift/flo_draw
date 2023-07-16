@@ -62,8 +62,10 @@ where
 ///
 /// Sends render actions to a window
 ///
-pub (super) async fn send_actions_to_window<RenderStream: Unpin+Stream<Item=Vec<RenderAction>>, EventPublisher: MessagePublisher<Message=DrawEvent>, TConfig, TSurfaceType>(window: GlutinWindow<TConfig>, render_actions: RenderStream, events: EventPublisher, window_properties: WindowProperties) 
+pub (super) async fn send_actions_to_window<RenderStream, EventPublisher, TConfig, TSurfaceType>(window: GlutinWindow<TConfig>, render_actions: RenderStream, events: EventPublisher, window_properties: WindowProperties) 
 where
+    RenderStream:       Unpin + Stream<Item=Vec<RenderAction>>,
+    EventPublisher:     MessagePublisher<Message=DrawEvent>,
     TConfig:            GlConfig + GetGlDisplay,
     TConfig::Target:    GlDisplay<WindowSurface=Surface<TSurfaceType>>,
     TSurfaceType:       SurfaceTypeTrait,
