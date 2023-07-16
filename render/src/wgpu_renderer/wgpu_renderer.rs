@@ -33,7 +33,6 @@ use std::ops::{Range};
 use std::sync::*;
 use std::collections::{HashMap};
 use std::ffi::{c_void};
-use std::num::{NonZeroU32};
 
 #[cfg(feature="profile")]
 use std::cell::*;
@@ -961,7 +960,7 @@ impl WgpuRenderer {
 
             let layout          = wgpu::ImageDataLayout {
                 offset:         line_offset + pixel_offset,
-                bytes_per_row:  Some(NonZeroU32::new(bytes_per_row as u32).unwrap()),
+                bytes_per_row:  Some(bytes_per_row as u32),
                 rows_per_image: None,
             };
 
@@ -978,7 +977,7 @@ impl WgpuRenderer {
             let bytes_per_pixel = texture.descriptor.format.describe().block_size as u64;
             let layout          = wgpu::ImageDataLayout {
                 offset:         (x1 as u64) * bytes_per_pixel,
-                bytes_per_row:  Some(NonZeroU32::new(((texture.descriptor.size.width as u64) * bytes_per_pixel) as u32).unwrap()),
+                bytes_per_row:  Some(((texture.descriptor.size.width as u64) * bytes_per_pixel) as u32),
                 rows_per_image: None,
             };
 

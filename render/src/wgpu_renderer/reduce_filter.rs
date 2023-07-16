@@ -48,7 +48,7 @@ pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandE
         dimension:          None,
         aspect:             wgpu::TextureAspect::All,
         base_mip_level:     source_mip_level,
-        mip_level_count:    NonZeroU32::new(1),
+        mip_level_count:    Some(1),
         base_array_layer:   0,
         array_layer_count:  None
     };
@@ -79,7 +79,7 @@ pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandE
             dimension:          None,
             aspect:             wgpu::TextureAspect::All,
             base_mip_level:     mip_level,
-            mip_level_count:    NonZeroU32::new(1),
+            mip_level_count:    Some(1),
             base_array_layer:   0,
             array_layer_count:  None
         };
