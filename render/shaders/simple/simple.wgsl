@@ -29,10 +29,10 @@ fn simple_vertex_shader(
 
 @fragment
 fn simple_fragment_shader(vertex: RasterData) -> @location(0) vec4<f32> {
-    let color = vertex.color;
+    var color = vertex.color;
 
-    let color = clip(color, vertex.pos);
-    let color = color_post_process(color);
+    color = clip(color, vertex.pos);
+    color = color_post_process(color);
 
     return color;
 }
