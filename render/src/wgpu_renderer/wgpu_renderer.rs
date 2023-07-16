@@ -201,7 +201,7 @@ impl WgpuRenderer {
         if let Some(target_surface) = &self.target_surface {
             // Fetch the format
             let possible_formats    = target_surface.get_capabilities(&*self.adapter).formats;
-            let actual_format       = possible_formats.iter().filter(|format| !format.describe().srgb).next().copied();
+            let actual_format       = possible_formats.iter().filter(|format| !format.is_srgb()).next().copied();
             let actual_format       = actual_format.unwrap_or(possible_formats[0]);
 
             let surface_config      = wgpu::SurfaceConfiguration {
@@ -958,7 +958,7 @@ impl WgpuRenderer {
             let (x1, x2)        = if x1 > x2 { (x2, x1) } else { (x1, x2) };
             let (y1, y2)        = if y1 > y2 { (y2, y1) } else { (y1, y2) };
 
-            let bytes_per_pixel = texture.descriptor.format.describe().block_size as u64;
+            let bytes_per_pixel = texture.descriptor.format.block_size(None).unwrap() as u64;
 
             let line_offset     = (y1 as u64) * (texture.descriptor.size.width as u64) * bytes_per_pixel;
             let pixel_offset    = (x1 as u64) * bytes_per_pixel;
@@ -980,7 +980,7 @@ impl WgpuRenderer {
     ///
     fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: Arc<Vec<u8>>, state: &mut RendererState) {
         if let Some(Some(texture)) = self.textures.get(texture_id) {
-            let bytes_per_pixel = texture.descriptor.format.describe().block_size as u64;
+            let bytes_per_pixel = texture.descriptor.format.block_size(None).unwrap() as u64;
             let layout          = wgpu::ImageDataLayout {
                 offset:         (x1 as u64) * bytes_per_pixel,
                 bytes_per_row:  Some(((texture.descriptor.size.width as u64) * bytes_per_pixel) as u32),
