@@ -42,7 +42,7 @@ pub (crate) fn displacement_map(device: &wgpu::Device, encoder: &mut wgpu::Comma
         lod_min_clamp:      0.0,
         lod_max_clamp:      0.0,
         compare:            None,
-        anisotropy_clamp:   None,
+        anisotropy_clamp:   1,
         border_color:       None,
     });
 

@@ -35,7 +35,7 @@ impl Samplers {
             lod_min_clamp:      0.0,
             lod_max_clamp:      8.0,
             compare:            None,
-            anisotropy_clamp:   None,
+            anisotropy_clamp:   1,
             border_color:       None,
         });
 
@@ -50,7 +50,7 @@ impl Samplers {
             lod_min_clamp:      0.0,
             lod_max_clamp:      8.0,
             compare:            None,
-            anisotropy_clamp:   None,
+            anisotropy_clamp:   1,
             border_color:       None,
         });
 
@@ -65,7 +65,7 @@ impl Samplers {
             lod_min_clamp:      0.0,
             lod_max_clamp:      0.0,
             compare:            None,
-            anisotropy_clamp:   None,
+            anisotropy_clamp:   1,
             border_color:       None,
         });
 
@@ -80,7 +80,7 @@ impl Samplers {
             lod_min_clamp:      0.0,
             lod_max_clamp:      0.0,
             compare:            None,
-            anisotropy_clamp:   None,
+            anisotropy_clamp:   1,
             border_color:       None,
         });
 

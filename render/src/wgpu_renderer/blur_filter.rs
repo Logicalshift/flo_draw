@@ -59,7 +59,7 @@ pub (crate) fn blur_fixed(device: &wgpu::Device, encoder: &mut wgpu::CommandEnco
         lod_min_clamp:      0.0,
         lod_max_clamp:      0.0,
         compare:            None,
-        anisotropy_clamp:   None,
+        anisotropy_clamp:   1,
         border_color:       None,
     });
 
@@ -164,7 +164,7 @@ pub (crate) fn blur_texture(device: &wgpu::Device, queue: &wgpu::Queue, encoder:
         lod_min_clamp:      0.0,
         lod_max_clamp:      0.0,
         compare:            None,
-        anisotropy_clamp:   None,
+        anisotropy_clamp:   1,
         border_color:       None,
     });
 
