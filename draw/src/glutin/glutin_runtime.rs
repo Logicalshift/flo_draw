@@ -379,7 +379,7 @@ impl GlutinRuntime {
                 if !self.suspended {
                     let mut suspend_resume = suspend_resume.republish_weak();
                     self.run_process(async move {
-                        suspend_resume.publish(SuspendResume::Resumed);
+                        suspend_resume.publish(SuspendResume::Resumed).await;
                     })
                 }
 
