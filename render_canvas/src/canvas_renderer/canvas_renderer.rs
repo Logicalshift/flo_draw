@@ -34,6 +34,9 @@ pub struct CanvasRenderer {
     /// Vertex buffer used to draw the background quad (if we need to)
     background_vertex_buffer: Option<render::VertexBufferId>,
 
+    /// The ID of the currently selected namespace
+    pub (super) current_namespace: usize,
+
     /// The layer that the next drawing instruction will apply to
     pub (super) current_layer: LayerHandle,
 
@@ -121,6 +124,7 @@ impl CanvasRenderer {
             workers:                    workers,
             core:                       core,
             background_vertex_buffer:   None,
+            current_namespace:          canvas::NamespaceId::default().local_id(),
             current_layer:              initial_layer,
             current_sprite:             None,
             viewport_transform:         canvas::Transform2D::identity(),
@@ -271,7 +275,7 @@ impl CanvasRenderer {
                     ShowFrame                                   => self.tes_show_frame(),
                     ResetFrame                                  => self.tes_reset_frame(),
 
-                    Namespace(new_namespace)                    => todo!(),
+                    Namespace(new_namespace)                    => self.tes_namespace(new_namespace),
 
                     Path(NewPath)                               => path_state.tes_new_path(),
                     Path(Move(x, y))                            => path_state.tes_move(x, y),
