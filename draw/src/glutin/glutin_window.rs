@@ -212,6 +212,7 @@ where
 ///
 /// The list of update events that can occur to a window
 ///
+#[derive(Debug)]
 enum WindowUpdate {
     Resumed,
     Suspended,
