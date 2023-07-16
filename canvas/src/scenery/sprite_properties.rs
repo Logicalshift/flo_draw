@@ -94,7 +94,7 @@ impl From<SpriteLayerRequest> for InternalSpriteLayerRequest {
 ///
 /// The sprite layer uses its own transform for rendering, which can be adjusted by sending commands to the sprite layer entity.
 ///
-pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContext>, initial_sprite_id: SpriteId, sprite_layer: LayerId, canvas: impl 'static + EntityChannel<Message=DrawingRequest>) -> Result<impl EntityChannel<Message=SpriteLayerRequest>, CreateEntityError> {
+pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContext>, canvas: impl 'static + EntityChannel<Message=DrawingRequest>) -> Result<impl EntityChannel<Message=SpriteLayerRequest>, CreateEntityError> {
     // Convert between the internal request and the external request type
     context.convert_message::<SpriteLayerRequest, InternalSpriteLayerRequest>()?;
 
@@ -113,20 +113,17 @@ pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContex
         let sprite_transforms = properties_follow_all::<Vec<SpriteTransform>>(&context, "SpriteTransform").flat_map(|msg| {
             match msg {
                 FollowAll::NewValue(entity_id, sprite_transform)    => stream::iter(Some(InternalSpriteLayerRequest::SetSpriteTransform(entity_id, sprite_transform))),
-                FollowAll::Destroyed(entity_id)                     => stream::iter(None),
+                FollowAll::Destroyed(_entity_id)                    => stream::iter(None),
                 FollowAll::Error(_)                                 => stream::iter(None),
             }
         });
 
         // Entity state variables
-        let mut layer_transform         = None;
-        let mut sprite_layer            = LayerId(1);
         let mut base_sprite_id          = 10000;
         let mut sprite_for_entity       = HashMap::new();
         let mut transforms_for_entity   = HashMap::new();
         let mut next_offset             = 0;
         let mut free_sprite_offsets     = vec![];
-        let mut refresh_rate            = Duration::from_nanos(1_000_000_000 / 120);
 
         // Mix in the definition updates with the other messages
         let messages        = stream::select_all(vec![messages.boxed(), sprite_definitions.boxed(), sprite_transforms.boxed()]);
@@ -139,10 +136,10 @@ pub fn create_sprite_layer_entity(entity_id: EntityId, context: &Arc<SceneContex
                 use InternalSpriteLayerRequest::*;
 
                 match msg {
-                    SetTransform(new_transform)             => { layer_transform = new_transform; },        // TODO: trigger redraw
-                    SetLayer(new_layer)                     => { sprite_layer = new_layer; },               // TODO: trigger redraw
+                    SetTransform(_new_transform)            => { },                                         // TODO: trigger redraw
+                    SetLayer(_new_layer)                    => { },                                         // TODO: trigger redraw
                     SetBaseSpriteId(SpriteId(new_sprite))   => { base_sprite_id = new_sprite; },            // TODO: renumber sprites, 
-                    SetRefreshRate(new_refresh_rate)        => { refresh_rate = new_refresh_rate },
+                    SetRefreshRate(_new_refresh_rate)       => { },
 
                     SetSpriteDefinition(entity_id, drawing) => {
                         // Allocate a sprite ID
