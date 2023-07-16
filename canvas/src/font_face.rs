@@ -16,14 +16,14 @@ pub struct CanvasTableProvider<'a>(&'a ttf_parser::Face<'a>);
 #[cfg(feature = "outline-fonts")] 
 impl<'b> FontTableProvider for CanvasTableProvider<'b> {
     fn table_data<'a>(&'a self, tag: u32) -> Result<Option<Cow<'a, [u8]>>, ParseError> {
-        let table_data = self.0.table_data(ttf_parser::Tag::from_bytes(&tag.to_be_bytes()));
+        let table_data = self.0.raw_face().table(ttf_parser::Tag::from_bytes(&tag.to_be_bytes()));
         let table_data = table_data.map(|data| Cow::Borrowed(data));
 
         Ok(table_data)
     }
 
     fn has_table<'a>(&'a self, tag: u32) -> bool {
-        let table_data = self.0.table_data(ttf_parser::Tag::from_bytes(&tag.to_be_bytes()));
+        let table_data = self.0.raw_face().table(ttf_parser::Tag::from_bytes(&tag.to_be_bytes()));
         table_data.is_some()
     }
 }
@@ -135,7 +135,7 @@ mod canvas_font_face {
             // Load into the TTF parser with scary self-referential data
             let font_face = CanvasFontFaceBuilder {
                 data:               data,
-                ttf_font_builder:   |data: &Arc<Pin<Box<[u8]>>>| { ttf_parser::Face::from_slice(&**data, font_index as _).unwrap() },
+                ttf_font_builder:   |data: &Arc<Pin<Box<[u8]>>>| { ttf_parser::Face::parse(&**data, font_index as _).unwrap() },
             }.build();
 
             // Generate the font face
