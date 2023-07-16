@@ -122,61 +122,59 @@ where
                     next_action.iter().any(|item| item == &RenderAction::ShowFrameBuffer)
                 };
 
-                unsafe {
-                    // TODO: report errors if we can't set the context rather than just stopping mysteriously
+                // TODO: report errors if we can't set the context rather than just stopping mysteriously
 
-                    // Fetch the surface, if one has been created (won't be available if we haven't resumed)
-                    let current_surface = window.surface.take();
-                    let current_surface = if let Some(current_surface) = current_surface { current_surface } else { continue; };
+                // Fetch the surface, if one has been created (won't be available if we haven't resumed)
+                let current_surface = window.surface.take();
+                let current_surface = if let Some(current_surface) = current_surface { current_surface } else { continue; };
 
-                    // Make the current context current
-                    let current_context = window.context.take().expect("Window context");
+                // Make the current context current
+                let current_context = window.context.take().expect("Window context");
 
-                    let current_context = current_context.make_current(&current_surface);
-                    let current_context = if let Ok(context) = current_context { context } else { break; };
+                let current_context = current_context.make_current(&current_surface);
+                let current_context = if let Ok(context) = current_context { context } else { break; };
 
-                    let display         = window.gl_config.display();
+                let display         = window.gl_config.display();
 
-                    // Get informtion about the current context
-                    let size            = window.window.as_ref().unwrap().inner_size();
-                    let width           = size.width as usize;
-                    let height          = size.height as usize;
+                // Get informtion about the current context
+                let size            = window.window.as_ref().unwrap().inner_size();
+                let width           = size.width as usize;
+                let height          = size.height as usize;
 
-                    // Create the renderer (needs the OpenGL functions to be loaded)
-                    if window.renderer.is_none() {
-                        // Load the functions for the current context
-                        // TODO: we're assuming they stay loaded to avoid loading them for every render, which might not be safe
-                        // TODO: probably better to have the renderer load the functions itself (gl::load doesn't work well
-                        // when we load GL twice, which could happen if we want to use the offscreen renderer)
-                        gl::load_with(|symbol_name| {
-                            let symbol_name = CString::new(symbol_name).unwrap();
-                            display.get_proc_address(symbol_name.as_c_str())
-                        });
+                // Create the renderer (needs the OpenGL functions to be loaded)
+                if window.renderer.is_none() {
+                    // Load the functions for the current context
+                    // TODO: we're assuming they stay loaded to avoid loading them for every render, which might not be safe
+                    // TODO: probably better to have the renderer load the functions itself (gl::load doesn't work well
+                    // when we load GL twice, which could happen if we want to use the offscreen renderer)
+                    gl::load_with(|symbol_name| {
+                        let symbol_name = CString::new(symbol_name).unwrap();
+                        display.get_proc_address(symbol_name.as_c_str())
+                    });
 
-                        // Create the renderer
-                        window.renderer = Some(GlRenderer::new());
-                    }
-
-                    // Perform the rendering actions
-                    if let Some(renderer) = &mut window.renderer {
-                        renderer.prepare_to_render_to_active_framebuffer(width, height);
-                        renderer.render(next_action);
-                    }
-
-                    // Swap buffers to finish the drawing
-                    if show_frame_buffer {
-                        current_surface.swap_buffers(&current_context).ok();
-                    }
-
-                    // Release the current context
-                    let context     = current_context.make_not_current();
-                    let context     = if let Ok(context) = context { context } else { break; };
-                    window.context  = Some(context);
-                    window.surface  = Some(current_surface);
-
-                    // Notify that a new frame has been drawn
-                    events.publish(DrawEvent::NewFrame).await;
+                    // Create the renderer
+                    window.renderer = Some(GlRenderer::new());
                 }
+
+                // Perform the rendering actions
+                if let Some(renderer) = &mut window.renderer {
+                    renderer.prepare_to_render_to_active_framebuffer(width, height);
+                    renderer.render(next_action);
+                }
+
+                // Swap buffers to finish the drawing
+                if show_frame_buffer {
+                    current_surface.swap_buffers(&current_context).ok();
+                }
+
+                // Release the current context
+                let context     = current_context.make_not_current();
+                let context     = if let Ok(context) = context { context } else { break; };
+                window.context  = Some(context);
+                window.surface  = Some(current_surface);
+
+                // Notify that a new frame has been drawn
+                events.publish(DrawEvent::NewFrame).await;
             }
 
             WindowUpdate::SetTitle(new_title)   => {
