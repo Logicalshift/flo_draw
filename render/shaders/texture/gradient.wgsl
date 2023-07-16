@@ -50,11 +50,11 @@ fn gradient_vertex_shader(
 
 @fragment
 fn gradient_fragment_shader(vertex: RasterData) -> @location(0) vec4<f32> {
-    let color = textureSample(f_texture, f_sampler, vertex.tex_coord[0]);
-    let color = alpha_blend(color, texture_settings.alpha);
+    var color = textureSample(f_texture, f_sampler, vertex.tex_coord[0]);
+    color = alpha_blend(color, texture_settings.alpha);
 
-    let color = clip(color, vertex.pos);
-    let color = color_post_process(color);
+    color = clip(color, vertex.pos);
+    color = color_post_process(color);
 
     return color;
 }
