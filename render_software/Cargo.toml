@@ -1,0 +1,10 @@
+[package]
+name                = "flo_render_software"
+version             = "0.4.0"
+authors             = ["Andrew Hunter"]
+license             = "Apache-2.0"
+edition             = "2018"
+readme              = "README.md"
+repository          = "https://github.com/Logicalshift/flo_draw"
+description         = "Software renderer for flo_canvas vector graphics"
+categories          = [ "graphics", "rendering", "gui" ]

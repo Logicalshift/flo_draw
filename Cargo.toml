@@ -5,6 +5,7 @@ members     = [
     "canvas_events",
     "render", 
     "render_canvas",
+    "render_software",
     "render_gl_offscreen",
     "draw",
 ]
