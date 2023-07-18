@@ -25,3 +25,9 @@ pub trait PixelProgram {
     ///
     fn create_scanline_data(&self, target: &[[f32; 4]], x_range: Range<f32>, ypos: i32, program_data: &Self::ProgramData) -> Self::ScanlineData;
 }
+
+///
+/// Identifier for a pixel program
+///
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct PixelProgramId(usize);
