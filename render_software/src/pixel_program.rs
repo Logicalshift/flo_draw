@@ -15,7 +15,7 @@ pub trait PixelProgram {
     ///
     /// The target points to the start of the range of values to be written. `x_range` provides the range of X values to 
     ///
-    fn draw_pixels(&self, target: &[[f32; 4]], x_range: Range<i32>, ypos: i32, program_data: &Self::ProgramData, scanline_data: &Self::ScanlineData);
+    fn draw_pixels(&self, target: &mut [[f32; 4]], x_range: Range<i32>, ypos: i32, program_data: &Self::ProgramData, scanline_data: &Self::ScanlineData);
 
     ///
     /// Returns the data for a specific scanline
@@ -23,7 +23,25 @@ pub trait PixelProgram {
     /// The x-range here is the range of values intercepted by this program: note that `draw_pixels` may be called with a narrower range if part of
     /// the scan line is not visible, or it is clipped to the edges of the rendering area.
     ///
-    fn create_scanline_data(&self, target: &[[f32; 4]], x_range: Range<f32>, ypos: i32, program_data: &Self::ProgramData) -> Self::ScanlineData;
+    fn create_scanline_data(&self, x_range: Range<f32>, ypos: i32, program_data: &Self::ProgramData) -> Self::ScanlineData;
+}
+
+impl<TFn> PixelProgram for TFn
+where
+    TFn: Fn(&mut [[f32; 4]], Range<i32>, i32, &()) -> (),
+{
+    type ProgramData    = ();
+    type ScanlineData   = ();
+
+    #[inline]
+    fn draw_pixels(&self, target: &mut [[f32; 4]], x_range: Range<i32>, ypos: i32, program_data: &Self::ProgramData, _scanline_data: &()) {
+        (*self)(target, x_range, ypos, program_data)
+    }
+
+    #[inline]
+    fn create_scanline_data(&self, _x_range: Range<f32>, _ypos: i32, _program_data: &Self::ProgramData) -> () {
+        ()
+    }
 }
 
 ///
