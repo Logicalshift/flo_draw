@@ -31,3 +31,11 @@ pub trait PixelProgram {
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct PixelProgramId(usize);
+
+///
+/// Identifier for the program data for a pixel program
+///
+/// Every pixel program has a separate set of identifiers for their data
+///
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct PixelProgramDataId(usize);
