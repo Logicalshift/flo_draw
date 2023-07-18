@@ -29,9 +29,27 @@ pub trait PixelProgram {
 ///
 /// Pixel program that calls a function to fill the pixels, with program data
 ///
+/// This can be used with a pixel program that generates rows of pixels (`PixelProgramFn::from(|target, x_range, ypos, data| { ... })`)
+///
 pub struct PixelProgramFn<TFn, TData>
 where 
     TFn: Fn(&mut [[f32; 4]], Range<i32>, i32, &TData) -> (),
+{
+    /// The function to call to fill in the pixels
+    function: TFn,
+
+    /// Placeholder for the TData type (Rust doesn't see a function parameter as a constraint)
+    phantom_data: PhantomData<TData>,
+}
+
+///
+/// Pixel program that calls a function to fill the pixels, with program data
+///
+/// This can be used with a pixel program that generates individual pixels (`PerPixelProgramFn::from(|x, y, data| { [r, g, b, a] })`)
+///
+pub struct PerPixelProgramFn<TFn, TData>
+where 
+    TFn: Fn(i32, i32, &TData) -> [f32; 4],
 {
     /// The function to call to fill in the pixels
     function: TFn,
@@ -83,6 +101,40 @@ where
     #[inline]
     fn draw_pixels(&self, target: &mut [[f32; 4]], x_range: Range<i32>, ypos: i32, program_data: &TData, _scanline_data: &()) {
         (self.function)(target, x_range, ypos, program_data)
+    }
+
+    #[inline]
+    fn create_scanline_data(&self, _x_range: Range<f32>, _ypos: i32, _program_data: &Self::ProgramData) -> () {
+        ()
+    }
+}
+
+impl<TFn, TData> From<TFn> for PerPixelProgramFn<TFn, TData> 
+where 
+    TFn: Fn(i32, i32, &TData) -> [f32; 4],
+{
+    fn from(function: TFn) -> Self {
+        PerPixelProgramFn {
+            function:       function,
+            phantom_data:   PhantomData,
+        }
+    }
+}
+
+impl<TFn, TData> PixelProgram for PerPixelProgramFn<TFn, TData> 
+where 
+    TFn: Fn(i32, i32, &TData) -> [f32; 4],
+{
+    type ProgramData    = TData;
+    type ScanlineData   = ();
+
+    #[inline]
+    fn draw_pixels(&self, target: &mut [[f32; 4]], x_range: Range<i32>, ypos: i32, program_data: &TData, _scanline_data: &()) {
+        let mut pos = 0;
+        for x in x_range {
+            target[pos] = (self.function)(x, ypos, program_data);
+            pos += 1;
+        }
     }
 
     #[inline]
