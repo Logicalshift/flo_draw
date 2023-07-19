@@ -147,4 +147,4 @@ where
 /// Identifier for a pixel program
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct PixelProgramId(usize);
+pub struct PixelProgramId(pub (crate) usize);
