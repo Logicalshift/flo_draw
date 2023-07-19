@@ -8,3 +8,6 @@ readme              = "README.md"
 repository          = "https://github.com/Logicalshift/flo_draw"
 description         = "Software renderer for flo_canvas vector graphics"
 categories          = [ "graphics", "rendering", "gui" ]
+
+[dependencies]
+once_cell = "1.18"
