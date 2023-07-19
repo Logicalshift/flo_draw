@@ -4,6 +4,7 @@ use super::winit_thread_event::*;
 use ::desync::*;
 
 use winit::event_loop::{EventLoop, EventLoopProxy};
+use once_cell::sync::{Lazy};
 
 use std::mem;
 use std::sync::*;
@@ -11,9 +12,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::collections::{HashMap};
 
-lazy_static! {
-    static ref WINIT_THREAD: Desync<Option<Arc<WinitThread>>> = Desync::new(None);
-}
+static WINIT_THREAD: Lazy<Desync<Option<Arc<WinitThread>>>> = Lazy::new(|| Desync::new(None));
 
 ///
 /// Represents the thread running the winit event loop

@@ -4,6 +4,7 @@ use super::glutin_thread_event::*;
 use ::desync::*;
 
 use winit::event_loop::{EventLoopBuilder, EventLoopProxy};
+use once_cell::sync::{Lazy};
 
 use std::mem;
 use std::sync::*;
@@ -11,9 +12,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::collections::{HashMap};
 
-lazy_static! {
-    static ref GLUTIN_THREAD: Desync<Option<Arc<GlutinThread>>> = Desync::new(None);
-}
+static GLUTIN_THREAD: Lazy<Desync<Option<Arc<GlutinThread>>>> = Lazy::new(|| Desync::new(None));
 
 ///
 /// Represents the thread running the glutin event loop

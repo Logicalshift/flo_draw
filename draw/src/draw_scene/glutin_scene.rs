@@ -1,15 +1,14 @@
 use crate::glutin::*;
 
 use futures::prelude::*;
+use once_cell::sync::{Lazy};
 
 use flo_scene::*;
 
 use std::sync::*;
 
-lazy_static! {
-    /// The scene context used for flo_draw, or None if a scene context has not been created yet
-    static ref DRAW_SCENE_CONTEXT: Mutex<Option<Arc<SceneContext>>> = Mutex::new(None);
-}
+/// The scene context used for flo_draw, or None if a scene context has not been created yet
+static DRAW_SCENE_CONTEXT: Lazy<Mutex<Option<Arc<SceneContext>>>> = Lazy::new(|| Mutex::new(None));
 
 ///
 /// Retrieves or creates a scene context for flo_draw
