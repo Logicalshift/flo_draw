@@ -5,6 +5,7 @@ use once_cell::sync::{Lazy};
 use std::marker::{PhantomData};
 use std::ops::{Range};
 use std::sync::*;
+use std::ptr;
 
 ///
 /// The pixel program cache provides a way to assign IDs to pixel programs and support initialising them
@@ -18,7 +19,7 @@ pub struct PixelProgramCache {
 /// The pixel program data cache stores the program data for the pixel programs
 ///
 pub struct PixelProgramDataCache {
-
+    data: Vec<*mut ()>,
 }
 
 ///
@@ -42,6 +43,27 @@ pub struct PixelProgramDataId(usize);
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct PixelScanlineDataId(usize);
+
+impl PixelProgramDataCache {
+    ///
+    /// Unsafely find or create the program data cache for a pixel program
+    ///
+    /// Safety: `TProgramData` must be the same if the `program_id` is the same
+    ///
+    unsafe fn get_program_data_mut_unchecked<TProgramData>(&mut self, PixelProgramId(program_id): PixelProgramId) -> &mut Vec<TProgramData> {
+        // Ensure enough space
+        while self.data.len() <= program_id {
+            self.data.push(ptr::null_mut());
+        }
+
+        // Allocate the vec if necessary
+
+        // .. a plan B might be an 'instantiate' function that takes the program and some data and creates a function that takes a scanline iterator, finally returning a
+        // function that can be called on each scanline (this avoids messing with pointer casts)
+
+        todo!()
+    }
+}
 
 impl PixelProgramCache {
     ///
