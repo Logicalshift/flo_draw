@@ -29,5 +29,5 @@ num_cpus    = "1.13"
 
 [dev-dependencies]
 png         = "0.17"
-lazy_static = "1.2"
+once_cell   = "1.18"
 winit       = "0.28"

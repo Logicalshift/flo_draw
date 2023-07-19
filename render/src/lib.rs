@@ -1,5 +1,3 @@
-#[cfg(feature="render-wgpu")] #[macro_use] extern crate lazy_static;
-
 mod action;
 mod buffer;
 #[cfg(feature="gl")] mod gl_renderer;

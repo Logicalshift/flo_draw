@@ -6,15 +6,14 @@ use crate::wgpu_renderer::*;
 
 use ::desync::*;
 use futures::prelude::*;
+use once_cell::sync::{Lazy};
 
 use wgpu;
 
 use std::num::*;
 use std::sync::*;
 
-lazy_static! {
-    static ref WGPU_BACKGROUND: Desync<()> = Desync::new(());
-}
+static WGPU_BACKGROUND: Lazy<Desync<()>> = Lazy::new(|| Desync::new(()));
 
 ///
 /// A WGPU offscreen render context

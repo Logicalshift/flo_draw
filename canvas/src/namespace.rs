@@ -1,5 +1,5 @@
 use uuid::*;
-use lazy_static::*;
+use once_cell::sync::{Lazy};
 
 use std::collections::{HashMap};
 use std::hash::{Hash, Hasher};
@@ -9,9 +9,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 /// The next local ID to assign (so every new namespace has a unique ID)
 static NEXT_LOCAL_ID: AtomicUsize = AtomicUsize::new(0);
 
-lazy_static! {
-    static ref KNOWN_IDS: Mutex<HashMap<Uuid, usize>> = Mutex::new(HashMap::new());
-}
+static KNOWN_IDS: Lazy<Mutex<HashMap<Uuid, usize>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 ///
 /// Specifies the ID of a namespace
