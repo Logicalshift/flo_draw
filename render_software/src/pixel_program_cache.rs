@@ -41,16 +41,24 @@ where
 ///
 /// Every pixel program has a separate set of identifiers for their data
 ///
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct PixelProgramDataId(usize);
 
 ///
 /// Identifier for some scanline data
 ///
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct PixelScanlineDataId(usize);
 
-impl PixelProgramDataCache {
+impl<TProgram> StoredPixelProgram<TProgram>
+where
+    TProgram: 'static + PixelProgram,
+{
+    /// Returns the program ID of this program
+    #[inline]
+    pub fn program_id(&self) -> PixelProgramId {
+        self.program_id
+    }
 }
 
 impl PixelProgramCache {
@@ -112,16 +120,64 @@ impl PixelProgramCache {
     }
 
     ///
+    /// Creates a data cache to store data for rendering a frame with this pixel program cache
+    ///
+    pub fn create_data_cache(&mut self) -> PixelProgramDataCache {
+        PixelProgramDataCache {
+            program_data:   vec![],
+            scanline_data:  vec![],
+        }
+    }
+
+    ///
+    /// Stores data to be used with an instance of a pixel program
+    ///
+    /// Program data can be a number of things: in the simplest case it might be the colour that the program 
+    ///
+    pub fn store_program_data<TProgram>(&mut self, stored_program: &StoredPixelProgram<TProgram>, data_cache: &mut PixelProgramDataCache, data: TProgram::ProgramData) -> PixelProgramDataId 
+    where
+        TProgram: 'static + PixelProgram,
+    {
+        // Assign an ID to this program data
+        let program_data_id = data_cache.program_data.len();
+
+        // Generate the data for this program (well, encapsulate it in a function waiting for the scanline data)
+        let associate_scanline_data = (stored_program.associate_program_data)(data);
+
+        // Store in the data cache
+        data_cache.program_data.push(associate_scanline_data);
+
+        PixelProgramDataId(program_data_id)
+    }
+
+    ///
     /// Creates scanline data for a program 
     ///
     pub fn create_scanline_data(&self, data_cache: &mut PixelProgramDataCache, program_id: PixelProgramId, min_y: i32, scanlines: &Vec<PixelProgramScanline>, program_data: PixelProgramDataId) -> PixelScanlineDataId {
-        todo!()
+        // The program ID is currently unused as we only need to know the program data ID
+        let _program_id = program_id;
+
+        // Assign an ID to this scanline data
+        let scanline_data_id = data_cache.scanline_data.len();
+
+        // Generate the scanline data for this program (actually generates the 'run' function)
+        let run_program = (data_cache.program_data[program_data.0])(min_y, scanlines);
+
+        // Store in the data cache
+        data_cache.scanline_data.push(run_program);
+
+        PixelScanlineDataId(scanline_data_id)
     }
 
     ///
     /// Runs a program on a range of pixels
     ///
-    pub fn run_program(&self, data_cache: &PixelProgramDataCache, program_id: PixelProgramId, target: &mut [[f32; 4]], x_range: Range<i32>, ypos: i32, program_data: PixelProgramDataId, scanline_data: PixelScanlineDataId) {
-        todo!()
+    #[inline]
+    pub fn run_program(&self, data_cache: &PixelProgramDataCache, program_id: PixelProgramId, target: &mut [[f32; 4]], x_range: Range<i32>, y_pos: i32, program_data: PixelProgramDataId, scanline_data: PixelScanlineDataId) {
+        // The program ID and program data ID are currently unused as we only need to know the scanline ID to run the program
+        let _program_id     = program_id;
+        let _program_data   = program_data;
+
+        (data_cache.scanline_data[scanline_data.0])(target, x_range, y_pos)
     }
 }
