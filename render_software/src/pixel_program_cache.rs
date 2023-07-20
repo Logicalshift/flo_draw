@@ -1,5 +1,6 @@
 use crate::pixel_program::*;
 
+use std::marker::{PhantomData};
 use std::ops::{Range};
 use std::sync::*;
 
@@ -7,19 +8,20 @@ use std::sync::*;
 /// The pixel program cache provides a way to assign IDs to pixel programs and support initialising them
 /// with a data cache.
 ///
-pub struct PixelProgramCache {
-    next_program_id: usize
+pub struct PixelProgramCache<TPixel> {
+    next_program_id:    usize,
+    phantom_data:       PhantomData<TPixel>,
 }
 
 ///
 /// The pixel program data cache stores the program data for the pixel programs
 ///
-pub struct PixelProgramDataCache {
+pub struct PixelProgramDataCache<TPixel> {
     /// Program data is encapsulated in a function that generates the scanline data. This is indexed by `PixelProgramDataId`
-    program_data: Vec<Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [[f32; 4]], Range<i32>, i32) -> ()>>>,
+    program_data: Vec<Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [TPixel], Range<i32>, i32) -> ()>>>,
 
     /// The scanline_data functions encapsulate the program data and the scanline data indicate programs that are ready to run
-    scanline_data: Vec<Box<dyn Fn(&mut [[f32; 4]], Range<i32>, i32) -> ()>>,
+    scanline_data: Vec<Box<dyn Fn(&mut [TPixel], Range<i32>, i32) -> ()>>,
 }
 
 ///
@@ -33,7 +35,7 @@ where
     program_id: PixelProgramId,
 
     /// Function to associate program data with this program
-    associate_program_data: Box<dyn Fn(TProgram::ProgramData) -> Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [[f32; 4]], Range<i32>, i32) -> ()>>>,
+    associate_program_data: Box<dyn Fn(TProgram::ProgramData) -> Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [TProgram::Pixel], Range<i32>, i32) -> ()>>>,
 }
 
 ///
@@ -61,22 +63,26 @@ where
     }
 }
 
-impl PixelProgramCache {
+impl<TPixel> PixelProgramCache<TPixel>
+where
+    TPixel: 'static + Send,
+{
     ///
     /// Creates an empty pixel program cache
     ///
-    pub fn empty() -> PixelProgramCache {
+    pub fn empty() -> PixelProgramCache<TPixel> {
         PixelProgramCache {
-            next_program_id: 0
+            next_program_id:    0,
+            phantom_data:       PhantomData,
         }
     }
 
     ///
     /// Creates a function based on a program that sets its data and scanline data, generating the 'make pixels at position' function
     ///
-    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Fn(TProgram::ProgramData) -> Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [[f32; 4]], Range<i32>, i32) -> ()>>
+    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Fn(TProgram::ProgramData) -> Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [TPixel], Range<i32>, i32) -> ()>>
     where
-        TProgram: 'static + PixelProgram,
+        TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
         move |program_data| {
             // Copy the program
@@ -101,7 +107,7 @@ impl PixelProgramCache {
     ///
     pub fn add_program<TProgram>(&mut self, program: TProgram) -> StoredPixelProgram<TProgram> 
     where
-        TProgram: 'static + PixelProgram,
+        TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
         // Assign an ID to the new program
         let new_program_id = self.next_program_id;
@@ -122,7 +128,7 @@ impl PixelProgramCache {
     ///
     /// Creates a data cache to store data for rendering a frame with this pixel program cache
     ///
-    pub fn create_data_cache(&mut self) -> PixelProgramDataCache {
+    pub fn create_data_cache(&mut self) -> PixelProgramDataCache<TPixel> {
         PixelProgramDataCache {
             program_data:   vec![],
             scanline_data:  vec![],
@@ -134,9 +140,9 @@ impl PixelProgramCache {
     ///
     /// Program data can be a number of things: in the simplest case it might be the colour that the program 
     ///
-    pub fn store_program_data<TProgram>(&mut self, stored_program: &StoredPixelProgram<TProgram>, data_cache: &mut PixelProgramDataCache, data: TProgram::ProgramData) -> PixelProgramDataId 
+    pub fn store_program_data<TProgram>(&mut self, stored_program: &StoredPixelProgram<TProgram>, data_cache: &mut PixelProgramDataCache<TPixel>, data: TProgram::ProgramData) -> PixelProgramDataId 
     where
-        TProgram: 'static + PixelProgram,
+        TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
         // Assign an ID to this program data
         let program_data_id = data_cache.program_data.len();
@@ -153,7 +159,7 @@ impl PixelProgramCache {
     ///
     /// Creates scanline data for a program 
     ///
-    pub fn create_scanline_data(&self, data_cache: &mut PixelProgramDataCache, program_id: PixelProgramId, min_y: i32, scanlines: &Vec<PixelProgramScanline>, program_data: PixelProgramDataId) -> PixelScanlineDataId {
+    pub fn create_scanline_data(&self, data_cache: &mut PixelProgramDataCache<TPixel>, program_id: PixelProgramId, min_y: i32, scanlines: &Vec<PixelProgramScanline>, program_data: PixelProgramDataId) -> PixelScanlineDataId {
         // The program ID is currently unused as we only need to know the program data ID
         let _program_id = program_id;
 
@@ -173,7 +179,7 @@ impl PixelProgramCache {
     /// Runs a program on a range of pixels
     ///
     #[inline]
-    pub fn run_program(&self, data_cache: &PixelProgramDataCache, program_id: PixelProgramId, target: &mut [[f32; 4]], x_range: Range<i32>, y_pos: i32, program_data: PixelProgramDataId, scanline_data: PixelScanlineDataId) {
+    pub fn run_program(&self, data_cache: &PixelProgramDataCache<TPixel>, program_id: PixelProgramId, target: &mut [TPixel], x_range: Range<i32>, y_pos: i32, program_data: PixelProgramDataId, scanline_data: PixelScanlineDataId) {
         // The program ID and program data ID are currently unused as we only need to know the scanline ID to run the program
         let _program_id     = program_id;
         let _program_data   = program_data;

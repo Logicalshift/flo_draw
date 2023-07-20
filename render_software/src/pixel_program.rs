@@ -4,6 +4,9 @@ use std::{ops::{Range}, marker::PhantomData};
 /// A pixel program descibes how to draw pixels along a scan line
 ///
 pub trait PixelProgram : Send {
+    /// The type representing a pixel within this program
+    type Pixel;
+
     /// Data associated with a particular instance of this program
     type ProgramData;
 
@@ -15,7 +18,7 @@ pub trait PixelProgram : Send {
     ///
     /// The target points to the start of the range of values to be written. `x_range` provides the range of X values to fill with pixels.
     ///
-    fn draw_pixels(&self, target: &mut [[f32; 4]], x_range: Range<i32>, y_pos: i32, program_data: &Self::ProgramData, scanline_data: &Self::ScanlineData);
+    fn draw_pixels(&self, target: &mut [Self::Pixel], x_range: Range<i32>, y_pos: i32, program_data: &Self::ProgramData, scanline_data: &Self::ScanlineData);
 
     ///
     /// Returns the data for the scanlines the program will be run over
@@ -41,15 +44,15 @@ pub struct PixelProgramScanline {
 ///
 /// This can be used with a pixel program that generates rows of pixels (`PixelProgramFn::from(|target, x_range, ypos, data| { ... })`)
 ///
-pub struct PixelProgramFn<TFn, TData>
+pub struct PixelProgramFn<TFn, TPixel, TData>
 where 
-    TFn: Send + Fn(&mut [[f32; 4]], Range<i32>, i32, &TData) -> (),
+    TFn: Send + Fn(&mut [TPixel], Range<i32>, i32, &TData) -> (),
 {
     /// The function to call to fill in the pixels
     function: TFn,
 
     /// Placeholder for the TData type (Rust doesn't see a function parameter as a constraint)
-    phantom_data: PhantomData<TData>,
+    phantom_data: PhantomData<(TData, TPixel)>,
 }
 
 ///
@@ -57,41 +60,20 @@ where
 ///
 /// This can be used with a pixel program that generates individual pixels (`PerPixelProgramFn::from(|x, y, data| { [r, g, b, a] })`)
 ///
-pub struct PerPixelProgramFn<TFn, TData>
+pub struct PerPixelProgramFn<TFn, TPixel, TData>
 where 
-    TFn: Fn(i32, i32, &TData) -> [f32; 4],
+    TFn: Fn(i32, i32, &TData) -> TPixel,
 {
     /// The function to call to fill in the pixels
     function: TFn,
 
     /// Placeholder for the TData type (Rust doesn't see a function parameter as a constraint)
-    phantom_data: PhantomData<TData>,
+    phantom_data: PhantomData<(TData, TPixel)>,
 }
 
-///
-/// Simple functions can be pixel programs that take no program data
-///
-impl<TFn> PixelProgram for TFn
-where
-    TFn: Send + Fn(&mut [[f32; 4]], Range<i32>, i32, &()) -> (),
-{
-    type ProgramData    = ();
-    type ScanlineData   = ();
-
-    #[inline]
-    fn draw_pixels(&self, target: &mut [[f32; 4]], x_range: Range<i32>, ypos: i32, program_data: &(), _scanline_data: &()) {
-        (*self)(target, x_range, ypos, program_data)
-    }
-
-    #[inline]
-    fn create_scanline_data(&self, _min_y: i32, _scanlines: &Vec<PixelProgramScanline>, _program_data: &Self::ProgramData) -> () {
-        ()
-    }
-}
-
-impl<TFn, TData> From<TFn> for PixelProgramFn<TFn, TData> 
+impl<TFn, TPixel, TData> From<TFn> for PixelProgramFn<TFn, TPixel, TData> 
 where 
-    TFn: Send + Fn(&mut [[f32; 4]], Range<i32>, i32, &TData) -> (),
+    TFn: Send + Fn(&mut [TPixel], Range<i32>, i32, &TData) -> (),
 {
     fn from(function: TFn) -> Self {
         PixelProgramFn {
@@ -101,16 +83,18 @@ where
     }
 }
 
-impl<TFn, TData> PixelProgram for PixelProgramFn<TFn, TData> 
+impl<TFn, TPixel, TData> PixelProgram for PixelProgramFn<TFn, TPixel, TData> 
 where 
-    TFn:    Send + Fn(&mut [[f32; 4]], Range<i32>, i32, &TData) -> (),
+    TFn:    Send + Fn(&mut [TPixel], Range<i32>, i32, &TData) -> (),
     TData:  Send,
+    TPixel: Send,
 {
+    type Pixel          = TPixel;
     type ProgramData    = TData;
     type ScanlineData   = ();
 
     #[inline]
-    fn draw_pixels(&self, target: &mut [[f32; 4]], x_range: Range<i32>, ypos: i32, program_data: &TData, _scanline_data: &()) {
+    fn draw_pixels(&self, target: &mut [TPixel], x_range: Range<i32>, ypos: i32, program_data: &TData, _scanline_data: &()) {
         (self.function)(target, x_range, ypos, program_data)
     }
 
@@ -120,9 +104,9 @@ where
     }
 }
 
-impl<TFn, TData> From<TFn> for PerPixelProgramFn<TFn, TData> 
+impl<TFn, TPixel, TData> From<TFn> for PerPixelProgramFn<TFn, TPixel, TData> 
 where 
-    TFn: Fn(i32, i32, &TData) -> [f32; 4],
+    TFn: Fn(i32, i32, &TData) -> TPixel,
 {
     fn from(function: TFn) -> Self {
         PerPixelProgramFn {
@@ -132,16 +116,18 @@ where
     }
 }
 
-impl<TFn, TData> PixelProgram for PerPixelProgramFn<TFn, TData> 
+impl<TFn, TPixel, TData> PixelProgram for PerPixelProgramFn<TFn, TPixel, TData> 
 where 
-    TFn:    Send + Fn(i32, i32, &TData) -> [f32; 4],
+    TFn:    Send + Fn(i32, i32, &TData) -> TPixel,
     TData:  Send,
+    TPixel: Send,
 {
+    type Pixel          = TPixel;
     type ProgramData    = TData;
     type ScanlineData   = ();
 
     #[inline]
-    fn draw_pixels(&self, target: &mut [[f32; 4]], x_range: Range<i32>, ypos: i32, program_data: &TData, _scanline_data: &()) {
+    fn draw_pixels(&self, target: &mut [TPixel], x_range: Range<i32>, ypos: i32, program_data: &TData, _scanline_data: &()) {
         let mut pos = 0;
         for x in x_range {
             target[pos] = (self.function)(x, ypos, program_data);
