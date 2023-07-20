@@ -1,32 +1,39 @@
 use crate::pixel_program::*;
 
-use once_cell::sync::{Lazy};
-
 use std::ops::{Range};
 use std::sync::*;
-use std::ptr;
 
 ///
 /// The pixel program cache provides a way to assign IDs to pixel programs and support initialising them
 /// with a data cache.
 ///
 pub struct PixelProgramCache {
-
+    next_program_id: usize
 }
 
 ///
 /// The pixel program data cache stores the program data for the pixel programs
 ///
 pub struct PixelProgramDataCache {
-    data: Vec<*mut ()>,
+    /// Program data is encapsulated in a function that generates the scanline data. This is indexed by `PixelProgramDataId`
+    program_data: Vec<Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [[f32; 4]], Range<i32>, i32) -> ()>>>,
+
+    /// The scanline_data functions encapsulate the program data and the scanline data indicate programs that are ready to run
+    scanline_data: Vec<Box<dyn Fn(&mut [[f32; 4]], Range<i32>, i32) -> ()>>,
 }
 
 ///
 /// A data manager is used to store data associated with a program into a data cache
 ///
-pub struct PixelProgramDataManager<TProgramData> {
-    // Write the data for running this pixel program to the data cache 
-    write_program_data: Box<dyn Fn(TProgramData, &mut PixelProgramDataCache) -> PixelProgramDataId>,
+pub struct StoredPixelProgram<TProgram>
+where
+    TProgram: 'static + PixelProgram,
+{
+    /// The ID of this pixel program
+    program_id: PixelProgramId,
+
+    /// Function to associate program data with this program
+    associate_program_data: Box<dyn Fn(TProgram::ProgramData) -> Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [[f32; 4]], Range<i32>, i32) -> ()>>>,
 }
 
 ///
@@ -44,24 +51,6 @@ pub struct PixelProgramDataId(usize);
 pub struct PixelScanlineDataId(usize);
 
 impl PixelProgramDataCache {
-    ///
-    /// Unsafely find or create the program data cache for a pixel program
-    ///
-    /// Safety: `TProgramData` must be the same if the `program_id` is the same
-    ///
-    unsafe fn get_program_data_mut_unchecked<TProgramData>(&mut self, PixelProgramId(program_id): PixelProgramId) -> &mut Vec<TProgramData> {
-        // Ensure enough space
-        while self.data.len() <= program_id {
-            self.data.push(ptr::null_mut());
-        }
-
-        // Allocate the vec if necessary
-
-        // .. a plan B might be an 'instantiate' function that takes the program and some data and creates a function that takes a scanline iterator, finally returning a
-        // function that can be called on each scanline (this avoids messing with pointer casts)
-
-        todo!()
-    }
 }
 
 impl PixelProgramCache {
@@ -70,13 +59,14 @@ impl PixelProgramCache {
     ///
     pub fn empty() -> PixelProgramCache {
         PixelProgramCache {
+            next_program_id: 0
         }
     }
 
     ///
     /// Creates a function based on a program that sets its data and scanline data, generating the 'make pixels at position' function
     ///
-    fn create_set_program_data<TProgram>(program: Arc<TProgram>) -> impl Fn(TProgram::ProgramData) -> Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [[f32; 4]], Range<i32>, i32) ->() >>
+    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Fn(TProgram::ProgramData) -> Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [[f32; 4]], Range<i32>, i32) -> ()>>
     where
         TProgram: 'static + PixelProgram,
     {
@@ -99,25 +89,26 @@ impl PixelProgramCache {
     }
 
     ///
-    /// Caches a pixel program, returns its ID and a data manager to store data relating to the program
+    /// Caches a pixel program, assigning it an ID, and a cache that can be used
     ///
-    pub fn add_program<TProgram>(&mut self, program: TProgram) -> (PixelProgramId, PixelProgramDataManager<TProgram::ProgramData>) 
+    pub fn add_program<TProgram>(&mut self, program: TProgram) -> StoredPixelProgram<TProgram> 
     where
         TProgram: 'static + PixelProgram,
     {
-        static NEXT_PROGRAM_ID: Lazy<Mutex<usize>> = Lazy::new(|| Mutex::new(0));
-
-        // Assign a data cache index for this program (or this program's data type? Might be easier to just make it per-program though)
-        let new_program_id = {
-            let mut next_program_id = NEXT_PROGRAM_ID.lock().unwrap();
-            let new_program_id      = *next_program_id;
-            *next_program_id        += 1;
-
-            new_program_id
-        };
+        // Assign an ID to the new program
+        let new_program_id = self.next_program_id;
         let new_program_id = PixelProgramId(new_program_id);
 
-        todo!()
+        self.next_program_id += 1;
+
+        // Create the function to associate data with this program
+        let associate_data = Box::new(Self::create_associate_program_data(Arc::new(program)));
+
+        // Return a stored pixel program of the appropriate type
+        StoredPixelProgram {
+            program_id:             new_program_id,
+            associate_program_data: associate_data,
+        }
     }
 
     ///
