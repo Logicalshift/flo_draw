@@ -84,7 +84,7 @@ where
     }
 
     #[inline]
-    fn create_scanline_data(&self, _x_range: Range<f32>, _ypos: i32, _program_data: &Self::ProgramData) -> () {
+    fn create_scanline_data(&self, _min_y: i32, _scanlines: &Vec<PixelProgramScanline>, _program_data: &Self::ProgramData) -> () {
         ()
     }
 }
@@ -114,7 +114,7 @@ where
     }
 
     #[inline]
-    fn create_scanline_data(&self, _x_range: Range<f32>, _ypos: i32, _program_data: &Self::ProgramData) -> () {
+    fn create_scanline_data(&self, _min_y: i32, _scanlines: &Vec<PixelProgramScanline>, _program_data: &Self::ProgramData) -> () {
         ()
     }
 }
@@ -148,7 +148,7 @@ where
     }
 
     #[inline]
-    fn create_scanline_data(&self, _x_range: Range<f32>, _ypos: i32, _program_data: &Self::ProgramData) -> () {
+    fn create_scanline_data(&self, _min_y: i32, _scanlines: &Vec<PixelProgramScanline>, _program_data: &Self::ProgramData) -> () {
         ()
     }
 }
