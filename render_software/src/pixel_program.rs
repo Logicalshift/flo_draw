@@ -3,7 +3,7 @@ use std::{ops::{Range}, marker::PhantomData};
 ///
 /// A pixel program descibes how to draw pixels along a scan line
 ///
-pub trait PixelProgram {
+pub trait PixelProgram : Send {
     /// Data associated with a particular instance of this program
     type ProgramData;
 
@@ -43,7 +43,7 @@ pub struct PixelProgramScanline {
 ///
 pub struct PixelProgramFn<TFn, TData>
 where 
-    TFn: Fn(&mut [[f32; 4]], Range<i32>, i32, &TData) -> (),
+    TFn: Send + Fn(&mut [[f32; 4]], Range<i32>, i32, &TData) -> (),
 {
     /// The function to call to fill in the pixels
     function: TFn,
@@ -73,7 +73,7 @@ where
 ///
 impl<TFn> PixelProgram for TFn
 where
-    TFn: Fn(&mut [[f32; 4]], Range<i32>, i32, &()) -> (),
+    TFn: Send + Fn(&mut [[f32; 4]], Range<i32>, i32, &()) -> (),
 {
     type ProgramData    = ();
     type ScanlineData   = ();
@@ -91,7 +91,7 @@ where
 
 impl<TFn, TData> From<TFn> for PixelProgramFn<TFn, TData> 
 where 
-    TFn: Fn(&mut [[f32; 4]], Range<i32>, i32, &TData) -> (),
+    TFn: Send + Fn(&mut [[f32; 4]], Range<i32>, i32, &TData) -> (),
 {
     fn from(function: TFn) -> Self {
         PixelProgramFn {
@@ -103,7 +103,8 @@ where
 
 impl<TFn, TData> PixelProgram for PixelProgramFn<TFn, TData> 
 where 
-    TFn: Fn(&mut [[f32; 4]], Range<i32>, i32, &TData) -> (),
+    TFn:    Send + Fn(&mut [[f32; 4]], Range<i32>, i32, &TData) -> (),
+    TData:  Send,
 {
     type ProgramData    = TData;
     type ScanlineData   = ();
@@ -133,7 +134,8 @@ where
 
 impl<TFn, TData> PixelProgram for PerPixelProgramFn<TFn, TData> 
 where 
-    TFn: Fn(i32, i32, &TData) -> [f32; 4],
+    TFn:    Send + Fn(i32, i32, &TData) -> [f32; 4],
+    TData:  Send,
 {
     type ProgramData    = TData;
     type ScanlineData   = ();
