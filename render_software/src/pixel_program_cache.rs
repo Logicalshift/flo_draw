@@ -2,7 +2,6 @@ use crate::pixel_program::*;
 
 use once_cell::sync::{Lazy};
 
-use std::marker::{PhantomData};
 use std::ops::{Range};
 use std::sync::*;
 use std::ptr;
@@ -75,14 +74,27 @@ impl PixelProgramCache {
     }
 
     ///
-    /// Creates the 'write program data' function
+    /// Creates a function based on a program that sets its data and scanline data, generating the 'make pixels at position' function
     ///
-    fn create_write_program_data<TProgram>(program: Arc<TProgram>, program_id: PixelProgramId) -> impl for<'a> Fn(TProgram::ProgramData, &'a mut PixelProgramDataCache) -> PixelProgramDataId 
+    fn create_set_program_data<TProgram>(program: Arc<TProgram>) -> impl Fn(TProgram::ProgramData) -> Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [[f32; 4]], Range<i32>, i32) ->() >>
     where
-        TProgram: PixelProgram,
+        TProgram: 'static + PixelProgram,
     {
-        move |program_data, data_cache| {
-            PixelProgramDataId(0)
+        move |program_data| {
+            // Copy the program
+            let program         = Arc::clone(&program);
+            let program_data    = Arc::new(program_data);
+
+            // Return a function that takes the scanlines and returns the rendering function
+            Box::new(move |min_y, scanlines| {
+                let scanline_data   = program.create_scanline_data(min_y, scanlines, &*program_data);
+                let program         = Arc::clone(&program);
+                let program_data    = Arc::clone(&program_data);
+
+                Box::new(move |target, x_range, y_pos| {
+                    program.draw_pixels(target, x_range, y_pos, &*program_data, &scanline_data)
+                })
+            })
         }
     }
 
@@ -105,18 +117,7 @@ impl PixelProgramCache {
         };
         let new_program_id = PixelProgramId(new_program_id);
 
-        // Convert the program to read from the data cache
-        let program_1 = Arc::new(program);
-        let program_2 = Arc::clone(&program_1);
-        let program_3 = Arc::clone(&program_2);
-
-        // Create the data manager
-        let data_manager = PixelProgramDataManager {
-            write_program_data: Box::new(Self::create_write_program_data(program_1, new_program_id))
-        };
-
-        // Store the program in the cache
-        (new_program_id, data_manager)
+        todo!()
     }
 
     ///
