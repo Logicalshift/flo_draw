@@ -123,8 +123,8 @@ impl PixelProgramCache {
     ///
     /// Creates scanline data for a program 
     ///
-    pub fn create_scanline_data(&self, data_cache: &mut PixelProgramDataCache, program_id: PixelProgramId, x_range: Range<f32>, ypos: i32, program_data: PixelProgramDataId) -> PixelScanlineDataId {
-        todo!()        
+    pub fn create_scanline_data(&self, data_cache: &mut PixelProgramDataCache, program_id: PixelProgramId, min_y: i32, scanlines: &Vec<PixelProgramScanline>, program_data: PixelProgramDataId) -> PixelScanlineDataId {
+        todo!()
     }
 
     ///
