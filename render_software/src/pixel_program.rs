@@ -13,17 +13,27 @@ pub trait PixelProgram {
     ///
     /// Draws a series of pixels to a frame buffer
     ///
-    /// The target points to the start of the range of values to be written. `x_range` provides the range of X values to 
+    /// The target points to the start of the range of values to be written. `x_range` provides the range of X values to fill with pixels.
     ///
-    fn draw_pixels(&self, target: &mut [[f32; 4]], x_range: Range<i32>, ypos: i32, program_data: &Self::ProgramData, scanline_data: &Self::ScanlineData);
+    fn draw_pixels(&self, target: &mut [[f32; 4]], x_range: Range<i32>, y_pos: i32, program_data: &Self::ProgramData, scanline_data: &Self::ScanlineData);
 
     ///
-    /// Returns the data for a specific scanline
+    /// Returns the data for the scanlines the program will be run over
     ///
-    /// The x-range here is the range of values intercepted by this program: note that `draw_pixels` may be called with a narrower range if part of
-    /// the scan line is not visible, or it is clipped to the edges of the rendering area.
+    /// Scanlines generally are taken over a contiguous range, starting at `min_y`. 
     ///
-    fn create_scanline_data(&self, x_range: Range<f32>, ypos: i32, program_data: &Self::ProgramData) -> Self::ScanlineData;
+    fn create_scanline_data(&self, min_y: i32, scanlines: &Vec<PixelProgramScanline>, program_data: &Self::ProgramData) -> Self::ScanlineData;
+}
+
+///
+/// Describes a scanline when creating the scanline data
+///
+pub struct PixelProgramScanline {
+    /// The exact range of values intercepted by the program, before dealing with any clipping or occlusion
+    pub x_range: Range<f32>,
+
+    /// The y position of this scanline
+    pub y_pos: f32,
 }
 
 ///
