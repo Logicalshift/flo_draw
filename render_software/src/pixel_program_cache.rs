@@ -138,7 +138,7 @@ where
     ///
     /// Stores data to be used with an instance of a pixel program
     ///
-    /// Program data can be a number of things: in the simplest case it might be the colour that the program 
+    /// Program data can be a number of things: in the simplest case it might be the colour that the program will set the pixels to.
     ///
     pub fn store_program_data<TProgram>(&mut self, stored_program: &StoredPixelProgram<TProgram>, data_cache: &mut PixelProgramDataCache<TPixel>, data: TProgram::ProgramData) -> PixelProgramDataId 
     where
@@ -157,12 +157,11 @@ where
     }
 
     ///
-    /// Creates scanline data for a program 
+    /// Creates scanline data for a program
     ///
-    pub fn create_scanline_data(&self, data_cache: &mut PixelProgramDataCache<TPixel>, program_id: PixelProgramId, min_y: i32, scanlines: &Vec<PixelProgramScanline>, program_data: PixelProgramDataId) -> PixelScanlineDataId {
-        // The program ID is currently unused as we only need to know the program data ID
-        let _program_id = program_id;
-
+    /// This takes the program data ID and generates the scanline data for it, creating a scanline data ID that can be used to run the program itself
+    ///
+    pub fn create_scanline_data(&self, data_cache: &mut PixelProgramDataCache<TPixel>, min_y: i32, scanlines: &Vec<PixelProgramScanline>, program_data: PixelProgramDataId) -> PixelScanlineDataId {
         // Assign an ID to this scanline data
         let scanline_data_id = data_cache.scanline_data.len();
 
@@ -179,11 +178,7 @@ where
     /// Runs a program on a range of pixels
     ///
     #[inline]
-    pub fn run_program(&self, data_cache: &PixelProgramDataCache<TPixel>, program_id: PixelProgramId, target: &mut [TPixel], x_range: Range<i32>, y_pos: i32, program_data: PixelProgramDataId, scanline_data: PixelScanlineDataId) {
-        // The program ID and program data ID are currently unused as we only need to know the scanline ID to run the program
-        let _program_id     = program_id;
-        let _program_data   = program_data;
-
+    pub fn run_program(&self, data_cache: &PixelProgramDataCache<TPixel>, target: &mut [TPixel], x_range: Range<i32>, y_pos: i32, scanline_data: PixelScanlineDataId) {
         (data_cache.scanline_data[scanline_data.0])(target, x_range, y_pos)
     }
 }
