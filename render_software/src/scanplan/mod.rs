@@ -11,3 +11,9 @@
 //! parallize both the rendering and the generation tasks. Less complex scenes may render more slowly due to the extra
 //! work involved, however.
 //!
+
+mod scanspan;
+mod scanline_plan;
+
+pub use scanspan::*;
+pub use scanline_plan::*;
