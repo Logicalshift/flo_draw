@@ -16,7 +16,7 @@ fn add_first_scanline() {
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
-    assert!(spans == vec![ScanSpan::opaque(0..100, scanline_data_id)]);
+    assert!(spans == vec![ScanSpan::opaque(0..100, scanline_data_id)], "Unexpected spans: {:?}", spans);
 }
 
 #[test]
@@ -36,7 +36,7 @@ fn add_two_scanlines() {
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
-    assert!(spans == vec![ScanSpan::opaque(0..100, scanline_data_id_1), ScanSpan::opaque(200..300, scanline_data_id_2)]);
+    assert!(spans == vec![ScanSpan::opaque(0..100, scanline_data_id_1), ScanSpan::opaque(200..300, scanline_data_id_2)], "Unexpected spans: {:?}", spans);
 }
 
 #[test]
@@ -55,7 +55,7 @@ fn add_two_scanlines_reverse() {
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
-    assert!(spans == vec![ScanSpan::opaque(0..100, scanline_data_id), ScanSpan::opaque(200..300, scanline_data_id)]);
+    assert!(spans == vec![ScanSpan::opaque(0..100, scanline_data_id), ScanSpan::opaque(200..300, scanline_data_id)], "Unexpected spans: {:?}", spans);
 }
 
 #[test]
@@ -75,7 +75,7 @@ fn add_opaque_scanline_start() {
 
     // Read the span back again (TODO: this should actually produce a continguous span rather than splitting the original)
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
-    assert!(spans == vec![ScanSpan::opaque(0..25, scanline_data_id_2), ScanSpan::opaque(25..50, scanline_data_id_2), ScanSpan::opaque(50..100, scanline_data_id_1)]);
+    assert!(spans == vec![ScanSpan::opaque(0..25, scanline_data_id_2), ScanSpan::opaque(25..50, scanline_data_id_2), ScanSpan::opaque(50..100, scanline_data_id_1)], "Unexpected spans: {:?}", spans);
 }
 
 #[test]
@@ -95,7 +95,7 @@ fn add_opaque_scanline_end() {
 
     // Read the span back again (TODO: this should actually produce a continguous span rather than splitting the original)
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
-    assert!(spans == vec![ScanSpan::opaque(0..50, scanline_data_id_1), ScanSpan::opaque(50..75, scanline_data_id_2), ScanSpan::opaque(75..100, scanline_data_id_2)]);
+    assert!(spans == vec![ScanSpan::opaque(0..50, scanline_data_id_1), ScanSpan::opaque(50..75, scanline_data_id_2), ScanSpan::opaque(75..100, scanline_data_id_2)], "Unexpected spans: {:?}", spans);
 }
 
 #[test]
@@ -115,7 +115,7 @@ fn add_opaque_scanline_middle() {
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
-    assert!(spans == vec![ScanSpan::opaque(0..25, scanline_data_id_1), ScanSpan::opaque(25..75, scanline_data_id_2), ScanSpan::opaque(75..100, scanline_data_id_1)]);
+    assert!(spans == vec![ScanSpan::opaque(0..25, scanline_data_id_1), ScanSpan::opaque(25..75, scanline_data_id_2), ScanSpan::opaque(75..100, scanline_data_id_1)], "Unexpected spans: {:?}", spans);
 }
 
 #[test]
@@ -135,5 +135,5 @@ fn add_transparent_scanline_middle() {
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
-    assert!(spans == vec![ScanSpan::opaque(0..25, scanline_data_id_1), ScanSpan::opaque(25..75, scanline_data_id_1), ScanSpan::opaque(25..75, scanline_data_id_2), ScanSpan::opaque(75..100, scanline_data_id_1)]);
+    assert!(spans == vec![ScanSpan::opaque(0..25, scanline_data_id_1), ScanSpan::opaque(25..75, scanline_data_id_1), ScanSpan::opaque(25..75, scanline_data_id_2), ScanSpan::opaque(75..100, scanline_data_id_1)], "Unexpected spans: {:?}", spans);
 }

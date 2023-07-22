@@ -1,6 +1,7 @@
 use crate::pixel_program_cache::*;
 
 use std::ops::{Range};
+use std::fmt;
 
 ///
 /// A ScanSpan indicates which program(s) to apply to a range along a scanline 
@@ -64,6 +65,16 @@ impl ScanSpan {
             ))
         } else {
             Err(self)
+        }
+    }
+}
+
+impl fmt::Debug for ScanSpan {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.opaque {
+            write!(f, "O({:?}: {:?})", self.x_range, self.program)
+        } else {
+            write!(f, "T({:?}: {:?})", self.x_range, self.program)
         }
     }
 }
