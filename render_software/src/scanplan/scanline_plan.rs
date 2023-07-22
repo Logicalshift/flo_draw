@@ -140,35 +140,7 @@ impl ScanlinePlan {
                     break;
                 }
 
-                if self.spans[pos].x_range.start == span.x_range.start {
-                    // Scanline overlaps this range: split it at the end of the current range if possible
-                    match span.split(self.spans[pos].x_range.end) {
-                        Ok((lhs, rhs)) => {
-                            // Remaining span on the rhs
-                            self.spans[pos] = ScanSpanStack::with_first_span(lhs);
-                            span            = rhs;
-
-                            // New position is after the current span
-                            pos += 1;
-                        }
-
-                        Err(span) => {
-                            // Swap out the exisitng stack
-                            let end = span.x_range.end;
-
-                            let mut remaining = ScanSpanStack::with_first_span(span);
-                            mem::swap(&mut self.spans[pos], &mut remaining);
-
-                            // Add the 'remaining' stack back in if the existing span doesn't fully overlap it
-                            if remaining.x_range.end > end {
-                                remaining.x_range.start = end;
-                                self.spans.insert(pos+1, remaining);
-                            }
-
-                            break;
-                        }
-                    }
-                } else {
+                if self.spans[pos].x_range.start > span.x_range.start {
                     // Scanline is before this range: split it at the start of the range if possible
                     match span.split(self.spans[pos].x_range.start) {
                         Ok((lhs, rhs)) => {
@@ -178,7 +150,7 @@ impl ScanlinePlan {
                             // Remaining span is the RHS
                             span = rhs;
 
-                            // Move the position back to the original span
+                            // Move the position back to the original span (we now know that it overlaps this range)
                             pos += 1;
                         }
 
@@ -187,6 +159,34 @@ impl ScanlinePlan {
                             self.spans.insert(pos, ScanSpanStack::with_first_span(span));
                             break;
                         }
+                    }
+                }
+
+                // Scanline overlaps this range: split it at the end of the current range if possible
+                match span.split(self.spans[pos].x_range.end) {
+                    Ok((lhs, rhs)) => {
+                        // Remaining part of the new span on the rhs
+                        self.spans[pos] = ScanSpanStack::with_first_span(lhs);
+                        span            = rhs;
+
+                        // New position is after the current span
+                        pos += 1;
+                    }
+
+                    Err(span) => {
+                        // Swap out the exisitng stack
+                        let end = span.x_range.end;
+
+                        let mut remaining = ScanSpanStack::with_first_span(span);
+                        mem::swap(&mut self.spans[pos], &mut remaining);
+
+                        // Add the 'remaining' stack back in if the existing span doesn't fully overlap it
+                        if remaining.x_range.end > end {
+                            remaining.x_range.start = end;
+                            self.spans.insert(pos+1, remaining);
+                        }
+
+                        break;
                     }
                 }
             }
