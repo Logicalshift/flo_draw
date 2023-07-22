@@ -30,7 +30,9 @@ pub struct ScanlinePlan {
 }
 
 impl ScanSpanStack {
+    ///
     /// Creates a new stack containing a single span
+    ///
     #[inline]
     pub fn with_first_span(span: ScanSpan) -> ScanSpanStack {
         ScanSpanStack { 
@@ -40,14 +42,18 @@ impl ScanSpanStack {
         }
     }
 
+    ///
     /// Adds a new a span to this stack (it will cover the same range as the stack)
+    ///
     #[inline]
     pub fn push(&mut self, span: ScanSpan) {
         self.others.get_or_insert_with(|| vec![])
             .push(span.program)
     }
 
-    /// Splits this stack at an x position
+    ///
+    /// Splits this stack at an x position (which should be within the range of this span)
+    ///
     #[inline]
     pub fn split(self, x_pos: i32) -> Result<(ScanSpanStack, ScanSpanStack), ScanSpanStack> {
         if x_pos >= self.x_range.start && x_pos < self.x_range.end {
@@ -76,6 +82,116 @@ impl ScanlinePlan {
     pub fn new() -> ScanlinePlan {
         ScanlinePlan {
             spans: vec![]
+        }
+    }
+
+    ///
+    /// Adds a new span to this plan
+    ///
+    #[inline]
+    pub fn add_span(&mut self, span: ScanSpan) {
+        use std::mem;
+
+        // Binary search for where this span begins
+        let x_pos   = span.x_range.start;
+        let mut min = 0;
+        let mut max = self.spans.len();
+
+        /* -- TODO, test is this worth it? (as we just insert into the vec later on)
+        while max > min+4 {
+            // Calculate mid-point
+            let mid     = (min + max) >> 1;
+            let mid_pos = self.spans[mid].x_range.start;
+
+            if mid_pos == x_pos {
+                min = mid;
+                max = min;
+                break;
+            } else if mid_pos < x_pos {
+                min = mid + 1;
+            } else {
+                max = mid;
+            }
+        }
+        */
+
+        // Linear search for small ranges
+        while min < max {
+            let min_pos = self.spans[min].x_range.start;
+            if min_pos >= x_pos {
+                break;
+            }
+
+            min += 1;
+        }
+
+        // The position that's >= 
+        let mut pos = min;
+
+        // Add the span to the stacks by repeatedly splitting it
+        if span.opaque {
+            // Span is opaque: replace existing stacks with it
+            let mut span = span;
+
+            loop {
+                if pos >= self.spans.len() {
+                    // This span is after the end of the current stack
+                    self.spans.push(ScanSpanStack::with_first_span(span));
+                    break;
+                }
+
+                if self.spans[pos].x_range.start == span.x_range.start {
+                    // Scanline overlaps this range: split it at the end of the current range if possible
+                    match span.split(self.spans[pos].x_range.end) {
+                        Ok((lhs, rhs)) => {
+                            // Remaining span on the rhs
+                            self.spans[pos] = ScanSpanStack::with_first_span(lhs);
+                            span            = rhs;
+
+                            // New position is after the current span
+                            pos += 1;
+                        }
+
+                        Err(span) => {
+                            // Swap out the exisitng stack
+                            let end = span.x_range.end;
+
+                            let mut remaining = ScanSpanStack::with_first_span(span);
+                            mem::swap(&mut self.spans[pos], &mut remaining);
+
+                            // Add the 'remaining' stack back in if the existing span doesn't fully overlap it
+                            if remaining.x_range.end > end {
+                                remaining.x_range.start = end;
+                                self.spans.insert(pos+1, remaining);
+                            }
+
+                            break;
+                        }
+                    }
+                } else {
+                    // Scanline is before this range: split it at the start of the range if possible
+                    match span.split(self.spans[pos].x_range.start) {
+                        Ok((lhs, rhs)) => {
+                            // LHS needs to be added as a new span
+                            self.spans.insert(pos, ScanSpanStack::with_first_span(lhs));
+
+                            // Remaining span is the RHS
+                            span = rhs;
+
+                            // Move the position back to the original span
+                            pos += 1;
+                        }
+
+                        Err(span) => {
+                            // Span just fits before the current position
+                            self.spans.insert(pos, ScanSpanStack::with_first_span(span));
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            // Span is transparent: add to existing stacks
         }
     }
 }
