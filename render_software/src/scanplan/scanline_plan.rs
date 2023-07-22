@@ -9,7 +9,8 @@ use std::ops::{Range};
 //
 // The left-to-right approach here makes it much easier to eliminate rendering behind opaque sections, however. It also operates
 // on a more local section of pixels (which can be faster in itself due to how processor caching works), and can be run fully
-// in parallel if needed (say, on a GPU as well as on multiple CPUs)
+// in parallel if needed (say, on a GPU as well as on multiple CPUs). It has an advantage with layers too: it's possible to
+// process multiple plans together to build up a final result.
 
 #[derive(Clone)]
 struct ScanSpanStack {
@@ -259,7 +260,10 @@ impl ScanlinePlan {
     ///
     /// Generates scan spans in rendering order for this scanline
     ///
+    /// The lowest span in a stack is always returned as opaque even if it was originally created as transparent using this function
+    ///
     pub fn iter_as_spans<'a>(&'a self) -> impl 'a + Iterator<Item=ScanSpan> {
+        // TODO: should the lowest span always be returned as opaque? Layers might be more efficient to implement if we can know if their lowest span is opaque or transparent
         use std::iter;
 
         self.spans.iter()
