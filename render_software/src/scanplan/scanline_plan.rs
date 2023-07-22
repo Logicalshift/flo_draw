@@ -126,6 +126,19 @@ impl ScanlinePlan {
         // The position that's >= the start of the span
         let mut pos = min;
 
+        // Try to split the span at pos (the current span might start after the start of the position)
+        if pos < self.spans.len() {
+            match self.spans[pos].split(span.x_range.start) {
+                Ok(rhs) => {
+                    // Add the RHS into the spans to be merged by the remainder of the algorithm
+                    self.spans.insert(pos+1, rhs);
+                    pos += 1;
+                }
+
+                Err(()) => { }
+            }
+        }
+
         // Add the span to the stacks by repeatedly splitting it
         if span.opaque {
             // Span is opaque: replace existing stacks with it
