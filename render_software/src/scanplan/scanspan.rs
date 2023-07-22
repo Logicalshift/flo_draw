@@ -8,10 +8,10 @@ use std::ops::{Range};
 #[derive(Clone)]
 pub struct ScanSpan {
     /// The pixels to draw on the scanline
-    x_range: Range<i32>,
+    pub (super) x_range: Range<i32>,
 
     /// The ID of the scanline data for the program to run over this range
-    program: PixelScanlineDataId
+    pub (super) program: PixelScanlineDataId
 }
 
 impl ScanSpan {
