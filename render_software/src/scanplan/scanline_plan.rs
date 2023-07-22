@@ -255,4 +255,21 @@ impl ScanlinePlan {
             }
         }
     }
+
+    ///
+    /// Generates scan spans in rendering order for this scanline
+    ///
+    pub fn iter_as_spans<'a>(&'a self) -> impl 'a + Iterator<Item=ScanSpan> {
+        use std::iter;
+
+        self.spans.iter()
+            .flat_map(|span| {
+                let range = span.x_range.clone();
+
+                iter::once(ScanSpan::opaque(range.clone(), span.first))
+                    .chain(span.others.iter().flatten().copied().map(move |stack_program| {
+                        ScanSpan::transparent(range.clone(), stack_program)
+                    }))
+            })
+    }
 }
