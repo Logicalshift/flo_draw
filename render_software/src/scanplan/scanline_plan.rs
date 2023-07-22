@@ -101,11 +101,7 @@ impl ScanlinePlan {
             let mid     = (min + max) >> 1;
             let mid_pos = self.spans[mid].x_range.end;
 
-            if mid_pos == x_pos {
-                min = mid;
-                max = min;
-                break;
-            } else if mid_pos < x_pos {
+            if mid_pos <= x_pos {
                 min = mid + 1;
             } else {
                 max = mid;
@@ -116,7 +112,7 @@ impl ScanlinePlan {
         // Linear search for small ranges
         while min < max {
             let min_pos = self.spans[min].x_range.end;
-            if min_pos >= x_pos {
+            if min_pos > x_pos {
                 break;
             }
 
