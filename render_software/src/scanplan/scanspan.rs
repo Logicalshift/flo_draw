@@ -50,7 +50,7 @@ impl ScanSpan {
     ///
     #[inline]
     pub fn split(self, pos: i32) -> Result<(ScanSpan, ScanSpan), ScanSpan> {
-        if pos >= self.x_range.start && pos < self.x_range.end {
+        if pos > self.x_range.start && pos < self.x_range.end {
             Ok((
                 ScanSpan {
                     x_range: (self.x_range.start)..pos,

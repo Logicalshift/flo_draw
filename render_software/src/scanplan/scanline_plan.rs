@@ -59,7 +59,7 @@ impl ScanSpanStack {
     ///
     #[inline]
     pub fn split(&mut self, x_pos: i32) -> Result<ScanSpanStack, ()> {
-        if x_pos >= self.x_range.start && x_pos < self.x_range.end {
+        if x_pos > self.x_range.start && x_pos < self.x_range.end {
             let end = self.x_range.end;
             self.x_range.end = x_pos;
 
