@@ -2,7 +2,7 @@ use flo_render_software::*;
 use flo_render_software::scanplan::*;
 
 #[test]
-fn add_first_scanline() {
+fn add_first_span() {
     // Create a data token for the scanline we're generating
     let mut program_cache = PixelProgramCache::empty();
     let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
@@ -20,7 +20,7 @@ fn add_first_scanline() {
 }
 
 #[test]
-fn add_two_scanlines() {
+fn add_two_spans() {
     // Create a data token for the scanline we're generating
     let mut program_cache = PixelProgramCache::empty();
     let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
@@ -40,7 +40,7 @@ fn add_two_scanlines() {
 }
 
 #[test]
-fn add_two_scanlines_reverse() {
+fn add_two_spans_reverse() {
     // Create a data token for the scanline we're generating
     let mut program_cache = PixelProgramCache::empty();
     let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
@@ -59,7 +59,7 @@ fn add_two_scanlines_reverse() {
 }
 
 #[test]
-fn add_opaque_scanline_overlap() {
+fn add_opaque_spans_overlap() {
     // Create a data token for the scanline we're generating
     let mut program_cache = PixelProgramCache::empty();
     let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
@@ -79,7 +79,7 @@ fn add_opaque_scanline_overlap() {
 }
 
 #[test]
-fn add_transparent_scanline_overlap() {
+fn add_transparent_spans_overlap() {
     // Create a data token for the scanline we're generating
     let mut program_cache = PixelProgramCache::empty();
     let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
@@ -99,7 +99,7 @@ fn add_transparent_scanline_overlap() {
 }
 
 #[test]
-fn add_opaque_scanline_start() {
+fn add_opaque_span_overlapping_start() {
     // Create a data token for the scanline we're generating
     let mut program_cache = PixelProgramCache::empty();
     let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
@@ -119,7 +119,7 @@ fn add_opaque_scanline_start() {
 }
 
 #[test]
-fn add_opaque_scanline_end() {
+fn add_opaque_span_overlapping_end() {
     // Create a data token for the scanline we're generating
     let mut program_cache = PixelProgramCache::empty();
     let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
@@ -139,7 +139,7 @@ fn add_opaque_scanline_end() {
 }
 
 #[test]
-fn add_opaque_scanline_middle() {
+fn add_opaque_span_overlapping_middle() {
     // Create a data token for the scanline we're generating
     let mut program_cache = PixelProgramCache::empty();
     let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
@@ -159,7 +159,7 @@ fn add_opaque_scanline_middle() {
 }
 
 #[test]
-fn add_transparent_scanline_middle() {
+fn add_transparent_span_middle() {
     // Create a data token for the scanline we're generating
     let mut program_cache = PixelProgramCache::empty();
     let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
