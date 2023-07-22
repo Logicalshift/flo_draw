@@ -263,18 +263,29 @@ impl ScanlinePlan {
     ///
     /// The lowest span in a stack is always returned as opaque even if it was originally created as transparent using this function
     ///
+    pub fn iter_as_stacks<'a>(&'a self) -> impl 'a + Iterator<Item=&'a ScanSpanStack> {
+        self.spans.iter()
+    }
+
+    ///
+    /// Generates scan spans in rendering order for this scanline
+    ///
+    /// The lowest span in a stack is always returned as opaque even if it was originally created as transparent using this function
+    ///
     pub fn iter_as_spans<'a>(&'a self) -> impl 'a + Iterator<Item=ScanSpan> {
         // TODO: should the lowest span always be returned as opaque? Layers might be more efficient to implement if we can know if their lowest span is opaque or transparent
         use std::iter;
 
-        self.spans.iter()
+        self.iter_as_stacks()
             .flat_map(|span| {
-                let range = span.x_range.clone();
+                let range           = span.x_range();
+                let mut programs    = span.programs();
 
-                iter::once(ScanSpan::opaque(range.clone(), span.first))
-                    .chain(span.others.iter().flatten().copied().map(move |stack_program| {
-                        ScanSpan::transparent(range.clone(), stack_program)
-                    }))
+                // First program is opaque, the rest are transparent
+                let first   = ScanSpan::opaque(range.clone(), programs.next().unwrap());
+                let others  = programs.map(move |program| ScanSpan::transparent(range.clone(), program));
+
+                iter::once(first).chain(others)
             })
     }
 }
