@@ -173,6 +173,43 @@ fn overlap_many_spans_first_and_last_partial_opaque() {
 }
 
 #[test]
+fn overlap_many_spans_first_and_last_partial_transparent() {
+    // Create a data token for the scanline we're generating
+    let mut program_cache = PixelProgramCache::empty();
+    let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
+    let mut data_cache      = program_cache.create_data_cache();
+    let program_data_id     = program_cache.store_program_data(&program_id, &mut data_cache, ());
+    let scanline_data_id_1  = program_cache.create_scanline_data(&mut data_cache, 0, &vec![], program_data_id);
+    let scanline_data_id_2  = program_cache.create_scanline_data(&mut data_cache, 0, &vec![], program_data_id);
+
+    // Set up a plan for a scanline using this program
+    let mut plan = ScanlinePlan::new();
+    plan.add_span(ScanSpan::opaque(0..50, scanline_data_id_1));
+    plan.add_span(ScanSpan::opaque(75..100, scanline_data_id_1));
+    plan.add_span(ScanSpan::opaque(125..150, scanline_data_id_1));
+    plan.add_span(ScanSpan::opaque(175..400, scanline_data_id_1));
+    plan.add_span(ScanSpan::transparent(25..300, scanline_data_id_2));
+
+    // Read the span back again
+    let spans = plan.iter_as_spans().collect::<Vec<_>>();
+    assert!(spans == vec![
+        ScanSpan::opaque(0..25, scanline_data_id_1),
+        ScanSpan::opaque(25..50, scanline_data_id_1),
+        ScanSpan::transparent(25..50, scanline_data_id_2),
+        ScanSpan::opaque(50..75, scanline_data_id_2),
+        ScanSpan::opaque(75..100, scanline_data_id_1),
+        ScanSpan::transparent(75..100, scanline_data_id_2),
+        ScanSpan::opaque(100..125, scanline_data_id_2),
+        ScanSpan::opaque(125..150, scanline_data_id_1),
+        ScanSpan::transparent(125..150, scanline_data_id_2),
+        ScanSpan::opaque(150..175, scanline_data_id_2),
+        ScanSpan::opaque(175..300, scanline_data_id_1),
+        ScanSpan::transparent(175..300, scanline_data_id_2),
+        ScanSpan::opaque(300..400, scanline_data_id_1),
+    ], "Unexpected spans: {:?}", spans);
+}
+
+#[test]
 fn add_overlapping_bridging_span_transparent() {
     // Create a data token for the scanline we're generating
     let mut program_cache = PixelProgramCache::empty();
