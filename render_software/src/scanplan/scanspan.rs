@@ -5,7 +5,7 @@ use std::ops::{Range};
 ///
 /// A ScanSpan indicates which program(s) to apply to a range along a scanline 
 ///
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct ScanSpan {
     /// The pixels to draw on the scanline
     pub (super) x_range: Range<i32>,
