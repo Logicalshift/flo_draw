@@ -14,5 +14,7 @@ fn add_first_scanline() {
     let mut plan = ScanlinePlan::new();
     plan.add_span(ScanSpan::opaque(0..100, scanline_data_id));
 
-    // TODO: Read the span back again
+    // Read the span back again
+    let spans = plan.iter_as_spans().collect::<Vec<_>>();
+    assert!(spans == vec![ScanSpan::opaque(0..100, scanline_data_id)]);
 }
