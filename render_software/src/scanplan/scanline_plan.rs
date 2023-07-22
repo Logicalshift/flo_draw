@@ -115,7 +115,7 @@ impl ScanlinePlan {
 
         // Linear search for small ranges
         while min < max {
-            let min_pos = self.spans[min].x_range.start;
+            let min_pos = self.spans[min].x_range.end;
             if min_pos >= x_pos {
                 break;
             }
@@ -123,7 +123,7 @@ impl ScanlinePlan {
             min += 1;
         }
 
-        // The position that's >= 
+        // The position that's >= the start of the span
         let mut pos = min;
 
         // Add the span to the stacks by repeatedly splitting it
