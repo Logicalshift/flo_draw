@@ -12,8 +12,11 @@ use std::ops::{Range};
 // in parallel if needed (say, on a GPU as well as on multiple CPUs). It has an advantage with layers too: it's possible to
 // process multiple plans together to build up a final result.
 
+///
+/// Represents a stack of pixel programs to run on a region of a scanline
+///
 #[derive(Clone)]
-struct ScanSpanStack {
+pub struct ScanSpanStack {
     x_range:    Range<i32>,
     first:      PixelScanlineDataId,
     others:     Option<Vec<PixelScanlineDataId>>,
@@ -71,6 +74,23 @@ impl ScanSpanStack {
         } else {
             Err(())
         }
+    }
+
+    ///
+    /// The range of pixels covered by this span
+    ///
+    #[inline]
+    pub fn x_range(&self) -> Range<i32> { self.x_range.start..self.x_range.end }
+
+    ///
+    /// Returns an iterator for the IDs of the programs that should be run over this range
+    ///
+    #[inline]
+    pub fn programs<'a>(&'a self) -> impl 'a + Iterator<Item=PixelScanlineDataId> {
+        use std::iter;
+
+        iter::once(self.first)
+            .chain(self.others.iter().flatten().copied())
     }
 }
 
