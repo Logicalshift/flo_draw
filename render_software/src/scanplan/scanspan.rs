@@ -11,18 +11,34 @@ pub struct ScanSpan {
     pub (super) x_range: Range<i32>,
 
     /// The ID of the scanline data for the program to run over this range
-    pub (super) program: PixelScanlineDataId
+    pub (super) program: PixelScanlineDataId,
+
+    /// True if this span is opaque (entirely obscures anything underneath it)
+    pub (super) opaque: bool,
 }
 
 impl ScanSpan {
     ///
-    /// Creates a scanspan that will run a single program
+    /// Creates a scanspan that will run a single program that changes the pixels underneath it
     ///
     #[inline]
-    pub fn new(range: Range<i32>, program: PixelScanlineDataId) -> ScanSpan {
+    pub fn transparent(range: Range<i32>, program: PixelScanlineDataId) -> ScanSpan {
         ScanSpan {
             x_range: range,
-            program: program
+            program: program,
+            opaque:  false
+        }
+    }
+
+    ///
+    /// Creates a scanspan that will run a single program that replaces the pixels underneath it
+    ///
+    #[inline]
+    pub fn opaque(range: Range<i32>, program: PixelScanlineDataId) -> ScanSpan {
+        ScanSpan {
+            x_range: range,
+            program: program,
+            opaque:  true
         }
     }
 
@@ -38,10 +54,12 @@ impl ScanSpan {
                 ScanSpan {
                     x_range: (self.x_range.start)..pos,
                     program: self.program,
+                    opaque:  self.opaque,
                 },
                 ScanSpan {
                     x_range: pos..(self.x_range.end),
                     program: self.program,
+                    opaque:  self.opaque,
                 }
             ))
         } else {
