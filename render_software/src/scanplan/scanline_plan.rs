@@ -86,7 +86,6 @@ impl ScanlinePlan {
     ///
     /// Adds a new span to this plan
     ///
-    #[inline]
     pub fn add_span(&mut self, span: ScanSpan) {
         use std::mem;
 
