@@ -54,23 +54,21 @@ impl ScanSpanStack {
     ///
     /// Splits this stack at an x position (which should be within the range of this span)
     ///
+    /// Returns either the right-hand side of the split stack, or an error to indicate that the split point is out of range
+    ///
     #[inline]
-    pub fn split(self, x_pos: i32) -> Result<(ScanSpanStack, ScanSpanStack), ScanSpanStack> {
+    pub fn split(&mut self, x_pos: i32) -> Result<ScanSpanStack, ()> {
         if x_pos >= self.x_range.start && x_pos < self.x_range.end {
-            Ok((
-                ScanSpanStack {
-                    x_range:    (self.x_range.start)..x_pos,
-                    first:      self.first,
-                    others:     self.others.clone(),
-                },
-                ScanSpanStack {
-                    x_range:    x_pos..(self.x_range.end),
-                    first:      self.first,
-                    others:     self.others.clone(),
-                }
-            ))
+            let end = self.x_range.end;
+            self.x_range.end = x_pos;
+
+            Ok(ScanSpanStack {
+                x_range:    x_pos..end,
+                first:      self.first,
+                others:     self.others.clone(),
+            })
         } else {
-            Err(self)
+            Err(())
         }
     }
 }
@@ -95,7 +93,7 @@ impl ScanlinePlan {
         // Binary search for where this span begins
         let x_pos   = span.x_range.start;
         let mut min = 0;
-        let mut max = self.spans.len();
+        let max     = self.spans.len();
 
         /* -- TODO, test is this worth it? (as we just insert into the vec later on)
         while max > min+4 {
@@ -192,6 +190,70 @@ impl ScanlinePlan {
             }
         } else {
             // Span is transparent: add to existing stacks
+            let mut span = span;
+
+            loop {
+                if pos >= self.spans.len() {
+                    // This span is after the end of the current stack
+                    self.spans.push(ScanSpanStack::with_first_span(span));
+                    break;
+                }
+
+                if self.spans[pos].x_range.start > span.x_range.start {
+                    // Scanline is before this range: split it at the start of the range if possible
+                    match span.split(self.spans[pos].x_range.start) {
+                        Ok((lhs, rhs)) => {
+                            // LHS needs to be added as a new span
+                            self.spans.insert(pos, ScanSpanStack::with_first_span(lhs));
+
+                            // Remaining span is the RHS
+                            span = rhs;
+
+                            // Move the position back to the original span (we now know that it overlaps this range)
+                            pos += 1;
+                        }
+
+                        Err(span) => {
+                            // Span just fits before the current position
+                            self.spans.insert(pos, ScanSpanStack::with_first_span(span));
+                            break;
+                        }
+                    }
+                }
+
+                // Scanline overlaps this range: split it at the end of the current range if possible
+                match span.split(self.spans[pos].x_range.end) {
+                    Ok((lhs, rhs)) => {
+                        // Remaining part of the new span on the rhs
+                        self.spans[pos].push(lhs);
+                        span = rhs;
+
+                        // New position is after the current span
+                        pos += 1;
+                    }
+
+                    Err(span) => {
+                        // Span either entirely overlaps the range, or partially overlaps it at the start
+                        match self.spans[pos].split(span.x_range.end) {
+                            Ok(rhs) => {
+                                // Span overlaps the start of the range
+                                self.spans[pos].push(span);
+
+                                // The RHS is the parts of the span
+                                self.spans.insert(pos+1, rhs);
+                            }
+
+                            Err(()) => {
+                                // Add the current span to the
+                                self.spans[pos].push(span);
+                            }
+                        }
+
+                        // Span is entirely consumed
+                        break;
+                    }
+                }
+            }
         }
     }
 }
