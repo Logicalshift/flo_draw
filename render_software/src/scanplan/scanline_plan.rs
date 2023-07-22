@@ -99,7 +99,7 @@ impl ScanlinePlan {
         while max > min+4 {
             // Calculate mid-point
             let mid     = (min + max) >> 1;
-            let mid_pos = self.spans[mid].x_range.start;
+            let mid_pos = self.spans[mid].x_range.end;
 
             if mid_pos == x_pos {
                 min = mid;
