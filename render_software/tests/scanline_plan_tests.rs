@@ -98,9 +98,7 @@ fn add_overlapping_bridging_span_opaque() {
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
     assert!(spans == vec![
         ScanSpan::opaque(0..90, scanline_data_id_1), 
-        ScanSpan::opaque(90..100, scanline_data_id_2), 
-        ScanSpan::opaque(100..200, scanline_data_id_2), 
-        ScanSpan::opaque(200..210, scanline_data_id_2), 
+        ScanSpan::opaque(90..210, scanline_data_id_2),
         ScanSpan::opaque(210..300, scanline_data_id_1)
     ], "Unexpected spans: {:?}", spans);
 }
@@ -211,7 +209,7 @@ fn add_closely_overlapping_spans() {
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
-    assert!(spans == vec![ScanSpan::opaque(0..99, scanline_data_id_1), ScanSpan::opaque(99..100, scanline_data_id_2), ScanSpan::opaque(100..200, scanline_data_id_2)], "Unexpected spans: {:?}", spans);
+    assert!(spans == vec![ScanSpan::opaque(0..99, scanline_data_id_1), ScanSpan::opaque(99..200, scanline_data_id_2)], "Unexpected spans: {:?}", spans);
 }
 
 #[test]
@@ -231,7 +229,7 @@ fn add_closely_overlapping_spans_reverse_order() {
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
-    assert!(spans == vec![ScanSpan::opaque(0..99, scanline_data_id_1), ScanSpan::opaque(99..100, scanline_data_id_1), ScanSpan::opaque(100..200, scanline_data_id_2)], "Unexpected spans: {:?}", spans);
+    assert!(spans == vec![ScanSpan::opaque(0..100, scanline_data_id_1), ScanSpan::opaque(100..200, scanline_data_id_2)], "Unexpected spans: {:?}", spans);
 }
 
 #[test]
@@ -269,9 +267,9 @@ fn add_opaque_span_overlapping_start() {
     plan.add_span(ScanSpan::opaque(25..100, scanline_data_id_1));
     plan.add_span(ScanSpan::opaque(0..50, scanline_data_id_2));
 
-    // Read the span back again (TODO: this should actually produce a continguous span rather than splitting the original)
+    // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
-    assert!(spans == vec![ScanSpan::opaque(0..25, scanline_data_id_2), ScanSpan::opaque(25..50, scanline_data_id_2), ScanSpan::opaque(50..100, scanline_data_id_1)], "Unexpected spans: {:?}", spans);
+    assert!(spans == vec![ScanSpan::opaque(0..50, scanline_data_id_2), ScanSpan::opaque(50..100, scanline_data_id_1)], "Unexpected spans: {:?}", spans);
 }
 
 #[test]
@@ -289,9 +287,9 @@ fn add_opaque_span_overlapping_end() {
     plan.add_span(ScanSpan::opaque(0..75, scanline_data_id_1));
     plan.add_span(ScanSpan::opaque(50..100, scanline_data_id_2));
 
-    // Read the span back again (TODO: this should actually produce a continguous span rather than splitting the original)
+    // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
-    assert!(spans == vec![ScanSpan::opaque(0..50, scanline_data_id_1), ScanSpan::opaque(50..75, scanline_data_id_2), ScanSpan::opaque(75..100, scanline_data_id_2)], "Unexpected spans: {:?}", spans);
+    assert!(spans == vec![ScanSpan::opaque(0..50, scanline_data_id_1), ScanSpan::opaque(50..100, scanline_data_id_2)], "Unexpected spans: {:?}", spans);
 }
 
 #[test]

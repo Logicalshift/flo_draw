@@ -88,8 +88,6 @@ impl ScanlinePlan {
     /// Adds a new span to this plan
     ///
     pub fn add_span(&mut self, span: ScanSpan) {
-        use std::mem;
-
         // Binary search for where this span begins
         let x_pos   = span.x_range.start;
         let mut min = 0;
@@ -137,64 +135,38 @@ impl ScanlinePlan {
 
         // Add the span to the stacks by repeatedly splitting it
         if span.opaque {
-            // Span is opaque: replace existing stacks with it
-            let mut span = span;
+            // Span is opaque: replace existing stacks with it, combine/delete them rather than split them
+            let span = span;
 
-            loop {
-                if pos >= self.spans.len() {
-                    // This span is after the end of the current stack
-                    self.spans.push(ScanSpanStack::with_first_span(span));
-                    break;
-                }
+            if pos >= self.spans.len() {
+                // This span is after the end of the current stack
+                self.spans.push(ScanSpanStack::with_first_span(span));
+            } else if span.x_range.end < self.spans[pos].x_range.start {
+                // The span is in between any existing span
+                self.spans.insert(pos, ScanSpanStack::with_first_span(span));
+            } else if span.x_range.end == self.spans[pos].x_range.end {
+                // The span exactly replaces the current span
+                self.spans[pos] = ScanSpanStack::with_first_span(span);
+            } else if span.x_range.end < self.spans[pos].x_range.end {
+                // The span overlaps the start of the current span (can't overlap the middle due to the split operation above)
+                self.spans[pos].x_range.start = span.x_range.end;
+                self.spans.insert(pos, ScanSpanStack::with_first_span(span));
+            } else {
+                // The span overlaps the existing span, and maybe the spans in front of it
+                let x_range = span.x_range.clone();
+                self.spans[pos] = ScanSpanStack::with_first_span(span);
+                pos += 1;
 
-                if self.spans[pos].x_range.start > span.x_range.start {
-                    // Scanline is before this range: split it at the start of the range if possible
-                    match span.split(self.spans[pos].x_range.start) {
-                        Ok((lhs, rhs)) => {
-                            // LHS needs to be added as a new span
-                            self.spans.insert(pos, ScanSpanStack::with_first_span(lhs));
+                loop {
+                    if pos >= self.spans.len() { break; }
+                    if self.spans[pos].x_range.start >= x_range.end { break; }
 
-                            // Remaining span is the RHS
-                            span = rhs;
-
-                            // Move the position back to the original span (we now know that it overlaps this range)
-                            pos += 1;
-                        }
-
-                        Err(span) => {
-                            // Span just fits before the current position
-                            self.spans.insert(pos, ScanSpanStack::with_first_span(span));
-                            break;
-                        }
-                    }
-                }
-
-                // Scanline overlaps this range: split it at the end of the current range if possible
-                match span.split(self.spans[pos].x_range.end) {
-                    Ok((lhs, rhs)) => {
-                        // Remaining part of the new span on the rhs
-                        self.spans[pos] = ScanSpanStack::with_first_span(lhs);
-                        span            = rhs;
-
-                        // New position is after the current span
-                        pos += 1;
-                    }
-
-                    Err(span) => {
-                        // Swap out the exisitng stack
-                        let end = span.x_range.end;
-
-                        let mut remaining = ScanSpanStack::with_first_span(span);
-                        mem::swap(&mut self.spans[pos], &mut remaining);
-
-                        // Add the 'remaining' stack back in if the existing span doesn't fully overlap it
-                        if remaining.x_range.end > end {
-                            remaining.x_range.start = end;
-                            self.spans.insert(pos+1, remaining);
-                        }
-
+                    if self.spans[pos].x_range.end > x_range.end {
+                        self.spans[pos].x_range.start = x_range.end;
                         break;
                     }
+
+                    self.spans.remove(pos);
                 }
             }
         } else {
