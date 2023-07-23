@@ -70,15 +70,15 @@ fn gamma_correction_4() {
 #[test]
 fn source_over_1() {
     let col1 = F32LinearPixel::from_color(Color::Rgba(0.4980, 0.6039, 0.7647, 1.0), 2.2);
-    let col2 = F32LinearPixel::from_color(Color::Rgba(0.6470, 0.4705, 0.7647, 0.6), 2.2);
+    let col2 = F32LinearPixel::from_color(Color::Rgba(0.7764, 0.6823, 0.8588, 0.6), 2.2);
 
     let col3            = col2.source_over(col1);
     let back_as_color   = col3.to_color(2.2);
 
     let (r, g, b, a)    = back_as_color.to_rgba_components();
 
-    debug_assert!((r-0.5725).abs() < 0.05, "({}, {}, {}, {})", r, g, b, a);
-    debug_assert!((g-0.5254).abs() < 0.05, "({}, {}, {}, {})", r, g, b, a);
-    debug_assert!((b-0.7647).abs() < 0.05, "({}, {}, {}, {})", r, g, b, a);
-    debug_assert!((a-1.0).abs() < 0.05, "({}, {}, {}, {})", r, g, b, a);
+    debug_assert!((r-0.6666).abs() < 0.025, "r({}, {}, {}, {})", r, g, b, a);
+    debug_assert!((g-0.6509).abs() < 0.025, "g({}, {}, {}, {})", r, g, b, a);
+    debug_assert!((b-0.8196).abs() < 0.025, "b({}, {}, {}, {})", r, g, b, a);
+    debug_assert!((a-1.0).abs() < 0.01, "({}, {}, {}, {})", r, g, b, a);
 }
