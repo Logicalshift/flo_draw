@@ -178,7 +178,7 @@ where
     /// Runs a program on a range of pixels
     ///
     #[inline]
-    pub fn run_program(&self, data_cache: &PixelProgramDataCache<TPixel>, target: &mut [TPixel], x_range: Range<i32>, y_pos: i32, scanline_data: PixelScanlineDataId) {
+    pub fn run_program(&self, data_cache: &PixelProgramDataCache<TPixel>, scanline_data: PixelScanlineDataId, target: &mut [TPixel], x_range: Range<i32>, y_pos: i32) {
         (data_cache.scanline_data[scanline_data.0])(target, x_range, y_pos)
     }
 }
