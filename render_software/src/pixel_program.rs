@@ -13,22 +13,12 @@ pub trait PixelProgram : Send {
     /// Data associated with a particular instance of this program
     type ProgramData;
 
-    /// Data for the individual scanlines for this program
-    type ScanlineData;
-
     ///
     /// Draws a series of pixels to a frame buffer
     ///
     /// The target points to the start of the range of values to be written. `x_range` provides the range of X values to fill with pixels.
     ///
-    fn draw_pixels(&self, pixel_program_cache: &PixelProgramCache<Self::Pixel>, data_cahce: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, y_pos: i32, program_data: &Self::ProgramData, scanline_data: &Self::ScanlineData);
-
-    ///
-    /// Returns the data for the scanlines the program will be run over
-    ///
-    /// Scanlines generally are taken over a contiguous range, starting at `min_y`. 
-    ///
-    fn create_scanline_data(&self, min_y: i32, scanlines: &Vec<PixelProgramScanline>, program_data: &Self::ProgramData) -> Self::ScanlineData;
+    fn draw_pixels(&self, pixel_program_cache: &PixelProgramCache<Self::Pixel>, data_cache: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, y_pos: i32, program_data: &Self::ProgramData);
 }
 
 ///
@@ -94,16 +84,10 @@ where
 {
     type Pixel          = TPixel;
     type ProgramData    = TData;
-    type ScanlineData   = ();
 
     #[inline]
-    fn draw_pixels(&self, _: &PixelProgramCache<Self::Pixel>, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, ypos: i32, program_data: &TData, _scanline_data: &()) {
+    fn draw_pixels(&self, _: &PixelProgramCache<Self::Pixel>, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, ypos: i32, program_data: &TData) {
         (self.function)(target, x_range, ypos, program_data)
-    }
-
-    #[inline]
-    fn create_scanline_data(&self, _min_y: i32, _scanlines: &Vec<PixelProgramScanline>, _program_data: &Self::ProgramData) -> () {
-        ()
     }
 }
 
@@ -127,20 +111,14 @@ where
 {
     type Pixel          = TPixel;
     type ProgramData    = TData;
-    type ScanlineData   = ();
 
     #[inline]
-    fn draw_pixels(&self, _: &PixelProgramCache<Self::Pixel>, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, ypos: i32, program_data: &TData, _scanline_data: &()) {
+    fn draw_pixels(&self, _: &PixelProgramCache<Self::Pixel>, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, ypos: i32, program_data: &TData) {
         let mut pos = 0;
         for x in x_range {
             target[pos] = (self.function)(x, ypos, program_data);
             pos += 1;
         }
-    }
-
-    #[inline]
-    fn create_scanline_data(&self, _min_y: i32, _scanlines: &Vec<PixelProgramScanline>, _program_data: &Self::ProgramData) -> () {
-        ()
     }
 }
 

@@ -18,8 +18,8 @@ use std::ops::{Range};
 #[derive(Clone)]
 pub struct ScanSpanStack {
     x_range:    Range<i32>,
-    first:      PixelScanlineDataId,
-    others:     Option<Vec<PixelScanlineDataId>>,
+    first:      PixelProgramDataId,
+    others:     Option<Vec<PixelProgramDataId>>,
 }
 
 ///
@@ -86,7 +86,7 @@ impl ScanSpanStack {
     /// Returns an iterator for the IDs of the programs that should be run over this range
     ///
     #[inline]
-    pub fn programs<'a>(&'a self) -> impl 'a + Iterator<Item=PixelScanlineDataId> {
+    pub fn programs<'a>(&'a self) -> impl 'a + Iterator<Item=PixelProgramDataId> {
         use std::iter;
 
         iter::once(self.first)
