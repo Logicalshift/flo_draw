@@ -9,7 +9,7 @@ use wide::*;
 use std::ops::*;
 
 ///
-/// A pixel using linear floating-point components
+/// A pixel using linear floating-point components, with the alpha value pre-multiplied
 ///
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct F32LinearPixel(f32x4);
@@ -46,17 +46,23 @@ impl Pixel<4> for F32LinearPixel {
     fn from_color(color: canvas::Color, gamma: f64) -> Self {
         let (r, g, b, a) = color.to_rgba_components();
 
+        // Add premultiplication and gamma correction
         let gamma = gamma as f32;
         let pixel = f32x4::new([r, g, b, a]);
         let pixel = pixel.pow_f32x4(f32x4::new([gamma, gamma, gamma, 1.0]));
+        let pixel = pixel * f32x4::new([a, a, a, 1.0]);
 
         F32LinearPixel(pixel)
     }
 
     #[inline]
     fn to_color(&self, gamma: f64) -> canvas::Color {
+        let alpha   = self.0.as_array_ref()[3];
+
+        // Remove premultiplication and gamma correction
         let gamma   = (1.0/gamma) as f32;
-        let rgba    = self.0.pow_f32x4(f32x4::new([gamma, gamma, gamma, 1.0]));
+        let rgba    = self.0 / f32x4::new([alpha, alpha, alpha, 1.0]);
+        let rgba    = rgba.pow_f32x4(f32x4::new([gamma, gamma, gamma, 1.0]));
 
         let [r, g, b, a] = rgba.to_array();
         canvas::Color::Rgba(r, g, b, a)
@@ -64,6 +70,7 @@ impl Pixel<4> for F32LinearPixel {
 
     #[inline]
     fn to_u8_rgba(&self, gamma: f64) -> U8RgbaPremultipliedPixel {
+        // Remove gamma correction
         let gamma   = (1.0/gamma) as f32;
         let rgba    = self.0.pow_f32x4(f32x4::new([gamma, gamma, gamma, 1.0]));
         let rgba    = rgba * 255.0;
