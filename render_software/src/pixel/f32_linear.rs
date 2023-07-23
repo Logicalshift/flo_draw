@@ -90,6 +90,15 @@ impl AlphaBlend for F32LinearPixel {
 
         source_alpha.apply(self, src_alpha, dst_alpha) + dest_alpha.apply(dest, src_alpha, dst_alpha)
     }
+
+    #[inline] fn source_over(self, dest: Self) -> Self        { let src_alpha = self.0.as_array_ref()[3]; F32LinearPixel(self.0 + dest.0*(1.0-src_alpha)) }
+    #[inline] fn dest_over(self, dest: Self) -> Self          { let dst_alpha = dest.0.as_array_ref()[3]; F32LinearPixel(self.0*(1.0-dst_alpha) + dest.0) }
+    #[inline] fn source_in(self, dest: Self) -> Self          { let dst_alpha = dest.0.as_array_ref()[3]; F32LinearPixel(self.0*dst_alpha) }
+    #[inline] fn dest_in(self, dest: Self) -> Self            { let src_alpha = self.0.as_array_ref()[3]; F32LinearPixel(dest.0*src_alpha) }
+    #[inline] fn source_held_out(self, dest: Self) -> Self    { let dst_alpha = dest.0.as_array_ref()[3]; F32LinearPixel(self.0*(1.0-dst_alpha)) }
+    #[inline] fn dest_held_out(self, dest: Self) -> Self      { let src_alpha = self.0.as_array_ref()[3]; F32LinearPixel(dest.0*(1.0-src_alpha)) }
+    #[inline] fn source_atop(self, dest: Self) -> Self        { self.alpha_blend(dest, AlphaOperation::SourceAtop) }
+    #[inline] fn dest_atop(self, dest: Self) -> Self          { self.alpha_blend(dest, AlphaOperation::DestAtop) }
 }
 
 impl Add<F32LinearPixel> for F32LinearPixel {
