@@ -3,4 +3,4 @@
 ///
 /// The alpha value is pre-multiplied into the RGB values, and the colour space is gamma-corrected
 ///
-pub struct U8RgbaPremultiplied(pub [u8; 4]);
+pub struct U8RgbaPremultipliedPixel(pub [u8; 4]);
