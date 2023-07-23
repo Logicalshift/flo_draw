@@ -13,4 +13,12 @@ impl U8RgbaPremultipliedPixel {
     pub fn from_components(components: [u8; 4]) -> Self {
         U8RgbaPremultipliedPixel(components)
     }
+
+    ///
+    /// Retrieves the RGBA values from this pixel
+    ///
+    #[inline]
+    pub fn get_components(&self) -> [u8; 4] {
+        self.0
+    }
 }
