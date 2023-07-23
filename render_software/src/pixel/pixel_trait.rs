@@ -1,4 +1,7 @@
 use super::alpha_blend_trait::*;
+use super::u8_rgba::*;
+
+use flo_canvas as canvas;
 
 use std::ops::*;
 
@@ -21,6 +24,15 @@ where
 
     /// A pixel representing the 'white' colour
     fn white() -> Self;
+
+    /// Creates a pixel from a canvas colour with a particular gamma correction value (2.2 is standard on OS X and windows)
+    fn from_color(color: canvas::Color, gamma: f64) -> Self;
+
+    /// Converts this pixel colour back to a canvas colour (2.2 is the standard gamma value on OS X and windows)
+    fn to_color(&self, gamma: f64) -> canvas::Color;
+
+    /// Converts this colour to a premultiplied 8bpp pixel value (2.2 is the standard gamma value on OS X and windows)
+    fn to_u8_rgba(&self, gamma: f64) -> U8RgbaPremultipliedPixel;
 
     /// Returns the components that make up this pixel
     fn to_components(&self) -> [Self::Component; N];

@@ -1,5 +1,8 @@
-use super::pixel_trait::*;
 use super::alpha_blend_trait::*;
+use super::pixel_trait::*;
+use super::u8_rgba::*;
+
+use flo_canvas as canvas;
 
 use wide::*;
 
@@ -37,6 +40,38 @@ impl Pixel<4> for F32LinearPixel {
     #[inline]
     fn alpha_component(&self) -> Self::Component {
         self.0.as_array_ref()[3]
+    }
+
+    #[inline]
+    fn from_color(color: canvas::Color, gamma: f64) -> Self {
+        let (r, g, b, a) = color.to_rgba_components();
+
+        let gamma = gamma as f32;
+        let pixel = f32x4::new([r, g, b, a]);
+        let pixel = pixel.pow_f32x4(f32x4::new([gamma, gamma, gamma, 1.0]));
+
+        F32LinearPixel(pixel)
+    }
+
+    #[inline]
+    fn to_color(&self, gamma: f64) -> canvas::Color {
+        let gamma   = (1.0/gamma) as f32;
+        let rgba    = self.0.pow_f32x4(f32x4::new([gamma, gamma, gamma, 1.0]));
+
+        let [r, g, b, a] = rgba.to_array();
+        canvas::Color::Rgba(r, g, b, a)
+    }
+
+    #[inline]
+    fn to_u8_rgba(&self, gamma: f64) -> U8RgbaPremultipliedPixel {
+        let gamma   = (1.0/gamma) as f32;
+        let rgba    = self.0.pow_f32x4(f32x4::new([gamma, gamma, gamma, 1.0]));
+        let rgba    = rgba * 255.0;
+        let rgba    = rgba.fast_trunc_int();
+        let rgba    = rgba.min(i32x4::splat(255)).max(i32x4::splat(0));
+
+        let [r, g, b, a] = rgba.to_array();
+        U8RgbaPremultipliedPixel::from_components([r as _, g as _, b as _, a as _])
     }
 }
 
