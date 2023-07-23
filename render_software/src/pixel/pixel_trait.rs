@@ -3,7 +3,9 @@ use super::alpha_blend_trait::*;
 use std::ops::*;
 
 ///
-/// Trait implemented by types that represent a pixel
+/// Trait implemented by types that represent a pixel. A pixel is a square region of a single colour
+///
+/// Pixel transforms and operations should be performed in a linear colour space
 ///
 pub trait Pixel<const N: usize>
 where
@@ -13,6 +15,12 @@ where
     Self: AlphaBlend,
 {
     type Component: Sized + Copy + Clone + AlphaValue + Neg<Output=Self::Component> + Add<Output=Self::Component> + Sub<Output=Self::Component> + Mul<Output=Self::Component> + Div<Output=Self::Component>;
+
+    /// A pixel representing the 'black' colour
+    fn black() -> Self;
+
+    /// A pixel representing the 'white' colour
+    fn white() -> Self;
 
     /// Returns the components that make up this pixel
     fn to_components(&self) -> [Self::Component; N];
