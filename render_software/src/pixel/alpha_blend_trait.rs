@@ -36,7 +36,7 @@ pub enum AlphaOperation {
 /// Trait implemented by types that support alpha blending
 ///
 pub trait AlphaBlend : Sized {
-    /// Performs alpha blending with a chosen source and target functions (for non-premultiplied alphas)
+    /// Performs alpha blending with a chosen source and target functions (for premultiplied alphas)
     fn alpha_blend_with_function(self, dest: Self, source_alpha: AlphaFunction, dest_alpha: AlphaFunction) -> Self;
 
     /// Performs the specified alpha blending operation
