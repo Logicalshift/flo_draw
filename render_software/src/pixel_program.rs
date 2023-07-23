@@ -1,4 +1,7 @@
-use std::{ops::{Range}, marker::PhantomData};
+use super::pixel_program_cache::*;
+
+use std::ops::{Range};
+use std::marker::{PhantomData};
 
 ///
 /// A pixel program descibes how to draw pixels along a scan line
@@ -18,7 +21,7 @@ pub trait PixelProgram : Send {
     ///
     /// The target points to the start of the range of values to be written. `x_range` provides the range of X values to fill with pixels.
     ///
-    fn draw_pixels(&self, target: &mut [Self::Pixel], x_range: Range<i32>, y_pos: i32, program_data: &Self::ProgramData, scanline_data: &Self::ScanlineData);
+    fn draw_pixels(&self, pixel_program_cache: &PixelProgramCache<Self::Pixel>, data_cahce: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, y_pos: i32, program_data: &Self::ProgramData, scanline_data: &Self::ScanlineData);
 
     ///
     /// Returns the data for the scanlines the program will be run over
@@ -94,7 +97,7 @@ where
     type ScanlineData   = ();
 
     #[inline]
-    fn draw_pixels(&self, target: &mut [TPixel], x_range: Range<i32>, ypos: i32, program_data: &TData, _scanline_data: &()) {
+    fn draw_pixels(&self, _: &PixelProgramCache<Self::Pixel>, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, ypos: i32, program_data: &TData, _scanline_data: &()) {
         (self.function)(target, x_range, ypos, program_data)
     }
 
@@ -127,7 +130,7 @@ where
     type ScanlineData   = ();
 
     #[inline]
-    fn draw_pixels(&self, target: &mut [TPixel], x_range: Range<i32>, ypos: i32, program_data: &TData, _scanline_data: &()) {
+    fn draw_pixels(&self, _: &PixelProgramCache<Self::Pixel>, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, ypos: i32, program_data: &TData, _scanline_data: &()) {
         let mut pos = 0;
         for x in x_range {
             target[pos] = (self.function)(x, ypos, program_data);

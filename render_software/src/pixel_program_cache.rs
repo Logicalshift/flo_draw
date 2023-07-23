@@ -18,10 +18,10 @@ pub struct PixelProgramCache<TPixel> {
 ///
 pub struct PixelProgramDataCache<TPixel> {
     /// Program data is encapsulated in a function that generates the scanline data. This is indexed by `PixelProgramDataId`
-    program_data: Vec<Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [TPixel], Range<i32>, i32) -> ()>>>,
+    program_data: Vec<Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&PixelProgramCache<TPixel>, &PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, i32) -> ()>>>,
 
     /// The scanline_data functions encapsulate the program data and the scanline data indicate programs that are ready to run
-    scanline_data: Vec<Box<dyn Fn(&mut [TPixel], Range<i32>, i32) -> ()>>,
+    scanline_data: Vec<Box<dyn Fn(&PixelProgramCache<TPixel>, &PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, i32) -> ()>>,
 }
 
 ///
@@ -35,7 +35,7 @@ where
     program_id: PixelProgramId,
 
     /// Function to associate program data with this program
-    associate_program_data: Box<dyn Fn(TProgram::ProgramData) -> Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [TProgram::Pixel], Range<i32>, i32) -> ()>>>,
+    associate_program_data: Box<dyn Fn(TProgram::ProgramData) -> Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&PixelProgramCache<TProgram::Pixel>, &PixelProgramDataCache<TProgram::Pixel>, &mut [TProgram::Pixel], Range<i32>, i32) -> ()>>>,
 }
 
 ///
@@ -80,7 +80,7 @@ where
     ///
     /// Creates a function based on a program that sets its data and scanline data, generating the 'make pixels at position' function
     ///
-    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Fn(TProgram::ProgramData) -> Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&mut [TPixel], Range<i32>, i32) -> ()>>
+    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Fn(TProgram::ProgramData) -> Box<dyn Fn(i32, &Vec<PixelProgramScanline>) -> Box<dyn Fn(&PixelProgramCache<TPixel>, &PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, i32) -> ()>>
     where
         TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
@@ -95,8 +95,8 @@ where
                 let program         = Arc::clone(&program);
                 let program_data    = Arc::clone(&program_data);
 
-                Box::new(move |target, x_range, y_pos| {
-                    program.draw_pixels(target, x_range, y_pos, &*program_data, &scanline_data)
+                Box::new(move |program_cache, data_cache, target, x_range, y_pos| {
+                    program.draw_pixels(program_cache, data_cache, target, x_range, y_pos, &*program_data, &scanline_data)
                 })
             })
         }
@@ -179,6 +179,6 @@ where
     ///
     #[inline]
     pub fn run_program(&self, data_cache: &PixelProgramDataCache<TPixel>, scanline_data: PixelScanlineDataId, target: &mut [TPixel], x_range: Range<i32>, y_pos: i32) {
-        (data_cache.scanline_data[scanline_data.0])(target, x_range, y_pos)
+        (data_cache.scanline_data[scanline_data.0])(self, data_cache, target, x_range, y_pos)
     }
 }
