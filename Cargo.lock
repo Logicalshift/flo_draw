@@ -781,6 +781,7 @@ dependencies = [
 name = "flo_render_software"
 version = "0.4.0"
 dependencies = [
+ "flo_canvas",
  "once_cell",
  "wide",
 ]
