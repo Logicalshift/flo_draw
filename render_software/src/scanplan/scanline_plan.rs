@@ -20,6 +20,7 @@ pub struct ScanSpanStack {
     x_range:    Range<i32>,
     first:      PixelProgramDataId,
     others:     Option<Vec<PixelProgramDataId>>,
+    opaque:     bool,
 }
 
 ///
@@ -42,7 +43,8 @@ impl ScanSpanStack {
         ScanSpanStack { 
             x_range:    span.x_range,
             first:      span.program,
-            others:     None
+            others:     None,
+            opaque:     span.opaque,
         }
     }
 
@@ -70,6 +72,7 @@ impl ScanSpanStack {
                 x_range:    x_pos..end,
                 first:      self.first,
                 others:     self.others.clone(),
+                opaque:     self.opaque,
             })
         } else {
             Err(())
@@ -92,6 +95,13 @@ impl ScanSpanStack {
         iter::once(self.first)
             .chain(self.others.iter().flatten().copied())
     }
+
+    ///
+    /// True if this stack is opaque (will overwrite anything it's drawn on top of), false if it's transparent (will blend)
+    /// with anything it's on top of
+    ///
+    #[inline]
+    pub fn is_opaque(&self) -> bool { self.opaque }
 }
 
 impl ScanlinePlan {
@@ -281,10 +291,11 @@ impl ScanlinePlan {
         self.iter_as_stacks()
             .flat_map(|span| {
                 let range           = span.x_range();
+                let opaque          = span.is_opaque();
                 let mut programs    = span.programs();
 
                 // First program is opaque, the rest are transparent
-                let first   = ScanSpan::opaque(range.clone(), programs.next().unwrap());
+                let first   = if opaque { ScanSpan::opaque(range.clone(), programs.next().unwrap()) } else { ScanSpan::transparent(range.clone(), programs.next().unwrap()) };
                 let others  = programs.map(move |program| ScanSpan::transparent(range.clone(), program));
 
                 iter::once(first).chain(others)
