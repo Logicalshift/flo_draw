@@ -22,7 +22,7 @@ pub struct PixelProgramDataCache<TPixel> {
 }
 
 ///
-/// A data manager is used to store data associated with a program into a data cache
+/// A stored pixel program can be used with a `PixelProgramDataCache` to save data to be used with pixel programs
 ///
 pub struct StoredPixelProgram<TProgram>
 where
