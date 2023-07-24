@@ -9,3 +9,9 @@
 //! it partially covers a pixel. A less-accurate form of anti-aliasing can also be used where we assume that the
 //! edges are linked by 1-pixel high linear sections.
 //!
+
+mod edge_descriptor;
+mod shape_id;
+
+pub use edge_descriptor::*;
+pub use shape_id::*;

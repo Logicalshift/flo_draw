@@ -783,6 +783,7 @@ version = "0.4.0"
 dependencies = [
  "flo_canvas",
  "once_cell",
+ "smallvec",
  "wide",
 ]
 
