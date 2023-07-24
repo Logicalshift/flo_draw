@@ -22,17 +22,6 @@ pub trait PixelProgram : Send {
 }
 
 ///
-/// Describes a scanline when creating the scanline data
-///
-pub struct PixelProgramScanline {
-    /// The exact range of values intercepted by the program, before dealing with any clipping or occlusion
-    pub x_range: Range<f32>,
-
-    /// The y position of this scanline
-    pub y_pos: f32,
-}
-
-///
 /// Pixel program that calls a function to fill the pixels, with program data
 ///
 /// This can be used with a pixel program that generates rows of pixels (`PixelProgramFn::from(|target, x_range, ypos, data| { ... })`)
