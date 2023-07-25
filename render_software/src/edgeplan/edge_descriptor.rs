@@ -55,3 +55,9 @@ pub trait EdgeDescriptor {
     ///
     fn intercepts(&self, y_pos: f64) -> SmallVec<[(EdgeInterceptDirection, f64); 2]>;
 }
+
+impl EdgeDescriptor for Box<dyn EdgeDescriptor> {
+    #[inline] fn shape(&self) -> ShapeId                                                        { (**self).shape() }
+    #[inline] fn bounding_box(&self) -> ((f64, f64), (f64, f64))                                { (**self).bounding_box() }
+    #[inline] fn intercepts(&self, y_pos: f64) -> SmallVec<[(EdgeInterceptDirection, f64); 2]>  { (**self).intercepts(y_pos) }
+}
