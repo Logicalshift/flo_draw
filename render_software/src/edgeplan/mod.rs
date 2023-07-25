@@ -13,7 +13,9 @@
 mod edge_descriptor;
 mod shape_descriptor;
 mod shape_id;
+mod edge_plan;
 
 pub use edge_descriptor::*;
 pub use shape_descriptor::*;
 pub use shape_id::*;
+pub use edge_plan::*;
