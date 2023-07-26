@@ -56,4 +56,24 @@ where
             self.add_edge(edge);
         }
     }
+
+    ///
+    /// Returns the edges that intercept a scanline. Shapes are entered on the right-hand side of any intercepts.
+    ///
+    pub fn intercepts_on_scaline<'a>(&'a self, y_pos: f64) -> impl 'a + Iterator<Item=(ShapeId, EdgeInterceptDirection, f64)> {
+        // This is the slow way to find the edges that intercept a scanline
+        // Possible enhancements
+        //  - group up the edges by y position (we can use regions here) so that it's easy to find which edges are on a particular scanline
+        //  - pre-sort the edges and only re-sort if there are overlapping edges. Most of the time in an edge region the edges will be intercepted in the
+        //      same order
+        let mut intercepts = vec![];
+
+        for edge in self.edges.iter() {
+            for (direction, pos) in edge.intercepts(y_pos) {
+                intercepts.push((edge.shape(), direction, pos));
+            }
+        }
+
+        intercepts.into_iter()
+    }
 }
