@@ -66,6 +66,7 @@ where
         //  - group up the edges by y position (we can use regions here) so that it's easy to find which edges are on a particular scanline
         //  - pre-sort the edges and only re-sort if there are overlapping edges. Most of the time in an edge region the edges will be intercepted in the
         //      same order
+        //  - for anti-aliasing we need a way to track intercepts on the previous scanline for the same shape (usually the same edge, but sometimes the preceding or following edge)
         let mut intercepts = vec![];
 
         for edge in self.edges.iter() {
@@ -74,6 +75,7 @@ where
             }
         }
 
+        intercepts.sort_by(|(_, _, pos_a), (_, _, pos_b)| pos_a.total_cmp(pos_b));
         intercepts.into_iter()
     }
 }
