@@ -2,6 +2,17 @@ use super::shape_id::*;
 
 use smallvec::*;
 
+///
+/// Describes the direction of an edge intercept
+///
+/// * `Toggle` intercepts enter and leave the shape every time an edge is crossed.
+/// * `DirectionOut` indicates an edge with the normal facing outwards (increasing the intercept counter).
+/// * `DirectionIn` indicates an edge with the normal facing inwards (decreasing the intercept counter).
+///
+/// `Toggle` can be used to implement the even-odd winding rule, and the `DirectionOut` and `DirectionIn`
+/// directions can be used for the non-zero winding rule.
+///
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum EdgeInterceptDirection {
     ///
     /// If the LHS of the edge is inside of the shape, the RHS is outside of the shape, and vice versa
