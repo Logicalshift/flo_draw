@@ -40,11 +40,19 @@ where
     }
 
     ///
-    /// Returns the z-index for a shape
+    /// Returns the z-index for a shape ID
     ///
     #[inline]
     pub fn shape_z_index(&self, shape_id: ShapeId) -> i64 {
         self.shapes.get(shape_id.0).map(|shape| shape.z_index).unwrap_or(0)
+    }
+
+    ///
+    /// Returns the shape descriptor for a shape ID
+    ///
+    #[inline]
+    pub fn shape_descriptor(&self, shape_id: ShapeId) -> Option<&ShapeDescriptor> {
+        self.shapes.get(shape_id.0)
     }
 
     ///
