@@ -63,7 +63,7 @@ where
                 let descriptor  = edge_plan.shape_descriptor(shape_id.shape_id()).unwrap();
 
                 program_stack.extend(descriptor.programs.iter().copied());
-                if !descriptor.is_transparent {
+                if descriptor.is_opaque {
                     is_opaque = true;
                     break;
                 }
