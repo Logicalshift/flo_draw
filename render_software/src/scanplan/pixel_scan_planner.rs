@@ -11,7 +11,7 @@ use std::ops::{Range};
 /// This plan is created from the edge plan, and pixel-aligned to produce a 'jaggy' pixel-precise version of the plan.
 /// Ie, no anti-aliasing of any kind is performed with this scanline plan.
 ///
-pub fn plan_pixel_scanline<TEdge>(edge_plan: &EdgePlan<TEdge>, y_pos: f64, x_range: Range<i64>) -> ScanlinePlan 
+pub fn plan_pixel_scanline<TEdge>(edge_plan: &EdgePlan<TEdge>, y_pos: f64, x_range: Range<i32>) -> ScanlinePlan 
 where
     TEdge: EdgeDescriptor,
 {
@@ -24,7 +24,7 @@ where
     // Trace programs but don't generate fragments until we get an intercept
     let mut active_shapes = ScanlineInterceptState::new();
 
-    while (current_intercept.2.ceil() as i64) < x_range.start {
+    while (current_intercept.2.ceil() as i32) < x_range.start {
         // Add or remove this intercept's programs to the active list
         let (shape_id, direction, x_pos)    = &current_intercept;
         let z_index                         = edge_plan.shape_z_index(*shape_id);
@@ -41,10 +41,14 @@ where
     // Read intercepts until we reach the x_range end, and generate the program stacks for the scanline plan
     let mut last_x          = x_range.start;
     let mut program_stack   = vec![];
+    let mut scanplan        = vec![];
 
     loop {
+        // TODO: if there are multiple intercepts on the same pixel, we should process them all simultaneously (otherwise we will occasionally start a set of programs one pixel too late)
+        // TODO: if the program/shape stack doesn not change due to the new intercept (eg, because the change happens behind a longer opaque span), don't create a new span
+
         // Generate a stack for the current intercept
-        let next_x = current_intercept.2.ceil() as i64;
+        let next_x = current_intercept.2.ceil() as i32;
 
         // Add the next intercept to update the scanline state
         let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
@@ -69,9 +73,11 @@ where
             }
 
             if !program_stack.is_empty() {
-                // TODO: create a ScanPlanStack
+                // Create the stack for these programs
+                let stack = ScanSpanStack::with_reversed_programs(x_range, is_opaque, &program_stack);
 
-                // TODO: add the stack to a scanplan
+                // Add the stack to the scanplan
+                scanplan.push(stack);
             }
         }
 
@@ -82,7 +88,10 @@ where
         if next_x >= x_range.end {
             break;
         }
+
+        // Get ready to process the next intercept in the stack
+        current_intercept = if let Some(next_intercept) = ordered_intercepts.next() { next_intercept } else { break; };
     }
 
-    todo!()
+    ScanlinePlan::from_ordered_stacks(scanplan)
 }
