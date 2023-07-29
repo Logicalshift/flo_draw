@@ -782,7 +782,6 @@ name = "flo_render_software"
 version = "0.4.0"
 dependencies = [
  "flo_canvas",
- "flo_curves",
  "flo_sparse_array",
  "once_cell",
  "smallvec",
