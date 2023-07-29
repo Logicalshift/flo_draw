@@ -114,12 +114,21 @@ where
         // Calculate the t-values of the intercepts for the curve
         let intercepts = solve_basis_for_t(self.curve_y.0, self.curve_y.1, self.curve_y.2, self.curve_y.3, y_pos);
 
-        // TODO: For the non-zero winding rule, we need to know the direction of the normal 
         // Calculate the x-positions of the intercepts to generate the final result
+        // TODO: can we pre-calculate the bits we need to get the normal at a position (we actually just need the x direction...)
         let (w1, w2, w3, w4) = self.curve_x;
         intercepts.into_iter()
-            .map(|t| basis(t, w1, w2, w3, w4))
-            .map(|pos| (EdgeInterceptDirection::Toggle, pos))
+            .map(|t| {
+                let pos     = basis(t, w1, w2, w3, w4);
+                let normal  = self.curve.normal_at_pos(t);
+                let side    = (normal.x() * 1.0 + normal.y() * 0.0).signum();  // Dot product with the 'ray' direction of the scanline
+
+                if side <= 0.0 {
+                    (EdgeInterceptDirection::DirectionOut, pos)
+                } else {
+                    (EdgeInterceptDirection::DirectionIn, pos)
+                }
+            })
             .collect()
     }
 }
