@@ -137,6 +137,16 @@ impl ScanlinePlan {
     }
 
     ///
+    /// Creates a scanline plan from a set of ScanSpanStacks which are non-overlapping and ordered from left-to-right
+    ///
+    #[inline]
+    pub fn from_ordered_stacks(stacks: Vec<ScanSpanStack>) -> ScanlinePlan {
+        ScanlinePlan {
+            spans: stacks
+        }
+    }
+
+    ///
     /// Adds a new span to this plan
     ///
     pub fn add_span(&mut self, span: ScanSpan) {
