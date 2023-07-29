@@ -2,7 +2,7 @@ use super::edge_descriptor::*;
 use super::shape_descriptor::*;
 use super::shape_id::*;
 
-use std::collections::{HashMap};
+use flo_sparse_array::*;
 
 ///
 /// An edge plan describes a 2 dimensional space as a set of edges that divide 
@@ -12,7 +12,7 @@ where
     TEdge: EdgeDescriptor,
 {
     /// Describes the shapes
-    shapes: HashMap<ShapeId, ShapeDescriptor>,
+    shapes: SparseArray<ShapeDescriptor>,
 
     /// The edges themselves
     edges: Vec<TEdge>,
@@ -27,7 +27,7 @@ where
     ///
     pub fn new() -> EdgePlan<TEdge> {
         EdgePlan {
-            shapes: HashMap::new(),
+            shapes: SparseArray::empty(),
             edges:  vec![],
         }
     }
@@ -36,7 +36,15 @@ where
     /// Stores the details of how the interior of a shape should be rendered
     ///
     pub fn declare_shape_description(&mut self, shape_id: ShapeId, descriptor: ShapeDescriptor) {
-        self.shapes.insert(shape_id, descriptor);
+        self.shapes.insert(shape_id.0, descriptor);
+    }
+
+    ///
+    /// Returns the z-index for a shape
+    ///
+    #[inline]
+    pub fn shape_z_index(&self, shape_id: ShapeId) -> i64 {
+        self.shapes.get(shape_id.0).map(|shape| shape.z_index).unwrap_or(0)
     }
 
     ///

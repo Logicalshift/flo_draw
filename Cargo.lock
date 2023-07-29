@@ -782,6 +782,7 @@ name = "flo_render_software"
 version = "0.4.0"
 dependencies = [
  "flo_canvas",
+ "flo_sparse_array",
  "once_cell",
  "smallvec",
  "wide",
@@ -807,6 +808,15 @@ dependencies = [
  "lazy_static",
  "log",
  "uuid",
+]
+
+[[package]]
+name = "flo_sparse_array"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9a0ae455af55d5d3897545f2b4718d7d2d10ef23dd86235a424e3a173b4cc9c"
+dependencies = [
+ "rand",
 ]
 
 [[package]]
