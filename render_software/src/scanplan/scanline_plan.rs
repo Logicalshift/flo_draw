@@ -49,6 +49,28 @@ impl ScanSpanStack {
     }
 
     ///
+    /// Creates a span stack with the specified set of programs, specified in reverse ordrer
+    ///
+    #[inline]
+    pub fn with_reversed_programs(x_range: Range<i32>, opaque: bool, programs_reversed: &Vec<PixelProgramDataId>) -> ScanSpanStack {
+        if programs_reversed.len() == 1 {
+            ScanSpanStack {
+                x_range:    x_range,
+                opaque:     opaque,
+                first:      programs_reversed[0],
+                others:     None
+            }
+        } else {
+            ScanSpanStack {
+                x_range:    x_range,
+                first:      programs_reversed[programs_reversed.len()-1],
+                others:     Some(programs_reversed.iter().rev().skip(1).copied().collect()),
+                opaque:     opaque,
+            }
+        }
+    }
+
+    ///
     /// Adds a new a span to this stack (it will cover the same range as the stack)
     ///
     #[inline]
