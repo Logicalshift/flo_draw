@@ -27,8 +27,10 @@ where
 
     while (current_intercept.2.ceil() as i64) < x_range.start {
         // Add or remove this intercept's programs to the active list
-        let (shape_id, direction, x_pos) = &current_intercept;
-        // active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos); -- z-index
+        let (shape_id, direction, x_pos)    = &current_intercept;
+        let z_index                         = edge_plan.shape_z_index(*shape_id);
+
+        active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos);
 
         // Move to the next intercept (or stop if no intercepts actually fall within the x-range)
         if let Some(intercept) = ordered_intercepts.next() { intercept } else { return ScanlinePlan::new(); };
@@ -36,6 +38,10 @@ where
 
     // Update all of the existing shapes to have a start position at the left-hand side of the screen
     active_shapes.clip_start_x(x_range.start as _);
+
+    // Read intercepts until we reach the x_range end, and generate the program stacks for the scanline plan
+
+    // If there's still a final intercept, then generate a final scan region to the end of the x_range
 
     todo!()
 }
