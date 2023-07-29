@@ -40,8 +40,50 @@ where
     active_shapes.clip_start_x(x_range.start as _);
 
     // Read intercepts until we reach the x_range end, and generate the program stacks for the scanline plan
+    let mut last_x          = x_range.start;
+    let mut program_stack   = vec![];
 
-    // If there's still a final intercept, then generate a final scan region to the end of the x_range
+    loop {
+        // Generate a stack for the current intercept
+        let next_x = current_intercept.2.ceil() as i64;
+
+        // Add the next intercept to update the scanline state
+        let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
+        let stack_depth = active_shapes.len();
+
+        if next_x != last_x && stack_depth > 0 {
+            // Create a program stack between the ranges: all the programs until the first opaque layer
+            let x_range         = last_x..next_x;
+            let mut is_opaque   = false;
+
+            // We re-use program_stack so we don't have to keep re-allocating a vec as we go
+            program_stack.clear();
+            for shape in (0..stack_depth).rev() {
+                let shape_id    = active_shapes.get(shape).unwrap();
+                let descriptor  = edge_plan.shape_descriptor(shape_id.shape_id()).unwrap();
+
+                program_stack.extend(descriptor.programs.iter().copied());
+                if !descriptor.is_transparent {
+                    is_opaque = true;
+                    break;
+                }
+            }
+
+            if !program_stack.is_empty() {
+                // TODO: create a ScanPlanStack
+
+                // TODO: add the stack to a scanplan
+            }
+        }
+
+        // Next span will start after the end of this one
+        last_x = next_x;
+
+        // Stop when the next_x value gets to the end of the range
+        if next_x >= x_range.end {
+            break;
+        }
+    }
 
     todo!()
 }
