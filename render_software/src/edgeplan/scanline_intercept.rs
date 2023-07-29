@@ -34,6 +34,14 @@ impl ScanlineIntercept {
     pub fn start_x(&self) -> f64 {
         self.start_x
     }
+
+    ///
+    /// Returns the shape ID used for this intercept
+    ///
+    #[inline]
+    pub fn shape_id(&self) -> ShapeId {
+        self.shape_id
+    }
 }
 
 impl ScanlineInterceptState {
