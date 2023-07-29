@@ -1,8 +1,7 @@
-use super::edge_descriptor::*;
-use super::edge_plan::*;
+use super::scanline_plan::*;
 use super::scanline_intercept::*;
 
-use crate::scanplan::*;
+use crate::edgeplan::*;
 
 use std::ops::{Range};
 

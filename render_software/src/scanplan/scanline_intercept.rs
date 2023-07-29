@@ -1,5 +1,4 @@
-use super::shape_id::*;
-use super::edge_descriptor::*;
+use crate::edgeplan::*;
 
 ///
 /// Represents an active intercept on a scanline

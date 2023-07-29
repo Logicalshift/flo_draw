@@ -15,13 +15,9 @@ mod edge_id;
 mod shape_descriptor;
 mod shape_id;
 mod edge_plan;
-mod scanline_intercept;
-mod pixel_scan_planner;
 
 pub use edge_descriptor::*;
 pub use edge_id::*;
 pub use shape_descriptor::*;
 pub use shape_id::*;
 pub use edge_plan::*;
-pub use scanline_intercept::*;
-pub use pixel_scan_planner::*;
