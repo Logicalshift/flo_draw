@@ -84,11 +84,11 @@ impl Pixel<4> for F32LinearPixel {
 
 impl AlphaBlend for F32LinearPixel {
     #[inline]
-    fn alpha_blend_with_function(self, dest: Self, source_alpha: AlphaFunction, dest_alpha: AlphaFunction) -> Self {
+    fn alpha_blend_with_function(self, dest: Self, source_alpha_fn: AlphaFunction, dest_alpha_fn: AlphaFunction) -> Self {
         let src_alpha = self.alpha_component();
         let dst_alpha = dest.alpha_component();
 
-        source_alpha.apply(self, src_alpha, dst_alpha) + dest_alpha.apply(dest, src_alpha, dst_alpha)
+        source_alpha_fn.apply(self, src_alpha, dst_alpha) + dest_alpha_fn.apply(dest, src_alpha, dst_alpha)
     }
 
     #[inline] fn source_over(self, dest: Self) -> Self        { let src_alpha = self.0.as_array_ref()[3]; F32LinearPixel(self.0 + dest.0*(1.0-src_alpha)) }
