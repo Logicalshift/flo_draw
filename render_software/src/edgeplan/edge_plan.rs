@@ -78,7 +78,7 @@ where
     ///
     /// Returns the edges that intercept a scanline. Shapes are entered on the right-hand side of any intercepts.
     ///
-    pub fn intercepts_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [SmallVec<[(ShapeId, EdgeInterceptDirection, f64); 4]>]) {
+    pub fn intercepts_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [Vec<(ShapeId, EdgeInterceptDirection, f64)>]) {
         // Extend the edge intercepts to cover the number of y-positions we have (can be larger than needed but not smaller)
         let mut edge_intercepts = vec![smallvec![]; y_positions.len()];
 
