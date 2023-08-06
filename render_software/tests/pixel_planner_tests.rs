@@ -17,5 +17,8 @@ fn simple_rectangle() {
 
     let pixel_plan      = plan_pixel_scanlines(&edge_plan, &[99.0, 100.0, 101.0], 0..1000);
     assert!(pixel_plan.len() == 3);
-    //assert!(false, "{:?}", pixel_plan);
+
+    assert!(pixel_plan[0].iter_as_spans().count() == 0, "[0, y == 99.0] {} != 0", pixel_plan[0].iter_as_spans().count());
+    assert!(pixel_plan[1].iter_as_spans().count() == 1, "[1, y == 100.0] {} != 1", pixel_plan[1].iter_as_spans().count());
+    assert!(pixel_plan[2].iter_as_spans().count() == 1, "[2, y == 101.0] {} != 1", pixel_plan[2].iter_as_spans().count());
 }
