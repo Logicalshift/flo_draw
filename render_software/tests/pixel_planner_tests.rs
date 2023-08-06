@@ -12,13 +12,13 @@ fn simple_rectangle() {
     let program_data_id     = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     let rectangle_shape = ShapeId::new();
-    let rectangle_edge  = RectangleEdge::new(rectangle_shape, 100.0..200.0, 150.0..200.0);
+    let rectangle_edge  = RectangleEdge::new(rectangle_shape, 100.0..200.0, 125.0..175.0);
     let edge_plan       = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
 
-    let pixel_plan      = plan_pixel_scanlines(&edge_plan, &[99.0, 100.0, 101.0], 0..1000);
+    let pixel_plan      = plan_pixel_scanlines(&edge_plan, &[124.0, 125.0, 126.0], 0..1000);
     assert!(pixel_plan.len() == 3);
 
-    assert!(pixel_plan[0].iter_as_spans().count() == 0, "[0, y == 99.0] {} != 0", pixel_plan[0].iter_as_spans().count());
-    assert!(pixel_plan[1].iter_as_spans().count() == 1, "[1, y == 100.0] {} != 1", pixel_plan[1].iter_as_spans().count());
-    assert!(pixel_plan[2].iter_as_spans().count() == 1, "[2, y == 101.0] {} != 1", pixel_plan[2].iter_as_spans().count());
+    assert!(pixel_plan[0].iter_as_spans().count() == 0, "[0, y == 124.0] {} != 0", pixel_plan[0].iter_as_spans().count());
+    assert!(pixel_plan[1].iter_as_spans().count() == 1, "[1, y == 125.0] {} != 1", pixel_plan[1].iter_as_spans().count());
+    assert!(pixel_plan[2].iter_as_spans().count() == 1, "[2, y == 126.0] {} != 1", pixel_plan[2].iter_as_spans().count());
 }
