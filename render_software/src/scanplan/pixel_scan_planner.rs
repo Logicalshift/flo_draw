@@ -68,7 +68,7 @@ where
             let shape_descriptor                = edge_plan.shape_descriptor(*shape_id);
             let is_opaque                       = shape_descriptor.map(|descriptor| descriptor.is_opaque).unwrap_or(false);
 
-            if z_index >= z_floor && next_x != last_x && stack_depth > 0 {
+            if z_index >= z_floor && next_x != last_x {
                 // Create a program stack between the ranges: all the programs until the first opaque layer
                 let x_range         = last_x..next_x;
                 let mut is_opaque   = false;
