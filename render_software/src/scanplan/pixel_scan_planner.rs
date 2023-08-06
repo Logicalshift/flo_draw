@@ -49,7 +49,7 @@ where
         let mut last_x          = x_range.start;
         let mut program_stack   = vec![];
         let mut scanplan        = vec![];
-        let mut z_floor         = active_shapes.z_floor();
+        let mut z_floor         = i64::MIN;
 
         loop {
             // TODO: if a program range is < 1px, instead of just ignoring it, use a blend program (provides horizontal-only anti-aliasing)
@@ -93,14 +93,14 @@ where
                     // Add the stack to the scanplan
                     scanplan.push(stack);
                 }
+
+                // Next span will start after the end of this one
+                last_x = next_x;
             }
 
             // Update the state from the current intercept
             active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos, is_opaque);
             z_floor = active_shapes.z_floor();
-
-            // Next span will start after the end of this one
-            last_x = next_x;
 
             // Stop when the next_x value gets to the end of the range
             if next_x >= x_range.end {
