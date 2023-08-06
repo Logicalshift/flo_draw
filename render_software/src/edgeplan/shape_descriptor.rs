@@ -16,3 +16,47 @@ pub struct ShapeDescriptor {
     /// Shapes with a higher z-index are drawn first where they overlap with other shapes
     pub z_index: i64,
 }
+
+impl ShapeDescriptor {
+    ///
+    /// Declares an opaque shape that will fill pixels using the specified program
+    ///
+    #[inline]
+    pub fn opaque(program: PixelProgramDataId) -> ShapeDescriptor {
+        ShapeDescriptor { 
+            programs:   smallvec![program], 
+            is_opaque:  true, 
+            z_index:    0 
+        }
+    }
+
+    ///
+    /// Declares a transparent shape that will blend pixels using the specified program
+    ///
+    #[inline]
+    pub fn transparent(program: PixelProgramDataId) -> ShapeDescriptor {
+        ShapeDescriptor { 
+            programs:   smallvec![program], 
+            is_opaque:  false, 
+            z_index:    0 
+        }
+    }
+
+    ///
+    /// Updates a shape descriptor with a z-index to specify render ordering
+    ///
+    #[inline]
+    pub fn with_z_index(mut self, z_index: i64) -> ShapeDescriptor {
+        self.z_index = z_index;
+        self
+    }
+
+    ///
+    /// Updates a shape descriptor with an extra program to run on the pixels (this will be run with the values output by the earlier programs)
+    ///
+    #[inline]
+    pub fn with_extra_program(mut self, program: PixelProgramDataId) -> ShapeDescriptor {
+        self.programs.push(program);
+        self
+    }
+}
