@@ -57,6 +57,7 @@ impl ScanlineInterceptState {
     ///
     /// The z-index of the lowest opaque item in this state (or `i64::MIN` if there's no floor)
     ///
+    #[inline]
     pub fn z_floor(&self) -> i64 { 
         i64::MIN
     }
@@ -131,7 +132,7 @@ impl ScanlineInterceptState {
     /// Adds or removes from the active shapes after an intercept
     ///
     #[inline]
-    pub fn add_intercept(&mut self, direction: EdgeInterceptDirection, z_index: i64, shape_id: ShapeId, x_pos: f64) {
+    pub fn add_intercept(&mut self, direction: EdgeInterceptDirection, z_index: i64, shape_id: ShapeId, x_pos: f64, is_opaque: bool) {
         match self.find(z_index, shape_id) {
             Ok(existing_idx) => {
                 // Update the existing shape depending on the direction of the intercept

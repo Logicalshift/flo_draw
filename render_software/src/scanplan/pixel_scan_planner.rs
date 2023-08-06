@@ -64,6 +64,7 @@ where
             // We use the z-index of the current shape to determine if it's in front of or behind the current line
             let (shape_id, direction, x_pos)    = &current_intercept;
             let z_index                         = edge_plan.shape_z_index(*shape_id);
+            let shape_descriptor                = edge_plan.shape_descriptor(*shape_id);
 
             if z_index >= z_floor && next_x != last_x && stack_depth > 0 {
                 // Create a program stack between the ranges: all the programs until the first opaque layer
@@ -93,7 +94,7 @@ where
             }
 
             // Update the state from the current intercept
-            active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos);
+            active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos, shape_descriptor.map(|descriptor| descriptor.is_opaque).unwrap_or(false));
             z_floor = active_shapes.z_floor();
 
             // Next span will start after the end of this one
