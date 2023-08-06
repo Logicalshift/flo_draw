@@ -84,12 +84,29 @@ impl AlphaOperation {
     /// Returns the function required to alpha-blend two pixels using this operation
     ///
     #[inline]
-    pub fn get_function<TPixel, const N: usize>(&self) -> impl Fn(TPixel, TPixel) -> TPixel
+    pub const fn get_function<TPixel, const N: usize>(&self) -> impl Fn(TPixel, TPixel) -> TPixel
     where
         TPixel:         Copy + Pixel<N>,
     {
         let (src_fn, dst_fn) = self.functions();
-        let (src_fn, dst_fn) = (src_fn.get_function(), dst_fn.get_function());
+
+        let src_fn = match src_fn {
+            AlphaFunction::Zero                     => |pixel, _, _|            pixel * TPixel::Component::zero(),
+            AlphaFunction::One                      => |pixel, _, _|            pixel * TPixel::Component::one(),
+            AlphaFunction::SourceAlpha              => |pixel, src_alpha, _|    pixel * src_alpha,
+            AlphaFunction::DestAlpha                => |pixel, _, dst_alpha|    pixel * dst_alpha,
+            AlphaFunction::OneMinusSourceAlpha      => |pixel, src_alpha, _|    pixel * (TPixel::Component::one() - src_alpha),
+            AlphaFunction::OneMinusDestAlpha        => |pixel, _, dst_alpha|    pixel * (TPixel::Component::one() - dst_alpha),
+        };
+        
+        let dst_fn = match dst_fn {
+            AlphaFunction::Zero                     => |pixel, _, _|            pixel * TPixel::Component::zero(),
+            AlphaFunction::One                      => |pixel, _, _|            pixel * TPixel::Component::one(),
+            AlphaFunction::SourceAlpha              => |pixel, src_alpha, _|    pixel * src_alpha,
+            AlphaFunction::DestAlpha                => |pixel, _, dst_alpha|    pixel * dst_alpha,
+            AlphaFunction::OneMinusSourceAlpha      => |pixel, src_alpha, _|    pixel * (TPixel::Component::one() - src_alpha),
+            AlphaFunction::OneMinusDestAlpha        => |pixel, _, dst_alpha|    pixel * (TPixel::Component::one() - dst_alpha),
+        };
 
         move |pix1, pix2| {
             let src_alpha = pix1.alpha_component();
