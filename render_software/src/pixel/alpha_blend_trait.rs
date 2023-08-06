@@ -86,7 +86,7 @@ impl AlphaOperation {
     #[inline]
     pub const fn get_function<TPixel, const N: usize>(&self) -> impl Fn(TPixel, TPixel) -> TPixel
     where
-        TPixel:         Copy + Pixel<N>,
+        TPixel: Pixel<N>,
     {
         let (src_fn, dst_fn) = self.functions();
 
@@ -98,7 +98,7 @@ impl AlphaOperation {
             AlphaFunction::OneMinusSourceAlpha      => |pixel, src_alpha, _|    pixel * (TPixel::Component::one() - src_alpha),
             AlphaFunction::OneMinusDestAlpha        => |pixel, _, dst_alpha|    pixel * (TPixel::Component::one() - dst_alpha),
         };
-        
+
         let dst_fn = match dst_fn {
             AlphaFunction::Zero                     => |pixel, _, _|            pixel * TPixel::Component::zero(),
             AlphaFunction::One                      => |pixel, _, _|            pixel * TPixel::Component::one(),
