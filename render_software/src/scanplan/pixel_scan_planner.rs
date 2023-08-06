@@ -39,7 +39,7 @@ where
             active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos, is_opaque);
 
             // Move to the next intercept (or stop if no intercepts actually fall within the x-range)
-            if let Some(intercept) = ordered_intercepts.next() { intercept } else { return ScanlinePlan::new(); };
+            current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { return ScanlinePlan::new(); };
         }
 
         // Update all of the existing shapes to have a start position at the left-hand side of the screen
