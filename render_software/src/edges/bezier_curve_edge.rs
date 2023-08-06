@@ -114,32 +114,35 @@ where
         ((min.x(), min.y()), (max.x(), max.y()))
     }
 
-    #[inline]
-    fn intercepts(&self, y_pos: f64) -> SmallVec<[(EdgeInterceptDirection, f64); 2]> {
-        // Calculate the t-values of the intercepts for the curve
-        let intercepts = solve_basis_for_t(self.curve_y.0, self.curve_y.1, self.curve_y.2, self.curve_y.3, y_pos);
+    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+        for idx in 0..y_positions.len() {
+            let y_pos = y_positions[idx];
 
-        // Calculate the x-positions of the intercepts to generate the final result
-        let (w1, w2, w3, w4)    = self.curve_x;
-        let (d1, d2, d3)        = self.derivative_y;
-        intercepts.into_iter()
-            .map(|t| {
-                let pos         = basis(t, w1, w2, w3, w4);
-                let tangent_y   = de_casteljau3(t, d1, d2, d3);
-                let normal_x    = -tangent_y;
-                let side        = normal_x.signum();
+            // Calculate the t-values of the intercepts for the curve
+            let intercepts = solve_basis_for_t(self.curve_y.0, self.curve_y.1, self.curve_y.2, self.curve_y.3, y_pos);
 
-                // The basic approach to the normal is to get the dot product like this, but we precalculate just what we need
-                //let normal  = self.curve.normal_at_pos(t);
-                //let side    = (normal.x() * 1.0 + normal.y() * 0.0).signum();  // Dot product with the 'ray' direction of the scanline
+            // Calculate the x-positions of the intercepts to generate the final result
+            let (w1, w2, w3, w4)    = self.curve_x;
+            let (d1, d2, d3)        = self.derivative_y;
+            output[idx] = intercepts.into_iter()
+                .map(|t| {
+                    let pos         = basis(t, w1, w2, w3, w4);
+                    let tangent_y   = de_casteljau3(t, d1, d2, d3);
+                    let normal_x    = -tangent_y;
+                    let side        = normal_x.signum();
 
-                if side <= 0.0 {
-                    (EdgeInterceptDirection::DirectionOut, pos)
-                } else {
-                    (EdgeInterceptDirection::DirectionIn, pos)
-                }
-            })
-            .collect()
+                    // The basic approach to the normal is to get the dot product like this, but we precalculate just what we need
+                    //let normal  = self.curve.normal_at_pos(t);
+                    //let side    = (normal.x() * 1.0 + normal.y() * 0.0).signum();  // Dot product with the 'ray' direction of the scanline
+
+                    if side <= 0.0 {
+                        (EdgeInterceptDirection::DirectionOut, pos)
+                    } else {
+                        (EdgeInterceptDirection::DirectionIn, pos)
+                    }
+                })
+                .collect();
+        }
     }
 }
 
@@ -163,16 +166,19 @@ where
         ((min.x(), min.y()), (max.x(), max.y()))
     }
 
-    #[inline]
-    fn intercepts(&self, y_pos: f64) -> SmallVec<[(EdgeInterceptDirection, f64); 2]> {
-        // Calculate the t-values of the intercepts for the curve
-        let intercepts = solve_basis_for_t(self.curve_y.0, self.curve_y.1, self.curve_y.2, self.curve_y.3, y_pos);
+    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+        for idx in 0..y_positions.len() {
+            let y_pos = y_positions[idx];
 
-        // Calculate the x-positions of the intercepts to generate the final result (the even-odd winding rule always toggles)
-        let (w1, w2, w3, w4) = self.curve_x;
-        intercepts.into_iter()
-            .map(|t| basis(t, w1, w2, w3, w4))
-            .map(|pos| (EdgeInterceptDirection::Toggle, pos))
-            .collect()
+            // Calculate the t-values of the intercepts for the curve
+            let intercepts = solve_basis_for_t(self.curve_y.0, self.curve_y.1, self.curve_y.2, self.curve_y.3, y_pos);
+
+            // Calculate the x-positions of the intercepts to generate the final result (the even-odd winding rule always toggles)
+            let (w1, w2, w3, w4) = self.curve_x;
+            output[idx] = intercepts.into_iter()
+                .map(|t| basis(t, w1, w2, w3, w4))
+                .map(|pos| (EdgeInterceptDirection::Toggle, pos))
+                .collect();
+        }
     }
 }

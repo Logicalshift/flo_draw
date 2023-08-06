@@ -2,6 +2,8 @@ use super::edge_descriptor::*;
 use super::shape_descriptor::*;
 use super::shape_id::*;
 
+use smallvec::*;
+
 use flo_sparse_array::*;
 
 ///
@@ -76,22 +78,35 @@ where
     ///
     /// Returns the edges that intercept a scanline. Shapes are entered on the right-hand side of any intercepts.
     ///
-    pub fn intercepts_on_scanline<'a>(&'a self, y_pos: f64) -> impl 'a + Iterator<Item=(ShapeId, EdgeInterceptDirection, f64)> {
+    pub fn intercepts_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [SmallVec<[(ShapeId, EdgeInterceptDirection, f64); 4]>]) {
+        // Extend the edge intercepts to cover the number of y-positions we have (can be larger than needed but not smaller)
+        let mut edge_intercepts = vec![smallvec![]; y_positions.len()];
+
+        // Clear the output
+        output.iter_mut().for_each(|val| val.clear());
+
         // This is the slow way to find the edges that intercept a scanline
         // Possible enhancements
         //  - group up the edges by y position (we can use regions here) so that it's easy to find which edges are on a particular scanline
         //  - pre-sort the edges and only re-sort if there are overlapping edges. Most of the time in an edge region the edges will be intercepted in the
         //      same order
         //  - for anti-aliasing we need a way to track intercepts on the previous scanline for the same shape (usually the same edge, but sometimes the preceding or following edge)
-        let mut intercepts = vec![];
-
         for edge in self.edges.iter() {
-            for (direction, pos) in edge.intercepts(y_pos) {
-                intercepts.push((edge.shape(), direction, pos));
+            // Read the intercepts from this edge (we rely on the 'intercepts' method overwriting any old values)
+            edge.intercepts(y_positions, &mut edge_intercepts);
+
+            for idx in 0..y_positions.len() {
+                let output = &mut output[idx];
+
+                for (direction, pos) in edge_intercepts[idx] {
+                    output.push((edge.shape(), direction, pos));
+                }
             }
         }
 
-        intercepts.sort_by(|(_, _, pos_a), (_, _, pos_b)| pos_a.total_cmp(pos_b));
-        intercepts.into_iter()
+        // Sort the intercepts on each line by x position
+        output.iter_mut().for_each(|intercepts| {
+            intercepts.sort_by(|(_, _, pos_a), (_, _, pos_b)| pos_a.total_cmp(pos_b));
+        });
     }
 }
