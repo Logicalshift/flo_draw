@@ -47,6 +47,7 @@ where
         let mut last_x          = x_range.start;
         let mut program_stack   = vec![];
         let mut scanplan        = vec![];
+        let mut z_floor         = active_shapes.z_floor();
 
         loop {
             // TODO: if a program range is < 1px, instead of just ignoring it, use a blend program (provides horizontal-only anti-aliasing)
@@ -60,7 +61,11 @@ where
             let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
             let stack_depth = active_shapes.len();
 
-            if next_x != last_x && stack_depth > 0 {
+            // We use the z-index of the current shape to determine if it's in front of or behind the current line
+            let (shape_id, direction, x_pos)    = &current_intercept;
+            let z_index                         = edge_plan.shape_z_index(*shape_id);
+
+            if z_index >= z_floor && next_x != last_x && stack_depth > 0 {
                 // Create a program stack between the ranges: all the programs until the first opaque layer
                 let x_range         = last_x..next_x;
                 let mut is_opaque   = false;
@@ -88,10 +93,8 @@ where
             }
 
             // Update the state from the current intercept
-            let (shape_id, direction, x_pos)    = &current_intercept;
-            let z_index                         = edge_plan.shape_z_index(*shape_id);
-
             active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos);
+            z_floor = active_shapes.z_floor();
 
             // Next span will start after the end of this one
             last_x = next_x;
