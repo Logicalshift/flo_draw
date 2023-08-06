@@ -33,8 +33,10 @@ where
             // Add or remove this intercept's programs to the active list
             let (shape_id, direction, x_pos)    = &current_intercept;
             let z_index                         = edge_plan.shape_z_index(*shape_id);
+            let shape_descriptor                = edge_plan.shape_descriptor(*shape_id);
+            let is_opaque                       = shape_descriptor.map(|descriptor| descriptor.is_opaque).unwrap_or(false);
 
-            active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos);
+            active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos, is_opaque);
 
             // Move to the next intercept (or stop if no intercepts actually fall within the x-range)
             if let Some(intercept) = ordered_intercepts.next() { intercept } else { return ScanlinePlan::new(); };
@@ -65,6 +67,7 @@ where
             let (shape_id, direction, x_pos)    = &current_intercept;
             let z_index                         = edge_plan.shape_z_index(*shape_id);
             let shape_descriptor                = edge_plan.shape_descriptor(*shape_id);
+            let is_opaque                       = shape_descriptor.map(|descriptor| descriptor.is_opaque).unwrap_or(false);
 
             if z_index >= z_floor && next_x != last_x && stack_depth > 0 {
                 // Create a program stack between the ranges: all the programs until the first opaque layer
@@ -94,7 +97,7 @@ where
             }
 
             // Update the state from the current intercept
-            active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos, shape_descriptor.map(|descriptor| descriptor.is_opaque).unwrap_or(false));
+            active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos, is_opaque);
             z_floor = active_shapes.z_floor();
 
             // Next span will start after the end of this one
