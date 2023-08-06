@@ -1,3 +1,5 @@
+use super::pixel_trait::*;
+
 use std::ops::*;
 
 ///
@@ -77,6 +79,25 @@ impl AlphaOperation {
             AlphaOperation::Xor             => (AlphaFunction::OneMinusDestAlpha,   AlphaFunction::OneMinusSourceAlpha),
         }
     }
+
+    ///
+    /// Returns the function required to alpha-blend two pixels using this operation
+    ///
+    #[inline]
+    pub fn get_function<TPixel, const N: usize>(&self) -> impl Fn(TPixel, TPixel) -> TPixel
+    where
+        TPixel:         Copy + Pixel<N>,
+    {
+        let (src_fn, dst_fn) = self.functions();
+        let (src_fn, dst_fn) = (src_fn.get_function(), dst_fn.get_function());
+
+        move |pix1, pix2| {
+            let src_alpha = pix1.alpha_component();
+            let dst_alpha = pix2.alpha_component();
+
+            src_fn(pix1, src_alpha, dst_alpha) + dst_fn(pix2, src_alpha, dst_alpha)
+        }
+    }
 }
 
 ///
@@ -88,6 +109,25 @@ pub trait AlphaValue {
 }
 
 impl AlphaFunction {
+    ///
+    /// Returns the transformation function for this alpha function. The function has the form `fn(pixel, src_alpha, dst_alpha)`
+    ///
+    #[inline]
+    pub const fn get_function<TPixel, TComponent>(&self) -> impl Fn(TPixel, TComponent, TComponent) -> TPixel 
+    where
+        TPixel:         Copy + Mul<TComponent, Output=TPixel>,
+        TComponent:     Copy + AlphaValue + Sub<TComponent, Output=TComponent>,
+    {
+        match self {
+            AlphaFunction::Zero                     => |pixel, _, _|            pixel * TComponent::zero(),
+            AlphaFunction::One                      => |pixel, _, _|            pixel * TComponent::one(),
+            AlphaFunction::SourceAlpha              => |pixel, src_alpha, _|    pixel * src_alpha,
+            AlphaFunction::DestAlpha                => |pixel, _, dst_alpha|    pixel * dst_alpha,
+            AlphaFunction::OneMinusSourceAlpha      => |pixel, src_alpha, _|    pixel * (TComponent::one() - src_alpha),
+            AlphaFunction::OneMinusDestAlpha        => |pixel, _, dst_alpha|    pixel * (TComponent::one() - dst_alpha),
+        }
+    }
+
     ///
     /// Applies this alpha function to a pixel
     ///

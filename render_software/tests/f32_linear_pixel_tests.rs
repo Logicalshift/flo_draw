@@ -98,3 +98,21 @@ fn source_over_2() {
     debug_assert!(b == 209, "b({}, {}, {}, {})", r, g, b, a);
     debug_assert!(a == 255, "a({}, {}, {}, {})", r, g, b, a);
 }
+
+
+#[test]
+fn source_over_3() {
+    let col1        = F32LinearPixel::from_color(Color::Rgba(0.4980, 0.6039, 0.7647, 1.0), 2.2);
+    let col2        = F32LinearPixel::from_color(Color::Rgba(0.7764, 0.6823, 0.8588, 0.6), 2.2);
+    let src_over    = AlphaOperation::SourceOver.get_function();
+
+    let col3            = src_over(col2, col1);
+    let back_as_color   = col3.to_u8_rgba(2.2);
+
+    let [r, g, b, a]    = back_as_color.get_components();
+
+    debug_assert!(r == 173, "r({}, {}, {}, {})", r, g, b, a);
+    debug_assert!(g == 166, "g({}, {}, {}, {})", r, g, b, a);
+    debug_assert!(b == 209, "b({}, {}, {}, {})", r, g, b, a);
+    debug_assert!(a == 255, "a({}, {}, {}, {})", r, g, b, a);
+}
