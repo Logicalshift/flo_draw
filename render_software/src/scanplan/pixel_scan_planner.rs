@@ -54,7 +54,6 @@ where
         loop {
             // TODO: if a program range is < 1px, instead of just ignoring it, use a blend program (provides horizontal-only anti-aliasing)
             // TODO: if there are multiple intercepts on the same pixel, we should process them all simultaneously (otherwise we will occasionally start a set of programs one pixel too late)
-            // TODO: if the program/shape stack doesn not change due to the new intercept (eg, because the change happens behind a longer opaque span), don't create a new span
 
             // Generate a stack for the current intercept
             let next_x = current_intercept.2.ceil() as i32;
