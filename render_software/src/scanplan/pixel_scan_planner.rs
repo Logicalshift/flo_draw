@@ -49,7 +49,7 @@ where
         let mut last_x          = x_range.start;
         let mut program_stack   = vec![];
         let mut scanplan        = vec![];
-        let mut z_floor         = i64::MIN;
+        let mut z_floor         = active_shapes.z_floor();
 
         loop {
             // TODO: if a program range is < 1px, instead of just ignoring it, use a blend program (provides horizontal-only anti-aliasing)
