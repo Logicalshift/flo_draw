@@ -13,8 +13,11 @@ pub struct ScanlineIntercept {
     /// The Z-index of this scanline (scanlines are stored ordered by z-index then shape ID)
     z_index: i64,
 
-    // The shape that is being drawn by this scanline
+    /// The shape that is being drawn by this scanline
     shape_id: ShapeId,
+
+    /// Opaque spans form the 'z-floor': spans below this point are not rendered
+    is_opaque: bool,
 }
 
 ///
@@ -23,6 +26,9 @@ pub struct ScanlineIntercept {
 pub struct ScanlineInterceptState {
     /// The currently active shapes, with the most recent one 
     active_shapes: Vec<ScanlineIntercept>,
+
+    /// The current z-floor
+    z_floor: i64,
 }
 
 impl ScanlineIntercept {
@@ -41,6 +47,14 @@ impl ScanlineIntercept {
     pub fn shape_id(&self) -> ShapeId {
         self.shape_id
     }
+
+    ///
+    /// Returns true if this intercept is opaque
+    ///
+    #[inline]
+    pub fn is_opaque(&self) -> bool {
+        self.is_opaque
+    }
 }
 
 impl ScanlineInterceptState {
@@ -50,7 +64,8 @@ impl ScanlineInterceptState {
     #[inline]
     pub fn new() -> ScanlineInterceptState {
         ScanlineInterceptState { 
-            active_shapes: vec![]
+            active_shapes:  vec![],
+            z_floor:        i64::MIN,
         }
     }
 
@@ -59,7 +74,7 @@ impl ScanlineInterceptState {
     ///
     #[inline]
     pub fn z_floor(&self) -> i64 { 
-        i64::MIN
+        self.z_floor
     }
 
     ///
@@ -154,6 +169,21 @@ impl ScanlineInterceptState {
                 if remove_existing {
                     // If the count is 0 (or the edge is a toggle edge), then stop intercepting this shape
                     self.active_shapes.remove(existing_idx);
+
+                    // If the shape matches the current z-floor, update it
+                    if is_opaque && z_index == self.z_floor {
+                        self.z_floor = i64::MIN;
+
+                        if existing_idx > 0 {
+                            // TODO: if multiple shapes are on the same z-index, existing_idx might represent a shape below the 'true' z-floor (so this will set the floor too low)
+                            for idx in (0..(existing_idx-1)).rev() {
+                                if self.active_shapes[idx].is_opaque {
+                                    self.z_floor = self.active_shapes[idx].z_index;
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -165,11 +195,17 @@ impl ScanlineInterceptState {
                     EdgeInterceptDirection::DirectionIn     => -1,
                 };
 
+                // Opaque shapes update the z-floor (note that if an opaque shape has the same z-index as another shape, the z-floor is not enough to tell which is in front)
+                if is_opaque {
+                    self.z_floor = self.z_floor.max(z_index);
+                }
+
                 self.active_shapes.insert(following_idx, ScanlineIntercept { 
                     count:      count, 
                     start_x:    x_pos, 
                     z_index:    z_index, 
-                    shape_id:   shape_id
+                    shape_id:   shape_id,
+                    is_opaque:  is_opaque,
                 })
             }
         }
