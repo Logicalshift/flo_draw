@@ -57,6 +57,12 @@ where
             let next_x = current_intercept.2.ceil() as i32;
 
             // Add the next intercept to update the scanline state
+            let (shape_id, direction, x_pos)    = &current_intercept;
+            let z_index                         = edge_plan.shape_z_index(*shape_id);
+
+            active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos);
+
+            // The end of the current range is the 'next_x' coordinate
             let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
             let stack_depth = active_shapes.len();
 
