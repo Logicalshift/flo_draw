@@ -42,6 +42,15 @@ where
     }
 
     ///
+    /// As for `declare_shape_description` but using a 'fluent' API design
+    ///
+    #[inline]
+    pub fn with_shape_description(mut self, shape_id: ShapeId, descriptor: ShapeDescriptor) -> Self {
+        (&mut self).declare_shape_description(shape_id, descriptor);
+        self
+    }
+
+    ///
     /// Returns the z-index for a shape ID
     ///
     #[inline]
@@ -66,6 +75,15 @@ where
     }
 
     ///
+    /// As for `add_edge` but using a 'fluent' API design
+    ///
+    #[inline]
+    pub fn with_edge(mut self, new_edge: TEdge) -> Self {
+        (&mut self).add_edge(new_edge);
+        self
+    }
+
+    ///
     /// Declares a shape and all of its edges at once
     ///
     pub fn add_shape(&mut self, shape_id: ShapeId, descriptor: ShapeDescriptor, edges: impl IntoIterator<Item=TEdge>) {
@@ -73,6 +91,15 @@ where
         for edge in edges {
             self.add_edge(edge);
         }
+    }
+
+    ///
+    /// As for `add_shape` but using a 'fluent' API design
+    ///
+    #[inline]
+    pub fn with_shape(mut self, shape_id: ShapeId, descriptor: ShapeDescriptor, edges: impl IntoIterator<Item=TEdge>) -> Self {
+        (&mut self).add_shape(shape_id, descriptor, edges);
+        self
     }
 
     ///
