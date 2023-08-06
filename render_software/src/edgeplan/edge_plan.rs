@@ -98,8 +98,8 @@ where
             for idx in 0..y_positions.len() {
                 let output = &mut output[idx];
 
-                for (direction, pos) in edge_intercepts[idx] {
-                    output.push((edge.shape(), direction, pos));
+                for (direction, pos) in edge_intercepts[idx].iter() {
+                    output.push((edge.shape(), *direction, *pos));
                 }
             }
         }
