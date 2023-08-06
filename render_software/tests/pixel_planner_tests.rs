@@ -21,4 +21,7 @@ fn simple_rectangle() {
     assert!(pixel_plan[0].iter_as_spans().count() == 0, "[0, y == 124.0] {} != 0", pixel_plan[0].iter_as_spans().count());
     assert!(pixel_plan[1].iter_as_spans().count() == 1, "[1, y == 125.0] {} != 1", pixel_plan[1].iter_as_spans().count());
     assert!(pixel_plan[2].iter_as_spans().count() == 1, "[2, y == 126.0] {} != 1", pixel_plan[2].iter_as_spans().count());
+
+    assert!(pixel_plan[1].iter_as_spans().collect::<Vec<_>>() == vec![ScanSpan::opaque(100..200, program_data_id)], "[1, y == 125.0] {:?}", pixel_plan[1].iter_as_spans().collect::<Vec<_>>());
+    assert!(pixel_plan[2].iter_as_spans().collect::<Vec<_>>() == vec![ScanSpan::opaque(100..200, program_data_id)], "[2, y == 126.0] {:?}", pixel_plan[1].iter_as_spans().collect::<Vec<_>>());
 }
