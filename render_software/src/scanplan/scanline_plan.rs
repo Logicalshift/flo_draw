@@ -1,5 +1,5 @@
 use super::scanspan::*;
-use crate::pixel_program_cache::*;
+use crate::pixel_program::*;
 
 use std::ops::{Range};
 
@@ -18,8 +18,8 @@ use std::ops::{Range};
 #[derive(Clone)]
 pub struct ScanSpanStack {
     x_range:    Range<i32>,
-    first:      PixelProgramDataId,
-    others:     Option<Vec<PixelProgramDataId>>,
+    first:      PixelProgramPlan,
+    others:     Option<Vec<PixelProgramPlan>>,
     opaque:     bool,
 }
 
@@ -42,7 +42,7 @@ impl ScanSpanStack {
     pub fn with_first_span(span: ScanSpan) -> ScanSpanStack {
         ScanSpanStack { 
             x_range:    span.x_range,
-            first:      span.program,
+            first:      PixelProgramPlan::Run(span.program),
             others:     None,
             opaque:     span.opaque,
         }
@@ -52,7 +52,7 @@ impl ScanSpanStack {
     /// Creates a span stack with the specified set of programs, specified in reverse ordrer
     ///
     #[inline]
-    pub fn with_reversed_programs(x_range: Range<i32>, opaque: bool, programs_reversed: &Vec<PixelProgramDataId>) -> ScanSpanStack {
+    pub fn with_reversed_programs(x_range: Range<i32>, opaque: bool, programs_reversed: &Vec<PixelProgramPlan>) -> ScanSpanStack {
         if programs_reversed.len() == 1 {
             ScanSpanStack {
                 x_range:    x_range,
@@ -76,7 +76,7 @@ impl ScanSpanStack {
     #[inline]
     pub fn push(&mut self, span: ScanSpan) {
         self.others.get_or_insert_with(|| vec![])
-            .push(span.program)
+            .push(PixelProgramPlan::Run(span.program))
     }
 
     ///
@@ -111,7 +111,7 @@ impl ScanSpanStack {
     /// Returns an iterator for the IDs of the programs that should be run over this range
     ///
     #[inline]
-    pub fn programs<'a>(&'a self) -> impl 'a + Iterator<Item=PixelProgramDataId> {
+    pub fn programs<'a>(&'a self) -> impl 'a + Iterator<Item=PixelProgramPlan> {
         use std::iter;
 
         iter::once(self.first)
@@ -313,18 +313,22 @@ impl ScanlinePlan {
     ///
     /// Generates scan spans in rendering order for this scanline
     ///
-    /// The lowest span in a stack is always returned as opaque even if it was originally created as transparent using this function
+    /// The lowest span in a stack is always returned as opaque even if it was originally created as transparent using this function. Blending is ignored
+    /// in these results.
     ///
     #[inline]
     pub fn iter_as_spans<'a>(&'a self) -> impl 'a + Iterator<Item=ScanSpan> {
-        // TODO: should the lowest span always be returned as opaque? Layers might be more efficient to implement if we can know if their lowest span is opaque or transparent
         use std::iter;
 
         self.iter_as_stacks()
             .flat_map(|span| {
                 let range           = span.x_range();
                 let opaque          = span.is_opaque();
-                let mut programs    = span.programs();
+                let mut programs    = span.programs().filter_map(|program| match program {
+                    PixelProgramPlan::Run(program)          => Some(program),
+                    PixelProgramPlan::Blend(_, _)           => None,
+                    PixelProgramPlan::LinearBlend(_, _, _)  => None,
+                });
 
                 // First program is opaque, the rest are transparent
                 let first   = if opaque { ScanSpan::opaque(range.clone(), programs.next().unwrap()) } else { ScanSpan::transparent(range.clone(), programs.next().unwrap()) };

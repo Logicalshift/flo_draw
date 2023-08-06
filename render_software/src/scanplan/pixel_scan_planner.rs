@@ -2,6 +2,7 @@ use super::scanline_plan::*;
 use super::scanline_intercept::*;
 
 use crate::edgeplan::*;
+use crate::pixel_program::*;
 
 use std::ops::{Range};
 
@@ -69,7 +70,7 @@ where
                     let shape_id    = active_shapes.get(shape).unwrap();
                     let descriptor  = edge_plan.shape_descriptor(shape_id.shape_id()).unwrap();
 
-                    program_stack.extend(descriptor.programs.iter().copied());
+                    program_stack.extend(descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
                     if descriptor.is_opaque {
                         is_opaque = true;
                         break;
