@@ -55,6 +55,13 @@ impl ScanlineInterceptState {
     }
 
     ///
+    /// The z-index of the lowest opaque item in this state (or `i64::MIN` if there's no floor)
+    ///
+    pub fn z_floor(&self) -> i64 { 
+        i64::MIN
+    }
+
+    ///
     /// Finds the index of the intercept that's >= the z-index
     ///
     /// Returns Ok(index) if we find an exact match, or Err(index) if we don't
