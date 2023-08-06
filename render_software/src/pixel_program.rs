@@ -127,7 +127,7 @@ pub struct PixelProgramId(pub (crate) usize);
 #[derive(Clone, Copy, PartialEq, PartialOrd, Debug)]
 pub enum PixelProgramPlan {
     /// Run the pixel program on the current scanline data, with no further processing
-    Run(PixelProgramId),
+    Run(PixelProgramDataId),
 
     /// Run the next 'n' programs on the stack, and blend with the result of the programs underneath using the 
     /// source over algorithm The input is the output of the programs below this one, but the final result is 
