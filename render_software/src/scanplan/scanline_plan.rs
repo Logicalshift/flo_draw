@@ -26,6 +26,9 @@ pub struct ScanSpanStack {
 ///
 /// A scanline plan contains the drawing commands needed to draw a single scanline
 ///
+/// Spans in a scanline plan are always stored in order and non-overlapping (that is, the start of the next span is always after the end
+/// of the previous span). This means that the full range of the plan can be determined just by checking the first and the last span.
+///
 /// The scanline is divided up into 'stacks' of `ScanSpan`s, moving from left to right (so scanlines are always drawn from left-to-right).
 /// This class builds up the plan to draw the scanline by adding new `ScanSpan`s and merging and splitting them to make the stacks.
 ///
@@ -137,10 +140,42 @@ impl ScanlinePlan {
     }
 
     ///
+    /// Asserts that a list of stacks is in the correct order and non-overlapping, so that we know that the plan is safe to use without
+    /// bounds checking
+    ///
+    pub fn check_spans_ordering(stacks: &Vec<ScanSpanStack>) {
+        let mut stack_iter = stacks.iter();
+
+        if let Some(first_stack) = stack_iter.next() {
+            let mut last_x = first_stack.x_range.end;
+
+            while let Some(next_stack) = stack_iter.next() {
+                assert!(next_stack.x_range.start >= last_x, "Spans are out of order ({} < {})", next_stack.x_range.start, last_x);
+                assert!(next_stack.x_range.start != next_stack.x_range.end, "0-length span");
+
+                last_x = next_stack.x_range.end;
+            }
+        }
+    }
+
+    ///
     /// Creates a scanline plan from a set of ScanSpanStacks which are non-overlapping and ordered from left-to-right
     ///
     #[inline]
     pub fn from_ordered_stacks(stacks: Vec<ScanSpanStack>) -> ScanlinePlan {
+        Self::check_spans_ordering(&stacks);
+
+        unsafe { Self::from_ordered_stacks_prechecked(stacks) }
+    }
+
+    ///
+    /// Creates a scanline plan from a set of ScanSpanStacks that are expected to be in order and non-overlapping
+    ///
+    /// This is marked as 'unsafe' because we later depend on these stacks to be non-overlapping for safety reasons. Call
+    /// `from_ordered_stacks` instead to create a plan with checking.
+    ///
+    #[inline]
+    pub unsafe fn from_ordered_stacks_prechecked(stacks: Vec<ScanSpanStack>) -> ScanlinePlan {
         ScanlinePlan {
             spans: stacks
         }
