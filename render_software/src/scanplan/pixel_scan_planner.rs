@@ -73,11 +73,10 @@ where
                 // We re-use program_stack so we don't have to keep re-allocating a vec as we go
                 program_stack.clear();
                 for shape in (0..stack_depth).rev() {
-                    let intercept = active_shapes.get(shape).unwrap();
+                    let intercept           = active_shapes.get(shape).unwrap();
+                    let shape_descriptor    = intercept.shape_descriptor();
 
-                    if let Some(descriptor) = intercept.shape_descriptor() {
-                        program_stack.extend(descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
-                    }
+                    program_stack.extend(shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
 
                     if intercept.is_opaque() {
                         is_opaque = true;

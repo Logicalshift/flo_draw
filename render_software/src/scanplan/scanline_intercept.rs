@@ -17,7 +17,7 @@ pub struct ScanlineIntercept<'a> {
     shape_id: ShapeId,
 
     /// The shape descriptor
-    descriptor: Option<&'a ShapeDescriptor>,
+    descriptor: &'a ShapeDescriptor,
 
     /// Opaque spans form the 'z-floor': spans below this point are not rendered
     is_opaque: bool,
@@ -63,7 +63,7 @@ impl<'a> ScanlineIntercept<'a> {
     /// Returns the shape descriptor for this intercept
     ///
     #[inline]
-    pub fn shape_descriptor(&self) -> Option<&ShapeDescriptor> {
+    pub fn shape_descriptor(&self) -> &ShapeDescriptor {
         self.descriptor
     }
 }
@@ -159,68 +159,70 @@ impl<'a> ScanlineInterceptState<'a> {
     ///
     #[inline]
     pub fn add_intercept(&mut self, direction: EdgeInterceptDirection, shape_id: ShapeId, descriptor: Option<&'a ShapeDescriptor>, x_pos: f64) {
-        let (z_index, is_opaque) = descriptor.map(|descriptor| (descriptor.z_index, descriptor.is_opaque)).unwrap_or((i64::MIN, false));
+        if let Some(descriptor) = descriptor {
+            let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque);
 
-        match self.find(z_index, shape_id) {
-            Ok(existing_idx) => {
-                // Update the existing shape depending on the direction of the intercept
-                let existing        = &mut self.active_shapes[existing_idx];
-                let remove_existing = match direction {
-                    EdgeInterceptDirection::Toggle          => true,
+            match self.find(z_index, shape_id) {
+                Ok(existing_idx) => {
+                    // Update the existing shape depending on the direction of the intercept
+                    let existing        = &mut self.active_shapes[existing_idx];
+                    let remove_existing = match direction {
+                        EdgeInterceptDirection::Toggle          => true,
 
-                    EdgeInterceptDirection::DirectionOut    => {
-                        existing.count += 1;
-                        existing.count == 0
-                    },
+                        EdgeInterceptDirection::DirectionOut    => {
+                            existing.count += 1;
+                            existing.count == 0
+                        },
 
-                    EdgeInterceptDirection::DirectionIn     => {
-                        existing.count -= 1;
-                        existing.count == 0
-                    },
-                };
+                        EdgeInterceptDirection::DirectionIn     => {
+                            existing.count -= 1;
+                            existing.count == 0
+                        },
+                    };
 
-                if remove_existing {
-                    // If the count is 0 (or the edge is a toggle edge), then stop intercepting this shape
-                    self.active_shapes.remove(existing_idx);
+                    if remove_existing {
+                        // If the count is 0 (or the edge is a toggle edge), then stop intercepting this shape
+                        self.active_shapes.remove(existing_idx);
 
-                    // If the shape matches the current z-floor, update it
-                    if is_opaque && z_index == self.z_floor {
-                        self.z_floor = i64::MIN;
+                        // If the shape matches the current z-floor, update it
+                        if is_opaque && z_index == self.z_floor {
+                            self.z_floor = i64::MIN;
 
-                        if existing_idx > 0 {
-                            // TODO: if multiple shapes are on the same z-index, existing_idx might represent a shape below the 'true' z-floor (so this will set the floor too low)
-                            for idx in (0..(existing_idx-1)).rev() {
-                                if self.active_shapes[idx].is_opaque {
-                                    self.z_floor = self.active_shapes[idx].z_index;
-                                    break;
+                            if existing_idx > 0 {
+                                // TODO: if multiple shapes are on the same z-index, existing_idx might represent a shape below the 'true' z-floor (so this will set the floor too low)
+                                for idx in (0..(existing_idx-1)).rev() {
+                                    if self.active_shapes[idx].is_opaque {
+                                        self.z_floor = self.active_shapes[idx].z_index;
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            Err(following_idx) => {
-                // There's no existing matching shape: just insert a new intercept
-                let count = match direction {
-                    EdgeInterceptDirection::Toggle          => 1,
-                    EdgeInterceptDirection::DirectionOut    => 1,
-                    EdgeInterceptDirection::DirectionIn     => -1,
-                };
+                Err(following_idx) => {
+                    // There's no existing matching shape: just insert a new intercept
+                    let count = match direction {
+                        EdgeInterceptDirection::Toggle          => 1,
+                        EdgeInterceptDirection::DirectionOut    => 1,
+                        EdgeInterceptDirection::DirectionIn     => -1,
+                    };
 
-                // Opaque shapes update the z-floor (note that if an opaque shape has the same z-index as another shape, the z-floor is not enough to tell which is in front)
-                if is_opaque {
-                    self.z_floor = self.z_floor.max(z_index);
+                    // Opaque shapes update the z-floor (note that if an opaque shape has the same z-index as another shape, the z-floor is not enough to tell which is in front)
+                    if is_opaque {
+                        self.z_floor = self.z_floor.max(z_index);
+                    }
+
+                    self.active_shapes.insert(following_idx, ScanlineIntercept { 
+                        count:      count, 
+                        start_x:    x_pos, 
+                        z_index:    z_index, 
+                        shape_id:   shape_id,
+                        is_opaque:  is_opaque,
+                        descriptor: descriptor,
+                    })
                 }
-
-                self.active_shapes.insert(following_idx, ScanlineIntercept { 
-                    count:      count, 
-                    start_x:    x_pos, 
-                    z_index:    z_index, 
-                    shape_id:   shape_id,
-                    is_opaque:  is_opaque,
-                    descriptor: descriptor,
-                })
             }
         }
     }
