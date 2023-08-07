@@ -32,11 +32,9 @@ where
         while (current_intercept.2.ceil() as i32) < x_range.start {
             // Add or remove this intercept's programs to the active list
             let (shape_id, direction, x_pos)    = &current_intercept;
-            let z_index                         = edge_plan.shape_z_index(*shape_id);
             let shape_descriptor                = edge_plan.shape_descriptor(*shape_id);
-            let is_opaque                       = shape_descriptor.map(|descriptor| descriptor.is_opaque).unwrap_or(false);
 
-            active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos, is_opaque);
+            active_shapes.add_intercept(*direction, *shape_id, shape_descriptor, *x_pos);
 
             // Move to the next intercept (or stop if no intercepts actually fall within the x-range)
             current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { return ScanlinePlan::new(); };
@@ -66,7 +64,6 @@ where
             let (shape_id, direction, x_pos)    = &current_intercept;
             let z_index                         = edge_plan.shape_z_index(*shape_id);
             let shape_descriptor                = edge_plan.shape_descriptor(*shape_id);
-            let is_opaque                       = shape_descriptor.map(|descriptor| descriptor.is_opaque).unwrap_or(false);
 
             if z_index >= z_floor && next_x != last_x {
                 // Create a program stack between the ranges: all the programs until the first opaque layer
@@ -76,11 +73,13 @@ where
                 // We re-use program_stack so we don't have to keep re-allocating a vec as we go
                 program_stack.clear();
                 for shape in (0..stack_depth).rev() {
-                    let shape_id    = active_shapes.get(shape).unwrap();
-                    let descriptor  = edge_plan.shape_descriptor(shape_id.shape_id()).unwrap();
+                    let intercept = active_shapes.get(shape).unwrap();
 
-                    program_stack.extend(descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
-                    if descriptor.is_opaque {
+                    if let Some(descriptor) = intercept.shape_descriptor() {
+                        program_stack.extend(descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
+                    }
+
+                    if intercept.is_opaque() {
                         is_opaque = true;
                         break;
                     }
@@ -99,7 +98,7 @@ where
             }
 
             // Update the state from the current intercept
-            active_shapes.add_intercept(*direction, z_index, *shape_id, *x_pos, is_opaque);
+            active_shapes.add_intercept(*direction, *shape_id, shape_descriptor, *x_pos);
             z_floor = active_shapes.z_floor();
 
             // Stop when the next_x value gets to the end of the range
