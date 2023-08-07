@@ -109,6 +109,14 @@ where
             current_intercept = if let Some(next_intercept) = ordered_intercepts.next() { next_intercept } else { break; };
         }
 
-        ScanlinePlan::from_ordered_stacks(scanplan)
+        #[cfg(debug_assertions)]
+        {
+            ScanlinePlan::from_ordered_stacks(scanplan)
+        }
+
+        #[cfg(not(debug_assertions))]
+        {
+            unsafe { ScanlinePlan::from_ordered_stacks_prechecked(scanplan) }
+        }
     }).collect()
 }
