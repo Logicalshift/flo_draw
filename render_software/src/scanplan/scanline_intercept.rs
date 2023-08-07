@@ -10,17 +10,11 @@ pub struct ScanlineIntercept<'a> {
     /// The x-position where the shape was first intercepted
     start_x: f64,
 
-    /// The Z-index of this scanline (scanlines are stored ordered by z-index then shape ID)
-    z_index: i64,
-
     /// The shape that is being drawn by this scanline
     shape_id: ShapeId,
 
     /// The shape descriptor
     descriptor: &'a ShapeDescriptor,
-
-    /// Opaque spans form the 'z-floor': spans below this point are not rendered
-    is_opaque: bool,
 }
 
 ///
@@ -52,11 +46,19 @@ impl<'a> ScanlineIntercept<'a> {
     }
 
     ///
+    /// Returns the z-index of this shape (higher is in front of lower)
+    ///
+    #[inline]
+    pub fn z_index(&self) -> i64 {
+        self.descriptor.z_index
+    }
+
+    ///
     /// Returns true if this intercept is opaque
     ///
     #[inline]
     pub fn is_opaque(&self) -> bool {
-        self.is_opaque
+        self.descriptor.is_opaque
     }
 
     ///
@@ -104,9 +106,9 @@ impl<'a> ScanlineInterceptState<'a> {
             let mid         = (min + max) >> 1;
             let intercept   = &self.active_shapes[mid];
 
-            if intercept.z_index < z_index {
+            if intercept.z_index() < z_index {
                 min = mid + 1;
-            } else if intercept.z_index > z_index {
+            } else if intercept.z_index() > z_index {
                 max = mid;
             } else if intercept.shape_id < shape_id {
                 min = mid + 1;
@@ -191,8 +193,8 @@ impl<'a> ScanlineInterceptState<'a> {
                             if existing_idx > 0 {
                                 // TODO: if multiple shapes are on the same z-index, existing_idx might represent a shape below the 'true' z-floor (so this will set the floor too low)
                                 for idx in (0..(existing_idx-1)).rev() {
-                                    if self.active_shapes[idx].is_opaque {
-                                        self.z_floor = self.active_shapes[idx].z_index;
+                                    if self.active_shapes[idx].is_opaque() {
+                                        self.z_floor = self.active_shapes[idx].z_index();
                                         break;
                                     }
                                 }
@@ -217,9 +219,7 @@ impl<'a> ScanlineInterceptState<'a> {
                     self.active_shapes.insert(following_idx, ScanlineIntercept { 
                         count:      count, 
                         start_x:    x_pos, 
-                        z_index:    z_index, 
                         shape_id:   shape_id,
-                        is_opaque:  is_opaque,
                         descriptor: descriptor,
                     })
                 }
