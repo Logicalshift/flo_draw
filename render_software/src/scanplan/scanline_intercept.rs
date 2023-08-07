@@ -3,7 +3,7 @@ use crate::edgeplan::*;
 ///
 /// Represents an active intercept on a scanline
 ///
-pub struct ScanlineIntercept {
+pub struct ScanlineIntercept<'a> {
     /// The number of times an edge for this shape has been crossed
     count: isize,
 
@@ -16,6 +16,9 @@ pub struct ScanlineIntercept {
     /// The shape that is being drawn by this scanline
     shape_id: ShapeId,
 
+    /// The shape descriptor
+    descriptor: Option<&'a ShapeDescriptor>,
+
     /// Opaque spans form the 'z-floor': spans below this point are not rendered
     is_opaque: bool,
 }
@@ -23,15 +26,15 @@ pub struct ScanlineIntercept {
 ///
 /// Used to keep track of which shapes are being rendered when tracing a scanline
 ///
-pub struct ScanlineInterceptState {
+pub struct ScanlineInterceptState<'a> {
     /// The currently active shapes, with the most recent one 
-    active_shapes: Vec<ScanlineIntercept>,
+    active_shapes: Vec<ScanlineIntercept<'a>>,
 
     /// The current z-floor
     z_floor: i64,
 }
 
-impl ScanlineIntercept {
+impl<'a> ScanlineIntercept<'a> {
     ///
     /// Returns the point at which this intercept started
     ///
@@ -55,14 +58,22 @@ impl ScanlineIntercept {
     pub fn is_opaque(&self) -> bool {
         self.is_opaque
     }
+
+    ///
+    /// Returns the shape descriptor for this intercept
+    ///
+    #[inline]
+    pub fn shape_descriptor(&self) -> Option<&ShapeDescriptor> {
+        self.descriptor
+    }
 }
 
-impl ScanlineInterceptState {
+impl<'a> ScanlineInterceptState<'a> {
     ///
     /// Creates a new intercept state
     ///
     #[inline]
-    pub fn new() -> ScanlineInterceptState {
+    pub fn new() -> ScanlineInterceptState<'a> {
         ScanlineInterceptState { 
             active_shapes:  vec![],
             z_floor:        i64::MIN,
@@ -147,7 +158,9 @@ impl ScanlineInterceptState {
     /// Adds or removes from the active shapes after an intercept
     ///
     #[inline]
-    pub fn add_intercept(&mut self, direction: EdgeInterceptDirection, z_index: i64, shape_id: ShapeId, x_pos: f64, is_opaque: bool) {
+    pub fn add_intercept(&mut self, direction: EdgeInterceptDirection, shape_id: ShapeId, descriptor: Option<&'a ShapeDescriptor>, x_pos: f64) {
+        let (z_index, is_opaque) = descriptor.map(|descriptor| (descriptor.z_index, descriptor.is_opaque)).unwrap_or((i64::MIN, false));
+
         match self.find(z_index, shape_id) {
             Ok(existing_idx) => {
                 // Update the existing shape depending on the direction of the intercept
@@ -206,6 +219,7 @@ impl ScanlineInterceptState {
                     z_index:    z_index, 
                     shape_id:   shape_id,
                     is_opaque:  is_opaque,
+                    descriptor: descriptor,
                 })
             }
         }
