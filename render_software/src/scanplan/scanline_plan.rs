@@ -1,5 +1,9 @@
 use super::scanspan::*;
+use crate::pixel::*;
 use crate::pixel_program::*;
+use crate::pixel_program_cache::*;
+
+use smallvec::*;
 
 use std::ops::{Range};
 
@@ -372,5 +376,68 @@ impl ScanlinePlan {
 
                 iter::once(first).chain(others)
             })
+    }
+
+    ///
+    /// Runs this plan on a scanline
+    ///
+    pub fn run_plan<TPixel, const N: usize>(&self, program_cache: &PixelProgramCache<TPixel>, data_cache: &PixelProgramDataCache<TPixel>, scanline: &mut [TPixel], y_pos: i32)
+    where
+        TPixel: 'static + Send + Pixel<N>,
+    {
+        // Check that the operations will fit over this scanline
+        let start_pos   = self.spans.get(0).map(|span| span.x_range.start).unwrap_or(0);
+        let end_pos     = self.spans.last().map(|span| span.x_range.end).unwrap_or(0);
+
+        if (scanline.len() as i32) < end_pos {
+            panic!("Scanline is too long (have {} pixels, but want to write {})", end_pos, scanline.len());
+        }
+
+        if start_pos < 0 {
+            panic!("Scanline starts before the start of the list of pixels (at {})", start_pos);
+        }
+
+        // The shadow stack keeps our copies of the scanline for blending operations, so we don't need to keep reallocating them
+        let mut shadow_stack: SmallVec<[Vec<TPixel>; 2]> = smallvec![];
+
+        // 'pixels' points to where we're modifying the pixels, stack_pos indicates the current position in the shadow stack
+        let mut pixels      = scanline;
+
+        // Execute each span
+        for span in self.spans.iter() {
+            // Read the span and start iterating through the program IDs
+            let x_range             = span.x_range.clone();
+            let mut current_step    = &span.first;
+            let mut remaining_steps = span.others.iter().flatten();
+
+            loop {
+                // Evaluate the current step of this span
+                match current_step {
+                    PixelProgramPlan::Run(data_id) => {
+                        // Just run the program
+                        program_cache.run_program(data_cache, *data_id, pixels, x_range.clone(), y_pos);
+                    }
+
+                    PixelProgramPlan::StartBlend => {
+                        todo!()
+                    },
+
+                    PixelProgramPlan::Blend(factor) => {
+                        todo!()
+                    },
+
+                    PixelProgramPlan::LinearBlend(start, end) => {
+                        todo!()
+                    }
+                }
+
+                // Move to the next step
+                if let Some(next_step) = remaining_steps.next() {
+                    current_step = next_step;
+                } else {
+                    break;
+                }
+            }
+        }
     }
 }
