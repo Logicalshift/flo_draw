@@ -30,7 +30,7 @@ where
     /// Borrows the buffer inside this stack
     ///
     #[inline]
-    pub fn buffer<'b: 'a>(&'b mut self) -> &'b mut [TPixel] {
+    pub fn buffer<'b>(&'b mut self) -> &'b mut [TPixel] {
         if let Some(last) = self.stack.last_mut() {
             last
         } else {
