@@ -48,6 +48,9 @@ pub trait AlphaBlend : Sized {
         self.alpha_blend_with_function(dest, src, dst)
     }
 
+    /// Multiplies the alpha blend factor for this value by a constant
+    fn multiply_alpha(self, factor: f64) -> Self;
+
     #[inline] fn source_over(self, dest: Self) -> Self        { self.alpha_blend(dest, AlphaOperation::SourceOver) }
     #[inline] fn dest_over(self, dest: Self) -> Self          { self.alpha_blend(dest, AlphaOperation::DestOver) }
     #[inline] fn source_in(self, dest: Self) -> Self          { self.alpha_blend(dest, AlphaOperation::SourceIn) }
