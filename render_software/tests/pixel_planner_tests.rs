@@ -5,11 +5,8 @@ use flo_render_software::*;
 
 #[test]
 fn simple_rectangle() {
-    // Declare a program cache for the rectangle
-    let mut program_cache   = PixelProgramCache::empty();
-    let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
-    let mut data_cache      = program_cache.create_data_cache();
-    let program_data_id     = program_cache.store_program_data(&program_id, &mut data_cache, ());
+    // The program data ID usually maps to the program cache (specifies what to do in a particular span)
+    let program_data_id = PixelProgramDataId(0);
 
     let rectangle_shape = ShapeId::new();
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, 100.0..200.0, 125.0..175.0);
@@ -28,12 +25,9 @@ fn simple_rectangle() {
 
 #[test]
 fn small_rectangle_on_rectangle() {
-    // Declare a program cache for the rectangle
-    let mut program_cache   = PixelProgramCache::empty();
-    let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
-    let mut data_cache      = program_cache.create_data_cache();
-    let program_data_id_1   = program_cache.store_program_data(&program_id, &mut data_cache, ());
-    let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
+    // The program data ID usually maps to the program cache (specifies what to do in a particular span)
+    let program_data_id_1   = PixelProgramDataId(1);
+    let program_data_id_2   = PixelProgramDataId(2);
 
     // One rectangle in front of another
     let rectangle_shape_1   = ShapeId::new();
@@ -60,12 +54,9 @@ fn small_rectangle_on_rectangle() {
 
 #[test]
 fn identical_overlapping_rectangles_1() {
-    // Declare a program cache for the rectangle
-    let mut program_cache   = PixelProgramCache::empty();
-    let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
-    let mut data_cache      = program_cache.create_data_cache();
-    let program_data_id_1   = program_cache.store_program_data(&program_id, &mut data_cache, ());
-    let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
+    // The program data ID usually maps to the program cache (specifies what to do in a particular span)
+    let program_data_id_1   = PixelProgramDataId(1);
+    let program_data_id_2   = PixelProgramDataId(2);
 
     // One rectangle in front of another
     let rectangle_shape_1   = ShapeId::new();
@@ -92,12 +83,9 @@ fn identical_overlapping_rectangles_1() {
 
 #[test]
 fn identical_overlapping_rectangles_2() {
-    // Declare a program cache for the rectangle
-    let mut program_cache   = PixelProgramCache::empty();
-    let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
-    let mut data_cache      = program_cache.create_data_cache();
-    let program_data_id_1   = program_cache.store_program_data(&program_id, &mut data_cache, ());
-    let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
+    // The program data ID usually maps to the program cache (specifies what to do in a particular span)
+    let program_data_id_1   = PixelProgramDataId(1);
+    let program_data_id_2   = PixelProgramDataId(2);
 
     // One rectangle in front of another
     let rectangle_shape_1   = ShapeId::new();
@@ -124,12 +112,9 @@ fn identical_overlapping_rectangles_2() {
 
 #[test]
 fn identical_overlapping_rectangles_3() {
-    // Declare a program cache for the rectangle
-    let mut program_cache   = PixelProgramCache::empty();
-    let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
-    let mut data_cache      = program_cache.create_data_cache();
-    let program_data_id_1   = program_cache.store_program_data(&program_id, &mut data_cache, ());
-    let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
+    // The program data ID usually maps to the program cache (specifies what to do in a particular span)
+    let program_data_id_1   = PixelProgramDataId(1);
+    let program_data_id_2   = PixelProgramDataId(2);
 
     // One rectangle in front of another
     let rectangle_shape_1   = ShapeId::new();
@@ -156,12 +141,9 @@ fn identical_overlapping_rectangles_3() {
 
 #[test]
 fn small_rectangle_under_rectangle() {
-    // Declare a program cache for the rectangle
-    let mut program_cache   = PixelProgramCache::empty();
-    let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
-    let mut data_cache      = program_cache.create_data_cache();
-    let program_data_id_1   = program_cache.store_program_data(&program_id, &mut data_cache, ());
-    let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
+    // The program data ID usually maps to the program cache (specifies what to do in a particular span)
+    let program_data_id_1   = PixelProgramDataId(1);
+    let program_data_id_2   = PixelProgramDataId(2);
 
     // One rectangle in front of another
     let rectangle_shape_1   = ShapeId::new();
@@ -188,12 +170,9 @@ fn small_rectangle_under_rectangle() {
 
 #[test]
 fn transparent_rectangle_on_rectangle() {
-    // Declare a program cache for the rectangle
-    let mut program_cache   = PixelProgramCache::empty();
-    let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
-    let mut data_cache      = program_cache.create_data_cache();
-    let program_data_id_1   = program_cache.store_program_data(&program_id, &mut data_cache, ());
-    let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
+    // The program data ID usually maps to the program cache (specifies what to do in a particular span)
+    let program_data_id_1   = PixelProgramDataId(1);
+    let program_data_id_2   = PixelProgramDataId(2);
 
     // One rectangle in front of another
     let rectangle_shape_1   = ShapeId::new();
@@ -220,11 +199,8 @@ fn transparent_rectangle_on_rectangle() {
 
 #[test]
 fn clip_left() {
-    // Declare a program cache for the rectangle
-    let mut program_cache   = PixelProgramCache::empty();
-    let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
-    let mut data_cache      = program_cache.create_data_cache();
-    let program_data_id     = program_cache.store_program_data(&program_id, &mut data_cache, ());
+    // The program data ID usually maps to the program cache (specifies what to do in a particular span)
+    let program_data_id = PixelProgramDataId(0);
 
     let rectangle_shape = ShapeId::new();
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, -100.0..200.0, 125.0..175.0);
@@ -243,11 +219,8 @@ fn clip_left() {
 
 #[test]
 fn clip_right() {
-    // Declare a program cache for the rectangle
-    let mut program_cache   = PixelProgramCache::empty();
-    let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
-    let mut data_cache      = program_cache.create_data_cache();
-    let program_data_id     = program_cache.store_program_data(&program_id, &mut data_cache, ());
+    // The program data ID usually maps to the program cache (specifies what to do in a particular span)
+    let program_data_id = PixelProgramDataId(0);
 
     let rectangle_shape = ShapeId::new();
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, 100.0..1200.0, 125.0..175.0);
@@ -266,11 +239,8 @@ fn clip_right() {
 
 #[test]
 fn clip_both() {
-    // Declare a program cache for the rectangle
-    let mut program_cache   = PixelProgramCache::empty();
-    let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
-    let mut data_cache      = program_cache.create_data_cache();
-    let program_data_id     = program_cache.store_program_data(&program_id, &mut data_cache, ());
+    // The program data ID usually maps to the program cache (specifies what to do in a particular span)
+    let program_data_id = PixelProgramDataId(0);
 
     let rectangle_shape = ShapeId::new();
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, -100.0..1200.0, 125.0..175.0);

@@ -41,7 +41,7 @@ where
 /// Every pixel program has a separate set of identifiers for their data
 ///
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub struct PixelProgramDataId(usize);
+pub struct PixelProgramDataId(pub usize);
 
 impl<TProgram> StoredPixelProgram<TProgram>
 where
