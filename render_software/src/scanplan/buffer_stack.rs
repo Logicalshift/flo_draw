@@ -9,6 +9,9 @@ pub struct BufferStack<'a, TPixel> {
 
     /// The items that have been pushed to the stack
     stack: Vec<Vec<TPixel>>,
+
+    /// Previously used pixel buffers waiting for use
+    ready_stack: Vec<Vec<TPixel>>,
 }
 
 impl<'a, TPixel> BufferStack<'a, TPixel> 
@@ -21,8 +24,9 @@ where
     #[inline]
     pub fn new(buffer: &'a mut [TPixel]) -> Self {
         BufferStack {
-            first: buffer,
-            stack: vec![]
+            first:          buffer,
+            stack:          vec![],
+            ready_stack:    vec![],
         }
     }
 
@@ -44,16 +48,31 @@ where
     /// Each layer of the stack is the same length, but only the bytes in the range are relevant for the next layer
     ///
     #[inline]
-    pub fn push_entry(&mut self, _range: Range<usize>) {
-        let mut new_entry = vec![];
+    pub fn push_entry(&mut self, range: Range<usize>) {
+        if let Some(mut new_entry) = self.ready_stack.pop() {
+            // Copy into the new entry from the existing entry (we already know this is large enough as it was copied earlier on)
+            // (Often the scanline plan will be writing to different ranges so copying the pixels again is not needed, but complicated blending plans might make things more difficult)
 
-        if let Some(last) = self.stack.last() {
-            new_entry.extend_from_slice(last);
+            if let Some(last) = self.stack.last() {
+                new_entry[range.clone()].copy_from_slice(&last[range]);
+            } else {
+                new_entry[range.clone()].copy_from_slice(&self.first[range]);
+            }
+
+            // Push to the top of the stack
+            self.stack.push(new_entry);
         } else {
-            new_entry.extend_from_slice(self.first);
-        }
+            // Create a new buffer by copying whatever was last in the list
+            let mut new_entry = vec![];
 
-        self.stack.push(new_entry);
+            if let Some(last) = self.stack.last() {
+                new_entry.extend_from_slice(last);
+            } else {
+                new_entry.extend_from_slice(self.first);
+            }
+
+            self.stack.push(new_entry);
+        }
     }
 
     ///
@@ -62,11 +81,15 @@ where
     #[inline]
     pub fn pop_entry(&mut self, blend_pixels: impl FnOnce(&[TPixel], &mut [TPixel])) {
         if let Some(removed) = self.stack.pop() {
+            // Blend with the lower layer
             if let Some(last) = self.stack.last_mut() {
                 blend_pixels(&removed, last);
             } else {
                 blend_pixels(&removed, self.first);
             }
+
+            // Store in the ready stack so we can re-use this buffer later on
+            self.ready_stack.push(removed);
         }
     }
 }
