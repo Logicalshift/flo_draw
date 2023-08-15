@@ -1,9 +1,8 @@
+use super::buffer_stack::*;
 use super::scanspan::*;
 use crate::pixel::*;
 use crate::pixel_program::*;
 use crate::pixel_program_cache::*;
-
-use smallvec::*;
 
 use std::ops::{Range};
 
@@ -398,10 +397,7 @@ impl ScanlinePlan {
         }
 
         // The shadow stack keeps our copies of the scanline for blending operations, so we don't need to keep reallocating them
-        let mut shadow_stack: SmallVec<[Vec<TPixel>; 2]> = smallvec![];
-
-        // 'pixels' points to where we're modifying the pixels, stack_pos indicates the current position in the shadow stack
-        let mut pixels      = scanline;
+        let mut shadow_pixels = BufferStack::new(scanline);
 
         // Execute each span
         for span in self.spans.iter() {
@@ -415,19 +411,50 @@ impl ScanlinePlan {
                 match current_step {
                     PixelProgramPlan::Run(data_id) => {
                         // Just run the program
-                        program_cache.run_program(data_cache, *data_id, pixels, x_range.clone(), y_pos);
+                        program_cache.run_program(data_cache, *data_id, shadow_pixels.buffer(), x_range.clone(), y_pos);
                     }
 
                     PixelProgramPlan::StartBlend => {
-                        todo!()
+                        // Add a new copy of the pixels to the shadow stack
+                        shadow_pixels.push_entry((x_range.start as _)..(x_range.end as _));
                     },
 
                     PixelProgramPlan::Blend(factor) => {
-                        todo!()
+                        let factor = *factor as f64;
+
+                        // Can skip the factor multiplication step if the blend factor is 1.0 (which should be fairly common)
+                        if factor == 1.0 {
+                            shadow_pixels.pop_entry(|src, dst| {
+                                for x in (x_range.start as usize)..(x_range.end as usize) {
+                                    dst[x] = src[x].source_over(dst[x]);
+                                }
+                            });
+                        } else {
+                            shadow_pixels.pop_entry(|src, dst| {
+                                for x in (x_range.start as usize)..(x_range.end as usize) {
+                                    dst[x] = (src[x].multiply_alpha(factor)).source_over(dst[x]);
+                                }
+                            });
+                        }
                     },
 
                     PixelProgramPlan::LinearBlend(start, end) => {
-                        todo!()
+                        // Change the alpha factor across the range of the blend
+                        let x_range     = (x_range.start as usize)..(x_range.end as usize);
+                        let start       = *start as f64;
+                        let end         = *end as f64;
+                        let multiplier  = (end-start)/(x_range.len() as f64);
+
+                        shadow_pixels.pop_entry(|src, dst| {
+                            let start_x = x_range.start;
+
+                            for x in x_range {
+                                let pos     = (x-start_x) as f64;
+                                let factor  = start + pos * multiplier;
+
+                                dst[x] = (src[x].multiply_alpha(factor)).source_over(dst[x]);
+                            }
+                        });
                     }
                 }
 
