@@ -160,15 +160,15 @@ impl<'a> ScanlineInterceptState<'a> {
     /// Adds or removes from the active shapes after an intercept
     ///
     #[inline]
-    pub fn add_intercept(&mut self, direction: EdgeInterceptDirection, shape_id: ShapeId, descriptor: Option<&'a ShapeDescriptor>, x_pos: f64) {
+    pub fn add_intercept(&mut self, intercept: &EdgeIntercept, descriptor: Option<&'a ShapeDescriptor>) {
         if let Some(descriptor) = descriptor {
             let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque);
 
-            match self.find(z_index, shape_id) {
+            match self.find(z_index, intercept.shape) {
                 Ok(existing_idx) => {
                     // Update the existing shape depending on the direction of the intercept
                     let existing        = &mut self.active_shapes[existing_idx];
-                    let remove_existing = match direction {
+                    let remove_existing = match intercept.direction {
                         EdgeInterceptDirection::Toggle          => true,
 
                         EdgeInterceptDirection::DirectionOut    => {
@@ -205,7 +205,7 @@ impl<'a> ScanlineInterceptState<'a> {
 
                 Err(following_idx) => {
                     // There's no existing matching shape: just insert a new intercept
-                    let count = match direction {
+                    let count = match intercept.direction {
                         EdgeInterceptDirection::Toggle          => 1,
                         EdgeInterceptDirection::DirectionOut    => 1,
                         EdgeInterceptDirection::DirectionIn     => -1,
@@ -218,8 +218,8 @@ impl<'a> ScanlineInterceptState<'a> {
 
                     self.active_shapes.insert(following_idx, ScanlineIntercept { 
                         count:      count, 
-                        start_x:    x_pos, 
-                        shape_id:   shape_id,
+                        start_x:    intercept.x_pos, 
+                        shape_id:   intercept.shape,
                         descriptor: descriptor,
                     })
                 }

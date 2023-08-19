@@ -29,12 +29,11 @@ where
         // Trace programs but don't generate fragments until we get an intercept
         let mut active_shapes = ScanlineInterceptState::new();
 
-        while (current_intercept.2.ceil() as i32) < x_range.start {
+        while (current_intercept.x_pos.ceil() as i32) < x_range.start {
             // Add or remove this intercept's programs to the active list
-            let (shape_id, direction, x_pos)    = &current_intercept;
-            let shape_descriptor                = edge_plan.shape_descriptor(*shape_id);
+            let shape_descriptor                = edge_plan.shape_descriptor(current_intercept.shape);
 
-            active_shapes.add_intercept(*direction, *shape_id, shape_descriptor, *x_pos);
+            active_shapes.add_intercept(&current_intercept, shape_descriptor);
 
             // Move to the next intercept (or stop if no intercepts actually fall within the x-range)
             current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { return ScanlinePlan::new(); };
@@ -54,16 +53,15 @@ where
             // TODO: if there are multiple intercepts on the same pixel, we should process them all simultaneously (otherwise we will occasionally start a set of programs one pixel too late)
 
             // Generate a stack for the current intercept
-            let next_x = current_intercept.2.ceil() as i32;
+            let next_x = current_intercept.x_pos.ceil() as i32;
 
             // The end of the current range is the 'next_x' coordinate
             let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
             let stack_depth = active_shapes.len();
 
             // We use the z-index of the current shape to determine if it's in front of or behind the current line
-            let (shape_id, direction, x_pos)    = &current_intercept;
-            let z_index                         = edge_plan.shape_z_index(*shape_id);
-            let shape_descriptor                = edge_plan.shape_descriptor(*shape_id);
+            let z_index                         = edge_plan.shape_z_index(current_intercept.shape);
+            let shape_descriptor                = edge_plan.shape_descriptor(current_intercept.shape);
 
             if z_index >= z_floor && next_x != last_x {
                 // Create a program stack between the ranges: all the programs until the first opaque layer
@@ -97,7 +95,7 @@ where
             }
 
             // Update the state from the current intercept
-            active_shapes.add_intercept(*direction, *shape_id, shape_descriptor, *x_pos);
+            active_shapes.add_intercept(&current_intercept, shape_descriptor);
             z_floor = active_shapes.z_floor();
 
             // Stop when the next_x value gets to the end of the range

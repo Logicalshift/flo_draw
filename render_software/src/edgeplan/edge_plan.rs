@@ -1,4 +1,5 @@
 use super::edge_descriptor::*;
+use super::edge_intercept::*;
 use super::shape_descriptor::*;
 use super::shape_id::*;
 
@@ -105,7 +106,7 @@ where
     ///
     /// Returns the edges that intercept a scanline. Shapes are entered on the right-hand side of any intercepts.
     ///
-    pub fn intercepts_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [Vec<(ShapeId, EdgeInterceptDirection, f64)>]) {
+    pub fn intercepts_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [Vec<EdgeIntercept>]) {
         // Extend the edge intercepts to cover the number of y-positions we have (can be larger than needed but not smaller)
         let mut edge_intercepts = vec![smallvec![]; y_positions.len()];
 
@@ -126,14 +127,14 @@ where
                 let output = &mut output[idx];
 
                 for (direction, pos) in edge_intercepts[idx].iter() {
-                    output.push((edge.shape(), *direction, *pos));
+                    output.push(EdgeIntercept { shape: edge.shape(), direction: *direction, x_pos: *pos });
                 }
             }
         }
 
         // Sort the intercepts on each line by x position
         output.iter_mut().for_each(|intercepts| {
-            intercepts.sort_by(|(_, _, pos_a), (_, _, pos_b)| pos_a.total_cmp(pos_b));
+            intercepts.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
         });
     }
 }
