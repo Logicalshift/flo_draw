@@ -1,6 +1,3 @@
-mod pixel_program;
-mod pixel_program_cache;
-
 /// Kinds of edges that can be used in an edge plan
 pub mod edges;
 
@@ -12,6 +9,3 @@ pub mod scanplan;
 
 /// A pixel models a single colour sample (thematically it could be considered 0 dimensional, though really a pixel is better modelled as aggregation of the light passing through a particular region)
 pub mod pixel;
-
-pub use pixel_program::*;
-pub use pixel_program_cache::*;

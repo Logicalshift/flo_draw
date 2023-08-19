@@ -1,4 +1,4 @@
-use crate::pixel_program_cache::*;
+use crate::pixel::*;
 
 use std::ops::{Range};
 use std::fmt;

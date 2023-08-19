@@ -1,8 +1,6 @@
 use super::buffer_stack::*;
 use super::scanspan::*;
 use crate::pixel::*;
-use crate::pixel_program::*;
-use crate::pixel_program_cache::*;
 
 use std::ops::{Range};
 

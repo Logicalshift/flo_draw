@@ -1,7 +1,7 @@
 use flo_render_software::edgeplan::*;
 use flo_render_software::edges::*;
+use flo_render_software::pixel::*;
 use flo_render_software::scanplan::*;
-use flo_render_software::*;
 
 #[test]
 fn simple_rectangle() {

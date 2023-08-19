@@ -2,7 +2,7 @@ use super::scanline_plan::*;
 use super::scanline_intercept::*;
 
 use crate::edgeplan::*;
-use crate::pixel_program::*;
+use crate::pixel::*;
 
 use std::ops::{Range};
 

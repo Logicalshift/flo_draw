@@ -1,4 +1,4 @@
-use flo_render_software::*;
+use flo_render_software::pixel::*;
 use flo_render_software::scanplan::*;
 
 #[test]
