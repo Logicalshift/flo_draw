@@ -35,8 +35,21 @@ impl Default for U8RgbaPremultipliedPixel {
 }
 
 pub trait ToRgbaU8Slice {
+    /// Returns the pixels as a single slice of u8 values
     fn to_rgba_u8_slice(&self) -> &[u8];
+
+    /// Returns the pixels as a mutable single slice of u8 values
     fn to_rgba_u8_slice_mut(&mut self) -> &mut [u8];
+}
+
+pub trait ToRgbaPremultipliedPixels {
+    /// Converts a slice of `u8` values to a slice of U8RgbaPremultipliedPixels
+    ///
+    /// If the slice is not a multiple of 4, then no pixels are generated at the end
+    fn to_rgba_slice(&self) -> &[U8RgbaPremultipliedPixel];
+
+    /// Converts a slice of `u8` values to a mutable slice of U8RgbaPremultipliedPixels
+    fn to_rgba_slice_mut(&mut self) -> &mut [U8RgbaPremultipliedPixel];
 }
 
 impl ToRgbaU8Slice for [U8RgbaPremultipliedPixel] {
@@ -63,9 +76,33 @@ impl ToRgbaU8Slice for [U8RgbaPremultipliedPixel] {
     }
 }
 
+impl ToRgbaPremultipliedPixels for [u8] {
+    #[inline]
+    fn to_rgba_slice(&self) -> &[U8RgbaPremultipliedPixel] {
+        unsafe {
+            let len     = self.len();
+            let data    = self.as_ptr();
+            let data    = data as *const U8RgbaPremultipliedPixel;
+
+            slice::from_raw_parts(data, len/4)
+        }
+    }
+
+    #[inline]
+    fn to_rgba_slice_mut(&mut self) -> &mut [U8RgbaPremultipliedPixel] {
+        unsafe {
+            let len     = self.len();
+            let data    = self.as_mut_ptr();
+            let data    = data as *mut U8RgbaPremultipliedPixel;
+
+            slice::from_raw_parts_mut(data, len/4)
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use super::{U8RgbaPremultipliedPixel, ToRgbaU8Slice};
+    use super::*;
 
     fn rgba(t: f64) -> [u8; 4] {
         let r = t * 0.3;
@@ -82,7 +119,7 @@ mod test {
     }
 
     #[test]
-    fn convert_u8_pixels() {
+    fn read_rgba_as_u8() {
         // Fill up some pixels
         let mut pixel_data = vec![];
         for x in 0..65536 {
@@ -106,7 +143,7 @@ mod test {
     }
 
     #[test]
-    fn write_u8_pixels() {
+    fn write_rgba_using_u8() {
         // Fill up some pixels
         let mut pixel_data = vec![];
         for _ in 0..65536 {
@@ -132,6 +169,53 @@ mod test {
 
             assert!(pixel_data[x] == U8RgbaPremultipliedPixel::from_components(rgba(t)));
         }
+    }
 
+    #[test]
+    fn read_u8_buffer_using_rgba() {
+        // Fill up some pixels
+        let mut pixel_data  = vec![0u8; 65536*4];
+        for x in 0..65536 {
+            let pos = x * 4;
+            let t = (x as f64)/65536.0;
+            let [r, g, b, a] = rgba(t);
+
+            pixel_data[pos+0] = r;
+            pixel_data[pos+1] = g;
+            pixel_data[pos+2] = b;
+            pixel_data[pos+3] = a;
+        }
+
+        // Should read back as expected the u8 array
+        let as_rgba_array   = pixel_data.to_rgba_slice();
+        for x in 0..65536 {
+            let t = (x as f64)/65536.0;
+
+            assert!(as_rgba_array[x] == U8RgbaPremultipliedPixel::from_components(rgba(t)));
+        }
+    }
+
+    #[test]
+    fn write_u8_buffer_using_rgba() {
+        // Fill up some pixels
+        let mut pixel_data  = vec![0u8; 65536*4];
+        let as_rgba_array   = pixel_data.to_rgba_slice_mut();
+        for x in 0..65536 {
+            let t = (x as f64)/65536.0;
+
+            as_rgba_array[x] = U8RgbaPremultipliedPixel::from_components(rgba(t));
+        }
+
+        // Should read back as expected the u8 array
+        for x in 0..65536 {
+            let pos = x * 4;
+            let t = (x as f64)/65536.0;
+            let [r, g, b, a] = rgba(t);
+
+            assert!(pixel_data[pos+0] == r);
+            assert!(pixel_data[pos+1] == g);
+            assert!(pixel_data[pos+2] == b);
+            assert!(pixel_data[pos+3] == a);
+        }
     }
 }
