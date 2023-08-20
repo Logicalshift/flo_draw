@@ -20,7 +20,7 @@ use std::ops::{Range};
 ///
 #[derive(Clone)]
 pub struct ScanSpanStack {
-    x_range:    Range<i32>,
+    x_range:    Range<f64>,
     first:      PixelProgramPlan,
     others:     Option<SmallVec<[PixelProgramPlan; 4]>>,
     opaque:     bool,
@@ -58,7 +58,7 @@ impl ScanSpanStack {
     /// Creates a span stack with the specified set of programs, specified in reverse ordrer
     ///
     #[inline]
-    pub fn with_reversed_programs(x_range: Range<i32>, opaque: bool, programs_reversed: &Vec<PixelProgramPlan>) -> ScanSpanStack {
+    pub fn with_reversed_programs(x_range: Range<f64>, opaque: bool, programs_reversed: &Vec<PixelProgramPlan>) -> ScanSpanStack {
         if programs_reversed.len() == 1 {
             ScanSpanStack {
                 x_range:    x_range,
@@ -91,7 +91,7 @@ impl ScanSpanStack {
     /// Returns either the right-hand side of the split stack, or an error to indicate that the split point is out of range
     ///
     #[inline]
-    pub fn split(&mut self, x_pos: i32) -> Result<ScanSpanStack, ()> {
+    pub fn split(&mut self, x_pos: f64) -> Result<ScanSpanStack, ()> {
         if x_pos > self.x_range.start && x_pos < self.x_range.end {
             let end = self.x_range.end;
             self.x_range.end = x_pos;
@@ -111,7 +111,7 @@ impl ScanSpanStack {
     /// The range of pixels covered by this span
     ///
     #[inline]
-    pub fn x_range(&self) -> Range<i32> { self.x_range.start..self.x_range.end }
+    pub fn x_range(&self) -> Range<f64> { self.x_range.start..self.x_range.end }
 
     ///
     /// Returns an iterator for the IDs of the programs that should be run over this range
@@ -393,14 +393,14 @@ impl ScanlinePlan {
         TPixel: 'static + Send + Pixel<N>,
     {
         // Check that the operations will fit over this scanline
-        let start_pos   = self.spans.get(0).map(|span| span.x_range.start).unwrap_or(0);
-        let end_pos     = self.spans.last().map(|span| span.x_range.end).unwrap_or(0);
+        let start_pos   = self.spans.get(0).map(|span| span.x_range.start).unwrap_or(0.0);
+        let end_pos     = self.spans.last().map(|span| span.x_range.end).unwrap_or(0.0);
 
-        if (scanline.len() as i32) < end_pos {
+        if (scanline.len() as f64) < end_pos.floor() {
             panic!("Scanline is too long (have {} pixels, but want to write {})", end_pos, scanline.len());
         }
 
-        if start_pos < 0 {
+        if start_pos < 0.0 {
             panic!("Scanline starts before the start of the list of pixels (at {})", start_pos);
         }
 
@@ -419,7 +419,7 @@ impl ScanlinePlan {
                 match current_step {
                     PixelProgramPlan::Run(data_id) => {
                         // Just run the program
-                        program_cache.run_program(data_cache, *data_id, shadow_pixels.buffer(), x_range.clone(), y_pos);
+                        program_cache.run_program(data_cache, *data_id, shadow_pixels.buffer(), (x_range.start.ceil() as _)..(x_range.end.floor() as _), y_pos);
                     }
 
                     PixelProgramPlan::StartBlend => {

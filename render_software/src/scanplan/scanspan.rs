@@ -9,7 +9,7 @@ use std::fmt;
 #[derive(Clone, PartialEq)]
 pub struct ScanSpan {
     /// The pixels to draw on the scanline
-    pub (super) x_range: Range<i32>,
+    pub (super) x_range: Range<f64>,
 
     /// The ID of the program data for the program to run over this range
     pub (super) program: PixelProgramDataId,
@@ -23,7 +23,7 @@ impl ScanSpan {
     /// Creates a scanspan that will run a single program that changes the pixels underneath it
     ///
     #[inline]
-    pub fn transparent(range: Range<i32>, program: PixelProgramDataId) -> ScanSpan {
+    pub fn transparent(range: Range<f64>, program: PixelProgramDataId) -> ScanSpan {
         ScanSpan {
             x_range: range,
             program: program,
@@ -35,7 +35,7 @@ impl ScanSpan {
     /// Creates a scanspan that will run a single program that replaces the pixels underneath it
     ///
     #[inline]
-    pub fn opaque(range: Range<i32>, program: PixelProgramDataId) -> ScanSpan {
+    pub fn opaque(range: Range<f64>, program: PixelProgramDataId) -> ScanSpan {
         ScanSpan {
             x_range: range,
             program: program,
@@ -49,7 +49,7 @@ impl ScanSpan {
     /// Returns the same span if the split would result in a 0-length span
     ///
     #[inline]
-    pub fn split(self, pos: i32) -> Result<(ScanSpan, ScanSpan), ScanSpan> {
+    pub fn split(self, pos: f64) -> Result<(ScanSpan, ScanSpan), ScanSpan> {
         if pos > self.x_range.start && pos < self.x_range.end {
             Ok((
                 ScanSpan {

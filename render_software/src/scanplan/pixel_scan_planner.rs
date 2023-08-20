@@ -12,7 +12,7 @@ use std::ops::{Range};
 /// This plan is created from the edge plan, and pixel-aligned to produce a 'jaggy' pixel-precise version of the plan.
 /// Ie, no anti-aliasing of any kind is performed with this scanline plan.
 ///
-pub fn plan_pixel_scanlines<TEdge>(edge_plan: &EdgePlan<TEdge>, y_positions: &[f64], x_range: Range<i32>) -> Vec<ScanlinePlan>
+pub fn plan_pixel_scanlines<TEdge>(edge_plan: &EdgePlan<TEdge>, y_positions: &[f64], x_range: Range<f64>) -> Vec<ScanlinePlan>
 where
     TEdge: EdgeDescriptor,
 {
@@ -29,7 +29,7 @@ where
         // Trace programs but don't generate fragments until we get an intercept
         let mut active_shapes = ScanlineInterceptState::new();
 
-        while (current_intercept.x_pos.ceil() as i32) < x_range.start {
+        while current_intercept.x_pos.ceil() < x_range.start {
             // Add or remove this intercept's programs to the active list
             let shape_descriptor                = edge_plan.shape_descriptor(current_intercept.shape);
 
@@ -53,7 +53,7 @@ where
             // TODO: if there are multiple intercepts on the same pixel, we should process them all simultaneously (otherwise we will occasionally start a set of programs one pixel too late)
 
             // Generate a stack for the current intercept
-            let next_x = current_intercept.x_pos.ceil() as i32;
+            let next_x = current_intercept.x_pos.ceil();
 
             // The end of the current range is the 'next_x' coordinate
             let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
