@@ -44,12 +44,13 @@ where
 impl<'a, TPixel, TRegionRenderer, const N: usize> Renderer for &'a U8FrameRenderer<TPixel, TRegionRenderer, N> 
 where
     TPixel:                         Sized + Send + Default + Pixel<N>,
-    for<'b> &'b TRegionRenderer:    Renderer<Source=[f64], Dest=[&'b mut [TPixel]]>,
+    for<'b> &'b TRegionRenderer:    Renderer<Region=[f64], Source=[f64], Dest=[&'b mut [TPixel]]>,
 {
+    type Region = ();
     type Source = ();       // Source is '()' because the region renderer references the edge plan that is the 'true' source; TODO: supply the edge plan here?
     type Dest   = [U8RgbaPremultipliedPixel];
 
-    fn render(&self, _source: &(), dest: &mut [U8RgbaPremultipliedPixel]) {
+    fn render(&self, _region: &(), _source: &(), dest: &mut [U8RgbaPremultipliedPixel]) {
         const LINES_AT_ONCE: usize = 8;
 
         // Cut the destination into chunks to form the lines
@@ -82,7 +83,7 @@ where
             y_positions.extend((start_idx..end_idx).map(|idx| idx as f64));
 
             // Render these lines
-            renderer.render(&y_positions, &mut buffer_chunks);
+            renderer.render(&y_positions, &y_positions, &mut buffer_chunks);
 
             // Convert to the final pixel format
             for y_idx in 0..(end_idx-start_idx) {
