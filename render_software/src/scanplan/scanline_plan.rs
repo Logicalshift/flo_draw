@@ -132,16 +132,15 @@ impl ScanSpanStack {
     pub fn is_opaque(&self) -> bool { self.opaque }
 }
 
-impl ScanlinePlan {
-    ///
-    /// Creates a new scanline plan (with no spans)
-    ///
-    pub fn new() -> ScanlinePlan {
+impl Default for ScanlinePlan {
+    fn default() -> Self {
         ScanlinePlan {
             spans: vec![]
         }
     }
+}
 
+impl ScanlinePlan {
     ///
     /// Asserts that a list of stacks is in the correct order and non-overlapping, so that we know that the plan is safe to use without
     /// bounds checking
@@ -172,7 +171,7 @@ impl ScanlinePlan {
     }
 
     ///
-    /// Creates a scanline plan from a set of ScanSpanStacks that are expected to be in order and non-overlapping
+    /// Replaces a scanline plan with a set of ScanSpanStacks that are expected to be in order and non-overlapping
     ///
     /// This is marked as 'unsafe' because we later depend on these stacks to be non-overlapping for safety reasons. Call
     /// `from_ordered_stacks` instead to create a plan with checking.
@@ -182,6 +181,27 @@ impl ScanlinePlan {
         ScanlinePlan {
             spans: stacks
         }
+    }
+
+    ///
+    /// Creates a scanline plan from a set of ScanSpanStacks which are non-overlapping and ordered from left-to-right
+    ///
+    #[inline]
+    pub fn fill_from_ordered_stacks(&mut self, stacks: Vec<ScanSpanStack>) {
+        Self::check_spans_ordering(&stacks);
+
+        unsafe { self.fill_from_ordered_stacks_prechecked(stacks) }
+    }
+
+    ///
+    /// Replaces a scanline plan with a set of ScanSpanStacks that are expected to be in order and non-overlapping
+    ///
+    /// This is marked as 'unsafe' because we later depend on these stacks to be non-overlapping for safety reasons. Call
+    /// `from_ordered_stacks` instead to create a plan with checking.
+    ///
+    #[inline]
+    pub unsafe fn fill_from_ordered_stacks_prechecked(&mut self, stacks: Vec<ScanSpanStack>) {
+        self.spans = stacks;
     }
 
     ///

@@ -10,7 +10,7 @@ fn add_first_span() {
     let program_data_id     = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id));
 
     // Read the span back again
@@ -28,7 +28,7 @@ fn add_two_spans() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program (two spans)
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(200.0..300.0, program_data_id_2));
 
@@ -46,7 +46,7 @@ fn add_two_spans_reverse() {
     let program_data_id     = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program (two spans, reverse order of above)
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(200.0..300.0, program_data_id));
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id));
 
@@ -64,7 +64,7 @@ fn add_in_between_span() {
     let program_data_id     = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id));
     plan.add_span(ScanSpan::opaque(200.0..300.0, program_data_id));
     plan.add_span(ScanSpan::opaque(125.0..175.0, program_data_id));
@@ -84,7 +84,7 @@ fn add_overlapping_bridging_span_opaque() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(200.0..300.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(90.0..210.0, program_data_id_2));
@@ -108,7 +108,7 @@ fn overlap_many_spans_opaque() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..50.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(75.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(125.0..150.0, program_data_id_1));
@@ -130,7 +130,7 @@ fn overlap_many_spans_last_partial_opaque() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..50.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(75.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(125.0..150.0, program_data_id_1));
@@ -152,7 +152,7 @@ fn overlap_many_spans_first_and_last_partial_opaque() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..50.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(75.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(125.0..150.0, program_data_id_1));
@@ -174,7 +174,7 @@ fn overlap_many_spans_first_and_last_partial_transparent() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..50.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(75.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(125.0..150.0, program_data_id_1));
@@ -210,7 +210,7 @@ fn add_overlapping_bridging_span_transparent() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(200.0..300.0, program_data_id_1));
     plan.add_span(ScanSpan::transparent(90.0..210.0, program_data_id_2));
@@ -238,7 +238,7 @@ fn add_opaque_spans_overlap() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id_2));
 
@@ -257,7 +257,7 @@ fn add_two_neighboring_spans() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program (two spans)
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(100.0..200.0, program_data_id_2));
 
@@ -276,7 +276,7 @@ fn add_two_neighboring_spans_reverse_order() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program (two spans)
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(100.0..200.0, program_data_id_2));
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id_1));
 
@@ -295,7 +295,7 @@ fn add_closely_overlapping_spans() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program (two spans)
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(99.0..200.0, program_data_id_2));
 
@@ -314,7 +314,7 @@ fn add_closely_overlapping_spans_reverse_order() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program (two spans)
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(99.0..200.0, program_data_id_2));
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id_1));
 
@@ -333,7 +333,7 @@ fn add_transparent_spans_overlap() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::transparent(0.0..100.0, program_data_id_2));
 
@@ -352,7 +352,7 @@ fn add_opaque_span_overlapping_start() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program (here we split a span with another program)
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(25.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(0.0..50.0, program_data_id_2));
 
@@ -371,7 +371,7 @@ fn add_opaque_span_overlapping_end() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program (here we split a span with another program)
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..75.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(50.0..100.0, program_data_id_2));
 
@@ -390,7 +390,7 @@ fn add_opaque_span_overlapping_middle() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program (here we split a span with another program)
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::opaque(25.0..75.0, program_data_id_2));
 
@@ -409,7 +409,7 @@ fn add_transparent_span_middle() {
     let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
 
     // Set up a plan for a scanline using this program (here we split a span with another program: in this case a transparent one so both programs need to run over that range)
-    let mut plan = ScanlinePlan::new();
+    let mut plan = ScanlinePlan::default();
     plan.add_span(ScanSpan::opaque(0.0..100.0, program_data_id_1));
     plan.add_span(ScanSpan::transparent(25.0..75.0, program_data_id_2));
 

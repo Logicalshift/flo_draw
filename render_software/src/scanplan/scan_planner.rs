@@ -12,5 +12,5 @@ pub trait ScanPlanner {
 
     /// For every scanline in `y_positions`, use the edge plan to find the intercepts at a set of y-positions, clipped to the specified x-range, and
     /// generating the output in the `scanlines` array
-    fn plan_scanlines(edge_plan: &EdgePlan<Self::Edge>, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [ScanlinePlan]);
+    fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [ScanlinePlan]);
 }
