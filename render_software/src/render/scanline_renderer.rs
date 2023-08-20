@@ -31,11 +31,11 @@ where
     }
 }
 
-impl<'a, TPixel, const N: usize> LineRenderer for ScanlineRenderer<'a, TPixel, N> 
+impl<'a, TPixel, const N: usize> Renderer for ScanlineRenderer<'a, TPixel, N> 
 where
     TPixel: 'static + Send + Pixel<N>,
 {
-    type Source = ScanlinePlan;
+    type Source = (f64, ScanlinePlan);
     type Dest   = [TPixel];
 
     ///
@@ -43,9 +43,11 @@ where
     ///
     /// The y-position here is relayed to the pixel program when generating the actual pixels for the scanline
     ///
-    fn render(&self, y_pos: f64, source: &Self::Source, dest: &mut Self::Dest) {
-        let scanline    = dest;
-        let spans       = source.spans();
+    fn render(&self, source: &Self::Source, dest: &mut Self::Dest) {
+        let scanline        = dest;
+        let (y_pos, source) = source;
+        let spans           = source.spans();
+        let y_pos           = *y_pos;
 
         // Check that the operations will fit over this scanline
         let start_pos   = spans.get(0).map(|span| span.x_range.start).unwrap_or(0.0);
