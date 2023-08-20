@@ -31,16 +31,14 @@ where
     }
 }
 
-impl<'a, TPixel, const N: usize> Renderer for ScanlineRenderer<'a, TPixel, N> 
+impl<'a, TPixel, const N: usize> LineRenderer for ScanlineRenderer<'a, TPixel, N> 
 where
     TPixel: 'static + Send + Pixel<N>,
 {
     type Source = ScanlinePlan;
     type Dest   = [TPixel];
 
-    fn render(&self, source: &Self::Source, dest: &mut Self::Dest) {
-        // TODO: this needs to be some kind of a scanline renderer rather than a flat renderer, where a y-position is required
-        let y_pos       = 0;
+    fn render(&self, y_pos: f64, source: &Self::Source, dest: &mut Self::Dest) {
         let scanline    = dest;
         let spans       = source.spans();
 
@@ -71,7 +69,7 @@ where
                 match current_step {
                     PixelProgramPlan::Run(data_id) => {
                         // Just run the program
-                        self.program_cache.run_program(self.program_data, *data_id, shadow_pixels.buffer(), (x_range.start.ceil() as _)..(x_range.end.floor() as _), y_pos);
+                        self.program_cache.run_program(self.program_data, *data_id, shadow_pixels.buffer(), (x_range.start.ceil() as _)..(x_range.end.floor() as _), y_pos as _);
                     }
 
                     PixelProgramPlan::StartBlend => {
