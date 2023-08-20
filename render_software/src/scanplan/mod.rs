@@ -17,8 +17,10 @@ mod pixel_scan_planner;
 mod scanspan;
 mod scanline_plan;
 mod scanline_intercept;
+mod scan_planner;
 
 pub use pixel_scan_planner::*;
 pub use scanspan::*;
 pub use scanline_plan::*;
 pub use scanline_intercept::*;
+pub use scan_planner::*;
