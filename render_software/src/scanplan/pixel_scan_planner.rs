@@ -17,9 +17,29 @@ pub struct PixelScanPlanner<TEdge> {
     edge: PhantomData<TEdge>
 }
 
+impl<TEdge> PixelScanPlanner<TEdge>
+where
+    TEdge: EdgeDescriptor,
+{
+    ///
+    /// Plans out a scanline using the PixelScanPlanner (this scan planner does not perform any anti-aliasing)
+    ///
+    #[inline]
+    pub fn plan(edge_plan: &EdgePlan<TEdge>, y_positions: &[f64], x_range: Range<f64>) -> Vec<ScanlinePlan> {
+        // Create a planner and the result vec
+        let planner         = Self::default();
+        let mut scanlines   = vec![ScanlinePlan::default(); y_positions.len()];
+
+        // Fill with scanlines
+        planner.plan_scanlines(edge_plan, y_positions, x_range, &mut scanlines);
+
+        scanlines
+    }
+} 
+
 impl<TEdge> Default for PixelScanPlanner<TEdge>
 where
-    TEdge: EdgeDescriptor
+    TEdge: EdgeDescriptor,
 {
     #[inline]
     fn default() -> Self {
@@ -148,24 +168,4 @@ where
             }
         }
     }
-}
-
-///
-/// Creates a pixel-precise scanline plan from an edge plan at a particular y position
-///
-/// This plan is created from the edge plan, and pixel-aligned to produce a 'jaggy' pixel-precise version of the plan.
-/// Ie, no anti-aliasing of any kind is performed with this scanline plan.
-///
-pub fn plan_pixel_scanlines<TEdge>(edge_plan: &EdgePlan<TEdge>, y_positions: &[f64], x_range: Range<f64>) -> Vec<ScanlinePlan>
-where
-    TEdge: EdgeDescriptor,
-{
-    // Create a planner and the result vec
-    let planner         = PixelScanPlanner::default();
-    let mut scanlines   = vec![ScanlinePlan::default(); y_positions.len()];
-
-    // Fill with scanlines
-    planner.plan_scanlines(edge_plan, y_positions, x_range, &mut scanlines);
-
-    scanlines
 }
