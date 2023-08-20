@@ -1,8 +1,6 @@
 use super::renderer::*;
 
-use crate::edgeplan::*;
 use crate::pixel::*;
-use crate::scanplan::*;
 
 use std::marker::{PhantomData};
 
@@ -45,18 +43,18 @@ where
 
 impl<'a, TPixel, TRegionRenderer, const N: usize> Renderer for &'a U8FrameRenderer<TPixel, TRegionRenderer, N> 
 where
-    TPixel:                         Sized + Send + Pixel<N>,
+    TPixel:                         Sized + Send + Default + Pixel<N>,
     for<'b> &'b TRegionRenderer:    Renderer<Source=[f64], Dest=[&'b mut [TPixel]]>,
 {
     type Source = ();       // Source is '()' because the region renderer references the edge plan that is the 'true' source; TODO: supply the edge plan here?
-    type Dest   = [TPixel];
+    type Dest   = [U8RgbaPremultipliedPixel];
 
-    fn render(&self, _source: &(), dest: &mut [TPixel]) {
+    fn render(&self, _source: &(), dest: &mut [U8RgbaPremultipliedPixel]) {
         const LINES_AT_ONCE: usize = 8;
 
         // Cut the destination into chunks to form the lines
-        let mut chunks: Vec<_>  = dest.chunks_exact_mut(self.width).collect();
-        let renderer            = &self.region_renderer;
+        let mut chunks  = dest.chunks_exact_mut(self.width).collect::<Vec<_>>();
+        let renderer    = &self.region_renderer;
 
         // Rendering fails if there are insufficient lines to complete
         if chunks.len() < self.height {
@@ -64,8 +62,10 @@ where
         }
 
         // Render in chunks of LINES_AT_ONCE lines
-        let mut y_idx       = 0;
-        let mut y_positions = vec![];
+        let mut y_idx           = 0;
+        let mut y_positions     = vec![];
+        let mut buffer          = vec![TPixel::default(); self.width*LINES_AT_ONCE];
+        let mut buffer_chunks   = buffer.chunks_exact_mut(self.width).collect::<Vec<_>>();
         loop {
             // Stop once we reach the end
             if y_idx >= self.height {
@@ -82,11 +82,20 @@ where
             y_positions.extend((start_idx..end_idx).map(|idx| idx as f64));
 
             // Render these lines
-            renderer.render(&y_positions, &mut chunks[start_idx..end_idx]);
+            renderer.render(&y_positions, &mut buffer_chunks);
+
+            // Convert to the final pixel format
+            for y_idx in 0..(end_idx-start_idx) {
+                let rendered_pixels = &mut buffer_chunks[y_idx];
+                let target_pixels   = &mut chunks[start_idx + y_idx];
+
+                for x_idx in 0..self.width {
+                    target_pixels[x_idx] = rendered_pixels[x_idx].to_u8_rgba(self.gamma);
+                }
+            }
 
             // Advance to the next y position
             y_idx = end_idx;
         }
     } 
 }
-
