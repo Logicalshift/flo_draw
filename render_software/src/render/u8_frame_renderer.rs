@@ -1,16 +1,18 @@
 use super::renderer::*;
 
 use crate::pixel::*;
+use crate::edgeplan::*;
 
 use std::marker::{PhantomData};
 
 ///
 /// Renders a whole frame of pixels to a RGBA U8 buffer
 ///
-pub struct U8FrameRenderer<TPixel, TRegionRenderer, const N: usize>
+pub struct U8FrameRenderer<TPixel, TEdge, TRegionRenderer, const N: usize>
 where
     TPixel:                         Send + Pixel<N>,
-    for<'a> &'a TRegionRenderer:    Renderer<Source=[f64], Dest=[&'a mut [TPixel]]>,
+    TEdge:                          EdgeDescriptor,
+    for<'a> &'a TRegionRenderer:    Renderer<Region=[f64], Source=EdgePlan<TEdge>, Dest=[&'a mut [TPixel]]>,
 {
     width:              usize,
     height:             usize,
@@ -20,10 +22,11 @@ where
 }
 
 
-impl<TPixel, TRegionRenderer, const N: usize> U8FrameRenderer<TPixel, TRegionRenderer, N>
+impl<TPixel, TEdge, TRegionRenderer, const N: usize> U8FrameRenderer<TPixel, TEdge, TRegionRenderer, N>
 where
     TPixel:                         Send + Pixel<N>,
-    for<'a> &'a TRegionRenderer:    Renderer<Source=[f64], Dest=[&'a mut [TPixel]]>,
+    TEdge:                          EdgeDescriptor,
+    for<'a> &'a TRegionRenderer:    Renderer<Region=[f64], Source=EdgePlan<TEdge>, Dest=[&'a mut [TPixel]]>,
 {
     ///
     /// Creates a new frame renderer
@@ -41,16 +44,17 @@ where
     }
 }
 
-impl<'a, TPixel, TRegionRenderer, const N: usize> Renderer for &'a U8FrameRenderer<TPixel, TRegionRenderer, N> 
+impl<'a, TPixel, TEdge, TRegionRenderer, const N: usize> Renderer for &'a U8FrameRenderer<TPixel, TEdge, TRegionRenderer, N> 
 where
     TPixel:                         Sized + Send + Default + Pixel<N>,
-    for<'b> &'b TRegionRenderer:    Renderer<Region=[f64], Source=[f64], Dest=[&'b mut [TPixel]]>,
+    TEdge:                          EdgeDescriptor,
+    for<'b> &'b TRegionRenderer:    Renderer<Region=[f64], Source=EdgePlan<TEdge>, Dest=[&'b mut [TPixel]]>,
 {
     type Region = ();
-    type Source = ();       // Source is '()' because the region renderer references the edge plan that is the 'true' source; TODO: supply the edge plan here?
+    type Source = EdgePlan<TEdge>;
     type Dest   = [U8RgbaPremultipliedPixel];
 
-    fn render(&self, _region: &(), _source: &(), dest: &mut [U8RgbaPremultipliedPixel]) {
+    fn render(&self, _region: &(), source: &EdgePlan<TEdge>, dest: &mut [U8RgbaPremultipliedPixel]) {
         const LINES_AT_ONCE: usize = 8;
 
         // Cut the destination into chunks to form the lines
@@ -83,7 +87,7 @@ where
             y_positions.extend((start_idx..end_idx).map(|idx| idx as f64));
 
             // Render these lines
-            renderer.render(&y_positions, &y_positions, &mut buffer_chunks);
+            renderer.render(&y_positions, source, &mut buffer_chunks);
 
             // Convert to the final pixel format
             for y_idx in 0..(end_idx-start_idx) {
