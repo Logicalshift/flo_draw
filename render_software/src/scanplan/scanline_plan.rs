@@ -2,6 +2,8 @@ use super::buffer_stack::*;
 use super::scanspan::*;
 use crate::pixel::*;
 
+use smallvec::*;
+
 use std::ops::{Range};
 
 // An observation is that we don't have to build up the stacks here, we can just run all the spans from back to front to build up
@@ -20,7 +22,7 @@ use std::ops::{Range};
 pub struct ScanSpanStack {
     x_range:    Range<i32>,
     first:      PixelProgramPlan,
-    others:     Option<Vec<PixelProgramPlan>>,
+    others:     Option<SmallVec<[PixelProgramPlan; 4]>>,
     opaque:     bool,
 }
 
@@ -79,7 +81,7 @@ impl ScanSpanStack {
     ///
     #[inline]
     pub fn push(&mut self, span: ScanSpan) {
-        self.others.get_or_insert_with(|| vec![])
+        self.others.get_or_insert_with(|| smallvec![])
             .push(PixelProgramPlan::Run(span.program))
     }
 
