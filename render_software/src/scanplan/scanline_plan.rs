@@ -447,7 +447,7 @@ impl ScanlinePlan {
                 match current_step {
                     PixelProgramPlan::Run(data_id) => {
                         // Just run the program
-                        program_cache.run_program(data_cache, *data_id, shadow_pixels.buffer(), (x_range.start.ceil() as _)..(x_range.end.floor() as _), y_pos);
+                        program_cache.run_program(data_cache, *data_id, shadow_pixels.buffer(), (x_range.start.ceil() as _)..(x_range.end.floor() as _), y_pos as _);
                     }
 
                     PixelProgramPlan::StartBlend => {

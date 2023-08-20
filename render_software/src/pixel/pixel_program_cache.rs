@@ -18,7 +18,7 @@ pub struct PixelProgramCache<TPixel> {
 ///
 pub struct PixelProgramDataCache<TPixel> {
     /// Functions that call a pixel program with its associated program data
-    program_data: Vec<Box<dyn Fn(&PixelProgramCache<TPixel>, &PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, i32) -> ()>>,
+    program_data: Vec<Box<dyn Fn(&PixelProgramCache<TPixel>, &PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, f64) -> ()>>,
 }
 
 ///
@@ -32,7 +32,7 @@ where
     program_id: PixelProgramId,
 
     /// Function to associate program data with this program
-    associate_program_data: Box<dyn Fn(TProgram::ProgramData) -> Box<dyn Fn(&PixelProgramCache<TProgram::Pixel>, &PixelProgramDataCache<TProgram::Pixel>, &mut [TProgram::Pixel], Range<i32>, i32) -> ()>>,
+    associate_program_data: Box<dyn Fn(TProgram::ProgramData) -> Box<dyn Fn(&PixelProgramCache<TProgram::Pixel>, &PixelProgramDataCache<TProgram::Pixel>, &mut [TProgram::Pixel], Range<i32>, f64) -> ()>>,
 }
 
 ///
@@ -71,7 +71,7 @@ where
     ///
     /// Creates a function based on a program that sets its data and scanline data, generating the 'make pixels at position' function
     ///
-    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Fn(TProgram::ProgramData) -> Box<dyn Fn(&PixelProgramCache<TPixel>, &PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, i32) -> ()>
+    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Fn(TProgram::ProgramData) -> Box<dyn Fn(&PixelProgramCache<TPixel>, &PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, f64) -> ()>
     where
         TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
@@ -144,7 +144,7 @@ where
     /// Runs a program on a range of pixels
     ///
     #[inline]
-    pub fn run_program(&self, data_cache: &PixelProgramDataCache<TPixel>, program_data: PixelProgramDataId, target: &mut [TPixel], x_range: Range<i32>, y_pos: i32) {
+    pub fn run_program(&self, data_cache: &PixelProgramDataCache<TPixel>, program_data: PixelProgramDataId, target: &mut [TPixel], x_range: Range<i32>, y_pos: f64) {
         (data_cache.program_data[program_data.0])(self, data_cache, target, x_range, y_pos)
     }
 }
