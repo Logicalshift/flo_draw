@@ -3,6 +3,7 @@
 ///
 /// The alpha value is pre-multiplied into the RGB values, and the colour space is gamma-corrected
 ///
+#[repr(C)]
 pub struct U8RgbaPremultipliedPixel([u8; 4]);
 
 impl U8RgbaPremultipliedPixel {
