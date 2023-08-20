@@ -20,10 +20,10 @@ use std::ops::{Range};
 ///
 #[derive(Clone)]
 pub struct ScanSpanStack {
-    x_range:    Range<f64>,
-    first:      PixelProgramPlan,
-    others:     Option<SmallVec<[PixelProgramPlan; 4]>>,
-    opaque:     bool,
+    pub (crate) x_range:    Range<f64>,
+    pub (crate) first:      PixelProgramPlan,
+    pub (crate) others:     Option<SmallVec<[PixelProgramPlan; 4]>>,
+    pub (crate) opaque:     bool,
 }
 
 ///
@@ -364,6 +364,14 @@ impl ScanlinePlan {
     #[inline]
     pub fn clear(&mut self) {
         self.spans.clear();
+    }
+
+    ///
+    /// Returns the spans in this plan
+    ///
+    #[inline]
+    pub fn spans(&self) -> &[ScanSpanStack] {
+        &self.spans
     }
 
     ///
