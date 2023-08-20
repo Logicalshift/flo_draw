@@ -3,6 +3,8 @@ use super::renderer::*;
 use crate::edgeplan::*;
 use crate::scanplan::*;
 
+use std::marker::{PhantomData};
+
 ///
 /// The edge plan region renderer renders blocks of scanlines from an edge plan, supplied as y coordinates. It will work
 /// with any kind of renderer that takes scanline plans (ScanlineRenderer being the most simple example of this)
@@ -14,7 +16,7 @@ where
     TLineRenderer:  Renderer<Source=(f64, ScanlinePlan)>,
 {
     width:          f64,
-    edge_plan:      EdgePlan<TEdge>,
+    edge_plan:      PhantomData<TEdge>,
     scan_planner:   TPlanner,
     line_renderer:  TLineRenderer,
 }
@@ -28,11 +30,14 @@ where
     ///
     /// Creates a new region renderer
     ///
-    pub fn new(width: usize, edge_plan: EdgePlan<TEdge>, scan_planner: TPlanner, line_renderer: TLineRenderer) -> Self {
+    pub fn new(width: usize, scan_planner: TPlanner, line_renderer: TLineRenderer) -> Self {
         let width = width as f64;
 
         Self {
-            width, edge_plan, scan_planner, line_renderer,
+            width:          width,
+            edge_plan:      PhantomData, 
+            scan_planner:   scan_planner, 
+            line_renderer:  line_renderer,
         }
     }
 }
@@ -43,16 +48,18 @@ where
     TPlanner:       ScanPlanner<Edge=TEdge>,
     TLineRenderer:  Renderer<Source=(f64, ScanlinePlan)>,
 {
-    type Source = [f64];
+    type Source = (&'a [f64], &'a EdgePlan<TEdge>);
     type Dest   = [&'a mut TLineRenderer::Dest];
 
-    fn render(&self, source: &[f64], dest: &mut [&'a mut TLineRenderer::Dest]) {
+    fn render(&self, source: &(&'a [f64], &'a EdgePlan<TEdge>), dest: &mut [&'a mut TLineRenderer::Dest]) {
+        let (y_positions, edge_plan) = source;
+
         // Plan the lines
-        let mut scanlines = vec![(0.0, ScanlinePlan::default()); source.len()];
-        self.scan_planner.plan_scanlines(&self.edge_plan, source, 0.0..self.width, &mut scanlines);
+        let mut scanlines = vec![(0.0, ScanlinePlan::default()); y_positions.len()];
+        self.scan_planner.plan_scanlines(edge_plan, y_positions, 0.0..self.width, &mut scanlines);
 
         // Pass them on to the line renderer to generate the result
-        for idx in 0..source.len() {
+        for idx in 0..y_positions.len() {
             self.line_renderer.render(&scanlines[idx], dest[idx]);
         }
     }
