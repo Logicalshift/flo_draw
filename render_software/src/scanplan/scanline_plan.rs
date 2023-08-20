@@ -337,6 +337,14 @@ impl ScanlinePlan {
     }
 
     ///
+    /// Clears out this plan so the structure can be re-used
+    ///
+    #[inline]
+    pub fn clear(&mut self) {
+        self.spans.clear();
+    }
+
+    ///
     /// Generates scan spans in rendering order for this scanline
     ///
     /// The lowest span in a stack is always returned as opaque even if it was originally created as transparent using this function
