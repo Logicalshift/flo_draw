@@ -38,6 +38,11 @@ where
     type Source = ScanlinePlan;
     type Dest   = [TPixel];
 
+    ///
+    /// Renders a `ScanlinePlan` to a buffer of pixels (which should match the length of the plan)
+    ///
+    /// The y-position here is relayed to the pixel program when generating the actual pixels for the scanline
+    ///
     fn render(&self, y_pos: f64, source: &Self::Source, dest: &mut Self::Dest) {
         let scanline    = dest;
         let spans       = source.spans();
