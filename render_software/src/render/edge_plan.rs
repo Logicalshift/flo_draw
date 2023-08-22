@@ -30,7 +30,7 @@ where
 
         let scanline_renderer       = ScanlineRenderer::new(program_cache, data);
         let scanline_planner        = PixelScanPlanner::<TEdge>::default();
-        let edge_region_renderer    = EdgePlanRegionRenderer::<TEdge, _, _>::new(width, scanline_planner, scanline_renderer);
+        let edge_region_renderer    = EdgePlanRegionRenderer::<TEdge, _, _>::new(scanline_planner, scanline_renderer);
         let frame_renderer          = U8FrameRenderer::<_, _, EdgePlanRegionRenderer<TEdge, _, _>, N>::new(width, height, gamma, edge_region_renderer);
 
         (&frame_renderer).render(&(), self, target);

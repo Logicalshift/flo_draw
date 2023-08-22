@@ -1,4 +1,5 @@
 use super::renderer::*;
+use super::render_slice::*;
 
 use crate::pixel::*;
 use crate::edgeplan::*;
@@ -12,7 +13,7 @@ pub struct U8FrameRenderer<TPixel, TEdge, TRegionRenderer, const N: usize>
 where
     TPixel:                         Send + Pixel<N>,
     TEdge:                          EdgeDescriptor,
-    for<'a> &'a TRegionRenderer:    Renderer<Region=[f64], Source=EdgePlan<TEdge>, Dest=[&'a mut [TPixel]]>,
+    for<'a> &'a TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[&'a mut [TPixel]]>,
 {
     width:              usize,
     height:             usize,
@@ -26,7 +27,7 @@ impl<TPixel, TEdge, TRegionRenderer, const N: usize> U8FrameRenderer<TPixel, TEd
 where
     TPixel:                         Send + Pixel<N>,
     TEdge:                          EdgeDescriptor,
-    for<'a> &'a TRegionRenderer:    Renderer<Region=[f64], Source=EdgePlan<TEdge>, Dest=[&'a mut [TPixel]]>,
+    for<'a> &'a TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[&'a mut [TPixel]]>,
 {
     ///
     /// Creates a new frame renderer
@@ -48,7 +49,7 @@ impl<'a, TPixel, TEdge, TRegionRenderer, const N: usize> Renderer for &'a U8Fram
 where
     TPixel:                         Sized + Send + Default + Pixel<N>,
     TEdge:                          EdgeDescriptor,
-    for<'b> &'b TRegionRenderer:    Renderer<Region=[f64], Source=EdgePlan<TEdge>, Dest=[&'b mut [TPixel]]>,
+    for<'b> &'b TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[&'b mut [TPixel]]>,
 {
     type Region = ();
     type Source = EdgePlan<TEdge>;
@@ -68,7 +69,7 @@ where
 
         // Render in chunks of LINES_AT_ONCE lines
         let mut y_idx           = 0;
-        let mut y_positions     = vec![];
+        let mut render_slice    = RenderSlice { width: self.width, y_positions: vec![] };
         let mut buffer          = vec![TPixel::default(); self.width*LINES_AT_ONCE];
         let mut buffer_chunks   = buffer.chunks_exact_mut(self.width).collect::<Vec<_>>();
         loop {
@@ -83,11 +84,11 @@ where
             let end_idx     = if end_idx > self.height { self.height } else { end_idx };
 
             // Write the y positions
-            y_positions.clear();
-            y_positions.extend((start_idx..end_idx).map(|idx| idx as f64));
+            render_slice.y_positions.clear();
+            render_slice.y_positions.extend((start_idx..end_idx).map(|idx| idx as f64));
 
             // Render these lines
-            renderer.render(&y_positions, source, &mut buffer_chunks);
+            renderer.render(&render_slice, source, &mut buffer_chunks);
 
             // Convert to the final pixel format
             for y_idx in 0..(end_idx-start_idx) {
