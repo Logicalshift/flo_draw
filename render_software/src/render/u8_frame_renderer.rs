@@ -10,9 +10,9 @@ use std::marker::{PhantomData};
 ///
 /// Renders a whole frame of pixels to a RGBA U8 buffer (using TPixel as the intermediate format)
 ///
-pub struct U8FrameRenderer<TPixel, TEdge, TRegionRenderer, const N: usize>
+pub struct U8FrameRenderer<TPixel, TEdge, TRegionRenderer>
 where
-    TPixel:                         Send + Pixel<N>,
+    TPixel:                         Sized + Send + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
     TEdge:                          EdgeDescriptor,
     for<'a> &'a TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[&'a mut [TPixel]]>,
 {
@@ -21,9 +21,9 @@ where
 }
 
 
-impl<TPixel, TEdge, TRegionRenderer, const N: usize> U8FrameRenderer<TPixel, TEdge, TRegionRenderer, N>
+impl<TPixel, TEdge, TRegionRenderer> U8FrameRenderer<TPixel, TEdge, TRegionRenderer>
 where
-    TPixel:                         Send + Pixel<N>,
+    TPixel:                         Sized + Send + Clone + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
     TEdge:                          EdgeDescriptor,
     for<'a> &'a TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[&'a mut [TPixel]]>,
 {
@@ -40,9 +40,9 @@ where
     }
 }
 
-impl<'a, TPixel, TEdge, TRegionRenderer, const N: usize> Renderer for &'a U8FrameRenderer<TPixel, TEdge, TRegionRenderer, N> 
+impl<'a, TPixel, TEdge, TRegionRenderer> Renderer for &'a U8FrameRenderer<TPixel, TEdge, TRegionRenderer> 
 where
-    TPixel:                         Sized + Send + Default + Pixel<N>,
+    TPixel:                         Sized + Send + Clone + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
     TEdge:                          EdgeDescriptor,
     for<'b> &'b TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[&'b mut [TPixel]]>,
 {
@@ -91,7 +91,7 @@ where
                 let target_pixels   = &mut chunks[start_idx + y_idx];
 
                 for x_idx in 0..region.width {
-                    target_pixels[x_idx] = rendered_pixels[x_idx].to_u8_rgba(region.gamma);
+                    target_pixels[x_idx] = rendered_pixels[x_idx].to_gamma_colorspace(region.gamma);
                 }
             }
 

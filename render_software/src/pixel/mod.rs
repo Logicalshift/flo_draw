@@ -1,5 +1,6 @@
 mod pixel_trait;
 mod alpha_blend_trait;
+mod to_gamma_colorspace_trait;
 mod u8_rgba;
 mod f32_linear;
 mod pixel_program;
@@ -11,3 +12,4 @@ pub use u8_rgba::*;
 pub use f32_linear::*;
 pub use pixel_program::*;
 pub use pixel_program_cache::*;
+pub use to_gamma_colorspace_trait::*;

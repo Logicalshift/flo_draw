@@ -1,4 +1,5 @@
 use super::alpha_blend_trait::*;
+use super::to_gamma_colorspace_trait::*;
 use super::pixel_trait::*;
 use super::u8_rgba::*;
 
@@ -67,9 +68,11 @@ impl Pixel<4> for F32LinearPixel {
         let [r, g, b, a] = rgba.to_array();
         canvas::Color::Rgba(r, g, b, a)
     }
+}
 
+impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
     #[inline]
-    fn to_u8_rgba(&self, gamma: f64) -> U8RgbaPremultipliedPixel {
+    fn to_gamma_colorspace(&self, gamma: f64) -> U8RgbaPremultipliedPixel {
         // Remove gamma correction
         let gamma   = (1.0/gamma) as f32;
         let rgba    = self.0.pow_f32x4(f32x4::new([gamma, gamma, gamma, 1.0]));
