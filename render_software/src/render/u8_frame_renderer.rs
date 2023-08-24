@@ -1,5 +1,6 @@
 use super::renderer::*;
 use super::render_slice::*;
+use super::frame_size::*;
 
 use crate::pixel::*;
 use crate::edgeplan::*;
@@ -7,7 +8,7 @@ use crate::edgeplan::*;
 use std::marker::{PhantomData};
 
 ///
-/// Renders a whole frame of pixels to a RGBA U8 buffer
+/// Renders a whole frame of pixels to a RGBA U8 buffer (using TPixel as the intermediate format)
 ///
 pub struct U8FrameRenderer<TPixel, TEdge, TRegionRenderer, const N: usize>
 where
@@ -15,9 +16,6 @@ where
     TEdge:                          EdgeDescriptor,
     for<'a> &'a TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[&'a mut [TPixel]]>,
 {
-    width:              usize,
-    height:             usize,
-    gamma:              f64,
     region_renderer:    TRegionRenderer,
     pixel:              PhantomData<TPixel>,
 }
@@ -34,11 +32,8 @@ where
     ///
     /// Use a gamma value of 2.2 for most rendering tasks (this is the default used by most operating systems)
     ///
-    pub fn new(width: usize, height: usize, gamma: f64, region_renderer: TRegionRenderer) -> Self {
+    pub fn new(region_renderer: TRegionRenderer) -> Self {
         Self {
-            width:              width, 
-            height:             height,
-            gamma:              gamma,
             region_renderer:    region_renderer,
             pixel:              PhantomData,
         }
@@ -51,37 +46,37 @@ where
     TEdge:                          EdgeDescriptor,
     for<'b> &'b TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[&'b mut [TPixel]]>,
 {
-    type Region = ();
+    type Region = GammaFrameSize;
     type Source = EdgePlan<TEdge>;
     type Dest   = [U8RgbaPremultipliedPixel];
 
-    fn render(&self, _region: &(), source: &EdgePlan<TEdge>, dest: &mut [U8RgbaPremultipliedPixel]) {
+    fn render(&self, region: &GammaFrameSize, source: &EdgePlan<TEdge>, dest: &mut [U8RgbaPremultipliedPixel]) {
         const LINES_AT_ONCE: usize = 8;
 
         // Cut the destination into chunks to form the lines
-        let mut chunks  = dest.chunks_exact_mut(self.width).collect::<Vec<_>>();
+        let mut chunks  = dest.chunks_exact_mut(region.width).collect::<Vec<_>>();
         let renderer    = &self.region_renderer;
 
         // Rendering fails if there are insufficient lines to complete
-        if chunks.len() < self.height {
-            panic!("Cannot render: needed an output buffer large enough to fit {} lines but found {} lines", self.height, chunks.len());
+        if chunks.len() < region.height {
+            panic!("Cannot render: needed an output buffer large enough to fit {} lines but found {} lines", region.height, chunks.len());
         }
 
         // Render in chunks of LINES_AT_ONCE lines
         let mut y_idx           = 0;
-        let mut render_slice    = RenderSlice { width: self.width, y_positions: vec![] };
-        let mut buffer          = vec![TPixel::default(); self.width*LINES_AT_ONCE];
-        let mut buffer_chunks   = buffer.chunks_exact_mut(self.width).collect::<Vec<_>>();
+        let mut render_slice    = RenderSlice { width: region.width, y_positions: vec![] };
+        let mut buffer          = vec![TPixel::default(); region.width*LINES_AT_ONCE];
+        let mut buffer_chunks   = buffer.chunks_exact_mut(region.width).collect::<Vec<_>>();
         loop {
             // Stop once we reach the end
-            if y_idx >= self.height {
+            if y_idx >= region.height {
                 break;
             }
 
             // Work out which lines to render next
             let start_idx   = y_idx;
             let end_idx     = start_idx + LINES_AT_ONCE;
-            let end_idx     = if end_idx > self.height { self.height } else { end_idx };
+            let end_idx     = if end_idx > region.height { region.height } else { end_idx };
 
             // Write the y positions
             render_slice.y_positions.clear();
@@ -95,8 +90,8 @@ where
                 let rendered_pixels = &mut buffer_chunks[y_idx];
                 let target_pixels   = &mut chunks[start_idx + y_idx];
 
-                for x_idx in 0..self.width {
-                    target_pixels[x_idx] = rendered_pixels[x_idx].to_u8_rgba(self.gamma);
+                for x_idx in 0..region.width {
+                    target_pixels[x_idx] = rendered_pixels[x_idx].to_u8_rgba(region.gamma);
                 }
             }
 
