@@ -14,5 +14,5 @@ pub trait RenderSource<'a, TScanPlanner: ScanPlanner, TProgramRunner: PixelProgr
     ///
     /// Builds a region renderer that can read from this type and output pixels along rows
     ///
-    fn create_region_renderer(planner: &impl ScanPlanner, pixel_runner: &impl PixelProgramRunner<TPixel>) -> Self::RegionRenderer;
+    fn create_region_renderer(planner: TScanPlanner, pixel_runner: &'a TProgramRunner) -> Self::RegionRenderer;
 }
