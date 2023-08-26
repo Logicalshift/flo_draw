@@ -7,25 +7,25 @@ mod term_render {
     ///
     /// (This version only supports the iterm escape sequence)
     ///
-    pub struct TermRenderTarget {
+    pub struct TerminalRenderTarget {
         width:  usize,
         height: usize,
     }
 
-    impl TermRenderTarget {
+    impl TerminalRenderTarget {
         ///
         /// Creates a terminal rendering target
         ///
         pub fn new(width: usize, height: usize) -> Self {
-            TermRenderTarget {
+            TerminalRenderTarget {
                 width, height
             }
         }
     }
 
-    impl<'a, TPixel> RenderTarget<TPixel> for TermRenderTarget
+    impl<'a, TPixel> RenderTarget<TPixel> for TerminalRenderTarget
     where
-        TPixel:     'static + Send + Copy + Default + AlphaBlend + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
+        TPixel: 'static + Send + Copy + Default + AlphaBlend + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
     {
         fn render<TRegionRenderer>(&mut self, region_renderer: TRegionRenderer, source_data: &TRegionRenderer::Source)
         where
