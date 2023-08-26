@@ -6,6 +6,8 @@ use flo_render_software::scanplan::*;
 
 #[test]
 fn render_rectangle() {
+    // == Edge plan: draw two rectangles, one on top of the other in a foreground and background colour
+
     // The program data ID usually maps to the program cache (specifies what to do in a particular span)
     let program_data_id_1   = PixelProgramDataId(1);
     let program_data_id_2   = PixelProgramDataId(2);
@@ -21,6 +23,8 @@ fn render_rectangle() {
         .with_edge(rectangle_edge_1)
         .with_edge(rectangle_edge_2);
 
+    // == Pixel programs: just render the requested colour
+
     // Create a program runner to fill in the pixels (white in the background, blue for the foreground)
     let background_col = F32LinearPixel::white();
     let foreground_col = F32LinearPixel::from_components([0.0, 0.0, 1.0, 1.0]);
@@ -31,9 +35,13 @@ fn render_rectangle() {
         }
     });
 
+    // == Render to a RGBA buffer using the basic PixelScanPlanner
+
     // Render with the basic scan planner
     let mut frame_data = vec![0u8; 400*300*4];
     render_frame_with_planner(PixelScanPlanner::default(), program_runner, &edge_plan, &mut RgbaFrame::from_bytes(400, 300, 2.2, &mut frame_data).unwrap());
+
+    // == Assertions: check that the rectangles appear where they should in the frame we just rendered
 
     // Mid point should be inside the rectangle
     assert!(&frame_data[(150*4) + (150*400*4)..(151*4) + (150*400*4)] == &[0, 0, 255, 255], "Mid point is {:?}", &frame_data[(150*4) + (150*400*4)..(151*4) + (150*400*4)]);
