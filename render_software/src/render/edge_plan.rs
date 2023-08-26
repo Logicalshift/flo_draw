@@ -16,16 +16,15 @@ where
     ///
     /// Renders an edge plan to an 8-bit RGBA buffer (must contain width*height pixels)
     ///
-    pub fn render_whole_frame<TPixel, const N: usize>(&self, program_cache: &PixelProgramCache<TPixel>, data: &PixelProgramDataCache<TPixel>, width: usize, height: usize, gamma: f64, target: &mut [U8RgbaPremultipliedPixel])
+    pub fn render_whole_frame<TPixel>(&self, program_cache: &PixelProgramCache<TPixel>, data: &PixelProgramDataCache<TPixel>, width: usize, height: usize, gamma: f64, target: &mut [U8RgbaPremultipliedPixel])
     where
-        TPixel: 'static + Default + Send + Pixel<N>,
+        TPixel: 'static + Default + Send + Copy + AlphaBlend + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
     {
         // TODO:
         //      * Add a way to choose the scan planner to use
         //      * Add a trait to make the frame renderer from a target type and a source region renderer
         //      * Add a trait for creating the region renderer from a type (eg, EdgePlan in this case) and a scan planner
         //      * Add a trait for running a program (so we can just pass in that instead of the data type)
-        //      * Simplified 'to U8 pixel' type so we don't need to make TPixel a Pixel (and remove the 'N' from everything)
         //      * Some way to do away with the `for<'a> &'a ...` constraints on the region planners
 
         let scanline_renderer       = ScanlineRenderer::new(program_cache, data);
