@@ -88,6 +88,9 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
     fn to_gamma_colorspace(&self, gamma: f64) -> U8RgbaPremultipliedPixel {
         static F32X4_255: Lazy<f32x4> = Lazy::new(|| f32x4::splat(255.0));
 
+        // TODO: might be good to do this as a 'whole buffer' operation instead of single pixels like this
+        // TODO: we can get SRGB alpha format if we change the powf to (gamma, gamma, gamma, 1)
+
         // Remove gamma correction
         let gamma   = (1.0/gamma) as f32;
         let rgba    = self.0;
