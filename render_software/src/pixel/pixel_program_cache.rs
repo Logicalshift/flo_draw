@@ -1,4 +1,5 @@
 use super::pixel_program::*;
+use super::pixel_program_runner::*;
 
 use std::marker::{PhantomData};
 use std::ops::{Range};
@@ -141,12 +142,12 @@ where
     }
 }
 
-impl<TPixel> PixelProgramDataCache<TPixel> {
+impl<TPixel> PixelProgramRunner<TPixel> for PixelProgramDataCache<TPixel> {
     ///
     /// Runs a program on a range of pixels
     ///
     #[inline]
-    pub fn run_program(&self, program_data: PixelProgramDataId, target: &mut [TPixel], x_range: Range<i32>, y_pos: f64) {
+    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [TPixel], x_range: Range<i32>, y_pos: f64) {
         (self.program_data[program_data.0])(self, target, x_range, y_pos)
     }
 }
