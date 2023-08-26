@@ -86,16 +86,15 @@ impl Pixel<4> for F32LinearPixel {
 impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
     #[inline]
     fn to_gamma_colorspace(&self, gamma: f64) -> U8RgbaPremultipliedPixel {
-        static I32X4_255: Lazy<i32x4> = Lazy::new(|| i32x4::splat(255));
         static F32X4_255: Lazy<f32x4> = Lazy::new(|| f32x4::splat(255.0));
 
         // Remove gamma correction
         let gamma   = (1.0/gamma) as f32;
         let rgba    = self.0;
+        let rgba    = rgba.min(f32x4::ONE).max(f32x4::ZERO);
         let rgba    = rgba.powf(gamma);
         let rgba    = rgba * *F32X4_255;
         let rgba    = rgba.fast_trunc_int();
-        let rgba    = rgba.min(*I32X4_255).max(i32x4::ZERO);
 
         let [r, g, b, a] = rgba.to_array();
         U8RgbaPremultipliedPixel::from_components([r as _, g as _, b as _, a as _])
