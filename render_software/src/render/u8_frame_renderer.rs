@@ -12,9 +12,9 @@ use std::marker::{PhantomData};
 ///
 pub struct U8FrameRenderer<TPixel, TEdge, TRegionRenderer>
 where
-    TPixel:                         Sized + Send + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
-    TEdge:                          EdgeDescriptor,
-    for<'a> &'a TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[&'a mut [TPixel]]>,
+    TPixel:             Sized + Send + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
+    TEdge:              EdgeDescriptor,
+    TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[TPixel]>,
 {
     region_renderer:    TRegionRenderer,
     pixel:              PhantomData<TPixel>,
@@ -23,9 +23,9 @@ where
 
 impl<TPixel, TEdge, TRegionRenderer> U8FrameRenderer<TPixel, TEdge, TRegionRenderer>
 where
-    TPixel:                         Sized + Send + Clone + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
-    TEdge:                          EdgeDescriptor,
-    for<'a> &'a TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[&'a mut [TPixel]]>,
+    TPixel:             Sized + Send + Clone + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
+    TEdge:              EdgeDescriptor,
+    TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[TPixel]>,
 {
     ///
     /// Creates a new frame renderer
@@ -40,11 +40,11 @@ where
     }
 }
 
-impl<'a, TPixel, TEdge, TRegionRenderer> Renderer for &'a U8FrameRenderer<TPixel, TEdge, TRegionRenderer> 
+impl<'a, TPixel, TEdge, TRegionRenderer> Renderer for U8FrameRenderer<TPixel, TEdge, TRegionRenderer> 
 where
-    TPixel:                         Sized + Send + Clone + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
-    TEdge:                          EdgeDescriptor,
-    for<'b> &'b TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[&'b mut [TPixel]]>,
+    TPixel:             Sized + Send + Clone + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
+    TEdge:              EdgeDescriptor,
+    TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[TPixel]>,
 {
     type Region = GammaFrameSize;
     type Source = EdgePlan<TEdge>;
@@ -66,7 +66,6 @@ where
         let mut y_idx           = 0;
         let mut render_slice    = RenderSlice { width: region.width, y_positions: vec![] };
         let mut buffer          = vec![TPixel::default(); region.width*LINES_AT_ONCE];
-        let mut buffer_chunks   = buffer.chunks_exact_mut(region.width).collect::<Vec<_>>();
         loop {
             // Stop once we reach the end
             if y_idx >= region.height {
@@ -83,11 +82,11 @@ where
             render_slice.y_positions.extend((start_idx..end_idx).map(|idx| idx as f64));
 
             // Render these lines
-            renderer.render(&render_slice, source, &mut buffer_chunks);
+            renderer.render(&render_slice, source, &mut buffer);
 
             // Convert to the final pixel format
             for y_idx in 0..(end_idx-start_idx) {
-                let rendered_pixels = &mut buffer_chunks[y_idx];
+                let rendered_pixels = &buffer[(y_idx*region.width)..((y_idx+1)*region.width)];
                 let target_pixels   = &mut chunks[start_idx + y_idx];
 
                 for x_idx in 0..region.width {

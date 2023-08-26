@@ -44,7 +44,7 @@ where
 {
     /// The region renderer takes instances of this type and uses them to generate pixel values in a region
     // TODO: using a reference here (required due to some later borrowing requirements) doesn't work
-    type RegionRenderer = &'a EdgePlanRegionRenderer<TEdge, TScanPlanner, ScanlineRenderer<'a, TPixel>>;
+    type RegionRenderer = EdgePlanRegionRenderer<TEdge, TScanPlanner, ScanlineRenderer<'a, TPixel>>;
 
     ///
     /// Builds a region renderer that can read from this type and output pixels along rows

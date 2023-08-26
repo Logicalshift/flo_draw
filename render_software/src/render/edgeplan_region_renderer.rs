@@ -39,20 +39,23 @@ where
     }
 }
 
-impl<'a, TEdge, TPlanner, TLineRenderer> Renderer for &'a EdgePlanRegionRenderer<TEdge, TPlanner, TLineRenderer>
+impl<'a, TEdge, TPlanner, TLineRenderer, TPixel> Renderer for EdgePlanRegionRenderer<TEdge, TPlanner, TLineRenderer>
 where
-    TEdge:          EdgeDescriptor,
-    TPlanner:       ScanPlanner<Edge=TEdge>,
-    TLineRenderer:  Renderer<Region=f64, Source=ScanlinePlan>,
+    TEdge:                  EdgeDescriptor,
+    TPlanner:               ScanPlanner<Edge=TEdge>,
+    TLineRenderer:          Renderer<Region=f64, Source=ScanlinePlan, Dest=[TPixel]>,
 {
     type Region = RenderSlice;
     type Source = EdgePlan<TEdge>;
-    type Dest   = [&'a mut TLineRenderer::Dest];
+    type Dest   = [TPixel];
 
-    fn render(&self, region: &RenderSlice, source: &EdgePlan<TEdge>, dest: &mut [&'a mut TLineRenderer::Dest]) {
+    fn render(&self, region: &RenderSlice, source: &EdgePlan<TEdge>, dest: &mut TLineRenderer::Dest) {
         let y_positions = &region.y_positions;
         let width       = region.width as f64;
         let edge_plan   = source;
+
+        // Split the dest into chunks (lines)
+        let mut lines = dest.chunks_exact_mut(region.width);
 
         // Plan the lines
         let mut scanlines = vec![(0.0f64, ScanlinePlan::default()); y_positions.len()];
@@ -61,8 +64,9 @@ where
         // Pass them on to the line renderer to generate the result
         for idx in 0..y_positions.len() {
             let (ypos, scanline) = &scanlines[idx];
+            let line = lines.next().unwrap();
 
-            self.line_renderer.render(ypos, scanline, dest[idx]);
+            self.line_renderer.render(ypos, scanline, line);
         }
     }
 }

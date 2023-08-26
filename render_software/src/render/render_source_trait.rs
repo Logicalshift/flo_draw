@@ -9,7 +9,7 @@ use crate::scanplan::*;
 ///
 pub trait RenderSource<'a, TScanPlanner: ScanPlanner, TProgramRunner: PixelProgramRunner<TPixel>, TPixel: 'a> {
     /// The region renderer takes instances of this type and uses them to generate pixel values in a region
-    type RegionRenderer: Renderer<Region=RenderSlice, Source=Self, Dest=[&'a mut [TPixel]]>;
+    type RegionRenderer: Renderer<Region=RenderSlice, Source=Self, Dest=[TPixel]>;
 
     ///
     /// Builds a region renderer that can read from this type and output pixels along rows
