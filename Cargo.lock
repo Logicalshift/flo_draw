@@ -142,6 +142,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.75"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4668cab20f66d8d020e1fbc0ebe47217433c1b6c8f2040faf858554e394ace6"
+
+[[package]]
 name = "arrayref"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -363,6 +369,15 @@ dependencies = [
  "glob",
  "libc 0.2.147",
  "libloading 0.7.4",
+]
+
+[[package]]
+name = "cmake"
+version = "0.1.50"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a31c789563b815f77f4250caee12365734369f942439b7defd71e18a48197130"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
@@ -786,6 +801,7 @@ dependencies = [
  "once_cell",
  "png",
  "smallvec",
+ "turbojpeg",
  "webp",
  "wide",
 ]
@@ -2572,6 +2588,29 @@ name = "ttf-parser"
 version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a464a4b34948a5f67fddd2b823c62d9d92e44be75058b99939eae6c5b6960b33"
+
+[[package]]
+name = "turbojpeg"
+version = "0.5.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b72653c4d8f295945ea47c1782cb640f7268f52232b7925f9a3589b971d786f"
+dependencies = [
+ "libc 0.2.147",
+ "thiserror",
+ "turbojpeg-sys",
+]
+
+[[package]]
+name = "turbojpeg-sys"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1e9e755f0086dc42f4b285972b1f9fd136861b48dd4f3c0472cb5b71f5cb3e6"
+dependencies = [
+ "anyhow",
+ "cmake",
+ "libc 0.2.147",
+ "pkg-config",
+]
 
 [[package]]
 name = "ucd-trie"
