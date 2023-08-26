@@ -7,6 +7,8 @@ use flo_render_software::curves::bezier::vectorize::{CircularDistanceField};
 use flo_render_software::scanplan::PixelScanPlanner;
 use smallvec::*;
 
+use std::time::{Instant};
+
 ///
 /// Renders a circle to circle.png using an edge plan and a straightforward pixel program
 ///
@@ -33,5 +35,9 @@ pub fn main() {
     // Render to the terminal
     let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
 
+    let render_start = Instant::now();
     render_frame_with_planner(PixelScanPlanner::default(), pixel_programs, &edge_plan, &mut term_renderer);
+    let render_time = Instant::now().duration_since(render_start);
+
+    println!("Render time: {}.{}ms", render_time.as_micros()/1000, render_time.as_micros()%1000);
 }
