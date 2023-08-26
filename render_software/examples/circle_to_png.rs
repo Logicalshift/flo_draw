@@ -15,7 +15,7 @@ use std::time::{Instant};
 pub fn main() {
     // Create a circular edge (using the circle distance field from flo_curves)
     // This is a more low-level way to represent a 2D scene than describing the rendering instructions using flo_canvas::Draw
-    let radius          = 300.0;
+    let radius          = 500.0;
     let circle_shape    = ShapeId::new();
     let circle          = ContourEdge::new((960.0-radius, 540.0-radius), circle_shape, CircularDistanceField::with_radius(radius));
 
