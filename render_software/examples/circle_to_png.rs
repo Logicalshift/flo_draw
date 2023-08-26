@@ -15,18 +15,26 @@ use std::time::{Instant};
 pub fn main() {
     // Create a circular edge (using the circle distance field from flo_curves)
     // This is a more low-level way to represent a 2D scene than describing the rendering instructions using flo_canvas::Draw
-    let radius          = 500.0;
-    let circle_shape    = ShapeId::new();
-    let circle          = ContourEdge::new((960.0-radius, 540.0-radius), circle_shape, CircularDistanceField::with_radius(radius));
+    let radius              = 500.0;
+    let circle_shape        = ShapeId::new();
+    let background_shape    = ShapeId::new();
+    let circle              = ContourEdge::new((960.0-radius, 540.0-radius), circle_shape, CircularDistanceField::with_radius(radius));
+    let background          = RectangleEdge::new(background_shape, 0.0..1920.0, 0.0..1080.0);
 
     // Create an edge plan that renders this circle
-    let edge_plan       = EdgePlan::new()
+    let edge_plan       = EdgePlan::<Box<dyn EdgeDescriptor>>::new()
+        .with_shape_description(background_shape, ShapeDescriptor { programs: smallvec![PixelProgramDataId(0)], is_opaque: true, z_index: 0 })
         .with_shape_description(circle_shape, ShapeDescriptor { programs: smallvec![PixelProgramDataId(1)], is_opaque: true, z_index: 1 })
-        .with_edge(circle);
+        .with_edge(Box::new(circle))
+        .with_edge(Box::new(background));
 
     // Pixel program that renders everything in blue
-    let pixel_programs = BasicPixelProgramRunner::from(|_program_id, data: &mut [F32LinearPixel], range, _ypos| {
-        let col = F32LinearPixel::from_components([0.0, 0.0, 1.0, 1.0]);
+    let pixel_programs = BasicPixelProgramRunner::from(|program_id, data: &mut [F32LinearPixel], range, _ypos| {
+        let col = if program_id == PixelProgramDataId(1) {
+            F32LinearPixel::from_components([0.0, 0.0, 1.0, 1.0])
+        } else {
+            F32LinearPixel::from_components([0.0, 0.0, 0.0, 0.0])
+        };
         for x in range {
             data[x as usize] = col;
         }
