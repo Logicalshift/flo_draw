@@ -15,6 +15,13 @@ use std::ops::*;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct F32LinearPixel(f32x4);
 
+impl Default for F32LinearPixel {
+    #[inline]
+    fn default() -> Self {
+        F32LinearPixel(f32x4::splat(0.0))
+    }
+}
+
 impl Pixel<4> for F32LinearPixel {
     type Component = f32;
 
