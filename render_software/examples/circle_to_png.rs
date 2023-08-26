@@ -32,12 +32,24 @@ pub fn main() {
         }
     });
 
+    // Render to a buffer as a perf test
+    let mut frame   = vec![0u8; 1920*1080*4];
+    let mut rgba    = RgbaFrame::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
+
+    let render_start = Instant::now();
+    for _ in 0..10 {
+        render_frame_with_planner(PixelScanPlanner::default(), &pixel_programs, &edge_plan, &mut rgba);
+    }
+    let render_time = Instant::now().duration_since(render_start);
+    let avg_micros  = render_time.as_micros() / 10;
+    println!("Frame render time: {}.{}ms", avg_micros/1000, avg_micros%1000);
+
     // Render to the terminal
     let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
 
     let render_start = Instant::now();
-    render_frame_with_planner(PixelScanPlanner::default(), pixel_programs, &edge_plan, &mut term_renderer);
+    render_frame_with_planner(PixelScanPlanner::default(), &pixel_programs, &edge_plan, &mut term_renderer);
     let render_time = Instant::now().duration_since(render_start);
 
-    println!("Render time: {}.{}ms", render_time.as_micros()/1000, render_time.as_micros()%1000);
+    println!("PNG render time: {}.{}ms", render_time.as_micros()/1000, render_time.as_micros()%1000);
 }
