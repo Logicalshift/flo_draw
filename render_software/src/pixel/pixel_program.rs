@@ -18,7 +18,7 @@ pub trait PixelProgram : Send {
     ///
     /// The target points to the start of the range of values to be written. `x_range` provides the range of X values to fill with pixels.
     ///
-    fn draw_pixels(&self, pixel_program_cache: &PixelProgramCache<Self::Pixel>, data_cache: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, y_pos: f64, program_data: &Self::ProgramData);
+    fn draw_pixels(&self, data_cache: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, y_pos: f64, program_data: &Self::ProgramData);
 }
 
 ///
@@ -75,7 +75,7 @@ where
     type ProgramData    = TData;
 
     #[inline]
-    fn draw_pixels(&self, _: &PixelProgramCache<Self::Pixel>, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, ypos: f64, program_data: &TData) {
+    fn draw_pixels(&self, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, ypos: f64, program_data: &TData) {
         (self.function)(target, x_range, ypos, program_data)
     }
 }
@@ -102,7 +102,7 @@ where
     type ProgramData    = TData;
 
     #[inline]
-    fn draw_pixels(&self, _: &PixelProgramCache<Self::Pixel>, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, ypos: f64, program_data: &TData) {
+    fn draw_pixels(&self, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, ypos: f64, program_data: &TData) {
         let mut pos = 0;
         for x in x_range {
             target[pos] = (self.function)(x, ypos, program_data);

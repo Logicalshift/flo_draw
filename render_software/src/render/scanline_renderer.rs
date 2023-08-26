@@ -11,7 +11,6 @@ pub struct ScanlineRenderer<'a, TPixel>
 where
     TPixel: 'static + Send + Copy + AlphaBlend,
 {
-    program_cache:  &'a PixelProgramCache<TPixel>,
     program_data:   &'a PixelProgramDataCache<TPixel>,
 }
 
@@ -23,10 +22,9 @@ where
     /// Creates a new scanline renderer
     ///
     #[inline]
-    pub fn new(program_cache: &'a PixelProgramCache<TPixel>, data_cache: &'a PixelProgramDataCache<TPixel>) -> Self {
+    pub fn new(data_cache: &'a PixelProgramDataCache<TPixel>) -> Self {
         ScanlineRenderer {
-            program_cache:  program_cache,
-            program_data:   data_cache
+            program_data: data_cache
         }
     }
 }
@@ -76,7 +74,7 @@ where
                 match current_step {
                     PixelProgramPlan::Run(data_id) => {
                         // Just run the program
-                        self.program_cache.run_program(self.program_data, *data_id, shadow_pixels.buffer(), (x_range.start.ceil() as _)..(x_range.end.floor() as _), y_pos);
+                        self.program_data.run_program(*data_id, shadow_pixels.buffer(), (x_range.start.ceil() as _)..(x_range.end.floor() as _), y_pos);
                     }
 
                     PixelProgramPlan::StartBlend => {
