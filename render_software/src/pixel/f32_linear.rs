@@ -92,7 +92,7 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
         let gamma   = (1.0/gamma) as f32;
         let rgba    = self.0;
         let rgba    = rgba.min(f32x4::ONE).max(f32x4::ZERO);
-        let rgba    = rgba.powf(gamma);
+        let rgba    = rgba.powf(gamma);             // TODO: removing this creates a considerable speed increase (especially in debug builds). We can speed up by using lookup tables (eg, by converting to 0-65536 and gamma correcting from there)
         let rgba    = rgba * *F32X4_255;
         let rgba    = rgba.fast_trunc_int();
 
