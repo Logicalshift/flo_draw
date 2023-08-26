@@ -48,6 +48,19 @@ where
 {
     type TPixel = TPixel;
 
+    #[inline]
+    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [Self::TPixel], x_range: Range<i32>, y_pos: f64) {
+        (self.pixel_fn)(program_data, target, x_range, y_pos)
+    }
+}
+
+impl<'a, TFn, TPixel> PixelProgramRunner for &'a BasicPixelProgramRunner<TFn, TPixel>
+where
+    TFn: Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+{
+    type TPixel = TPixel;
+
+    #[inline]
     fn run_program(&self, program_data: PixelProgramDataId, target: &mut [Self::TPixel], x_range: Range<i32>, y_pos: f64) {
         (self.pixel_fn)(program_data, target, x_range, y_pos)
     }
