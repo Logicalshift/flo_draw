@@ -27,6 +27,9 @@ where
     /// A pixel representing the 'white' colour
     fn white() -> Self;
 
+    /// A pixel with the specified components
+    fn from_components(components: [Self::Component; N]) -> Self;
+
     /// Creates a pixel from a canvas colour with a particular gamma correction value (2.2 is standard on OS X and windows)
     fn from_color(color: canvas::Color, gamma: f64) -> Self;
 

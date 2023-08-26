@@ -29,6 +29,11 @@ impl Pixel<4> for F32LinearPixel {
     }
 
     #[inline]
+    fn from_components(components: [Self::Component; 4]) -> Self {
+        F32LinearPixel(f32x4::new(components))
+    }
+
+    #[inline]
     fn to_components(&self) -> [Self::Component; 4] {
         self.0.to_array()
     }
