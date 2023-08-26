@@ -142,7 +142,21 @@ where
     }
 }
 
-impl<TPixel> PixelProgramRunner<TPixel> for PixelProgramDataCache<TPixel> {
+impl<TPixel> PixelProgramRunner for PixelProgramDataCache<TPixel> {
+    type TPixel = TPixel;
+
+    ///
+    /// Runs a program on a range of pixels
+    ///
+    #[inline]
+    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [TPixel], x_range: Range<i32>, y_pos: f64) {
+        (self.program_data[program_data.0])(self, target, x_range, y_pos)
+    }
+}
+
+impl<'a, TPixel> PixelProgramRunner for &'a PixelProgramDataCache<TPixel> {
+    type TPixel = TPixel;
+
     ///
     /// Runs a program on a range of pixels
     ///

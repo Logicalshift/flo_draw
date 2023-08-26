@@ -4,45 +4,41 @@ use crate::pixel::*;
 use crate::scanplan::*;
 use crate::scanplan::buffer_stack::*;
 
-use std::marker::{PhantomData};
-
 ///
 /// Renders a ScanPlan using a particular pixel type
 ///
-pub struct ScanlineRenderer<'a, TPixel, TProgramRunner>
+pub struct ScanlineRenderer<TProgramRunner>
 where
-    TPixel:         'static + Send + Copy + AlphaBlend,
-    TProgramRunner: PixelProgramRunner<TPixel>,
+    TProgramRunner:         PixelProgramRunner,
+    TProgramRunner::TPixel: 'static + Send + Copy + AlphaBlend,
 {
-    program_data:   &'a TProgramRunner,
-    pixel:          PhantomData<TPixel>,
+    program_data:   TProgramRunner,
 }
 
-impl<'a, TPixel, TProgramRunner> ScanlineRenderer<'a, TPixel, TProgramRunner>
+impl<TProgramRunner> ScanlineRenderer<TProgramRunner>
 where
-    TPixel:         'static + Send + Copy + AlphaBlend,
-    TProgramRunner: PixelProgramRunner<TPixel>,
+    TProgramRunner:         PixelProgramRunner,
+    TProgramRunner::TPixel: 'static + Send + Copy + AlphaBlend,
 {
     ///
     /// Creates a new scanline renderer
     ///
     #[inline]
-    pub fn new(data_cache: &'a TProgramRunner) -> Self {
+    pub fn new(data_cache: TProgramRunner) -> Self {
         ScanlineRenderer {
             program_data:   data_cache,
-            pixel:          PhantomData,
         }
     }
 }
 
-impl<'a, TPixel, TProgramRunner> Renderer for ScanlineRenderer<'a, TPixel, TProgramRunner>
+impl<TProgramRunner> Renderer for ScanlineRenderer<TProgramRunner>
 where
-    TPixel:         'static + Send + Copy + AlphaBlend,
-    TProgramRunner: PixelProgramRunner<TPixel>,
+    TProgramRunner:         PixelProgramRunner,
+    TProgramRunner::TPixel: 'static + Send + Copy + AlphaBlend,
 {
     type Region = f64;
     type Source = ScanlinePlan;
-    type Dest   = [TPixel];
+    type Dest   = [TProgramRunner::TPixel];
 
     ///
     /// Renders a `ScanlinePlan` to a buffer of pixels (which should match the length of the plan)
