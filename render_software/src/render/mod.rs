@@ -10,6 +10,7 @@ mod u8_frame_renderer;
 mod rgba_frame;
 mod render_frame;
 mod image_render;
+mod term_render;
 
 pub use render_source_trait::*;
 pub use render_target_trait::*;
@@ -23,3 +24,4 @@ pub use edge_plan::*;
 pub use rgba_frame::*;
 pub use render_frame::*;
 pub use image_render::*;
+pub use term_render::*;
