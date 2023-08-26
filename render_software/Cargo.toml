@@ -10,11 +10,11 @@ description         = "Software renderer for flo_canvas vector graphics"
 categories          = [ "graphics", "rendering", "gui" ]
 
 [features]
-default             = [ "render_png", "render_jpeg", "render_webp", "render_iterm" ]
+default             = [ "render_png", "render_jpeg", "render_webp", "render_term" ]
 render_png          = [ "png" ]
 render_webp         = [ "webp" ]
 render_jpeg         = [ "turbojpeg" ]
-render_iterm        = [ "render_png" ]
+render_term         = [ "render_png" ]
 
 [dependencies]
 once_cell           = "1.18"
