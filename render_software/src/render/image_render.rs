@@ -62,6 +62,7 @@ mod render_png {
             TRegionRenderer: Renderer<Region=RenderSlice, Dest=[TPixel]>
         {
             // Render to a buffer
+            // TODO: need to render to a non-premultiplied RGB format for PNG files
             let renderer        = U8FrameRenderer::new(region_renderer);
             let frame_size      = GammaFrameSize { width: self.width, height: self.height, gamma: self.gamma };
             let mut pixel_data  = vec![0u8; self.width*self.height*4];
