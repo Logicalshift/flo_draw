@@ -87,7 +87,8 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
     fn to_gamma_colorspace(&self, gamma: f64) -> U8RgbaPremultipliedPixel {
         // Remove gamma correction
         let gamma   = (1.0/gamma) as f32;
-        let rgba    = self.0.pow_f32x4(f32x4::new([gamma, gamma, gamma, 1.0]));
+        let rgba    = self.0;
+        let rgba    = rgba.powf(gamma);
         let rgba    = rgba * 255.0;
         let rgba    = rgba.fast_trunc_int();
         let rgba    = rgba.min(i32x4::splat(255)).max(i32x4::splat(0));
