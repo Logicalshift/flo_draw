@@ -1,6 +1,11 @@
-#[cfg(feature="term_render")]
+#[cfg(feature="render_term")]
 mod term_render {
     use super::super::image_render::*;
+    use super::super::renderer::*;
+    use super::super::render_slice::*;
+    use super::super::render_target_trait::*;
+
+    use crate::pixel::*;
 
     ///
     /// Render target that sends its results to the terminal
@@ -31,14 +36,17 @@ mod term_render {
         where
             TRegionRenderer: Renderer<Region=RenderSlice, Dest=[TPixel]>
         {
+            use base64::engine::{Engine};
             use base64::engine::general_purpose;
 
             // Create the png data
-            let mut png_data: Vec<u8>   = vec![];
-            let mut png_render          = PngRenderTarget::new(&mut png_data, self.width, self.height, 2.2);
+            let mut png_data: Vec<u8> = vec![];
 
             // Render as PNG data
-            png_render.render(region_renderer, source_data);
+            {
+                let mut png_render = PngRenderTarget::from_stream(&mut png_data, self.width, self.height, 2.2);
+                png_render.render(region_renderer, source_data);
+            }
 
             // TODO: check termial capabilities (we can fall back to an ASCII-art representation)
 
@@ -46,10 +54,10 @@ mod term_render {
             let base64 = general_purpose::STANDARD_NO_PAD.encode(&png_data);
 
             // Write out the iterm escape sequence
-            print!("\x1b1337;File=inline:{}\x07", base64);
+            print!("\x1b]1337;File=inline:{}\x07", base64);
         }
     }
 }
 
-#[cfg(feature="term_render")]
+#[cfg(feature="render_term")]
 pub use term_render::*;
