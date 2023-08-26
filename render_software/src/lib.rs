@@ -12,3 +12,6 @@ pub mod pixel;
 
 /// Renderers convert from data represented by a series of instructions to a simpler form
 pub mod render;
+
+pub use flo_canvas as canvas;
+pub use flo_canvas::curves as curves;
