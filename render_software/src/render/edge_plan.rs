@@ -1,4 +1,5 @@
 use super::renderer::*;
+use super::render_source_trait::*;
 use super::edgeplan_region_renderer::*;
 use super::frame_size::*;
 use super::scanline_renderer::*;
@@ -6,8 +7,7 @@ use super::u8_frame_renderer::*;
 
 use crate::edgeplan::*;
 use crate::pixel::*;
-use crate::scanplan::PixelScanPlanner;
-
+use crate::scanplan::*;
 
 impl<TEdge> EdgePlan<TEdge>
 where
@@ -32,5 +32,24 @@ where
         let frame_renderer          = U8FrameRenderer::<_, _, EdgePlanRegionRenderer<TEdge, _, _>>::new(edge_region_renderer);
 
         (&frame_renderer).render(&GammaFrameSize { width, height, gamma }, self, target);
+    }
+}
+
+impl<'a, TEdge, TScanPlanner, TProgramRunner, TPixel> RenderSource<'a, TScanPlanner, TProgramRunner, TPixel> for EdgePlan<TEdge>
+where
+    TEdge:          'a + EdgeDescriptor,
+    TPixel:         'static + Send + Copy + AlphaBlend,
+    TScanPlanner:   'a + ScanPlanner<Edge=TEdge>,
+    TProgramRunner: PixelProgramRunner<TPixel>,
+{
+    /// The region renderer takes instances of this type and uses them to generate pixel values in a region
+    // TODO: using a reference here (required due to some later borrowing requirements) doesn't work
+    type RegionRenderer = &'a EdgePlanRegionRenderer<TEdge, TScanPlanner, ScanlineRenderer<'a, TPixel>>;
+
+    ///
+    /// Builds a region renderer that can read from this type and output pixels along rows
+    ///
+    fn create_region_renderer(planner: &impl ScanPlanner, pixel_runner: &impl PixelProgramRunner<TPixel>) -> Self::RegionRenderer {
+        todo!()
     }
 }
