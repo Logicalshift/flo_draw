@@ -3,29 +3,26 @@ use super::render_slice::*;
 use super::frame_size::*;
 
 use crate::pixel::*;
-use crate::edgeplan::*;
 
 use std::marker::{PhantomData};
 
 ///
 /// Renders a whole frame of pixels to a RGBA U8 buffer (using TPixel as the intermediate format)
 ///
-pub struct U8FrameRenderer<TPixel, TEdge, TRegionRenderer>
+pub struct U8FrameRenderer<TPixel, TRegionRenderer>
 where
     TPixel:             Sized + Send + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
-    TEdge:              EdgeDescriptor,
-    TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[TPixel]>,
+    TRegionRenderer:    Renderer<Region=RenderSlice, Dest=[TPixel]>,
 {
     region_renderer:    TRegionRenderer,
     pixel:              PhantomData<TPixel>,
 }
 
 
-impl<TPixel, TEdge, TRegionRenderer> U8FrameRenderer<TPixel, TEdge, TRegionRenderer>
+impl<TPixel, TRegionRenderer> U8FrameRenderer<TPixel, TRegionRenderer>
 where
     TPixel:             Sized + Send + Clone + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
-    TEdge:              EdgeDescriptor,
-    TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[TPixel]>,
+    TRegionRenderer:    Renderer<Region=RenderSlice, Dest=[TPixel]>,
 {
     ///
     /// Creates a new frame renderer
@@ -40,17 +37,16 @@ where
     }
 }
 
-impl<'a, TPixel, TEdge, TRegionRenderer> Renderer for U8FrameRenderer<TPixel, TEdge, TRegionRenderer> 
+impl<'a, TPixel, TRegionRenderer> Renderer for U8FrameRenderer<TPixel, TRegionRenderer> 
 where
     TPixel:             Sized + Send + Clone + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
-    TEdge:              EdgeDescriptor,
-    TRegionRenderer:    Renderer<Region=RenderSlice, Source=EdgePlan<TEdge>, Dest=[TPixel]>,
+    TRegionRenderer:    Renderer<Region=RenderSlice, Dest=[TPixel]>,
 {
     type Region = GammaFrameSize;
-    type Source = EdgePlan<TEdge>;
+    type Source = TRegionRenderer::Source;
     type Dest   = [U8RgbaPremultipliedPixel];
 
-    fn render(&self, region: &GammaFrameSize, source: &EdgePlan<TEdge>, dest: &mut [U8RgbaPremultipliedPixel]) {
+    fn render(&self, region: &GammaFrameSize, source: &TRegionRenderer::Source, dest: &mut [U8RgbaPremultipliedPixel]) {
         const LINES_AT_ONCE: usize = 8;
 
         // Cut the destination into chunks to form the lines
