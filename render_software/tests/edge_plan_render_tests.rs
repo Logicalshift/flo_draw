@@ -35,10 +35,13 @@ fn render_rectangle() {
     let mut frame_data = vec![0u8; 400*300*4];
     render_frame_with_planner(PixelScanPlanner::default(), program_runner, &edge_plan, &mut RgbaFrame::from_bytes(400, 300, 2.2, &mut frame_data).unwrap());
 
+    // Mid point should be inside the rectangle
+    assert!(&frame_data[(150*4) + (150*400*4)..(151*4) + (150*400*4)] == &[0, 0, 255, 255], "Mid point is {:?}", &frame_data[(150*4) + (150*400*4)..(151*4) + (150*400*4)]);
+
     // Check the pixels
     for y in 0..300 {
         for x in 0..400 {
-            let idx     = x+(y*400*4);
+            let idx     = (x*4)+(y*400*4);
             let pixel   = &frame_data[idx..(idx+4)];
 
             let expected_col = if x >= 140 && x < 160 && y >= 140 && y < 160 { [0, 0, 255, 255] } else { [255, 255, 255, 255] };
