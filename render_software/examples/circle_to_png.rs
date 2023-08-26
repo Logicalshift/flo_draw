@@ -26,7 +26,7 @@ pub fn main() {
 
     // Pixel program that renders everything in blue
     let pixel_programs = BasicPixelProgramRunner::from(|_program_id, data: &mut [F32LinearPixel], range, _ypos| {
-        let col = F32LinearPixel::from_components([0.0, 0.0, 255.0, 255.0]);
+        let col = F32LinearPixel::from_components([0.0, 0.0, 1.0, 1.0]);
         for x in range {
             data[x as usize] = col;
         }
