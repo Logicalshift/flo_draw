@@ -14,7 +14,7 @@ default             = [ "render_png", "render_jpeg", "render_webp", "render_term
 render_png          = [ "png" ]
 render_webp         = [ "webp" ]
 render_jpeg         = [ "turbojpeg" ]
-render_term         = [ "render_png" ]
+render_term         = [ "render_png", "base64" ]
 
 [dependencies]
 once_cell           = "1.18"
