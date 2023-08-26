@@ -32,7 +32,7 @@ impl Pixel<4> for F32LinearPixel {
 
     #[inline]
     fn white() -> F32LinearPixel {
-        F32LinearPixel(f32x4::new([0.0, 0.0, 0.0, 1.0]))
+        F32LinearPixel(f32x4::new([1.0, 1.0, 1.0, 1.0]))
     }
 
     #[inline]
