@@ -7,9 +7,6 @@ use flo_render_software::curves::bezier::vectorize::{CircularDistanceField};
 use flo_render_software::scanplan::PixelScanPlanner;
 use smallvec::*;
 
-use std::fs::{File};
-use std::path::{Path};
-
 ///
 /// Renders a circle to circle.png using an edge plan and a straightforward pixel program
 ///
@@ -33,9 +30,8 @@ pub fn main() {
         }
     });
 
-    // Render to a file, 'circle.png'
-    let circle_png      = File::create(Path::new(r"circle.png")).unwrap();
-    let mut circle_png  = PngRenderTarget::from_stream(circle_png, 1920, 1080, 2.2);
+    // Render to the terminal
+    let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
 
-    render_frame_with_planner(PixelScanPlanner::default(), pixel_programs, &edge_plan, &mut circle_png);
+    render_frame_with_planner(PixelScanPlanner::default(), pixel_programs, &edge_plan, &mut term_renderer);
 }
