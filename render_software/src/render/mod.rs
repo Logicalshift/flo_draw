@@ -1,3 +1,4 @@
+mod render_source_trait;
 mod render_target_trait;
 mod renderer;
 mod scanline_renderer;
@@ -7,6 +8,7 @@ mod edgeplan_region_renderer;
 mod edge_plan;
 mod u8_frame_renderer;
 
+pub use render_source_trait::*;
 pub use render_target_trait::*;
 pub use renderer::*;
 pub use scanline_renderer::*;
