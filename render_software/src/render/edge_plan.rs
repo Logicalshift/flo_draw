@@ -24,7 +24,6 @@ where
         //      * Add a way to choose the scan planner to use
         //      * Add a trait to make the frame renderer from a target type and a source region renderer
         //      * Add a trait for creating the region renderer from a type (eg, EdgePlan in this case) and a scan planner
-        //      * Add a trait for running a program (so we can just pass in that instead of the data type)
         //      * Some way to do away with the `for<'a> &'a ...` constraints on the region planners
 
         let scanline_renderer       = ScanlineRenderer::new(data);
