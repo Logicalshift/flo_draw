@@ -12,6 +12,7 @@ pub trait RenderTarget<IntermediatePixel: 'static> {
     ///
     /// The renderer that is passed in here is a region renderer, which takes a list of y-positions and generates the pixels for those rows in the results.
     ///
-    fn render<'a>(&'a mut self, region_renderer: impl Renderer<Region=RenderSlice, Dest=[&'a mut [IntermediatePixel]]>) -> Self;
+    fn render<TRegionRenderer>(&mut self, region_renderer: TRegionRenderer, source_data: &TRegionRenderer::Source)
+    where
+        TRegionRenderer: Renderer<Region=RenderSlice, Dest=[IntermediatePixel]>;
 }
-
