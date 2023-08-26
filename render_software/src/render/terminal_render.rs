@@ -54,7 +54,7 @@ mod term_render {
             let base64 = general_purpose::STANDARD_NO_PAD.encode(&png_data);
 
             // Write out the iterm escape sequence
-            print!("\x1b]1337;File=inline:{}\x07", base64);
+            print!("\x1b]1337;File=inline=1:{}\x07", base64);
         }
     }
 }
