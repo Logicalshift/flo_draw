@@ -23,7 +23,6 @@ mod render_png {
         gamma:  f64,
     }
 
-    #[cfg(feature="render_png")]
     impl<TStream> PngRenderTarget<TStream>
     where
         TStream: Write,
@@ -53,7 +52,6 @@ mod render_png {
         }
     }
 
-    #[cfg(feature="render_png")]
     impl<'a, TStream, TPixel> RenderTarget<TPixel> for PngRenderTarget<TStream> 
     where
         TStream:    Write,
