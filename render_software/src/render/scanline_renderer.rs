@@ -7,17 +7,17 @@ use crate::scanplan::buffer_stack::*;
 ///
 /// Renders a ScanPlan using a particular pixel type
 ///
-pub struct ScanlineRenderer<'a, TPixel, const N: usize> 
+pub struct ScanlineRenderer<'a, TPixel>
 where
-    TPixel: Pixel<N>,
+    TPixel: 'static + Send + Copy + AlphaBlend,
 {
     program_cache:  &'a PixelProgramCache<TPixel>,
     program_data:   &'a PixelProgramDataCache<TPixel>,
 }
 
-impl<'a, TPixel, const N: usize> ScanlineRenderer<'a, TPixel, N> 
+impl<'a, TPixel> ScanlineRenderer<'a, TPixel>
 where
-    TPixel: 'static + Send + Pixel<N>,
+    TPixel: 'static + Send + Copy + AlphaBlend,
 {
     ///
     /// Creates a new scanline renderer
@@ -31,9 +31,9 @@ where
     }
 }
 
-impl<'a, TPixel, const N: usize> Renderer for ScanlineRenderer<'a, TPixel, N> 
+impl<'a, TPixel> Renderer for ScanlineRenderer<'a, TPixel> 
 where
-    TPixel: 'static + Send + Pixel<N>,
+    TPixel: 'static + Send + Copy + AlphaBlend,
 {
     type Region = f64;
     type Source = ScanlinePlan;
