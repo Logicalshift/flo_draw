@@ -28,8 +28,8 @@ where
 
         let scanline_renderer       = ScanlineRenderer::new(data);
         let scanline_planner        = PixelScanPlanner::<TEdge>::default();
-        let edge_region_renderer    = EdgePlanRegionRenderer::<TEdge, _, _>::new(scanline_planner, scanline_renderer);
-        let frame_renderer          = U8FrameRenderer::<_, _, EdgePlanRegionRenderer<TEdge, _, _>>::new(edge_region_renderer);
+        let edge_region_renderer    = EdgePlanRegionRenderer::new(scanline_planner, scanline_renderer);
+        let frame_renderer          = U8FrameRenderer::new(edge_region_renderer);
 
         (&frame_renderer).render(&GammaFrameSize { width, height, gamma }, self, target);
     }
