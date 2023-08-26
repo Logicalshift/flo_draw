@@ -89,7 +89,7 @@ fn source_over_2() {
     let col2 = F32LinearPixel::from_color(Color::Rgba(0.7764, 0.6823, 0.8588, 0.6), 2.2);
 
     let col3            = col2.source_over(col1);
-    let back_as_color   = col3.to_u8_rgba(2.2);
+    let back_as_color   = col3.to_gamma_colorspace(2.2);
 
     let [r, g, b, a]    = back_as_color.get_components();
 
@@ -107,7 +107,7 @@ fn source_over_3() {
     let src_over    = AlphaOperation::SourceOver.get_function();
 
     let col3            = src_over(col2, col1);
-    let back_as_color   = col3.to_u8_rgba(2.2);
+    let back_as_color   = col3.to_gamma_colorspace(2.2);
 
     let [r, g, b, a]    = back_as_color.get_components();
 
