@@ -2,13 +2,14 @@ use super::pixel_program_cache::*;
 
 use std::marker::{PhantomData};
 use std::ops::{Range};
+use std::sync::*;
 
 ///
 /// Trait implemented by types that can run pixel programs (identified by their data ID)
 ///
 /// `PixelProgramDataCache` is the one provided by this library, but this trait can be re-implemented to customise how a scene is rendered.
 ///
-pub trait PixelProgramRunner {
+pub trait PixelProgramRunner : Send + Sync {
     /// The type of pixel that this program runner will write
     type TPixel;
 
@@ -24,15 +25,17 @@ pub trait PixelProgramRunner {
 ///
 pub struct BasicPixelProgramRunner<TFn, TPixel> 
 where
-    TFn: Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+    TFn:    Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+    TPixel: Send,
 {
     pixel_fn:   TFn,
-    pixel:      PhantomData<TPixel>,
+    pixel:      PhantomData<Mutex<TPixel>>,
 }
 
 impl<TFn, TPixel> From<TFn> for BasicPixelProgramRunner<TFn, TPixel>
 where
-    TFn: Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+    TFn:    Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+    TPixel: Send,
 {
     fn from(func: TFn) -> Self {
         BasicPixelProgramRunner { 
@@ -44,7 +47,8 @@ where
 
 impl<TFn, TPixel> PixelProgramRunner for BasicPixelProgramRunner<TFn, TPixel>
 where
-    TFn: Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+    TFn:    Send + Sync + Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+    TPixel: Send,
 {
     type TPixel = TPixel;
 
@@ -56,7 +60,8 @@ where
 
 impl<'a, TFn, TPixel> PixelProgramRunner for &'a BasicPixelProgramRunner<TFn, TPixel>
 where
-    TFn: Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+    TFn: Send + Sync + Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+    TPixel: Send,
 {
     type TPixel = TPixel;
 

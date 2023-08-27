@@ -2,16 +2,17 @@ use super::pixel_program_cache::*;
 
 use std::ops::{Range};
 use std::marker::{PhantomData};
+use std::sync::*;
 
 ///
 /// A pixel program descibes how to draw pixels along a scan line
 ///
-pub trait PixelProgram : Send {
+pub trait PixelProgram : Send + Sync {
     /// The type representing a pixel within this program
-    type Pixel;
+    type Pixel : Send;
 
     /// Data associated with a particular instance of this program
-    type ProgramData;
+    type ProgramData : Send + Sync;
 
     ///
     /// Draws a series of pixels to a frame buffer
@@ -28,13 +29,13 @@ pub trait PixelProgram : Send {
 ///
 pub struct PixelProgramFn<TFn, TPixel, TData>
 where 
-    TFn: Send + Fn(&mut [TPixel], Range<i32>, f64, &TData) -> (),
+    TFn: Send + Sync + Fn(&mut [TPixel], Range<i32>, f64, &TData) -> (),
 {
     /// The function to call to fill in the pixels
     function: TFn,
 
     /// Placeholder for the TData type (Rust doesn't see a function parameter as a constraint)
-    phantom_data: PhantomData<(TData, TPixel)>,
+    phantom_data: PhantomData<Mutex<(TData, TPixel)>>,
 }
 
 ///
@@ -44,18 +45,18 @@ where
 ///
 pub struct PerPixelProgramFn<TFn, TPixel, TData>
 where 
-    TFn: Fn(i32, f64, &TData) -> TPixel,
+    TFn: Send + Sync + Fn(i32, f64, &TData) -> TPixel,
 {
     /// The function to call to fill in the pixels
     function: TFn,
 
     /// Placeholder for the TData type (Rust doesn't see a function parameter as a constraint)
-    phantom_data: PhantomData<(TData, TPixel)>,
+    phantom_data: PhantomData<Mutex<(TData, TPixel)>>,
 }
 
 impl<TFn, TPixel, TData> From<TFn> for PixelProgramFn<TFn, TPixel, TData> 
 where 
-    TFn: Send + Fn(&mut [TPixel], Range<i32>, f64, &TData) -> (),
+    TFn: Send + Sync + Fn(&mut [TPixel], Range<i32>, f64, &TData) -> (),
 {
     fn from(function: TFn) -> Self {
         PixelProgramFn {
@@ -67,8 +68,8 @@ where
 
 impl<TFn, TPixel, TData> PixelProgram for PixelProgramFn<TFn, TPixel, TData> 
 where 
-    TFn:    Send + Fn(&mut [TPixel], Range<i32>, f64, &TData) -> (),
-    TData:  Send,
+    TFn:    Send + Sync + Fn(&mut [TPixel], Range<i32>, f64, &TData) -> (),
+    TData:  Send + Sync,
     TPixel: Send,
 {
     type Pixel          = TPixel;
@@ -82,7 +83,7 @@ where
 
 impl<TFn, TPixel, TData> From<TFn> for PerPixelProgramFn<TFn, TPixel, TData> 
 where 
-    TFn: Fn(i32, f64, &TData) -> TPixel,
+    TFn: Send + Sync + Fn(i32, f64, &TData) -> TPixel,
 {
     fn from(function: TFn) -> Self {
         PerPixelProgramFn {
@@ -94,8 +95,8 @@ where
 
 impl<TFn, TPixel, TData> PixelProgram for PerPixelProgramFn<TFn, TPixel, TData> 
 where 
-    TFn:    Send + Fn(i32, f64, &TData) -> TPixel,
-    TData:  Send,
+    TFn:    Send + Sync + Fn(i32, f64, &TData) -> TPixel,
+    TData:  Send + Sync,
     TPixel: Send,
 {
     type Pixel          = TPixel;
