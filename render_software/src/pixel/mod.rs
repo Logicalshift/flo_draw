@@ -1,5 +1,6 @@
 mod pixel_trait;
 mod alpha_blend_trait;
+pub (crate) mod gamma_lut;
 mod to_gamma_colorspace_trait;
 mod u8_rgba;
 mod f32_linear;
