@@ -49,14 +49,14 @@ where
     fn render(&self, region: &GammaFrameSize, source: &TRegionRenderer::Source, dest: &mut [U8RgbaPremultipliedPixel]) {
         const LINES_AT_ONCE: usize = 8;
 
+        // Rendering fails if there are insufficient lines to complete
+        if dest.len() < region.width * region.height {
+            panic!("Cannot render: needed an output buffer large enough to fit {} lines but found {} lines", region.height, dest.len()/region.width);
+        }
+
         // Cut the destination into chunks to form the lines
         let mut chunks  = dest.chunks_mut(region.width*LINES_AT_ONCE).collect::<Vec<_>>();
         let renderer    = &self.region_renderer;
-
-        // Rendering fails if there are insufficient lines to complete
-        // if chunks.len() < region.height {
-        //     panic!("Cannot render: needed an output buffer large enough to fit {} lines but found {} lines", region.height, chunks.len());
-        // }
 
         // Render in chunks of LINES_AT_ONCE lines
         let mut y_idx           = 0;
