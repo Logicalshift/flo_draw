@@ -103,8 +103,6 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
             // Some values we use during the conversion
             let f32x4_65535 = f32x4::splat(65535.0);
 
-            // TODO: we can get SRGB alpha format if we change the powf to (gamma, gamma, gamma, 1)
-
             let mut input   = input_pixels.iter();
             let mut output  = output_pixels.iter_mut();
 
@@ -115,12 +113,13 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
                 let rgba    = rgba * f32x4_65535;
                 let rgba    = rgba.fast_trunc_int();
 
+                // This produces SRGB format, where the values are pre-multiplied before gamma correction
                 let [r, g, b, a] = rgba.to_array();
                 *output = U8RgbaPremultipliedPixel::from_components([
                     gamma_lut.look_up(r as _), 
                     gamma_lut.look_up(g as _), 
                     gamma_lut.look_up(b as _), 
-                    gamma_lut.look_up(a as _)]);
+                    (a >> 8) as u8]);
             }
         })
     }
