@@ -7,9 +7,9 @@ use super::gamma_lut::*;
 use flo_canvas as canvas;
 
 use wide::*;
-use once_cell::sync::{Lazy};
 
 use std::ops::*;
+use std::cell::{RefCell};
 
 ///
 /// A pixel using linear floating-point components, with the alpha value pre-multiplied
@@ -87,32 +87,42 @@ impl Pixel<4> for F32LinearPixel {
 impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
     #[inline]
     fn to_gamma_colorspace(input_pixels: &[F32LinearPixel], output_pixels: &mut [U8RgbaPremultipliedPixel], gamma: f64) {
-        // TODO: need to re-use the LUT if possible, also generate a table using the appropriate gamma value
-        static LUT: Lazy<U8GammaLut> = Lazy::new(|| U8GammaLut::new(1.0/2.2));
-
-        //let gamma       = 1.0/gamma;
-        let f32x4_65535 = f32x4::splat(65535.0);
-        let gamma_lut   = &*LUT;
-
-        // TODO: we can get SRGB alpha format if we change the powf to (gamma, gamma, gamma, 1)
-
-        let mut input   = input_pixels.iter();
-        let mut output  = output_pixels.iter_mut();
-
-        while let (Some(input), Some(output)) = (input.next(), output.next()) {
-            // Convert the pixel to u8 format and apply gamma correction
-            let rgba    = input.0;
-            let rgba    = rgba.min(f32x4::ONE).max(f32x4::ZERO);
-            let rgba    = rgba * f32x4_65535;
-            let rgba    = rgba.fast_trunc_int();
-
-            let [r, g, b, a] = rgba.to_array();
-            *output = U8RgbaPremultipliedPixel::from_components([
-                gamma_lut.look_up(r as _), 
-                gamma_lut.look_up(g as _), 
-                gamma_lut.look_up(b as _), 
-                gamma_lut.look_up(a as _)]);
+        thread_local! {
+            // The gamma-correction look-up table is generated once per thread, saves us doing the expensive 'powf()' operation
+            pub static GAMMA_LUT: RefCell<U8GammaLut> = RefCell::new(U8GammaLut::new(1.0/2.2));
         }
+
+        GAMMA_LUT.with(move |gamma_lut| {
+            // This isn't re-entrant so only this function can use the gamma-correction table 
+            let mut gamma_lut = gamma_lut.borrow_mut();
+
+            // Update the LUT if needed (should be rare, we'll generally be working on converting a whole frame at once)
+            let gamma = 1.0/gamma;
+            if gamma != gamma_lut.gamma() { *gamma_lut = U8GammaLut::new(gamma) };
+
+            // Some values we use during the conversion
+            let f32x4_65535 = f32x4::splat(65535.0);
+
+            // TODO: we can get SRGB alpha format if we change the powf to (gamma, gamma, gamma, 1)
+
+            let mut input   = input_pixels.iter();
+            let mut output  = output_pixels.iter_mut();
+
+            while let (Some(input), Some(output)) = (input.next(), output.next()) {
+                // Convert the pixel to u8 format and apply gamma correction
+                let rgba    = input.0;
+                let rgba    = rgba.min(f32x4::ONE).max(f32x4::ZERO);
+                let rgba    = rgba * f32x4_65535;
+                let rgba    = rgba.fast_trunc_int();
+
+                let [r, g, b, a] = rgba.to_array();
+                *output = U8RgbaPremultipliedPixel::from_components([
+                    gamma_lut.look_up(r as _), 
+                    gamma_lut.look_up(g as _), 
+                    gamma_lut.look_up(b as _), 
+                    gamma_lut.look_up(a as _)]);
+            }
+        })
     }
 }
 
