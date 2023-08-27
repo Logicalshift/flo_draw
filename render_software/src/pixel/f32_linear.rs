@@ -85,22 +85,27 @@ impl Pixel<4> for F32LinearPixel {
 
 impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
     #[inline]
-    fn to_gamma_colorspace(&self, gamma: f64) -> U8RgbaPremultipliedPixel {
+    fn to_gamma_colorspace(input_pixels: &[F32LinearPixel], output_pixels: &mut [U8RgbaPremultipliedPixel], gamma: f64) {
         static F32X4_255: Lazy<f32x4> = Lazy::new(|| f32x4::splat(255.0));
+        let gamma       = (1.0/gamma) as f32;
+        let f32x4_255   = *F32X4_255;
 
-        // TODO: might be good to do this as a 'whole buffer' operation instead of single pixels like this
         // TODO: we can get SRGB alpha format if we change the powf to (gamma, gamma, gamma, 1)
 
-        // Remove gamma correction
-        let gamma   = (1.0/gamma) as f32;
-        let rgba    = self.0;
-        let rgba    = rgba.min(f32x4::ONE).max(f32x4::ZERO);
-        let rgba    = rgba.powf(gamma);             // TODO: removing this creates a considerable speed increase (especially in debug builds). We can speed up by using lookup tables (eg, by converting to 0-65536 and gamma correcting from there)
-        let rgba    = rgba * *F32X4_255;
-        let rgba    = rgba.fast_trunc_int();
+        let mut input   = input_pixels.iter();
+        let mut output  = output_pixels.iter_mut();
 
-        let [r, g, b, a] = rgba.to_array();
-        U8RgbaPremultipliedPixel::from_components([r as _, g as _, b as _, a as _])
+        while let (Some(input), Some(output)) = (input.next(), output.next()) {
+            // Convert the pixel to u8 format and apply gamma correction
+            let rgba    = input.0;
+            let rgba    = rgba.min(f32x4::ONE).max(f32x4::ZERO);
+            let rgba    = rgba.powf(gamma);             // TODO: removing this creates a considerable speed increase (especially in debug builds). We can speed up by using lookup tables (eg, by converting to 0-65536 and gamma correcting from there)
+            let rgba    = rgba * f32x4_255;
+            let rgba    = rgba.fast_trunc_int();
+
+            let [r, g, b, a] = rgba.to_array();
+            *output = U8RgbaPremultipliedPixel::from_components([r as _, g as _, b as _, a as _]);
+        }
     }
 }
 

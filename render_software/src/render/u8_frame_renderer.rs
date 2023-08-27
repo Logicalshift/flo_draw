@@ -50,16 +50,17 @@ where
         const LINES_AT_ONCE: usize = 8;
 
         // Cut the destination into chunks to form the lines
-        let mut chunks  = dest.chunks_exact_mut(region.width).collect::<Vec<_>>();
+        let mut chunks  = dest.chunks_mut(region.width*LINES_AT_ONCE).collect::<Vec<_>>();
         let renderer    = &self.region_renderer;
 
         // Rendering fails if there are insufficient lines to complete
-        if chunks.len() < region.height {
-            panic!("Cannot render: needed an output buffer large enough to fit {} lines but found {} lines", region.height, chunks.len());
-        }
+        // if chunks.len() < region.height {
+        //     panic!("Cannot render: needed an output buffer large enough to fit {} lines but found {} lines", region.height, chunks.len());
+        // }
 
         // Render in chunks of LINES_AT_ONCE lines
         let mut y_idx           = 0;
+        let mut chunk_idx       = 0;
         let mut render_slice    = RenderSlice { width: region.width, y_positions: vec![] };
         let mut buffer          = vec![TPixel::default(); region.width*LINES_AT_ONCE];
         loop {
@@ -81,17 +82,11 @@ where
             renderer.render(&render_slice, source, &mut buffer);
 
             // Convert to the final pixel format
-            for y_idx in 0..(end_idx-start_idx) {
-                let rendered_pixels = &buffer[(y_idx*region.width)..((y_idx+1)*region.width)];
-                let target_pixels   = &mut chunks[start_idx + y_idx];
-
-                for x_idx in 0..region.width {
-                    target_pixels[x_idx] = rendered_pixels[x_idx].to_gamma_colorspace(region.gamma);
-                }
-            }
+            TPixel::to_gamma_colorspace(&buffer, chunks[chunk_idx], region.gamma);
 
             // Advance to the next y position
-            y_idx = end_idx;
+            y_idx       = end_idx;
+            chunk_idx   += 1;
         }
     } 
 }
