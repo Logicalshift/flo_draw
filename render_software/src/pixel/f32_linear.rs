@@ -85,7 +85,6 @@ impl Pixel<4> for F32LinearPixel {
 }
 
 impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
-    #[inline]
     fn to_gamma_colorspace(input_pixels: &[F32LinearPixel], output_pixels: &mut [U8RgbaPremultipliedPixel], gamma: f64) {
         thread_local! {
             // The gamma-correction look-up table is generated once per thread, saves us doing the expensive 'powf()' operation
