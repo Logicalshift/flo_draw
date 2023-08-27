@@ -55,38 +55,28 @@ where
         }
 
         // Cut the destination into chunks to form the lines
-        let mut chunks  = dest.chunks_mut(region.width*LINES_AT_ONCE).collect::<Vec<_>>();
+        let chunks      = dest.chunks_mut(region.width*LINES_AT_ONCE);
         let renderer    = &self.region_renderer;
 
         // Render in chunks of LINES_AT_ONCE lines
-        let mut y_idx           = 0;
-        let mut chunk_idx       = 0;
         let mut render_slice    = RenderSlice { width: region.width, y_positions: vec![] };
         let mut buffer          = vec![TPixel::default(); region.width*LINES_AT_ONCE];
-        loop {
-            // Stop once we reach the end
-            if y_idx >= region.height {
-                break;
-            }
 
-            // Work out which lines to render next
-            let start_idx   = y_idx;
-            let end_idx     = start_idx + LINES_AT_ONCE;
-            let end_idx     = if end_idx > region.height { region.height } else { end_idx };
+        chunks.enumerate().map(|(chunk_idx, chunk)| {
+            let start_y = chunk_idx * LINES_AT_ONCE;
+            let end_y   = if start_y + LINES_AT_ONCE > region.height { region.height } else { start_y + LINES_AT_ONCE };
 
+            (start_y..end_y, chunk_idx, chunk)
+        }).for_each(|(y_positions, _chunk_idx, chunk)| {
             // Write the y positions
             render_slice.y_positions.clear();
-            render_slice.y_positions.extend((start_idx..end_idx).map(|idx| idx as f64));
+            render_slice.y_positions.extend(y_positions.map(|idx| idx as f64));
 
             // Render these lines
             renderer.render(&render_slice, source, &mut buffer);
 
             // Convert to the final pixel format
-            TPixel::to_gamma_colorspace(&buffer, chunks[chunk_idx], region.gamma);
-
-            // Advance to the next y position
-            y_idx       = end_idx;
-            chunk_idx   += 1;
-        }
+            TPixel::to_gamma_colorspace(&buffer, chunk, region.gamma);
+        });
     } 
 }
