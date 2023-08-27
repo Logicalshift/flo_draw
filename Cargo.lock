@@ -802,6 +802,7 @@ dependencies = [
  "flo_sparse_array",
  "once_cell",
  "png",
+ "rayon",
  "smallvec",
  "turbojpeg",
  "webp",
