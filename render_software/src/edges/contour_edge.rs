@@ -39,7 +39,7 @@ where
 
 impl<TContour> EdgeDescriptor for ContourEdge<TContour>
 where
-    TContour: Send + SampledContour,
+    TContour: Send + Sync + SampledContour,
 {
     #[inline]
     fn shape(&self) -> ShapeId { 

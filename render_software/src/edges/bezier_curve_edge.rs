@@ -10,7 +10,7 @@ use smallvec::*;
 ///
 pub struct NonZeroBezierCurveEdge<TCurve> 
 where
-    TCurve:        Send + BezierCurve,
+    TCurve:         Send + Sync + BezierCurve,
     TCurve::Point:  Coordinate + Coordinate2D,
 {
     /// The ID of the shape that this contour surrounds
@@ -52,7 +52,7 @@ where
 
 impl<TCurve> NonZeroBezierCurveEdge<TCurve>
 where
-    TCurve:         Send + BezierCurve,
+    TCurve:         Send + Sync + BezierCurve,
     TCurve::Point:  Coordinate + Coordinate2D,
 {
     ///
@@ -96,7 +96,7 @@ where
 
 impl<TCurve> EdgeDescriptor for NonZeroBezierCurveEdge<TCurve>
 where
-    TCurve:         Send + BezierCurve,
+    TCurve:         Send + Sync + BezierCurve,
     TCurve::Point:  Coordinate + Coordinate2D,
 {
     #[inline]
@@ -148,7 +148,7 @@ where
 
 impl<TCurve> EdgeDescriptor for EvenOddBezierCurveEdge<TCurve>
 where
-    TCurve:         Send + BezierCurve,
+    TCurve:         Send + Sync + BezierCurve,
     TCurve::Point:  Coordinate + Coordinate2D,
 {
     #[inline]

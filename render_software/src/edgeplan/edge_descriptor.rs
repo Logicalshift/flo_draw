@@ -40,7 +40,7 @@ pub enum EdgeInterceptDirection {
 ///
 /// Describes an edge that 
 ///
-pub trait EdgeDescriptor : Send {
+pub trait EdgeDescriptor : Send + Sync {
     ///
     /// Returns the ID of the shape that this edge is a boundary for
     ///
