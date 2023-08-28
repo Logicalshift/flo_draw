@@ -1,5 +1,4 @@
 use flo_canvas as canvas;
-use turbojpeg::Transform;
 
 ///
 /// A `CanvasDrawing` represents the state of a drawing after a series of `Draw` commands have been processed
