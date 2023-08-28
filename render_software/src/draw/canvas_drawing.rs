@@ -13,7 +13,7 @@ pub struct CanvasDrawing {
     current_namespace:  canvas::NamespaceId,
 
     /// The layer that we're currently writing to
-    current_layer:      canvas::LayerId,
+    current_layer:      LayerHandle,
 
     /// The current drawing state
     current_state:      DrawingState,
@@ -33,13 +33,19 @@ impl CanvasDrawing {
     /// Creates a blank canvas drawing
     ///
     pub fn empty() -> Self {
+        // Create an empty initial layer
+        let mut layers = SparseArray::<Layer>::empty();
+        let initial_layer = Layer::default();
+
+        layers.insert(0, initial_layer);
+
         CanvasDrawing {
             current_namespace:  canvas::NamespaceId::default(),
-            current_layer:      canvas::LayerId(0),
+            current_layer:      LayerHandle(0),
             current_state:      DrawingState::default(),
-            layers:             SparseArray::empty(),
-            ordered_layers:     vec![],
-            next_layer_handle:  LayerHandle(0),
+            layers:             layers,
+            ordered_layers:     vec![LayerHandle(0)],
+            next_layer_handle:  LayerHandle(1),
         }
     }
 
@@ -51,10 +57,11 @@ impl CanvasDrawing {
             use canvas::Draw::*;
 
             match instruction {
-                StartFrame                                          => { todo!() },
-                ShowFrame                                           => { todo!() },
-                ResetFrame                                          => { todo!() },
-                Namespace(namespace)                                => { todo!() },
+                StartFrame                                          => { /* For flow control outside of the renderer */ },
+                ShowFrame                                           => { /* For flow control outside of the renderer */ },
+                ResetFrame                                          => { /* For flow control outside of the renderer */ },
+
+                Namespace(namespace)                                => { self.current_namespace = namespace; },
 
                 Path(path_op)                                       => { todo!() },
                 Fill                                                => { todo!() },

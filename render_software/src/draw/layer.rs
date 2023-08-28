@@ -10,3 +10,10 @@ pub struct LayerHandle(pub usize);
 pub struct Layer {
 
 }
+
+impl Default for Layer {
+    fn default() -> Self {
+        Layer { 
+        }
+    }
+}
