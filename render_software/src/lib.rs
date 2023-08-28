@@ -16,5 +16,8 @@ pub mod pixel_programs;
 /// Renderers convert from data represented by a series of instructions to a simpler form
 pub mod render;
 
+/// The 'draw' module converts from `flo_canvas::Draw` instructions to layered edge plans
+pub mod draw;
+
 pub use flo_canvas as canvas;
 pub use flo_canvas::curves as curves;
