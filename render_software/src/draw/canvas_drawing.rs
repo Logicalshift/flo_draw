@@ -38,11 +38,17 @@ where
 
     /// The next layer handle to allocate
     pub (super) next_layer_handle:  LayerHandle,
+
+    /// Used to store the pixel programs used by this drawing
+    pub (super) program_cache:      PixelProgramCache<TPixel>,
+
+    /// Used to store the data for the pixel program used by this drawing
+    pub (super) program_data_cache: PixelProgramDataCache<TPixel>,
 }
 
 impl<TPixel, const N: usize>CanvasDrawing<TPixel, N> 
 where
-    TPixel: Send + Sync + Pixel<N>,
+    TPixel: 'static + Send + Sync + Pixel<N>,
 {
     ///
     /// Creates a blank canvas drawing
@@ -54,6 +60,10 @@ where
 
         layers.insert(0, initial_layer);
 
+        // Create the program and data cache
+        let mut program_cache   = PixelProgramCache::empty();
+        let data_cache          = program_cache.create_data_cache();
+
         CanvasDrawing {
             gamma:              2.2,
             background_color:   TPixel::white(),
@@ -63,6 +73,8 @@ where
             layers:             layers,
             ordered_layers:     vec![LayerHandle(0)],
             next_layer_handle:  LayerHandle(1),
+            program_cache:      program_cache,
+            program_data_cache: data_cache,
         }
     }
 
