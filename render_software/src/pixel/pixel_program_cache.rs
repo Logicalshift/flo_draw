@@ -20,6 +20,9 @@ pub struct PixelProgramCache<TPixel: Send> {
 pub struct PixelProgramDataCache<TPixel: Send> {
     /// Functions that call a pixel program with its associated program data
     program_data: Vec<Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, f64) -> ()>>,
+
+    /// Slots in the 'program_data' list that are available to re-use with different data
+    free_data_slots: Vec<usize>,
 }
 
 ///
@@ -115,7 +118,8 @@ where
     ///
     pub fn create_data_cache(&mut self) -> PixelProgramDataCache<TPixel> {
         PixelProgramDataCache {
-            program_data:   vec![],
+            program_data:       vec![],
+            free_data_slots:    vec![],
         }
     }
 
@@ -128,16 +132,24 @@ where
     where
         TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
-        // Assign an ID to this program data
-        let program_data_id = data_cache.program_data.len();
-
         // Generate the data for this program (well, encapsulate it in a function waiting for the scanline data)
         let associate_scanline_data = (stored_program.associate_program_data)(data);
 
         // Store in the data cache
-        data_cache.program_data.push(associate_scanline_data);
+        if let Some(program_data_id) = data_cache.free_data_slots.pop() {
+            // Overwrite the program data in the unused slot
+            data_cache.program_data[program_data_id] = associate_scanline_data;
 
-        PixelProgramDataId(program_data_id)
+            PixelProgramDataId(program_data_id)
+        } else {
+            // Assign an ID to this program data
+            let program_data_id = data_cache.program_data.len();
+
+            // Store the data in the cache
+            data_cache.program_data.push(associate_scanline_data);
+
+            PixelProgramDataId(program_data_id)
+        }
     }
 }
 
