@@ -1,10 +1,31 @@
+use super::drawing_state::*;
+use super::layer::*;
+
+use flo_sparse_array::*;
+
 use flo_canvas as canvas;
 
 ///
 /// A `CanvasDrawing` represents the state of a drawing after a series of `Draw` commands have been processed
 ///
 pub struct CanvasDrawing {
+    /// The namespace for the current set of IDs
+    current_namespace:  canvas::NamespaceId,
 
+    /// The layer that we're currently writing to
+    current_layer:      canvas::LayerId,
+
+    /// The current drawing state
+    current_state:      DrawingState,
+
+    /// Maps layer handles to layers
+    layers:             SparseArray<Layer>,
+
+    /// The layers in order
+    ordered_layers:     Vec<LayerHandle>,
+
+    /// The next layer handle to allocate
+    next_layer_handle:  LayerHandle,
 }
 
 impl CanvasDrawing {
@@ -13,6 +34,12 @@ impl CanvasDrawing {
     ///
     pub fn empty() -> Self {
         CanvasDrawing {
+            current_namespace:  canvas::NamespaceId::default(),
+            current_layer:      canvas::LayerId(0),
+            current_state:      DrawingState::default(),
+            layers:             SparseArray::empty(),
+            ordered_layers:     vec![],
+            next_layer_handle:  LayerHandle(0),
         }
     }
 
