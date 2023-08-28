@@ -10,6 +10,9 @@ pub mod scanplan;
 /// A pixel models a single colour sample (thematically it could be considered 0 dimensional, though really a pixel is better modelled as aggregation of the light passing through a particular region)
 pub mod pixel;
 
+/// Well-known pixel programs
+pub mod pixel_programs;
+
 /// Renderers convert from data represented by a series of instructions to a simpler form
 pub mod render;
 
