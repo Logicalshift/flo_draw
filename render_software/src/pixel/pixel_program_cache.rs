@@ -21,6 +21,9 @@ pub struct PixelProgramDataCache<TPixel: Send> {
     /// Functions that call a pixel program with its associated program data
     program_data: Vec<Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, f64) -> ()>>,
 
+    /// The number of times each program_data item is used (0 when free)
+    retain_counts: Vec<usize>,
+
     /// Slots in the 'program_data' list that are available to re-use with different data
     free_data_slots: Vec<usize>,
 }
@@ -120,6 +123,7 @@ where
         PixelProgramDataCache {
             program_data:       vec![],
             free_data_slots:    vec![],
+            retain_counts:      vec![],
         }
     }
 
@@ -127,6 +131,7 @@ where
     /// Stores data to be used with an instance of a pixel program
     ///
     /// Program data can be a number of things: in the simplest case it might be the colour that the program will set the pixels to.
+    /// `release_program_data()` can be used to free this data and make the ID available for reallocation to a different program. 
     ///
     pub fn store_program_data<TProgram>(&mut self, stored_program: &StoredPixelProgram<TProgram>, data_cache: &mut PixelProgramDataCache<TPixel>, data: TProgram::ProgramData) -> PixelProgramDataId 
     where
@@ -138,7 +143,8 @@ where
         // Store in the data cache
         if let Some(program_data_id) = data_cache.free_data_slots.pop() {
             // Overwrite the program data in the unused slot
-            data_cache.program_data[program_data_id] = associate_scanline_data;
+            data_cache.program_data[program_data_id]  = associate_scanline_data;
+            data_cache.retain_counts[program_data_id] = 1;
 
             PixelProgramDataId(program_data_id)
         } else {
@@ -147,8 +153,38 @@ where
 
             // Store the data in the cache
             data_cache.program_data.push(associate_scanline_data);
+            data_cache.retain_counts.push(1);
 
             PixelProgramDataId(program_data_id)
+        }
+    }
+
+    ///
+    /// Increase the retain count for the specified program data ID
+    ///
+    /// Pixel program data will only be freed if release is called for every time this is called, plus once more for the initial allocation.
+    ///
+    #[inline]
+    pub fn retain_program_data(&mut self, data_cache: &mut PixelProgramDataCache<TPixel>, data_id: PixelProgramDataId) {
+        data_cache.retain_counts[data_id.0] += 1;
+    }
+
+    ///
+    /// Increase the retain count for the specified program data ID
+    ///
+    /// Pixel program data will only be freed if release is called for every time this is called, plus once more for the initial allocation.
+    ///
+    #[inline]
+    pub fn release_program_data(&mut self, data_cache: &mut PixelProgramDataCache<TPixel>, data_id: PixelProgramDataId) {
+        if data_cache.retain_counts[data_id.0] == 0 {
+            // Already freed
+        } else if data_cache.retain_counts[data_id.0] == 1 {
+            // Free the data for this program
+            data_cache.retain_counts[data_id.0] = 0;
+            data_cache.program_data[data_id.0]  = Box::new(|_, _, _, _| { });
+        } else {
+            // Reduce the retain count
+            data_cache.retain_counts[data_id.0] -= 1;
         }
     }
 }
