@@ -1,6 +1,9 @@
 use super::drawing_state::*;
 use super::layer::*;
 
+use crate::pixel::*;
+
+use canvas::NamespaceId;
 use flo_sparse_array::*;
 
 use flo_canvas as canvas;
@@ -8,27 +11,39 @@ use flo_canvas as canvas;
 ///
 /// A `CanvasDrawing` represents the state of a drawing after a series of `Draw` commands have been processed
 ///
-pub struct CanvasDrawing {
+pub struct CanvasDrawing<TPixel, const N: usize>
+where
+    TPixel: Send + Sync + Pixel<N>,
+{
+    /// The gamma correction value for the current drawing
+    pub (super) gamma:              f64,
+
+    /// The background color to use for the canvas
+    pub (super) background_color:   TPixel,
+
     /// The namespace for the current set of IDs
-    current_namespace:  canvas::NamespaceId,
+    pub (super) current_namespace:  canvas::NamespaceId,
 
     /// The layer that we're currently writing to
-    current_layer:      LayerHandle,
+    pub (super) current_layer:      LayerHandle,
 
     /// The current drawing state
-    current_state:      DrawingState,
+    pub (super) current_state:      DrawingState,
 
     /// Maps layer handles to layers
-    layers:             SparseArray<Layer>,
+    pub (super) layers:             SparseArray<Layer>,
 
     /// The layers in order
-    ordered_layers:     Vec<LayerHandle>,
+    pub (super) ordered_layers:     Vec<LayerHandle>,
 
     /// The next layer handle to allocate
-    next_layer_handle:  LayerHandle,
+    pub (super) next_layer_handle:  LayerHandle,
 }
 
-impl CanvasDrawing {
+impl<TPixel, const N: usize>CanvasDrawing<TPixel, N> 
+where
+    TPixel: Send + Sync + Pixel<N>,
+{
     ///
     /// Creates a blank canvas drawing
     ///
@@ -40,6 +55,8 @@ impl CanvasDrawing {
         layers.insert(0, initial_layer);
 
         CanvasDrawing {
+            gamma:              2.2,
+            background_color:   TPixel::white(),
             current_namespace:  canvas::NamespaceId::default(),
             current_layer:      LayerHandle(0),
             current_state:      DrawingState::default(),
@@ -62,6 +79,14 @@ impl CanvasDrawing {
                 ResetFrame                                          => { /* For flow control outside of the renderer */ },
 
                 Namespace(namespace)                                => { self.current_namespace = namespace; },
+
+                ClearCanvas(color)                                  => { self.clear_canvas(TPixel::from_color(color, self.gamma)); },
+                Layer(layer_id)                                     => { self.select_layer(layer_id); },
+                LayerBlend(layer_id, blend_mode)                    => { self.layer_blend(layer_id, blend_mode); },
+                LayerAlpha(layer_id, alpha)                         => { self.layer_alpha(layer_id, alpha as f64); },
+                ClearLayer                                          => { self.clear_layer(self.current_layer); },
+                ClearAllLayers                                      => { self.clear_all_layers(); },
+                SwapLayers(layer_1, layer_2)                        => { self.swap_layers(layer_1, layer_2); },
 
                 Path(path_op)                                       => { todo!() },
                 Fill                                                => { todo!() },
@@ -95,14 +120,6 @@ impl CanvasDrawing {
                 PushState                                           => { todo!() },
                 PopState                                            => { todo!() },
 
-                ClearCanvas(color)                                  => { todo!() },
-                Layer(layer_id)                                     => { todo!() },
-                LayerBlend(layer_id, blend_mode)                    => { todo!() },
-                LayerAlpha(layer_id, alpha)                         => { todo!() },
-                ClearLayer                                          => { todo!() },
-                ClearAllLayers                                      => { todo!() },
-                SwapLayers(layer_1, layer_2)                        => { todo!() },
-
                 Sprite(sprite_id)                                   => { todo!() },
                 MoveSpriteFrom(sprite_id)                           => { todo!() },
                 ClearSprite                                         => { todo!() },
@@ -119,5 +136,25 @@ impl CanvasDrawing {
                 DrawText(font_id, text, x, y)                       => { todo!() },
             }
         }
+    }
+
+    ///
+    /// Clears the canvas
+    ///
+    pub fn clear_canvas(&mut self, new_background_color: TPixel) {
+        // Create an empty set of layers, containing only layer 0
+        let mut layers = SparseArray::<Layer>::empty();
+        let initial_layer = Layer::default();
+
+        layers.insert(0, initial_layer);
+
+        // Reset the state of the canvas
+        self.background_color   = new_background_color;
+        self.current_layer      = LayerHandle(0);
+        self.layers             = layers;
+        self.current_state      = DrawingState::default();
+        self.ordered_layers     = vec![LayerHandle(0)];
+        self.current_namespace  = NamespaceId::default();
+        self.next_layer_handle  = LayerHandle(1);
     }
 }
