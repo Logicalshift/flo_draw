@@ -182,6 +182,7 @@ where
             // Free the data for this program
             data_cache.retain_counts[data_id.0] = 0;
             data_cache.program_data[data_id.0]  = Box::new(|_, _, _, _| { });
+            data_cache.free_data_slots.push(data_id.0);
         } else {
             // Reduce the retain count
             data_cache.retain_counts[data_id.0] -= 1;
