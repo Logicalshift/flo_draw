@@ -42,6 +42,7 @@ where
 
 impl<'a, TEdge, TPlanner, TLineRenderer, TPixel> Renderer for EdgePlanRegionRenderer<TEdge, TPlanner, TLineRenderer>
 where
+    TPixel:                 Send,
     TEdge:                  EdgeDescriptor,
     TPlanner:               ScanPlanner<Edge=TEdge>,
     TLineRenderer:          Renderer<Region=f64, Source=ScanlinePlan, Dest=[TPixel]>,

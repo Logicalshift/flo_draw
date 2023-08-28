@@ -6,10 +6,10 @@ pub trait Renderer : Send + Sync {
     type Region: ?Sized;
 
     /// The source is the source instructions for the rendering
-    type Source: ?Sized;
+    type Source: Send + Sync + ?Sized;
 
     /// The dest is the target buffer type for the rendering
-    type Dest: ?Sized;
+    type Dest: Send + ?Sized;
 
     ///
     /// Renders a set of instructions to a destination
