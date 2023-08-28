@@ -5,6 +5,7 @@ use crate::edgeplan::*;
 use crate::scanplan::*;
 
 use std::marker::{PhantomData};
+use std::sync::*;
 
 ///
 /// The edge plan region renderer renders blocks of scanlines from an edge plan, supplied as y coordinates. It will work
@@ -16,7 +17,7 @@ where
     TPlanner:       ScanPlanner,
     TLineRenderer:  Renderer<Region=f64, Source=ScanlinePlan>,
 {
-    edge_plan:      PhantomData<TEdge>,
+    edge_plan:      PhantomData<Mutex<TEdge>>,
     scan_planner:   TPlanner,
     line_renderer:  TLineRenderer,
 }

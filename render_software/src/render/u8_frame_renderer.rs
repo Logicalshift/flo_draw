@@ -5,6 +5,7 @@ use super::frame_size::*;
 use crate::pixel::*;
 
 use std::marker::{PhantomData};
+use std::sync::*;
 
 ///
 /// Renders a whole frame of pixels to a RGBA U8 buffer (using TPixel as the intermediate format)
@@ -15,7 +16,7 @@ where
     TRegionRenderer:    Renderer<Region=RenderSlice, Dest=[TPixel]>,
 {
     region_renderer:    TRegionRenderer,
-    pixel:              PhantomData<TPixel>,
+    pixel:              PhantomData<Mutex<TPixel>>,
 }
 
 

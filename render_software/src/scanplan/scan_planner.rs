@@ -6,7 +6,7 @@ use std::ops::{Range};
 ///
 /// A scan planner is an algorithm that discovers where along a scanline to render pixels using pixel programs
 ///
-pub trait ScanPlanner : Send {
+pub trait ScanPlanner : Send + Sync {
     /// The type of edge stored in the edge plan for this planner
     type Edge: EdgeDescriptor;
 
