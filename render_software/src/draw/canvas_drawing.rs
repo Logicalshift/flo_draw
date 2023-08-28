@@ -1,5 +1,6 @@
 use super::drawing_state::*;
 use super::layer::*;
+use super::pixel_programs::*;
 
 use crate::pixel::*;
 
@@ -13,7 +14,7 @@ use flo_canvas as canvas;
 ///
 pub struct CanvasDrawing<TPixel, const N: usize>
 where
-    TPixel: Send + Sync + Pixel<N>,
+    TPixel: 'static + Send + Sync + Pixel<N>,
 {
     /// The gamma correction value for the current drawing
     pub (super) gamma:              f64,
@@ -40,7 +41,7 @@ where
     pub (super) next_layer_handle:  LayerHandle,
 
     /// Used to store the pixel programs used by this drawing
-    pub (super) program_cache:      PixelProgramCache<TPixel>,
+    pub (super) program_cache:      CanvasPixelPrograms<TPixel, N>,
 
     /// Used to store the data for the pixel program used by this drawing
     pub (super) program_data_cache: PixelProgramDataCache<TPixel>,
@@ -61,7 +62,7 @@ where
         layers.insert(0, initial_layer);
 
         // Create the program and data cache
-        let mut program_cache   = PixelProgramCache::empty();
+        let mut program_cache   = CanvasPixelPrograms::default();
         let data_cache          = program_cache.create_data_cache();
 
         CanvasDrawing {

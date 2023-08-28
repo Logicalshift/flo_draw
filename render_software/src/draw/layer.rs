@@ -41,7 +41,7 @@ impl Layer {
 
 impl<TPixel, const N: usize>CanvasDrawing<TPixel, N> 
 where
-    TPixel: Send + Sync + Pixel<N>,
+    TPixel: 'static + Send + Sync + Pixel<N>,
 {
     ///
     /// Creates a new blank layer and returns the layer ID that it will have
