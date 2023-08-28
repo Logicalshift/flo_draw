@@ -1,7 +1,7 @@
 ///
 /// A renderer converts from a set of source instructions to a set of destination values
 ///
-pub trait Renderer {
+pub trait Renderer : Send {
     /// The region is used to specify what region is being rendered
     type Region: ?Sized;
 
