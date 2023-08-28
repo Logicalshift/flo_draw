@@ -38,7 +38,7 @@ where
     }
 }
 
-/*
+#[cfg(not(feature="multithreading"))]
 impl<'a, TPixel, TRegionRenderer> Renderer for U8FrameRenderer<TPixel, TRegionRenderer> 
 where
     TPixel:             Sized + Send + Clone + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
@@ -82,8 +82,8 @@ where
         });
     } 
 }
-*/
 
+#[cfg(feature="multithreading")]
 impl<'a, TPixel, TRegionRenderer> Renderer for U8FrameRenderer<TPixel, TRegionRenderer> 
 where
     TPixel:                     Sized + Send + Clone + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
