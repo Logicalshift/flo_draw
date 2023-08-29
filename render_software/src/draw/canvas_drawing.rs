@@ -112,11 +112,11 @@ where
                 NewDashPattern                                      => { todo!() },
                 DashLength(dash_length)                             => { todo!() },
                 DashOffset(dash_offset)                             => { todo!() },
-                FillColor(fill_color)                               => { todo!() },
+                FillColor(fill_color)                               => { self.current_state.fill_solid_color(fill_color); },
                 FillTexture(texture, (x1, y1), (x2, y2))            => { todo!() },
                 FillGradient(gradient, (x1, y1), (x2, y2))          => { todo!() },
                 FillTransform(transform)                            => { todo!() },
-                StrokeColor(color)                                  => { todo!() },
+                StrokeColor(stroke_color)                           => { self.current_state.stroke_solid_color(stroke_color); },
                 WindingRule(winding_rule)                           => { todo!() },
                 BlendMode(blend_mode)                               => { todo!() },
 
@@ -169,7 +169,7 @@ where
         self.ordered_layers     = vec![LayerHandle(0)];
         self.current_namespace  = NamespaceId::default();
         self.next_layer_handle  = LayerHandle(1);
-        
+
         self.program_cache.program_cache.free_all_data(&mut self.program_data_cache);
     }
 }
