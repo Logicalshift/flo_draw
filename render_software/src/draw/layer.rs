@@ -27,6 +27,9 @@ pub struct Layer {
 
     /// The pixel program data referenced by this layer
     pub (super) used_data: Vec<PixelProgramDataId>,
+
+    /// The z-index for the next shape we add to the edge plan
+    pub (super) z_index: usize,
 }
 
 impl Default for Layer {
@@ -36,6 +39,7 @@ impl Default for Layer {
             blend_mode: AlphaOperation::SourceOver,
             edges:      EdgePlan::new(),
             used_data:  vec![],
+            z_index:    0,
         }
     }
 }
@@ -44,10 +48,13 @@ impl Layer {
     ///
     /// Clears this layer
     ///
+    /// This leaves hte program data intact, so this needs to be released separately
+    ///
     pub fn clear(&mut self) {
         self.alpha      = 1.0;
         self.blend_mode = AlphaOperation::SourceOver;
         self.edges      = EdgePlan::new();
+        self.z_index    = 0;
     }
 }
 
