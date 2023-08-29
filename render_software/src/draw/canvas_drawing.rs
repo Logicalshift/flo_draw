@@ -170,6 +170,6 @@ where
         self.current_namespace  = NamespaceId::default();
         self.next_layer_handle  = LayerHandle(1);
 
-        self.program_cache.program_cache.free_all_data(&mut self.program_data_cache);
+        self.program_data_cache.free_all_data();
     }
 }

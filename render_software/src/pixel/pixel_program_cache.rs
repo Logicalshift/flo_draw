@@ -158,15 +158,20 @@ where
             PixelProgramDataId(program_data_id)
         }
     }
+}
 
+impl<TPixel> PixelProgramDataCache<TPixel> 
+where
+    TPixel: Send,
+{
     ///
     /// Increase the retain count for the specified program data ID
     ///
     /// Pixel program data will only be freed if release is called for every time this is called, plus once more for the initial allocation.
     ///
     #[inline]
-    pub fn retain_program_data(&self, data_cache: &mut PixelProgramDataCache<TPixel>, data_id: PixelProgramDataId) {
-        data_cache.retain_counts[data_id.0] += 1;
+    pub fn retain_program_data(&mut self, data_id: PixelProgramDataId) {
+        self.retain_counts[data_id.0] += 1;
     }
 
     ///
@@ -175,27 +180,27 @@ where
     /// Pixel program data will only be freed if release is called for every time this is called, plus once more for the initial allocation.
     ///
     #[inline]
-    pub fn release_program_data(&self, data_cache: &mut PixelProgramDataCache<TPixel>, data_id: PixelProgramDataId) {
-        if data_cache.retain_counts[data_id.0] == 0 {
+    pub fn release_program_data(&mut self, data_id: PixelProgramDataId) {
+        if self.retain_counts[data_id.0] == 0 {
             // Already freed
-        } else if data_cache.retain_counts[data_id.0] == 1 {
+        } else if self.retain_counts[data_id.0] == 1 {
             // Free the data for this program
-            data_cache.retain_counts[data_id.0] = 0;
-            data_cache.program_data[data_id.0]  = Box::new(|_, _, _, _| { });
-            data_cache.free_data_slots.push(data_id.0);
+            self.retain_counts[data_id.0] = 0;
+            self.program_data[data_id.0]  = Box::new(|_, _, _, _| { });
+            self.free_data_slots.push(data_id.0);
         } else {
             // Reduce the retain count
-            data_cache.retain_counts[data_id.0] -= 1;
+            self.retain_counts[data_id.0] -= 1;
         }
     }
 
     ///
     /// Frees all of the program data in a data cache, regardless of usage count
     ///
-    pub fn free_all_data(&self, data_cache: &mut PixelProgramDataCache<TPixel>) {
-        data_cache.free_data_slots.clear();
-        data_cache.retain_counts.clear();
-        data_cache.program_data.clear();
+    pub fn free_all_data(&mut self) {
+        self.free_data_slots.clear();
+        self.retain_counts.clear();
+        self.program_data.clear();
     }
 }
 

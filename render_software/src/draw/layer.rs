@@ -142,7 +142,7 @@ where
 
             // Release the layer's data
             for data_id in layer.used_data.drain(..) {
-                self.program_cache.program_cache.release_program_data(&mut self.program_data_cache, data_id);
+                self.program_data_cache.release_program_data(data_id);
             }
         }
     }
@@ -204,7 +204,7 @@ where
 
                 // Release the layer's data
                 for data_id in layer.used_data.drain(..) {
-                    program_cache.program_cache.release_program_data(program_data_cache, data_id);
+                    program_data_cache.release_program_data(data_id);
                 }
             });
     }
