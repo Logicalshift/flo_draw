@@ -64,6 +64,16 @@ impl Color {
     }
 
     ///
+    /// Retrieves the alpha component of this colour
+    ///
+    pub fn alpha_component(&self) -> f32 {
+        match self {
+            Color::Hsluv(_, _, _, a)    => *a,
+            Color::Rgba(_, _, _, a)     => *a,
+        }
+    }
+
+    ///
     /// Converts this colour to another format
     ///
     #[inline]
