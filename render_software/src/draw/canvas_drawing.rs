@@ -169,5 +169,7 @@ where
         self.ordered_layers     = vec![LayerHandle(0)];
         self.current_namespace  = NamespaceId::default();
         self.next_layer_handle  = LayerHandle(1);
+        
+        self.program_cache.program_cache.free_all_data(&mut self.program_data_cache);
     }
 }

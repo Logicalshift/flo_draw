@@ -1,6 +1,8 @@
 use super::canvas_drawing::*;
 
 use crate::pixel::*;
+use crate::edges::*;
+use crate::edgeplan::*;
 
 use flo_canvas as canvas;
 
@@ -19,6 +21,12 @@ pub struct Layer {
 
     /// The blending function used for this layer
     pub (super) blend_mode: AlphaOperation,
+
+    /// The edges that make up this layer
+    pub (super) edges: EdgePlan<Box<dyn EdgeDescriptor>>,
+
+    /// The pixel program data referenced by this layer
+    pub (super) used_data: Vec<PixelProgramDataId>,
 }
 
 impl Default for Layer {
@@ -26,6 +34,8 @@ impl Default for Layer {
         Layer { 
             alpha:      1.0,
             blend_mode: AlphaOperation::SourceOver,
+            edges:      EdgePlan::new(),
+            used_data:  vec![],
         }
     }
 }
@@ -35,7 +45,9 @@ impl Layer {
     /// Clears this layer
     ///
     pub fn clear(&mut self) {
-        *self = Self::default();
+        self.alpha      = 1.0;
+        self.blend_mode = AlphaOperation::SourceOver;
+        self.edges      = EdgePlan::new();
     }
 }
 
@@ -118,7 +130,13 @@ where
     #[inline]
     pub (crate) fn clear_layer(&mut self, handle: LayerHandle) {
         if let Some(layer) = self.layers.get_mut(handle.0) {
+            // Clear the layer
             layer.clear();
+
+            // Release the layer's data
+            for data_id in layer.used_data.drain(..) {
+                self.program_cache.program_cache.release_program_data(&mut self.program_data_cache, data_id);
+            }
         }
     }
 
@@ -169,8 +187,19 @@ where
     ///
     #[inline]
     pub (crate) fn clear_all_layers(&mut self) {
-        self.layers.iter_mut()
-            .for_each(|(_, layer)| layer.clear());
+        let layers              = &mut self.layers;
+        let program_cache       = &mut self.program_cache;
+        let program_data_cache  = &mut self.program_data_cache;
+
+        layers.iter_mut()
+            .for_each(|(_, layer)| {
+                layer.clear();
+
+                // Release the layer's data
+                for data_id in layer.used_data.drain(..) {
+                    program_cache.program_cache.release_program_data(program_data_cache, data_id);
+                }
+            });
     }
 
     #[inline]

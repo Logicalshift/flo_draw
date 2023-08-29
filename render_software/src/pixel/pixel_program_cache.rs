@@ -188,6 +188,15 @@ where
             data_cache.retain_counts[data_id.0] -= 1;
         }
     }
+
+    ///
+    /// Frees all of the program data in a data cache, regardless of usage count
+    ///
+    pub fn free_all_data(&mut self, data_cache: &mut PixelProgramDataCache<TPixel>) {
+        data_cache.free_data_slots.clear();
+        data_cache.retain_counts.clear();
+        data_cache.program_data.clear();
+    }
 }
 
 impl<TPixel> PixelProgramRunner for PixelProgramDataCache<TPixel>
