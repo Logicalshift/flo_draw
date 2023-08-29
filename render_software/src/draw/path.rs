@@ -6,6 +6,7 @@ use crate::edgeplan::*;
 use crate::pixel::*;
 use crate::pixel_programs::*;
 
+use flo_canvas as canvas;
 use flo_canvas::curves::line::*;
 use flo_canvas::curves::bezier::*;
 
@@ -91,9 +92,18 @@ where
         let shape_id = ShapeId::new();
         current_layer.edges.declare_shape_description(shape_id, shape_descriptor);
 
-        // TODO: add as even-odd or non-zero depending on the current winding rule
-        for edge in current_state.path_edges.iter() {
-            current_layer.edges.add_edge(Box::new(EvenOddBezierCurveEdge::new(shape_id, edge.clone())));
+        match current_state.winding_rule {
+            canvas::WindingRule::EvenOdd => {
+                for edge in current_state.path_edges.iter() {
+                    current_layer.edges.add_edge(Box::new(EvenOddBezierCurveEdge::new(shape_id, edge.clone())));
+                }
+            }
+
+            canvas::WindingRule::NonZero => {
+                for edge in current_state.path_edges.iter() {
+                    current_layer.edges.add_edge(Box::new(NonZeroBezierCurveEdge::new(shape_id, edge.clone())));
+                }
+            }
         }
 
         // Generate lines for unclosed subpaths
@@ -111,9 +121,13 @@ where
             let end_point   = current_state.path_edges[end_idx].end_point();
 
             // Add a line edge if they don't match
-            // TODO: respect the winding rule
             if start_point != end_point {
-                current_layer.edges.add_edge(Box::new(EvenOddBezierCurveEdge::<Curve<Coord2>>::new(shape_id, line_to_bezier(&(end_point, start_point)))));
+                match current_state.winding_rule {
+                    canvas::WindingRule::EvenOdd => 
+                        current_layer.edges.add_edge(Box::new(EvenOddBezierCurveEdge::<Curve<Coord2>>::new(shape_id, line_to_bezier(&(end_point, start_point))))),
+                    canvas::WindingRule::NonZero => 
+                        current_layer.edges.add_edge(Box::new(NonZeroBezierCurveEdge::<Curve<Coord2>>::new(shape_id, line_to_bezier(&(end_point, start_point))))),
+                }
             }
         }
     }
