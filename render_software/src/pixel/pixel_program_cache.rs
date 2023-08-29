@@ -133,7 +133,7 @@ where
     /// Program data can be a number of things: in the simplest case it might be the colour that the program will set the pixels to.
     /// `release_program_data()` can be used to free this data and make the ID available for reallocation to a different program. 
     ///
-    pub fn store_program_data<TProgram>(&mut self, stored_program: &StoredPixelProgram<TProgram>, data_cache: &mut PixelProgramDataCache<TPixel>, data: TProgram::ProgramData) -> PixelProgramDataId 
+    pub fn store_program_data<TProgram>(&self, stored_program: &StoredPixelProgram<TProgram>, data_cache: &mut PixelProgramDataCache<TPixel>, data: TProgram::ProgramData) -> PixelProgramDataId 
     where
         TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
@@ -165,7 +165,7 @@ where
     /// Pixel program data will only be freed if release is called for every time this is called, plus once more for the initial allocation.
     ///
     #[inline]
-    pub fn retain_program_data(&mut self, data_cache: &mut PixelProgramDataCache<TPixel>, data_id: PixelProgramDataId) {
+    pub fn retain_program_data(&self, data_cache: &mut PixelProgramDataCache<TPixel>, data_id: PixelProgramDataId) {
         data_cache.retain_counts[data_id.0] += 1;
     }
 
@@ -175,7 +175,7 @@ where
     /// Pixel program data will only be freed if release is called for every time this is called, plus once more for the initial allocation.
     ///
     #[inline]
-    pub fn release_program_data(&mut self, data_cache: &mut PixelProgramDataCache<TPixel>, data_id: PixelProgramDataId) {
+    pub fn release_program_data(&self, data_cache: &mut PixelProgramDataCache<TPixel>, data_id: PixelProgramDataId) {
         if data_cache.retain_counts[data_id.0] == 0 {
             // Already freed
         } else if data_cache.retain_counts[data_id.0] == 1 {
@@ -192,7 +192,7 @@ where
     ///
     /// Frees all of the program data in a data cache, regardless of usage count
     ///
-    pub fn free_all_data(&mut self, data_cache: &mut PixelProgramDataCache<TPixel>) {
+    pub fn free_all_data(&self, data_cache: &mut PixelProgramDataCache<TPixel>) {
         data_cache.free_data_slots.clear();
         data_cache.retain_counts.clear();
         data_cache.program_data.clear();

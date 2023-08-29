@@ -1,9 +1,14 @@
+use super::canvas_drawing::*;
+
 use crate::pixel::*;
+use crate::pixel_programs::*;
 use crate::edgeplan::*;
 
 use flo_canvas as canvas;
 use flo_canvas::curves::line::*;
 use flo_canvas::curves::bezier::*;
+
+use smallvec::*;
 
 ///
 /// A brush represents what will be used to fill in the next region 
@@ -176,5 +181,50 @@ impl DrawingState {
                 }
             }
         }
+    }
+}
+
+impl<TPixel, const N: usize> CanvasDrawing<TPixel, N>
+where
+    TPixel: 'static + Send + Sync + Pixel<N>,
+{
+    ///
+    /// Creates a shape descriptor from a brush
+    ///
+    /// The z-index of this descriptor will be set to 0: this should be updated later on
+    ///
+    pub fn create_shape_descriptor(&mut self, brush: &Brush) -> ShapeDescriptor
+    where
+        TPixel: 'static + Send + Sync + Pixel<N>,
+    {
+        use Brush::*;
+
+        let gamma           = self.gamma;
+        let program_cache   = &self.program_cache;
+        let data_cache      = &mut self.program_data_cache;
+
+        let descriptor = match brush {
+            OpaqueSolidColor(color) => {
+                let brush_data = program_cache.program_cache.store_program_data(&program_cache.solid_color, data_cache, SolidColorData(TPixel::from_color(*color, gamma)));
+
+                ShapeDescriptor {
+                    programs:   smallvec![brush_data],
+                    is_opaque:  true,
+                    z_index:    0
+                }
+            }
+
+            TransparentSolidColor(color) => {
+                let brush_data = program_cache.program_cache.store_program_data(&program_cache.source_over_color, data_cache, SolidColorData(TPixel::from_color(*color, gamma)));
+
+                ShapeDescriptor {
+                    programs:   smallvec![brush_data],
+                    is_opaque:  false,
+                    z_index:    0
+                }
+            }
+        };
+
+        descriptor
     }
 }
