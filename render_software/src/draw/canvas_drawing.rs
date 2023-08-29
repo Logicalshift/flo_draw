@@ -47,7 +47,7 @@ where
     pub (super) program_data_cache: PixelProgramDataCache<TPixel>,
 }
 
-impl<TPixel, const N: usize>CanvasDrawing<TPixel, N> 
+impl<TPixel, const N: usize> CanvasDrawing<TPixel, N> 
 where
     TPixel: 'static + Send + Sync + Pixel<N>,
 {
