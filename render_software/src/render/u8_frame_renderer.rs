@@ -113,19 +113,22 @@ where
             let end_y   = if start_y + LINES_AT_ONCE > region.height { region.height } else { start_y + LINES_AT_ONCE };
 
             (start_y..end_y, chunk_idx, chunk)
-        }).for_each(|(y_positions, _chunk_idx, chunk)| {
-            let mut render_slice    = RenderSlice { width: region.width, y_positions: vec![] };
-            let mut buffer          = vec![TPixel::default(); region.width*LINES_AT_ONCE];
+        }).for_each_init(|| {
+                let render_slice    = RenderSlice { width: region.width, y_positions: vec![] };
+                let buffer          = vec![TPixel::default(); region.width*LINES_AT_ONCE];
 
-            // Write the y positions
-            render_slice.y_positions.clear();
-            render_slice.y_positions.extend(y_positions.map(|idx| idx as f64));
+                (render_slice, buffer)
+            }, 
+            |(ref mut render_slice, ref mut buffer), (y_positions, _chunk_idx, chunk)| {
+                // Write the y positions
+                render_slice.y_positions.clear();
+                render_slice.y_positions.extend(y_positions.map(|idx| idx as f64));
 
-            // Render these lines
-            renderer.render(&render_slice, source, &mut buffer);
+                // Render these lines
+                renderer.render(render_slice, source, buffer);
 
-            // Convert to the final pixel format
-            TPixel::to_gamma_colorspace(&buffer, chunk, region.gamma);
-        });
+                // Convert to the final pixel format
+                TPixel::to_gamma_colorspace(&buffer, chunk, region.gamma);
+            });
     } 
 }
