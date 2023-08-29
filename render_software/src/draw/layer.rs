@@ -29,7 +29,7 @@ pub struct Layer {
     pub (super) used_data: Vec<PixelProgramDataId>,
 
     /// The z-index for the next shape we add to the edge plan
-    pub (super) z_index: usize,
+    pub (super) z_index: i64,
 }
 
 impl Default for Layer {

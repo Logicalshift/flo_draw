@@ -102,7 +102,7 @@ where
                 SwapLayers(layer_1, layer_2)                        => { self.swap_layers(layer_1, layer_2); },
 
                 Path(path_op)                                       => { self.current_state.path_op(path_op); },
-                Fill                                                => { todo!() },
+                Fill                                                => { self.fill(); },
                 Stroke                                              => { todo!() },
 
                 LineWidth(width)                                    => { todo!() },
@@ -160,6 +160,8 @@ where
         let initial_layer = Layer::default();
 
         layers.insert(0, initial_layer);
+
+        self.current_state.release_all_programs(&mut self.program_data_cache);
 
         // Reset the state of the canvas
         self.background_color   = new_background_color;
