@@ -118,7 +118,7 @@ where
                 FillGradient(gradient, (x1, y1), (x2, y2))          => { todo!() },
                 FillTransform(transform)                            => { todo!() },
                 StrokeColor(stroke_color)                           => { self.current_state.stroke_solid_color(stroke_color, &mut self.program_data_cache); },
-                WindingRule(winding_rule)                           => { todo!() },
+                WindingRule(winding_rule)                           => { self.current_state.winding_rule(winding_rule); },
                 BlendMode(blend_mode)                               => { todo!() },
 
                 IdentityTransform                                   => { todo!() },

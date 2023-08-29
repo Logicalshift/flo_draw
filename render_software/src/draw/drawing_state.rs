@@ -42,6 +42,9 @@ pub struct DrawingState {
 
     /// Indexes of the points where the subpaths starts
     pub (super) subpaths: Vec<usize>,
+
+    /// The winding rule to apply to the next path to be drawn
+    pub (super) winding_rule: canvas::WindingRule,
 }
 
 impl Default for DrawingState {
@@ -54,6 +57,7 @@ impl Default for DrawingState {
             path_position:      Coord2::origin(),
             path_edges:         vec![],
             subpaths:           vec![0],
+            winding_rule:       canvas::WindingRule::NonZero,
         }
     }
 }
@@ -210,5 +214,13 @@ impl DrawingState {
                 }
             }
         }
+    }
+
+    ///
+    /// Sets the winding rule to use for the next path to be drawn
+    ///
+    #[inline]
+    pub fn winding_rule(&mut self, winding_rule: canvas::WindingRule) {
+        self.winding_rule = winding_rule;
     }
 }
