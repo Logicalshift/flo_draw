@@ -65,11 +65,31 @@ impl Default for DrawingState {
 
 impl DrawingState {
     ///
+    /// Ensures that a program location is released (sets it to None)
+    ///
+    /// The state holds on to the programs it's going to use, so they have to be released before they can be changed
+    ///
+    #[inline]
+    pub fn release_program<TPixel, const N: usize>(program: &mut Option<ShapeDescriptor>, data_cache: &mut PixelProgramDataCache<TPixel>) 
+    where
+        TPixel: Send + Pixel<N>,
+    {
+        if let Some(mut program) = program.take() {
+            for program_data in program.programs.drain(..) {
+                data_cache.release_program_data(program_data);
+            }
+        }
+    }
+
+    ///
     /// Updates the state so that the next shape added will use a solid fill colour 
     ///
-    pub fn fill_solid_color(&mut self, colour: canvas::Color) {
+    pub fn fill_solid_color<TPixel, const N: usize>(&mut self, colour: canvas::Color, data_cache: &mut PixelProgramDataCache<TPixel>) 
+    where
+        TPixel: Send + Pixel<N>,
+    {
         // This clears the fill program so we allocate data for it next time
-        self.fill_program = None;
+        Self::release_program(&mut self.fill_program, data_cache);
 
         // Choose opaque or transparent for the brush based on the alpha component
         if colour.alpha_component() >= 1.0 {
@@ -82,9 +102,12 @@ impl DrawingState {
     ///
     /// Updates the state so that the next shape added will use a solid fill colour 
     ///
-    pub fn stroke_solid_color(&mut self, colour: canvas::Color) {
-        // This clears the fill program so we allocate data for it next time
-        self.stroke_program = None;
+    pub fn stroke_solid_color<TPixel, const N: usize>(&mut self, colour: canvas::Color, data_cache: &mut PixelProgramDataCache<TPixel>)
+    where
+        TPixel: Send + Pixel<N>,
+    {
+        // This clears the stroke program so we allocate data for it next time
+        Self::release_program(&mut self.stroke_program, data_cache);
 
         // Choose opaque or transparent for the brush based on the alpha component
         if colour.alpha_component() >= 1.0 {

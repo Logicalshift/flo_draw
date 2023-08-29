@@ -112,11 +112,11 @@ where
                 NewDashPattern                                      => { todo!() },
                 DashLength(dash_length)                             => { todo!() },
                 DashOffset(dash_offset)                             => { todo!() },
-                FillColor(fill_color)                               => { self.current_state.fill_solid_color(fill_color); },
+                FillColor(fill_color)                               => { self.current_state.fill_solid_color(fill_color, &mut self.program_data_cache); },
                 FillTexture(texture, (x1, y1), (x2, y2))            => { todo!() },
                 FillGradient(gradient, (x1, y1), (x2, y2))          => { todo!() },
                 FillTransform(transform)                            => { todo!() },
-                StrokeColor(stroke_color)                           => { self.current_state.stroke_solid_color(stroke_color); },
+                StrokeColor(stroke_color)                           => { self.current_state.stroke_solid_color(stroke_color, &mut self.program_data_cache); },
                 WindingRule(winding_rule)                           => { todo!() },
                 BlendMode(blend_mode)                               => { todo!() },
 
