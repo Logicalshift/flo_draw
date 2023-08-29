@@ -101,7 +101,7 @@ where
                 ClearAllLayers                                      => { self.clear_all_layers(); },
                 SwapLayers(layer_1, layer_2)                        => { self.swap_layers(layer_1, layer_2); },
 
-                Path(path_op)                                       => { todo!() },
+                Path(path_op)                                       => { self.current_state.path_op(path_op); },
                 Fill                                                => { todo!() },
                 Stroke                                              => { todo!() },
 
