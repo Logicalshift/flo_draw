@@ -1,5 +1,6 @@
 use super::drawing_state::*;
 use super::layer::*;
+use super::path::*;
 use super::pixel_programs::*;
 
 use crate::pixel::*;
