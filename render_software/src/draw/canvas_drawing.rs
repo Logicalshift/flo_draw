@@ -46,6 +46,9 @@ where
 
     /// Used to store the data for the pixel program used by this drawing
     pub (super) program_data_cache: PixelProgramDataCache<TPixel>,
+
+    /// States that have been pushed by PushState
+    pub (super) state_stack:        Vec<DrawingState>,
 }
 
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N> 
@@ -77,6 +80,7 @@ where
             next_layer_handle:  LayerHandle(1),
             program_cache:      program_cache,
             program_data_cache: data_cache,
+            state_stack:        vec![],
         }
     }
 
@@ -131,8 +135,8 @@ where
                 Store                                               => { todo!() },
                 Restore                                             => { todo!() },
                 FreeStoredBuffer                                    => { todo!() },
-                PushState                                           => { todo!() },
-                PopState                                            => { todo!() },
+                PushState                                           => { self.push_state() },
+                PopState                                            => { self.pop_state() },
 
                 Sprite(sprite_id)                                   => { todo!() },
                 MoveSpriteFrom(sprite_id)                           => { todo!() },
@@ -156,6 +160,11 @@ where
     /// Clears the canvas
     ///
     pub fn clear_canvas(&mut self, new_background_color: TPixel) {
+        // Clear the state stack
+        while self.state_stack.len() > 0 {
+            self.pop_state();
+        }
+
         // Create an empty set of layers, containing only layer 0
         let mut layers = SparseArray::<Layer>::empty();
         let initial_layer = Layer::default();

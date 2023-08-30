@@ -1,3 +1,5 @@
+use super::canvas_drawing::*;
+
 use crate::edgeplan::*;
 use crate::pixel::*;
 
@@ -70,6 +72,21 @@ impl Default for DrawingState {
 
 impl DrawingState {
     ///
+    /// Ensures that a program location is retained
+    ///
+    #[inline]
+    pub fn retain_program<TPixel, const N: usize>(program: &Option<ShapeDescriptor>, data_cache: &mut PixelProgramDataCache<TPixel>) 
+    where
+        TPixel: Send + Pixel<N>,
+    {
+        if let Some(program) = &program {
+            for program_data in program.programs.iter().copied() {
+                data_cache.retain_program_data(program_data);
+            }
+        }
+    }
+
+    ///
     /// Ensures that a program location is released (sets it to None)
     ///
     /// The state holds on to the programs it's going to use, so they have to be released before they can be changed
@@ -139,5 +156,40 @@ impl DrawingState {
     #[inline]
     pub fn winding_rule(&mut self, winding_rule: canvas::WindingRule) {
         self.winding_rule = winding_rule;
+    }
+}
+
+
+impl<TPixel, const N: usize> CanvasDrawing<TPixel, N>
+where
+    TPixel: 'static + Send + Sync + Pixel<N>,
+{
+    ///
+    /// Pushes a state onto the stack
+    ///
+    pub fn push_state(&mut self) {
+        // Copy the existing state
+        let state_copy = self.current_state.clone();
+
+        // Retain the fill and stroke shapes
+        DrawingState::retain_program(&state_copy.fill_program, &mut self.program_data_cache);
+        DrawingState::retain_program(&state_copy.stroke_program, &mut self.program_data_cache);
+
+        // Store on the stack
+        self.state_stack.push(state_copy);
+    }
+
+    ///
+    /// Removes a state from the stack and makes it the current state
+    ///
+    pub fn pop_state(&mut self) {
+        if let Some(new_state) = self.state_stack.pop() {
+            // Release the programs for the current state
+            DrawingState::release_program(&mut self.current_state.fill_program, &mut self.program_data_cache);
+            DrawingState::release_program(&mut self.current_state.stroke_program, &mut self.program_data_cache);
+
+            // Replace with the new state
+            self.current_state = new_state;
+        }
     }
 }
