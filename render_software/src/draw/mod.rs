@@ -4,5 +4,7 @@ mod layer;
 mod pixel_programs;
 mod path;
 mod transform;
+mod render_source;
 
-pub use self::canvas_drawing::*;
+pub use canvas_drawing::*;
+pub use render_source::*;
