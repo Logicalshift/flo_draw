@@ -121,10 +121,10 @@ where
                 WindingRule(winding_rule)                           => { self.current_state.winding_rule(winding_rule); },
                 BlendMode(blend_mode)                               => { todo!() },
 
-                IdentityTransform                                   => { todo!() },
-                CanvasHeight(height)                                => { todo!() },
-                CenterRegion((x1, y1), (x2, y2))                    => { todo!() },
-                MultiplyTransform(transform)                        => { todo!() },
+                IdentityTransform                                   => { self.current_state.identity_transform(); },
+                CanvasHeight(height)                                => { self.current_state.canvas_height(height); },
+                CenterRegion((x1, y1), (x2, y2))                    => { self.current_state.center_region((x1, y1), (x2, y2)); },
+                MultiplyTransform(transform)                        => { self.current_state.multiply_transform(transform); },
 
                 Unclip                                              => { todo!() },
                 Clip                                                => { todo!() },
