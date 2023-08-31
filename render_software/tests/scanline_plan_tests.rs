@@ -99,6 +99,30 @@ fn add_overlapping_bridging_span_opaque() {
 }
 
 #[test]
+fn add_overlapping_bridging_span_opaque_canvas_coordinates() {
+    // Create a data token for the scanline we're generating. Canvas coordinates are from -1.0 to 1.0, so the plan needs to work this way
+    let mut program_cache   = PixelProgramCache::empty();
+    let program_id          = program_cache.add_program(PerPixelProgramFn::from(|_x, _y, _data: &()| 12.0f64));
+    let mut data_cache      = program_cache.create_data_cache();
+    let program_data_id_1   = program_cache.store_program_data(&program_id, &mut data_cache, ());
+    let program_data_id_2   = program_cache.store_program_data(&program_id, &mut data_cache, ());
+
+    // Set up a plan for a scanline using this program
+    let mut plan = ScanlinePlan::default();
+    plan.add_span(ScanSpan::opaque(-1.0..-0.9, program_data_id_1));
+    plan.add_span(ScanSpan::opaque(-0.8..-0.7, program_data_id_1));
+    plan.add_span(ScanSpan::opaque(-0.91..-0.79, program_data_id_2));
+
+    // Read the span back again
+    let spans = plan.iter_as_spans().collect::<Vec<_>>();
+    assert!(spans == vec![
+        ScanSpan::opaque(-1.0..-0.91, program_data_id_1), 
+        ScanSpan::opaque(-0.91..-0.79, program_data_id_2),
+        ScanSpan::opaque(-0.79..-0.7, program_data_id_1)
+    ], "Unexpected spans: {:?}", spans);
+}
+
+#[test]
 fn overlap_many_spans_opaque() {
     // Create a data token for the scanline we're generating
     let mut program_cache   = PixelProgramCache::empty();
