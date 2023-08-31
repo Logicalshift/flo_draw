@@ -39,7 +39,7 @@ where
     program_id: PixelProgramId,
 
     /// Function to associate program data with this program
-    associate_program_data: Box<dyn Fn(TProgram::ProgramData) -> Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TProgram::Pixel>, &mut [TProgram::Pixel], Range<i32>, f64) -> ()>>,
+    associate_program_data: Box<dyn Send + Sync + Fn(TProgram::ProgramData) -> Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TProgram::Pixel>, &mut [TProgram::Pixel], Range<i32>, f64) -> ()>>,
 }
 
 ///
