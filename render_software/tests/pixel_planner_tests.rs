@@ -30,6 +30,26 @@ fn simple_rectangle() {
 }
 
 #[test]
+fn simple_rectangle_canvas_coords() {
+    // The program data ID usually maps to the program cache (specifies what to do in a particular span)
+    let program_data_id = PixelProgramDataId(0);
+
+    let rectangle_shape = ShapeId::new();
+    let rectangle_edge  = RectangleEdge::new(rectangle_shape, -0.5..0.25, -0.4..0.4);
+    let edge_plan       = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+
+    let pixel_plan      = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &[-0.6, -0.3, 0.1], -1.0..1.0));
+    assert!(pixel_plan.len() == 3);
+
+    assert!(pixel_plan[0].iter_as_spans().count() == 0, "[0, y == -0.6] {} != 0", pixel_plan[0].iter_as_spans().count());
+    assert!(pixel_plan[1].iter_as_spans().count() == 1, "[1, y == -0.3] {} != 1", pixel_plan[1].iter_as_spans().count());
+    assert!(pixel_plan[2].iter_as_spans().count() == 1, "[2, y == 0.1] {} != 1", pixel_plan[2].iter_as_spans().count());
+
+    assert!(pixel_plan[1].iter_as_spans().collect::<Vec<_>>() == vec![ScanSpan::opaque(-0.5..0.25, program_data_id)], "[1, y == -0.3] {:?}", pixel_plan[1].iter_as_spans().collect::<Vec<_>>());
+    assert!(pixel_plan[2].iter_as_spans().collect::<Vec<_>>() == vec![ScanSpan::opaque(-0.5..0.25, program_data_id)], "[2, y == 0.1] {:?}", pixel_plan[1].iter_as_spans().collect::<Vec<_>>());
+}
+
+#[test]
 fn small_rectangle_on_rectangle() {
     // The program data ID usually maps to the program cache (specifies what to do in a particular span)
     let program_data_id_1   = PixelProgramDataId(1);
