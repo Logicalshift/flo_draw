@@ -157,6 +157,13 @@ where
     }
 
     ///
+    /// Returns the program runner for this canvas drawing
+    ///
+    pub fn program_runner(&self) -> &PixelProgramDataCache<TPixel> {
+        &self.program_data_cache
+    }
+
+    ///
     /// Clears the canvas
     ///
     pub (super) fn clear_canvas(&mut self, new_background_color: TPixel) {
