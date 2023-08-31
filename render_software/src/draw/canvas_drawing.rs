@@ -159,7 +159,7 @@ where
     ///
     /// Clears the canvas
     ///
-    pub fn clear_canvas(&mut self, new_background_color: TPixel) {
+    pub (super) fn clear_canvas(&mut self, new_background_color: TPixel) {
         // Clear the state stack
         while self.state_stack.len() > 0 {
             self.pop_state();

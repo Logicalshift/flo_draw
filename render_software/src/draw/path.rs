@@ -126,7 +126,7 @@ where
     ///
     /// The z-index of this descriptor will be set to 0: this should be updated later on
     ///
-    pub fn create_shape_descriptor(&mut self, brush: &Brush) -> ShapeDescriptor
+    pub (super) fn create_shape_descriptor(&mut self, brush: &Brush) -> ShapeDescriptor
     where
         TPixel: 'static + Send + Sync + Pixel<N>,
     {
@@ -165,7 +165,7 @@ where
     ///
     /// Adds the current path as a filled path to the current layer
     ///
-    pub fn fill(&mut self) {
+    pub (super) fn fill(&mut self) {
         // Fetch or create the fill shape descriptor
         let mut shape_descriptor = if let Some(shape_descriptor) = &mut self.current_state.fill_program {
             shape_descriptor.clone()

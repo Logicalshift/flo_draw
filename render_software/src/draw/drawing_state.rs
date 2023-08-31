@@ -167,7 +167,7 @@ where
     ///
     /// Pushes a state onto the stack
     ///
-    pub fn push_state(&mut self) {
+    pub (super) fn push_state(&mut self) {
         // Copy the existing state
         let state_copy = self.current_state.clone();
 
@@ -182,7 +182,7 @@ where
     ///
     /// Removes a state from the stack and makes it the current state
     ///
-    pub fn pop_state(&mut self) {
+    pub (super) fn pop_state(&mut self) {
         if let Some(new_state) = self.state_stack.pop() {
             // Release the programs for the current state
             DrawingState::release_program(&mut self.current_state.fill_program, &mut self.program_data_cache);
