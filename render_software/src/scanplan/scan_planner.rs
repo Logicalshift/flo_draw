@@ -38,8 +38,8 @@ impl ScanlineTransform {
     pub fn for_region(source_x_range: &Range<f64>, pixel_width: usize) -> Self {
         ScanlineTransform {
             offset:         -source_x_range.start,
-            scale:          (pixel_width as f64) / (source_x_range.start-source_x_range.end),
-            scale_recip:    (source_x_range.start-source_x_range.end) / (pixel_width as f64),
+            scale:          (pixel_width as f64) / (source_x_range.end-source_x_range.start),
+            scale_recip:    (source_x_range.end-source_x_range.start) / (pixel_width as f64),
         }
     }
 
