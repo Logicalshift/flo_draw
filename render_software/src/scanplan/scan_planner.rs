@@ -111,4 +111,13 @@ mod test {
 
         assert!((converted-500.0).abs() < 0.1, "Expected 500, got {}", converted);
     }
+
+    #[test]
+    fn transform_convert_pixels() {
+        let transform = ScanlineTransform::for_region(&(-1.0..1.0), 1000);
+        let converted = transform.pixel_range_to_x(&(250..750));
+
+        assert!((converted.start- -0.5).abs() < 0.01, "Expected -0.5, got {:?}", converted);
+        assert!((converted.end-0.5).abs() < 0.01, "Expected 0.5, got {:?}", converted);
+    }
 }
