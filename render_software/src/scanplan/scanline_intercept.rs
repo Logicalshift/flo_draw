@@ -1,3 +1,5 @@
+use super::scan_planner::*;
+
 use crate::edgeplan::*;
 
 ///
@@ -160,7 +162,7 @@ impl<'a> ScanlineInterceptState<'a> {
     /// Adds or removes from the active shapes after an intercept
     ///
     #[inline]
-    pub fn add_intercept(&mut self, intercept: &EdgeIntercept, descriptor: Option<&'a ShapeDescriptor>) {
+    pub fn add_intercept(&mut self, intercept: &EdgeIntercept, transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
         if let Some(descriptor) = descriptor {
             let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque);
 
@@ -218,7 +220,7 @@ impl<'a> ScanlineInterceptState<'a> {
 
                     self.active_shapes.insert(following_idx, ScanlineIntercept { 
                         count:      count, 
-                        start_x:    intercept.x_pos, 
+                        start_x:    transform.source_x_to_pixels(intercept.x_pos),
                         shape_id:   intercept.shape,
                         descriptor: descriptor,
                     })
