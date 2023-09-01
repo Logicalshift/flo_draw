@@ -93,6 +93,8 @@ where
         for layer_handle in source.ordered_layers.iter().copied() {
             if let Some(layer) = source.layers.get(layer_handle.0) {
                 // Plan this layer (note that the x-range will be something like -1..1 so the scan planner must support this)
+                // TODO: need a way to scale/move the intercepts found in the edge plan to match the canvas edge plan
+                // TODO: need a way to specify the 'original' coordinates to the pixel program after scaling (otherwise things like texture mappers really have no way to map the x_range to the texture coordiantes)
                 self.scan_planner.plan_scanlines(&layer.edges, &y_positions, x_range.clone(), &mut layer_scanlines);
 
                 // TODO: Combine the layer with the scanlines we're planning
