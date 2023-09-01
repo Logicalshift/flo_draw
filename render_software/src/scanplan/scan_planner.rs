@@ -83,3 +83,32 @@ pub trait ScanPlanner : Send + Sync {
     ///
     fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]);
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn transform_convert_start_to_pixels() {
+        let transform = ScanlineTransform::for_region(&(-1.0..1.0), 1000);
+        let converted = transform.source_x_to_pixels(-1.0);
+
+        assert!((converted-0.0).abs() < 0.1, "Expected 0, got {}", converted);
+    }
+
+    #[test]
+    fn transform_convert_end_to_pixels() {
+        let transform = ScanlineTransform::for_region(&(-1.0..1.0), 1000);
+        let converted = transform.source_x_to_pixels(1.0);
+
+        assert!((converted-1000.0).abs() < 0.1, "Expected 1000, got {}", converted);
+    }
+
+    #[test]
+    fn transform_convert_middle_to_pixels() {
+        let transform = ScanlineTransform::for_region(&(-1.0..1.0), 1000);
+        let converted = transform.source_x_to_pixels(0.0);
+
+        assert!((converted-500.0).abs() < 0.1, "Expected 500, got {}", converted);
+    }
+}
