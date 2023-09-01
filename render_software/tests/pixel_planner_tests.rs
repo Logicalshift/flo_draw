@@ -38,7 +38,7 @@ fn simple_rectangle_canvas_coords() {
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, -0.5..0.25, -0.4..0.4);
     let edge_plan       = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
 
-    let pixel_plan      = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[-0.6, -0.3, 0.1], -1.0..1.0));
+    let pixel_plan      = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::for_region(&(-1.0..1.0), 1000), &[-0.6, -0.3, 0.1], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
 
     assert!(pixel_plan[0].iter_as_spans().count() == 0, "[0, y == -0.6] {} != 0", pixel_plan[0].iter_as_spans().count());
