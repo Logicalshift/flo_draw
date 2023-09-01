@@ -18,6 +18,8 @@ pub trait PixelProgram : Send + Sync {
     /// Draws a series of pixels to a frame buffer
     ///
     /// The target points to the start of the range of values to be written. `x_range` provides the range of X values to fill with pixels.
+    /// To deal with the translation between internal coordinates and pixels, the `source_x_range` value indicates coordinates in the source
+    /// for the rendering (before they were transformed by the `ScanlineTransform`).
     ///
     fn draw_pixels(&self, data_cache: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, source_x_range: Range<f64>, y_pos: f64, program_data: &Self::ProgramData);
 }
