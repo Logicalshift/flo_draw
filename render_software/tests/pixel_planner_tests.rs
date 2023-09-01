@@ -45,8 +45,8 @@ fn simple_rectangle_canvas_coords() {
     assert!(pixel_plan[1].iter_as_spans().count() == 1, "[1, y == -0.3] {} != 1", pixel_plan[1].iter_as_spans().count());
     assert!(pixel_plan[2].iter_as_spans().count() == 1, "[2, y == 0.1] {} != 1", pixel_plan[2].iter_as_spans().count());
 
-    assert!(pixel_plan[1].iter_as_spans().collect::<Vec<_>>() == vec![ScanSpan::opaque(-0.5..0.25, program_data_id)], "[1, y == -0.3] {:?}", pixel_plan[1].iter_as_spans().collect::<Vec<_>>());
-    assert!(pixel_plan[2].iter_as_spans().collect::<Vec<_>>() == vec![ScanSpan::opaque(-0.5..0.25, program_data_id)], "[2, y == 0.1] {:?}", pixel_plan[1].iter_as_spans().collect::<Vec<_>>());
+    assert!(pixel_plan[1].iter_as_spans().collect::<Vec<_>>() == vec![ScanSpan::opaque(250.0..625.0, program_data_id)], "[1, y == -0.3] {:?}", pixel_plan[1].iter_as_spans().collect::<Vec<_>>());
+    assert!(pixel_plan[2].iter_as_spans().collect::<Vec<_>>() == vec![ScanSpan::opaque(250.0..625.0, program_data_id)], "[2, y == 0.1] {:?}", pixel_plan[1].iter_as_spans().collect::<Vec<_>>());
 }
 
 #[test]
