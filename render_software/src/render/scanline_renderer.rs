@@ -77,7 +77,8 @@ where
                 match current_step {
                     PixelProgramPlan::Run(data_id) => {
                         // Just run the program
-                        self.program_data.run_program(*data_id, shadow_pixels.buffer(), (x_range.start.ceil() as _)..(x_range.end.floor() as _), y_pos);
+                        // TODO: use the 'real' source x-range here
+                        self.program_data.run_program(*data_id, shadow_pixels.buffer(), (x_range.start.ceil() as _)..(x_range.end.floor() as _), (x_range.start.ceil() as _)..(x_range.end.floor() as _), y_pos);
                     }
 
                     PixelProgramPlan::StartBlend => {

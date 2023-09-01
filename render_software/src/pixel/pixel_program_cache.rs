@@ -19,7 +19,7 @@ pub struct PixelProgramCache<TPixel: Send> {
 ///
 pub struct PixelProgramDataCache<TPixel: Send> {
     /// Functions that call a pixel program with its associated program data
-    program_data: Vec<Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, f64) -> ()>>,
+    program_data: Vec<Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, Range<f64>, f64) -> ()>>,
 
     /// The number of times each program_data item is used (0 when free)
     retain_counts: Vec<usize>,
@@ -39,7 +39,7 @@ where
     program_id: PixelProgramId,
 
     /// Function to associate program data with this program
-    associate_program_data: Box<dyn Send + Sync + Fn(TProgram::ProgramData) -> Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TProgram::Pixel>, &mut [TProgram::Pixel], Range<i32>, f64) -> ()>>,
+    associate_program_data: Box<dyn Send + Sync + Fn(TProgram::ProgramData) -> Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TProgram::Pixel>, &mut [TProgram::Pixel], Range<i32>, Range<f64>, f64) -> ()>>,
 }
 
 ///
@@ -78,7 +78,7 @@ where
     ///
     /// Creates a function based on a program that sets its data and scanline data, generating the 'make pixels at position' function
     ///
-    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Send + Sync + Fn(TProgram::ProgramData) -> Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, f64) -> ()>
+    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Send + Sync + Fn(TProgram::ProgramData) -> Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, Range<f64>, f64) -> ()>
     where
         TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
@@ -87,8 +87,8 @@ where
             let program         = Arc::clone(&program);
 
             // Return a function that encapsulates the program data
-            Box::new(move |data_cache, target, x_range, y_pos| {
-                program.draw_pixels(data_cache, target, x_range, y_pos, &program_data)
+            Box::new(move |data_cache, target, x_range, source_x_range, y_pos| {
+                program.draw_pixels(data_cache, target, x_range, source_x_range, y_pos, &program_data)
             })
         }
     }
@@ -186,7 +186,7 @@ where
         } else if self.retain_counts[data_id.0] == 1 {
             // Free the data for this program
             self.retain_counts[data_id.0] = 0;
-            self.program_data[data_id.0]  = Box::new(|_, _, _, _| { });
+            self.program_data[data_id.0]  = Box::new(|_, _, _, _, _| { });
             self.free_data_slots.push(data_id.0);
         } else {
             // Reduce the retain count
@@ -214,8 +214,8 @@ where
     /// Runs a program on a range of pixels
     ///
     #[inline]
-    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [TPixel], x_range: Range<i32>, y_pos: f64) {
-        (self.program_data[program_data.0])(self, target, x_range, y_pos)
+    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [TPixel], x_range: Range<i32>, source_x_range: Range<f64>, y_pos: f64) {
+        (self.program_data[program_data.0])(self, target, x_range, source_x_range, y_pos)
     }
 }
 
@@ -229,7 +229,7 @@ where
     /// Runs a program on a range of pixels
     ///
     #[inline]
-    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [TPixel], x_range: Range<i32>, y_pos: f64) {
-        (self.program_data[program_data.0])(self, target, x_range, y_pos)
+    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [TPixel], x_range: Range<i32>, source_x_range: Range<f64>, y_pos: f64) {
+        (self.program_data[program_data.0])(self, target, x_range, source_x_range, y_pos)
     }
 }

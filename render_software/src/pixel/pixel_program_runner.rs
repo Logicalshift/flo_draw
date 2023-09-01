@@ -17,7 +17,7 @@ pub trait PixelProgramRunner : Send + Sync {
     /// Runs a program with the data found at the `program_data` identifier, to render the pixels in `x_range` to `target`. The pixels will
     /// eventually be rendered at the specified y position in the frame.
     ///
-    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [Self::TPixel], x_range: Range<i32>, y_pos: f64);
+    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [Self::TPixel], x_range: Range<i32>, source_x_range: Range<f64>, y_pos: f64);
 }
 
 ///
@@ -25,7 +25,7 @@ pub trait PixelProgramRunner : Send + Sync {
 ///
 pub struct BasicPixelProgramRunner<TFn, TPixel> 
 where
-    TFn:    Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+    TFn:    Send + Sync + Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, Range<f64>, f64),
     TPixel: Send,
 {
     pixel_fn:   TFn,
@@ -34,7 +34,7 @@ where
 
 impl<TFn, TPixel> From<TFn> for BasicPixelProgramRunner<TFn, TPixel>
 where
-    TFn:    Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+    TFn:    Send + Sync + Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, Range<f64>, f64),
     TPixel: Send,
 {
     fn from(func: TFn) -> Self {
@@ -47,26 +47,26 @@ where
 
 impl<TFn, TPixel> PixelProgramRunner for BasicPixelProgramRunner<TFn, TPixel>
 where
-    TFn:    Send + Sync + Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+    TFn:    Send + Sync + Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, Range<f64>, f64),
     TPixel: Send,
 {
     type TPixel = TPixel;
 
     #[inline]
-    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [Self::TPixel], x_range: Range<i32>, y_pos: f64) {
-        (self.pixel_fn)(program_data, target, x_range, y_pos)
+    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [Self::TPixel], x_range: Range<i32>, source_x_range: Range<f64>, y_pos: f64) {
+        (self.pixel_fn)(program_data, target, x_range, source_x_range, y_pos)
     }
 }
 
 impl<'a, TFn, TPixel> PixelProgramRunner for &'a BasicPixelProgramRunner<TFn, TPixel>
 where
-    TFn: Send + Sync + Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, f64),
+    TFn:    Send + Sync + Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, Range<f64>, f64),
     TPixel: Send,
 {
     type TPixel = TPixel;
 
     #[inline]
-    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [Self::TPixel], x_range: Range<i32>, y_pos: f64) {
-        (self.pixel_fn)(program_data, target, x_range, y_pos)
+    fn run_program(&self, program_data: PixelProgramDataId, target: &mut [Self::TPixel], x_range: Range<i32>, source_x_range: Range<f64>, y_pos: f64) {
+        (self.pixel_fn)(program_data, target, x_range, source_x_range, y_pos)
     }
 }

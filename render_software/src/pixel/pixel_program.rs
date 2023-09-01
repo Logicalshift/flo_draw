@@ -19,7 +19,7 @@ pub trait PixelProgram : Send + Sync {
     ///
     /// The target points to the start of the range of values to be written. `x_range` provides the range of X values to fill with pixels.
     ///
-    fn draw_pixels(&self, data_cache: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, y_pos: f64, program_data: &Self::ProgramData);
+    fn draw_pixels(&self, data_cache: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, source_x_range: Range<f64>, y_pos: f64, program_data: &Self::ProgramData);
 }
 
 ///
@@ -29,7 +29,7 @@ pub trait PixelProgram : Send + Sync {
 ///
 pub struct PixelProgramFn<TFn, TPixel, TData>
 where 
-    TFn: Send + Sync + Fn(&mut [TPixel], Range<i32>, f64, &TData) -> (),
+    TFn: Send + Sync + Fn(&mut [TPixel], Range<i32>, Range<f64>, f64, &TData) -> (),
 {
     /// The function to call to fill in the pixels
     function: TFn,
@@ -56,7 +56,7 @@ where
 
 impl<TFn, TPixel, TData> From<TFn> for PixelProgramFn<TFn, TPixel, TData> 
 where 
-    TFn: Send + Sync + Fn(&mut [TPixel], Range<i32>, f64, &TData) -> (),
+    TFn: Send + Sync + Fn(&mut [TPixel], Range<i32>, Range<f64>, f64, &TData) -> (),
 {
     fn from(function: TFn) -> Self {
         PixelProgramFn {
@@ -68,7 +68,7 @@ where
 
 impl<TFn, TPixel, TData> PixelProgram for PixelProgramFn<TFn, TPixel, TData> 
 where 
-    TFn:    Send + Sync + Fn(&mut [TPixel], Range<i32>, f64, &TData) -> (),
+    TFn:    Send + Sync + Fn(&mut [TPixel], Range<i32>, Range<f64>, f64, &TData) -> (),
     TData:  Send + Sync,
     TPixel: Send,
 {
@@ -76,8 +76,8 @@ where
     type ProgramData    = TData;
 
     #[inline]
-    fn draw_pixels(&self, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, ypos: f64, program_data: &TData) {
-        (self.function)(target, x_range, ypos, program_data)
+    fn draw_pixels(&self, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, source_x_range: Range<f64>, ypos: f64, program_data: &TData) {
+        (self.function)(target, x_range, source_x_range, ypos, program_data)
     }
 }
 
@@ -103,7 +103,7 @@ where
     type ProgramData    = TData;
 
     #[inline]
-    fn draw_pixels(&self, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, ypos: f64, program_data: &TData) {
+    fn draw_pixels(&self, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, _source_x_range: Range<f64>, ypos: f64, program_data: &TData) {
         let mut pos = 0;
         for x in x_range {
             target[pos] = (self.function)(x, ypos, program_data);
