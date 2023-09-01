@@ -87,7 +87,7 @@ where
                 active_shapes.add_intercept(&current_intercept, transform, shape_descriptor);
 
                 // Move to the next intercept (or stop if no intercepts actually fall within the x-range)
-                current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { continue; };
+                current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { break; };
             }
 
             // Update all of the existing shapes to have a start position at the left-hand side of the screen
