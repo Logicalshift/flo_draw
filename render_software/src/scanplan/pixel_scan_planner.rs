@@ -26,13 +26,13 @@ where
     /// Plans out a scanline using the PixelScanPlanner (this scan planner does not perform any anti-aliasing)
     ///
     #[inline]
-    pub fn plan(edge_plan: &EdgePlan<TEdge>, y_positions: &[f64], x_range: Range<f64>) -> Vec<(f64, ScanlinePlan)> {
+    pub fn plan(edge_plan: &EdgePlan<TEdge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>) -> Vec<(f64, ScanlinePlan)> {
         // Create a planner and the result vec
         let planner         = Self::default();
         let mut scanlines   = vec![(0.0, ScanlinePlan::default()); y_positions.len()];
 
         // Fill with scanlines
-        planner.plan_scanlines(edge_plan, y_positions, x_range, &mut scanlines);
+        planner.plan_scanlines(edge_plan, transform, y_positions, x_range, &mut scanlines);
 
         scanlines
     }
@@ -54,7 +54,7 @@ where
 {
     type Edge = TEdge;
 
-    fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
+    fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
         // Must be enough scanlines supplied for filling the scanline array
         if scanlines.len() < y_positions.len() {
             panic!("The number of scanline suppled ({}) is less than the number of y positions to fill them ({})", scanlines.len(), y_positions.len());

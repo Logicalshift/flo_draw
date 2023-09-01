@@ -20,10 +20,22 @@ pub struct ScanlineTransform {
 
 impl ScanlineTransform {
     ///
+    /// Creates an identity transform (where pixel coordinates map directly on to the edge plan)
+    ///
+    #[inline]
+    pub fn identity() -> Self {
+        ScanlineTransform { 
+            offset:         0.0, 
+            scale:          1.0, 
+            scale_recip:    1.0
+        }
+    }
+
+    ///
     /// Creates a scanline transform that maps from the specified source x range to pixel values of 0..pixel_width
     ///
     #[inline]
-    pub fn for_region(source_x_range: Range<f64>, pixel_width: usize) -> Self {
+    pub fn for_region(source_x_range: &Range<f64>, pixel_width: usize) -> Self {
         ScanlineTransform {
             offset:         -source_x_range.start,
             scale:          (pixel_width as f64) / (source_x_range.start-source_x_range.end),
@@ -45,5 +57,5 @@ pub trait ScanPlanner : Send + Sync {
     ///
     /// The y-position is copied into the scanlines array, and the scanlines are always generated in the same order that they are requested in.
     ///
-    fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]);
+    fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]);
 }

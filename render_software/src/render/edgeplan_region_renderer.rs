@@ -55,13 +55,14 @@ where
         let y_positions = &region.y_positions;
         let width       = region.width as f64;
         let edge_plan   = source;
+        let transform   = ScanlineTransform::identity();
 
         // Split the dest into chunks (lines)
         let mut lines = dest.chunks_exact_mut(region.width);
 
         // Plan the lines
         let mut scanlines = vec![(0.0f64, ScanlinePlan::default()); y_positions.len()];
-        self.scan_planner.plan_scanlines(edge_plan, y_positions, 0.0..width, &mut scanlines);
+        self.scan_planner.plan_scanlines(edge_plan, &transform, y_positions, 0.0..width, &mut scanlines);
 
         // Pass them on to the line renderer to generate the result
         for idx in 0..y_positions.len() {
