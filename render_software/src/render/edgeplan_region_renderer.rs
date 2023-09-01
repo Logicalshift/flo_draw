@@ -1,5 +1,6 @@
 use super::renderer::*;
 use super::render_slice::*;
+use super::scanline_renderer::*;
 
 use crate::edgeplan::*;
 use crate::scanplan::*;
@@ -15,7 +16,7 @@ pub struct EdgePlanRegionRenderer<TEdge, TPlanner, TLineRenderer>
 where
     TEdge:          EdgeDescriptor,
     TPlanner:       ScanPlanner,
-    TLineRenderer:  Renderer<Region=f64, Source=ScanlinePlan>,
+    TLineRenderer:  Renderer<Region=ScanlineRenderRegion, Source=ScanlinePlan>,
 {
     edge_plan:      PhantomData<Mutex<TEdge>>,
     scan_planner:   TPlanner,
@@ -26,7 +27,7 @@ impl<TEdge, TPlanner, TLineRenderer> EdgePlanRegionRenderer<TEdge, TPlanner, TLi
 where
     TEdge:          EdgeDescriptor,
     TPlanner:       ScanPlanner,
-    TLineRenderer:  Renderer<Region=f64, Source=ScanlinePlan>,
+    TLineRenderer:  Renderer<Region=ScanlineRenderRegion, Source=ScanlinePlan>,
 {
     ///
     /// Creates a new region renderer
@@ -45,7 +46,7 @@ where
     TPixel:                 Send,
     TEdge:                  EdgeDescriptor,
     TPlanner:               ScanPlanner<Edge=TEdge>,
-    TLineRenderer:          Renderer<Region=f64, Source=ScanlinePlan, Dest=[TPixel]>,
+    TLineRenderer:          Renderer<Region=ScanlineRenderRegion, Source=ScanlinePlan, Dest=[TPixel]>,
 {
     type Region = RenderSlice;
     type Source = EdgePlan<TEdge>;
@@ -65,11 +66,17 @@ where
         self.scan_planner.plan_scanlines(edge_plan, &transform, y_positions, 0.0..width, &mut scanlines);
 
         // Pass them on to the line renderer to generate the result
-        for idx in 0..y_positions.len() {
-            let (ypos, scanline) = &scanlines[idx];
-            let line = lines.next().unwrap();
+        let mut region = ScanlineRenderRegion {
+            y_pos:      0.0,
+            transform:  transform,
+        };
 
-            self.line_renderer.render(ypos, scanline, line);
+        for idx in 0..y_positions.len() {
+            let (ypos, scanline)    = &scanlines[idx];
+            let line                = lines.next().unwrap();
+            region.y_pos            = *ypos;
+
+            self.line_renderer.render(&region, scanline, line);
         }
     }
 }

@@ -5,6 +5,18 @@ use crate::scanplan::*;
 use crate::scanplan::buffer_stack::*;
 
 ///
+/// Specifies the y-pos and x transformation to use with a scanline renderer
+///
+#[derive(Copy, Clone)]
+pub struct ScanlineRenderRegion {
+    /// The y position of this scanline
+    pub y_pos: f64,
+
+    /// The transform to apply to get the source range from the pixels
+    pub transform: ScanlineTransform,
+}
+
+///
 /// Renders a ScanPlan using a particular pixel type
 ///
 pub struct ScanlineRenderer<TProgramRunner>
@@ -36,7 +48,7 @@ where
     TProgramRunner:         PixelProgramRunner,
     TProgramRunner::TPixel: 'static + Send + Copy + AlphaBlend,
 {
-    type Region = f64;
+    type Region = ScanlineRenderRegion;
     type Source = ScanlinePlan;
     type Dest   = [TProgramRunner::TPixel];
 
@@ -48,7 +60,8 @@ where
     fn render(&self, region: &Self::Region, source: &Self::Source, dest: &mut Self::Dest) {
         let scanline        = dest;
         let spans           = source.spans();
-        let y_pos           = *region;
+        let y_pos           = region.y_pos;
+        let transform       = &region.transform;
 
         // Check that the operations will fit over this scanline
         let start_pos   = spans.get(0).map(|span| span.x_range.start).unwrap_or(0.0);
@@ -77,8 +90,11 @@ where
                 match current_step {
                     PixelProgramPlan::Run(data_id) => {
                         // Just run the program
+                        let pixel_range     = (x_range.start.ceil() as _)..(x_range.end.floor() as _);
+                        let source_range    = transform.pixel_range_to_x(&pixel_range);
+
                         // TODO: use the 'real' source x-range here
-                        self.program_data.run_program(*data_id, shadow_pixels.buffer(), (x_range.start.ceil() as _)..(x_range.end.floor() as _), (x_range.start.ceil() as _)..(x_range.end.floor() as _), y_pos);
+                        self.program_data.run_program(*data_id, shadow_pixels.buffer(), pixel_range, source_range, y_pos);
                     }
 
                     PixelProgramPlan::StartBlend => {
