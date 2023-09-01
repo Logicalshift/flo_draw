@@ -55,7 +55,7 @@ impl ScanlineTransform {
     /// Converts a range in pixel coordinates to source coordinates
     ///
     #[inline]
-    pub fn pixel_x_to_source_x(&self, pixel_x: i32) -> f64{
+    pub fn pixel_x_to_source_x(&self, pixel_x: i32) -> f64 {
         ((pixel_x as f64) * self.scale_recip) - self.offset
     }
 

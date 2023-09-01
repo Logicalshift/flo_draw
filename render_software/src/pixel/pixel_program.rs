@@ -1,5 +1,7 @@
 use super::pixel_program_cache::*;
 
+use crate::scanplan::*;
+
 use std::ops::{Range};
 use std::marker::{PhantomData};
 use std::sync::*;
@@ -18,10 +20,11 @@ pub trait PixelProgram : Send + Sync {
     /// Draws a series of pixels to a frame buffer
     ///
     /// The target points to the start of the range of values to be written. `x_range` provides the range of X values to fill with pixels.
-    /// To deal with the translation between internal coordinates and pixels, the `source_x_range` value indicates coordinates in the source
-    /// for the rendering (before they were transformed by the `ScanlineTransform`).
+    /// The 'x_transform' indicates how the pixel coordinates are translated into source coordinates (the y-position is always given in source
+    /// coordinates). If the `x_transform.pixel_range_to_x()` function can be called to generate the source coordinates to render for the
+    /// specified x-range.
     ///
-    fn draw_pixels(&self, data_cache: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, source_x_range: Range<f64>, y_pos: f64, program_data: &Self::ProgramData);
+    fn draw_pixels(&self, data_cache: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, x_transform: &ScanlineTransform, y_pos: f64, program_data: &Self::ProgramData);
 }
 
 ///
@@ -31,7 +34,7 @@ pub trait PixelProgram : Send + Sync {
 ///
 pub struct PixelProgramFn<TFn, TPixel, TData>
 where 
-    TFn: Send + Sync + Fn(&mut [TPixel], Range<i32>, Range<f64>, f64, &TData) -> (),
+    TFn: Send + Sync + Fn(&mut [TPixel], Range<i32>, &ScanlineTransform, f64, &TData) -> (),
 {
     /// The function to call to fill in the pixels
     function: TFn,
@@ -58,7 +61,7 @@ where
 
 impl<TFn, TPixel, TData> From<TFn> for PixelProgramFn<TFn, TPixel, TData> 
 where 
-    TFn: Send + Sync + Fn(&mut [TPixel], Range<i32>, Range<f64>, f64, &TData) -> (),
+    TFn: Send + Sync + Fn(&mut [TPixel], Range<i32>, &ScanlineTransform, f64, &TData) -> (),
 {
     fn from(function: TFn) -> Self {
         PixelProgramFn {
@@ -70,7 +73,7 @@ where
 
 impl<TFn, TPixel, TData> PixelProgram for PixelProgramFn<TFn, TPixel, TData> 
 where 
-    TFn:    Send + Sync + Fn(&mut [TPixel], Range<i32>, Range<f64>, f64, &TData) -> (),
+    TFn:    Send + Sync + Fn(&mut [TPixel], Range<i32>, &ScanlineTransform, f64, &TData) -> (),
     TData:  Send + Sync,
     TPixel: Send,
 {
@@ -78,8 +81,8 @@ where
     type ProgramData    = TData;
 
     #[inline]
-    fn draw_pixels(&self, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, source_x_range: Range<f64>, ypos: f64, program_data: &TData) {
-        (self.function)(target, x_range, source_x_range, ypos, program_data)
+    fn draw_pixels(&self, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, x_transform: &ScanlineTransform, ypos: f64, program_data: &TData) {
+        (self.function)(target, x_range, x_transform, ypos, program_data)
     }
 }
 
@@ -105,7 +108,7 @@ where
     type ProgramData    = TData;
 
     #[inline]
-    fn draw_pixels(&self, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, _source_x_range: Range<f64>, ypos: f64, program_data: &TData) {
+    fn draw_pixels(&self, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, _x_transform: &ScanlineTransform, ypos: f64, program_data: &TData) {
         let mut pos = 0;
         for x in x_range {
             target[pos] = (self.function)(x, ypos, program_data);

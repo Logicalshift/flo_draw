@@ -28,7 +28,7 @@ fn render_rectangle() {
     // Create a program runner to fill in the pixels (white in the background, blue for the foreground)
     let background_col = F32LinearPixel::white();
     let foreground_col = F32LinearPixel::from_components([0.0, 0.0, 1.0, 1.0]);
-    let program_runner = BasicPixelProgramRunner::from(|program, data: &mut [F32LinearPixel], range, _source_range, _ypos| {
+    let program_runner = BasicPixelProgramRunner::from(|program, data: &mut [F32LinearPixel], range, _x_transform: &ScanlineTransform, _ypos| {
         let col = if program == program_data_id_2 { foreground_col } else { background_col };
         for x in range {
             data[x as usize] = col;

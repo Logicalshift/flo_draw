@@ -90,11 +90,8 @@ where
                 match current_step {
                     PixelProgramPlan::Run(data_id) => {
                         // Just run the program
-                        let pixel_range     = (x_range.start.ceil() as _)..(x_range.end.floor() as _);
-                        let source_range    = transform.pixel_range_to_x(&pixel_range);
-
-                        // TODO: use the 'real' source x-range here
-                        self.program_data.run_program(*data_id, shadow_pixels.buffer(), pixel_range, source_range, y_pos);
+                        let pixel_range = (x_range.start.ceil() as _)..(x_range.end.floor() as _);
+                        self.program_data.run_program(*data_id, shadow_pixels.buffer(), pixel_range, transform, y_pos);
                     }
 
                     PixelProgramPlan::StartBlend => {
