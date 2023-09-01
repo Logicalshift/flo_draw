@@ -42,6 +42,30 @@ impl ScanlineTransform {
             scale_recip:    (source_x_range.start-source_x_range.end) / (pixel_width as f64),
         }
     }
+
+    ///
+    /// Converts an x-position from the source to pixels
+    ///
+    #[inline]
+    pub fn source_x_to_pixels(&self, source_x: f64) -> f64 {
+        (source_x + self.offset) * self.scale
+    }
+
+    ///
+    /// Converts a range in pixel coordinates to source coordinates
+    ///
+    #[inline]
+    pub fn pixel_x_to_source_x(&self, pixel_x: i32) -> f64{
+        ((pixel_x as f64) * self.scale_recip) - self.offset
+    }
+
+    ///
+    /// Converts a range in pixel coordinates to source coordinates
+    ///
+    #[inline]
+    pub fn pixel_range_to_x(&self, pixels: &Range<i32>) -> Range<f64> {
+        self.pixel_x_to_source_x(pixels.start)..self.pixel_x_to_source_x(pixels.end)
+    }
 }
 
 ///
