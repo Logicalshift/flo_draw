@@ -60,6 +60,8 @@ where
             panic!("The number of scanline suppled ({}) is less than the number of y positions to fill them ({})", scanlines.len(), y_positions.len());
         }
 
+        let x_range = transform.source_x_to_pixels(x_range.start)..transform.source_x_to_pixels(x_range.end);
+
         // Ask the edge plan to compute the intercepts on the current scanline
         let mut ordered_intercepts = vec![vec![]; y_positions.len()];
         edge_plan.intercepts_on_scanlines(y_positions, &mut ordered_intercepts);
