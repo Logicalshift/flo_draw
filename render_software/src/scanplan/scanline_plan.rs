@@ -396,11 +396,26 @@ impl ScanlinePlan {
                     let start   = our_span.x_range.start.max(merge_span.x_range.start);
                     let end     = our_span.x_range.end.min(merge_span.x_range.end);
 
-                    new_spans.push(ScanSpanStack {
-                        x_range:    start..end,
-                        plan:       merged_program,
-                        opaque:     our_span.opaque || merge_span.opaque,
-                    });
+                    if let Some(last_span) = new_spans.last_mut() {
+                        if last_span.x_range.end == start && last_span.plan == merged_program {
+                            // Just extend the last span as it abuts this one and uses the same set of programs
+                            last_span.x_range.end = end;
+                        } else {
+                            // Last span either does not abut this one or the final program is different
+                            new_spans.push(ScanSpanStack {
+                                x_range:    start..end,
+                                plan:       merged_program,
+                                opaque:     our_span.opaque || merge_span.opaque,
+                            });
+                        }
+                    } else {
+                        // Always push the first span
+                        new_spans.push(ScanSpanStack {
+                            x_range:    start..end,
+                            plan:       merged_program,
+                            opaque:     our_span.opaque || merge_span.opaque,
+                        });
+                    }
 
                     // Continue with the remaining part of the plan
                     if end >= our_span.x_range.end {
