@@ -316,3 +316,23 @@ fn clip_entirely_off_right() {
     assert!(pixel_plan[1].iter_as_spans().count() == 0, "[1, y == 125.0] {} != 0", pixel_plan[1].iter_as_spans().count());
     assert!(pixel_plan[2].iter_as_spans().count() == 0, "[2, y == 126.0] {} != 0", pixel_plan[2].iter_as_spans().count());
 }
+
+#[test]
+fn thin_rectangle() {
+    // The program data ID usually maps to the program cache (specifies what to do in a particular span)
+    let program_data_id = PixelProgramDataId(0);
+
+    let rectangle_shape = ShapeId::new();
+    let rectangle_edge  = RectangleEdge::new(rectangle_shape, 100.1..100.2, 125.0..175.0);
+    let edge_plan       = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+
+    let pixel_plan      = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[124.0, 125.0, 126.0], 0.0..1000.0));
+    assert!(pixel_plan.len() == 3);
+
+    assert!(pixel_plan[0].iter_as_spans().count() == 0, "[0, y == 124.0] {} != 0", pixel_plan[0].iter_as_spans().count());
+    assert!(pixel_plan[1].iter_as_spans().count() == 1, "[1, y == 125.0] {} != 1", pixel_plan[1].iter_as_spans().count());
+    assert!(pixel_plan[2].iter_as_spans().count() == 1, "[2, y == 126.0] {} != 1", pixel_plan[2].iter_as_spans().count());
+
+    assert!(pixel_plan[1].iter_as_spans().collect::<Vec<_>>() == vec![ScanSpan::opaque(100.1..100.2, program_data_id)], "[1, y == 125.0] {:?}", pixel_plan[1].iter_as_spans().collect::<Vec<_>>());
+    assert!(pixel_plan[2].iter_as_spans().collect::<Vec<_>>() == vec![ScanSpan::opaque(100.1..100.2, program_data_id)], "[2, y == 126.0] {:?}", pixel_plan[1].iter_as_spans().collect::<Vec<_>>());
+}
