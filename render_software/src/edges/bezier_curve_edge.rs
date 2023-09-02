@@ -182,6 +182,7 @@ where
             // Calculate the x-positions of the intercepts to generate the final result (the even-odd winding rule always toggles)
             let (w1, w2, w3, w4) = self.curve_x;
             output[idx] = intercepts.into_iter()
+                .filter(|t| *t < 0.999)       // Remove one of the end-points of each curve (on the assumption that it will be joined to another curve to create a filled shape)
                 .map(|t| basis(t, w1, w2, w3, w4))
                 .map(|pos| (EdgeInterceptDirection::Toggle, pos))
                 .collect();
