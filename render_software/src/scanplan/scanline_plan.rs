@@ -348,7 +348,7 @@ impl ScanlinePlan {
     ///
     pub fn merge(&mut self, merge_with: &ScanlinePlan, merge_stacks: impl Fn(&mut SmallVec<[PixelProgramPlan; 4]>, &SmallVec<[PixelProgramPlan; 4]>, bool)) {
         // Allocate space for the merged spans
-        let mut new_spans = Vec::with_capacity(self.spans.len());
+        let mut new_spans = Vec::<ScanSpanStack>::with_capacity(self.spans.len());
 
         {
             // Iterate on the current and merged spans, and look for overlaps
@@ -362,12 +362,34 @@ impl ScanlinePlan {
             while let (Some(our_span), Some(merge_span)) = (&mut maybe_our_span, &mut maybe_merge_span) {
                 if our_span.x_range.end <= merge_span.x_range.start {
                     // our_span is before the merge span
-                    new_spans.push(maybe_our_span.take().unwrap());
+                    if let Some(last_span) = new_spans.last_mut() {
+                        if last_span.x_range.end == our_span.x_range.start && last_span.plan == our_span.plan {
+                            // Just extend the last span as it abuts this one and uses the same set of programs
+                            last_span.x_range.end = our_span.x_range.end;
+                        } else {
+                            // Different programs, or does not abut
+                            new_spans.push(maybe_our_span.take().unwrap());
+                        }
+                    } else {
+                        // First span
+                        new_spans.push(maybe_our_span.take().unwrap());
+                    }
 
                     maybe_our_span = our_span_iter.next();
                 } else if merge_span.x_range.end <= our_span.x_range.start {
                     // merge_span is before our_span
-                    new_spans.push(maybe_merge_span.take().unwrap());
+                    if let Some(last_span) = new_spans.last_mut() {
+                        if last_span.x_range.end == merge_span.x_range.start && last_span.plan == merge_span.plan {
+                            // Just extend the last span as it abuts this one and uses the same set of programs
+                            last_span.x_range.end = merge_span.x_range.end;
+                        } else {
+                            // Different programs, or does not abut
+                            new_spans.push(maybe_merge_span.take().unwrap());
+                        }
+                    } else {
+                        // First span
+                        new_spans.push(maybe_merge_span.take().unwrap());
+                    }
 
                     maybe_merge_span = merge_span_iter.next()
                 } else {
