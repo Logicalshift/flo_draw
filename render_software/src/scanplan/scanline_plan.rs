@@ -17,7 +17,7 @@ use std::ops::{Range};
 ///
 /// Represents a stack of pixel programs to run on a region of a scanline
 ///
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ScanSpanStack {
     pub (crate) x_range:    Range<f64>,
     pub (crate) plan:       SmallVec<[PixelProgramPlan; 4]>,
@@ -33,7 +33,7 @@ pub struct ScanSpanStack {
 /// The scanline is divided up into 'stacks' of `ScanSpan`s, moving from left to right (so scanlines are always drawn from left-to-right).
 /// This class builds up the plan to draw the scanline by adding new `ScanSpan`s and merging and splitting them to make the stacks.
 ///
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ScanlinePlan {
     spans: Vec<ScanSpanStack>,
 }
