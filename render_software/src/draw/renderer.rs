@@ -42,7 +42,7 @@ where
     ///
     /// Creates a new renderer that will render for a viewport with the specified height
     ///
-    pub fn new(&self, planner: TScanPlanner, line_renderer: TLineRenderer, height: usize) -> Self {
+    pub fn new(planner: TScanPlanner, line_renderer: TLineRenderer, height: usize) -> Self {
         CanvasDrawingRegionRenderer { 
             half_height:        (height as f64)/2.0, 
             half_height_recip:  1.0/((height as f64)/2.0),
