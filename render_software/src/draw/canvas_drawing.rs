@@ -4,6 +4,7 @@ use super::path::*;
 use super::pixel_programs::*;
 
 use crate::pixel::*;
+use crate::pixel_programs::*;
 
 use canvas::NamespaceId;
 use flo_sparse_array::*;
@@ -20,8 +21,8 @@ where
     /// The gamma correction value for the current drawing
     pub (super) gamma:              f64,
 
-    /// The background color to use for the canvas
-    pub (super) background_color:   TPixel,
+    /// The program data ID for the program used to render the background
+    pub (super) background:         PixelProgramDataId,
 
     /// The namespace for the current set of IDs
     pub (super) current_namespace:  canvas::NamespaceId,
@@ -67,11 +68,14 @@ where
 
         // Create the program and data cache
         let mut program_cache   = CanvasPixelPrograms::default();
-        let data_cache          = program_cache.create_data_cache();
+        let mut data_cache      = program_cache.create_data_cache();
+
+        // Default background colour is solid white
+        let background          = program_cache.program_cache.store_program_data(&program_cache.solid_color, &mut data_cache, SolidColorData(TPixel::white()));
 
         CanvasDrawing {
             gamma:              2.2,
-            background_color:   TPixel::white(),
+            background:         background,
             current_namespace:  canvas::NamespaceId::default(),
             current_layer:      LayerHandle(0),
             current_state:      DrawingState::default(),
@@ -167,6 +171,8 @@ where
     /// Clears the canvas
     ///
     pub (super) fn clear_canvas(&mut self, new_background_color: TPixel) {
+        use std::mem;
+
         // Clear the state stack
         while self.state_stack.len() > 0 {
             self.pop_state();
@@ -180,14 +186,20 @@ where
 
         self.current_state.release_all_programs(&mut self.program_data_cache);
 
+        // Create a new background colour
+        let mut background = self.program_cache.program_cache.store_program_data(&self.program_cache.solid_color, &mut self.program_data_cache, SolidColorData(new_background_color));
+
         // Reset the state of the canvas
-        self.background_color   = new_background_color;
+        mem::swap(&mut background, &mut self.background);
         self.current_layer      = LayerHandle(0);
         self.layers             = layers;
         self.current_state      = DrawingState::default();
         self.ordered_layers     = vec![LayerHandle(0)];
         self.current_namespace  = NamespaceId::default();
         self.next_layer_handle  = LayerHandle(1);
+
+        // Free the old background colour
+        self.program_data_cache.release_program_data(background);
 
         self.program_data_cache.free_all_data();
     }
