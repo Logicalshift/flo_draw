@@ -90,7 +90,7 @@ where
                 match current_step {
                     PixelProgramPlan::Run(data_id) => {
                         // Just run the program
-                        let pixel_range = (x_range.start.ceil() as _)..(x_range.end.floor() as _);
+                        let pixel_range = (x_range.start.floor() as _)..(x_range.end.ceil() as _);
                         self.program_data.run_program(*data_id, shadow_pixels.buffer(), pixel_range, transform, y_pos);
                     }
 
