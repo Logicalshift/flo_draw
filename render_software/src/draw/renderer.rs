@@ -11,10 +11,11 @@ use std::ops::{Range};
 ///
 /// Renders sections of a canvas drawing
 ///
-pub struct CanvasDrawingRegionRenderer<TScanPlanner, TPixel, const N: usize>
+pub struct CanvasDrawingRegionRenderer<TScanPlanner, TLineRenderer, TPixel, const N: usize>
 where
     TPixel:         'static + Send + Sync + Pixel<N>,
     TScanPlanner:   ScanPlanner,
+    TLineRenderer:  Renderer<Region=ScanlineRenderRegion, Source=ScanlinePlan>,
 {
     /// Half the height in pixels to render the region at
     half_height: f64,
@@ -25,23 +26,28 @@ where
     /// The scan planner to use
     scan_planner: TScanPlanner,
 
+    /// The scanline renderer
+    line_renderer: TLineRenderer,
+
     /// Type of a pixel
     pixel: PhantomData<TPixel>,
 }
 
-impl<TScanPlanner, TPixel, const N: usize> CanvasDrawingRegionRenderer<TScanPlanner, TPixel, N>
+impl<TScanPlanner, TLineRenderer, TPixel, const N: usize> CanvasDrawingRegionRenderer<TScanPlanner, TLineRenderer, TPixel, N>
 where
     TPixel:         'static + Send + Sync + Pixel<N>,
     TScanPlanner:   ScanPlanner,
+    TLineRenderer:  Renderer<Region=ScanlineRenderRegion, Source=ScanlinePlan>,
 {
     ///
     /// Creates a new renderer that will render for a viewport with the specified height
     ///
-    pub fn new(&self, planner: TScanPlanner, height: usize) -> Self {
+    pub fn new(&self, planner: TScanPlanner, line_renderer: TLineRenderer, height: usize) -> Self {
         CanvasDrawingRegionRenderer { 
             half_height:        (height as f64)/2.0, 
             half_height_recip:  1.0/((height as f64)/2.0),
             scan_planner:       planner,
+            line_renderer:      line_renderer,
             pixel:              PhantomData,
         }
     }
@@ -71,10 +77,11 @@ where
     }
 }
 
-impl<TScanPlanner, TPixel, const N: usize> Renderer for CanvasDrawingRegionRenderer<TScanPlanner, TPixel, N>
+impl<TScanPlanner, TLineRenderer, TPixel, const N: usize> Renderer for CanvasDrawingRegionRenderer<TScanPlanner, TLineRenderer, TPixel, N>
 where
     TPixel:         'static + Send + Sync + Pixel<N>,
     TScanPlanner:   ScanPlanner<Edge=Box<dyn EdgeDescriptor>>,
+    TLineRenderer:  Renderer<Region=ScanlineRenderRegion, Source=ScanlinePlan, Dest=[TPixel]>,
 {
     type Region = RenderSlice;
     type Source = CanvasDrawing<TPixel, N>;
@@ -97,14 +104,35 @@ where
                 // Plan this layer (note that the x-range will be something like -1..1 so the scan planner must support this)
                 self.scan_planner.plan_scanlines(&layer.edges, &transform, &y_positions, x_range.clone(), &mut layer_scanlines);
 
-                // TODO: Combine the layer with the scanlines we're planning
+                // Combine the layer with the scanlines we're planning
+                // TODO: alpha blending (this assumes source over with 1.0 alpha)
+                scanlines.iter_mut()
+                    .zip(layer_scanlines.iter())
+                    .for_each(|((_, scanline), (_, layer_scanline))| {
+                        scanline.merge(&layer_scanline, |src, dst, is_opaque| {
+                            if is_opaque {
+                                *src = dst.clone();
+                            } else {
+                                src.extend(dst.clone());
+                            }
+                        })
+                    })
             }
         }
 
-        // TODO: Convert the scanlines back to render coordinates
+        // Pass the scanlines on to the line renderer to produce the final result
+        let mut lines  = dest.chunks_exact_mut(region.width);
+        let mut region = ScanlineRenderRegion {
+            y_pos:      0.0,
+            transform:  transform,
+        };
 
-        // TODO: Pass the scanlines on to the line renderer to produce the final result
+        for idx in 0..y_positions.len() {
+            let (ypos, scanline)    = &scanlines[idx];
+            let line                = lines.next().unwrap();
+            region.y_pos            = *ypos;
 
-        todo!()
+            self.line_renderer.render(&region, scanline, line);
+        }
     }
 }
