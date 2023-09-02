@@ -37,7 +37,7 @@ pub fn main() {
     println!("Frame render time: {}.{}ms", avg_micros/1000, avg_micros%1000);
 
     // Render the mascot to the terminal
-    let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
+    let mut term_renderer = TerminalRenderTarget::new(500, 400);
 
     let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner()), 1080);
     term_renderer.render(renderer, &canvas_drawing);
