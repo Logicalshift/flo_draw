@@ -441,3 +441,57 @@ fn add_transparent_span_middle() {
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
     assert!(spans == vec![ScanSpan::opaque(0.0..25.0, program_data_id_1), ScanSpan::opaque(25.0..75.0, program_data_id_1), ScanSpan::transparent(25.0..75.0, program_data_id_2), ScanSpan::opaque(75.0..100.0, program_data_id_1)], "Unexpected spans: {:?}", spans);
 }
+
+#[test]
+fn merge_span_over() {
+    // Create a plan with a span
+    let mut plan = ScanlinePlan::default();
+    plan.add_span(ScanSpan::opaque(0.0..300.0, PixelProgramDataId(0)));
+
+    // Create a plan to merge over the top
+    let mut merge_plan = ScanlinePlan::default();
+    merge_plan.add_span(ScanSpan::opaque(100.0..200.0, PixelProgramDataId(1)));
+
+    // Merge the two plans by overwriting one with the other
+    plan.merge(&merge_plan, |src, merge, _is_opaque| *src = merge.clone());
+
+    // Read the span back again
+    let spans = plan.iter_as_spans().collect::<Vec<_>>();
+    assert!(spans == vec![ScanSpan::opaque(0.0..100.0, PixelProgramDataId(0)), ScanSpan::opaque(100.0..200.0, PixelProgramDataId(1)), ScanSpan::opaque(200.0..300.0, PixelProgramDataId(0))], "Unexpected spans: {:?}", spans);
+}
+
+#[test]
+fn merge_span_over_start() {
+    // Create a plan with a span
+    let mut plan = ScanlinePlan::default();
+    plan.add_span(ScanSpan::opaque(0.0..300.0, PixelProgramDataId(0)));
+
+    // Create a plan to merge over the top
+    let mut merge_plan = ScanlinePlan::default();
+    merge_plan.add_span(ScanSpan::opaque(0.0..200.0, PixelProgramDataId(1)));
+
+    // Merge the two plans by overwriting one with the other
+    plan.merge(&merge_plan, |src, merge, _is_opaque| *src = merge.clone());
+
+    // Read the span back again
+    let spans = plan.iter_as_spans().collect::<Vec<_>>();
+    assert!(spans == vec![ScanSpan::opaque(0.0..200.0, PixelProgramDataId(1)), ScanSpan::opaque(200.0..300.0, PixelProgramDataId(0))], "Unexpected spans: {:?}", spans);
+}
+
+#[test]
+fn merge_span_over_end() {
+    // Create a plan with a span
+    let mut plan = ScanlinePlan::default();
+    plan.add_span(ScanSpan::opaque(0.0..300.0, PixelProgramDataId(0)));
+
+    // Create a plan to merge over the top
+    let mut merge_plan = ScanlinePlan::default();
+    merge_plan.add_span(ScanSpan::opaque(100.0..300.0, PixelProgramDataId(1)));
+
+    // Merge the two plans by overwriting one with the other
+    plan.merge(&merge_plan, |src, merge, _is_opaque| *src = merge.clone());
+
+    // Read the span back again
+    let spans = plan.iter_as_spans().collect::<Vec<_>>();
+    assert!(spans == vec![ScanSpan::opaque(0.0..100.0, PixelProgramDataId(0)), ScanSpan::opaque(100.0..300.0, PixelProgramDataId(1))], "Unexpected spans: {:?}", spans);
+}
