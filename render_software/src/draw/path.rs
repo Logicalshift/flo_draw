@@ -47,7 +47,7 @@ impl DrawingState {
         let y = y as f64;
 
         // Start a new subpath if we've generated any new edges
-        if self.subpaths.pop() != Some(self.path_edges.len()) {
+        if self.subpaths.last() != Some(&self.path_edges.len()) {
             self.subpaths.push(self.path_edges.len());
         }
 
