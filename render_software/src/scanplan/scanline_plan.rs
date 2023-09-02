@@ -341,6 +341,103 @@ impl ScanlinePlan {
     }
 
     ///
+    /// Merges a scanline plan into this one
+    ///
+    /// The merged stack is opaque if either stack is opaque. The function is called with the set of pixel programs that are being merged into, the set
+    /// from the new program, and whether or not the set in the new program are opaque.
+    ///
+    pub fn merge(&mut self, merge_with: &ScanlinePlan, merge_stacks: impl Fn(&mut SmallVec<[PixelProgramPlan; 4]>, &SmallVec<[PixelProgramPlan; 4]>, bool)) {
+        // Allocate space for the merged spans
+        let mut new_spans = Vec::with_capacity(self.spans.len());
+
+        {
+            // Iterate on the current and merged spans, and look for overlaps
+            let mut our_span_iter       = self.spans.drain(..);
+            let mut merge_span_iter     = merge_with.spans.iter().cloned();
+
+            let mut maybe_our_span      = our_span_iter.next();
+            let mut maybe_merge_span    = merge_span_iter.next();
+
+            // We iterate both from left to right, and deal with overlaps
+            while let (Some(our_span), Some(merge_span)) = (&mut maybe_our_span, &mut maybe_merge_span) {
+                if our_span.x_range.end < merge_span.x_range.start {
+                    // our_span is before the merge span
+                    new_spans.push(maybe_our_span.take().unwrap());
+
+                    maybe_our_span = our_span_iter.next();
+                } else if merge_span.x_range.end < our_span.x_range.start {
+                    // merge_span is before our_span
+                    new_spans.push(maybe_merge_span.take().unwrap());
+
+                    maybe_merge_span = merge_span_iter.next()
+                } else {
+                    // The two spans should overlap
+                    if merge_span.x_range.start < our_span.x_range.start {
+                        // Draw just merge_plan up to our_plan.start
+                        new_spans.push(ScanSpanStack {
+                            x_range:    merge_span.x_range.start..our_span.x_range.start,
+                            plan:       merge_span.plan.clone(),
+                            opaque:     merge_span.opaque,
+                        });
+                    } else if our_span.x_range.start < merge_span.x_range.start {
+                        // Draw just our_plan up to our_plan.start
+                        new_spans.push(ScanSpanStack {
+                            x_range:    our_span.x_range.start..merge_span.x_range.start,
+                            plan:       our_span.plan.clone(),
+                            opaque:     our_span.opaque,
+                        });
+                    }
+
+                    // Create the merged set of programs
+                    let mut merged_program = our_span.plan.clone();
+                    merge_stacks(&mut merged_program, &merge_span.plan, merge_span.opaque);
+
+                    // Create the merged plan
+                    let start   = our_span.x_range.start.max(merge_span.x_range.start);
+                    let end     = our_span.x_range.end.min(merge_span.x_range.end);
+
+                    new_spans.push(ScanSpanStack {
+                        x_range:    start..end,
+                        plan:       merged_program,
+                        opaque:     our_span.opaque || merge_span.opaque,
+                    });
+
+                    // Continue with the remaining part of the plan
+                    if end >= our_span.x_range.end {
+                        // Entire range was merged
+                        maybe_our_span = our_span_iter.next();
+                    } else {
+                        // Process the remaining part of 'our_span'
+                        our_span.x_range.start = end;
+                    }
+
+                    if end >= merge_span.x_range.end {
+                        // Entire range was merged
+                        maybe_merge_span = merge_span_iter.next();
+                    } else {
+                        // Process the remaining part of 'merge_span'
+                        merge_span.x_range.start = end;
+                    }
+                }
+            }
+
+            // Push any remaining spans
+            while let Some(our_span) = maybe_our_span {
+                new_spans.push(our_span);
+                maybe_our_span = our_span_iter.next();
+            } 
+
+            while let Some(merge_span) = maybe_merge_span {
+                new_spans.push(merge_span);
+                maybe_merge_span = merge_span_iter.next();
+            }
+        }
+
+        // Replace the contents of this object with the new spans
+        self.spans = new_spans;
+    }
+
+    ///
     /// Clears out this plan so the structure can be re-used
     ///
     #[inline]
