@@ -122,10 +122,13 @@ where
             let intercepts = solve_basis_for_t(self.curve_y.0, self.curve_y.1, self.curve_y.2, self.curve_y.3, y_pos);
 
             // Calculate the x-positions of the intercepts to generate the final result
+            // TODO: the end-point test here doesn't work: the solver is numeric and makes errors which will result in the start point of the following curve being included occasionally
+            // (using 0.999 to demonstrate this, but this will produce different errors sometimes where neither point gets hit)
+            // Need either a full subpath edge shape or a way of knowing that the other curve will be hit to solve this
             let (w1, w2, w3, w4)    = self.curve_x;
             let (d1, d2, d3)        = self.derivative_y;
             output[idx] = intercepts.into_iter()
-                .filter(|t| *t < 1.0)       // Remove one of the end-points of each curve (on the assumption that it will be joined to another curve to create a filled shape)
+                .filter(|t| *t < 0.999)       // Remove one of the end-points of each curve (on the assumption that it will be joined to another curve to create a filled shape)
                 .map(|t| {
                     let pos         = basis(t, w1, w2, w3, w4);
                     let tangent_y   = de_casteljau3(t, d1, d2, d3);
