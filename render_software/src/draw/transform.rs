@@ -8,7 +8,7 @@ impl DrawingState {
     ///
     #[inline]
     pub fn identity_transform(&mut self) {
-        self.transform = canvas::Transform2D::identity();
+        self.transform = canvas::Transform2D::scale(1.0, -1.0);
     }
 
     ///
@@ -30,7 +30,7 @@ impl DrawingState {
         // Work out the scale to use for this widget
         let height          = f32::max(1.0, height);
         let scale           = window_height / height;
-        let scale           = canvas::Transform2D::scale(scale, scale);
+        let scale           = canvas::Transform2D::scale(scale, -scale);
 
         // (0, 0) is already the center of the window
         let transform       = scale;
