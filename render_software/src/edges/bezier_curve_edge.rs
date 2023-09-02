@@ -130,7 +130,7 @@ where
             let (w1, w2, w3, w4)    = self.curve_x;
             let (d1, d2, d3)        = self.derivative_y;
             output[idx] = intercepts.into_iter()
-                .filter(|t| *t < 0.999)       // Remove one of the end-points of each curve (on the assumption that it will be joined to another curve to create a filled shape)
+                .filter(|t| *t < 1.0)       // Remove one of the end-points of each curve (on the assumption that it will be joined to another curve to create a filled shape)
                 .map(|t| {
                     let pos         = basis(t, w1, w2, w3, w4);
                     let tangent_y   = de_casteljau3(t, d1, d2, d3);
@@ -182,7 +182,7 @@ where
             // Calculate the x-positions of the intercepts to generate the final result (the even-odd winding rule always toggles)
             let (w1, w2, w3, w4) = self.curve_x;
             output[idx] = intercepts.into_iter()
-                .filter(|t| *t < 0.999)       // Remove one of the end-points of each curve (on the assumption that it will be joined to another curve to create a filled shape)
+                .filter(|t| *t < 1.0)       // Remove one of the end-points of each curve (on the assumption that it will be joined to another curve to create a filled shape)
                 .map(|t| basis(t, w1, w2, w3, w4))
                 .map(|pos| (EdgeInterceptDirection::Toggle, pos))
                 .collect();
