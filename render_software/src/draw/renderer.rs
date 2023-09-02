@@ -86,16 +86,15 @@ where
         let x_range     = self.convert_width(region.width);
         let transform   = ScanlineTransform::for_region(&x_range, region.width);
 
-        // We need to plan scanlines for each layer, then merge them
-        // TODO: initialise the scanlines with the background colour
-        let mut scanlines       = vec![(0.0, ScanlinePlan::default()); y_positions.len()];
+        // We need to plan scanlines for each layer, then merge them. The initial plan is just to fill the entire range with the background colour
+        let mut scanlines       = y_positions.iter().copied()
+            .map(|ypos| (ypos, ScanlinePlan::from_ordered_stacks(vec![ScanSpanStack::with_first_span(ScanSpan::opaque(0.0..(region.width as f64), source.background))])))
+            .collect::<Vec<_>>();
         let mut layer_scanlines = vec![(0.0, ScanlinePlan::default()); y_positions.len()];
 
         for layer_handle in source.ordered_layers.iter().copied() {
             if let Some(layer) = source.layers.get(layer_handle.0) {
                 // Plan this layer (note that the x-range will be something like -1..1 so the scan planner must support this)
-                // TODO: need a way to scale/move the intercepts found in the edge plan to match the canvas edge plan
-                // TODO: need a way to specify the 'original' coordinates to the pixel program after scaling (otherwise things like texture mappers really have no way to map the x_range to the texture coordiantes)
                 self.scan_planner.plan_scanlines(&layer.edges, &transform, &y_positions, x_range.clone(), &mut layer_scanlines);
 
                 // TODO: Combine the layer with the scanlines we're planning
