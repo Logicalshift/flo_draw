@@ -341,6 +341,55 @@ impl ScanlinePlan {
     }
 
     ///
+    /// Finds any adjacent spans that are running the same program and joins them into one
+    ///
+    fn combine_adjacent_spans(&mut self) {
+        // Search for the first adjacent span...
+        for idx in 1..self.spans.len() {
+            let last_span = &self.spans[idx-1];
+            let this_span = &self.spans[idx];
+
+            if last_span.x_range.end != this_span.x_range.start {
+                // Not adjacent
+                continue;
+            }
+
+            if last_span.plan != this_span.plan {
+                // Different programs
+                continue;
+            }
+
+            // This is the first span that has a matching adjacent span
+            let end = this_span.x_range.end;
+            self.spans[idx-1].x_range.end = end;
+
+            // The offset index is where we're moving spans to (one ahead of the 'last' span, and finally the length of the result)
+            let mut offset_idx = idx;
+
+            for copy_from_idx in (idx+1)..self.spans.len() {
+                let last_span = &self.spans[offset_idx-1];
+                let this_span = &self.spans[copy_from_idx];
+
+                if last_span.x_range.end != this_span.x_range.start || last_span.plan != this_span.plan {
+                    // Not adjacent, or not matching: copy the definition and update the offset index
+                    self.spans[offset_idx] = this_span.clone();
+                    offset_idx += 1;
+                } else {
+                    // this_span is a continuation of last_span: extend it
+                    let end = this_span.x_range.end;
+                    self.spans[offset_idx-1].x_range.end = end;
+                }
+            }
+
+            // Truncate the list of spans
+            self.spans.truncate(offset_idx);
+
+            // Stop here
+            break;
+        }
+    }
+
+    ///
     /// Merges a scanline plan into this one
     ///
     /// The merged stack is opaque if either stack is opaque. The function is called with the set of pixel programs that are being merged into, the set
@@ -362,34 +411,12 @@ impl ScanlinePlan {
             while let (Some(our_span), Some(merge_span)) = (&mut maybe_our_span, &mut maybe_merge_span) {
                 if our_span.x_range.end <= merge_span.x_range.start {
                     // our_span is before the merge span
-                    if let Some(last_span) = new_spans.last_mut() {
-                        if last_span.x_range.end == our_span.x_range.start && last_span.plan == our_span.plan {
-                            // Just extend the last span as it abuts this one and uses the same set of programs
-                            last_span.x_range.end = our_span.x_range.end;
-                        } else {
-                            // Different programs, or does not abut
-                            new_spans.push(maybe_our_span.take().unwrap());
-                        }
-                    } else {
-                        // First span
-                        new_spans.push(maybe_our_span.take().unwrap());
-                    }
+                    new_spans.push(maybe_our_span.take().unwrap());
 
                     maybe_our_span = our_span_iter.next();
                 } else if merge_span.x_range.end <= our_span.x_range.start {
                     // merge_span is before our_span
-                    if let Some(last_span) = new_spans.last_mut() {
-                        if last_span.x_range.end == merge_span.x_range.start && last_span.plan == merge_span.plan {
-                            // Just extend the last span as it abuts this one and uses the same set of programs
-                            last_span.x_range.end = merge_span.x_range.end;
-                        } else {
-                            // Different programs, or does not abut
-                            new_spans.push(maybe_merge_span.take().unwrap());
-                        }
-                    } else {
-                        // First span
-                        new_spans.push(maybe_merge_span.take().unwrap());
-                    }
+                    new_spans.push(maybe_merge_span.take().unwrap());
 
                     maybe_merge_span = merge_span_iter.next()
                 } else {
@@ -418,26 +445,11 @@ impl ScanlinePlan {
                     let start   = our_span.x_range.start.max(merge_span.x_range.start);
                     let end     = our_span.x_range.end.min(merge_span.x_range.end);
 
-                    if let Some(last_span) = new_spans.last_mut() {
-                        if last_span.x_range.end == start && last_span.plan == merged_program {
-                            // Just extend the last span as it abuts this one and uses the same set of programs
-                            last_span.x_range.end = end;
-                        } else {
-                            // Last span either does not abut this one or the final program is different
-                            new_spans.push(ScanSpanStack {
-                                x_range:    start..end,
-                                plan:       merged_program,
-                                opaque:     our_span.opaque || merge_span.opaque,
-                            });
-                        }
-                    } else {
-                        // Always push the first span
-                        new_spans.push(ScanSpanStack {
-                            x_range:    start..end,
-                            plan:       merged_program,
-                            opaque:     our_span.opaque || merge_span.opaque,
-                        });
-                    }
+                    new_spans.push(ScanSpanStack {
+                        x_range:    start..end,
+                        plan:       merged_program,
+                        opaque:     our_span.opaque || merge_span.opaque,
+                    });
 
                     // Continue with the remaining part of the plan
                     if end >= our_span.x_range.end {
@@ -472,6 +484,9 @@ impl ScanlinePlan {
 
         // Replace the contents of this object with the new spans
         self.spans = new_spans;
+
+        // Combine any adjacent spans that use the same program
+        self.combine_adjacent_spans();
     }
 
     ///
