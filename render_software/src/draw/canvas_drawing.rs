@@ -171,8 +171,6 @@ where
     /// Clears the canvas
     ///
     pub (super) fn clear_canvas(&mut self, new_background_color: TPixel) {
-        use std::mem;
-
         // Clear the state stack
         while self.state_stack.len() > 0 {
             self.pop_state();
@@ -186,11 +184,7 @@ where
 
         self.current_state.release_all_programs(&mut self.program_data_cache);
 
-        // Create a new background colour
-        let mut background = self.program_cache.program_cache.store_program_data(&self.program_cache.solid_color, &mut self.program_data_cache, SolidColorData(new_background_color));
-
         // Reset the state of the canvas
-        mem::swap(&mut background, &mut self.background);
         self.current_layer      = LayerHandle(0);
         self.layers             = layers;
         self.current_state      = DrawingState::default();
@@ -198,9 +192,11 @@ where
         self.current_namespace  = NamespaceId::default();
         self.next_layer_handle  = LayerHandle(1);
 
-        // Free the old background colour
-        self.program_data_cache.release_program_data(background);
-
+        // Free the old program data
         self.program_data_cache.free_all_data();
+
+        // Create a new background colour
+        let background = self.program_cache.program_cache.store_program_data(&self.program_cache.solid_color, &mut self.program_data_cache, SolidColorData(new_background_color));
+        self.background = background;
     }
 }
