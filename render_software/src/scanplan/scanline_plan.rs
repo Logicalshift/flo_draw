@@ -20,8 +20,7 @@ use std::ops::{Range};
 #[derive(Clone)]
 pub struct ScanSpanStack {
     pub (crate) x_range:    Range<f64>,
-    pub (crate) first:      PixelProgramPlan,
-    pub (crate) others:     Option<SmallVec<[PixelProgramPlan; 4]>>,
+    pub (crate) plan:       SmallVec<[PixelProgramPlan; 4]>,
     pub (crate) opaque:     bool,
 }
 
@@ -47,8 +46,7 @@ impl ScanSpanStack {
     pub fn with_first_span(span: ScanSpan) -> ScanSpanStack {
         ScanSpanStack { 
             x_range:    span.x_range,
-            first:      PixelProgramPlan::Run(span.program),
-            others:     None,
+            plan:       smallvec![PixelProgramPlan::Run(span.program)],
             opaque:     span.opaque,
         }
     }
@@ -58,20 +56,10 @@ impl ScanSpanStack {
     ///
     #[inline]
     pub fn with_reversed_programs(x_range: Range<f64>, opaque: bool, programs_reversed: &Vec<PixelProgramPlan>) -> ScanSpanStack {
-        if programs_reversed.len() == 1 {
-            ScanSpanStack {
-                x_range:    x_range,
-                opaque:     opaque,
-                first:      programs_reversed[0],
-                others:     None
-            }
-        } else {
-            ScanSpanStack {
-                x_range:    x_range,
-                first:      programs_reversed[programs_reversed.len()-1],
-                others:     Some(programs_reversed.iter().rev().skip(1).copied().collect()),
-                opaque:     opaque,
-            }
+        ScanSpanStack {
+            x_range:    x_range,
+            plan:       programs_reversed.iter().rev().copied().collect(),
+            opaque:     opaque,
         }
     }
 
@@ -80,8 +68,7 @@ impl ScanSpanStack {
     ///
     #[inline]
     pub fn push(&mut self, span: ScanSpan) {
-        self.others.get_or_insert_with(|| smallvec![])
-            .push(PixelProgramPlan::Run(span.program))
+        self.plan.push(PixelProgramPlan::Run(span.program))
     }
 
     ///
@@ -97,8 +84,7 @@ impl ScanSpanStack {
 
             Ok(ScanSpanStack {
                 x_range:    x_pos..end,
-                first:      self.first,
-                others:     self.others.clone(),
+                plan:       self.plan.clone(),
                 opaque:     self.opaque,
             })
         } else {
@@ -117,10 +103,7 @@ impl ScanSpanStack {
     ///
     #[inline]
     pub fn programs<'a>(&'a self) -> impl 'a + Iterator<Item=PixelProgramPlan> {
-        use std::iter;
-
-        iter::once(self.first)
-            .chain(self.others.iter().flatten().copied())
+        self.plan.iter().copied()
     }
 
     ///
