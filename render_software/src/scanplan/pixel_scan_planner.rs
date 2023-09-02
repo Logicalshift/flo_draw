@@ -60,6 +60,7 @@ where
             panic!("The number of scanline suppled ({}) is less than the number of y positions to fill them ({})", scanlines.len(), y_positions.len());
         }
 
+        // Map the x-range from the source coordinates to pixel coordinates
         let x_range = transform.source_x_to_pixels(x_range.start)..transform.source_x_to_pixels(x_range.end);
 
         // Ask the edge plan to compute the intercepts on the current scanline
