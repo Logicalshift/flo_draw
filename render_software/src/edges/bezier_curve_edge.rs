@@ -125,6 +125,8 @@ where
             // TODO: the end-point test here doesn't work: the solver is numeric and makes errors which will result in the start point of the following curve being included occasionally
             // (using 0.999 to demonstrate this, but this will produce different errors sometimes where neither point gets hit)
             // Need either a full subpath edge shape or a way of knowing that the other curve will be hit to solve this
+            // TODO: also need to deal with super-awkward paths like single-curve paths that start and end at the same point
+            // TODOTODO: ... and need to check the same things in flo_curves when generating a contour
             let (w1, w2, w3, w4)    = self.curve_x;
             let (d1, d2, d3)        = self.derivative_y;
             output[idx] = intercepts.into_iter()
