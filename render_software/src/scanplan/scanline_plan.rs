@@ -360,12 +360,12 @@ impl ScanlinePlan {
 
             // We iterate both from left to right, and deal with overlaps
             while let (Some(our_span), Some(merge_span)) = (&mut maybe_our_span, &mut maybe_merge_span) {
-                if our_span.x_range.end < merge_span.x_range.start {
+                if our_span.x_range.end <= merge_span.x_range.start {
                     // our_span is before the merge span
                     new_spans.push(maybe_our_span.take().unwrap());
 
                     maybe_our_span = our_span_iter.next();
-                } else if merge_span.x_range.end < our_span.x_range.start {
+                } else if merge_span.x_range.end <= our_span.x_range.start {
                     // merge_span is before our_span
                     new_spans.push(maybe_merge_span.take().unwrap());
 
