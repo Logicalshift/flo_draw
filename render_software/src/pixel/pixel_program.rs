@@ -6,6 +6,20 @@ use std::ops::{Range};
 use std::marker::{PhantomData};
 use std::sync::*;
 
+// A design/performance note:
+//
+// We pass in the x_transform to the pixel program to provide a way for things like texture brushes to map between pixel coordinates
+// and their source coordinates (eg, a canvas drawing has source coordinates going between -1..1 and needs to render to a target
+// framebuffer of any dimensions). This means that pixel programs that don't need this transformation - solid colours in particular -
+// can avoid the overhead of doing the calculation. However, it also means that if there's a 'stack' of transparent programs that all
+// need the transformation, it will be done multiple times per span.
+//
+// There are two possible approaches: if a scene mostly needs the transform, it would be faster to do it for every span in the scanline
+// renderer and pass it in to `draw_pixels`. This will be slower for any scene that doesn't use stacks of programs.
+//
+// Another approach is to calculate the value lazily and cache it. This is slower for the 'extremes' of the two cases, but might be a
+// win overall for either if we don't know what kind of scene is being rendered.
+
 ///
 /// A pixel program descibes how to draw pixels along a scan line
 ///
