@@ -199,6 +199,8 @@ where
         current_layer.edges.declare_shape_description(shape_id, shape_descriptor);
 
         // Create contours
+        // TODO: the contours actually work but I suspect they must have the same bug as previously encountered where some lines have too many or too few intercepts
+        // (masked because they are at an offset which doesn't line up the rays in the same way)
         use std::iter;
         use flo_canvas::curves::bezier::path::*;
         use flo_canvas::curves::bezier::rasterize::*;
