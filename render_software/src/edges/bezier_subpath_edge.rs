@@ -1,0 +1,200 @@
+use crate::edgeplan::*;
+
+use flo_canvas::curves::bezier::path::*;
+use flo_canvas::curves::geo::*;
+use flo_canvas::curves::bezier::*;
+
+use smallvec::*;
+
+use std::ops::{Range};
+use std::vec;
+
+///
+/// Represents a closed bezier subpath
+///
+/// To become an edge, this needs to be combined with a winding rule style and a 
+///
+#[derive(Clone)]
+pub struct BezierSubpath {
+    /// The curves within this subpath
+    curves: Vec<SubpathCurve>,
+
+    /// The bounding box (x coordinates)
+    x_bounds: Range<f64>,
+
+    /// The bounding box (y coordinates)
+    y_bounds: Range<f64>,
+}
+
+#[derive(Clone)]
+struct SubpathCurve {
+    /// The y bounding box for this curve
+    y_bounds: Range<f64>,
+
+    /// x control points (w1, w2, w3, w4)
+    wx: (f64, f64, f64, f64),
+
+    /// y control points (w1, w2, w3, w4)
+    wy: (f64, f64, f64, f64),
+
+    /// The y-derivative control points (w1, w2, w3)
+    wdy: (f64, f64, f64),
+}
+
+///
+/// An intercept on a bezier subpath
+///
+#[derive(Clone, Copy, Debug)]
+pub struct BezierSubpathIntercept {
+    /// The x position of this intercept
+    x_pos: f64,
+
+    /// The curve that the intercept belongs to
+    curve_idx: usize,
+
+    /// The t-value of this intercept
+    t: f64,
+}
+
+impl Geo for BezierSubpath {
+    type Point = Coord2;
+}
+
+impl BezierPath for BezierSubpath {
+    type PointIter = vec::IntoIter<(Coord2, Coord2, Coord2)>;
+
+    #[inline]
+    fn start_point(&self) -> Self::Point {
+        Coord2(self.curves[0].wx.0, self.curves[0].wy.0)
+    }
+
+    fn points(&self) -> Self::PointIter {
+        self.curves.iter()
+            .map(|curve| (Coord2(curve.wx.1, curve.wy.1), Coord2(curve.wx.2, curve.wy.2), Coord2(curve.wx.3, curve.wy.3)))
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+}
+
+///
+/// A bezier subpath can be used as the target of a bezier path factory
+///
+impl BezierPathFactory for BezierSubpath {
+    fn from_points<FromIter: IntoIterator<Item=(Coord2, Coord2, Coord2)>>(start_point: Coord2, points: FromIter) -> Self {
+        let mut curves      = vec![];
+        let mut last_point  = start_point;
+
+        let mut min_x       = f64::MAX;
+        let mut min_y       = f64::MAX;
+        let mut max_x       = f64::MIN;
+        let mut max_y       = f64::MIN;
+
+        for (cp1, cp2, end_point) in points {
+            // Fetch the w values, and calculate the derivative and bounding box
+            let wx          = (last_point.x(), cp1.x(), cp2.x(), end_point.x());
+            let wy          = (last_point.y(), cp1.y(), cp2.y(), end_point.y());
+            let wdy         = derivative4(wy.0, wy.1, wy.2, wy.3);
+            let x_bounds    = bounding_box4::<_, Bounds<f64>>(wy.0, wy.1, wy.2, wy.3);
+            let y_bounds    = bounding_box4::<_, Bounds<f64>>(wy.0, wy.1, wy.2, wy.3);
+
+            // Update the min, max coordinates
+            min_x = min_x.min(x_bounds.min());
+            min_y = min_y.min(y_bounds.min());
+            max_x = max_x.max(x_bounds.max());
+            max_y = max_y.max(y_bounds.max());
+
+            // Add a new curve
+            curves.push(SubpathCurve {
+                y_bounds:   y_bounds.min()..y_bounds.max(),
+                wx:         wx,
+                wy:         wy,
+                wdy:        wdy,
+            });
+
+            // Update the last point to match the end point of the previous curve section
+            last_point = end_point;
+        }
+
+        if curves.len() == 0 {
+            panic!("Bezier subpaths must have at least one curve in them");
+        }
+
+        BezierSubpath {
+            curves:     curves,
+            x_bounds:   min_x..max_x,
+            y_bounds:   min_y..max_y
+        }
+    }
+}
+
+impl BezierSubpath {
+    ///
+    /// Finds the intercepts on a line of this subpath
+    ///
+    pub fn intercepts_on_line(&self, y_pos: f64) -> impl Iterator<Item=BezierSubpathIntercept> {
+        // How close two intercepts have to be to invoke the 'double intercept' algorithm. This really depends on the precision of `solve_basis_for_t'
+        const VERY_CLOSE_X: f64 = 0.00000001;
+
+        // How high the 'T' value has to be for a value to be considered at the end of a curve (this is relative to the curve construction)
+        const HIGH_T: f64 = 0.95;
+
+        // How low the 'T' value has to be for a value to be considered at the start of a curve
+        const LOW_T: f64 = 0.05;
+
+        // Compute the raw intercepts. These can have double intercepts where two curves meet
+        let mut intercepts = self.curves
+            .iter()
+            .enumerate()
+            .filter(|(_idx, curve)| curve.y_bounds.contains(&y_pos))
+            .flat_map(|(idx, curve)| solve_basis_for_t(curve.wy.0, curve.wy.1, curve.wy.2, curve.wy.3, y_pos).into_iter()
+                .filter(|t| *t >= 0.0 && *t <= 1.0)
+                .map(move |t| BezierSubpathIntercept { x_pos: de_casteljau4(t, curve.wx.0, curve.wx.1, curve.wx.2, curve.wx.3), curve_idx: idx, t: t, } ))
+            .collect::<SmallVec<[_; 4]>>();
+
+        // Sort the intercepts by x position
+        intercepts.sort_unstable_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
+
+        // Detect double intercepts
+        // We use numerical methods to solve the intercept points, which is combined with the inherent imprecision of floating point numbers, so double intercepts will
+        // not always appear at the same place. So the approach is this: if two intercepts have very close x values, are for the end and start of neighboring curves, and
+        // are in the same direction, then count that intercept as just one. It's probably possible to fool this algorithm with a suitably constructed self-intersection shape.
+        // TODO: if there are very many very short curve sections we might end up with a whole cluster of intercepts that should count as one (isn't clear how short these
+        // need to be).
+        let mut intercept_idx = 0;
+        while intercept_idx < intercepts.len()-1 {
+            // Fetch the two intercepts that we want to check for doubling up
+            let prev = &intercepts[intercept_idx];
+            let next = &intercepts[intercept_idx+1];
+
+            if (prev.x_pos-next.x_pos).abs() <= VERY_CLOSE_X {
+                // Two points are very close together
+                if (prev.t < LOW_T && next.t > HIGH_T) || (prev.t > HIGH_T && next.t < LOW_T) {
+                    // One of prev, next is at the start of a section, and one is at the end of a section: calculate the direction of the line that the ray is crossing
+                    let prev_curve      = &self.curves[prev.curve_idx];
+                    let next_curve      = &self.curves[next.curve_idx];
+
+                    let prev_tangent_y   = de_casteljau3(prev.t, prev_curve.wdy.0, prev_curve.wdy.1, prev_curve.wdy.2);
+                    let prev_normal_x    = -prev_tangent_y;
+                    let prev_side        = prev_normal_x.signum();
+
+                    let next_tangent_y   = de_casteljau3(next.t, next_curve.wdy.0, next_curve.wdy.1, next_curve.wdy.2);
+                    let next_normal_x    = -next_tangent_y;
+                    let next_side        = next_normal_x.signum();
+
+                    // Remove one of the intercepts if these two very close points are crossing the subpath in the same direction
+                    if prev_side == next_side {
+                        // Skip advancing the intercept index so we check for another duplicate at the same position
+                        intercepts.remove(intercept_idx);
+                        continue;
+                    }
+                }
+            }
+
+            // Try the next intercept
+            intercept_idx += 1;
+        }
+
+        // Iterate over the results
+        intercepts.into_iter()
+    }
+}
