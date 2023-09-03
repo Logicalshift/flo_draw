@@ -203,13 +203,12 @@ where
         // (masked because they are at an offset which doesn't line up the rays in the same way)
         use std::iter;
         use flo_canvas::curves::bezier::path::*;
-        use flo_canvas::curves::bezier::rasterize::*;
 
         for (start_idx, end_idx) in current_state.subpaths.iter().copied().chain(iter::once(current_state.path_edges.len())).tuple_windows() {
             if start_idx >= end_idx { continue; }
 
             // Use a path builder to create a simple bezier path
-            let mut path = BezierPathBuilder::<SimpleBezierPath>::start(current_state.path_edges[start_idx].start_point());
+            let mut path = BezierPathBuilder::<BezierSubpath>::start(current_state.path_edges[start_idx].start_point());
             for curve in current_state.path_edges[start_idx..end_idx].iter() {
                 path = path.curve_to(curve.control_points(), curve.end_point());
             }
@@ -219,12 +218,9 @@ where
                 path = path.line_to(current_state.path_edges[start_idx].start_point());
             }
 
-            // Turn into a contour
-            let path = path.build();
-            let (contour, offset) = PathContour::center_path(vec![path], 2);
-
             // Add to the edges
-            current_layer.edges.add_edge(Box::new(ContourEdge::new((offset.x(), offset.y()), shape_id, contour)));
+            let path = path.build();
+            current_layer.edges.add_edge(Box::new(path.to_even_odd_edge(shape_id)));
         }
 
         /*
