@@ -222,46 +222,5 @@ where
             let path = path.build();
             current_layer.edges.add_edge(Box::new(path.to_even_odd_edge(shape_id)));
         }
-
-        /*
-        match current_state.winding_rule {
-            canvas::WindingRule::EvenOdd => {
-                for edge in current_state.path_edges.iter() {
-                    current_layer.edges.add_edge(Box::new(EvenOddBezierCurveEdge::new(shape_id, edge.clone())));
-                }
-            }
-
-            canvas::WindingRule::NonZero => {
-                for edge in current_state.path_edges.iter() {
-                    current_layer.edges.add_edge(Box::new(NonZeroBezierCurveEdge::new(shape_id, edge.clone())));
-                }
-            }
-        }
-
-        // Generate lines for unclosed subpaths
-        for subpath_idx in 0..current_state.subpaths.len() {
-            // The subpath start and end index (inclusive)
-            let start_idx   = current_state.subpaths[subpath_idx];
-            let end_idx     = if subpath_idx+1 < current_state.subpaths.len() { current_state.subpaths[subpath_idx+1] } else { current_state.path_edges.len() };
-
-            // Ignore zero-length paths
-            if end_idx <= start_idx { continue; }
-            let end_idx = end_idx - 1;
-
-            // Get the start and end point of the subpath
-            let start_point = current_state.path_edges[start_idx].start_point();
-            let end_point   = current_state.path_edges[end_idx].end_point();
-
-            // Add a line edge if they don't match
-            if start_point != end_point {
-                match current_state.winding_rule {
-                    canvas::WindingRule::EvenOdd => 
-                        current_layer.edges.add_edge(Box::new(EvenOddBezierCurveEdge::<Curve<Coord2>>::new(shape_id, line_to_bezier(&(end_point, start_point))))),
-                    canvas::WindingRule::NonZero => 
-                        current_layer.edges.add_edge(Box::new(NonZeroBezierCurveEdge::<Curve<Coord2>>::new(shape_id, line_to_bezier(&(end_point, start_point))))),
-                }
-            }
-        }
-        */
     }
 }
