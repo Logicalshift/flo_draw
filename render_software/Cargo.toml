@@ -10,10 +10,8 @@ description         = "Software renderer for flo_canvas vector graphics"
 categories          = [ "graphics", "rendering", "gui" ]
 
 [features]
-default             = [ "render_png", "render_jpeg", "render_webp", "render_term", "multithreading" ]
+default             = [ "render_png", "render_term", "multithreading" ]
 render_png          = [ "png" ]
-render_webp         = [ "webp" ]
-render_jpeg         = [ "turbojpeg" ]
 render_term         = [ "render_png", "base64" ]
 multithreading      = [ "rayon" ]
 
@@ -24,7 +22,5 @@ wide                = "0.7"
 flo_canvas          = "0.4"
 flo_sparse_array    = "0.1"
 png                 = { version = "0.17", optional = true }
-webp                = { version = "0.2", optional = true }
-turbojpeg           = { version = "0.5", optional = true }
 base64              = { version = "0.21", optional = true }
 rayon               = { version = "1.7", optional = true }
