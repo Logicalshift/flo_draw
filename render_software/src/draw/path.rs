@@ -11,6 +11,7 @@ use flo_canvas::curves::line::*;
 use flo_canvas::curves::bezier::*;
 
 use smallvec::*;
+use itertools::*;
 
 impl DrawingState {
     ///
@@ -197,6 +198,34 @@ where
         let shape_id = ShapeId::new();
         current_layer.edges.declare_shape_description(shape_id, shape_descriptor);
 
+        // Create contours
+        use std::iter;
+        use flo_canvas::curves::bezier::path::*;
+        use flo_canvas::curves::bezier::rasterize::*;
+
+        for (start_idx, end_idx) in current_state.subpaths.iter().copied().chain(iter::once(current_state.path_edges.len())).tuple_windows() {
+            if start_idx >= end_idx { continue; }
+
+            // Use a path builder to create a simple bezier path
+            let mut path = BezierPathBuilder::<SimpleBezierPath>::start(current_state.path_edges[start_idx].start_point());
+            for curve in current_state.path_edges[start_idx..end_idx].iter() {
+                path = path.curve_to(curve.control_points(), curve.end_point());
+            }
+
+            // Close if unclosed
+            if current_state.path_edges[start_idx].start_point() != current_state.path_edges[end_idx-1].end_point() {
+                path = path.line_to(current_state.path_edges[start_idx].start_point());
+            }
+
+            // Turn into a contour
+            let path = path.build();
+            let (contour, offset) = PathContour::center_path(vec![path], 2);
+
+            // Add to the edges
+            current_layer.edges.add_edge(Box::new(ContourEdge::new((offset.x(), offset.y()), shape_id, contour)));
+        }
+
+        /*
         match current_state.winding_rule {
             canvas::WindingRule::EvenOdd => {
                 for edge in current_state.path_edges.iter() {
@@ -235,5 +264,6 @@ where
                 }
             }
         }
+        */
     }
 }
