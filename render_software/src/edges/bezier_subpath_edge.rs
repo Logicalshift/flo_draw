@@ -10,6 +10,30 @@ use std::ops::{Range};
 use std::vec;
 
 ///
+/// Bezier subpath that uses the 'non-zero' algorithm to decide whether a point is inside or outside the shape
+///
+#[derive(Clone)]
+pub struct BezierSubpathNonZeroEdge {
+    /// The ID of the shape that's inside this subpath
+    shape_id: ShapeId,
+
+    /// The subpath definition
+    subpath: BezierSubpath,
+}
+
+///
+/// Bezier subpath that uses the 'even-odd' algorithm to decide whether a point is inside or outside the shape
+///
+#[derive(Clone)]
+pub struct BezierSubpathEvenOddEdge {
+    /// The ID of the shape that's inside this subpath
+    shape_id: ShapeId,
+
+    /// The subpath definition
+    subpath: BezierSubpath,
+}
+
+///
 /// Represents a closed bezier subpath
 ///
 /// To become an edge, this needs to be combined with a winding rule style and a 
@@ -196,5 +220,49 @@ impl BezierSubpath {
 
         // Iterate over the results
         intercepts.into_iter()
+    }
+
+    ///
+    /// Creates a non-zero edge from this subpath
+    ///
+    pub fn to_non_zero_edge(self, shape_id: ShapeId) -> BezierSubpathNonZeroEdge {
+        BezierSubpathNonZeroEdge {
+            shape_id:   shape_id,
+            subpath:    self,
+        }
+    }
+
+    ///
+    /// Creates a non-zero edge from this subpath
+    ///
+    pub fn to_even_odd_edge(self, shape_id: ShapeId) -> BezierSubpathEvenOddEdge {
+        BezierSubpathEvenOddEdge {
+            shape_id:   shape_id,
+            subpath:    self,
+        }
+    }
+}
+
+impl EdgeDescriptor for BezierSubpathEvenOddEdge {
+    #[inline]
+    fn shape(&self) -> ShapeId { self.shape_id }
+
+    #[inline]
+    fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
+        ((self.subpath.x_bounds.start, self.subpath.y_bounds.start), (self.subpath.x_bounds.end, self.subpath.y_bounds.end))
+    }
+
+    #[inline]
+    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+        let mut y_pos_iter  = y_positions.iter();
+        let mut output_iter = output.iter_mut();
+
+        while let (Some(y_pos), Some(output)) = (y_pos_iter.next(), output_iter.next()) {
+            let intercepts = self.subpath.intercepts_on_line(*y_pos);
+
+            *output = intercepts.into_iter()
+                .map(|intercept| (EdgeInterceptDirection::Toggle, intercept.x_pos))
+                .collect();
+        }
     }
 }
