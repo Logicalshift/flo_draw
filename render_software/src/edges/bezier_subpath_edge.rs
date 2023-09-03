@@ -272,3 +272,48 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
         }
     }
 }
+
+impl EdgeDescriptor for BezierSubpathNonZeroEdge {
+    #[inline]
+    fn shape(&self) -> ShapeId { self.shape_id }
+
+    #[inline]
+    fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
+        ((self.subpath.x_bounds.start, self.subpath.y_bounds.start), (self.subpath.x_bounds.end, self.subpath.y_bounds.end))
+    }
+
+    #[inline]
+    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+        let mut y_pos_iter  = y_positions.iter();
+        let mut output_iter = output.iter_mut();
+
+        while let (Some(y_pos), Some(output)) = (y_pos_iter.next(), output_iter.next()) {
+            let intercepts = self.subpath.intercepts_on_line(*y_pos);
+
+            if self.subpath.y_bounds.contains(y_pos) {
+                *output = intercepts.into_iter()
+                    .map(|intercept| {
+                        // Compute the direction that the ray is crossing the curve
+                        let t               = intercept.t;
+                        let (d1, d2, d3)    = self.subpath.curves[intercept.curve_idx].wdy;
+
+                        let tangent_y       = de_casteljau3(t, d1, d2, d3);
+                        let normal_x        = -tangent_y;
+                        let side            = normal_x.signum();
+
+                        // The basic approach to the normal is to get the dot product like this, but we precalculate just what we need
+                        //let normal  = self.curve.normal_at_pos(t);
+                        //let side    = (normal.x() * 1.0 + normal.y() * 0.0).signum();  // Dot product with the 'ray' direction of the scanline
+
+                        if side <= 0.0 {
+                            (EdgeInterceptDirection::DirectionOut, intercept.x_pos)
+                        } else {
+                            (EdgeInterceptDirection::DirectionIn, intercept.x_pos)
+                        }
+                    }).collect();
+            } else {
+                *output = smallvec![];
+            }
+        }
+    }
+}

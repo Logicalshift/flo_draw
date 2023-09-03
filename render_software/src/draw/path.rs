@@ -220,7 +220,7 @@ where
 
             // Add to the edges
             let path = path.build();
-            current_layer.edges.add_edge(Box::new(path.to_even_odd_edge(shape_id)));
+            current_layer.edges.add_edge(Box::new(path.to_non_zero_edge(shape_id)));
         }
     }
 }
