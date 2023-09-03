@@ -178,44 +178,46 @@ impl BezierSubpath {
         // Sort the intercepts by x position
         intercepts.sort_unstable_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
 
-        // Detect double intercepts
-        // We use numerical methods to solve the intercept points, which is combined with the inherent imprecision of floating point numbers, so double intercepts will
-        // not always appear at the same place. So the approach is this: if two intercepts have very close x values, are for the end and start of neighboring curves, and
-        // are in the same direction, then count that intercept as just one. It's probably possible to fool this algorithm with a suitably constructed self-intersection shape.
-        // TODO: if there are very many very short curve sections we might end up with a whole cluster of intercepts that should count as one (isn't clear how short these
-        // need to be).
-        let mut intercept_idx = 0;
-        while intercept_idx < intercepts.len()-1 {
-            // Fetch the two intercepts that we want to check for doubling up
-            let prev = &intercepts[intercept_idx];
-            let next = &intercepts[intercept_idx+1];
+        if intercepts.len() > 1 {
+            // Detect double intercepts
+            // We use numerical methods to solve the intercept points, which is combined with the inherent imprecision of floating point numbers, so double intercepts will
+            // not always appear at the same place. So the approach is this: if two intercepts have very close x values, are for the end and start of neighboring curves, and
+            // are in the same direction, then count that intercept as just one. It's probably possible to fool this algorithm with a suitably constructed self-intersection shape.
+            // TODO: if there are very many very short curve sections we might end up with a whole cluster of intercepts that should count as one (isn't clear how short these
+            // need to be).
+            let mut intercept_idx = 0;
+            while intercept_idx < intercepts.len()-1 {
+                // Fetch the two intercepts that we want to check for doubling up
+                let prev = &intercepts[intercept_idx];
+                let next = &intercepts[intercept_idx+1];
 
-            if (prev.x_pos-next.x_pos).abs() <= VERY_CLOSE_X {
-                // Two points are very close together
-                if (prev.t < LOW_T && next.t > HIGH_T) || (prev.t > HIGH_T && next.t < LOW_T) {
-                    // One of prev, next is at the start of a section, and one is at the end of a section: calculate the direction of the line that the ray is crossing
-                    let prev_curve      = &self.curves[prev.curve_idx];
-                    let next_curve      = &self.curves[next.curve_idx];
+                if (prev.x_pos-next.x_pos).abs() <= VERY_CLOSE_X {
+                    // Two points are very close together
+                    if (prev.t < LOW_T && next.t > HIGH_T) || (prev.t > HIGH_T && next.t < LOW_T) {
+                        // One of prev, next is at the start of a section, and one is at the end of a section: calculate the direction of the line that the ray is crossing
+                        let prev_curve      = &self.curves[prev.curve_idx];
+                        let next_curve      = &self.curves[next.curve_idx];
 
-                    let prev_tangent_y   = de_casteljau3(prev.t, prev_curve.wdy.0, prev_curve.wdy.1, prev_curve.wdy.2);
-                    let prev_normal_x    = -prev_tangent_y;
-                    let prev_side        = prev_normal_x.signum();
+                        let prev_tangent_y   = de_casteljau3(prev.t, prev_curve.wdy.0, prev_curve.wdy.1, prev_curve.wdy.2);
+                        let prev_normal_x    = -prev_tangent_y;
+                        let prev_side        = prev_normal_x.signum();
 
-                    let next_tangent_y   = de_casteljau3(next.t, next_curve.wdy.0, next_curve.wdy.1, next_curve.wdy.2);
-                    let next_normal_x    = -next_tangent_y;
-                    let next_side        = next_normal_x.signum();
+                        let next_tangent_y   = de_casteljau3(next.t, next_curve.wdy.0, next_curve.wdy.1, next_curve.wdy.2);
+                        let next_normal_x    = -next_tangent_y;
+                        let next_side        = next_normal_x.signum();
 
-                    // Remove one of the intercepts if these two very close points are crossing the subpath in the same direction
-                    if prev_side == next_side {
-                        // Skip advancing the intercept index so we check for another duplicate at the same position
-                        intercepts.remove(intercept_idx);
-                        continue;
+                        // Remove one of the intercepts if these two very close points are crossing the subpath in the same direction
+                        if prev_side == next_side {
+                            // Skip advancing the intercept index so we check for another duplicate at the same position
+                            intercepts.remove(intercept_idx);
+                            continue;
+                        }
                     }
                 }
-            }
 
-            // Try the next intercept
-            intercept_idx += 1;
+                // Try the next intercept
+                intercept_idx += 1;
+            }
         }
 
         // Iterate over the results
