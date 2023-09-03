@@ -262,9 +262,13 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
         while let (Some(y_pos), Some(output)) = (y_pos_iter.next(), output_iter.next()) {
             let intercepts = self.subpath.intercepts_on_line(*y_pos);
 
-            *output = intercepts.into_iter()
-                .map(|intercept| (EdgeInterceptDirection::Toggle, intercept.x_pos))
-                .collect();
+            if self.subpath.y_bounds.contains(y_pos) {
+                *output = intercepts.into_iter()
+                    .map(|intercept| (EdgeInterceptDirection::Toggle, intercept.x_pos))
+                    .collect();
+            } else {
+                *output = smallvec![];
+            }
         }
     }
 }
