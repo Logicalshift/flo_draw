@@ -9,7 +9,6 @@ use crate::pixel_programs::*;
 use flo_canvas as canvas;
 use flo_canvas::curves::line::*;
 use flo_canvas::curves::bezier::*;
-use flo_canvas::curves::bezier::path::*;
 
 use smallvec::*;
 use itertools::*;
