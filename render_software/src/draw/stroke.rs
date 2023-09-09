@@ -63,8 +63,8 @@ where
 
         // Create the stroke options
         let stroke_options = StrokeOptions::default()
-            .with_accuracy(2.0/4000.0)
-            .with_min_sample_distance(1.0/4000.0)
+            .with_accuracy(2.0/1000.0)
+            .with_min_sample_distance(1.0/1000.0)
             .with_start_cap(current_state.stroke_start_cap)
             .with_end_cap(current_state.stroke_end_cap)
             .with_join(current_state.stroke_join);
