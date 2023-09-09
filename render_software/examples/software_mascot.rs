@@ -16,7 +16,22 @@ pub fn main() {
 
     // Create a canvas drawing and draw the mascot to it
     let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
-    canvas_drawing.draw(mascot);
+    canvas_drawing.draw(mascot.iter().cloned());
+
+    // Time how long it takes to draw the mascot to the canvas (full frames will often involve both of these steps)
+    for _ in 0..10 {
+        let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
+        canvas_drawing.draw(mascot.iter().cloned());
+    }
+
+    let render_start = Instant::now();
+    for _ in 0..100 {
+        let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
+        canvas_drawing.draw(mascot.iter().cloned());
+    }
+    let render_time = Instant::now().duration_since(render_start);
+    let avg_micros  = render_time.as_micros() / 100;
+    println!("Canvas drawing time: {}.{}ms", avg_micros/1000, avg_micros%1000);
 
     // Time some rendering (useful for profiling/optimisation)
     let mut frame   = vec![0u8; 1920*1080*4];
