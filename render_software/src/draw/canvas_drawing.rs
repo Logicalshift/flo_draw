@@ -1,13 +1,10 @@
 use super::drawing_state::*;
 use super::layer::*;
-use super::path::*;
-use super::stroke::*;
 use super::pixel_programs::*;
 
 use crate::pixel::*;
 use crate::pixel_programs::*;
 
-use canvas::NamespaceId;
 use flo_sparse_array::*;
 
 use flo_canvas as canvas;
@@ -190,7 +187,7 @@ where
         self.layers             = layers;
         self.current_state      = DrawingState::default();
         self.ordered_layers     = vec![LayerHandle(0)];
-        self.current_namespace  = NamespaceId::default();
+        self.current_namespace  = canvas::NamespaceId::default();
         self.next_layer_handle  = LayerHandle(1);
 
         // Free the old program data
