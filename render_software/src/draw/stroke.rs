@@ -9,6 +9,19 @@ use flo_canvas::curves::bezier::*;
 
 use itertools::*;
 
+impl DrawingState {
+    ///
+    /// Sets the width of the stroke
+    ///
+    pub fn line_width(&mut self, width: f64) {
+        let transform   = &self.transform.0;
+        let scale       = (transform[0][0]*transform[0][0] + transform[1][0]*transform[1][0]).sqrt();
+        let scale       = scale as f64;
+
+        self.stroke_width = width * scale;
+    }
+}
+
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N>
 where
     TPixel: 'static + Send + Sync + Pixel<N>,

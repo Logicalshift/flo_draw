@@ -112,7 +112,7 @@ where
                 Fill                                                => { self.fill(); },
                 Stroke                                              => { self.stroke(); },
 
-                LineWidth(width)                                    => { /* todo!() */ },
+                LineWidth(width)                                    => { self.current_state.line_width(width as _); },
                 LineWidthPixels(width_pixels)                       => { /* todo!() */ },
                 LineJoin(join_style)                                => { /* todo!() */ },
                 LineCap(cap_style)                                  => { /* todo!() */ },
