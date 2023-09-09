@@ -112,7 +112,7 @@ where
 
                 Path(path_op)                                       => { self.current_state.path_op(path_op); },
                 Fill                                                => { self.fill(); },
-                Stroke                                              => { /* todo!() */ },
+                Stroke                                              => { self.stroke(); },
 
                 LineWidth(width)                                    => { /* todo!() */ },
                 LineWidthPixels(width_pixels)                       => { /* todo!() */ },

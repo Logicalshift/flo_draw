@@ -6,6 +6,7 @@ use crate::pixel::*;
 use flo_canvas as canvas;
 use flo_canvas::curves::line::*;
 use flo_canvas::curves::bezier::*;
+use flo_canvas::curves::bezier::path as curves_path;
 
 ///
 /// A brush represents what will be used to fill in the next region 
@@ -52,6 +53,18 @@ pub struct DrawingState {
 
     /// The winding rule to apply to the next path to be drawn
     pub (super) winding_rule: canvas::WindingRule,
+
+    /// The width of the next stroke
+    pub (super) stroke_width: f64,
+
+    /// How lines should be joined together
+    pub (super) stroke_join: curves_path::LineJoin,
+
+    /// The start cap for the next stroke
+    pub (super) stroke_start_cap: curves_path::LineCap,
+
+    /// The end cap for the next stroke
+    pub (super) stroke_end_cap: curves_path::LineCap,
 }
 
 impl Default for DrawingState {
@@ -66,6 +79,10 @@ impl Default for DrawingState {
             path_edges:         vec![],
             subpaths:           vec![0],
             winding_rule:       canvas::WindingRule::NonZero,
+            stroke_width:       1.0/200.0,
+            stroke_join:        curves_path::LineJoin::Round,
+            stroke_start_cap:   curves_path::LineCap::Butt,
+            stroke_end_cap:     curves_path::LineCap::Butt,
         }
     }
 }
