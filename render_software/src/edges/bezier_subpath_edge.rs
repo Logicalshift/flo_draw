@@ -160,7 +160,7 @@ impl BezierSubpath {
     ///
     pub fn intercepts_on_line(&self, y_pos: f64) -> impl Iterator<Item=BezierSubpathIntercept> {
         // How close two intercepts have to be to invoke the 'double intercept' algorithm. This really depends on the precision of `solve_basis_for_t'
-        const VERY_CLOSE_X: f64 = 0.00000001;
+        const VERY_CLOSE_X: f64 = 1.0;
 
         // Compute the raw intercepts. These can have double intercepts where two curves meet
         let mut intercepts = self.curves
