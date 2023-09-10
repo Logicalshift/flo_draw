@@ -28,7 +28,15 @@ pub fn intercepts_1() {
         .curve_to((Coord2(-0.20490878576133656, -0.35126184759863815), Coord2(-0.20433759189752945, -0.35060831308093454)), Coord2(-0.2037662266584257, -0.34995458248326766))
         .build();
     let y_pos       = -0.36296296296296293;
+    
+    // Forward
     let intercepts  = path.intercepts_on_line(y_pos).collect::<Vec<_>>();
+
+    assert!(intercepts.len()%2 == 0, "Uneven number of intercepts ({:?})", intercepts);
+
+    // Reversed
+    let reversed_path   = path.reversed::<BezierSubpath>();
+    let intercepts      = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
 
     assert!(intercepts.len()%2 == 0, "Uneven number of intercepts ({:?})", intercepts);
 }
@@ -465,7 +473,15 @@ pub fn intercepts_2() {
         .build();
 
     let y_pos       = 0.22037037037037033;
+
+    // Forward
     let intercepts  = path.intercepts_on_line(y_pos).collect::<Vec<_>>();
+
+    assert!(intercepts.len()%2 == 0, "Uneven number of intercepts ({:?})", intercepts);
+
+    // Reversed
+    let reversed_path   = path.reversed::<BezierSubpath>();
+    let intercepts      = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
 
     assert!(intercepts.len()%2 == 0, "Uneven number of intercepts ({:?})", intercepts);
 }
