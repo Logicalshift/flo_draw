@@ -100,67 +100,6 @@ impl BezierPath for BezierSubpath {
     }
 }
 
-fn remove_double_intercepts(curve: &SubpathCurve, intercepts: SmallVec<[f64; 4]>, y_pos: f64) -> SmallVec<[f64; 4]> {
-    let mut intercepts = intercepts;
-
-    // Sort the intercepts by x position
-    let (wx1, wx2, wx3, wx4) = curve.wx;
-    intercepts.sort_by(|a, b| de_casteljau4(*a, wx1, wx2, wx3, wx4).total_cmp(&de_casteljau4(*b, wx1, wx2, wx3, wx4)));
-
-    // Intercepts should be in alternating directions: if there are any pairs in the same direction, remove one of them (whichever is furthest from the y position)
-    let (wdy1, wdy2, wdy3) = curve.wdy;
-    let mut idx = 0;
-    while idx < intercepts.len()-1 {
-        let t1 = intercepts[idx];
-        let t2 = intercepts[idx+1];
-
-        // We can compute the 'side' of the shape the intercept is on by looking at the direction of the normal (facing left or right in the x-axis, we calculate it from the tangent)
-        let prev_tangent_y   = de_casteljau3(t1, wdy1, wdy2, wdy3);
-        let prev_normal_x    = -prev_tangent_y;
-        let prev_side        = prev_normal_x.signum();
-
-        let next_tangent_y   = de_casteljau3(t2, wdy1, wdy2, wdy3);
-        let next_normal_x    = -next_tangent_y;
-        let next_side        = next_normal_x.signum();
-
-        if prev_side == next_side {
-            // Two consecutive intercepts on the same side: this should not happen with a single curve: keep the one that's a worse match for the y position
-            let ypos1 = de_casteljau4(t1, wx1, wx2, wx3, wx4);
-            let ypos2 = de_casteljau4(t2, wx1, wx2, wx3, wx4);
-            let ydiff1 = (ypos1-y_pos).abs();
-            let ydiff2 = (ypos2-y_pos).abs();
-
-            if ydiff1 < ydiff2 {
-                intercepts.remove(idx+1);
-            } else {
-                intercepts.remove(idx);
-            }
-        } else {
-            idx += 1;
-        }
-    }
-
-    intercepts
-}
-
-///
-/// Solves for the 't' position, and strips off any spurious double crossings
-///
-/// (In flo_curves, 'solve_basis_for_t' uses numerical methods which are not entirely precise and can occasionally produce roots at the beginning or end
-/// of a curve that can cause )
-///
-#[inline]
-fn solve_basis_and_remove_double_intercepts(curve: &SubpathCurve, y_pos: f64) -> SmallVec<[f64; 4]> {
-    let intercepts = solve_basis_for_t(curve.wy.0, curve.wy.1, curve.wy.2, curve.wy.3, y_pos);
-
-    if intercepts.len() > 1 && intercepts.iter().any(|t| *t <= 0.0 || *t >= 1.0) {
-        // Matches at exactly 0.0 or 1.0 may have a 'doubled-up' intercept: these can be found because they cross the shape in the same direction
-        remove_double_intercepts(curve, intercepts, y_pos)
-    } else {
-        intercepts
-    }
-}
-
 ///
 /// A bezier subpath can be used as the target of a bezier path factory
 ///
@@ -228,7 +167,8 @@ impl BezierSubpath {
             .iter()
             .enumerate()
             .filter(|(_idx, curve)| curve.y_bounds.contains(&y_pos))
-            .flat_map(|(idx, curve)| solve_basis_and_remove_double_intercepts(&curve, y_pos).into_iter()
+            .flat_map(|(idx, curve)| solve_basis_for_t(curve.wy.0, curve.wy.1, curve.wy.2, curve.wy.3, y_pos).into_iter()
+                .filter(|t| *t >= 0.0 && *t < 1.0)
                 .map(move |t| BezierSubpathIntercept { x_pos: de_casteljau4(t, curve.wx.0, curve.wx.1, curve.wx.2, curve.wx.3), curve_idx: idx, t: t, } ))
             .collect::<SmallVec<[_; 4]>>();
 
