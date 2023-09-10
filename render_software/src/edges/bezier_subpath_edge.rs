@@ -168,7 +168,7 @@ impl BezierSubpath {
             .enumerate()
             .filter(|(_idx, curve)| curve.y_bounds.contains(&y_pos))
             .flat_map(|(idx, curve)| solve_basis_for_t(curve.wy.0, curve.wy.1, curve.wy.2, curve.wy.3, y_pos).into_iter()
-                .filter(|t| *t >= 0.0 && *t <= 1.0)
+                .filter(|t| *t >= 0.0 && *t < 1.0)
                 .map(move |t| BezierSubpathIntercept { x_pos: de_casteljau4(t, curve.wx.0, curve.wx.1, curve.wx.2, curve.wx.3), curve_idx: idx, t: t, } ))
             .collect::<SmallVec<[_; 4]>>();
 
@@ -222,7 +222,7 @@ impl BezierSubpath {
             }
         }
 
-        debug_assert!(intercepts.len()%2 == 0, "\n\nIntercepts should be even, but found {} intercepts - {:?} - on line {:?} for path '{}'\n\n", intercepts.len(), intercepts, y_pos, flo_canvas::curves::debug::bezier_path_to_rust_definition(self));
+        debug_assert!(intercepts.len()%2 == 0, "\n\nIntercepts should be even, but found {} intercepts - {:?} - on line {:?} for path:\n'{}'\n\n", intercepts.len(), intercepts, y_pos, flo_canvas::curves::debug::bezier_path_to_rust_definition(self));
 
         // Iterate over the results
         intercepts.into_iter()
