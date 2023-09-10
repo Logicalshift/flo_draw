@@ -78,7 +78,7 @@ where
             if start_idx >= end_idx { continue; }
 
             // Use a path builder to create a simple bezier path
-            let mut path = BezierPathBuilder::<BezierSubpath>::start(current_state.path_edges[start_idx].start_point());
+            let mut path = BezierPathBuilder::<SimpleBezierPath>::start(current_state.path_edges[start_idx].start_point());
             for curve in current_state.path_edges[start_idx..end_idx].iter() {
                 path = path.curve_to(curve.control_points(), curve.end_point());
             }
