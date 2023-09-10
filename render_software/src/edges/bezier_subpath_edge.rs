@@ -223,6 +223,8 @@ impl BezierSubpath {
             }
         }
 
+        debug_assert!(intercepts.len()%2 == 0, "\n\nIntercepts should be even, but found {} intercepts on line {:?} for path '{}'\n\n", intercepts.len(), y_pos, flo_canvas::curves::debug::bezier_path_to_rust_definition(self));
+
         // Iterate over the results
         intercepts.into_iter()
     }
