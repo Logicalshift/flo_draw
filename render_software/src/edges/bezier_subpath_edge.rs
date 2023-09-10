@@ -162,12 +162,6 @@ impl BezierSubpath {
         // How close two intercepts have to be to invoke the 'double intercept' algorithm. This really depends on the precision of `solve_basis_for_t'
         const VERY_CLOSE_X: f64 = 0.00000001;
 
-        // How high the 'T' value has to be for a value to be considered at the end of a curve (this is relative to the curve construction)
-        const HIGH_T: f64 = 0.95;
-
-        // How low the 'T' value has to be for a value to be considered at the start of a curve
-        const LOW_T: f64 = 0.05;
-
         // Compute the raw intercepts. These can have double intercepts where two curves meet
         let mut intercepts = self.curves
             .iter()
@@ -191,13 +185,14 @@ impl BezierSubpath {
             let mut intercept_idx = 0;
             while intercept_idx < intercepts.len()-1 {
                 // Fetch the two intercepts that we want to check for doubling up
-                let prev = &intercepts[intercept_idx];
-                let next = &intercepts[intercept_idx+1];
+                let mut overlap_idx = intercept_idx + 1;
 
-                if (prev.x_pos-next.x_pos).abs() <= VERY_CLOSE_X {
-                    // Two points are very close together
-                    if (prev.t < LOW_T && next.t > HIGH_T) || (prev.t > HIGH_T && next.t < LOW_T) {
-                        // One of prev, next is at the start of a section, and one is at the end of a section: calculate the direction of the line that the ray is crossing
+                while overlap_idx < intercepts.len() && (intercepts[intercept_idx].x_pos - intercepts[overlap_idx].x_pos).abs() <= VERY_CLOSE_X {
+                    let prev = &intercepts[intercept_idx];
+                    let next = &intercepts[overlap_idx];
+
+                    if ((prev.curve_idx as isize) - (next.curve_idx as isize)).abs() == 1 {
+                        // Two points are very close together
                         let prev_curve      = &self.curves[prev.curve_idx];
                         let next_curve      = &self.curves[next.curve_idx];
 
@@ -212,9 +207,13 @@ impl BezierSubpath {
                         // Remove one of the intercepts if these two very close points are crossing the subpath in the same direction
                         if prev_side == next_side {
                             // Skip advancing the intercept index so we check for another duplicate at the same position
-                            intercepts.remove(intercept_idx);
-                            continue;
+                            intercepts.remove(overlap_idx);
+                        } else {
+                            overlap_idx += 1;
                         }
+                    } else {
+                        // Only test neighboring edges
+                        overlap_idx += 1;
                     }
                 }
 
@@ -223,7 +222,7 @@ impl BezierSubpath {
             }
         }
 
-        debug_assert!(intercepts.len()%2 == 0, "\n\nIntercepts should be even, but found {} intercepts on line {:?} for path '{}'\n\n", intercepts.len(), y_pos, flo_canvas::curves::debug::bezier_path_to_rust_definition(self));
+        debug_assert!(intercepts.len()%2 == 0, "\n\nIntercepts should be even, but found {} intercepts - {:?} - on line {:?} for path '{}'\n\n", intercepts.len(), intercepts, y_pos, flo_canvas::curves::debug::bezier_path_to_rust_definition(self));
 
         // Iterate over the results
         intercepts.into_iter()
