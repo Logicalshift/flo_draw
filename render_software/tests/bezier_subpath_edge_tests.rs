@@ -1,7 +1,75 @@
+use flo_render_software::draw::*;
 use flo_render_software::edges::*;
+use flo_render_software::pixel::*;
+use flo_render_software::render::*;
+use flo_render_software::scanplan::*;
 
 use flo_render_software::curves::geo::*;
+use flo_render_software::curves::bezier::*;
 use flo_render_software::curves::bezier::path::*;
+
+use flo_render_software::canvas::*;
+
+#[cfg(feature = "render_term")]
+fn render_path(path: &impl BezierPath<Point=Coord2>, y_pos: f64) {
+    // Get the range of x and y coordinates in this path
+    let mut min_x = f64::MAX;
+    let mut min_y = f64::MAX;
+    let mut max_x = f64::MIN;
+    let mut max_y = f64::MIN;
+
+    for curve in path.to_curves::<Curve<_>>() {
+        let (sp, (cp1, cp2), ep) = curve.all_points();
+
+        for p in [sp, cp1, cp2, ep] {
+            min_x = min_x.min(p.x());
+            min_y = min_y.min(p.y());
+            max_x = max_x.max(p.x());
+            max_y = max_y.max(p.y());
+        }
+    }
+
+    let width   = max_x - min_x;
+    let height  = max_y - min_y;
+
+    // Render the curve
+    let mut drawing = vec![];
+    drawing.clear_canvas(Color::Rgba(1.0, 1.0, 1.0, 1.0));
+
+    drawing.canvas_height(width.max(height) as _);
+    drawing.center_region(min_x as _, min_y as _, max_x as _, max_y as _);
+    drawing.line_width_pixels(1.0);
+    drawing.stroke_color(Color::Rgba(0.0, 0.5, 0.0, 1.0));
+
+    drawing.new_path();
+    drawing.move_to(path.start_point().x() as _, path.start_point().y() as _);
+    for curve in path.to_curves::<Curve<_>>() {
+        drawing.bezier_curve(&curve);
+    }
+    drawing.stroke();
+
+    // Render the scanline
+    drawing.line_width_pixels(2.0);
+    drawing.stroke_color(Color::Rgba(0.7, 0.0, 0.0, 0.5));
+
+    drawing.new_path();
+    drawing.move_to(min_x as _, y_pos as _);
+    drawing.line_to(max_x as _, y_pos as _);
+    drawing.stroke();
+
+    // Draw to the terminal
+    let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
+    canvas_drawing.draw(drawing.iter().cloned());
+    let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
+
+    let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner()), 1080);
+    term_renderer.render(renderer, &canvas_drawing);
+}
+
+#[cfg(not(feature = "render_term"))]
+fn render_path(_path: impl BezierPath<Point=Coord2>, _y_pos: f64) {
+    // Nothing to do
+}
 
 #[test]
 pub fn intercepts_1() {
@@ -29,6 +97,7 @@ pub fn intercepts_1() {
         .curve_to((Coord2(-0.20490878576133656, -0.35126184759863815), Coord2(-0.20433759189752945, -0.35060831308093454)), Coord2(-0.2037662266584257, -0.34995458248326766))
         .build();
     let y_pos       = -0.36296296296296293;
+    render_path(&path, y_pos);
 
     // Forward
     let intercepts  = path.intercepts_on_line(y_pos).collect::<Vec<_>>();
@@ -475,13 +544,16 @@ pub fn intercepts_2() {
         .build();
 
     let y_pos       = 0.22037037037037033;
+    render_path(&path, y_pos);
 
     // Forward
+    println!("-- Forward");
     let intercepts  = path.intercepts_on_line(y_pos).collect::<Vec<_>>();
 
     assert!(intercepts.len()%2 == 0, "Uneven number of intercepts ({:?})", intercepts);
 
     // Reversed
+    println!("-- Reversed");
     let reversed_path   = path.reversed::<BezierSubpath>();
     let intercepts      = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
 
@@ -500,6 +572,7 @@ pub fn intercepts_3() {
         .curve_to((Coord2(-0.2214273001268888, -0.07600551080026045), Coord2(-0.22056905493711532, -0.07613506769938819)), Coord2(-0.21971055224803498, -0.07626466346947276))
         .build();
     let y_pos       = -0.07592592592592584;
+    render_path(&path, y_pos);
 
     // Forward
     let intercepts  = path.intercepts_on_line(y_pos).collect::<Vec<_>>();
