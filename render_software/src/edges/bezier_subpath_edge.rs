@@ -163,12 +163,10 @@ fn is_corner_intercept(prev_curve: &SubpathCurve, next_curve: &SubpathCurve, int
     let next_t = if intercept.t > 0.5 { 0.0 } else { 1.0 };
 
     let prev_tangent_y   = de_casteljau3(prev_t, prev_curve.wdy.0, prev_curve.wdy.1, prev_curve.wdy.2);
-    let prev_normal_x    = -prev_tangent_y;
-    let prev_side        = prev_normal_x.signum();
+    let prev_side        = prev_tangent_y.signum();
 
     let next_tangent_y   = de_casteljau3(next_t, next_curve.wdy.0, next_curve.wdy.1, next_curve.wdy.2);
-    let next_normal_x    = -next_tangent_y;
-    let next_side        = next_normal_x.signum();
+    let next_side        = next_tangent_y.signum();
 
     prev_side != next_side
 }
