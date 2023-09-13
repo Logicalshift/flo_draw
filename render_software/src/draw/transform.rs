@@ -28,7 +28,7 @@ impl DrawingState {
         let window_height   = 2.0;
 
         // Work out the scale to use for this widget
-        let height          = f32::max(1.0, height);
+        let height          = f32::max(0.0000001, height);
         let scale           = window_height / height;
         let scale           = canvas::Transform2D::scale(scale, -scale);
 
