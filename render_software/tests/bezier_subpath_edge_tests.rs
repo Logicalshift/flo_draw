@@ -11,7 +11,7 @@ use flo_render_software::curves::bezier::path::*;
 use flo_render_software::canvas::*;
 
 #[cfg(feature = "render_term")]
-fn render_path(path: &impl BezierPath<Point=Coord2>, y_pos: f64) {
+fn render_path(path: &BezierSubpath, y_pos: f64) {
     // Get the range of x and y coordinates in this path
     let mut min_x = f64::MAX;
     let mut min_y = f64::MAX;
@@ -32,11 +32,13 @@ fn render_path(path: &impl BezierPath<Point=Coord2>, y_pos: f64) {
     let width   = max_x - min_x;
     let height  = max_y - min_y;
 
+    let canvas_height = width.max(height);
+
     // Render the curve
     let mut drawing = vec![];
     drawing.clear_canvas(Color::Rgba(1.0, 1.0, 1.0, 1.0));
 
-    drawing.canvas_height(width.max(height) as _);
+    drawing.canvas_height(canvas_height as _);
     drawing.center_region(min_x as _, min_y as _, max_x as _, max_y as _);
     drawing.line_width_pixels(1.0);
     drawing.stroke_color(Color::Rgba(0.0, 0.5, 0.0, 1.0));
@@ -56,6 +58,16 @@ fn render_path(path: &impl BezierPath<Point=Coord2>, y_pos: f64) {
     drawing.move_to(min_x as _, y_pos as _);
     drawing.line_to(max_x as _, y_pos as _);
     drawing.stroke();
+
+    // Draw the intercepts
+    let intercepts  = path.intercepts_on_line(y_pos).collect::<Vec<_>>();
+    drawing.stroke_color(Color::Rgba(0.0, 0.7, 0.7, 1.0));
+    for intercept in intercepts {
+        drawing.new_path();
+        drawing.move_to(intercept.x_pos as _, (y_pos-(canvas_height/270.0)) as _);
+        drawing.line_to(intercept.x_pos as _, (y_pos+(canvas_height/270.0)) as _);
+        drawing.stroke();
+    }
 
     // Draw to the terminal
     let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
