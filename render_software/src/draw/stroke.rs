@@ -20,6 +20,15 @@ impl DrawingState {
 
         self.stroke_width = width * scale;
     }
+
+    ///
+    /// Sets the width of the stroke
+    ///
+    pub fn line_width_pixels(&mut self, pixel_width: f64, height_pixels: f64) {
+        let pixel_size  = 2.0/height_pixels;
+
+        self.stroke_width = pixel_size * pixel_width;
+    }
 }
 
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N>

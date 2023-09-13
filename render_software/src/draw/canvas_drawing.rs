@@ -19,6 +19,9 @@ where
     /// The gamma correction value for the current drawing
     pub (super) gamma:              f64,
 
+    /// The height in pixels of the target (used for things like line_width_pixels)
+    pub (super) height_pixels:      f64,
+
     /// The program data ID for the program used to render the background
     pub (super) background:         PixelProgramDataId,
 
@@ -73,6 +76,7 @@ where
 
         CanvasDrawing {
             gamma:              2.2,
+            height_pixels:      1080.0,
             background:         background,
             current_namespace:  canvas::NamespaceId::default(),
             current_layer:      LayerHandle(0),
@@ -84,6 +88,15 @@ where
             program_data_cache: data_cache,
             state_stack:        vec![],
         }
+    }
+
+    ///
+    /// Sets the height in pixels of the target for this drawing
+    ///
+    /// (This is used for pixel-precise operations like `LineWidthPixels()`)
+    ///
+    pub fn set_pixel_height(&mut self, pixel_height: f64) {
+        self.height_pixels = pixel_height;
     }
 
     ///
@@ -113,7 +126,7 @@ where
                 Stroke                                              => { self.stroke(); },
 
                 LineWidth(width)                                    => { self.current_state.line_width(width as _); },
-                LineWidthPixels(width_pixels)                       => { /* todo!() */ },
+                LineWidthPixels(width_pixels)                       => { self.current_state.line_width_pixels(width_pixels as _, self.height_pixels as _); },
                 LineJoin(join_style)                                => { /* todo!() */ },
                 LineCap(cap_style)                                  => { /* todo!() */ },
                 NewDashPattern                                      => { /* todo!() */ },
