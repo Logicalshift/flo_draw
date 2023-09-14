@@ -207,7 +207,8 @@ impl BezierSubpath {
                         // Remove one of the intercepts if these two very close points are crossing the subpath in the same direction
                         if prev_side == next_side {
                             // Skip advancing the intercept index so we check for another duplicate at the same position
-                            intercepts.remove(overlap_idx);
+                            //intercepts.remove(overlap_idx);
+                            overlap_idx += 1;
                         } else {
                             overlap_idx += 1;
                         }
