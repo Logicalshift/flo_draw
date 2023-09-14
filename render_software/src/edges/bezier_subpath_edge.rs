@@ -71,13 +71,13 @@ struct SubpathCurve {
 #[derive(Clone, Copy, Debug)]
 pub struct BezierSubpathIntercept {
     /// The x position of this intercept
-    x_pos: f64,
+    pub x_pos: f64,
 
     /// The curve that the intercept belongs to
-    curve_idx: usize,
+    pub curve_idx: usize,
 
     /// The t-value of this intercept
-    t: f64,
+    pub t: f64,
 }
 
 impl Geo for BezierSubpath {
