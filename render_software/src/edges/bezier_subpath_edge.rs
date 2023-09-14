@@ -154,23 +154,6 @@ impl BezierPathFactory for BezierSubpath {
     }
 }
 
-///
-/// Returns true if an intercept is exactly on a corner (where the current curve is moving up or down and the following curve is moving the opposite direction)
-///
-fn is_corner_intercept(prev_curve: &SubpathCurve, next_curve: &SubpathCurve, intercept: &BezierSubpathIntercept) -> bool {
-    // Is a corner intercept if the next curve is moving away from this point (and we'll count this as not a hit)
-    let prev_t = if intercept.t > 0.5 { 1.0 } else { 0.0 };
-    let next_t = if intercept.t > 0.5 { 0.0 } else { 1.0 };
-
-    let prev_tangent_y   = de_casteljau3(prev_t, prev_curve.wdy.0, prev_curve.wdy.1, prev_curve.wdy.2);
-    let prev_side        = prev_tangent_y.signum();
-
-    let next_tangent_y   = de_casteljau3(next_t, next_curve.wdy.0, next_curve.wdy.1, next_curve.wdy.2);
-    let next_side        = next_tangent_y.signum();
-
-    prev_side != next_side
-}
-
 impl BezierSubpath {
     ///
     /// Finds the intercepts on a line of this subpath
@@ -201,30 +184,6 @@ impl BezierSubpath {
             // need to be).
             let mut intercept_idx = 0;
             while intercept_idx < intercepts.len()-1 {
-                // Remove corner intercepts (these are always at the end of a curve)
-                // TODO: and maybe a super-unlucky ray that hits a cusp? Can we generate a cusp that causes an intercept like this?
-                if intercepts[intercept_idx].t <= 0.0 {
-                    let next_idx    = if intercept_idx == 0 { intercepts.len()-1 } else { intercept_idx-1 };
-                    let prev        = &intercepts[intercept_idx];
-                    let next        = &intercepts[next_idx];
-
-                    if is_corner_intercept(&self.curves[prev.curve_idx], &self.curves[next.curve_idx], prev) {
-                        intercepts.remove(intercept_idx);
-                        continue;
-                    }
-                }
-
-                if intercepts[intercept_idx].t >= 1.0 {
-                    let next_idx    = if intercept_idx >= intercepts.len()-1 { 0 } else { intercept_idx+1 };
-                    let prev        = &intercepts[intercept_idx];
-                    let next        = &intercepts[next_idx];
-
-                    if is_corner_intercept(&self.curves[prev.curve_idx], &self.curves[next.curve_idx], prev) {
-                        intercepts.remove(intercept_idx);
-                        continue;
-                    }
-                }
-
                 // Fetch the two intercepts that we want to check for doubling up
                 let mut overlap_idx = intercept_idx + 1;
 
