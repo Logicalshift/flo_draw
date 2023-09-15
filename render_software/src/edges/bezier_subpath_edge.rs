@@ -175,7 +175,7 @@ impl BezierSubpath {
     ///
     pub fn intercepts_on_line(&self, y_pos: f64) -> impl Iterator<Item=BezierSubpathIntercept> {
         // How close two intercepts have to be to invoke the 'double intercept' algorithm. This really depends on the precision of `solve_basis_for_t'
-        const VERY_CLOSE_X: f64 = 1.0;
+        const VERY_CLOSE_X: f64 = 1e-6;
 
         // How short the control polygon needs to be between two points to consider them as the same
         const MIN_CONTROL_POLYGON_LENGTH: f64 = 1e-6;
@@ -198,8 +198,6 @@ impl BezierSubpath {
             // We use numerical methods to solve the intercept points, which is combined with the inherent imprecision of floating point numbers, so double intercepts will
             // not always appear at the same place. So the approach is this: if two intercepts have very close x values, are for the end and start of neighboring curves, and
             // are in the same direction, then count that intercept as just one. It's probably possible to fool this algorithm with a suitably constructed self-intersection shape.
-            // TODO: if there are very many very short curve sections we might end up with a whole cluster of intercepts that should count as one (isn't clear how short these
-            // need to be).
             let mut intercept_idx = 0;
             while intercept_idx < intercepts.len()-1 {
                 // Fetch the two intercepts that we want to check for doubling up
