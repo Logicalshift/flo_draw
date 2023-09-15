@@ -46,6 +46,7 @@ fn render_path(path: &BezierSubpath, y_pos: f64) {
     drawing.new_path();
     drawing.move_to(path.start_point().x() as _, path.start_point().y() as _);
     for curve in path.to_curves::<Curve<_>>() {
+        println!("  {:?}", control_polygon_length(&curve));
         drawing.bezier_curve(&curve);
     }
     drawing.stroke();
