@@ -209,7 +209,7 @@ impl BezierSubpath {
                     let prev = &intercepts[intercept_idx];
                     let next = &intercepts[overlap_idx];
 
-                    // TODO: this won't work if the overlap happens at the very start of the cruve
+                    // TODO: this won't work if the overlap happens at the very start of the path
                     if ((prev.curve_idx as isize) - (next.curve_idx as isize)).abs() == 1 {
                         // Two points are very close together
                         let prev_curve      = &self.curves[prev.curve_idx];
