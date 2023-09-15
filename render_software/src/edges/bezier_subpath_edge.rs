@@ -233,7 +233,7 @@ impl BezierSubpath {
                                 let next_section    = next_as_curve.section(0.0, next.t);
                                 let length          = control_polygon_length(&prev_section) + control_polygon_length(&next_section);
 
-                                if length < MIN_CONTROL_POLYGON_LENGTH {
+                                if length < MIN_CONTROL_POLYGON_LENGTH || (prev.t >= 1.0 && next.t <= 0.0) {
                                     // Points are very close in terms of curve arc length
                                     intercepts.remove(overlap_idx);
                                 } else {
@@ -246,7 +246,7 @@ impl BezierSubpath {
                                 let next_section    = next_as_curve.section(next.t, 1.0);
                                 let length          = control_polygon_length(&prev_section) + control_polygon_length(&next_section);
 
-                                if length < MIN_CONTROL_POLYGON_LENGTH {
+                                if length < MIN_CONTROL_POLYGON_LENGTH || (prev.t <= 0.0 && next.t >= 1.0) {
                                     // Points are very close in terms of curve arc length
                                     intercepts.remove(overlap_idx);
                                 } else {
