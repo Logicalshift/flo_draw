@@ -105,6 +105,9 @@ impl BezierPath for BezierSubpath {
 ///
 impl BezierPathFactory for BezierSubpath {
     fn from_points<FromIter: IntoIterator<Item=(Coord2, Coord2, Coord2)>>(start_point: Coord2, points: FromIter) -> Self {
+        // This should be much smaller than a pixel: we exclude very short curves whose control polygon is smaller than this
+        const MIN_DISTANCE: f64 = 1e-6;
+
         let mut curves      = vec![];
         let mut last_point  = start_point;
 
@@ -114,6 +117,11 @@ impl BezierPathFactory for BezierSubpath {
         let mut max_y       = f64::MIN;
 
         for (cp1, cp2, end_point) in points {
+            if last_point.is_near_to(&end_point, MIN_DISTANCE) && control_polygon_length(&Curve::from_points(last_point, (cp1, cp2), end_point)) <= MIN_DISTANCE {
+                // This curve is very short, so we exclude it from the path
+                continue;
+            }
+
             // Fetch the w values, and calculate the derivative and bounding box
             let wx          = (last_point.x(), cp1.x(), cp2.x(), end_point.x());
             let wy          = (last_point.y(), cp1.y(), cp2.y(), end_point.y());
