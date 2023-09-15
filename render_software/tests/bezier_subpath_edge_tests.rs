@@ -41,7 +41,7 @@ fn render_path(path: &BezierSubpath, y_pos: f64) {
     drawing.canvas_height(canvas_height as _);
     drawing.center_region(min_x as _, min_y as _, max_x as _, max_y as _);
     drawing.line_width_pixels(1.0);
-    drawing.stroke_color(Color::Rgba(0.0, 0.5, 0.0, 1.0));
+    drawing.stroke_color(Color::Rgba(0.0, 0.7, 0.0, 1.0));
 
     drawing.new_path();
     drawing.move_to(path.start_point().x() as _, path.start_point().y() as _);
@@ -49,6 +49,19 @@ fn render_path(path: &BezierSubpath, y_pos: f64) {
         drawing.bezier_curve(&curve);
     }
     drawing.stroke();
+
+    // Draw the control points
+    drawing.stroke_color(Color::Rgba(0.5, 0.5, 0.0, 1.0));
+    for curve in path.to_curves::<Curve<_>>() {
+        let (sp, (cp1, cp2), ep) = curve.all_points();
+
+        drawing.new_path();
+        drawing.move_to(cp2.x() as _, cp2.y() as _);
+        drawing.line_to(ep.x() as _, ep.y() as _);
+        drawing.move_to(cp1.x() as _, cp1.y() as _);
+        drawing.line_to(sp.x() as _, sp.y() as _);
+        drawing.stroke();
+    }
 
     // Render the scanline
     drawing.line_width_pixels(2.0);
@@ -62,10 +75,15 @@ fn render_path(path: &BezierSubpath, y_pos: f64) {
     // Draw the intercepts
     let intercepts  = path.intercepts_on_line(y_pos).collect::<Vec<_>>();
     drawing.stroke_color(Color::Rgba(0.0, 0.7, 0.7, 1.0));
-    for intercept in intercepts {
+    for (idx, intercept) in intercepts.into_iter().enumerate() {
         drawing.new_path();
-        drawing.move_to(intercept.x_pos as _, (y_pos-(canvas_height/270.0)) as _);
-        drawing.line_to(intercept.x_pos as _, (y_pos+(canvas_height/270.0)) as _);
+        if idx%2 == 0 {
+            drawing.move_to(intercept.x_pos as _, y_pos as _);
+            drawing.line_to(intercept.x_pos as _, (y_pos+(canvas_height/270.0)) as _);
+        } else {
+            drawing.move_to(intercept.x_pos as _, (y_pos-(canvas_height/270.0)) as _);
+            drawing.line_to(intercept.x_pos as _, y_pos as _);
+        }
         drawing.stroke();
     }
 
@@ -608,7 +626,7 @@ pub fn intercepts_4() {
         .curve_to((Coord2(-0.15358119165293727, -0.3874509705835756), Coord2(-0.15358116201062869, -0.38745097778831117)), Coord2(-0.15358113235942653, -0.3874509849952084))
         .curve_to((Coord2(-0.14395285570388705, -0.3897915520488139), Coord2(-0.13347754501911002, -0.38814846670720726)), Coord2(-0.12368297576904297, -0.38814846670720726))
         .curve_to((Coord2(-0.12368297576904297, -0.38814846670720726), Coord2(-0.12368297576904297, -0.38814846670720726)), Coord2(-0.12368297576904297, -0.38814846670720726))
-        .curve_to((Coord2(-0.11573407727766122, -0.38814846670720726), Coord2(-0.10778901214865767, -0.387407625817904)), Coord2(-0.10026765180850696, -0.3845881040578401))
+        .curve_to((Coord2(-0.11573407727766122, -0.38814846670720726), Coord2(-0.10778901214865767, -0.387407625817904)),  Coord2(-0.10026765180850696, -0.3845881040578401))
         .curve_to((Coord2(-0.10026771361469485, -0.3845881272323997), Coord2(-0.10026777542088273, -0.38458815040695926)), Coord2(-0.10026783724561433, -0.3845881735884719))
         .curve_to((Coord2(-0.09822388934861571, -0.3838216071313091), Coord2(-0.09396942460443825, -0.3849772284862197)), Coord2(-0.09396942460443825, -0.38279426097869873))
         .curve_to((Coord2(-0.09310145582857077, -0.38279426097869873), Coord2(-0.09223348705270328, -0.38279426097869873)), Coord2(-0.09136525786016136, -0.38279426097869873))
@@ -633,10 +651,12 @@ pub fn intercepts_4() {
         }
 
         assert!(intercepts.len()%2 == 0, "Uneven number of intercepts at ypos {:?} ({:?})", y_pos, intercepts);
+    }
 
+    let reversed_path = path.reversed::<BezierSubpath>();
+    for y_pos in reversed_path.to_curves::<Curve<_>>().into_iter().map(|curve| curve.start_point().y()) {
         // Reversed
-        let reversed_path   = path.reversed::<BezierSubpath>();
-        let intercepts      = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
+        let intercepts = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
 
         if intercepts.len()%2 != 0 {
             render_path(&path, y_pos);
