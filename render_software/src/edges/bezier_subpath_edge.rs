@@ -84,6 +84,13 @@ impl Geo for BezierSubpath {
     type Point = Coord2;
 }
 
+impl SubpathCurve {
+    /// Converts this to a 'normal' curve
+    fn as_curve(&self) -> Curve<Coord2> {
+        Curve::from_points(Coord2(self.wx.0, self.wy.0), (Coord2(self.wx.1, self.wy.1), Coord2(self.wx.2, self.wy.2)), Coord2(self.wx.3, self.wy.3))
+    }
+}
+
 impl BezierPath for BezierSubpath {
     type PointIter = vec::IntoIter<(Coord2, Coord2, Coord2)>;
 
@@ -170,6 +177,9 @@ impl BezierSubpath {
         // How close two intercepts have to be to invoke the 'double intercept' algorithm. This really depends on the precision of `solve_basis_for_t'
         const VERY_CLOSE_X: f64 = 1.0;
 
+        // How short the control polygon needs to be between two points to consider them as the same
+        const MIN_CONTROL_POLYGON_LENGTH: f64 = 1e-6;
+
         // Compute the raw intercepts. These can have double intercepts where two curves meet
         let mut intercepts = self.curves
             .iter()
@@ -199,6 +209,7 @@ impl BezierSubpath {
                     let prev = &intercepts[intercept_idx];
                     let next = &intercepts[overlap_idx];
 
+                    // TODO: this won't work if the overlap happens at the very start of the cruve
                     if ((prev.curve_idx as isize) - (next.curve_idx as isize)).abs() == 1 {
                         // Two points are very close together
                         let prev_curve      = &self.curves[prev.curve_idx];
@@ -214,9 +225,34 @@ impl BezierSubpath {
 
                         // Remove one of the intercepts if these two very close points are crossing the subpath in the same direction
                         if prev_side == next_side {
-                            // Skip advancing the intercept index so we check for another duplicate at the same position
-                            //intercepts.remove(overlap_idx);
-                            overlap_idx += 1;
+                            // Two intercepts are on the same side of the curve, on subsequent sections: they are (very probably) the same if the 'control polygon' distance between them is small enough
+                            if prev.curve_idx < next.curve_idx {
+                                let prev_as_curve   = prev_curve.as_curve();
+                                let next_as_curve   = next_curve.as_curve();
+                                let prev_section    = prev_as_curve.section(prev.t, 1.0);
+                                let next_section    = next_as_curve.section(0.0, next.t);
+                                let length          = control_polygon_length(&prev_section) + control_polygon_length(&next_section);
+
+                                if length < MIN_CONTROL_POLYGON_LENGTH {
+                                    // Points are very close in terms of curve arc length
+                                    intercepts.remove(overlap_idx);
+                                } else {
+                                    overlap_idx += 1;
+                                }
+                            } else {
+                                let prev_as_curve   = prev_curve.as_curve();
+                                let next_as_curve   = next_curve.as_curve();
+                                let prev_section    = prev_as_curve.section(0.0, prev.t);
+                                let next_section    = next_as_curve.section(next.t, 1.0);
+                                let length          = control_polygon_length(&prev_section) + control_polygon_length(&next_section);
+
+                                if length < MIN_CONTROL_POLYGON_LENGTH {
+                                    // Points are very close in terms of curve arc length
+                                    intercepts.remove(overlap_idx);
+                                } else {
+                                    overlap_idx += 1;
+                                }
+                            }
                         } else {
                             overlap_idx += 1;
                         }
