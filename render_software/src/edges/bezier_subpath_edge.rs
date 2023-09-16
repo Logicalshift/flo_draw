@@ -181,6 +181,20 @@ impl BezierPathFactory for BezierSubpath {
 
 impl BezierSubpath {
     ///
+    /// True if two curve indexes indicates that two curves are joined together
+    ///
+    #[inline]
+    fn curves_are_neighbors(&self, idx1: usize, idx2: usize) -> bool {
+        if idx1 == 0 && idx2 == self.curves.len()-1 {
+            true
+        } else if idx2 == 0 && idx1 == self.curves.len()-1 {
+            true
+        } else {
+            ((idx1 as isize) - (idx2 as isize)).abs() == 1
+        }
+    }
+
+    ///
     /// Finds the intercepts on a line of this subpath
     ///
     pub fn intercepts_on_line(&self, y_pos: f64) -> impl Iterator<Item=BezierSubpathIntercept> {
@@ -217,8 +231,7 @@ impl BezierSubpath {
                     let prev = &intercepts[intercept_idx];
                     let next = &intercepts[overlap_idx];
 
-                    // TODO: this won't work if the overlap happens at the very start of the path
-                    if ((prev.curve_idx as isize) - (next.curve_idx as isize)).abs() == 1 {
+                    if self.curves_are_neighbors(prev.curve_idx, next.curve_idx) {
                         // Two points are very close together
                         let prev_curve      = &self.curves[prev.curve_idx];
                         let next_curve      = &self.curves[next.curve_idx];
