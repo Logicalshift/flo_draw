@@ -154,8 +154,18 @@ impl BezierPathFactory for BezierSubpath {
             last_point = end_point;
         }
 
-        // If a subpath isn't closed, then rays might 'escape'
-        debug_assert!(start_point == last_point, "Bezier subpaths must be closed ({}, {} != {}, {})", start_point.x(), start_point.y(), last_point.x(), last_point.y());
+        // Move the last point if it's 'close enough' (probably we removed a final short curve rather than the path being left open)
+        if curves.len() > 0 && start_point != last_point && last_point.is_near_to(&start_point, MIN_DISTANCE) {
+            let last_curve = curves.last_mut().unwrap();
+
+            last_curve.wx.3 = start_point.x();
+            last_curve.wy.3 = start_point.y();
+
+            last_curve.wdy  = derivative4(last_curve.wy.0, last_curve.wy.1, last_curve.wy.2, last_curve.wy.3);
+        } else {
+            // If a subpath isn't closed, then rays might 'escape'
+            debug_assert!(start_point == last_point, "Bezier subpaths must be closed ({}, {} != {}, {})", start_point.x(), start_point.y(), last_point.x(), last_point.y());
+        }
 
         if curves.len() == 0 {
             panic!("Bezier subpaths must have at least one curve in them");
