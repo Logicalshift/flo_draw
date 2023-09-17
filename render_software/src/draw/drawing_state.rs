@@ -174,6 +174,23 @@ impl DrawingState {
     pub fn winding_rule(&mut self, winding_rule: canvas::WindingRule) {
         self.winding_rule = winding_rule;
     }
+
+    ///
+    /// Sets the line join style
+    ///
+    #[inline]
+    pub fn line_join(&mut self, join: canvas::LineJoin) {
+        self.stroke_join = join.into();
+    }
+
+    ///
+    /// Sets the line join style
+    ///
+    #[inline]
+    pub fn line_cap(&mut self, cap: canvas::LineCap) {
+        self.stroke_start_cap   = cap.into();
+        self.stroke_end_cap     = cap.into();
+    }
 }
 
 

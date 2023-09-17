@@ -127,8 +127,8 @@ where
 
                 LineWidth(width)                                    => { self.current_state.line_width(width as _); },
                 LineWidthPixels(width_pixels)                       => { self.current_state.line_width_pixels(width_pixels as _, self.height_pixels as _); },
-                LineJoin(join_style)                                => { /* todo!() */ },
-                LineCap(cap_style)                                  => { /* todo!() */ },
+                LineJoin(join_style)                                => { self.current_state.line_join(join_style); },
+                LineCap(cap_style)                                  => { self.current_state.line_cap(cap_style); },
                 NewDashPattern                                      => { /* todo!() */ },
                 DashLength(dash_length)                             => { /* todo!() */ },
                 DashOffset(dash_offset)                             => { /* todo!() */ },
