@@ -43,6 +43,9 @@ pub struct BezierSubpath {
     /// The curves within this subpath
     curves: Vec<SubpathCurve>,
 
+    /// Lookup table for finding which curves are where
+    space: Space1D<usize>,
+
     /// The bounding box (x coordinates)
     x_bounds: Range<f64>,
 
@@ -171,8 +174,12 @@ impl BezierPathFactory for BezierSubpath {
             panic!("Bezier subpaths must have at least one curve in them");
         }
 
+        let space = Space1D::from_data(curves.iter().enumerate()
+            .map(|(idx, curve)| (curve.y_bounds.clone(), idx)));
+
         BezierSubpath {
             curves:     curves,
+            space:      space,
             x_bounds:   min_x..max_x,
             y_bounds:   min_y..max_y
         }
