@@ -114,6 +114,23 @@ fn multiply_1() {
 }
 
 #[test]
+fn multiply_2() {
+    let col1 = U32LinearPixel::from_color(Color::Rgba(0.2, 0.4, 0.6, 1.0), 1.0);
+    let col2 = U32LinearPixel::from_components([65535.into(), 65535.into(), 65535.into(), 65535.into()]);
+
+    let col3            = col1 * col2;
+    let back_as_color   = col3.to_color(1.0);
+
+    let (r, g, b, a)    = back_as_color.to_rgba_components();
+
+    println!("{:?} {:?} {:?}", col1, col2, col3);
+    debug_assert!((r-0.2).abs() < 0.025, "r({}, {}, {}, {})", r, g, b, a);
+    debug_assert!((g-0.4).abs() < 0.025, "g({}, {}, {}, {})", r, g, b, a);
+    debug_assert!((b-0.6).abs() < 0.025, "b({}, {}, {}, {})", r, g, b, a);
+    debug_assert!((a-1.0).abs() < 0.01, "({}, {}, {}, {})", r, g, b, a);
+}
+
+#[test]
 fn source_over_1() {
     let col1 = U32LinearPixel::from_color(Color::Rgba(0.4980, 0.6039, 0.7647, 1.0), 2.2);
     let col2 = U32LinearPixel::from_color(Color::Rgba(0.7764, 0.6823, 0.8588, 0.6), 2.2);

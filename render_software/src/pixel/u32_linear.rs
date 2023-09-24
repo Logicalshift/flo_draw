@@ -107,9 +107,6 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for U32LinearPixel {
             let gamma = 1.0/gamma;
             if gamma != gamma_lut.gamma() { *gamma_lut = U8GammaLut::new(gamma) };
 
-            // Some values we use during the conversion
-            let f32x4_65535 = f32x4::splat(65535.0);
-
             let mut input   = input_pixels.iter();
             let mut output  = output_pixels.iter_mut();
 
@@ -143,12 +140,12 @@ impl AlphaBlend for U32LinearPixel {
         self * (factor as f32)
     }
 
-    #[inline] fn source_over(self, dest: Self) -> Self        { let src_alpha = self.0.as_array_ref()[3]; U32LinearPixel(self.0 + dest.0*(65535-src_alpha)) }
-    #[inline] fn dest_over(self, dest: Self) -> Self          { let dst_alpha = dest.0.as_array_ref()[3]; U32LinearPixel(self.0*(65535-dst_alpha) + dest.0) }
-    #[inline] fn source_in(self, dest: Self) -> Self          { let dst_alpha = dest.0.as_array_ref()[3]; U32LinearPixel(self.0*dst_alpha) }
-    #[inline] fn dest_in(self, dest: Self) -> Self            { let src_alpha = self.0.as_array_ref()[3]; U32LinearPixel(dest.0*src_alpha) }
-    #[inline] fn source_held_out(self, dest: Self) -> Self    { let dst_alpha = dest.0.as_array_ref()[3]; U32LinearPixel(self.0*(65535-dst_alpha)) }
-    #[inline] fn dest_held_out(self, dest: Self) -> Self      { let src_alpha = self.0.as_array_ref()[3]; U32LinearPixel(dest.0*(65535-src_alpha)) }
+    #[inline] fn source_over(self, dest: Self) -> Self        { let src_alpha = self.0.as_array_ref()[3]; U32LinearPixel(self.0 + ((dest.0*(65535-src_alpha) >> 16))) }
+    #[inline] fn dest_over(self, dest: Self) -> Self          { let dst_alpha = dest.0.as_array_ref()[3]; U32LinearPixel(((self.0*(65535-dst_alpha)) >> 16) + dest.0) }
+    #[inline] fn source_in(self, dest: Self) -> Self          { let dst_alpha = dest.0.as_array_ref()[3]; U32LinearPixel((self.0*dst_alpha) >> 16) }
+    #[inline] fn dest_in(self, dest: Self) -> Self            { let src_alpha = self.0.as_array_ref()[3]; U32LinearPixel((dest.0*src_alpha) >> 16) }
+    #[inline] fn source_held_out(self, dest: Self) -> Self    { let dst_alpha = dest.0.as_array_ref()[3]; U32LinearPixel(((self.0*(65535-dst_alpha))) >> 16) }
+    #[inline] fn dest_held_out(self, dest: Self) -> Self      { let src_alpha = self.0.as_array_ref()[3]; U32LinearPixel(((dest.0*(65535-src_alpha))) >> 16) }
     #[inline] fn source_atop(self, dest: Self) -> Self        { self.alpha_blend(dest, AlphaOperation::SourceAtop) }
     #[inline] fn dest_atop(self, dest: Self) -> Self          { self.alpha_blend(dest, AlphaOperation::DestAtop) }
 }
