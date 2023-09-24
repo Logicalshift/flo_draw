@@ -14,12 +14,12 @@ use std::ops::*;
 pub trait Pixel<const N: usize>
 where
     Self: Sized + Copy + Clone,
-    Self: Neg<Output=Self> + Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self>,
+    Self: Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self>,
     Self: Add<Self::Component, Output=Self> + Sub<Self::Component, Output=Self> + Mul<Self::Component, Output=Self> + Div<Self::Component, Output=Self>,
     Self: AlphaBlend,
     Self: ToGammaColorSpace<U8RgbaPremultipliedPixel>,
 {
-    type Component: Sized + Copy + Clone + AlphaValue + Neg<Output=Self::Component> + Add<Output=Self::Component> + Sub<Output=Self::Component> + Mul<Output=Self::Component> + Div<Output=Self::Component>;
+    type Component: Sized + Copy + Clone + AlphaValue + Add<Output=Self::Component> + Sub<Output=Self::Component> + Mul<Output=Self::Component> + Div<Output=Self::Component>;
 
     /// A pixel representing the 'black' colour
     fn black() -> Self;
