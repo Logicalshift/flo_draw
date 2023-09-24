@@ -212,10 +212,9 @@ impl BezierSubpath {
         const MIN_CONTROL_POLYGON_LENGTH: f64 = 1e-6;
 
         // Compute the raw intercepts. These can have double intercepts where two curves meet
-        let mut intercepts = self.curves
-            .iter()
-            .enumerate()
-            .filter(|(_idx, curve)| curve.y_bounds.contains(&y_pos))
+        let mut intercepts = self.space
+            .data_at_point(y_pos)
+            .map(|idx| (*idx, &self.curves[*idx]))
             .flat_map(|(idx, curve)| solve_basis_for_t(curve.wy.0, curve.wy.1, curve.wy.2, curve.wy.3, y_pos).into_iter()
                 .filter(|t| *t >= 0.0 && *t <= 1.0)
                 .map(move |t| BezierSubpathIntercept { x_pos: de_casteljau4(t, curve.wx.0, curve.wx.1, curve.wx.2, curve.wx.3), curve_idx: idx, t: t, } ))
