@@ -15,18 +15,18 @@ pub fn main() {
     let mascot = decode_drawing(MASCOT.chars()).collect::<Result<Vec<Draw>, _>>().unwrap();
 
     // Create a canvas drawing and draw the mascot to it
-    let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
+    let mut canvas_drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
     canvas_drawing.draw(mascot.iter().cloned());
 
     // Time how long it takes to draw the mascot to the canvas (full frames will often involve both of these steps)
     for _ in 0..10 {
-        let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
+        let mut canvas_drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
         canvas_drawing.draw(mascot.iter().cloned());
     }
 
     let render_start = Instant::now();
     for _ in 0..100 {
-        let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
+        let mut canvas_drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
         canvas_drawing.draw(mascot.iter().cloned());
     }
     let render_time = Instant::now().duration_since(render_start);
