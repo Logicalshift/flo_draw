@@ -15,18 +15,21 @@ pub fn main() {
     let mascot = decode_drawing(MASCOT.chars()).collect::<Result<Vec<Draw>, _>>().unwrap();
 
     // Create a canvas drawing and draw the mascot to it
-    let mut canvas_drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
+    let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
     canvas_drawing.draw(mascot.iter().cloned());
+
+    let mut u32_canvas_drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
+    u32_canvas_drawing.draw(mascot.iter().cloned());
 
     // Time how long it takes to draw the mascot to the canvas (full frames will often involve both of these steps)
     for _ in 0..10 {
-        let mut canvas_drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
+        let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
         canvas_drawing.draw(mascot.iter().cloned());
     }
 
     let render_start = Instant::now();
     for _ in 0..100 {
-        let mut canvas_drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
+        let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
         canvas_drawing.draw(mascot.iter().cloned());
     }
     let render_time = Instant::now().duration_since(render_start);
@@ -50,13 +53,22 @@ pub fn main() {
     }
     let render_time = Instant::now().duration_since(render_start);
     let avg_micros  = render_time.as_micros() / 100;
-    println!("Frame render time: {}.{}ms", avg_micros/1000, avg_micros%1000);
+    println!("F32 frame render time: {}.{}ms", avg_micros/1000, avg_micros%1000);
+
+    let render_start = Instant::now();
+    for _ in 0..100 {
+        let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(u32_canvas_drawing.program_runner()), 1080);
+        rgba.render(renderer, &u32_canvas_drawing);
+    }
+    let render_time = Instant::now().duration_since(render_start);
+    let avg_micros  = render_time.as_micros() / 100;
+    println!("U32 fixed-point frame render time: {}.{}ms", avg_micros/1000, avg_micros%1000);
 
     // Render the mascot to the terminal
     let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
 
-    let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner()), 1080);
-    term_renderer.render(renderer, &canvas_drawing);
+    let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(u32_canvas_drawing.program_runner()), 1080);
+    term_renderer.render(renderer, &u32_canvas_drawing);
 }
 
 /// Mascot in canvas encoding form
