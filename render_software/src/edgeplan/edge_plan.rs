@@ -56,6 +56,20 @@ where
     }
 
     ///
+    /// Performs any caching required on the edges so that `intercepts_on_scanlines` will return accurate results
+    ///
+    #[cfg(not(feature="multithreading"))]
+    pub fn prepare_to_render(&mut self) {
+        // Prepare all of the edges that have not been prepared before
+        self.edges.iter_mut()
+            .skip(self.max_prepared)
+            .for_each(|edge| edge.prepare_to_render());
+
+        // Update the 'max_prepared' value so that we won't prepare edges again
+        self.max_prepared = self.edges.len();
+    }
+
+    ///
     /// Stores the details of how the interior of a shape should be rendered
     ///
     pub fn declare_shape_description(&mut self, shape_id: ShapeId, descriptor: ShapeDescriptor) {
