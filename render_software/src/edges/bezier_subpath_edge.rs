@@ -43,8 +43,8 @@ pub struct BezierSubpath {
     /// The curves within this subpath
     curves: Vec<SubpathCurve>,
 
-    /// Lookup table for finding which curves are where
-    space: Space1D<usize>,
+    /// Lookup table for finding which curves are where (or None if this has not been calculated yet)
+    space: Option<Space1D<usize>>,
 
     /// The bounding box (x coordinates)
     x_bounds: Range<f64>,
@@ -174,12 +174,9 @@ impl BezierPathFactory for BezierSubpath {
             panic!("Bezier subpaths must have at least one curve in them");
         }
 
-        let space = Space1D::from_data(curves.iter().enumerate()
-            .map(|(idx, curve)| (curve.y_bounds.clone(), idx)));
-
         BezierSubpath {
             curves:     curves,
-            space:      space,
+            space:      None,
             x_bounds:   min_x..max_x,
             y_bounds:   min_y..max_y
         }
@@ -187,6 +184,16 @@ impl BezierPathFactory for BezierSubpath {
 }
 
 impl BezierSubpath {
+    ///
+    /// Fills in the 'space' structure in preparation to retrieve intercepts using `intercepts_on_line()`
+    ///
+    #[inline]
+    pub fn prepare_to_render(&mut self) {
+        let space = Space1D::from_data(self.curves.iter().enumerate()
+            .map(|(idx, curve)| (curve.y_bounds.clone(), idx)));
+        self.space = Some(space);
+    }
+
     ///
     /// True if two curve indexes indicates that two curves are joined together
     ///
@@ -204,6 +211,8 @@ impl BezierSubpath {
     ///
     /// Finds the intercepts on a line of this subpath
     ///
+    /// `prepare_to_render()` must be called before this can be used
+    ///
     pub fn intercepts_on_line(&self, y_pos: f64) -> impl Iterator<Item=BezierSubpathIntercept> {
         // How close two intercepts have to be to invoke the 'double intercept' algorithm. This really depends on the precision of `solve_basis_for_t'
         const VERY_CLOSE_X: f64 = 1e-6;
@@ -214,6 +223,8 @@ impl BezierSubpath {
         // Compute the raw intercepts. These can have double intercepts where two curves meet
         let mut intercepts = if self.y_bounds.contains(&y_pos) {
             self.space
+                .as_ref()
+                .unwrap()
                 .data_at_point(y_pos)
                 .map(|idx| (*idx, &self.curves[*idx]))
                 .flat_map(|(idx, curve)| solve_basis_for_t(curve.wy.0, curve.wy.1, curve.wy.2, curve.wy.3, y_pos).into_iter()
@@ -327,6 +338,7 @@ impl BezierSubpath {
 
 impl EdgeDescriptor for BezierSubpathEvenOddEdge {
     fn prepare_to_render(&mut self) {
+        self.subpath.prepare_to_render();
     }
 
     #[inline]
@@ -358,6 +370,7 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
 
 impl EdgeDescriptor for BezierSubpathNonZeroEdge {
     fn prepare_to_render(&mut self) {
+        self.subpath.prepare_to_render();
     }
 
     #[inline]
