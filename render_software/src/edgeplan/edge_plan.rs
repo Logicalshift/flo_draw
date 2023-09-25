@@ -19,6 +19,9 @@ where
 
     /// The edges themselves
     edges: Vec<TEdge>,
+
+    /// The highest edge index that 'prepare_to_render' has been called on
+    max_prepared: usize,
 }
 
 impl<TEdge> EdgePlan<TEdge>
@@ -30,9 +33,26 @@ where
     ///
     pub fn new() -> EdgePlan<TEdge> {
         EdgePlan {
-            shapes: SparseArray::empty(),
-            edges:  vec![],
+            shapes:         SparseArray::empty(),
+            edges:          vec![],
+            max_prepared:   0,
         }
+    }
+
+    ///
+    /// Performs any caching required on the edges so that `intercepts_on_scanlines` will return accurate results
+    ///
+    #[cfg(feature="multithreading")]
+    pub fn prepare_to_render(&mut self) {
+        use rayon::prelude::*;
+
+        // Prepare all of the edges that have not been prepared before
+        self.edges.par_iter_mut()
+            .skip(self.max_prepared)
+            .for_each(|edge| edge.prepare_to_render());
+
+        // Update the 'max_prepared' value so that we won't prepare edges again
+        self.max_prepared = self.edges.len();
     }
 
     ///
@@ -105,6 +125,8 @@ where
 
     ///
     /// Returns the edges that intercept a scanline. Shapes are entered on the right-hand side of any intercepts.
+    ///
+    /// Note that `prepare_to_render()` must have been called before this function can be used to retrieve accurate results.
     ///
     pub fn intercepts_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [Vec<EdgeIntercept>]) {
         // Extend the edge intercepts to cover the number of y-positions we have (can be larger than needed but not smaller)
