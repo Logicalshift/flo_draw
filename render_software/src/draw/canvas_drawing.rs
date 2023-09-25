@@ -169,6 +169,36 @@ where
                 DrawText(font_id, text, x, y)                       => { /* todo!() */ },
             }
         }
+
+        // TODO: really want to defer this until we get to the point where we are actually planning to render something
+        // (It's more efficient to only call this immediately before a render, in case there are things on the canvas that are never ultimately rendered)
+        self.prepare_to_render();
+    }
+
+    ///
+    /// Prepares the layers in this drawing for rendering
+    ///
+    #[cfg(feature="multithreading")]
+    fn prepare_to_render(&mut self) {
+        use rayon::prelude::*;
+
+        let mut layers = self.layers.iter_mut()
+            .map(|(_, layer)| layer)
+            .collect::<Vec<_>>();
+
+        // Prepare each layer for rendering
+        layers.par_iter_mut()
+            .for_each(|layer| layer.edges.prepare_to_render());
+    }
+
+    ///
+    /// Prepares the layers in this drawing for rendering
+    ///
+    #[cfg(not(feature="multithreading"))]
+    fn prepare_to_render(&mut self) {
+        // Prepare each layer for rendering
+        self.layers.iter_mut()
+            .for_each(|(_, layer)| layer.edges.prepare_to_render());
     }
 
     ///
