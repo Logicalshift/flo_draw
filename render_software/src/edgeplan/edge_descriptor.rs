@@ -42,6 +42,15 @@ pub enum EdgeInterceptDirection {
 ///
 pub trait EdgeDescriptor : Send + Sync {
     ///
+    /// Performs any pre-calculations needed before the `intercepts()` call can be made
+    ///
+    /// This serves two purposes: firstly if an edge is never actually used for rendering, this will never be called,
+    /// speeding up how a scene is rendered. Secondly this can be run in parallel for all of the edges in a scene,
+    /// increasing the performance on multi-core systems.
+    ///
+    fn prepare_to_render(&mut self);
+
+    ///
     /// Returns the ID of the shape that this edge is a boundary for
     ///
     /// Edges represent the boundary between the region outside of this shape and the region inside of it. Shapes may
@@ -60,6 +69,9 @@ pub trait EdgeDescriptor : Send + Sync {
     ///
     /// Returns the intercepts for this edge at a particular y position
     ///
+    /// `prepare_to_render()` must have been called on this edge at least once before before this is called.
+    /// This function may not return valid results until this has been done.
+    ///
     /// The API here returns intercepts for as many y-positions as needed: this is more efficient with the
     /// layered design of this renderer as it makes it possible to run the inner loop of the algorithm
     /// multiple times (or even take advantage of vectorisation), and use previous results to derive future
@@ -74,6 +86,7 @@ pub trait EdgeDescriptor : Send + Sync {
 }
 
 impl EdgeDescriptor for Box<dyn EdgeDescriptor> {
+    #[inline] fn prepare_to_render(&mut self)                       { (**self).prepare_to_render() }
     #[inline] fn shape(&self) -> ShapeId                            { (**self).shape() }
     #[inline] fn bounding_box(&self) -> ((f64, f64), (f64, f64))    { (**self).bounding_box() }
     #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) { 

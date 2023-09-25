@@ -42,6 +42,10 @@ where
     TContour: Send + Sync + SampledContour,
 {
     #[inline]
+    fn prepare_to_render(&mut self) {
+    }
+
+    #[inline]
     fn shape(&self) -> ShapeId { 
         self.shape_id
     }

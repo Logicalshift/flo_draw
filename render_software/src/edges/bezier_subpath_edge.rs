@@ -326,6 +326,9 @@ impl BezierSubpath {
 }
 
 impl EdgeDescriptor for BezierSubpathEvenOddEdge {
+    fn prepare_to_render(&mut self) {
+    }
+
     #[inline]
     fn shape(&self) -> ShapeId { self.shape_id }
 
@@ -354,6 +357,9 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
 }
 
 impl EdgeDescriptor for BezierSubpathNonZeroEdge {
+    fn prepare_to_render(&mut self) {
+    }
+
     #[inline]
     fn shape(&self) -> ShapeId { self.shape_id }
 
