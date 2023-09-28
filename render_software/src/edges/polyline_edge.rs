@@ -103,8 +103,13 @@ impl Polyline {
     ///
     #[inline]
     pub fn new(points: impl IntoIterator<Item=Coord2>) -> Self {
+        let mut points = points.into_iter().collect::<Vec<_>>();
+        if points.last() != points.get(0) {
+            points.push(points.get(0).copied().unwrap());
+        }
+
         Polyline {
-            value:          PolylineValue::Points(points.into_iter().collect()),
+            value:          PolylineValue::Points(points),
             bounding_box:   ((0.0, 0.0), (0.0, 0.0)),
         }
     }
@@ -240,7 +245,9 @@ impl EdgeDescriptor for PolylineNonZeroEdge {
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
         for (y_pos, output) in y_positions.iter().zip(output.iter_mut()) {
-            self.line.intercepts_on_line(*y_pos, output)
+            self.line.intercepts_on_line(*y_pos, output);
+
+            debug_assert!(output.len() % 2 == 0, "Odd number of intercepts on line y={} ({:?})", y_pos, output);
         }
     }
 }
@@ -274,6 +281,8 @@ impl EdgeDescriptor for PolylineEvenOddEdge {
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
         for (y_pos, output) in y_positions.iter().zip(output.iter_mut()) {
             self.line.intercepts_on_line(*y_pos, output);
+
+            debug_assert!(output.len() % 2 == 0, "Odd number of intercepts on line y={} ({:?})", y_pos, output);
 
             for (direction, _) in output.iter_mut() {
                 *direction = EdgeInterceptDirection::Toggle;
