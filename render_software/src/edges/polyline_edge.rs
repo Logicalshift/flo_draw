@@ -190,6 +190,26 @@ impl Polyline {
             }
         }
     }
+
+    ///
+    /// Creates a non-zero edge from this polyline
+    ///
+    pub fn to_non_zero_edge(self, shape_id: ShapeId) -> PolylineNonZeroEdge {
+        PolylineNonZeroEdge {
+            shape_id: shape_id,
+            line: self
+        }
+    }
+
+    ///
+    /// Creates an even-odd edge from this polyline
+    ///
+    pub fn to_even_odd_edge(self, shape_id: ShapeId) -> PolylineEvenOddEdge {
+        PolylineEvenOddEdge {
+            shape_id: shape_id,
+            line: self
+        }
+    }
 }
 
 impl PolylineNonZeroEdge {
