@@ -1,3 +1,4 @@
+use super::polyline_edge::*;
 use crate::edgeplan::*;
 
 use flo_canvas::curves::bezier::path::*;
@@ -333,6 +334,21 @@ impl BezierSubpath {
             shape_id:   shape_id,
             subpath:    self,
         }
+    }
+
+    ///
+    /// Creates a polyline from this path
+    ///
+    pub fn flatten_to_polyline(self, min_length: f64, flatness: f64) -> Polyline {
+        use std::iter;
+
+        // TODO: this just creates the most basic polygon possible
+        let start_point = Coord2(self.curves[0].wx.0, self.curves[1].wy.1);
+        Polyline::new(iter::once(start_point)
+            .chain(self.curves.into_iter()
+                .map(|curve| {
+                    Coord2(curve.wx.3, curve.wy.3)
+                })))
     }
 }
 
