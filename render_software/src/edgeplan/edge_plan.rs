@@ -144,7 +144,7 @@ where
     ///
     pub fn intercepts_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [Vec<EdgeIntercept>]) {
         // Extend the edge intercepts to cover the number of y-positions we have (can be larger than needed but not smaller)
-        let mut edge_intercepts = vec![vec![]; y_positions.len()];
+        let mut edge_intercepts = vec![smallvec![]; y_positions.len()];
 
         // Clear the output
         output.iter_mut().for_each(|val| val.clear());
@@ -157,7 +157,6 @@ where
         //  - for anti-aliasing we need a way to track intercepts on the previous scanline for the same shape (usually the same edge, but sometimes the preceding or following edge)
         for edge in self.edges.iter() {
             // Read the intercepts from this edge (we rely on the 'intercepts' method overwriting any old values)
-            edge_intercepts.iter_mut().for_each(|intercept| intercept.clear());
             edge.intercepts(y_positions, &mut edge_intercepts);
 
             for idx in 0..y_positions.len() {
