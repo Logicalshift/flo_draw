@@ -7,6 +7,19 @@ use smallvec::*;
 
 use flo_sparse_array::*;
 
+use std::ops::{Range};
+
+///
+/// Data stored for an edge in the edge plan
+///
+struct EdgeData<TEdge>
+where
+    TEdge: EdgeDescriptor,
+{
+    edge: TEdge,
+    y_bounds: Range<f64>,
+}
+
 ///
 /// An edge plan describes a 2 dimensional space as a set of edges that divide 
 ///
@@ -18,7 +31,7 @@ where
     shapes: SparseArray<ShapeDescriptor>,
 
     /// The edges themselves
-    edges: Vec<TEdge>,
+    edges: Vec<EdgeData<TEdge>>,
 
     /// The highest edge index that 'prepare_to_render' has been called on
     max_prepared: usize,
@@ -49,7 +62,14 @@ where
         // Prepare all of the edges that have not been prepared before
         self.edges.par_iter_mut()
             .skip(self.max_prepared)
-            .for_each(|edge| edge.prepare_to_render());
+            .for_each(|edge| {
+                // Prepare the edge to render
+                edge.edge.prepare_to_render();
+
+                // The bounding_box() call should have accurate data at this point, so update the edge bounds
+                let ((_, min_y), (_, max_y)) = edge.edge.bounding_box();
+                edge.y_bounds = min_y..max_y;
+            });
 
         // Update the 'max_prepared' value so that we won't prepare edges again
         self.max_prepared = self.edges.len();
@@ -63,7 +83,14 @@ where
         // Prepare all of the edges that have not been prepared before
         self.edges.iter_mut()
             .skip(self.max_prepared)
-            .for_each(|edge| edge.prepare_to_render());
+            .for_each(|edge| {
+                // Prepare the edge to render
+                edge.edge.prepare_to_render();
+
+                // The bounding_box() call should have accurate data at this point, so update the edge bounds
+                let ((_, min_y), (_, max_y)) = edge.edge.bounding_box();
+                edge.y_bounds = min_y..max_y;
+            });
 
         // Update the 'max_prepared' value so that we won't prepare edges again
         self.max_prepared = self.edges.len();
@@ -106,7 +133,11 @@ where
     ///
     #[inline]
     pub fn add_edge(&mut self, new_edge: TEdge) {
-        self.edges.push(new_edge);
+        // The y-bounds are calculated later on when we prepare to render
+        self.edges.push(EdgeData {
+            edge:       new_edge,
+            y_bounds:   f64::MIN..f64::MAX,
+        });
     }
 
     ///
@@ -146,6 +177,14 @@ where
         // Extend the edge intercepts to cover the number of y-positions we have (can be larger than needed but not smaller)
         let mut edge_intercepts = vec![smallvec![]; y_positions.len()];
 
+        let mut y_min = f64::MAX;
+        let mut y_max = f64::MIN;
+
+        y_positions.iter().for_each(|pos| {
+            y_min = y_min.min(*pos);
+            y_max = y_max.max(*pos);
+        });
+
         // Clear the output
         output.iter_mut().for_each(|val| val.clear());
 
@@ -156,14 +195,17 @@ where
         //      same order
         //  - for anti-aliasing we need a way to track intercepts on the previous scanline for the same shape (usually the same edge, but sometimes the preceding or following edge)
         for edge in self.edges.iter() {
-            // Read the intercepts from this edge (we rely on the 'intercepts' method overwriting any old values)
-            edge.intercepts(y_positions, &mut edge_intercepts);
+            if edge.y_bounds.start <= y_max && edge.y_bounds.end >= y_min {
+                // Read the intercepts from this edge (we rely on the 'intercepts' method overwriting any old values)
+                let shape_id = edge.edge.shape();
+                edge.edge.intercepts(y_positions, &mut edge_intercepts);
 
-            for idx in 0..y_positions.len() {
-                let output = &mut output[idx];
+                for idx in 0..y_positions.len() {
+                    let output = &mut output[idx];
 
-                for (direction, pos) in edge_intercepts[idx].iter() {
-                    output.push(EdgeIntercept { shape: edge.shape(), direction: *direction, x_pos: *pos });
+                    for (direction, pos) in edge_intercepts[idx].iter() {
+                        output.push(EdgeIntercept { shape: shape_id, direction: *direction, x_pos: *pos });
+                    }
                 }
             }
         }
