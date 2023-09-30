@@ -366,7 +366,7 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
     }
 
     #[inline]
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<(EdgeInterceptDirection, f64)>]) {
         let mut y_pos_iter  = y_positions.iter();
         let mut output_iter = output.iter_mut();
 
@@ -374,11 +374,8 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
             let intercepts = self.subpath.intercepts_on_line(*y_pos);
 
             if self.subpath.y_bounds.contains(y_pos) {
-                *output = intercepts.into_iter()
-                    .map(|intercept| (EdgeInterceptDirection::Toggle, intercept.x_pos))
-                    .collect();
-            } else {
-                *output = smallvec![];
+                output.extend(intercepts.into_iter()
+                    .map(|intercept| (EdgeInterceptDirection::Toggle, intercept.x_pos)))
             }
         }
     }
@@ -398,7 +395,7 @@ impl EdgeDescriptor for BezierSubpathNonZeroEdge {
     }
 
     #[inline]
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<(EdgeInterceptDirection, f64)>]) {
         let mut y_pos_iter  = y_positions.iter();
         let mut output_iter = output.iter_mut();
 
@@ -406,7 +403,7 @@ impl EdgeDescriptor for BezierSubpathNonZeroEdge {
             let intercepts = self.subpath.intercepts_on_line(*y_pos);
 
             if self.subpath.y_bounds.contains(y_pos) {
-                *output = intercepts.into_iter()
+                output.extend(intercepts.into_iter()
                     .map(|intercept| {
                         // Compute the direction that the ray is crossing the curve
                         let t               = intercept.t;
@@ -425,9 +422,7 @@ impl EdgeDescriptor for BezierSubpathNonZeroEdge {
                         } else {
                             (EdgeInterceptDirection::DirectionIn, intercept.x_pos)
                         }
-                    }).collect();
-            } else {
-                *output = smallvec![];
+                    }));
             }
         }
     }

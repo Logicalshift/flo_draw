@@ -72,6 +72,9 @@ pub trait EdgeDescriptor : Send + Sync {
     /// `prepare_to_render()` must have been called on this edge at least once before before this is called.
     /// This function may not return valid results until this has been done.
     ///
+    /// The intercepts should be pushed to the end of the Vec supplied with any existing values being left
+    /// alone.
+    ///
     /// The API here returns intercepts for as many y-positions as needed: this is more efficient with the
     /// layered design of this renderer as it makes it possible to run the inner loop of the algorithm
     /// multiple times (or even take advantage of vectorisation), and use previous results to derive future
@@ -82,14 +85,14 @@ pub trait EdgeDescriptor : Send + Sync {
     /// edge with a start point at the same position. Apex points, where the following edge moves away in 
     /// the y-axis, also should not be counted as an intercept.
     ///
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]);
+    fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<(EdgeInterceptDirection, f64)>]);
 }
 
 impl EdgeDescriptor for Box<dyn EdgeDescriptor> {
     #[inline] fn prepare_to_render(&mut self)                       { (**self).prepare_to_render() }
     #[inline] fn shape(&self) -> ShapeId                            { (**self).shape() }
     #[inline] fn bounding_box(&self) -> ((f64, f64), (f64, f64))    { (**self).bounding_box() }
-    #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) { 
+    #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<(EdgeInterceptDirection, f64)>]) { 
         (**self).intercepts(y_positions, output) 
     }
 }

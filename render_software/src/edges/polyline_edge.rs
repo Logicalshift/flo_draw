@@ -168,12 +168,10 @@ impl Polyline {
     }
 
     ///
-    /// Finds all of the intercepts along this line
+    /// Finds all of the intercepts along a line, and pushes them to a Vec
     ///
     #[inline]
-    pub fn intercepts_on_line(&self, y_pos: f64, intercepts: &mut SmallVec<[(EdgeInterceptDirection, f64); 2]>) {
-        intercepts.clear();
-
+    pub fn intercepts_on_line(&self, y_pos: f64, intercepts: &mut Vec<(EdgeInterceptDirection, f64)>) {
         if let PolylineValue::Lines(lines) = &self.value {
             // All the lines passing through y_pos are included here (as ranges are exclusive, this will exclude the end point of the line)
             let mut last_direction = EdgeInterceptDirection::Toggle;
@@ -243,7 +241,7 @@ impl EdgeDescriptor for PolylineNonZeroEdge {
         self.line.bounding_box
     }
 
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<(EdgeInterceptDirection, f64)>]) {
         for (y_pos, output) in y_positions.iter().zip(output.iter_mut()) {
             self.line.intercepts_on_line(*y_pos, output);
 
@@ -278,7 +276,7 @@ impl EdgeDescriptor for PolylineEvenOddEdge {
         self.line.bounding_box
     }
 
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<(EdgeInterceptDirection, f64)>]) {
         for (y_pos, output) in y_positions.iter().zip(output.iter_mut()) {
             self.line.intercepts_on_line(*y_pos, output);
 

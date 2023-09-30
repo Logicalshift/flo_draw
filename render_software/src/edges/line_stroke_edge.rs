@@ -106,7 +106,7 @@ impl EdgeDescriptor for LineStrokeEdge {
         ((min_x, min_y), (max_x, max_y))
     }
 
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<(EdgeInterceptDirection, f64)>]) {
         match self.bezier_path.len() {
             0 => { }
             1 => { self.bezier_path[0].intercepts(y_positions, output) }
@@ -116,7 +116,7 @@ impl EdgeDescriptor for LineStrokeEdge {
                 self.bezier_path[0].intercepts(y_positions, output);
 
                 // Also add in the intercepts from the other paths
-                let mut tmp_output = vec![smallvec![]; y_positions.len()];
+                let mut tmp_output = vec![vec![]; y_positions.len()];
 
                 for path in self.bezier_path.iter().skip(1) {
                     // Get the intercepts for this path
