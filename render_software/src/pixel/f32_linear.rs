@@ -102,19 +102,16 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
             // Some values we use during the conversion
             let f32x4_65535 = f32x4::splat(65535.0);
 
-            let mut input   = input_pixels.iter();
-            let mut output  = output_pixels.iter_mut();
-
-            while let (Some(input), Some(output)) = (input.next(), output.next()) {
+            for idx in 0..(input_pixels.len().min(output_pixels.len())) {
                 // Convert the pixel to u8 format and apply gamma correction
-                let rgba    = input.0;
+                let rgba    = input_pixels[idx].0;
                 let rgba    = rgba.min(f32x4::ONE).max(f32x4::ZERO);
                 let rgba    = rgba * f32x4_65535;
                 let rgba    = rgba.fast_trunc_int();
 
                 // This produces SRGB format, where the values are pre-multiplied before gamma correction
-                let [r, g, b, a] = rgba.to_array();
-                *output = U8RgbaPremultipliedPixel::from_components([
+                let [r, g, b, a]    = rgba.to_array();
+                output_pixels[idx] = U8RgbaPremultipliedPixel::from_components([
                     gamma_lut.look_up(r as _), 
                     gamma_lut.look_up(g as _), 
                     gamma_lut.look_up(b as _), 
