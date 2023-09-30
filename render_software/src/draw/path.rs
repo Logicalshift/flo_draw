@@ -219,8 +219,8 @@ where
             let path = path.build();
 
             match current_state.winding_rule {
-                canvas::WindingRule::EvenOdd => current_layer.edges.add_edge(Box::new(path.to_even_odd_edge(shape_id))),
-                canvas::WindingRule::NonZero => current_layer.edges.add_edge(Box::new(path.to_non_zero_edge(shape_id))),
+                canvas::WindingRule::EvenOdd => current_layer.edges.add_edge(Box::new(path.flatten_to_polyline(1.0/2000.0, 0.1).to_even_odd_edge(shape_id))),
+                canvas::WindingRule::NonZero => current_layer.edges.add_edge(Box::new(path.flatten_to_polyline(1.0/2000.0, 0.1).to_non_zero_edge(shape_id))),
             }
         }
     }

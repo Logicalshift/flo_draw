@@ -1,4 +1,5 @@
 use super::bezier_subpath_edge::*;
+use super::polyline_edge::*;
 use crate::edgeplan::*;
 
 use flo_canvas::curves::bezier::path::*;
@@ -32,7 +33,7 @@ pub struct LineStrokeEdge {
     subpaths: Vec<usize>,
 
     /// After being prepared: the bezier path for the line stroke
-    bezier_path: Vec<BezierSubpathNonZeroEdge>,
+    bezier_path: Vec<PolylineNonZeroEdge>,
 }
 
 impl LineStrokeEdge {
@@ -75,7 +76,7 @@ impl EdgeDescriptor for LineStrokeEdge {
 
             // Render this path using the non-zero winding rule
             for subpath in stroked_path.into_iter() {
-                self.bezier_path.push(subpath.to_non_zero_edge(ShapeId(0)));
+                self.bezier_path.push(subpath.flatten_to_polyline(1.0/2000.0, 0.1).to_non_zero_edge(ShapeId(0)));
             }
         }
 
