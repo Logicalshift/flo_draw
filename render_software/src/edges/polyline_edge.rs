@@ -132,9 +132,9 @@ impl Polyline {
                     .map(|line| {
                         // Update bounding box
                         bounds_min.0 = bounds_min.0.min(line.0.x()).min(line.1.x());
-                        bounds_min.1 = bounds_min.0.min(line.0.y()).min(line.1.y());
+                        bounds_min.1 = bounds_min.1.min(line.0.y()).min(line.1.y());
                         bounds_max.0 = bounds_max.0.max(line.0.x()).max(line.1.x());
-                        bounds_max.1 = bounds_max.0.max(line.0.y()).max(line.1.y());
+                        bounds_max.1 = bounds_max.1.max(line.0.y()).max(line.1.y());
 
                         // Calculate coefficients and coordinates
                         let coefficients    = line.coefficients();
