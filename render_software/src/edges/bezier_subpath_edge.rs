@@ -1,4 +1,5 @@
 use super::polyline_edge::*;
+use super::flattened_bezier_subpath_edge::*;
 use crate::edgeplan::*;
 
 use flo_canvas::curves::bezier::path::*;
@@ -9,6 +10,10 @@ use smallvec::*;
 
 use std::ops::{Range};
 use std::vec;
+
+// These values are good for 4k rendering when flattening curves
+const DETAIL: f64   = 2.0/4000.0;
+const FLATNESS: f64 = 2.0/4000.0;
 
 ///
 /// Bezier subpath that uses the 'non-zero' algorithm to decide whether a point is inside or outside the shape
@@ -333,6 +338,26 @@ impl BezierSubpath {
         BezierSubpathEvenOddEdge {
             shape_id:   shape_id,
             subpath:    self,
+        }
+    }
+
+    ///
+    /// Creates a non-zero edge from this subpath, which will be flattened to a polyline before rendering
+    ///
+    pub fn to_flattened_non_zero_edge(self, shape_id: ShapeId) -> FlattenedBezierNonZeroEdge {
+        FlattenedBezierNonZeroEdge {
+            shape_id:   shape_id,
+            path:       FlattenedBezierSubpath::from_subpath(self, DETAIL, FLATNESS),
+        }
+    }
+
+    ///
+    /// Creates a non-zero edge from this subpath, which will be flattened to a polyline before rendering
+    ///
+    pub fn to_flattened_even_odd_edge(self, shape_id: ShapeId) -> FlattenedBezierEvenOddEdge {
+        FlattenedBezierEvenOddEdge {
+            shape_id:   shape_id,
+            path:       FlattenedBezierSubpath::from_subpath(self, DETAIL, FLATNESS),
         }
     }
 
