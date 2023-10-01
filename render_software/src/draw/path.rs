@@ -13,10 +13,6 @@ use flo_canvas::curves::bezier::*;
 use smallvec::*;
 use itertools::*;
 
-// These values are good for 4k rendering when flattening curves
-const DETAIL: f64   = 2.0/4000.0;
-const FLATNESS: f64 = 2.0/4000.0;
-
 impl DrawingState {
     ///
     /// Dispatches a path operation
@@ -223,8 +219,8 @@ where
             let path = path.build();
 
             match current_state.winding_rule {
-                canvas::WindingRule::EvenOdd => current_layer.edges.add_edge(Box::new(path.flatten_to_polyline(DETAIL, FLATNESS).to_even_odd_edge(shape_id))),
-                canvas::WindingRule::NonZero => current_layer.edges.add_edge(Box::new(path.flatten_to_polyline(DETAIL, FLATNESS).to_non_zero_edge(shape_id))),
+                canvas::WindingRule::EvenOdd => current_layer.edges.add_edge(Box::new(path.to_flattened_even_odd_edge(shape_id))),
+                canvas::WindingRule::NonZero => current_layer.edges.add_edge(Box::new(path.to_flattened_non_zero_edge(shape_id))),
             }
         }
     }
