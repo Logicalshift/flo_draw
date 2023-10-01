@@ -346,10 +346,45 @@ impl BezierSubpath {
         let start_point = Coord2(self.curves[0].wx.0, self.curves[0].wy.0);
         Polyline::new(iter::once(start_point)
             .chain(self.curves.into_iter()
-                .map(|curve| {
-                    Coord2(curve.wx.3, curve.wy.3)
-                })))
+                .flat_map(|curve| flatten_curve(&curve, min_length, flatness))))
     }
+}
+
+///
+/// Flattens a curve into a set of points for a polyline
+///
+fn flatten_curve(curve: &SubpathCurve, min_length: f64, flatness: f64) -> Vec<Coord2> {
+    // Create a curve from the subpath curve
+    let curve = Curve::from_points(
+            Coord2(curve.wx.0, curve.wy.0),
+            (Coord2(curve.wx.1, curve.wy.1), Coord2(curve.wx.2, curve.wy.2)),
+            Coord2(curve.wx.3, curve.wy.3)
+        );
+
+    // Process curve sections by subdividing until they are small enough
+    let mut to_process  = vec![];
+    let mut result      = Vec::with_capacity(4);
+    to_process.push(curve.section(0.0, 1.0));
+
+    while let Some(section) = to_process.pop() {
+        let sp = section.start_point();
+        let ep = section.end_point();
+
+        if (sp.is_near_to(&ep, min_length) && sp.is_near_to(&section.point_at_pos(0.5), min_length)) || section.flatness() < flatness {
+            // Section is either very short or flat so can be added to the result
+            result.push(section.end_point());
+        } else {
+            // Subdivide and try again
+            let lhs = section.subsection(0.0, 0.5);
+            let rhs = section.subsection(0.5, 1.0);
+
+            // Process the lhs first so the points are generated in order
+            to_process.push(rhs);
+            to_process.push(lhs);
+        }
+    }
+
+    result
 }
 
 impl EdgeDescriptor for BezierSubpathEvenOddEdge {
