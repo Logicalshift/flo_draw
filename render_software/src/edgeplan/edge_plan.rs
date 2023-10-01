@@ -6,6 +6,7 @@ use super::shape_id::*;
 use smallvec::*;
 
 use flo_sparse_array::*;
+use flo_canvas::curves::geo::*;
 
 use std::ops::{Range};
 
@@ -33,6 +34,9 @@ where
     /// The edges themselves
     edges: Vec<EdgeData<TEdge>>,
 
+    /// Where the edges are in space
+    edge_space: Space1D<usize>,
+
     /// The highest edge index that 'prepare_to_render' has been called on
     max_prepared: usize,
 }
@@ -48,6 +52,7 @@ where
         EdgePlan {
             shapes:         SparseArray::empty(),
             edges:          vec![],
+            edge_space:     Space1D::empty(),
             max_prepared:   0,
         }
     }
@@ -57,22 +62,31 @@ where
     ///
     #[cfg(feature="multithreading")]
     pub fn prepare_to_render(&mut self) {
-        use rayon::prelude::*;
+        if self.max_prepared != self.edges.len() {
+            use rayon::prelude::*;
 
-        // Prepare all of the edges that have not been prepared before
-        self.edges.par_iter_mut()
-            .skip(self.max_prepared)
-            .for_each(|edge| {
-                // Prepare the edge to render
-                edge.edge.prepare_to_render();
+            // Prepare all of the edges that have not been prepared before
+            self.edges.par_iter_mut()
+                .skip(self.max_prepared)
+                .for_each(|edge| {
+                    // Prepare the edge to render
+                    edge.edge.prepare_to_render();
 
-                // The bounding_box() call should have accurate data at this point, so update the edge bounds
-                let ((_, min_y), (_, max_y)) = edge.edge.bounding_box();
-                edge.y_bounds = min_y..max_y;
-            });
+                    // The bounding_box() call should have accurate data at this point, so update the edge bounds
+                    let ((_, min_y), (_, max_y)) = edge.edge.bounding_box();
+                    edge.y_bounds = min_y..max_y;
+                });
 
-        // Update the 'max_prepared' value so that we won't prepare edges again
-        self.max_prepared = self.edges.len();
+            // Update the 'max_prepared' value so that we won't prepare edges again
+            self.max_prepared = self.edges.len();
+
+            // Update where the edges are in space
+            self.edge_space = Space1D::from_data(self.edges.iter()
+                .enumerate()
+                .map(|(idx, edge)| {
+                    (edge.y_bounds.clone(), idx)
+                }));
+        }
     }
 
     ///
@@ -80,20 +94,29 @@ where
     ///
     #[cfg(not(feature="multithreading"))]
     pub fn prepare_to_render(&mut self) {
-        // Prepare all of the edges that have not been prepared before
-        self.edges.iter_mut()
-            .skip(self.max_prepared)
-            .for_each(|edge| {
-                // Prepare the edge to render
-                edge.edge.prepare_to_render();
+        if self.max_prepared != self.edges.len() {
+            // Prepare all of the edges that have not been prepared before
+            self.edges.iter_mut()
+                .skip(self.max_prepared)
+                .for_each(|edge| {
+                    // Prepare the edge to render
+                    edge.edge.prepare_to_render();
 
-                // The bounding_box() call should have accurate data at this point, so update the edge bounds
-                let ((_, min_y), (_, max_y)) = edge.edge.bounding_box();
-                edge.y_bounds = min_y..max_y;
-            });
+                    // The bounding_box() call should have accurate data at this point, so update the edge bounds
+                    let ((_, min_y), (_, max_y)) = edge.edge.bounding_box();
+                    edge.y_bounds = min_y..max_y;
+                });
 
-        // Update the 'max_prepared' value so that we won't prepare edges again
-        self.max_prepared = self.edges.len();
+            // Update the 'max_prepared' value so that we won't prepare edges again
+            self.max_prepared = self.edges.len();
+
+            // Update where the edges are in space
+            self.edge_space = Space1D::from_data(self.edges.iter()
+                .enumerate()
+                .map(|(idx, edge)| {
+                    (edge.y_bounds.clone(), idx)
+                }));
+        }
     }
 
     ///
@@ -194,18 +217,18 @@ where
         //  - pre-sort the edges and only re-sort if there are overlapping edges. Most of the time in an edge region the edges will be intercepted in the
         //      same order
         //  - for anti-aliasing we need a way to track intercepts on the previous scanline for the same shape (usually the same edge, but sometimes the preceding or following edge)
-        for edge in self.edges.iter() {
-            if edge.y_bounds.start <= y_max && edge.y_bounds.end >= y_min {
-                // Read the intercepts from this edge (we rely on the 'intercepts' method overwriting any old values)
-                let shape_id = edge.edge.shape();
-                edge.edge.intercepts(y_positions, &mut edge_intercepts);
+        for edge_idx in self.edge_space.data_in_region(y_min..(y_max+1e-6)) {
+            let edge = &self.edges[*edge_idx];
 
-                for idx in 0..y_positions.len() {
-                    let output = &mut output[idx];
+            // Read the intercepts from this edge (we rely on the 'intercepts' method overwriting any old values)
+            let shape_id = edge.edge.shape();
+            edge.edge.intercepts(y_positions, &mut edge_intercepts);
 
-                    for (direction, pos) in edge_intercepts[idx].iter() {
-                        output.push(EdgeIntercept { shape: shape_id, direction: *direction, x_pos: *pos });
-                    }
+            for idx in 0..y_positions.len() {
+                let output = &mut output[idx];
+
+                for (direction, pos) in edge_intercepts[idx].iter() {
+                    output.push(EdgeIntercept { shape: shape_id, direction: *direction, x_pos: *pos });
                 }
             }
         }
