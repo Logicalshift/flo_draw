@@ -71,7 +71,9 @@ impl FlattenedBezierSubpath {
             FlattenedBezierSubpathValue::Polyline(line)  => { self.value = FlattenedBezierSubpathValue::Polyline(line); },
 
             FlattenedBezierSubpathValue::BezierSubPath { path, min_distance, flatness } => {
-                self.value = FlattenedBezierSubpathValue::Polyline(path.flatten_to_polyline(min_distance, flatness));
+                let mut polyline = path.flatten_to_polyline(min_distance, flatness);
+                polyline.prepare_to_render();
+                self.value = FlattenedBezierSubpathValue::Polyline(polyline);
             },
         }
     }
