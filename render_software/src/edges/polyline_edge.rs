@@ -104,6 +104,7 @@ impl Polyline {
     #[inline]
     pub fn new(points: impl IntoIterator<Item=Coord2>) -> Self {
         let mut points = points.into_iter().collect::<Vec<_>>();
+        debug_assert!(points.last() == points.get(0), "Polyline is not closed");
         if points.last() != points.get(0) {
             points.push(points.get(0).copied().unwrap());
         }
