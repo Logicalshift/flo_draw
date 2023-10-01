@@ -11,6 +11,8 @@ use std::path::*;
 use std::fs::*;
 use std::result::{Result};
 
+use std::time::{Instant};
+
 ///
 /// Draws FlowBetween's mascot as vector graphics in a window
 ///
@@ -23,7 +25,17 @@ pub fn main() {
         let mut context     = initialize_offscreen_rendering().unwrap();
 
         // Render an image to bytes
-        let image           = render_canvas_offscreen(&mut context, 600, 600, 1.0, stream::iter(mascot)).await;
+        let image           = render_canvas_offscreen(&mut context, 600, 600, 1.0, stream::iter(mascot.clone())).await;
+
+        // Measure the rendering time
+        let render_start = Instant::now();
+        for _ in 0..100 {
+            let image       = render_canvas_offscreen(&mut context, 1920, 1080, 1.0, stream::iter(mascot.clone())).await;
+            std::hint::black_box(image);
+        }
+        let render_time = Instant::now().duration_since(render_start);
+        let avg_micros  = render_time.as_micros() / 100;
+        println!("Avg rendering time: {}.{}ms", avg_micros/1000, avg_micros%1000);
 
         // Save to a png file
         let path            = Path::new(r"flo.png");
