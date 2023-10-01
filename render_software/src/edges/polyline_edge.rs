@@ -169,6 +169,14 @@ impl Polyline {
     }
 
     ///
+    /// Once `prepare_to_render()` has been called, returns the bounding box of this polyline
+    ///
+    #[inline]
+    pub fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
+        self.bounding_box
+    }
+
+    ///
     /// Finds all of the intercepts along this line
     ///
     #[inline]
