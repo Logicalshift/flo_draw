@@ -14,8 +14,8 @@ use smallvec::*;
 use itertools::*;
 
 // These values are good for 4k rendering when flattening curves
-const DETAIL: f64   = 4000.0/2.0;
-const FLATNESS: f64 = 4000.0/2.0;
+const DETAIL: f64   = 2.0/4000.0;
+const FLATNESS: f64 = 2.0/4000.0;
 
 impl DrawingState {
     ///
