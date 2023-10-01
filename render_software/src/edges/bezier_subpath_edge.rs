@@ -343,7 +343,7 @@ impl BezierSubpath {
         use std::iter;
 
         // TODO: this just creates the most basic polygon possible
-        let start_point = Coord2(self.curves[0].wx.0, self.curves[1].wy.1);
+        let start_point = Coord2(self.curves[0].wx.0, self.curves[0].wy.0);
         Polyline::new(iter::once(start_point)
             .chain(self.curves.into_iter()
                 .map(|curve| {
