@@ -7,6 +7,7 @@ use std::ops::{Range};
 ///
 /// Describes the edges of an axis-aligned rectangular region (this is the simplest possible drawing primitive)
 ///
+#[derive(Clone)]
 pub struct RectangleEdge {
     shape_id: ShapeId,
     x_bounds: Range<f64>,

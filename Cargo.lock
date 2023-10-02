@@ -711,7 +711,7 @@ dependencies = [
 [[package]]
 name = "flo_curves"
 version = "0.8.0"
-source = "git+https://github.com/Logicalshift/flo_curves?branch=v0.8#20219cc332bdc17328ba91c46eb4e315d62760f3"
+source = "git+https://github.com/Logicalshift/flo_curves?branch=v0.8#7801e4d52ebe00bf66d518d0eefffe2bd3f13f31"
 dependencies = [
  "itertools 0.11.0",
  "ouroboros",
@@ -1546,9 +1546,9 @@ dependencies = [
 
 [[package]]
 name = "memchr"
-version = "2.6.3"
+version = "2.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f232d6ef707e1956a43342693d2a31e72989554d58299d7a88738cc95b0d35c"
+checksum = "f665ee40bc4a3c5590afb1e9677db74a508659dfd71e126420da8274909a0167"
 
 [[package]]
 name = "memmap2"

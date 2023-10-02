@@ -7,9 +7,10 @@ use smallvec::*;
 ///
 /// A contour edge provides an implementation of an edge for any type that implements the `SampledContour` trait
 ///
+#[derive(Clone)]
 pub struct ContourEdge<TContour> 
 where
-    TContour: SampledContour,
+    TContour: Clone + SampledContour,
 {
     /// The offset of the corner of where the contour should appear in space
     corner_offset: (f64, f64),
@@ -23,7 +24,7 @@ where
 
 impl<TContour> ContourEdge<TContour>
 where
-    TContour: SampledContour,
+    TContour: Clone + SampledContour,
 {
     ///
     /// Creates a new edge description from a sampled contour
@@ -39,7 +40,7 @@ where
 
 impl<TContour> EdgeDescriptor for ContourEdge<TContour>
 where
-    TContour: Send + Sync + SampledContour,
+    TContour: Clone + Send + Sync + SampledContour,
 {
     #[inline]
     fn prepare_to_render(&mut self) {
