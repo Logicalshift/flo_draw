@@ -129,9 +129,9 @@ where
                 LineWidthPixels(width_pixels)                       => { self.current_state.line_width_pixels(width_pixels as _, self.height_pixels as _); },
                 LineJoin(join_style)                                => { self.current_state.line_join(join_style); },
                 LineCap(cap_style)                                  => { self.current_state.line_cap(cap_style); },
-                NewDashPattern                                      => { /* todo!() */ },
-                DashLength(dash_length)                             => { /* todo!() */ },
-                DashOffset(dash_offset)                             => { /* todo!() */ },
+                NewDashPattern                                      => { /* todo!() - dash patterns not supported yet */ },
+                DashLength(_dash_length)                            => { /* todo!() - dash patterns not supported yet */ },
+                DashOffset(_dash_offset)                            => { /* todo!() - dash patterns not supported yet */ },
                 FillColor(fill_color)                               => { self.current_state.fill_solid_color(fill_color, &mut self.program_data_cache); },
                 FillTexture(texture, (x1, y1), (x2, y2))            => { /* todo!() */ },
                 FillGradient(gradient, (x1, y1), (x2, y2))          => { /* todo!() */ },
@@ -163,10 +163,10 @@ where
                 Texture(texture_id, texture_op)                     => { /* todo!() */ },
                 Gradient(gradient_id, gradient_op)                  => { /* todo!() */ },
 
-                Font(font_id, font_op)                              => { /* todo!() */ },
-                BeginLineLayout(x, y, alignment)                    => { /* todo!() */ },
-                DrawLaidOutText                                     => { /* todo!() */ },
-                DrawText(font_id, text, x, y)                       => { /* todo!() */ },
+                Font(_font_id, _font_op)                            => { /* Use the glyph and font streams in flo_canvas */ },
+                BeginLineLayout(_x, _y, _alignment)                 => { /* Use the glyph and font streams in flo_canvas */ },
+                DrawLaidOutText                                     => { /* Use the glyph and font streams in flo_canvas */ },
+                DrawText(_font_id, _text, _x, _y)                   => { /* Use the glyph and font streams in flo_canvas */ },
             }
         }
 
