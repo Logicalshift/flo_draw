@@ -13,6 +13,8 @@ use flo_canvas::curves::bezier::*;
 use smallvec::*;
 use itertools::*;
 
+use std::sync::*;
+
 impl DrawingState {
     ///
     /// Dispatches a path operation
@@ -219,8 +221,8 @@ where
             let path = path.build();
 
             match current_state.winding_rule {
-                canvas::WindingRule::EvenOdd => current_layer.edges.add_edge(Box::new(path.to_flattened_even_odd_edge(shape_id))),
-                canvas::WindingRule::NonZero => current_layer.edges.add_edge(Box::new(path.to_flattened_non_zero_edge(shape_id))),
+                canvas::WindingRule::EvenOdd => current_layer.edges.add_edge(Arc::new(path.to_flattened_even_odd_edge(shape_id))),
+                canvas::WindingRule::NonZero => current_layer.edges.add_edge(Arc::new(path.to_flattened_non_zero_edge(shape_id))),
             }
         }
     }

@@ -8,6 +8,8 @@ use crate::scanplan::*;
 use std::marker::{PhantomData};
 use std::ops::{Range};
 
+use std::sync::*;
+
 ///
 /// Renders sections of a canvas drawing
 ///
@@ -80,7 +82,7 @@ where
 impl<TScanPlanner, TLineRenderer, TPixel, const N: usize> Renderer for CanvasDrawingRegionRenderer<TScanPlanner, TLineRenderer, TPixel, N>
 where
     TPixel:         'static + Send + Sync + Pixel<N>,
-    TScanPlanner:   ScanPlanner<Edge=Box<dyn EdgeDescriptor>>,
+    TScanPlanner:   ScanPlanner<Edge=Arc<dyn EdgeDescriptor>>,
     TLineRenderer:  Renderer<Region=ScanlineRenderRegion, Source=ScanlinePlan, Dest=[TPixel]>,
 {
     type Region = RenderSlice;

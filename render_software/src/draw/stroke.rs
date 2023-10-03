@@ -7,6 +7,8 @@ use crate::pixel::*;
 
 use flo_canvas::curves::bezier::path::*;
 
+use std::sync::*;
+
 impl DrawingState {
     ///
     /// Sets the width of the stroke
@@ -79,6 +81,6 @@ where
 
         // Create the edge
         let stroke_edge = LineStrokeEdge::new(shape_id, current_state.path_edges.clone(), current_state.subpaths.clone(), width, stroke_options);
-        current_layer.edges.add_edge(Box::new(stroke_edge));
+        current_layer.edges.add_edge(Arc::new(stroke_edge));
     }
 }

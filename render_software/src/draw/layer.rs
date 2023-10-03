@@ -1,10 +1,11 @@
 use super::canvas_drawing::*;
 
 use crate::pixel::*;
-use crate::edges::*;
 use crate::edgeplan::*;
 
 use flo_canvas as canvas;
+
+use std::sync::*;
 
 ///
 /// A layer handle is a reference to a layer within a drawing
@@ -23,7 +24,7 @@ pub struct Layer {
     pub (super) blend_mode: AlphaOperation,
 
     /// The edges that make up this layer
-    pub (super) edges: EdgePlan<Box<dyn EdgeDescriptor>>,
+    pub (super) edges: EdgePlan<Arc<dyn EdgeDescriptor>>,
 
     /// The pixel program data referenced by this layer
     pub (super) used_data: Vec<PixelProgramDataId>,
