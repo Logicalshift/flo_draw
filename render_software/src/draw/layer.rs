@@ -29,6 +29,9 @@ pub struct Layer {
     /// The pixel program data referenced by this layer
     pub (super) used_data: Vec<PixelProgramDataId>,
 
+    /// The edges that were stored with the 'Store' command
+    pub (super) stored_edges: Vec<Arc<dyn EdgeDescriptor>>,
+
     /// The z-index for the next shape we add to the edge plan
     pub (super) z_index: i64,
 }
@@ -36,11 +39,12 @@ pub struct Layer {
 impl Default for Layer {
     fn default() -> Self {
         Layer { 
-            alpha:      1.0,
-            blend_mode: AlphaOperation::SourceOver,
-            edges:      EdgePlan::new(),
-            used_data:  vec![],
-            z_index:    0,
+            alpha:          1.0,
+            blend_mode:     AlphaOperation::SourceOver,
+            edges:          EdgePlan::new(),
+            stored_edges:   vec![],
+            used_data:      vec![],
+            z_index:        0,
         }
     }
 }
@@ -49,7 +53,7 @@ impl Layer {
     ///
     /// Clears this layer
     ///
-    /// This leaves hte program data intact, so this needs to be released separately
+    /// This leaves the program data and stored edges intact, so this needs to be released separately
     ///
     pub fn clear(&mut self) {
         self.alpha      = 1.0;
@@ -210,6 +214,9 @@ where
             });
     }
 
+    ///
+    /// Swaps two layers over
+    ///
     #[inline]
     pub (crate) fn swap_layers(&mut self, layer_1: canvas::LayerId, layer_2: canvas::LayerId) {
         // Layers must exist
@@ -218,5 +225,32 @@ where
 
         // Swap the two indexes in the ordered layer list
         self.ordered_layers.swap(layer_1.0 as usize, layer_2.0 as usize);
+    }
+
+    ///
+    /// Stores the edges in the current layer in a cache
+    ///
+    #[inline]
+    pub (crate) fn store_layer_edges(&mut self) {
+        // TODO: also store copies of the program data for these edges
+        let layer = self.current_layer();
+        layer.stored_edges.clear();
+        layer.stored_edges.extend(layer.edges.all_edges().cloned());
+    }
+
+    ///
+    /// Restores the edges in the current layer from the cache
+    ///
+    #[inline]
+    pub (crate) fn restore_layer_edges(&mut self) {
+        // TODO: release/refresh the program data for the layer
+        let layer           = self.current_layer();
+        let edges           = &mut layer.edges;
+        let stored_edges    = &layer.stored_edges;
+
+        edges.clear_edges();
+        stored_edges.iter()
+            .cloned()
+            .for_each(|edge| edges.add_edge(edge));
     }
 }

@@ -147,9 +147,9 @@ where
 
                 Unclip                                              => { /* todo!() */ },
                 Clip                                                => { /* todo!() */ },
-                Store                                               => { /* todo!() */ },
-                Restore                                             => { /* todo!() */ },
-                FreeStoredBuffer                                    => { /* todo!() */ },
+                Store                                               => { self.store_layer_edges(); },
+                Restore                                             => { self.restore_layer_edges(); },
+                FreeStoredBuffer                                    => { self.current_layer().stored_edges.clear() },
                 PushState                                           => { self.push_state() },
                 PopState                                            => { self.pop_state() },
 
