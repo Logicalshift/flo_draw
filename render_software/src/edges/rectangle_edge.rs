@@ -3,6 +3,7 @@ use crate::edgeplan::*;
 use smallvec::*;
 
 use std::ops::{Range};
+use std::sync::*;
 
 ///
 /// Describes the edges of an axis-aligned rectangular region (this is the simplest possible drawing primitive)
@@ -24,6 +25,10 @@ impl RectangleEdge {
 }
 
 impl EdgeDescriptor for RectangleEdge {
+    fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+        Arc::new(self.clone())
+    }
+
     #[inline]
     fn prepare_to_render(&mut self) {
     }

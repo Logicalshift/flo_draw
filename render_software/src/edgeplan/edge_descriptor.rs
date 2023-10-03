@@ -2,6 +2,8 @@ use super::shape_id::*;
 
 use smallvec::*;
 
+use std::sync::*;
+
 ///
 /// Describes the direction of an edge intercept
 ///
@@ -41,6 +43,11 @@ pub enum EdgeInterceptDirection {
 /// Describes an edge that 
 ///
 pub trait EdgeDescriptor : Send + Sync {
+    ///
+    /// Creates a clone of this edge as an Arc<dyn EdgeDescriptor>
+    ///
+    fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor>;
+
     ///
     /// Performs any pre-calculations needed before the `intercepts()` call can be made
     ///
@@ -86,10 +93,35 @@ pub trait EdgeDescriptor : Send + Sync {
 }
 
 impl EdgeDescriptor for Box<dyn EdgeDescriptor> {
+    #[inline] fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor>  { (**self).clone_as_object() }
     #[inline] fn prepare_to_render(&mut self)                       { (**self).prepare_to_render() }
     #[inline] fn shape(&self) -> ShapeId                            { (**self).shape() }
     #[inline] fn bounding_box(&self) -> ((f64, f64), (f64, f64))    { (**self).bounding_box() }
     #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) { 
         (**self).intercepts(y_positions, output) 
+    }
+}
+
+impl EdgeDescriptor for Arc<dyn EdgeDescriptor> {
+    #[inline] fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor>  { (**self).clone_as_object() }
+    #[inline] fn shape(&self) -> ShapeId                            { (**self).shape() }
+    #[inline] fn bounding_box(&self) -> ((f64, f64), (f64, f64))    { (**self).bounding_box() }
+
+    #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) { 
+        (**self).intercepts(y_positions, output) 
+    }
+
+    #[inline] fn prepare_to_render(&mut self) { 
+        if let Some(inner) = Arc::get_mut(self) {
+            // This is the only copy of this object, so we can mutate it
+            inner.prepare_to_render();
+        } else {
+            // Clone as a new object
+            *self = (**self).clone_as_object();
+
+            // Must be the only copy, so we can retrieve it as mutable and then call prepare_to_render
+            let inner = Arc::get_mut(self).unwrap();
+            inner.prepare_to_render();
+        }
     }
 }

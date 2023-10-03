@@ -5,6 +5,8 @@ use crate::edgeplan::*;
 
 use smallvec::*;
 
+use std::sync::*;
+
 #[derive(Clone)]
 enum FlattenedBezierSubpathValue {
     /// Empty value, used during preparation
@@ -80,6 +82,10 @@ impl FlattenedBezierSubpath {
 }
 
 impl EdgeDescriptor for FlattenedBezierNonZeroEdge {
+    fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+        Arc::new(self.clone())
+    }
+
     #[inline]
     fn prepare_to_render(&mut self) {
         self.path.prepare_to_render();
@@ -111,6 +117,10 @@ impl EdgeDescriptor for FlattenedBezierNonZeroEdge {
 }
 
 impl EdgeDescriptor for FlattenedBezierEvenOddEdge {
+    fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+        Arc::new(self.clone())
+    }
+
     #[inline]
     fn prepare_to_render(&mut self) {
         self.path.prepare_to_render();

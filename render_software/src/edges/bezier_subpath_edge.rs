@@ -9,6 +9,7 @@ use flo_canvas::curves::bezier::*;
 use smallvec::*;
 
 use std::ops::{Range};
+use std::sync::*;
 use std::vec;
 
 // These values are good for 4k rendering when flattening curves
@@ -413,6 +414,10 @@ fn flatten_curve(curve: &SubpathCurve, min_length: f64, flatness: f64) -> Vec<Co
 }
 
 impl EdgeDescriptor for BezierSubpathEvenOddEdge {
+    fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+        Arc::new(self.clone())
+    }
+
     fn prepare_to_render(&mut self) {
         self.subpath.prepare_to_render();
     }
@@ -445,6 +450,10 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
 }
 
 impl EdgeDescriptor for BezierSubpathNonZeroEdge {
+    fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+        Arc::new(self.clone())
+    }
+
     fn prepare_to_render(&mut self) {
         self.subpath.prepare_to_render();
     }

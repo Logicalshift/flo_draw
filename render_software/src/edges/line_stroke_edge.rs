@@ -10,6 +10,7 @@ use smallvec::*;
 use itertools::*;
 
 use std::iter;
+use std::sync::*;
 use std::vec;
 
 ///
@@ -56,6 +57,10 @@ impl LineStrokeEdge {
 }
 
 impl EdgeDescriptor for LineStrokeEdge {
+    fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+        Arc::new(self.clone())
+    }
+
     fn prepare_to_render(&mut self) {
         self.bezier_path.clear();
 
@@ -181,6 +186,10 @@ impl FlattenedLineStrokeEdge {
 }
 
 impl EdgeDescriptor for FlattenedLineStrokeEdge {
+    fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+        Arc::new(self.clone())
+    }
+
     fn prepare_to_render(&mut self) {
         self.bezier_path.clear();
 

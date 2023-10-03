@@ -4,13 +4,15 @@ use flo_canvas::curves::bezier::vectorize::*;
 
 use smallvec::*;
 
+use std::sync::*;
+
 ///
 /// A contour edge provides an implementation of an edge for any type that implements the `SampledContour` trait
 ///
 #[derive(Clone)]
 pub struct ContourEdge<TContour> 
 where
-    TContour: Clone + SampledContour,
+    TContour: 'static + Clone + SampledContour,
 {
     /// The offset of the corner of where the contour should appear in space
     corner_offset: (f64, f64),
@@ -24,7 +26,7 @@ where
 
 impl<TContour> ContourEdge<TContour>
 where
-    TContour: Clone + SampledContour,
+    TContour: 'static + Clone + SampledContour,
 {
     ///
     /// Creates a new edge description from a sampled contour
@@ -40,8 +42,13 @@ where
 
 impl<TContour> EdgeDescriptor for ContourEdge<TContour>
 where
-    TContour: Clone + Send + Sync + SampledContour,
+    TContour: 'static + Clone + Send + Sync + SampledContour,
 {
+    #[inline]
+    fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+        Arc::new(self.clone())
+    }
+
     #[inline]
     fn prepare_to_render(&mut self) {
     }

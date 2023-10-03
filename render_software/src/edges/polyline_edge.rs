@@ -7,6 +7,7 @@ use itertools::*;
 use smallvec::*;
 
 use std::ops::{Range};
+use std::sync::*;
 
 ///
 /// A single line within a polyline
@@ -240,6 +241,10 @@ impl PolylineNonZeroEdge {
 }
 
 impl EdgeDescriptor for PolylineNonZeroEdge {
+    fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+        Arc::new(self.clone())
+    }
+
     #[inline]
     fn prepare_to_render(&mut self) {
         self.line.prepare_to_render();
@@ -275,6 +280,10 @@ impl PolylineEvenOddEdge {
 }
 
 impl EdgeDescriptor for PolylineEvenOddEdge {
+    fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+        Arc::new(self.clone())
+    }
+
     #[inline]
     fn prepare_to_render(&mut self) {
         self.line.prepare_to_render();
