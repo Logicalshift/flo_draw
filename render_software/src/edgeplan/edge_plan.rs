@@ -192,6 +192,22 @@ where
     }
 
     ///
+    /// Once `prepare_to_render()` has been called, returns the edges found in a particular y-range
+    ///
+    pub fn edges_in_region<'a>(&'a self, y_range: Range<f64>) -> impl 'a + Iterator<Item=&'a TEdge> {
+        self.edge_space.data_in_region(y_range)
+            .map(move |edge_idx| &self.edges[*edge_idx].edge)
+    }
+
+    ///
+    /// Returns all of the edges in this plan
+    ///
+    pub fn all_edges<'a>(&'a self) -> impl 'a + Iterator<Item=&'a TEdge> {
+        self.edges.iter()
+            .map(|edge| &edge.edge)
+    }
+
+    ///
     /// Returns the edges that intercept a scanline. Shapes are entered on the right-hand side of any intercepts.
     ///
     /// Note that `prepare_to_render()` must have been called before this function can be used to retrieve accurate results.
