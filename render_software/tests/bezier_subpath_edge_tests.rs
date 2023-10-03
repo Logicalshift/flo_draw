@@ -105,7 +105,7 @@ fn render_path(_path: impl BezierPath<Point=Coord2>, _y_pos: f64) {
 #[test]
 pub fn intercepts_1() {
     // Generates an intercept on two consecutive curves where one point is at the end and one is at the beginning (ie, crossing the same edge twice)
-    let path = BezierPathBuilder::<BezierSubpath>::start(Coord2(-0.2037662266584257, -0.34995458248326766))
+    let mut path = BezierPathBuilder::<BezierSubpath>::start(Coord2(-0.2037662266584257, -0.34995458248326766))
         .curve_to((Coord2(-0.20006384207737574, -0.35319049320697476), Coord2(-0.19778599976302993, -0.3576703897326853)), Coord2(-0.19431519023924634, -0.36111487969372347))
         .curve_to((Coord2(-0.19431503462317426, -0.36111503420780017), Coord2(-0.1943148790071022, -0.3611151887218768)), Coord2(-0.19431472334434063, -0.3611153432823124))
         .curve_to((Coord2(-0.18294289255315344, -0.3724123516207334), Coord2(-0.16958474910311086, -0.3835618084981183)), Coord2(-0.15358122129524585, -0.38745096337884))
@@ -128,6 +128,8 @@ pub fn intercepts_1() {
         .curve_to((Coord2(-0.20490878576133656, -0.35126184759863815), Coord2(-0.20433759189752945, -0.35060831308093454)), Coord2(-0.2037662266584257, -0.34995458248326766))
         .build();
     let y_pos       = -0.36296296296296293;
+
+    path.prepare_to_render();
     render_path(&path, y_pos);
 
     // Forward
@@ -136,8 +138,9 @@ pub fn intercepts_1() {
     assert!(intercepts.len()%2 == 0, "Uneven number of intercepts ({:?})", intercepts);
 
     // Reversed
-    let reversed_path   = path.reversed::<BezierSubpath>();
-    let intercepts      = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
+    let mut reversed_path   = path.reversed::<BezierSubpath>();
+    reversed_path.prepare_to_render();
+    let intercepts          = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
 
     assert!(intercepts.len()%2 == 0, "Uneven number of intercepts ({:?})", intercepts);
 }
@@ -145,7 +148,7 @@ pub fn intercepts_1() {
 #[test]
 pub fn intercepts_2() {
     // Generates a 'phantom' intercept at the end of a curve (or the beginning when reversed)
-    let path = BezierPathBuilder::<BezierSubpath>::start(Coord2(0.04830430783292097, 0.18478220408954432))
+    let mut path = BezierPathBuilder::<BezierSubpath>::start(Coord2(0.04830430783292097, 0.18478220408954432))
         .curve_to((Coord2(0.04775305741207142, 0.18474116578970692), Coord2(0.047108255651257695, 0.184896668111831)), Coord2(0.04710566286387735, 0.1857024397248586))
         .curve_to((Coord2(0.04709953685697513, 0.18760624506595508), Coord2(0.04518566629694711, 0.18659355370749012)), Coord2(0.047371613815294464, 0.18690131940017693))
         .curve_to((Coord2(0.04805999857232273, 0.18699823902418602), Coord2(0.04688621835651759, 0.1863394738894744)), Coord2(0.046958130521619575, 0.18580241140839857))
@@ -574,6 +577,8 @@ pub fn intercepts_2() {
         .curve_to((Coord2(0.04817541180839825, 0.18651361080097037), Coord2(0.04823985015394111, 0.18564803729426824)), Coord2(0.04830430783292097, 0.18478220408954432))
         .build();
 
+    path.prepare_to_render();
+
     let y_pos       = 0.22037037037037033;
     render_path(&path, y_pos);
 
@@ -585,8 +590,9 @@ pub fn intercepts_2() {
 
     // Reversed
     println!("-- Reversed");
-    let reversed_path   = path.reversed::<BezierSubpath>();
-    let intercepts      = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
+    let mut reversed_path   = path.reversed::<BezierSubpath>();
+    reversed_path.prepare_to_render();
+    let intercepts          = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
 
     assert!(intercepts.len()%2 == 0, "Uneven number of intercepts ({:?})", intercepts);
 }
@@ -594,7 +600,7 @@ pub fn intercepts_2() {
 #[test]
 pub fn intercepts_3() {
     // Has two very close intercepts that are relatively far apart in terms of the curve's arc length
-    let path = BezierPathBuilder::<BezierSubpath>::start(Coord2(-0.21971055224803498, -0.07626466346947276))
+    let mut path = BezierPathBuilder::<BezierSubpath>::start(Coord2(-0.21971055224803498, -0.07626466346947276))
         .curve_to((Coord2(-0.21999702644031982, -0.07816240183136655), Coord2(-0.22232964285361873, -0.07778246186966635)), Coord2(-0.22236227459942665, -0.07601509758645536))
         .curve_to((Coord2(-0.22241645222423337, -0.07308078939478602), Coord2(-0.22151004579707395, -0.06372163603660543)), Coord2(-0.22297488846212313, -0.06196387189420541))
         .curve_to((Coord2(-0.22230810369408546, -0.061408203045884895), Coord2(-0.22164131892604777, -0.06085253419756438)), Coord2(-0.22097433410257414, -0.06029669863191764))
@@ -603,6 +609,8 @@ pub fn intercepts_3() {
         .curve_to((Coord2(-0.2214273001268888, -0.07600551080026045), Coord2(-0.22056905493711532, -0.07613506769938819)), Coord2(-0.21971055224803498, -0.07626466346947276))
         .build();
     let y_pos       = -0.07592592592592584;
+
+    path.prepare_to_render();
     render_path(&path, y_pos);
 
     // Forward
@@ -611,8 +619,9 @@ pub fn intercepts_3() {
     assert!(intercepts.len()%2 == 0, "Uneven number of intercepts ({:?})", intercepts);
 
     // Reversed
-    let reversed_path   = path.reversed::<BezierSubpath>();
-    let intercepts      = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
+    let mut reversed_path   = path.reversed::<BezierSubpath>();
+    reversed_path.prepare_to_render();
+    let intercepts          = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
 
     assert!(intercepts.len()%2 == 0, "Uneven number of intercepts ({:?})", intercepts);
 }
@@ -620,7 +629,7 @@ pub fn intercepts_3() {
 #[test]
 pub fn intercepts_4() {
     // Intercepts_1 again, but we try all the y positions that exactly hits a control point (which will intercept on both sides)
-    let path = BezierPathBuilder::<BezierSubpath>::start(Coord2(-0.2037662266584257, -0.34995458248326766))
+    let mut path = BezierPathBuilder::<BezierSubpath>::start(Coord2(-0.2037662266584257, -0.34995458248326766))
         .curve_to((Coord2(-0.20006384207737574, -0.35319049320697476), Coord2(-0.19778599976302993, -0.3576703897326853)), Coord2(-0.19431519023924634, -0.36111487969372347))
         .curve_to((Coord2(-0.19431503462317426, -0.36111503420780017), Coord2(-0.1943148790071022, -0.3611151887218768)), Coord2(-0.19431472334434063, -0.3611153432823124))
         .curve_to((Coord2(-0.18294289255315344, -0.3724123516207334), Coord2(-0.16958474910311086, -0.3835618084981183)), Coord2(-0.15358122129524585, -0.38745096337884))
@@ -643,6 +652,8 @@ pub fn intercepts_4() {
         .curve_to((Coord2(-0.20490878576133656, -0.35126184759863815), Coord2(-0.20433759189752945, -0.35060831308093454)), Coord2(-0.2037662266584257, -0.34995458248326766))
         .build();
 
+    path.prepare_to_render();
+
     for y_pos in path.to_curves::<Curve<_>>().into_iter().map(|curve| curve.start_point().y()) {
         // Forward
         let intercepts  = path.intercepts_on_line(y_pos).collect::<Vec<_>>();
@@ -654,7 +665,8 @@ pub fn intercepts_4() {
         assert!(intercepts.len()%2 == 0, "Uneven number of intercepts at ypos {:?} ({:?})", y_pos, intercepts);
     }
 
-    let reversed_path = path.reversed::<BezierSubpath>();
+    let mut reversed_path = path.reversed::<BezierSubpath>();
+    reversed_path.prepare_to_render();
     for y_pos in reversed_path.to_curves::<Curve<_>>().into_iter().map(|curve| curve.start_point().y()) {
         // Reversed
         let intercepts = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
@@ -670,7 +682,7 @@ pub fn intercepts_4() {
 #[test]
 pub fn intercepts_5() {
     // As for intercepts_1 but we've made the last curve a 'very short' curve (removing the last part might leave an unclosed curve)
-    let path = BezierPathBuilder::<BezierSubpath>::start(Coord2(-0.2037662266584257, -0.34995458248326766))
+    let mut path = BezierPathBuilder::<BezierSubpath>::start(Coord2(-0.2037662266584257, -0.34995458248326766))
         .curve_to((Coord2(-0.20006384207737574, -0.35319049320697476), Coord2(-0.19778599976302993, -0.3576703897326853)), Coord2(-0.19431519023924634, -0.36111487969372347))
         .curve_to((Coord2(-0.19431503462317426, -0.36111503420780017), Coord2(-0.1943148790071022, -0.3611151887218768)), Coord2(-0.19431472334434063, -0.3611153432823124))
         .curve_to((Coord2(-0.18294289255315344, -0.3724123516207334), Coord2(-0.16958474910311086, -0.3835618084981183)), Coord2(-0.15358122129524585, -0.38745096337884))
@@ -694,6 +706,8 @@ pub fn intercepts_5() {
         .curve_to((Coord2(-0.2037662266584256, -0.34995458248326765), Coord2(-0.2037662266584256, -0.34995458248326765)), Coord2(-0.2037662266584257, -0.34995458248326766))
         .build();
 
+    path.prepare_to_render();
+
     for y_pos in path.to_curves::<Curve<_>>().into_iter().map(|curve| curve.start_point().y()) {
         // Forward
         let intercepts  = path.intercepts_on_line(y_pos).collect::<Vec<_>>();
@@ -705,7 +719,8 @@ pub fn intercepts_5() {
         assert!(intercepts.len()%2 == 0, "Uneven number of intercepts at ypos {:?} ({:?})", y_pos, intercepts);
     }
 
-    let reversed_path = path.reversed::<BezierSubpath>();
+    let mut reversed_path = path.reversed::<BezierSubpath>();
+    reversed_path.prepare_to_render();
     for y_pos in reversed_path.to_curves::<Curve<_>>().into_iter().map(|curve| curve.start_point().y()) {
         // Reversed
         let intercepts = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
@@ -744,7 +759,9 @@ pub fn intercepts_6() {
         .curve_to((Coord2(-0.20490878576133656, -0.35126184759863815), Coord2(-0.20433759189752945, -0.35060831308093454)), Coord2(-0.2037662266584256, -0.34995458248326765))
         .curve_to((Coord2(-0.2037662266584256, -0.34995458248326765), Coord2(-0.2037662266584256, -0.34995458248326765)), Coord2(-0.2037662266584257, -0.34995458248326766))
         .build();
-    let path = path.map_points::<BezierSubpath>(|p| (p + Coord2(1.0, 1.0))*100.0);
+    let mut path = path.map_points::<BezierSubpath>(|p| (p + Coord2(1.0, 1.0))*100.0);
+
+    path.prepare_to_render();
 
     for y_pos in path.to_curves::<Curve<_>>().into_iter().map(|curve| curve.start_point().y()) {
         // Forward
@@ -758,7 +775,8 @@ pub fn intercepts_6() {
         assert!(intercepts.len()%2 == 0, "Uneven number of intercepts at ypos {:?} ({:?})", y_pos, intercepts);
     }
 
-    let reversed_path = path.reversed::<BezierSubpath>();
+    let mut reversed_path = path.reversed::<BezierSubpath>();
+    reversed_path.prepare_to_render();
     for y_pos in reversed_path.to_curves::<Curve<_>>().into_iter().map(|curve| curve.start_point().y()) {
         // Reversed
         let intercepts = reversed_path.intercepts_on_line(y_pos).collect::<Vec<_>>();
