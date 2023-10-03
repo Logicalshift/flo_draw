@@ -9,7 +9,6 @@ use std::sync::*;
 ///
 /// A contour edge provides an implementation of an edge for any type that implements the `SampledContour` trait
 ///
-#[derive(Clone)]
 pub struct ContourEdge<TContour> 
 where
     TContour: 'static + Clone + SampledContour,
@@ -36,6 +35,21 @@ where
             corner_offset,
             shape_id,
             contour
+        }
+    }
+}
+
+impl<TContour> Clone for ContourEdge<TContour>
+where
+    TContour: 'static + Clone + SampledContour,
+{
+    #[inline]
+    fn clone(&self) -> Self {
+        // Not sure why, but #[derive(Clone)] causes the type to become private, so we declare Clone the old-fashioned way
+        ContourEdge {
+            corner_offset:  self.corner_offset,
+            shape_id:       self.shape_id,
+            contour:        self.contour.clone(),
         }
     }
 }
