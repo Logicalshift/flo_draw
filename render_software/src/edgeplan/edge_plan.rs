@@ -58,6 +58,16 @@ where
     }
 
     ///
+    /// Removes all of the edges in this edge plan (leaving any shapes intact)
+    ///
+    pub fn clear_edges(&mut self) {
+        self.edges.clear();
+
+        self.edge_space     = Space1D::empty();
+        self.max_prepared   = 0;
+    }
+
+    ///
     /// Performs any caching required on the edges so that `intercepts_on_scanlines` will return accurate results
     ///
     #[cfg(feature="multithreading")]
