@@ -17,11 +17,13 @@ fn render_rectangle() {
     let rectangle_shape_2   = ShapeId::new();
     let rectangle_edge_1    = RectangleEdge::new(rectangle_shape_1, 0.0..400.0, 0.0..300.0);
     let rectangle_edge_2    = RectangleEdge::new(rectangle_shape_2, 140.0..160.0, 140.0..160.0);
-    let edge_plan           = EdgePlan::new()
+    let mut edge_plan       = EdgePlan::new()
         .with_shape_description(rectangle_shape_1, ShapeDescriptor::opaque(program_data_id_1).with_z_index(0))
         .with_shape_description(rectangle_shape_2, ShapeDescriptor::opaque(program_data_id_2).with_z_index(1))
         .with_edge(rectangle_edge_1)
         .with_edge(rectangle_edge_2);
+
+    edge_plan.prepare_to_render();
 
     // == Pixel programs: just render the requested colour
 
