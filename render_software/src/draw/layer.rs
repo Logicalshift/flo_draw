@@ -253,4 +253,12 @@ where
             .cloned()
             .for_each(|edge| edges.add_edge(edge));
     }
+
+    ///
+    /// Removes the stored edges for the current layer
+    ///
+    #[inline]
+    pub (crate) fn free_stored_edges(&mut self) {
+        self.current_layer().stored_edges.clear();
+    }
 }
