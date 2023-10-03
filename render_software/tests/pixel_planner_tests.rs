@@ -16,7 +16,8 @@ fn simple_rectangle() {
 
     let rectangle_shape = ShapeId::new();
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, 100.0..200.0, 125.0..175.0);
-    let edge_plan       = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    let mut edge_plan   = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    edge_plan.prepare_to_render();
 
     let pixel_plan      = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[124.0, 125.0, 126.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
@@ -36,7 +37,8 @@ fn simple_rectangle_canvas_coords() {
 
     let rectangle_shape = ShapeId::new();
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, -0.5..0.25, -0.4..0.4);
-    let edge_plan       = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    let mut edge_plan   = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    edge_plan.prepare_to_render();
 
     let pixel_plan      = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::for_region(&(-1.0..1.0), 1000), &[-0.6, -0.3, 0.1], -1.0..1.0));
     assert!(pixel_plan.len() == 3);
@@ -60,11 +62,12 @@ fn small_rectangle_on_rectangle() {
     let rectangle_shape_2   = ShapeId::new();
     let rectangle_edge_1    = RectangleEdge::new(rectangle_shape_1, 100.0..200.0, 125.0..175.0);
     let rectangle_edge_2    = RectangleEdge::new(rectangle_shape_2, 140.0..160.0, 140.0..160.0);
-    let edge_plan           = EdgePlan::new()
+    let mut edge_plan       = EdgePlan::new()
         .with_shape_description(rectangle_shape_1, ShapeDescriptor::opaque(program_data_id_1).with_z_index(0))
         .with_shape_description(rectangle_shape_2, ShapeDescriptor::opaque(program_data_id_2).with_z_index(1))
         .with_edge(rectangle_edge_1)
         .with_edge(rectangle_edge_2);
+    edge_plan.prepare_to_render();
 
     let pixel_plan = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[139.0, 140.0, 141.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
@@ -89,11 +92,12 @@ fn identical_overlapping_rectangles_1() {
     let rectangle_shape_2   = ShapeId::new();
     let rectangle_edge_1    = RectangleEdge::new(rectangle_shape_1, 100.0..200.0, 125.0..175.0);
     let rectangle_edge_2    = RectangleEdge::new(rectangle_shape_2, 100.0..200.0, 125.0..175.0);
-    let edge_plan           = EdgePlan::new()
+    let mut edge_plan       = EdgePlan::new()
         .with_shape_description(rectangle_shape_1, ShapeDescriptor::opaque(program_data_id_1).with_z_index(0))
         .with_shape_description(rectangle_shape_2, ShapeDescriptor::opaque(program_data_id_2).with_z_index(1))
         .with_edge(rectangle_edge_1)
         .with_edge(rectangle_edge_2);
+    edge_plan.prepare_to_render();
 
     let pixel_plan = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[124.0, 125.0, 126.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
@@ -118,11 +122,12 @@ fn identical_overlapping_rectangles_2() {
     let rectangle_shape_2   = ShapeId::new();
     let rectangle_edge_1    = RectangleEdge::new(rectangle_shape_1, 100.0..200.0, 125.0..175.0);
     let rectangle_edge_2    = RectangleEdge::new(rectangle_shape_2, 100.0..200.0, 125.0..175.0);
-    let edge_plan           = EdgePlan::new()
+    let mut edge_plan       = EdgePlan::new()
         .with_shape_description(rectangle_shape_1, ShapeDescriptor::opaque(program_data_id_1).with_z_index(1))
         .with_shape_description(rectangle_shape_2, ShapeDescriptor::opaque(program_data_id_2).with_z_index(0))
         .with_edge(rectangle_edge_1)
         .with_edge(rectangle_edge_2);
+    edge_plan.prepare_to_render();
 
     let pixel_plan = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[124.0, 125.0, 126.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
@@ -147,11 +152,12 @@ fn identical_overlapping_rectangles_3() {
     let rectangle_shape_2   = ShapeId::new();
     let rectangle_edge_1    = RectangleEdge::new(rectangle_shape_1, 100.0..200.0, 125.0..175.0);
     let rectangle_edge_2    = RectangleEdge::new(rectangle_shape_2, 100.0..200.0, 125.0..175.0);
-    let edge_plan           = EdgePlan::new()
+    let mut edge_plan       = EdgePlan::new()
         .with_shape_description(rectangle_shape_1, ShapeDescriptor::opaque(program_data_id_1).with_z_index(0))
         .with_shape_description(rectangle_shape_2, ShapeDescriptor::transparent(program_data_id_2).with_z_index(1))
         .with_edge(rectangle_edge_1)
         .with_edge(rectangle_edge_2);
+    edge_plan.prepare_to_render();
 
     let pixel_plan = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[124.0, 125.0, 126.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
@@ -176,11 +182,12 @@ fn small_rectangle_under_rectangle() {
     let rectangle_shape_2   = ShapeId::new();
     let rectangle_edge_1    = RectangleEdge::new(rectangle_shape_1, 100.0..200.0, 125.0..175.0);
     let rectangle_edge_2    = RectangleEdge::new(rectangle_shape_2, 140.0..160.0, 140.0..160.0);
-    let edge_plan           = EdgePlan::new()
+    let mut edge_plan       = EdgePlan::new()
         .with_shape_description(rectangle_shape_1, ShapeDescriptor::opaque(program_data_id_1).with_z_index(1))
         .with_shape_description(rectangle_shape_2, ShapeDescriptor::opaque(program_data_id_2).with_z_index(0))
         .with_edge(rectangle_edge_1)
         .with_edge(rectangle_edge_2);
+    edge_plan.prepare_to_render();
 
     let pixel_plan = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[139.0, 140.0, 141.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
@@ -205,11 +212,12 @@ fn transparent_rectangle_on_rectangle() {
     let rectangle_shape_2   = ShapeId::new();
     let rectangle_edge_1    = RectangleEdge::new(rectangle_shape_1, 100.0..200.0, 125.0..175.0);
     let rectangle_edge_2    = RectangleEdge::new(rectangle_shape_2, 140.0..160.0, 140.0..160.0);
-    let edge_plan           = EdgePlan::new()
+    let mut edge_plan       = EdgePlan::new()
         .with_shape_description(rectangle_shape_1, ShapeDescriptor::opaque(program_data_id_1).with_z_index(0))
         .with_shape_description(rectangle_shape_2, ShapeDescriptor::transparent(program_data_id_2).with_z_index(1))
         .with_edge(rectangle_edge_1)
         .with_edge(rectangle_edge_2);
+    edge_plan.prepare_to_render();
 
     let pixel_plan = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[139.0, 140.0, 141.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
@@ -230,7 +238,8 @@ fn clip_left() {
 
     let rectangle_shape = ShapeId::new();
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, -100.0..200.0, 125.0..175.0);
-    let edge_plan       = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    let mut edge_plan   = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    edge_plan.prepare_to_render();
 
     let pixel_plan      = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[124.0, 125.0, 126.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
@@ -250,7 +259,8 @@ fn clip_right() {
 
     let rectangle_shape = ShapeId::new();
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, 100.0..1200.0, 125.0..175.0);
-    let edge_plan       = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    let mut edge_plan   = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    edge_plan.prepare_to_render();
 
     let pixel_plan      = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[124.0, 125.0, 126.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
@@ -270,7 +280,8 @@ fn clip_both() {
 
     let rectangle_shape = ShapeId::new();
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, -100.0..1200.0, 125.0..175.0);
-    let edge_plan       = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    let mut edge_plan   = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    edge_plan.prepare_to_render();
 
     let pixel_plan      = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[124.0, 125.0, 126.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
@@ -290,7 +301,8 @@ fn clip_entirely_off_left() {
 
     let rectangle_shape = ShapeId::new();
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, -200.0..-100.0, 125.0..175.0);
-    let edge_plan       = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    let mut edge_plan   = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    edge_plan.prepare_to_render();
 
     let pixel_plan      = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[124.0, 125.0, 126.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
@@ -307,7 +319,8 @@ fn clip_entirely_off_right() {
 
     let rectangle_shape = ShapeId::new();
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, 1200.0..1300.0, 125.0..175.0);
-    let edge_plan       = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    let mut edge_plan   = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    edge_plan.prepare_to_render();
 
     let pixel_plan      = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[124.0, 125.0, 126.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
@@ -324,7 +337,8 @@ fn thin_rectangle() {
 
     let rectangle_shape = ShapeId::new();
     let rectangle_edge  = RectangleEdge::new(rectangle_shape, 100.1..100.2, 125.0..175.0);
-    let edge_plan       = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    let mut edge_plan   = EdgePlan::new().with_shape_description(rectangle_shape, ShapeDescriptor::opaque(program_data_id)).with_edge(rectangle_edge);
+    edge_plan.prepare_to_render();
 
     let pixel_plan      = strip_y_coordinates(PixelScanPlanner::plan(&edge_plan, &ScanlineTransform::identity(), &[124.0, 125.0, 126.0], 0.0..1000.0));
     assert!(pixel_plan.len() == 3);
