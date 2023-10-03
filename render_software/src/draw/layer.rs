@@ -32,6 +32,9 @@ pub struct Layer {
     /// The edges that were stored with the 'Store' command
     pub (super) stored_edges: Vec<Arc<dyn EdgeDescriptor>>,
 
+    /// The program data in use when the edges were stored
+    pub (super) stored_data: Vec<PixelProgramDataId>,
+
     /// The z-index for the next shape we add to the edge plan
     pub (super) z_index: i64,
 }
@@ -44,6 +47,7 @@ impl Default for Layer {
             edges:          EdgePlan::new(),
             stored_edges:   vec![],
             used_data:      vec![],
+            stored_data:    vec![],
             z_index:        0,
         }
     }
@@ -200,7 +204,6 @@ where
     #[inline]
     pub (crate) fn clear_all_layers(&mut self) {
         let layers              = &mut self.layers;
-        let program_cache       = &mut self.program_cache;
         let program_data_cache  = &mut self.program_data_cache;
 
         layers.iter_mut()
@@ -232,10 +235,23 @@ where
     ///
     #[inline]
     pub (crate) fn store_layer_edges(&mut self) {
-        // TODO: also store copies of the program data for these edges
-        let layer = self.current_layer();
-        layer.stored_edges.clear();
+        // Make sure the stored edges are empty
+        self.free_stored_edges();
+
+        // Borrow the data we need
+        let program_data_cache  = &mut self.program_data_cache;
+        let layers              = &mut self.layers;
+        let layer               = &mut layers.get_mut(self.current_layer.0).unwrap();
+
+        // Store the current set of edges 
         layer.stored_edges.extend(layer.edges.all_edges().cloned());
+
+        // Add extra references to the program data for the stored edges
+        layer.stored_data.extend(layer.used_data.iter()
+            .map(|data_id| {
+                program_data_cache.retain_program_data(*data_id);
+                *data_id
+            }));
     }
 
     ///
@@ -243,15 +259,26 @@ where
     ///
     #[inline]
     pub (crate) fn restore_layer_edges(&mut self) {
-        // TODO: release/refresh the program data for the layer
-        let layer           = self.current_layer();
-        let edges           = &mut layer.edges;
-        let stored_edges    = &layer.stored_edges;
+        // Borrow the data we need
+        let program_data_cache  = &mut self.program_data_cache;
+        let layers              = &mut self.layers;
+        let layer               = &mut layers.get_mut(self.current_layer.0).unwrap();
+        let edges               = &mut layer.edges;
+        let stored_edges        = &layer.stored_edges;
 
+        // Clear the existing set of edges and replace with the stored edges    
         edges.clear_edges();
         stored_edges.iter()
             .cloned()
             .for_each(|edge| edges.add_edge(edge));
+
+        // Clear the existing program data and replace with the stored program data
+        layer.used_data.drain(..).for_each(|data_id| program_data_cache.release_program_data(data_id));
+        layer.used_data.extend(layer.stored_data.iter()
+            .map(|data_id| {
+                program_data_cache.retain_program_data(*data_id);
+                *data_id
+            }));
     }
 
     ///
@@ -259,6 +286,17 @@ where
     ///
     #[inline]
     pub (crate) fn free_stored_edges(&mut self) {
-        self.current_layer().stored_edges.clear();
+        // Borrow the things we need
+        let program_data_cache  = &mut self.program_data_cache;
+        let layers              = &mut self.layers;
+        let layer               = &mut layers.get_mut(self.current_layer.0).unwrap();
+        let stored_edges        = &mut layer.stored_edges;
+        let stored_data         = &mut layer.stored_data;
+    
+        // Free the edges
+        stored_edges.clear();
+
+        // Release the data associated with each edge
+        stored_data.drain(..).for_each(|data_id| program_data_cache.release_program_data(data_id));
     }
 }
