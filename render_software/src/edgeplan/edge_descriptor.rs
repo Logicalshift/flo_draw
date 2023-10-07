@@ -40,7 +40,7 @@ pub enum EdgeInterceptDirection {
 }
 
 ///
-/// Describes an edge that 
+/// Describes an edge that can be used as part of an edge plan
 ///
 pub trait EdgeDescriptor : Send + Sync {
     ///
@@ -74,7 +74,7 @@ pub trait EdgeDescriptor : Send + Sync {
     fn bounding_box(&self) -> ((f64, f64), (f64, f64));
 
     ///
-    /// Returns the intercepts for this edge at a particular y position
+    /// Appends the intercepts for this edge at a set of y positions to a buffer
     ///
     /// `prepare_to_render()` must have been called on this edge at least once before before this is called.
     /// This function may not return valid results until this has been done.
