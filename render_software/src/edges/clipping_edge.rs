@@ -143,7 +143,7 @@ where
         // TODO: often we'll clip against multiple shapes for the same set of y coordinates, so a way to cache these results would speed things up
         let mut clip_intercepts = vec![smallvec![]; y_positions.len()];
 
-        // TODO: this assumes that the intercepts are added to the existing list of items, which they aren't at the moment
+        // Append the edges from each of the shapes making up the clip region
         for clip_edge in self.region.region.iter() {
             clip_edge.intercepts(y_positions, &mut clip_intercepts);
         }
@@ -154,7 +154,6 @@ where
         }
 
         // Collect the unclipped versions of the shape edges
-        // TODO: also assumes that the edges append to the buffer instead of replacing it
         for shape_edge in self.shape_edges.iter() {
             shape_edge.intercepts(y_positions, output);
         }
