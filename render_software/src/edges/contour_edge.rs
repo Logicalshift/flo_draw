@@ -89,12 +89,9 @@ where
             let (x, y)              = self.corner_offset;
 
             let y_pos = y_pos - y;
-            if y_pos < 0.0 || y_pos >= h {
-                output[idx] = smallvec![];
-            } else {
-                output[idx] = self.contour.intercepts_on_line(y_pos).into_iter()
-                    .flat_map(|intercept| [(EdgeInterceptDirection::Toggle, intercept.start + x), (EdgeInterceptDirection::Toggle, intercept.end + x)])
-                    .collect();
+            if !(y_pos < 0.0 || y_pos >= h) {
+                output[idx].extend(self.contour.intercepts_on_line(y_pos).into_iter()
+                    .flat_map(|intercept| [(EdgeInterceptDirection::Toggle, intercept.start + x), (EdgeInterceptDirection::Toggle, intercept.end + x)]));
             }
         }
     }

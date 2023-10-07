@@ -182,8 +182,6 @@ impl Polyline {
     ///
     #[inline]
     pub fn intercepts_on_line(&self, y_pos: f64, intercepts: &mut SmallVec<[(EdgeInterceptDirection, f64); 2]>) {
-        intercepts.clear();
-
         if let PolylineValue::Lines(lines) = &self.value {
             // All the lines passing through y_pos are included here (as ranges are exclusive, this will exclude the end point of the line)
             let mut last_direction = EdgeInterceptDirection::Toggle;

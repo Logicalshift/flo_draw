@@ -439,11 +439,8 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
             let intercepts = self.subpath.intercepts_on_line(*y_pos);
 
             if self.subpath.y_bounds.contains(y_pos) {
-                *output = intercepts.into_iter()
-                    .map(|intercept| (EdgeInterceptDirection::Toggle, intercept.x_pos))
-                    .collect();
-            } else {
-                *output = smallvec![];
+                output.extend(intercepts.into_iter()
+                    .map(|intercept| (EdgeInterceptDirection::Toggle, intercept.x_pos)));
             }
         }
     }
