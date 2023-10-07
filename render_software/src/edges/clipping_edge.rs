@@ -154,17 +154,75 @@ where
         }
 
         // Collect the unclipped versions of the shape edges
+        let mut unclipped_shape = vec![smallvec![]; y_positions.len()];
         for shape_edge in self.shape_edges.iter() {
-            shape_edge.intercepts(y_positions, output);
+            shape_edge.intercepts(y_positions, &mut unclipped_shape);
         }
 
         // Sort the intercepts so we can trace the clipping region from left to right
-        for intercept_list in clip_intercepts.iter_mut() {
+        for intercept_list in unclipped_shape.iter_mut() {
             intercept_list.sort_by(|(_, a_xpos), (_, b_xpos)| a_xpos.total_cmp(b_xpos));
         }
 
-        // TODO: clip the intercepts
+        // Clip the shape by scanning the clipping intercepts
+        for y_idx in 0..y_positions.len() {
+            // The crossing count for the clipping shape (0 = outside shape, non-zero = inside shape)
+            let mut clip_inside = 0;
 
-        todo!()
+            // Look ahead in the list of clipping intercepts, ie looking for the next point where the clipping changes
+            let mut clip_iter   = clip_intercepts[y_idx].iter();
+            let mut clip_next   = if let Some(next) = clip_iter.next() { 
+                next
+            } else {
+                // This entire line is clipped away
+                continue;
+            };
+
+            // Iterate across the shape
+            let mut shape_inside    = 0;
+            let mut shape_iter      = unclipped_shape[y_idx].iter();
+            let output              = &mut output[y_idx];
+
+            'clip_region: while let Some((shape_dir, shape_pos)) = shape_iter.next() {
+                // Advance the 'clip_next' position until it is after the current state
+                while clip_next.1 < *shape_pos {
+                    // Update the 'inside' part of the clipping rectangle
+                    let was_inside  = clip_inside != 0;
+                    clip_inside     = match clip_next.0 {
+                        EdgeInterceptDirection::Toggle          => if clip_inside == 0 { 1 } else { 0 },
+                        EdgeInterceptDirection::DirectionIn     => clip_inside + 1,
+                        EdgeInterceptDirection::DirectionOut    => clip_inside - 1,
+                    };
+                    let is_inside   = clip_inside != 0;
+
+                    // Enter/leave the shape if we're inside it already
+                    if shape_inside != 0 && was_inside != is_inside {
+                        output.push((EdgeInterceptDirection::Toggle, clip_next.1))
+                    }
+
+                    // Move to the next clip intercept
+                    clip_next = if let Some(next) = clip_iter.next() {
+                        next
+                    } else {
+                        // Once there are no more clip intercepts, the remaining points are all outside
+                        break 'clip_region;
+                    };
+                }
+
+                // Update whether or not we're inside the shape
+                let was_inside  = shape_inside != 0;
+                shape_inside    = match shape_dir {
+                    EdgeInterceptDirection::Toggle          => if shape_inside == 0 { 1 } else { 0 },
+                    EdgeInterceptDirection::DirectionIn     => shape_inside + 1,
+                    EdgeInterceptDirection::DirectionOut    => shape_inside - 1,
+                };
+                let is_inside   = shape_inside != 0;
+
+                // clip_next is the closest following clip region to the current shape, so clip_inside can be used to determine if this point is inside the shape
+                if clip_inside != 0 && was_inside != is_inside {
+                    output.push((EdgeInterceptDirection::Toggle, *shape_pos));
+                }
+            }
+        }
     }
 }
