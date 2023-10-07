@@ -246,6 +246,8 @@ where
         for edge_idx in self.edge_space.data_in_region(y_min..(y_max+1e-6)) {
             let edge = &self.edges[*edge_idx];
 
+            edge_intercepts.iter_mut().for_each(|edge| edge.clear());
+
             // Read the intercepts from this edge (we rely on the 'intercepts' method overwriting any old values)
             let shape_id = edge.edge.shape();
             edge.edge.intercepts(y_positions, &mut edge_intercepts);
