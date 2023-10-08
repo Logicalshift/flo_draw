@@ -43,7 +43,7 @@ where
 
 impl<TEdge> ClipRegion<TEdge>
 where
-    TEdge: EdgeDescriptor,
+    TEdge: 'static + EdgeDescriptor,
 {
     ///
     /// Creates a new clipping region
@@ -71,6 +71,16 @@ where
         ClipRegion { 
             region,
             bounds
+        }
+    }
+
+    ///
+    /// Converts this clip region to use an 'object' style of edge
+    ///
+    pub fn to_object(self) -> ClipRegion<Arc<dyn EdgeDescriptor>> {
+        ClipRegion {
+            region: self.region.into_iter().map(|edge| { let edge: Arc<dyn EdgeDescriptor> = Arc::new(edge); edge }).collect(),
+            bounds: self.bounds,
         }
     }
 }
