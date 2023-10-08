@@ -118,6 +118,41 @@ impl DrawingState {
             }
         }
     }
+
+    ///
+    /// Makes a shape from the current set of subpaths
+    ///
+    #[inline]
+    pub fn create_path_shape<TEdge>(&self, make_edge: impl Fn(BezierSubpath) -> TEdge) -> Vec<TEdge> 
+    where
+        TEdge: EdgeDescriptor
+    {
+        use std::iter;
+        use flo_canvas::curves::bezier::path::*;
+
+        let mut edges = vec![];
+
+        for (start_idx, end_idx) in self.subpaths.iter().copied().chain(iter::once(self.path_edges.len())).tuple_windows() {
+            if start_idx >= end_idx { continue; }
+
+            // Use a path builder to create a simple bezier path
+            let mut path = BezierPathBuilder::<BezierSubpath>::start(self.path_edges[start_idx].start_point());
+            for curve in self.path_edges[start_idx..end_idx].iter() {
+                path = path.curve_to(curve.control_points(), curve.end_point());
+            }
+
+            // Close if unclosed
+            if self.path_edges[start_idx].start_point() != self.path_edges[end_idx-1].end_point() {
+                path = path.line_to(self.path_edges[start_idx].start_point());
+            }
+
+            // Add to the edges
+            let path = path.build();
+            edges.push(make_edge(path));
+        }
+
+        edges
+    }
 }
 
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N>
@@ -200,30 +235,11 @@ where
         current_layer.edges.declare_shape_description(shape_id, shape_descriptor);
 
         // Create bezier subpaths
-        use std::iter;
-        use flo_canvas::curves::bezier::path::*;
+        let edges = match current_state.winding_rule {
+            canvas::WindingRule::EvenOdd => current_state.create_path_shape(|path| { let result: Arc<dyn EdgeDescriptor> = Arc::new(path.to_flattened_even_odd_edge(shape_id)); result }),
+            canvas::WindingRule::NonZero => current_state.create_path_shape(|path| { let result: Arc<dyn EdgeDescriptor> = Arc::new(path.to_flattened_non_zero_edge(shape_id)); result }),
+        };
 
-        for (start_idx, end_idx) in current_state.subpaths.iter().copied().chain(iter::once(current_state.path_edges.len())).tuple_windows() {
-            if start_idx >= end_idx { continue; }
-
-            // Use a path builder to create a simple bezier path
-            let mut path = BezierPathBuilder::<BezierSubpath>::start(current_state.path_edges[start_idx].start_point());
-            for curve in current_state.path_edges[start_idx..end_idx].iter() {
-                path = path.curve_to(curve.control_points(), curve.end_point());
-            }
-
-            // Close if unclosed
-            if current_state.path_edges[start_idx].start_point() != current_state.path_edges[end_idx-1].end_point() {
-                path = path.line_to(current_state.path_edges[start_idx].start_point());
-            }
-
-            // Add to the edges
-            let path = path.build();
-
-            match current_state.winding_rule {
-                canvas::WindingRule::EvenOdd => current_layer.edges.add_edge(Arc::new(path.to_flattened_even_odd_edge(shape_id))),
-                canvas::WindingRule::NonZero => current_layer.edges.add_edge(Arc::new(path.to_flattened_non_zero_edge(shape_id))),
-            }
-        }
+        edges.into_iter().for_each(|edge| current_layer.edges.add_edge(edge));
     }
 }
