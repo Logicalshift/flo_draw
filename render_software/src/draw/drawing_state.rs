@@ -1,12 +1,15 @@
 use super::canvas_drawing::*;
 
 use crate::edgeplan::*;
+use crate::edges::*;
 use crate::pixel::*;
 
 use flo_canvas as canvas;
 use flo_canvas::curves::line::*;
 use flo_canvas::curves::bezier::*;
 use flo_canvas::curves::bezier::path as curves_path;
+
+use std::sync::*;
 
 ///
 /// A brush represents what will be used to fill in the next region 
@@ -18,6 +21,21 @@ pub enum Brush {
 
     /// Transparent solid colour brush (will be blended with the image behind)
     TransparentSolidColor(canvas::Color),
+}
+
+#[derive(Clone)]
+pub enum DrawingClipRegion {
+    /// No clip region set
+    None,
+
+    /// A clip region described by a path with an even-odd winding rule
+    EvenOdd(Arc<ClipRegion<PolylineEvenOddEdge>>),
+
+    /// A clip region described by a path with a non-zero winding rule
+    NonZero(Arc<ClipRegion<PolylineNonZeroEdge>>),
+
+    /// A clip region that is itself clipped by another region
+    Nested(Arc<ClipRegion<ClippedShapeEdge<Arc<dyn EdgeDescriptor>, Arc<dyn EdgeDescriptor>>>>)
 }
 
 ///
@@ -65,6 +83,9 @@ pub struct DrawingState {
 
     /// The end cap for the next stroke
     pub (super) stroke_end_cap: curves_path::LineCap,
+
+    /// The currently set clip region, if any
+    pub (super) clip_path: DrawingClipRegion,
 }
 
 impl Default for DrawingState {
@@ -83,6 +104,7 @@ impl Default for DrawingState {
             stroke_join:        curves_path::LineJoin::Round,
             stroke_start_cap:   curves_path::LineCap::Butt,
             stroke_end_cap:     curves_path::LineCap::Butt,
+            clip_path:          DrawingClipRegion::None,
         }
     }
 }
