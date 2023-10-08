@@ -81,6 +81,7 @@ where
 
         // Create the edge
         let stroke_edge = LineStrokeEdge::new(shape_id, current_state.path_edges.clone(), current_state.subpaths.clone(), width, stroke_options);
-        current_layer.edges.add_edge(Arc::new(stroke_edge));
+        current_state.clip_shape(shape_id, vec![stroke_edge]).into_iter()
+            .for_each(|edge| current_layer.edges.add_edge(edge));
     }
 }
