@@ -29,10 +29,10 @@ pub enum DrawingClipRegion {
     None,
 
     /// A clip region described by a path with an even-odd winding rule
-    EvenOdd(Arc<ClipRegion<PolylineEvenOddEdge>>),
+    EvenOdd(Arc<ClipRegion<FlattenedBezierEvenOddEdge>>),
 
     /// A clip region described by a path with a non-zero winding rule
-    NonZero(Arc<ClipRegion<PolylineNonZeroEdge>>),
+    NonZero(Arc<ClipRegion<FlattenedBezierNonZeroEdge>>),
 
     /// A clip region that is itself clipped by another region
     Nested(Arc<ClipRegion<ClippedShapeEdge<Arc<dyn EdgeDescriptor>, Arc<dyn EdgeDescriptor>>>>)
