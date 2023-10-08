@@ -62,8 +62,8 @@ where
 
             min_x = min_x.min(edge_minx);
             min_y = min_y.min(edge_miny);
-            max_x = max_x.min(edge_maxx);
-            max_y = max_y.min(edge_maxy);
+            max_x = max_x.max(edge_maxx);
+            max_y = max_y.max(edge_maxy);
         }
 
         let bounds = ((min_x, min_y), (max_x, max_y));
@@ -130,8 +130,8 @@ where
 
             min_x = min_x.min(edge_minx);
             min_y = min_y.min(edge_miny);
-            max_x = max_x.min(edge_maxx);
-            max_y = max_y.min(edge_maxy);
+            max_x = max_x.max(edge_maxx);
+            max_y = max_y.max(edge_maxy);
         }
 
         // The shape bounds are constrained by the clipping region bounds
