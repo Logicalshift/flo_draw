@@ -242,4 +242,93 @@ where
 
         edges.into_iter().for_each(|edge| current_layer.edges.add_edge(edge));
     }
+
+    ///
+    /// Sets the clipping path to the current path
+    ///
+    pub (super) fn set_clipping_path(&mut self) {
+        let current_state   = &mut self.current_state;
+
+        // TODO: the two arms here are kind of the same with some minor differences, so extracting a function with the common functionality would make sense
+        match current_state.winding_rule {
+            canvas::WindingRule::EvenOdd => {
+                // Create the clipping shape (shape ID doesn't matter for this)
+                let shape_id    = ShapeId::new();
+                let mut shape   = current_state.create_path_shape(|path| path.to_flattened_even_odd_edge(shape_id));
+
+                // Turn into a clip region
+                shape.iter_mut().for_each(|edge| edge.prepare_to_render());
+
+                current_state.clip_path = match &current_state.clip_path {
+                    DrawingClipRegion::None                 => DrawingClipRegion::EvenOdd(Arc::new(ClipRegion::new(shape))),
+
+                    DrawingClipRegion::EvenOdd(old_region)  => {
+                        let old_region  = (&**old_region).clone().to_object();
+                        let shape       = shape_to_object(shape);
+                        let region      = ClipRegion::new(vec![ClippedShapeEdge::new(shape_id, Arc::new(old_region), shape)]);
+
+                        DrawingClipRegion::Nested(Arc::new(region))
+                    },
+                    DrawingClipRegion::NonZero(old_region)  => {
+                        let old_region  = (&**old_region).clone().to_object();
+                        let shape       = shape_to_object(shape);
+                        let region      = ClipRegion::new(vec![ClippedShapeEdge::new(shape_id, Arc::new(old_region), shape)]);
+
+                        DrawingClipRegion::Nested(Arc::new(region))
+                    },
+                    DrawingClipRegion::Nested(old_region) => {
+                        let old_region  = (&**old_region).clone().to_object();
+                        let shape       = shape_to_object(shape);
+                        let region      = ClipRegion::new(vec![ClippedShapeEdge::new(shape_id, Arc::new(old_region), shape)]);
+
+                        DrawingClipRegion::Nested(Arc::new(region))
+                    }
+                }
+            }
+
+            canvas::WindingRule::NonZero => {
+                // Create the clipping shape (shape ID doesn't matter for this)
+                let shape_id    = ShapeId::new();
+                let mut shape   = current_state.create_path_shape(|path| path.to_flattened_non_zero_edge(shape_id));
+
+                // Turn into a clip region
+                shape.iter_mut().for_each(|edge| edge.prepare_to_render());
+
+                current_state.clip_path = match &current_state.clip_path {
+                    DrawingClipRegion::None                 => DrawingClipRegion::NonZero(Arc::new(ClipRegion::new(shape))),
+                    
+                    DrawingClipRegion::EvenOdd(old_region)  => {
+                        let old_region  = (&**old_region).clone().to_object();
+                        let shape       = shape_to_object(shape);
+                        let region      = ClipRegion::new(vec![ClippedShapeEdge::new(shape_id, Arc::new(old_region), shape)]);
+
+                        DrawingClipRegion::Nested(Arc::new(region))
+                    },
+                    DrawingClipRegion::NonZero(old_region)  => {
+                        let old_region  = (&**old_region).clone().to_object();
+                        let shape       = shape_to_object(shape);
+                        let region      = ClipRegion::new(vec![ClippedShapeEdge::new(shape_id, Arc::new(old_region), shape)]);
+
+                        DrawingClipRegion::Nested(Arc::new(region))
+                    },
+                    DrawingClipRegion::Nested(old_region) => {
+                        let old_region  = (&**old_region).clone().to_object();
+                        let shape       = shape_to_object(shape);
+                        let region      = ClipRegion::new(vec![ClippedShapeEdge::new(shape_id, Arc::new(old_region), shape)]);
+
+                        DrawingClipRegion::Nested(Arc::new(region))
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn shape_to_object<TEdge>(shape: Vec<TEdge>) -> Vec<Arc<dyn EdgeDescriptor>>
+where
+    TEdge: 'static + EdgeDescriptor,
+{
+    shape.into_iter()
+        .map(|edge| { let result: Arc<dyn EdgeDescriptor> = Arc::new(edge); result })
+        .collect()
 }
