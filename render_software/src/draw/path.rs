@@ -322,6 +322,14 @@ where
             }
         }
     }
+
+    ///
+    /// Removes the current clipping path
+    ///
+    #[inline]
+    pub (super) fn unclip(&mut self) {
+        self.current_state.clip_path = DrawingClipRegion::None;
+    }
 }
 
 fn shape_to_object<TEdge>(shape: Vec<TEdge>) -> Vec<Arc<dyn EdgeDescriptor>>

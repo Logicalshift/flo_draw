@@ -145,7 +145,7 @@ where
                 CenterRegion((x1, y1), (x2, y2))                    => { self.current_state.center_region((x1, y1), (x2, y2)); },
                 MultiplyTransform(transform)                        => { self.current_state.multiply_transform(transform); },
 
-                Unclip                                              => { self.current_state.clip_path = DrawingClipRegion::None; },
+                Unclip                                              => { self.unclip(); },
                 Clip                                                => { self.set_clipping_path(); },
                 Store                                               => { self.store_layer_edges(); },
                 Restore                                             => { self.restore_layer_edges(); },
