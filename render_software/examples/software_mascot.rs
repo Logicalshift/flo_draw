@@ -14,6 +14,15 @@ pub fn main() {
     // Decode
     let mascot = decode_drawing(MASCOT.chars()).collect::<Result<Vec<Draw>, _>>().unwrap();
 
+    // Splice in a layer blend
+    let mut mascot      = mascot;
+    let mut layer_blend = vec![];
+
+    layer_blend.layer(LayerId(1));
+    layer_blend.layer_alpha(LayerId(1), 0.25);
+
+    mascot.splice(1..1, layer_blend);
+
     /*
     // Splice in setting a clip path
     let mut mascot  = mascot;
