@@ -218,7 +218,7 @@ impl DrawingState {
     /// Applies the clipping rules to a shape, returning an edge descriptor
     ///
     #[inline]
-    pub fn clip_edge(&self, shape_id: ShapeId, shape: Vec<impl 'static + Clone + EdgeDescriptor>) -> Vec<Arc<dyn EdgeDescriptor>> {
+    pub fn clip_shape(&self, shape_id: ShapeId, shape: Vec<impl 'static + Clone + EdgeDescriptor>) -> Vec<Arc<dyn EdgeDescriptor>> {
         match &self.clip_path {
             DrawingClipRegion::None             => shape.into_iter().map(|edge| { let result: Arc<dyn EdgeDescriptor> = Arc::new(edge); result }).collect(),
             DrawingClipRegion::EvenOdd(region)  => vec![Arc::new(ClippedShapeEdge::new(shape_id, Arc::clone(region), shape))],

@@ -236,8 +236,8 @@ where
 
         // Create bezier subpaths
         let edges = match current_state.winding_rule {
-            canvas::WindingRule::EvenOdd => current_state.create_path_shape(|path| { let result: Arc<dyn EdgeDescriptor> = Arc::new(path.to_flattened_even_odd_edge(shape_id)); result }),
-            canvas::WindingRule::NonZero => current_state.create_path_shape(|path| { let result: Arc<dyn EdgeDescriptor> = Arc::new(path.to_flattened_non_zero_edge(shape_id)); result }),
+            canvas::WindingRule::EvenOdd => current_state.clip_shape(shape_id, current_state.create_path_shape(|path| path.to_flattened_even_odd_edge(shape_id))),
+            canvas::WindingRule::NonZero => current_state.clip_shape(shape_id, current_state.create_path_shape(|path| path.to_flattened_non_zero_edge(shape_id))),
         };
 
         edges.into_iter().for_each(|edge| current_layer.edges.add_edge(edge));
