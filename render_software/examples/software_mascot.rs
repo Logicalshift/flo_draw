@@ -12,7 +12,20 @@ use std::time::{Instant};
 ///
 pub fn main() {
     // Decode
-    let mascot = decode_drawing(MASCOT.chars()).collect::<Result<Vec<Draw>, _>>().unwrap();
+    let mut mascot = decode_drawing(MASCOT.chars()).collect::<Result<Vec<Draw>, _>>().unwrap();
+
+    let mut clip = vec![];
+    clip.winding_rule(WindingRule::EvenOdd);
+    clip.new_path();
+    clip.circle(0.0, 0.0, 0.7);
+    clip.circle(0.0, 0.0, 0.3);
+    clip.fill_color(Color::Rgba(0.5, 0.5, 0.5, 0.5));
+    clip.fill();
+    clip.clip();
+    clip.new_path();
+    clip.winding_rule(WindingRule::NonZero);
+
+    mascot.splice(1..1, clip);
 
     // Create a canvas drawing and draw the mascot to it
     let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
