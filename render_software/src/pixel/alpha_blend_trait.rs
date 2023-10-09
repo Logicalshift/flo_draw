@@ -38,6 +38,9 @@ pub enum AlphaOperation {
 /// Trait implemented by types that support alpha blending
 ///
 pub trait AlphaBlend : Sized {
+    /// The type of a component of this value
+    type Component: Sized + Copy + Clone + AlphaValue + Add<Output=Self::Component> + Sub<Output=Self::Component> + Mul<Output=Self::Component> + Div<Output=Self::Component>;
+
     /// Performs alpha blending with a chosen source and target functions (for premultiplied alphas)
     fn alpha_blend_with_function(self, dest: Self, source_alpha: AlphaFunction, dest_alpha: AlphaFunction) -> Self;
 
@@ -87,9 +90,9 @@ impl AlphaOperation {
     /// Returns the function required to alpha-blend two pixels using this operation
     ///
     #[inline]
-    pub const fn get_function<TPixel, const N: usize>(&self) -> impl Fn(TPixel, TPixel) -> TPixel
+    pub const fn get_function<TPixel>(&self) -> impl Fn(TPixel, TPixel, TPixel::Component, TPixel::Component) -> TPixel
     where
-        TPixel: Pixel<N>,
+        TPixel: AlphaBlend + Add<TPixel, Output=TPixel> + Mul<TPixel::Component, Output=TPixel>,
     {
         let (src_fn, dst_fn) = self.functions();
 
@@ -111,10 +114,7 @@ impl AlphaOperation {
             AlphaFunction::OneMinusDestAlpha        => |pixel, _, dst_alpha|    pixel * (TPixel::Component::one() - dst_alpha),
         };
 
-        move |pix1, pix2| {
-            let src_alpha = pix1.alpha_component();
-            let dst_alpha = pix2.alpha_component();
-
+        move |pix1, pix2, src_alpha, dst_alpha| {
             src_fn(pix1, src_alpha, dst_alpha) + dst_fn(pix2, src_alpha, dst_alpha)
         }
     }

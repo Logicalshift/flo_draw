@@ -26,8 +26,6 @@ impl Default for U32LinearPixel {
 }
 
 impl Pixel<4> for U32LinearPixel {
-    type Component = U32FixedPoint;
-
     #[inline]
     fn black() -> U32LinearPixel {
         U32LinearPixel(u32x4::new([0, 0, 0, 65535]))
@@ -124,6 +122,8 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for U32LinearPixel {
 }
 
 impl AlphaBlend for U32LinearPixel {
+    type Component = U32FixedPoint;
+
     #[inline]
     fn alpha_blend_with_function(self, dest: Self, source_alpha_fn: AlphaFunction, dest_alpha_fn: AlphaFunction) -> Self {
         let src_alpha = self.alpha_component();

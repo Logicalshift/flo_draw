@@ -19,8 +19,6 @@ where
     Self: AlphaBlend,
     Self: ToGammaColorSpace<U8RgbaPremultipliedPixel>,
 {
-    type Component: Sized + Copy + Clone + AlphaValue + Add<Output=Self::Component> + Sub<Output=Self::Component> + Mul<Output=Self::Component> + Div<Output=Self::Component>;
-
     /// A pixel representing the 'black' colour
     fn black() -> Self;
 

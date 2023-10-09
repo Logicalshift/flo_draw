@@ -25,8 +25,6 @@ impl Default for F32LinearPixel {
 }
 
 impl Pixel<4> for F32LinearPixel {
-    type Component = f32;
-
     #[inline]
     fn black() -> F32LinearPixel {
         F32LinearPixel(f32x4::new([0.0, 0.0, 0.0, 1.0]))
@@ -122,6 +120,8 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
 }
 
 impl AlphaBlend for F32LinearPixel {
+    type Component = f32;
+
     #[inline]
     fn alpha_blend_with_function(self, dest: Self, source_alpha_fn: AlphaFunction, dest_alpha_fn: AlphaFunction) -> Self {
         let src_alpha = self.alpha_component();
