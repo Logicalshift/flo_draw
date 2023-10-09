@@ -104,7 +104,9 @@ where
         for layer_handle in source.ordered_layers.iter().copied() {
             if let Some(layer) = source.layers.get(layer_handle.0) {
                 // Plan this layer (note that the x-range will be something like -1..1 so the scan planner must support this)
-                self.scan_planner.plan_scanlines(&layer.edges, &transform, &y_positions, x_range.clone(), &mut layer_scanlines);
+                if layer.alpha > 0.0 {
+                    self.scan_planner.plan_scanlines(&layer.edges, &transform, &y_positions, x_range.clone(), &mut layer_scanlines);
+                }
 
                 // Combine the layer with the scanlines we're planning
                 if layer.blend_mode == AlphaOperation::SourceOver && layer.alpha >= 1.0 {
@@ -120,7 +122,7 @@ where
                                 }
                             })
                         })
-                } else {
+                } else if layer.alpha > 0.0 {
                     // Blend the layers together
                     let blend_mode  = layer.blend_mode;
                     let alpha       = layer.alpha as f32;
