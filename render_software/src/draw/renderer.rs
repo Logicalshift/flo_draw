@@ -107,18 +107,35 @@ where
                 self.scan_planner.plan_scanlines(&layer.edges, &transform, &y_positions, x_range.clone(), &mut layer_scanlines);
 
                 // Combine the layer with the scanlines we're planning
-                // TODO: alpha blending (this assumes source over with 1.0 alpha)
-                scanlines.iter_mut()
-                    .zip(layer_scanlines.iter())
-                    .for_each(|((_, scanline), (_, layer_scanline))| {
-                        scanline.merge(&layer_scanline, |src, dst, is_opaque| {
-                            if is_opaque {
-                                *src = dst.clone();
-                            } else {
-                                src.extend(dst.clone());
-                            }
+                if layer.blend_mode == AlphaOperation::SourceOver && layer.alpha >= 1.0 {
+                    // Source over, full transparency: just overlay the layers
+                    scanlines.iter_mut()
+                        .zip(layer_scanlines.iter())
+                        .for_each(|((_, scanline), (_, layer_scanline))| {
+                            scanline.merge(&layer_scanline, |src, dst, is_opaque| {
+                                if is_opaque {
+                                    *src = dst.clone();
+                                } else {
+                                    src.extend(dst.clone());
+                                }
+                            })
                         })
-                    })
+                } else {
+                    // Blend the layers together
+                    let blend_mode  = layer.blend_mode;
+                    let alpha       = layer.alpha as f32;
+
+                    scanlines.iter_mut()
+                        .zip(layer_scanlines.iter())
+                        .for_each(|((_, scanline), (_, layer_scanline))| {
+                            scanline.merge(&layer_scanline, |src, dst, _is_opaque| {
+                                // TODO: apply the alpha operation when it's other than SourceOver
+                                src.push(PixelProgramPlan::StartBlend);
+                                src.extend(dst.clone());
+                                src.push(PixelProgramPlan::Blend(alpha));
+                            })
+                        })
+                }
             }
         }
 
