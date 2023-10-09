@@ -109,7 +109,7 @@ fn source_over_3() {
     let col2        = F32LinearPixel::from_color(Color::Rgba(0.7764, 0.6823, 0.8588, 0.6), 2.2);
     let src_over    = AlphaOperation::SourceOver.get_function();
 
-    let col3                = src_over(col2, col1, col2.alpha_component(), col1.alpha_component());
+    let col3                = src_over(col2, col1);
     let col3                = [col3];
     let mut back_as_color   = [U8RgbaPremultipliedPixel::default()];
     F32LinearPixel::to_gamma_colorspace(&col3, &mut back_as_color, 2.2);

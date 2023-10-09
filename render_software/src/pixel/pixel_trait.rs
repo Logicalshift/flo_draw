@@ -39,7 +39,4 @@ where
 
     /// Retrieves an individual component from this 
     fn get(&self, component: usize) -> Self::Component { self.to_components()[component] }
-
-    /// Returns the alpha component of this pixel
-    fn alpha_component(&self) -> Self::Component;
 }

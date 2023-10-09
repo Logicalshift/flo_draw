@@ -52,11 +52,6 @@ impl Pixel<4> for U32LinearPixel {
     }
 
     #[inline]
-    fn alpha_component(&self) -> Self::Component {
-        U32FixedPoint(self.0.as_array_ref()[3])
-    }
-
-    #[inline]
     fn from_color(color: canvas::Color, gamma: f64) -> Self {
         let (r, g, b, a) = color.to_rgba_components();
 
@@ -130,6 +125,11 @@ impl AlphaBlend for U32LinearPixel {
         let dst_alpha = dest.alpha_component();
 
         source_alpha_fn.apply(self, src_alpha, dst_alpha) + dest_alpha_fn.apply(dest, src_alpha, dst_alpha)
+    }
+
+    #[inline]
+    fn alpha_component(&self) -> Self::Component {
+        U32FixedPoint(self.0.as_array_ref()[3])
     }
 
     #[inline]

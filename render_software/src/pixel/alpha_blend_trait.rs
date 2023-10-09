@@ -51,6 +51,9 @@ pub trait AlphaBlend : Sized {
         self.alpha_blend_with_function(dest, src, dst)
     }
 
+    /// Returns the alpha component of this item
+    fn alpha_component(&self) -> Self::Component;
+
     /// Multiplies the alpha blend factor for this value by a constant
     fn multiply_alpha(self, factor: f64) -> Self;
 
@@ -90,7 +93,7 @@ impl AlphaOperation {
     /// Returns the function required to alpha-blend two pixels using this operation
     ///
     #[inline]
-    pub const fn get_function<TPixel>(&self) -> impl Fn(TPixel, TPixel, TPixel::Component, TPixel::Component) -> TPixel
+    pub const fn get_function<TPixel>(&self) -> impl Fn(TPixel, TPixel) -> TPixel
     where
         TPixel: AlphaBlend + Add<TPixel, Output=TPixel> + Mul<TPixel::Component, Output=TPixel>,
     {
@@ -114,7 +117,10 @@ impl AlphaOperation {
             AlphaFunction::OneMinusDestAlpha        => |pixel, _, dst_alpha|    pixel * (TPixel::Component::one() - dst_alpha),
         };
 
-        move |pix1, pix2, src_alpha, dst_alpha| {
+        move |pix1, pix2| {
+            let src_alpha = pix1.alpha_component();
+            let dst_alpha = pix2.alpha_component();
+
             src_fn(pix1, src_alpha, dst_alpha) + dst_fn(pix2, src_alpha, dst_alpha)
         }
     }
