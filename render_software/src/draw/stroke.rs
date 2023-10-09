@@ -7,8 +7,6 @@ use crate::pixel::*;
 
 use flo_canvas::curves::bezier::path::*;
 
-use std::sync::*;
-
 impl DrawingState {
     ///
     /// Sets the width of the stroke
