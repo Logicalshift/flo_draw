@@ -122,6 +122,19 @@ where
                                 }
                             })
                         })
+                } else if layer.alpha > 0.0 && layer.blend_mode == AlphaOperation::SourceOver {
+                    // Blend the layers together using the source over operation
+                    let alpha = layer.alpha as f32;
+
+                    scanlines.iter_mut()
+                        .zip(layer_scanlines.iter())
+                        .for_each(|((_, scanline), (_, layer_scanline))| {
+                            scanline.merge(&layer_scanline, |src, dst, _is_opaque| {
+                                src.push(PixelProgramPlan::StartBlend);
+                                src.extend(dst.clone());
+                                src.push(PixelProgramPlan::SourceOver(alpha));
+                            })
+                        })
                 } else if layer.alpha > 0.0 {
                     // Blend the layers together
                     let blend_mode  = layer.blend_mode;
@@ -131,10 +144,9 @@ where
                         .zip(layer_scanlines.iter())
                         .for_each(|((_, scanline), (_, layer_scanline))| {
                             scanline.merge(&layer_scanline, |src, dst, _is_opaque| {
-                                // TODO: apply the alpha operation when it's other than SourceOver
                                 src.push(PixelProgramPlan::StartBlend);
                                 src.extend(dst.clone());
-                                src.push(PixelProgramPlan::SourceOver(alpha));
+                                src.push(PixelProgramPlan::Blend(blend_mode, alpha));
                             })
                         })
                 }
