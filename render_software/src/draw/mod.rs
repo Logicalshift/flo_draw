@@ -6,8 +6,6 @@ mod path;
 mod stroke;
 mod transform;
 mod renderer;
-mod render_source;
 
 pub use canvas_drawing::*;
 pub use renderer::*;
-pub use render_source::*;
