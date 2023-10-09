@@ -534,6 +534,8 @@ impl ScanlinePlan {
                     PixelProgramPlan::StartBlend                => None,
                     PixelProgramPlan::SourceOver(_)             => None,
                     PixelProgramPlan::LinearSourceOver(_, _)    => None,
+                    PixelProgramPlan::Blend(_, _)               => None,
+                    PixelProgramPlan::LinearBlend(_, _, _)      => None,
                 });
 
                 // First program is opaque, the rest are transparent

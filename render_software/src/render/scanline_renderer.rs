@@ -4,6 +4,8 @@ use crate::pixel::*;
 use crate::scanplan::*;
 use crate::scanplan::buffer_stack::*;
 
+use std::ops::*;
+
 ///
 /// Specifies the y-pos and x transformation to use with a scanline renderer
 ///
@@ -136,6 +138,46 @@ where
                             }
                         });
                     }
+
+                    PixelProgramPlan::Blend(op, factor) => {
+                        let factor  = *factor as f64;
+                        let op      = op.get_function::<TProgramRunner::TPixel>();
+
+                        // Can skip the factor multiplication step if the blend factor is 1.0 (which should be fairly common)
+                        if factor == 1.0 {
+                            shadow_pixels.pop_entry(|src, dst| {
+                                for x in (x_range.start as usize)..(x_range.end as usize) {
+                                    dst[x] = op(src[x], dst[x]);
+                                }
+                            });
+                        } else {
+                            shadow_pixels.pop_entry(|src, dst| {
+                                for x in (x_range.start as usize)..(x_range.end as usize) {
+                                    dst[x] = op(src[x].multiply_alpha(factor), dst[x]);
+                                }
+                            });
+                        }
+                    },
+
+                    PixelProgramPlan::LinearBlend(op, start, end) => {
+                        // Change the alpha factor across the range of the blend
+                        let op          = op.get_function::<TProgramRunner::TPixel>();
+                        let x_range     = (x_range.start as usize)..(x_range.end as usize);
+                        let start       = *start as f64;
+                        let end         = *end as f64;
+                        let multiplier  = (end-start)/(x_range.len() as f64);
+
+                        shadow_pixels.pop_entry(|src, dst| {
+                            let start_x = x_range.start;
+
+                            for x in x_range {
+                                let pos     = (x-start_x) as f64;
+                                let factor  = start + pos * multiplier;
+
+                                dst[x] = op(src[x].multiply_alpha(factor), dst[x]);
+                            }
+                        });
+                    },
                 }
 
                 // Move to the next step

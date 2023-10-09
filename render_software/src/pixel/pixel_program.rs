@@ -1,3 +1,4 @@
+use super::alpha_blend_trait::*;
 use super::pixel_program_cache::*;
 
 use crate::scanplan::*;
@@ -163,4 +164,11 @@ pub enum PixelProgramPlan {
     /// Blend the contents of the blend buffer with the current set of pixels, using a linear gradient for the alpha between
     /// the two sets of pixels
     LinearSourceOver(f32, f32),
+
+    /// Blend the contents of the blend buffer with the current set of pixels, using any operation, and release the buffer.
+    Blend(AlphaOperation, f32),
+
+    /// Blend the contents of the blend buffer with the current set of pixels, using a linear gradient for the alpha between
+    /// the two sets of pixels
+    LinearBlend(AlphaOperation, f32, f32),
 }
