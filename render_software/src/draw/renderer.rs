@@ -134,7 +134,7 @@ where
                                 // TODO: apply the alpha operation when it's other than SourceOver
                                 src.push(PixelProgramPlan::StartBlend);
                                 src.extend(dst.clone());
-                                src.push(PixelProgramPlan::Blend(alpha));
+                                src.push(PixelProgramPlan::SourceOver(alpha));
                             })
                         })
                 }

@@ -530,10 +530,10 @@ impl ScanlinePlan {
                 let range           = span.x_range();
                 let opaque          = span.is_opaque();
                 let mut programs    = span.programs().filter_map(|program| match program {
-                    PixelProgramPlan::Run(program)          => Some(program),
-                    PixelProgramPlan::StartBlend            => None,
-                    PixelProgramPlan::Blend(_)              => None,
-                    PixelProgramPlan::LinearBlend(_, _)     => None,
+                    PixelProgramPlan::Run(program)              => Some(program),
+                    PixelProgramPlan::StartBlend                => None,
+                    PixelProgramPlan::SourceOver(_)             => None,
+                    PixelProgramPlan::LinearSourceOver(_, _)    => None,
                 });
 
                 // First program is opaque, the rest are transparent

@@ -99,7 +99,7 @@ where
                         shadow_pixels.push_entry((x_range.start as _)..(x_range.end as _));
                     },
 
-                    PixelProgramPlan::Blend(factor) => {
+                    PixelProgramPlan::SourceOver(factor) => {
                         let factor = *factor as f64;
 
                         // Can skip the factor multiplication step if the blend factor is 1.0 (which should be fairly common)
@@ -118,7 +118,7 @@ where
                         }
                     },
 
-                    PixelProgramPlan::LinearBlend(start, end) => {
+                    PixelProgramPlan::LinearSourceOver(start, end) => {
                         // Change the alpha factor across the range of the blend
                         let x_range     = (x_range.start as usize)..(x_range.end as usize);
                         let start       = *start as f64;

@@ -158,9 +158,9 @@ pub enum PixelProgramPlan {
 
     /// Blend the contents of the blend buffer with the current set of pixels, using the source-over operation, and release
     /// the buffer.
-    Blend(f32),
+    SourceOver(f32),
 
     /// Blend the contents of the blend buffer with the current set of pixels, using a linear gradient for the alpha between
     /// the two sets of pixels
-    LinearBlend(f32, f32),
+    LinearSourceOver(f32, f32),
 }
