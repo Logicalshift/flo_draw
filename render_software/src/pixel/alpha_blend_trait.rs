@@ -18,7 +18,7 @@ pub enum AlphaFunction {
 ///
 /// An operation applied to an alpha function
 ///
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum AlphaOperation {
     Clear,
     Source,
