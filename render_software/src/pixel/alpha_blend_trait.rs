@@ -37,7 +37,11 @@ pub enum AlphaOperation {
 ///
 /// Trait implemented by types that support alpha blending
 ///
-pub trait AlphaBlend : Sized {
+pub trait AlphaBlend : Sized
+where
+    Self: Add<Self, Output=Self>,
+    Self: Mul<Self::Component, Output=Self>,
+{
     /// The type of a component of this value
     type Component: Sized + Copy + Clone + AlphaValue + Add<Output=Self::Component> + Sub<Output=Self::Component> + Mul<Output=Self::Component> + Div<Output=Self::Component>;
 
