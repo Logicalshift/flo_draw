@@ -21,9 +21,6 @@ pub enum Brush {
 
     /// Transparent solid colour brush (will be blended with the image behind)
     TransparentSolidColor(canvas::Color),
-
-    /// A solid colour blended with an alpha operation
-    BlendedSolidColor(AlphaOperation, canvas::Color),
 }
 
 #[derive(Clone)]
