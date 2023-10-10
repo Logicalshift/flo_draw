@@ -41,7 +41,7 @@ where
         let mut shape_descriptor = if let Some(shape_descriptor) = &mut self.current_state.stroke_program {
             shape_descriptor.clone()
         } else {
-            let shape_descriptor = self.create_shape_descriptor(&&self.current_state.next_stroke_brush.clone());
+            let shape_descriptor = self.create_shape_descriptor(&&self.current_state.next_stroke_brush.clone(), self.current_state.blend_mode);
             self.current_state.stroke_program = Some(shape_descriptor.clone());
 
             shape_descriptor

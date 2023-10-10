@@ -164,7 +164,7 @@ where
     ///
     /// The z-index of this descriptor will be set to 0: this should be updated later on
     ///
-    pub (super) fn create_shape_descriptor(&mut self, brush: &Brush) -> ShapeDescriptor
+    pub (super) fn create_shape_descriptor(&mut self, brush: &Brush, operation: AlphaOperation) -> ShapeDescriptor
     where
         TPixel: 'static + Send + Sync + Pixel<N>,
     {
@@ -174,8 +174,8 @@ where
         let program_cache   = &self.program_cache;
         let data_cache      = &mut self.program_data_cache;
 
-        let descriptor = match brush {
-            OpaqueSolidColor(color) => {
+        let descriptor = match (operation, brush) {
+            (AlphaOperation::SourceOver, OpaqueSolidColor(color)) => {
                 let brush_data = program_cache.program_cache.store_program_data(&program_cache.solid_color, data_cache, SolidColorData(TPixel::from_color(*color, gamma)));
 
                 ShapeDescriptor {
@@ -185,8 +185,18 @@ where
                 }
             }
 
-            TransparentSolidColor(color) => {
+            (AlphaOperation::SourceOver, TransparentSolidColor(color)) => {
                 let brush_data = program_cache.program_cache.store_program_data(&program_cache.source_over_color, data_cache, SolidColorData(TPixel::from_color(*color, gamma)));
+
+                ShapeDescriptor {
+                    programs:   smallvec![brush_data],
+                    is_opaque:  false,
+                    z_index:    0
+                }
+            }
+
+            (_, OpaqueSolidColor(color)) | (_, TransparentSolidColor(color)) => {
+                let brush_data = program_cache.program_cache.store_program_data(&program_cache.blend_color, data_cache, BlendColorData(operation, TPixel::from_color(*color, gamma)));
 
                 ShapeDescriptor {
                     programs:   smallvec![brush_data],
@@ -207,7 +217,7 @@ where
         let mut shape_descriptor = if let Some(shape_descriptor) = &mut self.current_state.fill_program {
             shape_descriptor.clone()
         } else {
-            let shape_descriptor = self.create_shape_descriptor(&self.current_state.next_fill_brush.clone());
+            let shape_descriptor = self.create_shape_descriptor(&self.current_state.next_fill_brush.clone(), self.current_state.blend_mode);
             self.current_state.fill_program = Some(shape_descriptor.clone());
 
             shape_descriptor
