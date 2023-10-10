@@ -194,6 +194,16 @@ where
                     z_index:    0
                 }
             }
+
+            BlendedSolidColor(op, color) => {
+                let brush_data = program_cache.program_cache.store_program_data(&program_cache.blend_color, data_cache, BlendColorData(*op, TPixel::from_color(*color, gamma)));
+
+                ShapeDescriptor {
+                    programs:   smallvec![brush_data],
+                    is_opaque:  false,
+                    z_index:    0
+                }
+            }
         };
 
         descriptor

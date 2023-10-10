@@ -15,7 +15,10 @@ where
     pub (super) solid_color: StoredPixelProgram<SolidColorProgram<TPixel>>,
 
     /// The 'source over' alpha blending pixel program
-    pub (super) source_over_color: StoredPixelProgram<SourceOverColorProgram<TPixel>>
+    pub (super) source_over_color: StoredPixelProgram<SourceOverColorProgram<TPixel>>,
+
+    /// The general solid colour blending pixel program
+    pub (super) blend_color: StoredPixelProgram<BlendColorProgram<TPixel>>,
 }
 
 impl<TPixel, const N: usize> Default for CanvasPixelPrograms<TPixel, N> 
@@ -26,11 +29,13 @@ where
         let mut cache   = PixelProgramCache::empty();
         let solid_color = cache.add_program(SolidColorProgram::default());
         let source_over = cache.add_program(SourceOverColorProgram::default());
+        let blend_color = cache.add_program(BlendColorProgram::default());
 
         CanvasPixelPrograms { 
             program_cache:      cache, 
             solid_color:        solid_color,
             source_over_color:  source_over,
+            blend_color:        blend_color,
         }
     }
 }
