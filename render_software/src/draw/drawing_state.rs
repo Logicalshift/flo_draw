@@ -89,6 +89,9 @@ pub struct DrawingState {
 
     /// The currently set clip region, if any
     pub (super) clip_path: DrawingClipRegion,
+
+    /// The blend mode to use with the brush
+    pub (super) blend_mode: AlphaOperation,
 }
 
 impl Default for DrawingState {
@@ -108,6 +111,7 @@ impl Default for DrawingState {
             stroke_start_cap:   curves_path::LineCap::Butt,
             stroke_end_cap:     curves_path::LineCap::Butt,
             clip_path:          DrawingClipRegion::None,
+            blend_mode:         AlphaOperation::SourceOver,
         }
     }
 }
