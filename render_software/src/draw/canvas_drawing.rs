@@ -138,7 +138,7 @@ where
                 FillTransform(transform)                            => { /* todo!() */ },
                 StrokeColor(stroke_color)                           => { self.current_state.stroke_solid_color(stroke_color, &mut self.program_data_cache); },
                 WindingRule(winding_rule)                           => { self.current_state.winding_rule(winding_rule); },
-                BlendMode(blend_mode)                               => { /* todo!() */ },
+                BlendMode(blend_mode)                               => { self.current_state.blend_mode(blend_mode, &mut self.program_data_cache); },
 
                 IdentityTransform                                   => { self.current_state.identity_transform(); },
                 CanvasHeight(height)                                => { self.current_state.canvas_height(height); },

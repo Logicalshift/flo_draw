@@ -194,6 +194,42 @@ impl DrawingState {
     }
 
     ///
+    /// Sets the blending mode of the current brush
+    ///
+    pub fn blend_mode<TPixel, const N: usize>(&mut self, blend_mode: canvas::BlendMode, data_cache: &mut PixelProgramDataCache<TPixel>) 
+    where
+        TPixel: Send + Pixel<N>,
+    {
+        use canvas::BlendMode::*;
+
+        // Convert the blend mode to an alpha operation
+        let operation = match blend_mode {
+            SourceOver          => { AlphaOperation::SourceOver },
+            SourceIn            => { AlphaOperation::SourceIn },
+            SourceOut           => { AlphaOperation::SourceHeldOut },
+            DestinationOver     => { AlphaOperation::DestOver },
+            DestinationIn       => { AlphaOperation::DestIn },
+            DestinationOut      => { AlphaOperation::DestHeldOut },
+            SourceAtop          => { AlphaOperation::SourceAtop },
+            DestinationAtop     => { AlphaOperation::DestAtop },
+
+            Multiply            => { todo!() },
+            Screen              => { todo!() },
+            Darken              => { todo!() },
+            Lighten             => { todo!() },
+        };
+
+        if operation != self.blend_mode {
+            // This will change the brush used for filling as well as the stroke
+            Self::release_program(&mut self.fill_program, data_cache);
+            Self::release_program(&mut self.stroke_program, data_cache);
+
+            // Set the alpha operation as our blend mode
+            self.blend_mode = operation;
+        }
+    }
+
+    ///
     /// Sets the winding rule to use for the next path to be drawn
     ///
     #[inline]
