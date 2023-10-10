@@ -1,5 +1,3 @@
-use super::pixel_trait::*;
-
 use std::ops::*;
 
 ///

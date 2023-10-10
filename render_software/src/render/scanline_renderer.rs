@@ -4,8 +4,6 @@ use crate::pixel::*;
 use crate::scanplan::*;
 use crate::scanplan::buffer_stack::*;
 
-use std::ops::*;
-
 ///
 /// Specifies the y-pos and x transformation to use with a scanline renderer
 ///
