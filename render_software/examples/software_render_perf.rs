@@ -126,4 +126,12 @@ fn main() {
     println!("  F32 to_gamma_color_space: {}", gamma_correct_f32.summary());
     println!("  U32 to_gamma_color_space: {}", gamma_correct_i32.summary());
     println!("  F32 to_gamma_color_space whole frame: {}", gamma_correct_f32_frame.summary_fps());
+
+    let mut f32_pix             = vec![F32LinearPixel::from_components([0.5, 0.5, 0.5, 1.0]); 1920];
+    let blend_val               = F32LinearPixel::from_components([0.1, 0.2, 0.3, 0.4]);
+    let alpha_blend_f32         = time(100_000, || { f32_pix.iter_mut().for_each(|pix| { black_box(pix.source_over(blend_val)); }); });
+    let alpha_blend_f32_frame   = time(1_000, || { for _ in 0..1080 { f32_pix.iter_mut().for_each(|pix| { black_box(pix.source_over(blend_val)); }); } });
+    println!("  F32 alpha blend line: {}", alpha_blend_f32.summary());
+    println!("  F32 alpha blend whole frame: {}", alpha_blend_f32_frame.summary_fps());
 }
+
