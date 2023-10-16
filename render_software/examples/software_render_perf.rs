@@ -110,9 +110,9 @@ fn print_header(name: &str) {
 fn main() {
     use std::hint::{black_box};
 
-    print_header("Pixel functions");
-
     // Simple pixel fill
+    print_header("Basic pixel fill");
+
     let mut frame   = vec![U8RgbaPremultipliedPixel::from_components([0, 0, 0, 0]); 1920 * 1080];
     let val         = U8RgbaPremultipliedPixel::from_components([12, 13, 14, 15]);
 
@@ -143,6 +143,8 @@ fn main() {
     println!("  F32 simple fill frame: {}", simple_fill_frame.summary_fps());
 
     // Gamma correct from an f32 and an i32 buffer
+    print_header("Gamma correct to generate output");
+
     let mut target_buf  = vec![U8RgbaPremultipliedPixel::default(); 1920];
     let target_buf      = &mut target_buf;
 
@@ -157,6 +159,8 @@ fn main() {
     println!("  U32 to_gamma_color_space: {}", gamma_correct_i32.summary());
     println!("  F32 to_gamma_color_space whole frame: {}", gamma_correct_f32_frame.summary_fps());
 
+    // Alpha blend
+    print_header("Alpha blending");
     let mut f32_pix             = vec![F32LinearPixel::from_components([0.5, 0.5, 0.5, 1.0]); 1920];
     let blend_val               = F32LinearPixel::from_components([0.1, 0.2, 0.3, 0.4]);
     let alpha_blend_f32         = time(100_000, || { f32_pix.iter_mut().for_each(|pix| { black_box(pix.source_over(blend_val)); }); });
