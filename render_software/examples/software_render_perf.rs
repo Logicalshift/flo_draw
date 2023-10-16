@@ -10,7 +10,14 @@
 //! second' like we do here.
 //!
 
+use flo_render_software::edgeplan::EdgeDescriptor;
 use flo_render_software::pixel::*;
+use flo_render_software::edges::*;
+use flo_render_software::edgeplan::*;
+use flo_canvas::curves::arc::*;
+use flo_canvas::curves::geo::*;
+
+use smallvec::*;
 
 use std::time::{Instant, Duration};
 
@@ -167,5 +174,44 @@ fn main() {
     let alpha_blend_f32_frame   = time(1_000, || { for _ in 0..1080 { f32_pix.iter_mut().for_each(|pix| { black_box(pix.source_over(blend_val)); }); } });
     println!("  F32 alpha blend line: {}", alpha_blend_f32.summary());
     println!("  F32 alpha blend whole frame: {}", alpha_blend_f32_frame.summary_fps());
+
+    // Scan conversion
+    print_header("Scan conversion");
+    let circle      = Circle::new(Coord2(1920.0/2.0, 1080.0/2.0), 1080.0/2.0);
+    let circle_path = circle.to_path::<BezierSubpath>();
+
+    let prepare_as_bezier = time(10_000, || { black_box(circle.to_path::<BezierSubpath>().to_even_odd_edge(ShapeId::new()).prepare_to_render()) });
+    let prepare_flattened = time(10_000, || { black_box(circle.to_path::<BezierSubpath>().to_flattened_non_zero_edge(ShapeId::new()).prepare_to_render()) });
+    let flatten           = time(10_000, || { black_box(circle_path.clone().flatten_to_polyline(1.0, 0.25)); });
+
+    println!("  Prepare to render bezier circle: {}", prepare_as_bezier.summary());
+    println!("  Prepare to render flattened bezier (v high res): {}", prepare_flattened.summary());
+    println!("  Flatten (pixel res): {}", flatten.summary());
+
+    // Note that `to_flattened_even_odd_edge` assumes a coordinate scheme of -1 to 1 so it tends to generate much higher resolution images than are needed
+    let mut circle_edge         = circle_path.clone().to_even_odd_edge(ShapeId::new());
+    let mut circle_flattened    = circle_path.clone().to_flattened_even_odd_edge(ShapeId::new());
+    let mut circle_polyline     = circle_path.clone().flatten_to_polyline(1.0, 0.25).to_even_odd_edge(ShapeId::new());
+    let mut output              = vec![smallvec![]; 1080];
+    circle_edge.prepare_to_render();
+    circle_flattened.prepare_to_render();
+    circle_polyline.prepare_to_render();
+
+    let scan_convert_bezier = time(1_000, || { 
+        circle_edge.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
+        black_box(&mut output);
+    });
+    let scan_convert_flattened = time(1_000, || { 
+        circle_flattened.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
+        black_box(&mut output);
+    });
+    let scan_convert_polyline = time(1_000, || { 
+        circle_polyline.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
+        black_box(&mut output);
+    });
+
+    println!("  Scan convert bezier circle: {}", scan_convert_bezier.summary_fps());
+    println!("  Scan convert flattened circle (v high res): {}", scan_convert_flattened.summary_fps());
+    println!("  Scan convert flattened circle (pixel res): {}", scan_convert_polyline.summary_fps());
 }
 
