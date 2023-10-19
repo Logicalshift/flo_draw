@@ -1,6 +1,7 @@
 use super::drawing_state::*;
 use super::layer::*;
 use super::pixel_programs::*;
+use super::texture::*;
 
 use crate::pixel::*;
 use crate::pixel_programs::*;
@@ -8,6 +9,9 @@ use crate::pixel_programs::*;
 use flo_sparse_array::*;
 
 use flo_canvas as canvas;
+
+use std::collections::{HashMap};
+use std::sync::*;
 
 ///
 /// A `CanvasDrawing` represents the state of a drawing after a series of `Draw` commands have been processed
@@ -51,6 +55,9 @@ where
 
     /// States that have been pushed by PushState
     pub (super) state_stack:        Vec<DrawingState>,
+
+    /// The textures in this drawing
+    pub (super) textures:           HashMap<(canvas::NamespaceId, canvas::TextureId), Arc<Texture>>,
 }
 
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N> 
@@ -87,6 +94,7 @@ where
             program_cache:      program_cache,
             program_data_cache: data_cache,
             state_stack:        vec![],
+            textures:           HashMap::new(),
         }
     }
 
@@ -160,7 +168,7 @@ where
                 DrawSprite(sprite_id)                               => { /* todo!() */ },
                 DrawSpriteWithFilters(sprite_id, filters)           => { /* todo!() */ },
 
-                Texture(texture_id, texture_op)                     => { /* todo!() */ },
+                Texture(texture_id, texture_op)                     => { self.texture(texture_id, texture_op); },
                 Gradient(gradient_id, gradient_op)                  => { /* todo!() */ },
 
                 Font(_font_id, _font_op)                            => { /* Use the glyph and font streams in flo_canvas */ },
@@ -232,6 +240,7 @@ where
         self.ordered_layers     = vec![LayerHandle(0)];
         self.current_namespace  = canvas::NamespaceId::default();
         self.next_layer_handle  = LayerHandle(1);
+        self.textures           = HashMap::new();
 
         // Free the old program data
         self.program_data_cache.free_all_data();
