@@ -11,7 +11,7 @@ pub struct ScanlineTransform {
     /// Value to add to the x coordinates before transforming
     offset: f64,
 
-    /// The scale to apply to the 
+    /// The scale to apply to the x coordinate to convert it to pixel coordinates
     scale: f64,
 
     /// The reciprocal of the scale
@@ -65,6 +65,14 @@ impl ScanlineTransform {
     #[inline]
     pub fn pixel_range_to_x(&self, pixels: &Range<i32>) -> Range<f64> {
         self.pixel_x_to_source_x(pixels.start)..self.pixel_x_to_source_x(pixels.end)
+    }
+
+    ///
+    /// The size of a pixel in source coordinates
+    ///
+    #[inline]
+    pub fn pixel_size(&self) -> f64 {
+        self.scale_recip
     }
 }
 
