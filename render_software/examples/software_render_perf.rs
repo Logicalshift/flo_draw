@@ -225,10 +225,12 @@ fn main() {
     let gamma_correct_i32   = time(100_000, || { U32LinearPixel::to_gamma_colorspace(&u32_pix, target_buf, 2.2); black_box(&target_buf); });
 
     let gamma_correct_f32_frame = time(1_000, || { for _ in 0..1080 { F32LinearPixel::to_gamma_colorspace(&f32_pix, target_buf, 2.2); black_box(&target_buf); } });
+    let gamma_correct_i32_frame = time(1_000, || { for _ in 0..1080 { U32LinearPixel::to_gamma_colorspace(&u32_pix, target_buf, 2.2); black_box(&target_buf); } });
 
     println!("  F32 to_gamma_color_space: {}", gamma_correct_f32.summary());
-    println!("  U32 to_gamma_color_space: {}", gamma_correct_i32.summary());
+    println!("  I32 to_gamma_color_space: {}", gamma_correct_i32.summary());
     println!("  F32 to_gamma_color_space whole frame: {}", gamma_correct_f32_frame.summary_fps());
+    println!("  I32 to_gamma_color_space whole frame: {}", gamma_correct_i32_frame.summary_fps());
 
     // Alpha blend
     print_header("Alpha blending");
