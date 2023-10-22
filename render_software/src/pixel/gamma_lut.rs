@@ -43,6 +43,6 @@ impl U8GammaLut {
     ///
     #[inline]
     pub fn look_up(&self, val: u16) -> u8 {
-        self.look_up_table[val as usize]
+        unsafe { *self.look_up_table.get_unchecked(val as usize) }
     }
 }
