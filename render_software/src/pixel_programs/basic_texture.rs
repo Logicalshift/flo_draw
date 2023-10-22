@@ -1,6 +1,8 @@
 use crate::pixel::*;
 use crate::scanplan::*;
 
+use flo_canvas as canvas;
+
 use std::marker::{PhantomData};
 use std::ops::{Range};
 use std::sync::*;
@@ -43,6 +45,23 @@ where
         BasicTextureProgram {
             texture:        PhantomData,
             texture_reader: PhantomData,
+        }
+    }
+}
+
+impl<TTexture> TextureData<TTexture>
+where
+    TTexture:       Send + Sync,
+{
+    ///
+    /// Creates texture data from a texture and the transform to use
+    ///
+    pub fn with_texture(texture: Arc<TTexture>, transform: &canvas::Transform2D) -> Self {
+        let [[a, b, c], [d, e, f], [_, _, _]] = transform.0;
+
+        TextureData { 
+            texture:    texture, 
+            transform:  [[a as f64, b as _, c as _], [d as _, e as _, f as _]],
         }
     }
 }
