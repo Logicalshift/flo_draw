@@ -130,6 +130,20 @@ fn main() {
 
         black_box(&mut frame);
     });
+    let simple_fill_u8_frame_checked = time(1_000, || {
+        for idx in 0..frame.len() {
+            frame[idx] = val;
+        }
+
+        black_box(&mut frame);
+    });
+    let simple_fill_u8_frame_unchecked = time(1_000, || {
+        for idx in 0..frame.len() {
+            unsafe { *frame.get_unchecked_mut(idx) = val; }
+        }
+
+        black_box(&mut frame);
+    });
     let mut f32_pix = vec![F32LinearPixel::from_components([0.5, 0.5, 0.5, 1.0]); 1920];
     let simple_fill = time(100_000, || {
         for idx in 0..(f32_pix.len()) {
@@ -150,13 +164,26 @@ fn main() {
             for idx in 0..(f32_pix.len()) {
                 f32_pix[idx] = F32LinearPixel::from_components([0.1, 0.2, 0.3, 0.4]);
             }
+            black_box(&mut f32_pix);
         }
-        black_box(&mut f32_pix);
     });
-    println!("  U8 simple fill frame: {}", simple_fill_u8_frame.summary_fps());
+    let simple_fill_frame_unchecked = time(1_000, || {
+        for _ in 0..1080 {
+            for idx in 0..(f32_pix.len()) {
+                unsafe {
+                    *f32_pix.get_unchecked_mut(idx) = F32LinearPixel::from_components([0.1, 0.2, 0.3, 0.4]);
+                }
+            }
+            black_box(&mut f32_pix);
+        }
+    });
+    println!("  U8 simple fill frame iterator: {}", simple_fill_u8_frame.summary_fps());
+    println!("  U8 simple fill frame checked: {}", simple_fill_u8_frame_checked.summary_fps());
+    println!("  U8 simple fill frame unchecked: {}", simple_fill_u8_frame_unchecked.summary_fps());
     println!("  F32 simple fill: {}", simple_fill.summary());
     println!("  F32 simple fill unchecked: {}", simple_fill_unchecked.summary());
     println!("  F32 simple fill frame: {}", simple_fill_frame.summary_fps());
+    println!("  F32 simple fill frame unchecked: {}", simple_fill_frame_unchecked.summary_fps());
 
     // Gamma correct from an f32 and an i32 buffer
     print_header("Gamma correct to generate output");
