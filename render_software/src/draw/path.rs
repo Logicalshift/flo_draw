@@ -1,6 +1,5 @@
 use super::canvas_drawing::*;
 use super::drawing_state::*;
-use super::texture::*;
 
 use crate::edges::*;
 use crate::edgeplan::*;
@@ -207,8 +206,8 @@ where
             }
 
             (_, TransparentTexture(texture, transform)) => {
-                // TODO!
-                let brush_data = program_cache.program_cache.store_program_data(&program_cache.source_over_color, data_cache, SolidColorData(TPixel::from_color(canvas::Color::Rgba(0.0, 0.0, 0.0, 0.5), gamma)));
+                let texture_data    = TextureData::with_texture(Arc::clone(texture), transform);
+                let brush_data      = program_cache.program_cache.store_program_data(&program_cache.basic_texture, data_cache, texture_data);
 
                 ShapeDescriptor {
                     programs:   smallvec![brush_data],

@@ -109,12 +109,12 @@ where
                     let transform = transform * canvas::Transform2D::scale(x2-x1, y2-y1);
                     let transform = transform * canvas::Transform2D::translate(x1, y1);
 
-                    debug_assert!((transform.transform_point(x1, y1).0 - 0.0).abs() < 0.01, "{:?}", transform.transform_point(x1, y1));
-                    debug_assert!((transform.transform_point(x2, y2).1 - h).abs() < 0.01, "{:?}", transform.transform_point(x2, y2));
+                    debug_assert!((transform.transform_point(x1, y1).0 - 0.0).abs() < 0.01, "{:?} {:?}", transform.transform_point(x1, y1), (0.0, 0.0));
+                    debug_assert!((transform.transform_point(x2, y2).1 - h).abs() < 0.01, "{:?} {:?}", transform.transform_point(x2, y2), (w, h));
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
-                    current_state.next_fill_brush = Brush::TransparentTexture(Arc::clone(texture), transform);
+                    current_state.next_fill_brush = Brush::TransparentTexture(Arc::clone(rgba_texture), transform);
                 }
             }
         }

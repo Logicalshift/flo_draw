@@ -24,7 +24,7 @@ pub enum Brush {
     TransparentSolidColor(canvas::Color),
 
     /// A transformed texture, known to have transparent pixels in it
-    TransparentTexture(Arc<Texture>, canvas::Transform2D),
+    TransparentTexture(Arc<RgbaTexture>, canvas::Transform2D),
 }
 
 #[derive(Clone)]
