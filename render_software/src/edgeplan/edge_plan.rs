@@ -252,10 +252,8 @@ where
             let shape_id = edge.edge.shape();
             edge.edge.intercepts(y_positions, &mut edge_intercepts);
 
-            for idx in 0..y_positions.len() {
-                let output = &mut output[idx];
-
-                for (direction, pos) in edge_intercepts[idx].iter() {
+            for (output, intercepts) in output.iter_mut().zip(edge_intercepts.iter()) {
+                for (direction, pos) in intercepts.iter() {
                     output.push(EdgeIntercept { shape: shape_id, direction: *direction, x_pos: *pos });
                 }
             }
