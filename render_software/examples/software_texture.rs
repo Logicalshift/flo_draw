@@ -34,6 +34,5 @@ pub fn main() {
     canvas.fill();
 
     // Render to the terminal window
-    let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
-    render_drawing(&mut term_renderer, canvas.iter().cloned());
+    render_drawing(&mut TerminalRenderTarget::new(1920, 1080), canvas.iter().cloned());
 }
