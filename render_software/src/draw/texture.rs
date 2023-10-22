@@ -1,4 +1,5 @@
 use super::canvas_drawing::*;
+use super::drawing_state::*;
 
 use crate::pixel::*;
 
@@ -63,6 +64,9 @@ where
         self.textures.insert((self.current_namespace, texture_id), Arc::new(texture));
     }
 
+    ///
+    /// Sets the bytes for a region of the texture
+    ///
     #[inline]
     pub fn texture_set_bytes(&mut self, texture_id: canvas::TextureId, canvas::TexturePosition(x, y): canvas::TexturePosition, canvas::TextureSize(width, height): canvas::TextureSize, bytes: Arc<Vec<u8>>) {
         if let Some(texture) = self.textures.get_mut(&(self.current_namespace, texture_id)) {
@@ -77,6 +81,37 @@ where
             match texture {
                 Texture::Rgba(rgba) => {
                     rgba.set_bytes(x, y, width, height, &*bytes);
+                }
+            }
+        }
+    }
+
+    ///
+    /// Sets the brush to fill using the specified texture
+    ///
+    pub fn fill_texture(&mut self, texture_id: canvas::TextureId, x1: f32, y1: f32, x2: f32, y2: f32) {
+        let textures        = &self.textures;
+        let current_state   = &mut self.current_state;
+        let data_cache      = &mut self.program_data_cache;
+
+        if let Some(texture) = textures.get(&(self.current_namespace, texture_id)) {
+            // Texture exists
+            match &**texture {
+                Texture::Rgba(rgba_texture) => {
+                    // We want to make a transformation that maps x1, y1 to 0,0 and x2, y2 to w, h
+                    let w = rgba_texture.width() as f32;
+                    let h = rgba_texture.height() as f32;
+
+                    let transform = canvas::Transform2D::scale(1.0/w, 1.0/h);
+                    let transform = transform * canvas::Transform2D::scale(x2-x1, y2-y1);
+                    let transform = transform * canvas::Transform2D::translate(x1, y1);
+
+                    debug_assert!((transform.transform_point(x1, y1).0 - 0.0).abs() < 0.01, "{:?}", transform.transform_point(x1, y1));
+                    debug_assert!((transform.transform_point(x2, y2).1 - h).abs() < 0.01, "{:?}", transform.transform_point(x2, y2));
+
+                    // Set as the brush state
+                    DrawingState::release_program(&mut current_state.fill_program, data_cache);
+                    current_state.next_fill_brush = Brush::TransparentTexture(Arc::clone(texture), transform);
                 }
             }
         }

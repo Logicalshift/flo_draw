@@ -141,7 +141,7 @@ where
                 DashLength(_dash_length)                            => { /* todo!() - dash patterns not supported yet */ },
                 DashOffset(_dash_offset)                            => { /* todo!() - dash patterns not supported yet */ },
                 FillColor(fill_color)                               => { self.current_state.fill_solid_color(fill_color, &mut self.program_data_cache); },
-                FillTexture(texture, (x1, y1), (x2, y2))            => { /* todo!() */ },
+                FillTexture(texture, (x1, y1), (x2, y2))            => { self.fill_texture(texture, x1, y1, x2, y2); },
                 FillGradient(gradient, (x1, y1), (x2, y2))          => { /* todo!() */ },
                 FillTransform(transform)                            => { /* todo!() */ },
                 StrokeColor(stroke_color)                           => { self.current_state.stroke_solid_color(stroke_color, &mut self.program_data_cache); },

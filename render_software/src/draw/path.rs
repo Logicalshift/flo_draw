@@ -1,5 +1,6 @@
 use super::canvas_drawing::*;
 use super::drawing_state::*;
+use super::texture::*;
 
 use crate::edges::*;
 use crate::edgeplan::*;
@@ -197,6 +198,17 @@ where
 
             (_, OpaqueSolidColor(color)) | (_, TransparentSolidColor(color)) => {
                 let brush_data = program_cache.program_cache.store_program_data(&program_cache.blend_color, data_cache, BlendColorData(operation, TPixel::from_color(*color, gamma)));
+
+                ShapeDescriptor {
+                    programs:   smallvec![brush_data],
+                    is_opaque:  false,
+                    z_index:    0
+                }
+            }
+
+            (_, TransparentTexture(texture, transform)) => {
+                // TODO!
+                let brush_data = program_cache.program_cache.store_program_data(&program_cache.source_over_color, data_cache, SolidColorData(TPixel::from_color(canvas::Color::Rgba(0.0, 0.0, 0.0, 0.5), gamma)));
 
                 ShapeDescriptor {
                     programs:   smallvec![brush_data],

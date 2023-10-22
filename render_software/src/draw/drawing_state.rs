@@ -1,4 +1,5 @@
 use super::canvas_drawing::*;
+use super::texture::*;
 
 use crate::edgeplan::*;
 use crate::edges::*;
@@ -21,6 +22,9 @@ pub enum Brush {
 
     /// Transparent solid colour brush (will be blended with the image behind)
     TransparentSolidColor(canvas::Color),
+
+    /// A transformed texture, known to have transparent pixels in it
+    TransparentTexture(Arc<Texture>, canvas::Transform2D),
 }
 
 #[derive(Clone)]
