@@ -7,6 +7,8 @@ use flo_canvas as canvas;
 
 use std::sync::*;
 
+// TODO: we store Texture as Arc<Texture> but we also tend to use Arc<> internally: do we need both?
+
 ///
 /// The data stored as part of a texture
 ///
