@@ -275,9 +275,19 @@ fn main() {
         circle_polyline.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
+    let scan_convert_bezier_partial = time(10_000, || { 
+        circle_edge.intercepts(&(500..506).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
+        black_box(&mut output);
+    });
+    let scan_convert_polyline_partial = time(10_000, || { 
+        circle_polyline.intercepts(&(500..506).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
+        black_box(&mut output);
+    });
 
     println!("  Scan convert bezier circle: {}", scan_convert_bezier.summary_fps());
     println!("  Scan convert flattened circle (v high res): {}", scan_convert_flattened.summary_fps());
     println!("  Scan convert flattened circle (pixel res): {}", scan_convert_polyline.summary_fps());
+    println!("  Scan convert bezier circle (partial): {}", scan_convert_bezier_partial.summary());
+    println!("  Scan convert flattened circle (partial): {}", scan_convert_polyline_partial.summary());
 }
 
