@@ -9,6 +9,8 @@ mod u32_linear;
 mod pixel_program;
 mod pixel_program_cache;
 mod pixel_program_runner;
+mod rgba_texture;
+mod texture_reader;
 
 pub use pixel_trait::*;
 pub use alpha_blend_trait::*;
@@ -20,3 +22,5 @@ pub use u32_linear::*;
 pub use pixel_program::*;
 pub use pixel_program_cache::*;
 pub use pixel_program_runner::*;
+pub use rgba_texture::*;
+pub use texture_reader::*;

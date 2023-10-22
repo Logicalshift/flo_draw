@@ -1,27 +1,10 @@
 use super::canvas_drawing::*;
 
-use flo_canvas as canvas;
-
 use crate::pixel::*;
 
+use flo_canvas as canvas;
+
 use std::sync::*;
-
-///
-/// An 8-bpp, non-premultiplied RGBA texture
-///
-/// We also assume a gamma correction value of 2.2 for this texture type
-///
-#[derive(Clone)]
-pub struct RgbaTexture {
-    /// The width of the texture in pixels (a row is 4x this value)
-    width: usize,
-
-    /// The height of the texture in pixels
-    height: usize,
-
-    /// The pixels stored for this texture
-    pixels: Vec<u8>,
-}
 
 ///
 /// The data stored as part of a texture
