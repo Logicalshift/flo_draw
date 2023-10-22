@@ -177,6 +177,14 @@ fn main() {
             black_box(&mut f32_pix);
         }
     });
+    let simple_fill_frame_iterator = time(1_000, || {
+        for _ in 0..1080 {
+            for pix in f32_pix.iter_mut() {
+                *pix = F32LinearPixel::from_components([0.1, 0.2, 0.3, 0.4]);
+            }
+            black_box(&mut f32_pix);
+        }
+    });
     println!("  U8 simple fill frame iterator: {}", simple_fill_u8_frame.summary_fps());
     println!("  U8 simple fill frame checked: {}", simple_fill_u8_frame_checked.summary_fps());
     println!("  U8 simple fill frame unchecked: {}", simple_fill_u8_frame_unchecked.summary_fps());
@@ -184,6 +192,7 @@ fn main() {
     println!("  F32 simple fill unchecked: {}", simple_fill_unchecked.summary());
     println!("  F32 simple fill frame: {}", simple_fill_frame.summary_fps());
     println!("  F32 simple fill frame unchecked: {}", simple_fill_frame_unchecked.summary_fps());
+    println!("  F32 simple fill frame iterator: {}", simple_fill_frame_iterator.summary_fps());
 
     // Gamma correct from an f32 and an i32 buffer
     print_header("Gamma correct to generate output");
