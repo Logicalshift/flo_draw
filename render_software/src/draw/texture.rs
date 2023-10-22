@@ -93,9 +93,14 @@ where
     /// Sets the brush to fill using the specified texture
     ///
     pub fn fill_texture(&mut self, texture_id: canvas::TextureId, x1: f32, y1: f32, x2: f32, y2: f32) {
+        // Fetch the state from this object
         let textures        = &self.textures;
         let current_state   = &mut self.current_state;
         let data_cache      = &mut self.program_data_cache;
+
+        // Transform the coordiantes to screen coordinates
+        let (x1, y1) = current_state.transform.transform_point(x1, y1);
+        let (x2, y2) = current_state.transform.transform_point(x2, y2);
 
         if let Some(texture) = textures.get(&(self.current_namespace, texture_id)) {
             // Texture exists
