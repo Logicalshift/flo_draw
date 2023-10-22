@@ -57,6 +57,14 @@ mod render_png {
         TStream:    Write,
         TPixel:     'static + Send + Copy + Default + AlphaBlend + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
     {
+        #[inline] fn width(&self) -> usize {
+            self.width
+        }
+
+        #[inline]fn height(&self) -> usize {
+            self.height
+        }
+        
         fn render<TRegionRenderer>(&mut self, region_renderer: TRegionRenderer, source_data: &TRegionRenderer::Source)
         where
             TRegionRenderer: Renderer<Region=RenderSlice, Dest=[TPixel]>

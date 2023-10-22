@@ -8,6 +8,16 @@ use super::render_slice::*;
 ///
 pub trait RenderTarget<IntermediatePixel: 'static> {
     ///
+    /// Retrieves the width of the target in pixels
+    ///
+    fn width(&self) -> usize;
+
+    ///
+    /// Retrieves the height of the target in pixels
+    ///
+    fn height(&self) -> usize;
+
+    ///
     /// Renders a frame to this render target
     ///
     /// The renderer that is passed in here is a region renderer, which takes a list of y-positions and generates the pixels for those rows in the results.
