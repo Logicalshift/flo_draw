@@ -185,7 +185,7 @@ fn main() {
             black_box(&mut f32_pix);
         }
     });
-    let partial_fill_frame = time(1_000, || {
+    let partial_fill_frame = time(10_000, || {
         for _ in 0..1080 {
             for idx in 500..600 {
                 f32_pix[idx] = F32LinearPixel::from_components([0.1, 0.2, 0.3, 0.4]);
@@ -193,7 +193,7 @@ fn main() {
             black_box(&mut f32_pix);
         }
     });
-    let partial_fill_frame_iterator = time(1_000, || {
+    let partial_fill_frame_iterator = time(10_000, || {
         for _ in 0..1080 {
             for pix in f32_pix[500..600].iter_mut() {
                 *pix = F32LinearPixel::from_components([0.1, 0.2, 0.3, 0.4]);
