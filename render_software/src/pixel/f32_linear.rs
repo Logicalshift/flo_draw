@@ -103,12 +103,15 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for F32LinearPixel {
                 let rgba    = rgba.fast_trunc_int();
 
                 // This produces SRGB format, where the values are pre-multiplied before gamma correction
-                let [r, g, b, a]    = rgba.to_array();
-                output_pixels[idx] = U8RgbaPremultipliedPixel::from_components([
-                    gamma_lut.look_up(r as _), 
-                    gamma_lut.look_up(g as _), 
-                    gamma_lut.look_up(b as _), 
-                    (a >> 8) as u8]);
+                let [r, g, b, a] = rgba.to_array();
+
+                unsafe {
+                    *output_pixels.get_unchecked_mut(idx) = U8RgbaPremultipliedPixel::from_components([
+                        gamma_lut.look_up(r as _), 
+                        gamma_lut.look_up(g as _), 
+                        gamma_lut.look_up(b as _), 
+                        (a >> 8) as u8]);
+                }
             }
         })
     }
