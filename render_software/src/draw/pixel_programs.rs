@@ -19,6 +19,9 @@ where
 
     /// The general solid colour blending pixel program
     pub (super) blend_color: StoredPixelProgram<BlendColorProgram<TPixel>>,
+
+    /// The basic texture rendering program
+    pub (super) basic_texture: StoredPixelProgram<BasicTextureProgram<TPixel, RgbaTexture>>,
 }
 
 impl<TPixel, const N: usize> Default for CanvasPixelPrograms<TPixel, N> 
@@ -26,16 +29,18 @@ where
     TPixel: 'static + Send + Sync + Pixel<N>,
 {
     fn default() -> Self {
-        let mut cache   = PixelProgramCache::empty();
-        let solid_color = cache.add_program(SolidColorProgram::default());
-        let source_over = cache.add_program(SourceOverColorProgram::default());
-        let blend_color = cache.add_program(BlendColorProgram::default());
+        let mut cache       = PixelProgramCache::empty();
+        let solid_color     = cache.add_program(SolidColorProgram::default());
+        let source_over     = cache.add_program(SourceOverColorProgram::default());
+        let blend_color     = cache.add_program(BlendColorProgram::default());
+        let basic_texture   = cache.add_program(BasicTextureProgram::default());
 
         CanvasPixelPrograms { 
             program_cache:      cache, 
             solid_color:        solid_color,
             source_over_color:  source_over,
             blend_color:        blend_color,
+            basic_texture:      basic_texture,
         }
     }
 }
