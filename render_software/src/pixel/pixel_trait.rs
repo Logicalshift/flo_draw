@@ -1,4 +1,6 @@
 use super::alpha_blend_trait::*;
+use super::rgba_texture::*;
+use super::texture_reader::*;
 use super::to_gamma_colorspace_trait::*;
 use super::u8_rgba::*;
 

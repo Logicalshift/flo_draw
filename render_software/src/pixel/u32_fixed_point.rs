@@ -34,6 +34,11 @@ impl From<u32> for U32FixedPoint {
     fn from(val: u32) -> Self { U32FixedPoint(val) }
 }
 
+impl From<u16> for U32FixedPoint {
+    #[inline]
+    fn from(val: u16) -> Self { U32FixedPoint(val as u32) }
+}
+
 impl Into<u32> for U32FixedPoint {
     #[inline]
     fn into(self) -> u32 { self.0 }
