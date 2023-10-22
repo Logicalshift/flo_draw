@@ -157,7 +157,7 @@ fn main() {
 
     let f32_pix             = vec![F32LinearPixel::from_components([0.5, 0.5, 0.5, 1.0]); 1920];
     let gamma_correct_f32   = time(100_000, || { F32LinearPixel::to_gamma_colorspace(&f32_pix, target_buf, 2.2); black_box(&target_buf); });
-    let u32_pix             = vec![U32LinearPixel::from_components([32768.into(), 32768.into(), 32768.into(), 65535.into()]); 1920];
+    let u32_pix             = vec![U32LinearPixel::from_components([32768u32.into(), 32768u32.into(), 32768u32.into(), 65535u32.into()]); 1920];
     let gamma_correct_i32   = time(100_000, || { U32LinearPixel::to_gamma_colorspace(&u32_pix, target_buf, 2.2); black_box(&target_buf); });
 
     let gamma_correct_f32_frame = time(1_000, || { for _ in 0..1080 { F32LinearPixel::to_gamma_colorspace(&f32_pix, target_buf, 2.2); black_box(&target_buf); } });

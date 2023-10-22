@@ -116,7 +116,7 @@ fn multiply_1() {
 #[test]
 fn multiply_2() {
     let col1 = U32LinearPixel::from_color(Color::Rgba(0.2, 0.4, 0.6, 1.0), 1.0);
-    let col2 = U32LinearPixel::from_components([65535.into(), 65535.into(), 65535.into(), 65535.into()]);
+    let col2 = U32LinearPixel::from_components([65535u32.into(), 65535u32.into(), 65535u32.into(), 65535u32.into()]);
 
     let col3            = col1 * col2;
     let back_as_color   = col3.to_color(1.0);
