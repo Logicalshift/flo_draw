@@ -69,7 +69,7 @@ where
 impl<TTextureReader, TTexture> PixelProgram for BasicTextureProgram<TTextureReader, TTexture>
 where
     TTexture:       Send + Sync,
-    TTextureReader: TextureReader<TTexture>,
+    TTextureReader: TextureReader<TTexture> + Copy + AlphaBlend,
 {
     type Pixel          = TTextureReader;
     type ProgramData    = TextureData<TTexture>;
@@ -95,7 +95,7 @@ where
             let tx = a * x_pos + byc;
             let ty = d * x_pos + eyf;
 
-            *pixel = TTextureReader::read_pixel(texture, tx, ty);
+            *pixel = TTextureReader::read_pixel(texture, tx, ty).source_over(*pixel);
 
             // Move the x position along
             x_pos += dx;
