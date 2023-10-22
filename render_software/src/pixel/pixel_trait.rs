@@ -20,6 +20,7 @@ where
     Self: Add<Self::Component, Output=Self> + Sub<Self::Component, Output=Self> + Mul<Self::Component, Output=Self> + Div<Self::Component, Output=Self>,
     Self: AlphaBlend,
     Self: ToGammaColorSpace<U8RgbaPremultipliedPixel>,
+    Self: TextureReader<RgbaTexture>,
 {
     /// A pixel representing the 'black' colour
     fn black() -> Self;
