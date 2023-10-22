@@ -1,8 +1,4 @@
-use flo_render_software::draw::*;
-use flo_render_software::pixel::*;
 use flo_render_software::render::*;
-use flo_render_software::scanplan::*;
-
 use flo_render_software::canvas::*;
 
 use std::io;
@@ -39,6 +35,5 @@ pub fn main() {
 
     // Render to the terminal window
     let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
-
-    // ...
+    render_drawing(&mut term_renderer, canvas.iter().cloned());
 }
