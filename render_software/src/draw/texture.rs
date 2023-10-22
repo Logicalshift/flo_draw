@@ -13,7 +13,7 @@ use std::sync::*;
 #[derive(Clone)]
 pub enum Texture {
     /// A texture in Rgba format
-    Rgba(RgbaTexture),
+    Rgba(Arc<RgbaTexture>),
 }
 
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N>
@@ -58,7 +58,7 @@ where
         // Build the texture structure
         let pixels  = vec![0u8; width * height * 4];
         let texture = RgbaTexture::new(width, height, pixels);
-        let texture = Texture::Rgba(texture);
+        let texture = Texture::Rgba(Arc::new(texture));
 
         // Store it, replacing any existing texture with this ID
         self.textures.insert((self.current_namespace, texture_id), Arc::new(texture));
@@ -80,6 +80,7 @@ where
             // How the bytes are written depend on the format of the texture
             match texture {
                 Texture::Rgba(rgba) => {
+                    let rgba = Arc::make_mut(rgba);
                     rgba.set_bytes(x, y, width, height, &*bytes);
                 }
             }
