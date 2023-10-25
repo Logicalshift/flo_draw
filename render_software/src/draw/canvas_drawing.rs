@@ -210,9 +210,9 @@ where
     }
 
     ///
-    /// Returns the program runner for this canvas drawing
+    /// Returns a program runner for this canvas drawing for a certain pixel size, determined from the height of the render target in pixels
     ///
-    pub fn program_runner(&self) -> &PixelProgramDataCache<TPixel> {
+    pub fn program_runner(&self, height_pixels: f64) -> &PixelProgramDataCache<TPixel> {
         &self.program_data_cache
     }
 

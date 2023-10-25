@@ -93,7 +93,7 @@ fn render_path(path: &BezierSubpath, y_pos: f64) {
     canvas_drawing.draw(drawing.iter().cloned());
     let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
 
-    let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner()), 1080);
+    let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
     term_renderer.render(renderer, &canvas_drawing);
 }
 

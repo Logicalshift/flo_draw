@@ -71,13 +71,13 @@ pub fn main() {
 
     // Warm up before timing the rendering
     for _ in 0..10 {
-        let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner()), 1080);
+        let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
         rgba.render(renderer, &canvas_drawing);
     }
 
     let render_start = Instant::now();
     for _ in 0..100 {
-        let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner()), 1080);
+        let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
         rgba.render(renderer, &canvas_drawing);
     }
     let render_time = Instant::now().duration_since(render_start);
@@ -86,7 +86,7 @@ pub fn main() {
 
     let render_start = Instant::now();
     for _ in 0..100 {
-        let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(u32_canvas_drawing.program_runner()), 1080);
+        let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(u32_canvas_drawing.program_runner(1080.0)), 1080);
         rgba.render(renderer, &u32_canvas_drawing);
     }
     let render_time = Instant::now().duration_since(render_start);
@@ -96,7 +96,7 @@ pub fn main() {
     // Render the mascot to the terminal
     let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
 
-    let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(u32_canvas_drawing.program_runner()), 1080);
+    let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(u32_canvas_drawing.program_runner(1080.0)), 1080);
     term_renderer.render(renderer, &u32_canvas_drawing);
 }
 
