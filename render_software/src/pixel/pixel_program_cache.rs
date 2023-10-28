@@ -38,8 +38,11 @@ type PixelRenderBindFn<TPixel> = Box<dyn Send + Sync + Fn(PixelSize) -> PixelPro
 type PixelProgramBindFn<TData, TPixel> = Box<dyn Send + Sync + Fn(TData) -> PixelRenderBindFn<TPixel>>;
 
 ///
-/// The pixel program cache provides a way to assign IDs to pixel programs and support initialising them
-/// with a data cache.
+/// The pixel program cache assigns IDs to pixel programs.
+///
+/// This can also be used to generate a data cache, which associates program-specific data to a pixel program (for example, the color or texture
+/// data to use). The data cache can in turn generate a program runner, which can be used to run the programs to a buffer with a particular
+/// set of settings.
 ///
 pub struct PixelProgramCache<TPixel: Send> {
     next_program_id:    usize,
