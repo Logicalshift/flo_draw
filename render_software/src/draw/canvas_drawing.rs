@@ -212,7 +212,15 @@ where
     ///
     /// Returns a program runner for this canvas drawing for a certain pixel size, determined from the height of the render target in pixels
     ///
+    /// Note that `set_pixel_height()` is used for the line widths, and this pixel height is used for choosing the shader programs. These
+    /// values are typically the same, but when rendering a scaled image, this value should be the real render height and the value set in
+    /// `set_pixel_height()` should be the 'original' height. Ie, if rendering an image scaled for 1080p at 4k resolution, `set_pixel_height()`
+    /// should be called with 1080 as the value, and this should be called with 2160.
+    ///
     pub fn program_runner(&self, height_pixels: f64) -> &PixelProgramDataCache<TPixel> {
+        // The y-position for the scene goes from -1 to 1 so the pixel size is 2.0/height
+        let pixel_size = 2.0 / height_pixels;
+
         &self.program_data_cache
     }
 
