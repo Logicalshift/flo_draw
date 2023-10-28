@@ -41,8 +41,11 @@ where
     /// Maps layer handles to layers
     pub (super) layers:             SparseArray<Layer>,
 
-    /// The layers in order
+    /// The layers to render in order
     pub (super) ordered_layers:     Vec<LayerHandle>,
+
+    /// The layer handles that map from sprite IDs
+    pub (super) sprites:            HashMap<(canvas::NamespaceId, canvas::SpriteId), LayerHandle>,
 
     /// The next layer handle to allocate
     pub (super) next_layer_handle:  LayerHandle,
@@ -90,6 +93,7 @@ where
             current_state:      DrawingState::default(),
             layers:             layers,
             ordered_layers:     vec![LayerHandle(0)],
+            sprites:            HashMap::new(),
             next_layer_handle:  LayerHandle(1),
             program_cache:      program_cache,
             program_data_cache: data_cache,
@@ -245,6 +249,7 @@ where
         self.current_layer      = LayerHandle(0);
         self.layers             = layers;
         self.current_state      = DrawingState::default();
+        self.sprites            = HashMap::new();
         self.ordered_layers     = vec![LayerHandle(0)];
         self.current_namespace  = canvas::NamespaceId::default();
         self.next_layer_handle  = LayerHandle(1);
