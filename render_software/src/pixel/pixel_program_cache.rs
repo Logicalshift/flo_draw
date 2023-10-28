@@ -8,6 +8,13 @@ use std::ops::{Range};
 use std::sync::*;
 
 ///
+/// Definition of a dynamic function that is passed a pixel range and fills it in
+///
+/// (This is essentially a fragment shader that runs on the CPU)
+///
+pub type PixelProgramFn<TPixel> = Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, &ScanlineTransform, f64) -> ()>;
+
+///
 /// The pixel program cache provides a way to assign IDs to pixel programs and support initialising them
 /// with a data cache.
 ///
@@ -21,7 +28,7 @@ pub struct PixelProgramCache<TPixel: Send> {
 ///
 pub struct PixelProgramDataCache<TPixel: Send> {
     /// Functions that call a pixel program with its associated program data
-    program_data: Vec<Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, &ScanlineTransform, f64) -> ()>>,
+    program_data: Vec<PixelProgramFn<TPixel>>,
 
     /// The number of times each program_data item is used (0 when free)
     retain_counts: Vec<usize>,
@@ -41,8 +48,7 @@ where
     program_id: PixelProgramId,
 
     /// Function to associate program data with this program
-    associate_program_data: Box<dyn Send + Sync + Fn(TProgram::ProgramData) -> 
-        Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TProgram::Pixel>, &mut [TProgram::Pixel], Range<i32>, &ScanlineTransform, f64) -> ()>>,
+    associate_program_data: Box<dyn Send + Sync + Fn(TProgram::ProgramData) -> PixelProgramFn<TProgram::Pixel>>,
 }
 
 ///
@@ -81,7 +87,7 @@ where
     ///
     /// Creates a function based on a program that sets its data and scanline data, generating the 'make pixels at position' function
     ///
-    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Send + Sync + Fn(TProgram::ProgramData) -> Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, &ScanlineTransform, f64) -> ()>
+    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Send + Sync + Fn(TProgram::ProgramData) -> PixelProgramFn<TPixel>
     where
         TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
