@@ -217,11 +217,11 @@ where
     /// `set_pixel_height()` should be the 'original' height. Ie, if rendering an image scaled for 1080p at 4k resolution, `set_pixel_height()`
     /// should be called with 1080 as the value, and this should be called with 2160.
     ///
-    pub fn program_runner(&self, height_pixels: f64) -> &PixelProgramDataCache<TPixel> {
+    pub fn program_runner<'a>(&'a self, height_pixels: f64) -> impl 'a + PixelProgramRunner<TPixel = TPixel> {
         // The y-position for the scene goes from -1 to 1 so the pixel size is 2.0/height
         let pixel_size = 2.0 / height_pixels;
 
-        &self.program_data_cache
+        self.program_data_cache.create_program_runner(PixelSize(pixel_size))
     }
 
     ///

@@ -32,7 +32,7 @@ where
     type ProgramData    = BlendColorData<TPixel>;
 
     #[inline]
-    fn draw_pixels(&self, _data_cache: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, _: &ScanlineTransform, _y_pos: f64, program_data: &Self::ProgramData) {
+    fn draw_pixels(&self, _data_cache: &PixelProgramRenderCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, _: &ScanlineTransform, _y_pos: f64, program_data: &Self::ProgramData) {
         let op = program_data.0.get_function::<TPixel>();
 
         for pixel in target[(x_range.start as usize)..(x_range.end as usize)].iter_mut() {

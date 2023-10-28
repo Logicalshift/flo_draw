@@ -10,6 +10,7 @@ use std::sync::*;
 ///
 /// f64 value representing the size of a pixel in render units
 ///
+#[derive(Copy, Clone, Debug)]
 pub struct PixelSize(pub f64);
 
 ///
@@ -17,12 +18,7 @@ pub struct PixelSize(pub f64);
 ///
 /// (This is essentially a fragment shader that runs on the CPU)
 ///
-pub type PixelProgramFn<'a, TPixel> = Box<dyn 'a + Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, &ScanlineTransform, f64) -> ()>;
-
-///
-/// Function that creates a pixel program function by binding some per-scene data into it
-///
-pub type PixelProgramBindFn<TData, TPixel> = Box<dyn Send + Sync + Fn(TData) -> PixelProgramFn<'static, TPixel>>;
+pub type PixelProgramFn<'a, TPixel> = Box<dyn 'a + Send + Sync + Fn(&PixelProgramRenderCache<TPixel>, &mut [TPixel], Range<i32>, &ScanlineTransform, f64) -> ()>;
 
 ///
 /// Function that binds a pixel program to a particular set of canvas properties
@@ -32,7 +28,14 @@ pub type PixelProgramBindFn<TData, TPixel> = Box<dyn Send + Sync + Fn(TData) -> 
 ///
 /// This is generally useful for avoiding having to re-make decisions regarding the canvas every time a pixel program is invoked.
 ///
-pub type PixelRenderBindFn<TData, TPixel> = Box<dyn Send + Sync + for<'a> Fn(&'a TData, PixelSize) -> PixelProgramFn<'a, TPixel>>;
+// TODO: passing in the data here is necessary for the lifetime, but this would be much simpler if it were possible to specify that
+// the function was borrowed for the lifetime of the PixelProgramFn (so the data can be entirely elided)
+type PixelRenderBindFn<TPixel> = Box<dyn Send + Sync + Fn(PixelSize) -> PixelProgramFn<'static, TPixel>>;
+
+///
+/// Function that creates a pixel program function by binding some per-scene data into it
+///
+type PixelProgramBindFn<TData, TPixel> = Box<dyn Send + Sync + Fn(TData) -> PixelRenderBindFn<TPixel>>;
 
 ///
 /// The pixel program cache provides a way to assign IDs to pixel programs and support initialising them
@@ -48,13 +51,21 @@ pub struct PixelProgramCache<TPixel: Send> {
 ///
 pub struct PixelProgramDataCache<TPixel: Send> {
     /// Functions that call a pixel program with its associated program data
-    program_data: Vec<PixelProgramFn<'static, TPixel>>,
+    program_data: Vec<PixelRenderBindFn<TPixel>>,
 
     /// The number of times each program_data item is used (0 when free)
     retain_counts: Vec<usize>,
 
     /// Slots in the 'program_data' list that are available to re-use with different data
     free_data_slots: Vec<usize>,
+}
+
+///
+/// The render cache contains the programs that will be run to render a frame using particular settings
+///
+pub struct PixelProgramRenderCache<'a, TPixel: Send> {
+    /// Functions that call a pixel program with its associated program data
+    program_data: Vec<PixelProgramFn<'a, TPixel>>,
 }
 
 ///
@@ -107,17 +118,23 @@ where
     ///
     /// Creates a function based on a program that sets its data and scanline data, generating the 'make pixels at position' function
     ///
-    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Send + Sync + Fn(TProgram::ProgramData) -> PixelProgramFn<'static, TPixel>
+    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Send + Sync + Fn(TProgram::ProgramData) -> PixelRenderBindFn<TPixel>
     where
         TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
         move |program_data| {
             // Copy the program
             let program         = Arc::clone(&program);
+            let program_data    = Arc::new(program_data);
 
             // Return a function that encapsulates the program data
-            Box::new(move |data_cache, target, x_range, x_transform, y_pos| {
-                program.draw_pixels(data_cache, target, x_range, x_transform, y_pos, &program_data)
+            Box::new(move |_pixel_size| {
+                let program         = Arc::clone(&program);
+                let program_data    = Arc::clone(&program_data);
+
+                Box::new(move |data_cache, target, x_range, x_transform, y_pos| {
+                    program.draw_pixels(data_cache, target, x_range, x_transform, y_pos, &*program_data)
+                })
             })
         }
     }
@@ -215,7 +232,7 @@ where
         } else if self.retain_counts[data_id.0] == 1 {
             // Free the data for this program
             self.retain_counts[data_id.0] = 0;
-            self.program_data[data_id.0]  = Box::new(|_, _, _, _, _| { });
+            self.program_data[data_id.0]  = Box::new(|_| { Box::new(|_, _, _, _, _| { }) });
             self.free_data_slots.push(data_id.0);
         } else {
             // Reduce the retain count
@@ -231,9 +248,18 @@ where
         self.retain_counts.clear();
         self.program_data.clear();
     }
+
+    ///
+    /// Initialises a render cache from this data cache. This 
+    ///
+    pub fn create_program_runner<'a>(&'a self, pixel_size: PixelSize) -> impl 'a + PixelProgramRunner<TPixel = TPixel> {
+        PixelProgramRenderCache {
+            program_data: self.program_data.iter().map(|data| data(pixel_size)).collect()
+        }
+    }
 }
 
-impl<TPixel> PixelProgramRunner for PixelProgramDataCache<TPixel>
+impl<'a, TPixel> PixelProgramRunner for PixelProgramRenderCache<'a, TPixel>
 where
     TPixel: Send,
 {
@@ -248,7 +274,7 @@ where
     }
 }
 
-impl<'a, TPixel> PixelProgramRunner for &'a PixelProgramDataCache<TPixel> 
+impl<'a, TPixel> PixelProgramRunner for &'a PixelProgramRenderCache<'a, TPixel> 
 where
     TPixel: Send,
 {

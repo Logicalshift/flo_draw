@@ -39,7 +39,7 @@ pub trait PixelProgram : Send + Sync {
     /// coordinates). If the `x_transform.pixel_range_to_x()` function can be called to generate the source coordinates to render for the
     /// specified x-range.
     ///
-    fn draw_pixels(&self, data_cache: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, x_transform: &ScanlineTransform, y_pos: f64, program_data: &Self::ProgramData);
+    fn draw_pixels(&self, data_cache: &PixelProgramRenderCache<Self::Pixel>, target: &mut [Self::Pixel], x_range: Range<i32>, x_transform: &ScanlineTransform, y_pos: f64, program_data: &Self::ProgramData);
 }
 
 ///
@@ -96,7 +96,7 @@ where
     type ProgramData    = TData;
 
     #[inline]
-    fn draw_pixels(&self, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, x_transform: &ScanlineTransform, ypos: f64, program_data: &TData) {
+    fn draw_pixels(&self, _: &PixelProgramRenderCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, x_transform: &ScanlineTransform, ypos: f64, program_data: &TData) {
         (self.function)(target, x_range, x_transform, ypos, program_data)
     }
 }
@@ -123,7 +123,7 @@ where
     type ProgramData    = TData;
 
     #[inline]
-    fn draw_pixels(&self, _: &PixelProgramDataCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, _x_transform: &ScanlineTransform, ypos: f64, program_data: &TData) {
+    fn draw_pixels(&self, _: &PixelProgramRenderCache<Self::Pixel>, target: &mut [TPixel], x_range: Range<i32>, _x_transform: &ScanlineTransform, ypos: f64, program_data: &TData) {
         let mut pos = 0;
         for x in x_range {
             target[pos] = (self.function)(x, ypos, program_data);

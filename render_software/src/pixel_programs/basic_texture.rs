@@ -75,7 +75,7 @@ where
     type ProgramData    = TextureData<TTexture>;
 
     #[inline]
-    fn draw_pixels(&self, _data_cache: &PixelProgramDataCache<Self::Pixel>, target: &mut [Self::Pixel], pixel_range: Range<i32>, x_transform: &ScanlineTransform, y_pos: f64, data: &Self::ProgramData) {
+    fn draw_pixels(&self, _data_cache: &PixelProgramRenderCache<Self::Pixel>, target: &mut [Self::Pixel], pixel_range: Range<i32>, x_transform: &ScanlineTransform, y_pos: f64, data: &Self::ProgramData) {
         // Read the data
         let texture                 = &*data.texture;
         let [[a, b, c], [d, e, f]]  = data.transform;
