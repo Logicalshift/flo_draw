@@ -89,6 +89,9 @@ where
 /// The `StoredPixelProgram` type that will be derived from the `PixelProgram` `TProgram`
 pub type StoredPixelProgramFromProgram<TProgram> = StoredPixelProgram<<TProgram as PixelProgram>::ProgramData, <TProgram as PixelProgram>::Pixel>;
 
+/// The `StoredPixelProgram` type that will be derived from the `PixelProgramForFrame` `TProgram`
+pub type StoredPixelProgramFromFrameProgram<TProgram> = StoredPixelProgram<<TProgram as PixelProgramForFrame>::FrameData, <<TProgram as PixelProgramForFrame>::Program as PixelProgram>::Pixel>;
+
 ///
 /// Identifier for the program data for a pixel program
 ///
@@ -148,6 +151,30 @@ where
     }
 
     ///
+    /// Creates a function based on a program that sets its data and scanline data, generating the 'make pixels at position' function
+    ///
+    fn create_associate_frame_program_data<TProgram>(program: Arc<TProgram>) -> impl Send + Sync + Fn(TProgram::FrameData) -> PixelRenderBindFn<TPixel>
+    where
+        TProgram: 'static + PixelProgramForFrame,
+        TProgram::Program: 'static + PixelProgram<Pixel=TPixel>,
+    {
+        move |program_data| {
+            // Copy the program
+            let program         = Arc::clone(&program);
+            let program_data    = Arc::new(program_data);
+
+            // Return a function that encapsulates the program data
+            Box::new(move |pixel_size| {
+                let (program, program_data) = program.program_for_frame(pixel_size, &program_data);
+
+                Box::new(move |data_cache, target, x_range, x_transform, y_pos| {
+                    program.draw_pixels(data_cache, target, x_range, x_transform, y_pos, &program_data)
+                })
+            })
+        }
+    }
+
+    ///
     /// Caches a pixel program, assigning it an ID, and a cache that can be used
     ///
     pub fn add_pixel_program<TProgram>(&mut self, program: TProgram) -> StoredPixelProgramFromProgram<TProgram> 
@@ -162,6 +189,36 @@ where
 
         // Create the function to associate data with this program
         let associate_data = Box::new(Self::create_associate_program_data(Arc::new(program)));
+
+        // Return a stored pixel program of the appropriate type
+        StoredPixelProgram {
+            program_id:             new_program_id,
+            associate_program_data: associate_data,
+        }
+    }
+
+    ///
+    /// Caches a pixel program, assigning it an ID, and a cache that can be used
+    ///
+    /// The difference between a 'frame' pixel program added by this function and the programs added by `add_pixel_program()` is that
+    /// these programs are given an opportunity to initialise themselves with the properties of the frame that is going to be rendered.
+    ///
+    /// This is useful for things like the texturing programs that need to pick which algorithm they're going to use based on the size
+    /// of pixel that they will be expected to render.
+    ///
+    pub fn add_frame_pixel_program<TProgram>(&mut self, program: TProgram) -> StoredPixelProgramFromFrameProgram<TProgram> 
+    where
+        TProgram:           'static + PixelProgramForFrame,
+        TProgram::Program:  'static + PixelProgram<Pixel=TPixel>,
+    {
+        // Assign an ID to the new program
+        let new_program_id = self.next_program_id;
+        let new_program_id = PixelProgramId(new_program_id);
+
+        self.next_program_id += 1;
+
+        // Create the function to associate data with this program
+        let associate_data = Box::new(Self::create_associate_frame_program_data(Arc::new(program)));
 
         // Return a stored pixel program of the appropriate type
         StoredPixelProgram {
