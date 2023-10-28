@@ -150,9 +150,40 @@ where
             layer.clear();
 
             // Release the layer's data
+            // There is also data in stored_data, that's in use by the stored edges: that's not freed here in case we want to restore those edges
             for data_id in layer.used_data.drain(..) {
                 self.program_data_cache.release_program_data(data_id);
             }
+        }
+    }
+
+    ///
+    /// Creates a clone of a layer (retaining any resources that it's using)
+    ///
+    pub (crate) fn clone_layer(&mut self, handle: LayerHandle) -> Layer {
+        if let Some(layer) = self.layers.get(handle.0) {
+            // Retain the program data for this layer
+            for data_id in layer.used_data.iter() {
+                self.program_data_cache.retain_program_data(*data_id);
+            }
+
+            for data_id in layer.stored_data.iter() {
+                self.program_data_cache.retain_program_data(*data_id);
+            }
+
+            // Create a copy of the layer
+            Layer {
+                alpha:          layer.alpha,
+                blend_mode:     layer.blend_mode,
+                edges:          layer.edges.clone(),
+                used_data:      layer.used_data.clone(),
+                stored_edges:   layer.stored_edges.clone(),
+                stored_data:    layer.stored_data.clone(),
+                z_index:        layer.z_index,
+            }
+        } else {
+            // Just use an empty default layer if this layer isn't created yet
+            Layer::default()
         }
     }
 

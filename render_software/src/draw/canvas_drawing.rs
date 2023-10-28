@@ -165,9 +165,9 @@ where
                 PushState                                           => { self.push_state() },
                 PopState                                            => { self.pop_state() },
 
-                Sprite(sprite_id)                                   => { /* todo!() */ },
-                MoveSpriteFrom(sprite_id)                           => { /* todo!() */ },
-                ClearSprite                                         => { /* todo!() */ },
+                Sprite(sprite_id)                                   => { self.sprite(sprite_id); },
+                MoveSpriteFrom(sprite_id)                           => { self.sprite_move_from(sprite_id); },
+                ClearSprite                                         => { self.clear_layer(self.current_layer); },
                 SpriteTransform(transform)                          => { /* todo!() */ },
                 DrawSprite(sprite_id)                               => { /* todo!() */ },
                 DrawSpriteWithFilters(sprite_id, filters)           => { /* todo!() */ },

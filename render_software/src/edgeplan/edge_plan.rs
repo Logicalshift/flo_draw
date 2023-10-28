@@ -13,17 +13,19 @@ use std::ops::{Range};
 ///
 /// Data stored for an edge in the edge plan
 ///
+#[derive(Clone)]
 struct EdgeData<TEdge>
 where
     TEdge: EdgeDescriptor,
 {
-    edge: TEdge,
-    y_bounds: Range<f64>,
+    edge:       TEdge,
+    y_bounds:   Range<f64>,
 }
 
 ///
 /// An edge plan describes a 2 dimensional space as a set of edges that divide 
 ///
+#[derive(Clone)]
 pub struct EdgePlan<TEdge>
 where
     TEdge: EdgeDescriptor,

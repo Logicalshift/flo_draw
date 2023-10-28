@@ -7,6 +7,7 @@ mod stroke;
 mod transform;
 mod renderer;
 mod texture;
+mod sprite;
 
 pub use canvas_drawing::*;
 pub use renderer::*;
