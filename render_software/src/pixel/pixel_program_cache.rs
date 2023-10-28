@@ -8,16 +8,31 @@ use std::ops::{Range};
 use std::sync::*;
 
 ///
+/// f64 value representing the size of a pixel in render units
+///
+pub struct PixelSize(pub f64);
+
+///
 /// Definition of a dynamic function that is passed a pixel range and fills it in
 ///
 /// (This is essentially a fragment shader that runs on the CPU)
 ///
-pub type PixelProgramFn<TPixel> = Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, &ScanlineTransform, f64) -> ()>;
+pub type PixelProgramFn<'a, TPixel> = Box<dyn 'a + Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, &ScanlineTransform, f64) -> ()>;
 
 ///
 /// Function that creates a pixel program function by binding some per-scene data into it
 ///
-pub type PixelProgramBindFn<TData, TPixel> = Box<dyn Send + Sync + Fn(TData) -> PixelProgramFn<TPixel>>;
+pub type PixelProgramBindFn<TData, TPixel> = Box<dyn Send + Sync + Fn(TData) -> PixelProgramFn<'static, TPixel>>;
+
+///
+/// Function that binds a pixel program to a particular set of canvas properties
+///
+/// This can be used to pre-compute some data related to a pixel program, or select the algorithm most appropriate for a given
+/// rendering operation (for example, the texture pixel program can choose to use mip-mapping to scale down a texture at this point)
+///
+/// This is generally useful for avoiding having to re-make decisions regarding the canvas every time a pixel program is invoked.
+///
+pub type PixelRenderBindFn<TData, TPixel> = Box<dyn Send + Sync + for<'a> Fn(&'a TData, PixelSize) -> PixelProgramFn<'a, TPixel>>;
 
 ///
 /// The pixel program cache provides a way to assign IDs to pixel programs and support initialising them
@@ -33,7 +48,7 @@ pub struct PixelProgramCache<TPixel: Send> {
 ///
 pub struct PixelProgramDataCache<TPixel: Send> {
     /// Functions that call a pixel program with its associated program data
-    program_data: Vec<PixelProgramFn<TPixel>>,
+    program_data: Vec<PixelProgramFn<'static, TPixel>>,
 
     /// The number of times each program_data item is used (0 when free)
     retain_counts: Vec<usize>,
@@ -92,7 +107,7 @@ where
     ///
     /// Creates a function based on a program that sets its data and scanline data, generating the 'make pixels at position' function
     ///
-    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Send + Sync + Fn(TProgram::ProgramData) -> PixelProgramFn<TPixel>
+    fn create_associate_program_data<TProgram>(program: Arc<TProgram>) -> impl Send + Sync + Fn(TProgram::ProgramData) -> PixelProgramFn<'static, TPixel>
     where
         TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
