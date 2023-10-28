@@ -15,6 +15,11 @@ use std::sync::*;
 pub type PixelProgramFn<TPixel> = Box<dyn Send + Sync + Fn(&PixelProgramDataCache<TPixel>, &mut [TPixel], Range<i32>, &ScanlineTransform, f64) -> ()>;
 
 ///
+/// Function that creates a pixel program function by binding some per-scene data into it
+///
+pub type PixelProgramBindFn<TData, TPixel> = Box<dyn Send + Sync + Fn(TData) -> PixelProgramFn<TPixel>>;
+
+///
 /// The pixel program cache provides a way to assign IDs to pixel programs and support initialising them
 /// with a data cache.
 ///
@@ -48,7 +53,7 @@ where
     program_id: PixelProgramId,
 
     /// Function to associate program data with this program
-    associate_program_data: Box<dyn Send + Sync + Fn(TProgram::ProgramData) -> PixelProgramFn<TProgram::Pixel>>,
+    associate_program_data: PixelProgramBindFn<TProgram::ProgramData, TProgram::Pixel>,
 }
 
 ///
