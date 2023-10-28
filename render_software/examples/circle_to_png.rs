@@ -17,7 +17,7 @@ pub fn main() {
     // Create a program cache and data cache
     let mut program_cache   = PixelProgramCache::empty();
     let mut data_cache      = program_cache.create_data_cache();
-    let solid_color         = program_cache.add_program(SolidColorProgram::default());
+    let solid_color         = program_cache.add_pixel_program(SolidColorProgram::default());
 
     // Create a circular edge (using the circle distance field from flo_curves)
     // This is a more low-level way to represent a 2D scene than describing the rendering instructions using flo_canvas::Draw

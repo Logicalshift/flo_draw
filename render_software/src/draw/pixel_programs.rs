@@ -30,10 +30,10 @@ where
 {
     fn default() -> Self {
         let mut cache       = PixelProgramCache::empty();
-        let solid_color     = cache.add_program(SolidColorProgram::default());
-        let source_over     = cache.add_program(SourceOverColorProgram::default());
-        let blend_color     = cache.add_program(BlendColorProgram::default());
-        let basic_texture   = cache.add_program(BasicTextureProgram::default());
+        let solid_color     = cache.add_pixel_program(SolidColorProgram::default());
+        let source_over     = cache.add_pixel_program(SourceOverColorProgram::default());
+        let blend_color     = cache.add_pixel_program(BlendColorProgram::default());
+        let basic_texture   = cache.add_pixel_program(BasicTextureProgram::default());
 
         CanvasPixelPrograms { 
             program_cache:      cache, 

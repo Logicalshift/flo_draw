@@ -150,7 +150,7 @@ where
     ///
     /// Caches a pixel program, assigning it an ID, and a cache that can be used
     ///
-    pub fn add_program<TProgram>(&mut self, program: TProgram) -> StoredPixelProgramFromProgram<TProgram> 
+    pub fn add_pixel_program<TProgram>(&mut self, program: TProgram) -> StoredPixelProgramFromProgram<TProgram> 
     where
         TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
