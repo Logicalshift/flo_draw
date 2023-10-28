@@ -43,6 +43,24 @@ pub trait PixelProgram : Send + Sync {
 }
 
 ///
+/// Trait implemented by pixel programs that need to customise themselves for a particular frame size, such as texture programs
+///
+pub trait PixelProgramForFrame : Send + Sync {
+    /// The type of the pixel program that this will run
+    type Program : PixelProgram;
+
+    ///
+    /// The data that is associated with an instance of this program (can generate the data required for the pixel program itself)
+    ///
+    type FrameData : Send + Sync;
+
+    ///
+    /// Creates a pixel program and the corresponding data that will run for a given frame size
+    ///
+    fn program_for_frame(&self, pixel_size: PixelSize, program_data: &Arc<Self::FrameData>) -> (Self::Program, <Self::Program as PixelProgram>::ProgramData);
+}
+
+///
 /// Pixel program that calls a function to fill the pixels, with program data
 ///
 /// This can be used with a pixel program that generates rows of pixels (`PixelProgramFn::from(|target, x_range, ypos, data| { ... })`)
