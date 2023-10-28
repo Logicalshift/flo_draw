@@ -74,16 +74,20 @@ pub struct PixelProgramRenderCache<'a, TPixel: Send> {
 ///
 /// A stored pixel program can be used with a `PixelProgramDataCache` to save data to be used with pixel programs
 ///
-pub struct StoredPixelProgram<TProgram>
+pub struct StoredPixelProgram<TProgramData, TPixel>
 where
-    TProgram: 'static + PixelProgram,
+    TProgramData:   Send,
+    TPixel:         Send
 {
     /// The ID of this pixel program
     program_id: PixelProgramId,
 
     /// Function to associate program data with this program
-    associate_program_data: PixelProgramBindFn<TProgram::ProgramData, TProgram::Pixel>,
+    associate_program_data: PixelProgramBindFn<TProgramData, TPixel>,
 }
+
+/// The `StoredPixelProgram` type that will be derived from the `PixelProgram` `TProgram`
+pub type StoredPixelProgramFromProgram<TProgram> = StoredPixelProgram<<TProgram as PixelProgram>::ProgramData, <TProgram as PixelProgram>::Pixel>;
 
 ///
 /// Identifier for the program data for a pixel program
@@ -93,9 +97,10 @@ where
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct PixelProgramDataId(pub usize);
 
-impl<TProgram> StoredPixelProgram<TProgram>
+impl<TProgramData, TPixel> StoredPixelProgram<TProgramData, TPixel>
 where
-    TProgram: 'static + PixelProgram,
+    TProgramData:   Send,
+    TPixel:         Send
 {
     /// Returns the program ID of this program
     #[inline]
@@ -145,7 +150,7 @@ where
     ///
     /// Caches a pixel program, assigning it an ID, and a cache that can be used
     ///
-    pub fn add_program<TProgram>(&mut self, program: TProgram) -> StoredPixelProgram<TProgram> 
+    pub fn add_program<TProgram>(&mut self, program: TProgram) -> StoredPixelProgramFromProgram<TProgram> 
     where
         TProgram: 'static + PixelProgram<Pixel=TPixel>,
     {
@@ -182,9 +187,9 @@ where
     /// Program data can be a number of things: in the simplest case it might be the colour that the program will set the pixels to.
     /// `release_program_data()` can be used to free this data and make the ID available for reallocation to a different program. 
     ///
-    pub fn store_program_data<TProgram>(&self, stored_program: &StoredPixelProgram<TProgram>, data_cache: &mut PixelProgramDataCache<TPixel>, data: TProgram::ProgramData) -> PixelProgramDataId 
+    pub fn store_program_data<TProgramData>(&self, stored_program: &StoredPixelProgram<TProgramData, TPixel>, data_cache: &mut PixelProgramDataCache<TPixel>, data: TProgramData) -> PixelProgramDataId 
     where
-        TProgram: 'static + PixelProgram<Pixel=TPixel>,
+        TProgramData: 'static + Send + Sync,
     {
         // Generate the data for this program (well, encapsulate it in a function waiting for the scanline data)
         let associate_scanline_data = (stored_program.associate_program_data)(data);

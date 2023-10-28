@@ -12,16 +12,16 @@ where
     pub (super) program_cache: PixelProgramCache<TPixel>,
 
     /// The basic solid colour pixel program
-    pub (super) solid_color: StoredPixelProgram<SolidColorProgram<TPixel>>,
+    pub (super) solid_color: StoredPixelProgramFromProgram<SolidColorProgram<TPixel>>,
 
     /// The 'source over' alpha blending pixel program
-    pub (super) source_over_color: StoredPixelProgram<SourceOverColorProgram<TPixel>>,
+    pub (super) source_over_color: StoredPixelProgramFromProgram<SourceOverColorProgram<TPixel>>,
 
     /// The general solid colour blending pixel program
-    pub (super) blend_color: StoredPixelProgram<BlendColorProgram<TPixel>>,
+    pub (super) blend_color: StoredPixelProgramFromProgram<BlendColorProgram<TPixel>>,
 
     /// The basic texture rendering program
-    pub (super) basic_texture: StoredPixelProgram<BasicTextureProgram<TPixel, RgbaTexture>>,
+    pub (super) basic_texture: StoredPixelProgramFromProgram<BasicTextureProgram<TPixel, RgbaTexture>>,
 }
 
 impl<TPixel, const N: usize> Default for CanvasPixelPrograms<TPixel, N> 
