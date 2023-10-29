@@ -286,8 +286,8 @@ fn main() {
 
     println!("  Scan convert bezier circle: {}", scan_convert_bezier.summary_fps());
     println!("  Scan convert flattened circle (v high res): {}", scan_convert_flattened.summary_fps());
-    println!("  Scan convert flattened circle (pixel res): {}", scan_convert_polyline.summary_fps());
+    println!("  Scan convert flattened circle (pixel res) ({} lines): {}", circle_polyline.len(), scan_convert_polyline.summary_fps());
     println!("  Scan convert bezier circle (partial): {}", scan_convert_bezier_partial.summary());
-    println!("  Scan convert flattened circle (partial): {}", scan_convert_polyline_partial.summary());
+    println!("  Scan convert flattened circle (partial) ({} lines): {}", circle_polyline.len(), scan_convert_polyline_partial.summary());
 }
 
