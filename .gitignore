@@ -5,7 +5,7 @@
 *.xcworkspace
 *.xcscheme
 *.flo
-SVGKit
 .DS_Store
 triangle.png
 flo.png
+etc
