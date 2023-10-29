@@ -247,6 +247,14 @@ impl PolylineNonZeroEdge {
             line:       Polyline::new(points)
         }
     }
+
+    ///
+    /// The number of lines in this edge
+    ///
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.line.len()
+    }
 }
 
 impl EdgeDescriptor for PolylineNonZeroEdge {
@@ -285,6 +293,14 @@ impl PolylineEvenOddEdge {
             shape_id:   shape_id,
             line:       Polyline::new(points)
         }
+    }
+
+    ///
+    /// The number of lines in this edge
+    ///
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.line.len()
     }
 }
 
