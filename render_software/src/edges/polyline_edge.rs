@@ -205,6 +205,17 @@ impl Polyline {
     }
 
     ///
+    /// Returns the number of lines in this polyline
+    ///
+    pub fn len(&self) -> usize {
+        match &self.value {
+            PolylineValue::Empty                => 0,
+            PolylineValue::Points(points)       => points.len(),
+            PolylineValue::Lines(line_space)    => line_space.data().count(),
+        }
+    }
+
+    ///
     /// Creates a non-zero edge from this polyline
     ///
     pub fn to_non_zero_edge(self, shape_id: ShapeId) -> PolylineNonZeroEdge {
