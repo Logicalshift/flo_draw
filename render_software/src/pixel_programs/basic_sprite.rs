@@ -43,6 +43,18 @@ where
     translate: (f64, f64),
 }
 
+impl<TEdgeDescriptor> BasicSpriteData<TEdgeDescriptor>
+where
+    TEdgeDescriptor: EdgeDescriptor,
+{
+    ///
+    /// Creates a new instance of the data for the basic sprite pixel program
+    ///
+    pub fn new(edges: Arc<EdgePlan<TEdgeDescriptor>>, scale: (f64, f64), translate: (f64, f64)) -> Self {
+        BasicSpriteData { edges, scale, translate }
+    }
+}
+
 impl<TPixel, TEdgeDescriptor, TPlanner> PixelProgram for BasicSpriteProgram<TPixel, TEdgeDescriptor, TPlanner>
 where
     TEdgeDescriptor:    'static + EdgeDescriptor,
