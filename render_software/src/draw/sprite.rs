@@ -150,6 +150,9 @@ where
 
                     // This 'unprepares' the current layer as for any other drawing operation
                     self.prepared_layers.remove(self.current_layer.0);
+                } else {
+                    // Need a way to render edge plans at arbitrary angles to implement this
+                    todo!("Only scaling and translations are currently supported for sprites")
                 }
             }
         }
