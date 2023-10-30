@@ -1,6 +1,7 @@
 mod canvas_drawing;
 mod drawing_state;
 mod layer;
+mod prepared_layer;
 mod pixel_programs;
 mod path;
 mod stroke;

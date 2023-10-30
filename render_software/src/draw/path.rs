@@ -262,6 +262,7 @@ where
         };
 
         edges.into_iter().for_each(|edge| current_layer.edges.add_edge(edge));
+        self.prepared_layers.remove(self.current_layer.0);
     }
 
     ///

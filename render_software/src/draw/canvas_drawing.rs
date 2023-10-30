@@ -1,5 +1,6 @@
 use super::drawing_state::*;
 use super::layer::*;
+use super::prepared_layer::*;
 use super::pixel_programs::*;
 use super::texture::*;
 
@@ -43,6 +44,9 @@ where
 
     /// The layers to render in order
     pub (super) ordered_layers:     Vec<LayerHandle>,
+
+    /// For layers that have not been altered since they were last used by a sprite rendering command, the ready-to-render version
+    pub (super) prepared_layers:    SparseArray<PreparedLayer>,
 
     /// The layer handles that map from sprite IDs
     pub (super) sprites:            HashMap<(canvas::NamespaceId, canvas::SpriteId), LayerHandle>,
@@ -92,6 +96,7 @@ where
             current_layer:      LayerHandle(0),
             current_state:      DrawingState::default(),
             layers:             layers,
+            prepared_layers:    SparseArray::empty(),
             ordered_layers:     vec![LayerHandle(0)],
             sprites:            HashMap::new(),
             next_layer_handle:  LayerHandle(1),

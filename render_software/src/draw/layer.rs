@@ -310,6 +310,8 @@ where
                 program_data_cache.retain_program_data(*data_id);
                 *data_id
             }));
+
+        self.prepared_layers.remove(self.current_layer.0);
     }
 
     ///
