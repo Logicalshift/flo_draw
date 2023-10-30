@@ -1,10 +1,17 @@
 use super::canvas_drawing::*;
 use super::drawing_state::*;
 use super::layer::*;
+use super::prepared_layer::*;
+
+use crate::edgeplan::*;
+use crate::edges::*;
+use crate::pixel::*;
+use crate::pixel_programs::*;
 
 use flo_canvas as canvas;
+use smallvec::*;
 
-use crate::pixel::*;
+use std::sync::*;
 
 impl SpriteTransform {
     ///
@@ -68,13 +75,84 @@ where
     }
 
     ///
+    /// Creates or retrieves the 'prepared' version of the current layer, which can be used to render sprites or textures
+    ///
+    pub fn prepare_layer(&mut self, layer_handle: LayerHandle) -> PreparedLayer {
+        if let Some(layer) = self.prepared_layers.get(layer_handle.0) {
+            // Use the existing prepared layer
+            layer.clone()
+        } else if let Some(current_layer) = self.layers.get(layer_handle.0){
+            // Prepare the current layer
+            let mut current_layer = current_layer.edges.clone();
+            current_layer.prepare_to_render();
+
+            // Calculate the overall bounding box of the layer
+            let bounds = current_layer.bounding_box();
+
+            // Create the prepared layer
+            let prepared_layer = PreparedLayer {
+                edges:  Arc::new(current_layer),
+                bounds: bounds,
+            };
+
+            // Store in the cache (drawing should clear the prepared layer)
+            self.prepared_layers.insert(layer_handle.0, prepared_layer.clone());
+
+            prepared_layer
+        } else {
+            // Layer does not exist
+            PreparedLayer {
+                edges: Arc::new(EdgePlan::new()),
+                bounds: ((0.0, 0.0), (0.0, 0.0))
+            }
+        }
+    }
+
+    ///
     /// Draws the sprite with the specified ID
     ///
     pub fn sprite_draw(&mut self, sprite_id: canvas::SpriteId) {
-        // TODO
-        // Get the size of the sprite
-        // Create the brush data
-        // Create a rectangle edge and use the sprite brush
+        use std::iter;
+
+        // Get the layer handle for this sprite
+        if let Some(sprite_layer_handle) = self.sprites.get(&(self.current_namespace, sprite_id)) {
+            // Prepare the sprite layer for rendering
+            let sprite_layer = self.prepare_layer(*sprite_layer_handle);
+
+            if !sprite_layer.edges.is_empty() {
+                // Get the z-index of where to render this sprite
+                let current_layer   = self.layers.get_mut(self.current_layer.0).unwrap();
+                let z_index         = current_layer.z_index;
+
+                current_layer.z_index += 1;
+
+                if let SpriteTransform::ScaleTransform { scale, translate } = self.current_state.sprite_transform {
+                    // Create the brush data
+                    let data    = BasicSpriteData::new(sprite_layer.edges, scale, translate);
+                    let data_id = self.program_cache.program_cache.store_program_data(&self.program_cache.basic_sprite, &mut self.program_data_cache, data);
+
+                    // Shape is a transparent rectangle that runs this program
+                    let shape_descriptor = ShapeDescriptor {
+                        programs:   smallvec![data_id],
+                        is_opaque:  false,
+                        z_index:    z_index,
+                    };
+                    let shape_id = ShapeId::new();
+
+                    // Create a rectangle edge for this data
+                    let ((min_x, min_y), (max_x, max_y)) = sprite_layer.bounds;
+                    let sprite_edge = RectangleEdge::new(shape_id, min_x..max_x, min_y..max_y);
+                    let sprite_edge: Arc<dyn EdgeDescriptor> = Arc::new(sprite_edge);
+
+                    // Store in the current layer
+                    current_layer.edges.add_shape(shape_id, shape_descriptor, iter::once(sprite_edge));
+                    current_layer.used_data.push(data_id);
+
+                    // This 'unprepares' the current layer as for any other drawing operation
+                    self.prepared_layers.remove(self.current_layer.0);
+                }
+            }
+        }
     }
 }
 
