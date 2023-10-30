@@ -135,8 +135,8 @@ where
                 if let SpriteTransform::ScaleTransform { scale, translate } = self.current_state.sprite_transform {
                     // Transform the coordinates for the current sprite transform
                     // TODO: we also need to apply things like the current canvas transform rotation here
-                    let translate = self.current_state.transform.transform_point(translate.0 as _, translate.1 as _);
-                    let translate = (translate.0 as f64, translate.1 as f64);
+                    //let translate = self.current_state.transform.transform_point(translate.0 as _, translate.1 as _);
+                    //let translate = (translate.0 as f64, translate.1 as f64);
 
                     // Create the brush data
                     let data    = BasicSpriteData::new(sprite_layer.edges, scale, translate);
