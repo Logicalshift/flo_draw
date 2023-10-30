@@ -75,3 +75,18 @@ where
         renderer.render(&region, scanplan, target);
     }
 }
+
+impl<TPixel, TEdgeDescriptor, TPlanner> Default for BasicSpriteProgram<TPixel, TEdgeDescriptor, TPlanner>
+where
+    TEdgeDescriptor:    'static + EdgeDescriptor,
+    TPixel:             'static,
+    TPlanner:           Default,
+{
+    #[inline]
+    fn default() -> Self {
+        BasicSpriteProgram { 
+            planner:        TPlanner::default(), 
+            phantom_data:   PhantomData
+        }
+    }
+}
