@@ -1,5 +1,9 @@
+use crate::edgeplan::*;
 use crate::pixel::*;
 use crate::pixel_programs::*;
+use crate::scanplan::PixelScanPlanner;
+
+type SimpleSpriteProgram<TPixel> = BasicSpriteProgram<TPixel, Box<dyn EdgeDescriptor>, PixelScanPlanner<Box<dyn EdgeDescriptor>>>;
 
 ///
 /// The standard set of pixel programs for a canvas drawing
@@ -22,6 +26,9 @@ where
 
     /// The basic texture rendering program
     pub (super) basic_texture: StoredPixelProgramFromProgram<BasicTextureProgram<TPixel, RgbaTexture>>,
+
+    /// The basic sprite rendering program (can scale or transform the sprite, and will render it as source over with 100% transparency)
+    pub (super) basic_sprite: StoredPixelProgramFromProgram<SimpleSpriteProgram<TPixel>>,
 }
 
 impl<TPixel, const N: usize> Default for CanvasPixelPrograms<TPixel, N> 
@@ -34,6 +41,7 @@ where
         let source_over     = cache.add_pixel_program(SourceOverColorProgram::default());
         let blend_color     = cache.add_pixel_program(BlendColorProgram::default());
         let basic_texture   = cache.add_pixel_program(BasicTextureProgram::default());
+        let basic_sprite    = cache.add_pixel_program::<SimpleSpriteProgram<TPixel>>(BasicSpriteProgram::default());
 
         CanvasPixelPrograms { 
             program_cache:      cache, 
@@ -41,6 +49,7 @@ where
             source_over_color:  source_over,
             blend_color:        blend_color,
             basic_texture:      basic_texture,
+            basic_sprite:       basic_sprite,
         }
     }
 }
