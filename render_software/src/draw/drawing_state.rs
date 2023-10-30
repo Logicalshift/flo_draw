@@ -13,6 +13,18 @@ use flo_canvas::curves::bezier::path as curves_path;
 use std::sync::*;
 
 ///
+/// The renderer representation of a sprite transform
+///
+#[derive(Copy, Clone)]
+pub enum SpriteTransform {
+    /// Scale then transform 
+    ScaleTransform { scale: (f64, f64), translate: (f64, f64) },
+
+    /// Arbitrary transform
+    Matrix(canvas::Transform2D),
+}
+
+///
 /// A brush represents what will be used to fill in the next region 
 ///
 #[derive(Clone)]
@@ -93,6 +105,9 @@ pub struct DrawingState {
 
     /// The blend mode to use with the brush
     pub (super) blend_mode: AlphaOperation,
+
+    /// The transform that's applied to the next sprite to be drawn
+    pub (super) sprite_transform: SpriteTransform,
 }
 
 impl Default for DrawingState {
@@ -113,6 +128,7 @@ impl Default for DrawingState {
             stroke_end_cap:     curves_path::LineCap::Butt,
             clip_path:          DrawingClipRegion::None,
             blend_mode:         AlphaOperation::SourceOver,
+            sprite_transform:   SpriteTransform::ScaleTransform { scale: (1.0, 1.0), translate: (0.0, 0.0) },
         }
     }
 }
