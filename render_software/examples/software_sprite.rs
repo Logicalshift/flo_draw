@@ -27,7 +27,6 @@ pub fn main() {
     // Draw the triangle in a few places
     draw.layer(LayerId(0));
 
-    /*
     draw.sprite_transform(SpriteTransform::Identity);
     draw.draw_sprite(SpriteId(0));
 
@@ -42,7 +41,6 @@ pub fn main() {
     draw.sprite_transform(SpriteTransform::Identity);
     draw.sprite_transform(SpriteTransform::Translate(300.0, 100.0));
     draw.draw_sprite(SpriteId(0));
-    */
 
     // Render to the terminal window
     render_drawing(&mut TerminalRenderTarget::new(1920, 1080), draw.iter().cloned());
