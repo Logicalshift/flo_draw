@@ -1,4 +1,4 @@
-use super::scan_planner::*;
+use super::scanline_transform::*;
 
 use crate::edgeplan::*;
 

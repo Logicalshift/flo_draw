@@ -1,4 +1,5 @@
 use super::scanline_intercept::*;
+use super::scanline_transform::*;
 use super::scanline_plan::*;
 use super::scan_planner::*;
 
