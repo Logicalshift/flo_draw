@@ -52,6 +52,9 @@ where
 
             // Add the new layer to the list
             self.layers.insert(new_layer_handle.0, new_layer);
+
+            // Use the layer we just created
+            self.current_layer = new_layer_handle;
         }
     }
 
