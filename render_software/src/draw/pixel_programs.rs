@@ -1,9 +1,11 @@
 use crate::edgeplan::*;
 use crate::pixel::*;
 use crate::pixel_programs::*;
-use crate::scanplan::PixelScanPlanner;
+use crate::scanplan::*;
 
-type SimpleSpriteProgram<TPixel> = BasicSpriteProgram<TPixel, Box<dyn EdgeDescriptor>, PixelScanPlanner<Box<dyn EdgeDescriptor>>>;
+use std::sync::*;
+
+type SimpleSpriteProgram<TPixel> = BasicSpriteProgram<TPixel, Arc<dyn EdgeDescriptor>, PixelScanPlanner<Arc<dyn EdgeDescriptor>>>;
 
 ///
 /// The standard set of pixel programs for a canvas drawing
