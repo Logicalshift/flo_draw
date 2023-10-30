@@ -206,6 +206,7 @@ where
     ///
     /// Once `prepare_to_render()` has been called, returns the edges found in a particular y-range
     ///
+    #[inline]
     pub fn edges_in_region<'a>(&'a self, y_range: Range<f64>) -> impl 'a + Iterator<Item=&'a TEdge> {
         self.edge_space.data_in_region(y_range)
             .map(move |edge_idx| &self.edges[*edge_idx].edge)
@@ -214,9 +215,42 @@ where
     ///
     /// Returns all of the edges in this plan
     ///
+    #[inline]
     pub fn all_edges<'a>(&'a self) -> impl 'a + Iterator<Item=&'a TEdge> {
         self.edges.iter()
             .map(|edge| &edge.edge)
+    }
+
+    ///
+    /// Returns true if there are 0 edges in this plan
+    ///
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.edges.is_empty()
+    }
+
+    ///
+    /// Calculates the bounding box for this edge plan (note this isn't cached, and will have a fairly useless result if there are no edges in the plan)
+    ///
+    pub fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
+        let mut min_x = f64::MAX;
+        let mut min_y = f64::MAX;
+        let mut max_x = f64::MIN;
+        let mut max_y = f64::MIN;
+
+        for edge in self.edges.iter() {
+            // Get the bounds of this edge
+            let ((edge_min_x, edge_min_y), (edge_max_x, edge_max_y)) = edge.edge.bounding_box();
+
+            // Update the bounds of this plan
+            min_x = min_x.min(edge_min_x);
+            min_y = min_y.min(edge_min_y);
+            max_x = max_x.max(edge_max_x);
+            max_y = max_y.max(edge_max_y);
+        }
+
+        // Return the overall bounds of the plan (which is pretty meaningless if the plan is empty)
+        ((min_x, min_y), (max_x, max_y))
     }
 
     ///
