@@ -41,6 +41,18 @@ impl ScanlineTransform {
     }
 
     ///
+    /// Creates a scaled/translated version of the scanline transform
+    ///
+    #[inline]
+    pub fn transform(&self, scale_x: f64, translate_x: f64) -> Self {
+        ScanlineTransform { 
+            offset:         (self.offset*scale_x) - translate_x, 
+            scale:          self.scale / scale_x, 
+            scale_recip:    self.scale_recip * scale_x,
+        }
+    }
+
+    ///
     /// Converts an x-position from the source to pixels
     ///
     #[inline]
@@ -86,11 +98,27 @@ mod test {
     }
 
     #[test]
+    fn transform_convert_start_from_pixels() {
+        let transform = ScanlineTransform::for_region(&(-1.0..1.0), 1000);
+        let converted = transform.pixel_x_to_source_x(0);
+
+        assert!((converted--1.0).abs() < 0.1, "Expected -1.0, got {}", converted);
+    }
+
+    #[test]
     fn transform_convert_end_to_pixels() {
         let transform = ScanlineTransform::for_region(&(-1.0..1.0), 1000);
         let converted = transform.source_x_to_pixels(1.0);
 
         assert!((converted-1000.0).abs() < 0.1, "Expected 1000, got {}", converted);
+    }
+
+    #[test]
+    fn transform_convert_end_from_pixels() {
+        let transform = ScanlineTransform::for_region(&(-1.0..1.0), 1000);
+        let converted = transform.pixel_x_to_source_x(1000);
+
+        assert!((converted-1.0).abs() < 0.1, "Expected -1.0, got {}", converted);
     }
 
     #[test]
@@ -108,5 +136,65 @@ mod test {
 
         assert!((converted.start- -0.5).abs() < 0.01, "Expected -0.5, got {:?}", converted);
         assert!((converted.end-0.5).abs() < 0.01, "Expected 0.5, got {:?}", converted);
+    }
+
+    #[test]
+    fn transform_scale_1() {
+        let transformed     = ScanlineTransform::for_region(&(-1.0..1.0), 1000).transform(2.0, 0.0);
+        let converted_left  = transformed.pixel_x_to_source_x(0);
+        let converted_right = transformed.pixel_x_to_source_x(1000);
+
+        assert!((converted_left-(-1.0 * 2.0 + 0.0)).abs() < 0.01, "Expected {}, got {}", (-1.0 * 2.0 + 0.0), converted_left);
+        assert!((converted_right-(1.0 * 2.0 + 0.0)).abs() < 0.01, "Expected {}, got {}", (1.0 * 2.0 + 0.0), converted_right);
+    }
+
+    #[test]
+    fn transform_scale_2() {
+        let transformed     = ScanlineTransform::for_region(&(-1.0..1.0), 1000).transform(2.0, 0.0);
+        let converted_left  = transformed.source_x_to_pixels(-1.0 * 2.0 + 0.0);
+        let converted_right = transformed.source_x_to_pixels(1.0 * 2.0 + 0.0);
+
+        assert!((converted_left-(0.0)).abs() < 0.01, "Expected {}, got {}", 0.0, converted_left);
+        assert!((converted_right-(1000.0)).abs() < 0.01, "Expected {}, got {}", 1000.0, converted_right);
+    }
+
+    #[test]
+    fn transform_translate_1() {
+        let transformed     = ScanlineTransform::for_region(&(-1.0..1.0), 1000).transform(1.0, 2.0);
+        let converted_left  = transformed.pixel_x_to_source_x(0);
+        let converted_right = transformed.pixel_x_to_source_x(1000);
+
+        assert!((converted_left-(-1.0 * 1.0 + 2.0)).abs() < 0.01, "Expected {}, got {}", (-1.0 * 1.0 + 2.0), converted_left);
+        assert!((converted_right-(1.0 * 1.0 + 2.0)).abs() < 0.01, "Expected {}, got {}", (1.0 * 1.0 + 2.0), converted_right);
+    }
+
+    #[test]
+    fn transform_translate_2() {
+        let transformed     = ScanlineTransform::for_region(&(-1.0..1.0), 1000).transform(1.0, 2.0);
+        let converted_left  = transformed.source_x_to_pixels(-1.0 * 1.0 + 2.0);
+        let converted_right = transformed.source_x_to_pixels(1.0 * 1.0 + 2.0);
+
+        assert!((converted_left-(0.0)).abs() < 0.01, "Expected {}, got {}", 0.0, converted_left);
+        assert!((converted_right-(1000.0)).abs() < 0.01, "Expected {}, got {}", 1000.0, converted_right);
+    }
+
+    #[test]
+    fn transform_scale_translate_1() {
+        let transformed     = ScanlineTransform::for_region(&(-1.0..1.0), 1000).transform(2.0, 3.0);
+        let converted_left  = transformed.pixel_x_to_source_x(0);
+        let converted_right = transformed.pixel_x_to_source_x(1000);
+
+        assert!((converted_left-(-1.0 * 2.0 + 3.0)).abs() < 0.01, "Expected {}, got {}", (-1.0 * 2.0 + 3.0), converted_left);
+        assert!((converted_right-(1.0 * 2.0 + 3.0)).abs() < 0.01, "Expected {}, got {}", (1.0 * 2.0 + 3.0), converted_right);
+    }
+
+    #[test]
+    fn transform_scale_translate_2() {
+        let transformed     = ScanlineTransform::for_region(&(-1.0..1.0), 1000).transform(2.0, 3.0);
+        let converted_left  = transformed.source_x_to_pixels(-1.0 * 2.0 + 3.0);
+        let converted_right = transformed.source_x_to_pixels(1.0 * 2.0 + 3.0);
+
+        assert!((converted_left-(0.0)).abs() < 0.01, "Expected {}, got {}", 0.0, converted_left);
+        assert!((converted_right-(1000.0)).abs() < 0.01, "Expected {}, got {}", 1000.0, converted_right);
     }
 }
