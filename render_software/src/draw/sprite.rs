@@ -53,6 +53,9 @@ where
             // Add the new layer to the list
             self.layers.insert(new_layer_handle.0, new_layer);
 
+            // Store as a sprite
+            self.sprites.insert((self.current_namespace, sprite_id), new_layer_handle);
+
             // Use the layer we just created
             self.current_layer = new_layer_handle;
         }
@@ -84,17 +87,17 @@ where
         if let Some(layer) = self.prepared_layers.get(layer_handle.0) {
             // Use the existing prepared layer
             layer.clone()
-        } else if let Some(current_layer) = self.layers.get(layer_handle.0){
+        } else if let Some(layer) = self.layers.get(layer_handle.0) {
             // Prepare the current layer
-            let mut current_layer = current_layer.edges.clone();
-            current_layer.prepare_to_render();
+            let mut layer = layer.edges.clone();
+            layer.prepare_to_render();
 
             // Calculate the overall bounding box of the layer
-            let bounds = current_layer.bounding_box();
+            let bounds = layer.bounding_box();
 
             // Create the prepared layer
             let prepared_layer = PreparedLayer {
-                edges:  Arc::new(current_layer),
+                edges:  Arc::new(layer),
                 bounds: bounds,
             };
 
