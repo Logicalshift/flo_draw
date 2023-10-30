@@ -169,7 +169,7 @@ where
                 MoveSpriteFrom(sprite_id)                           => { self.sprite_move_from(sprite_id); },
                 ClearSprite                                         => { self.clear_layer(self.current_layer); },
                 SpriteTransform(transform)                          => { self.current_state.sprite_transform(transform); },
-                DrawSprite(sprite_id)                               => { /* todo!() */ },
+                DrawSprite(sprite_id)                               => { self.sprite_draw(sprite_id); },
                 DrawSpriteWithFilters(sprite_id, filters)           => { /* todo!() */ },
 
                 Texture(texture_id, texture_op)                     => { self.texture(texture_id, texture_op); },

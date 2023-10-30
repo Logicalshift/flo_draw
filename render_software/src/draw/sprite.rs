@@ -66,6 +66,16 @@ where
             self.layers.insert(self.current_layer.0, layer_copy);
         }
     }
+
+    ///
+    /// Draws the sprite with the specified ID
+    ///
+    pub fn sprite_draw(&mut self, sprite_id: canvas::SpriteId) {
+        // TODO
+        // Get the size of the sprite
+        // Create the brush data
+        // Create a rectangle edge and use the sprite brush
+    }
 }
 
 impl DrawingState {
