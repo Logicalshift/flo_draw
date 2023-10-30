@@ -168,7 +168,7 @@ where
                 Sprite(sprite_id)                                   => { self.sprite(sprite_id); },
                 MoveSpriteFrom(sprite_id)                           => { self.sprite_move_from(sprite_id); },
                 ClearSprite                                         => { self.clear_layer(self.current_layer); },
-                SpriteTransform(transform)                          => { /* todo!() */ },
+                SpriteTransform(transform)                          => { self.current_state.sprite_transform(transform); },
                 DrawSprite(sprite_id)                               => { /* todo!() */ },
                 DrawSpriteWithFilters(sprite_id, filters)           => { /* todo!() */ },
 

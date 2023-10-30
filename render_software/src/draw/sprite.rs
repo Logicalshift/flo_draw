@@ -1,4 +1,5 @@
 use super::canvas_drawing::*;
+use super::drawing_state::*;
 use super::layer::*;
 
 use flo_canvas as canvas;
@@ -48,6 +49,32 @@ where
 
             // Replace the current layer with the sprite layer
             self.layers.insert(self.current_layer.0, layer_copy);
+        }
+    }
+}
+
+impl DrawingState {
+    ///
+    /// Applies a canvas sprite transform to the current drawing state
+    ///
+    pub fn sprite_transform(&mut self, transform: canvas::SpriteTransform) {
+        use canvas::SpriteTransform::*;
+
+        let sprite_transform = &mut self.sprite_transform;
+
+        match (transform, sprite_transform) {
+            (Identity, transform)                                                   => *transform = SpriteTransform::ScaleTransform { scale: (1.0, 1.0), translate: (0.0, 0.0) },
+
+            (Translate(x, y), SpriteTransform::ScaleTransform { translate, scale }) => { translate.0 -= x as f64 * scale.0; translate.1 -= y as f64 * scale.0; }
+            (Scale(x, y), SpriteTransform::ScaleTransform { scale, .. })            => { scale.0 /= x as f64; scale.1 /= y as f64; }
+
+            (Rotate(theta), SpriteTransform::ScaleTransform { .. })                 => { }
+            (Transform2D(matrix), SpriteTransform::ScaleTransform { .. })           => { }
+        
+            (Translate(x, y), SpriteTransform::Matrix(t))                           => { }
+            (Scale(x, y), SpriteTransform::Matrix(t))                               => { }
+            (Rotate(theta), SpriteTransform::Matrix(t))                             => { }
+            (Transform2D(matrix), SpriteTransform::Matrix(t))                       => { }
         }
     }
 }
