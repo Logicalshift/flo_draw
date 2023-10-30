@@ -61,6 +61,9 @@ where
         // Plan the rendering for the sprite
         // TODO: we might render the same sprite multiple times on a line, in which case it would be faster to do this once and re-use it later on, maybe can exploit that 
         // on one thread this is called for the same line repeatedly. We'll need to clip to the pixel range though, so will need to test to know if this is worth the extra effort
+        //
+        // It may also be possible to cache scaline plans for longer to re-use when the sprite is rendered in multiple positions (though this requires pixel-perfect alignment so
+        // may be even less useful)
         let mut scanline = [(sprite_ypos, ScanlinePlan::default())];
         self.planner.plan_scanlines(&*data.edges, &sprite_transform, &[sprite_ypos], sprite_xrange, &mut scanline);
 
