@@ -35,6 +35,10 @@ pub fn main() {
             gc.draw_sprite(SpriteId(0));
 
             gc.sprite_transform(SpriteTransform::Identity);
+            gc.sprite_transform(SpriteTransform::Scale(0.5, 0.5));
+            gc.draw_sprite(SpriteId(0));
+
+            gc.sprite_transform(SpriteTransform::Identity);
             gc.sprite_transform(SpriteTransform::Translate(100.0, 100.0));
             gc.draw_sprite(SpriteId(0));
 
