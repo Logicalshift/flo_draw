@@ -21,7 +21,7 @@ impl SpriteTransform {
     pub fn matrix(&self) -> canvas::Transform2D {
         match self {
             SpriteTransform::ScaleTransform { scale, translate } =>
-                canvas::Transform2D::scale(scale.0 as _, scale.1 as _) * canvas::Transform2D::translate(translate.0 as _, translate.0 as _),
+                canvas::Transform2D::scale(scale.0 as _, scale.1 as _) * canvas::Transform2D::translate(translate.0 as _, translate.1 as _),
 
             SpriteTransform::Matrix(matrix) => *matrix
         }
