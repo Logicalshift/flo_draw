@@ -160,7 +160,7 @@ where
                 let upper_right = inverse_transform.transform_point(upper_right.0, upper_right.1);
 
                 // Map back on to the canvas using the sprite transform (generates render coordinates again)
-                let canvas_transform = self.current_state.transform * self.current_state.sprite_transform.matrix();
+                let canvas_transform = self.current_state.transform * self.current_state.sprite_transform.matrix().invert().unwrap();
                 let lower_left  = canvas_transform.transform_point(lower_left.0, lower_left.1);
                 let lower_right = canvas_transform.transform_point(lower_right.0, lower_right.1);
                 let upper_left  = canvas_transform.transform_point(upper_left.0, upper_left.1);
