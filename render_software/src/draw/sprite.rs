@@ -194,6 +194,7 @@ where
 
                     // Create a rectangle edge for this data
                     let sprite_edge = RectangleEdge::new(shape_id, (lower_left.0 as f64)..(lower_right.0 as f64), (lower_left.1 as f64)..(upper_left.1 as f64));
+                    let sprite_edge = RectangleEdge::new(shape_id, -1.0..1.0, -1.0..1.0);
                     let sprite_edge: Arc<dyn EdgeDescriptor> = Arc::new(sprite_edge);
 
                     // Store in the current layer
