@@ -173,6 +173,7 @@ where
                 // Future stuff renders on top of the sprite
                 current_layer.z_index += 1;
 
+                // TOOD: this doesn't work for transforms that generate non-rectangular sprites (these can be rendered using the same 'basic' style that we're using here but the transform needs to change on every line)
                 if (lower_left.1-lower_right.1).abs() < VERY_CLOSE && (upper_left.1-upper_right.1).abs() < VERY_CLOSE {
                     let translate   = (min_x - lower_left.0 as f64, min_y - lower_left.1 as f64);
                     let scale       = (1.0, 1.0); // TODO!
