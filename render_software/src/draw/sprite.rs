@@ -90,11 +90,15 @@ where
     ///
     /// Creates or retrieves the 'prepared' version of the current layer, which can be used to render sprites or textures
     ///
-    pub fn prepare_layer(&mut self, layer_handle: LayerHandle) -> PreparedLayer {
+    pub fn prepare_sprite_layer(&mut self, layer_handle: LayerHandle) -> PreparedLayer {
         if let Some(layer) = self.prepared_layers.get(layer_handle.0) {
             // Use the existing prepared layer
             layer.clone()
         } else if let Some(layer) = self.layers.get(layer_handle.0) {
+            // Get the transformation that was used when this layer was last drawn to
+            let transform           = layer.last_transform;
+            let inverse_transform   = transform.invert().unwrap();
+
             // Prepare the current layer
             let mut layer = layer.edges.clone();
             layer.prepare_to_render();
@@ -104,8 +108,10 @@ where
 
             // Create the prepared layer
             let prepared_layer = PreparedLayer {
-                edges:  Arc::new(layer),
-                bounds: bounds,
+                edges:              Arc::new(layer),
+                bounds:             bounds,
+                transform:          transform,
+                inverse_transform:  inverse_transform,
             };
 
             // Store in the cache (drawing should clear the prepared layer)
@@ -115,8 +121,10 @@ where
         } else {
             // Layer does not exist
             PreparedLayer {
-                edges: Arc::new(EdgePlan::new()),
-                bounds: ((0.0, 0.0), (0.0, 0.0))
+                edges:              Arc::new(EdgePlan::new()),
+                bounds:             ((0.0, 0.0), (0.0, 0.0)),
+                transform:          canvas::Transform2D::identity(),
+                inverse_transform:  canvas::Transform2D::identity(),
             }
         }
     }
@@ -130,7 +138,7 @@ where
         // Get the layer handle for this sprite
         if let Some(sprite_layer_handle) = self.sprites.get(&(self.current_namespace, sprite_id)) {
             // Prepare the sprite layer for rendering
-            let sprite_layer = self.prepare_layer(*sprite_layer_handle);
+            let sprite_layer = self.prepare_sprite_layer(*sprite_layer_handle);
 
             if !sprite_layer.edges.is_empty() {
                 // Get the z-index of where to render this sprite
