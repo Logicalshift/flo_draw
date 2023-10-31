@@ -20,6 +20,9 @@ pub struct Layer {
     /// The transparency of this layer
     pub (super) alpha: f64,
 
+    /// The transform that was applied to this layer last time it was selected or deselected
+    pub (super) last_transform: canvas::Transform2D,
+
     /// The blending function used for this layer
     pub (super) blend_mode: AlphaOperation,
 
@@ -43,6 +46,7 @@ impl Default for Layer {
     fn default() -> Self {
         Layer { 
             alpha:          1.0,
+            last_transform: canvas::Transform2D::identity(),
             blend_mode:     AlphaOperation::SourceOver,
             edges:          EdgePlan::new(),
             stored_edges:   vec![],
@@ -133,11 +137,19 @@ where
     ///
     #[inline]
     pub (crate) fn select_layer(&mut self, layer_id: canvas::LayerId) {
+        let transform = self.current_state.transform;
+
         // Add layers until we get to the current layer ID
         self.ensure_layer(layer_id);
 
+        // Update the transform of the layer we're leaving
+        if let Some(layer) = self.layer(self.current_layer) { layer.last_transform = transform; }
+
         // Pick this layer
         self.current_layer = self.ordered_layers[layer_id.0 as usize];
+
+        // Update the transform of the layer we're entering
+        if let Some(layer) = self.layer(self.current_layer) { layer.last_transform = transform; }
     }
 
     ///
@@ -174,6 +186,7 @@ where
             // Create a copy of the layer
             Layer {
                 alpha:          layer.alpha,
+                last_transform: layer.last_transform,
                 blend_mode:     layer.blend_mode,
                 edges:          layer.edges.clone(),
                 used_data:      layer.used_data.clone(),

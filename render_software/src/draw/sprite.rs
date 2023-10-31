@@ -37,7 +37,11 @@ where
     ///
     #[inline]
     pub fn sprite(&mut self, sprite_id: canvas::SpriteId) {
-        let namespace_id = self.current_namespace;
+        let transform       = self.current_state.transform;
+        let namespace_id    = self.current_namespace;
+
+        // Update the transform of the layer we're leaving
+        if let Some(layer) = self.layer(self.current_layer) { layer.last_transform = transform; }
 
         if let Some(sprite_layer) = self.sprites.get(&(namespace_id, sprite_id)) {
             // Use the existing sprite layer
@@ -59,6 +63,9 @@ where
             // Use the layer we just created
             self.current_layer = new_layer_handle;
         }
+
+        // Update the transform of the layer we're entering
+        if let Some(layer) = self.layer(self.current_layer) { layer.last_transform = transform; }
     }
 
     ///
