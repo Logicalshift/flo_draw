@@ -135,24 +135,47 @@ where
     pub fn sprite_draw(&mut self, sprite_id: canvas::SpriteId) {
         use std::iter;
 
+        const VERY_CLOSE: f32 = 1e-12;
+
         // Get the layer handle for this sprite
         if let Some(sprite_layer_handle) = self.sprites.get(&(self.current_namespace, sprite_id)) {
             // Prepare the sprite layer for rendering
             let sprite_layer = self.prepare_sprite_layer(*sprite_layer_handle);
 
             if !sprite_layer.edges.is_empty() {
+                // Figure out where the sprite should be rendered on the canvas
+                let ((min_x, min_y), (max_x, max_y)) = sprite_layer.bounds;
+
+                // Coordinates in terms of render coordinates for the sprite
+                let lower_left  = (min_x as f32, min_y as f32);
+                let lower_right = (max_x as f32, min_y as f32);
+                let upper_left  = (min_x as f32, max_y as f32);
+                let upper_right = (max_x as f32, max_y as f32);
+
+                // Change to 'origin' coordinates using the inverse transform in the sprite
+                let inverse_transform = sprite_layer.inverse_transform;
+                let lower_left  = inverse_transform.transform_point(lower_left.0, lower_left.1);
+                let lower_right = inverse_transform.transform_point(lower_right.0, lower_right.1);
+                let upper_left  = inverse_transform.transform_point(upper_left.0, upper_left.1);
+                let upper_right = inverse_transform.transform_point(upper_right.0, upper_right.1);
+
+                // Map back on to the canvas using the sprite transform (generates render coordinates again)
+                let canvas_transform = self.current_state.transform * self.current_state.sprite_transform.matrix();
+                let lower_left  = canvas_transform.transform_point(lower_left.0, lower_left.1);
+                let lower_right = canvas_transform.transform_point(lower_right.0, lower_right.1);
+                let upper_left  = canvas_transform.transform_point(upper_left.0, upper_left.1);
+                let upper_right = canvas_transform.transform_point(upper_right.0, upper_right.1);
+
                 // Get the z-index of where to render this sprite
                 let current_layer   = self.layers.get_mut(self.current_layer.0).unwrap();
                 let z_index         = current_layer.z_index;
 
+                // Future stuff renders on top of the sprite
                 current_layer.z_index += 1;
 
-                if let SpriteTransform::ScaleTransform { scale, translate } = self.current_state.sprite_transform {
-                    // Transform the coordinates for the current sprite transform
-                    // TODO: we also need to apply things like the current canvas transform rotation here
-                    // TODO: the problem with this is that the transform here is an offset, but this turns it into an absolute position on the canvas
-                    //let translate = self.current_state.transform.transform_point(translate.0 as _, translate.1 as _);
-                    //let translate = (translate.0 as f64, translate.1 as f64);
+                if (lower_left.1-lower_right.1).abs() < VERY_CLOSE && (upper_left.1-upper_right.1).abs() < VERY_CLOSE {
+                    let translate   = (min_x - lower_left.0 as f64, min_y - lower_left.1 as f64);
+                    let scale       = (1.0, 1.0); // TODO!
 
                     // Create the brush data
                     let data    = BasicSpriteData::new(sprite_layer.edges, scale, translate);
@@ -166,9 +189,8 @@ where
                     };
                     let shape_id = ShapeId::new();
 
-                    // Create a rectangle edge for this data (TODO: needs to be transformed)
-                    let ((min_x, min_y), (max_x, max_y)) = sprite_layer.bounds;
-                    let sprite_edge = RectangleEdge::new(shape_id, min_x..max_x, min_y..max_y);
+                    // Create a rectangle edge for this data
+                    let sprite_edge = RectangleEdge::new(shape_id, (lower_left.0 as f64)..(lower_right.0 as f64), (lower_left.1 as f64)..(upper_left.1 as f64));
                     let sprite_edge: Arc<dyn EdgeDescriptor> = Arc::new(sprite_edge);
 
                     // Store in the current layer
