@@ -175,9 +175,10 @@ where
 
                 // TOOD: this doesn't work for transforms that generate non-rectangular sprites (these can be rendered using the same 'basic' style that we're using here but the transform needs to change on every line)
                 if (lower_left.1-lower_right.1).abs() < VERY_CLOSE && (upper_left.1-upper_right.1).abs() < VERY_CLOSE {
-                    let translate   = (min_x - lower_left.0 as f64, min_y - lower_left.1 as f64);
                     let scale_x     = (max_x - min_x) / (lower_right.0 - lower_left.0) as f64;
                     let scale_y     = (max_y - min_y) / (upper_left.1 - lower_left.1) as f64;
+                    
+                    let translate   = (min_x - (lower_left.0 as f64 * scale_x), min_y - (lower_left.1 as f64 * scale_y));
                     let scale       = (scale_x, scale_y);
 
                     // Create the brush data
@@ -194,7 +195,6 @@ where
 
                     // Create a rectangle edge for this data
                     let sprite_edge = RectangleEdge::new(shape_id, (lower_left.0 as f64)..(lower_right.0 as f64), (lower_left.1 as f64)..(upper_left.1 as f64));
-                    let sprite_edge = RectangleEdge::new(shape_id, -1.0..1.0, -1.0..1.0);
                     let sprite_edge: Arc<dyn EdgeDescriptor> = Arc::new(sprite_edge);
 
                     // Store in the current layer
