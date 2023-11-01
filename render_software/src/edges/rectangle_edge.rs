@@ -1,5 +1,6 @@
 use crate::edgeplan::*;
 
+use flo_canvas as canvas;
 use smallvec::*;
 
 use std::ops::{Range};
@@ -41,6 +42,10 @@ impl EdgeDescriptor for RectangleEdge {
     #[inline]
     fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
         ((self.x_bounds.start, self.y_bounds.start), (self.x_bounds.end, self.y_bounds.end))
+    }
+
+    fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        todo!()
     }
 
     #[inline]

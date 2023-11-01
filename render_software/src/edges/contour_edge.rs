@@ -1,5 +1,6 @@
 use crate::edgeplan::*;
 
+use flo_canvas as canvas;
 use flo_canvas::curves::bezier::vectorize::*;
 
 use smallvec::*;
@@ -70,6 +71,10 @@ where
     #[inline]
     fn shape(&self) -> ShapeId { 
         self.shape_id
+    }
+
+    fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        todo!()
     }
 
     fn bounding_box(&self) -> ((f64, f64), (f64, f64)) { 

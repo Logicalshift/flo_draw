@@ -1,5 +1,6 @@
 use crate::edgeplan::*;
 
+use flo_canvas as canvas;
 use smallvec::*;
 
 use std::sync::*;
@@ -83,6 +84,29 @@ where
             bounds: self.bounds,
         }
     }
+
+    ///
+    /// Applies a transformation to this region
+    ///
+    fn transform(&self, transform: &canvas::Transform2D) -> ClipRegion<Arc<dyn EdgeDescriptor>> {
+        // Transform the edges in the region
+        let region = self.region.iter()
+            .map(|edge| edge.transform(transform))
+            .collect::<Vec<_>>();
+
+        // Recompute the bounding box
+        let bounds = region.iter()
+            .fold(((f64::MAX, f64::MAX), (f64::MIN, f64::MIN)), |((xa1, ya1), (xa2, ya2)), edge| {
+                let ((xb1, yb1), (xb2, yb2)) = edge.bounding_box();
+
+                ((xa1.min(xb1), ya1.min(yb1)), (xa2.max(xb2), ya2.max(yb2)))
+            });
+
+        ClipRegion {
+            region,
+            bounds
+        }
+    }
 }
 
 impl<TEdge, TRegionEdge> ClippedShapeEdge<TEdge, TRegionEdge>
@@ -146,6 +170,22 @@ where
 
     fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
         self.shape_bounds
+    }
+
+    fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        // TODO: if the region is shared we really should continue to share it amongst all the transformed shapes
+        let region      = Arc::new(self.region.transform(transform));
+        let shape_edges = self.shape_edges.iter().map(|edge| edge.transform(transform)).collect();
+
+        let mut new_edge  = ClippedShapeEdge {
+            shape_id:       self.shape_id,
+            region:         region,
+            shape_edges:    shape_edges,
+            shape_bounds:   ((0.0, 0.0), (0.0, 0.0)),
+        };
+        new_edge.prepare_to_render();
+
+        Arc::new(new_edge)
     }
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [smallvec::SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {

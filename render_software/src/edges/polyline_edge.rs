@@ -1,5 +1,6 @@
 use crate::edgeplan::*;
 
+use flo_canvas as canvas;
 use flo_canvas::curves::geo::*;
 use flo_canvas::curves::line::*;
 
@@ -96,6 +97,49 @@ impl PolylineLine {
             (-b*y - c) / a
         }
     }
+
+    ///
+    /// Applies a canvas transform to this line
+    ///
+    #[inline]
+    pub fn transform(&self, transform: &canvas::Transform2D) -> Self {
+        // Convert the line back to normal coordinates
+        let start   = Coord2(self.x_pos(self.y_range.start), self.y_range.start);
+        let end     = Coord2(self.x_pos(self.y_range.end), self.y_range.end);
+
+        // Transform these coordinates
+        let start   = transform_coord(&start, transform);
+        let end     = transform_coord(&end, transform);
+
+        // Recalculate the coefficients, etc
+        let coefficients = (start, end).coefficients();
+
+        let y_min = start.y().min(end.y());
+        let y_max = start.y().max(end.y());
+        let x_min = start.x().min(end.x());
+
+        let direction = if start.y() == end.y() {
+            EdgeInterceptDirection::Toggle
+        } else if start.y() > end.y() {
+            EdgeInterceptDirection::DirectionIn
+        } else {
+            EdgeInterceptDirection::DirectionOut
+        };
+
+        Self {
+            y_range:        y_min..y_max,
+            coefficients:   coefficients,
+            direction:      direction,
+            min_x:          x_min,
+        }
+    }
+}
+
+#[inline]
+fn transform_coord(point: &canvas::Coord2, transform: &canvas::Transform2D) -> canvas::Coord2 {
+    let (x, y) = transform.transform_point(point.x() as _, point.y() as _);
+
+    Coord2(x as _, y as _)
 }
 
 impl Polyline {
@@ -178,6 +222,53 @@ impl Polyline {
     }
 
     ///
+    /// Returns a transformed version of this polyline
+    ///
+    pub fn transform(&self, transform: &canvas::Transform2D) -> Self {
+        match &self.value {
+            PolylineValue::Empty => Self { value: PolylineValue::Empty, bounding_box: self.bounding_box },
+
+            PolylineValue::Points(points) => {
+                let points = points.iter().map(|point| transform_coord(point, transform)).collect();
+
+                // We don't need to transform/recalculate the bounding box as this polyline is not already transformed
+                Self {
+                    value:          PolylineValue::Points(points),
+                    bounding_box:   self.bounding_box,
+                }
+            }
+
+            PolylineValue::Lines(lines) => {
+                // Recreate the space for the lines
+                let lines = lines.data().map(|line| line.transform(transform)).map(|line| (line.y_range.clone(), line));
+                let lines = Space1D::from_data(lines);
+
+                // Recalculate the bounding box
+                let mut bounds_min = (f64::MAX, f64::MAX);
+                let mut bounds_max = (f64::MIN, f64::MIN);
+
+                for line in lines.data() {
+                    // Convert to a normal line
+                    let start   = Coord2(line.x_pos(line.y_range.start), line.y_range.start);
+                    let end     = Coord2(line.x_pos(line.y_range.end), line.y_range.end);
+                    let line    = (start, end);
+
+                    // Combine with the bounding box
+                    bounds_min.0 = bounds_min.0.min(line.0.x()).min(line.1.x());
+                    bounds_min.1 = bounds_min.1.min(line.0.y()).min(line.1.y());
+                    bounds_max.0 = bounds_max.0.max(line.0.x()).max(line.1.x());
+                    bounds_max.1 = bounds_max.1.max(line.0.y()).max(line.1.y());
+                }
+
+                Self {
+                    value:          PolylineValue::Lines(lines),
+                    bounding_box:   (bounds_min, bounds_max),
+                }
+            }
+        }
+    }
+
+    ///
     /// Finds all of the intercepts along this line
     ///
     #[inline]
@@ -255,6 +346,18 @@ impl PolylineNonZeroEdge {
     pub fn len(&self) -> usize {
         self.line.len()
     }
+
+    ///
+    /// Returns a new polyline edge after a transform
+    ///
+    pub fn transform_as_self(&self, transform: &canvas::Transform2D) -> Self {
+        let line = self.line.transform(transform);
+
+        Self {
+            shape_id:   self.shape_id,
+            line:       line
+        }
+    }
 }
 
 impl EdgeDescriptor for PolylineNonZeroEdge {
@@ -272,6 +375,16 @@ impl EdgeDescriptor for PolylineNonZeroEdge {
 
     fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
         self.line.bounding_box
+    }
+
+    fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        let mut line = self.line.transform(transform);
+        line.prepare_to_render();
+
+        Arc::new(Self {
+            shape_id:   self.shape_id,
+            line:       line
+        })
     }
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
@@ -302,6 +415,18 @@ impl PolylineEvenOddEdge {
     pub fn len(&self) -> usize {
         self.line.len()
     }
+
+    ///
+    /// Returns a new polyline edge after a transform
+    ///
+    pub fn transform_as_self(&self, transform: &canvas::Transform2D) -> Self {
+        let line = self.line.transform(transform);
+
+        Self {
+            shape_id:   self.shape_id,
+            line:       line
+        }
+    }
 }
 
 impl EdgeDescriptor for PolylineEvenOddEdge {
@@ -319,6 +444,16 @@ impl EdgeDescriptor for PolylineEvenOddEdge {
 
     fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
         self.line.bounding_box
+    }
+
+    fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        let mut line = self.line.transform(transform);
+        line.prepare_to_render();
+
+        Arc::new(Self {
+            shape_id:   self.shape_id,
+            line:       line
+        })
     }
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {

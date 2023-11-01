@@ -2,6 +2,7 @@ use super::bezier_subpath_edge::*;
 use super::flattened_bezier_subpath_edge::*;
 use crate::edgeplan::*;
 
+use flo_canvas as canvas;
 use flo_canvas::curves::bezier::path::*;
 use flo_canvas::curves::geo::*;
 use flo_canvas::curves::bezier::*;
@@ -56,6 +57,13 @@ impl LineStrokeEdge {
     }
 }
 
+#[inline]
+fn transform_coord(point: &canvas::Coord2, transform: &canvas::Transform2D) -> canvas::Coord2 {
+    let (x, y) = transform.transform_point(point.x() as _, point.y() as _);
+
+    Coord2(x as _, y as _)
+}
+
 impl EdgeDescriptor for LineStrokeEdge {
     fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
         Arc::new(self.clone())
@@ -88,6 +96,54 @@ impl EdgeDescriptor for LineStrokeEdge {
         // Prepare the paths we created for rendering
         for path in self.bezier_path.iter_mut() {
             path.prepare_to_render();
+        }
+    }
+
+    fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        // Convert the edges
+        let path_edges = self.path_edges.iter()
+            .map(|curve| {
+                let (sp, (cp1, cp2), ep) = curve.all_points();
+                let sp  = transform_coord(&sp, &transform);
+                let cp1 = transform_coord(&cp1, &transform);
+                let cp2 = transform_coord(&cp2, &transform);
+                let ep  = transform_coord(&ep, &transform);
+
+                Curve::from_points(sp, (cp1, cp2), ep)
+            })
+            .collect();
+
+        if self.bezier_path.len() != 0 {
+            // This edge was already prepared, so transform the bezier path
+            let bezier_path = self.bezier_path.iter()
+                .map(|bezier_path| {
+                    let mut path = bezier_path.transform_as_self(transform);
+                    path.prepare_to_render();
+                    path
+                })
+                .collect();
+
+            Arc::new(LineStrokeEdge {
+                shape_id:       self.shape_id,
+                stroke_options: self.stroke_options,
+                width:          self.width,
+                path_edges:     path_edges,
+                subpaths:       self.subpaths.clone(),
+                bezier_path:    bezier_path,
+            })
+        } else {
+            // Edge was not prepared: create with no bezier path, then prepare it
+            let mut new_edge = LineStrokeEdge {
+                shape_id:       self.shape_id,
+                stroke_options: self.stroke_options,
+                width:          self.width,
+                path_edges:     path_edges,
+                subpaths:       self.subpaths.clone(),
+                bezier_path:    vec![],
+            };
+            new_edge.prepare_to_render();
+
+            Arc::new(new_edge)
         }
     }
 
@@ -238,6 +294,50 @@ impl EdgeDescriptor for FlattenedLineStrokeEdge {
         }
 
         ((min_x, min_y), (max_x, max_y))
+    }
+
+    fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        // Convert the edges
+        let path_edges = self.path_edges.iter()
+            .map(|curve| {
+                let (sp, (cp1, cp2), ep) = curve.all_points();
+                let sp  = transform_coord(&sp, &transform);
+                let cp1 = transform_coord(&cp1, &transform);
+                let cp2 = transform_coord(&cp2, &transform);
+                let ep  = transform_coord(&ep, &transform);
+
+                Curve::from_points(sp, (cp1, cp2), ep)
+            })
+            .collect();
+
+        if self.bezier_path.len() != 0 {
+            // This edge was already prepared, so transform the bezier path
+            let bezier_path = self.bezier_path.iter()
+                .map(|bezier_path| bezier_path.transform_as_self(transform))
+                .collect::<Vec<_>>();
+
+            Arc::new(FlattenedLineStrokeEdge {
+                shape_id:       self.shape_id,
+                stroke_options: self.stroke_options,
+                width:          self.width,
+                path_edges:     path_edges,
+                subpaths:       self.subpaths.clone(),
+                bezier_path:    bezier_path,
+            })
+        } else {
+            // Edge was not prepared: create with no bezier path, then prepare it
+            let mut new_edge = LineStrokeEdge {
+                shape_id:       self.shape_id,
+                stroke_options: self.stroke_options,
+                width:          self.width,
+                path_edges:     path_edges,
+                subpaths:       self.subpaths.clone(),
+                bezier_path:    vec![],
+            };
+            new_edge.prepare_to_render();
+
+            Arc::new(new_edge)
+        }
     }
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {

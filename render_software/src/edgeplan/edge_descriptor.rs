@@ -1,5 +1,6 @@
 use super::shape_id::*;
 
+use flo_canvas as canvas;
 use smallvec::*;
 
 use std::sync::*;
@@ -58,6 +59,13 @@ pub trait EdgeDescriptor : Send + Sync {
     fn prepare_to_render(&mut self);
 
     ///
+    /// Returns a transformed version of this edge descriptor
+    ///
+    /// This both applies the transform and prepares the result for rendering.
+    ///
+    fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor>;
+
+    ///
     /// Returns the ID of the shape that this edge is a boundary for
     ///
     /// Edges represent the boundary between the region outside of this shape and the region inside of it. Shapes may
@@ -100,6 +108,9 @@ impl EdgeDescriptor for Box<dyn EdgeDescriptor> {
     #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) { 
         (**self).intercepts(y_positions, output) 
     }
+    #[inline] fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        (**self).transform(transform)
+    }
 }
 
 impl EdgeDescriptor for Arc<dyn EdgeDescriptor> {
@@ -109,6 +120,10 @@ impl EdgeDescriptor for Arc<dyn EdgeDescriptor> {
 
     #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) { 
         (**self).intercepts(y_positions, output) 
+    }
+
+    #[inline] fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        (**self).transform(transform)
     }
 
     #[inline] fn prepare_to_render(&mut self) { 

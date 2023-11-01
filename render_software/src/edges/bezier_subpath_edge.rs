@@ -2,6 +2,7 @@ use super::polyline_edge::*;
 use super::flattened_bezier_subpath_edge::*;
 use crate::edgeplan::*;
 
+use flo_canvas as canvas;
 use flo_canvas::curves::bezier::path::*;
 use flo_canvas::curves::geo::*;
 use flo_canvas::curves::bezier::*;
@@ -98,6 +99,37 @@ impl SubpathCurve {
     /// Converts this to a 'normal' curve
     fn as_curve(&self) -> Curve<Coord2> {
         Curve::from_points(Coord2(self.wx.0, self.wy.0), (Coord2(self.wx.1, self.wy.1), Coord2(self.wx.2, self.wy.2)), Coord2(self.wx.3, self.wy.3))
+    }
+
+    ///
+    /// Returns a transformed version of this edge descriptor
+    ///
+    fn transform(&self, transform: &canvas::Transform2D) -> SubpathCurve {
+        // Transform the points in this curve
+        let (wx, wy) = (&self.wx, &self.wy);
+
+        let w1 = transform.transform_point(wx.0 as _, wy.0 as _);
+        let w2 = transform.transform_point(wx.1 as _, wy.1 as _);
+        let w3 = transform.transform_point(wx.2 as _, wy.2 as _);
+        let w4 = transform.transform_point(wx.3 as _, wy.3 as _);
+
+        let w1 = (w1.0 as f64, w1.1 as f64);
+        let w2 = (w2.0 as f64, w2.1 as f64);
+        let w3 = (w3.0 as f64, w3.1 as f64);
+        let w4 = (w4.0 as f64, w4.1 as f64);
+
+        // Recalculate the bounds
+        let y_bounds = bounding_box4::<_, Bounds<f64>>(w1.1, w2.1, w3.1, w4.1);
+
+        // Calculate the derivative
+        let wdy = derivative4(w1.1, w2.1, w3.1, w4.1);
+
+        SubpathCurve { 
+            y_bounds:   y_bounds.min()..y_bounds.max(),
+            wx:         (w1.0, w2.0, w3.0, w4.0),
+            wy:         (w1.1, w2.1, w3.1, w4.1), 
+            wdy:        wdy,
+        }
     }
 }
 
@@ -323,6 +355,33 @@ impl BezierSubpath {
     }
 
     ///
+    /// Returns a transformed version of this subpath
+    ///
+    pub fn transform(&self, transform: &canvas::Transform2D) -> BezierSubpath {
+        // Transform the curves
+        let curves = self.curves.iter().map(|curve| curve.transform(&transform)).collect::<Vec<_>>();
+
+        // Calculate the bounding box
+        let x_bounds = curves.iter()
+            .fold(f64::MAX..f64::MIN, |x_bounds, curve| {
+                let curve_x_bounds = bounding_box4::<_, Bounds<f64>>(curve.wx.0, curve.wx.1, curve.wx.2, curve.wx.3);
+
+                x_bounds.start.min(curve_x_bounds.min())..x_bounds.end.max(curve_x_bounds.max())
+            });
+        let y_bounds = curves.iter()
+            .fold(f64::MAX..f64::MIN, |y_bounds, curve| {
+                y_bounds.start.min(curve.y_bounds.start)..y_bounds.end.max(curve.y_bounds.end)
+            });
+
+        BezierSubpath {
+            curves:     curves, 
+            space:      None, 
+            x_bounds:   x_bounds, 
+            y_bounds:   y_bounds,
+        }
+    }
+
+    ///
     /// Creates a non-zero edge from this subpath
     ///
     pub fn to_non_zero_edge(self, shape_id: ShapeId) -> BezierSubpathNonZeroEdge {
@@ -430,6 +489,18 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
         ((self.subpath.x_bounds.start, self.subpath.y_bounds.start), (self.subpath.x_bounds.end, self.subpath.y_bounds.end))
     }
 
+    fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        let mut subpath = self.subpath.transform(transform);
+        subpath.prepare_to_render();
+
+        let new_edge = Self {
+            shape_id:   self.shape_id,
+            subpath:    subpath
+        };
+
+        Arc::new(new_edge)
+    }
+
     #[inline]
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
         let mut y_pos_iter  = y_positions.iter();
@@ -443,6 +514,34 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
                     .map(|intercept| (EdgeInterceptDirection::Toggle, intercept.x_pos)));
             }
         }
+    }
+}
+
+impl BezierSubpathEvenOddEdge {
+    pub fn transform_as_self(&self, transform: &canvas::Transform2D) -> Self {
+        let mut subpath = self.subpath.transform(transform);
+        subpath.prepare_to_render();
+
+        let new_edge = Self {
+            shape_id:   self.shape_id,
+            subpath:    subpath
+        };
+
+        new_edge
+    }
+}
+
+impl BezierSubpathNonZeroEdge {
+    pub fn transform_as_self(&self, transform: &canvas::Transform2D) -> Self {
+        let mut subpath = self.subpath.transform(transform);
+        subpath.prepare_to_render();
+
+        let new_edge = Self {
+            shape_id:   self.shape_id,
+            subpath:    subpath
+        };
+
+        new_edge
     }
 }
 
@@ -461,6 +560,18 @@ impl EdgeDescriptor for BezierSubpathNonZeroEdge {
     #[inline]
     fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
         ((self.subpath.x_bounds.start, self.subpath.y_bounds.start), (self.subpath.x_bounds.end, self.subpath.y_bounds.end))
+    }
+
+    fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        let mut subpath = self.subpath.transform(transform);
+        subpath.prepare_to_render();
+
+        let new_edge = Self {
+            shape_id:   self.shape_id,
+            subpath:    subpath
+        };
+
+        Arc::new(new_edge)
     }
 
     #[inline]
