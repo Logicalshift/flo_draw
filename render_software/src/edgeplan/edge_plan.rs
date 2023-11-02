@@ -3,12 +3,14 @@ use super::edge_intercept::*;
 use super::shape_descriptor::*;
 use super::shape_id::*;
 
+use flo_canvas as canvas;
 use smallvec::*;
 
 use flo_sparse_array::*;
 use flo_canvas::curves::geo::*;
 
 use std::ops::{Range};
+use std::sync::*;
 
 ///
 /// Data stored for an edge in the edge plan
@@ -98,6 +100,56 @@ where
                 .map(|(idx, edge)| {
                     (edge.y_bounds.clone(), idx)
                 }));
+        }
+    }
+
+    ///
+    /// Returns an edge plan with all of the edges transformed
+    ///
+    pub fn transform(&self, transform: &canvas::Transform2D) -> EdgePlan<Arc<dyn EdgeDescriptor>> {
+        // Get the transformed edges, and populate their y-coordiantes
+        #[cfg(feature="multithreading")]
+        let transformed_edges = {
+            use rayon::prelude::*;
+            self.edges.par_iter().map(|edge_data| {
+                // Transform the edge. Transforming also prepares it so we can get the y-bounds
+                let edge                        = edge_data.edge.transform(transform);
+                let ((_, min_y), (_, max_y))    = edge.bounding_box();
+
+                EdgeData {
+                    edge:       edge,
+                    y_bounds:    min_y..max_y,
+                }
+            }).collect::<Vec<_>>()
+        };
+
+        #[cfg(not(feature="multithreading"))]
+        let transformed_edges = {
+            self.edges.iter().map(|edge_data| {
+                // Transform the edge. Transforming also prepares it so we can get the y-bounds
+                let edge                        = edge_data.edge.transform(transform);
+                let ((_, min_y), (_, max_y))    = edge.bounding_box();
+
+                EdgeData {
+                    edge:       edge,
+                    y_bounds:   min_y..max_y,
+                }
+            }).collect::<Vec<_>>()
+        };
+
+        // Map to a space
+        let edge_space = Space1D::from_data(transformed_edges.iter()
+            .enumerate()
+            .map(|(idx, edge)| {
+                (edge.y_bounds.clone(), idx)
+            }));
+
+        // Create a new edge plan based on this
+        EdgePlan {
+            shapes:         self.shapes.clone(),
+            edge_space:     edge_space,
+            max_prepared:   transformed_edges.len(),
+            edges:          transformed_edges,
         }
     }
 
