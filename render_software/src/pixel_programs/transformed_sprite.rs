@@ -7,6 +7,7 @@ use crate::render::*;
 
 use flo_canvas as canvas;
 
+use std::marker::{PhantomData};
 use std::ops::{Range};
 use std::sync::*;
 
@@ -36,8 +37,8 @@ where
     TEdgeDescriptor:    'static + EdgeDescriptor,
     TPixel:             'static,
 {
-    /// The basic program that will do the work for this program
-    basic_program: BasicSpriteProgram<TPixel, TEdgeDescriptor, TPlanner>,
+    basic_program: PhantomData<BasicSpriteProgram<TPixel, Arc<dyn EdgeDescriptor>, TPlanner>>,
+    edge_descriptor: PhantomData<EdgePlan<TEdgeDescriptor>>
 }
 
 ///
@@ -52,4 +53,51 @@ where
 
     /// The transform that will be applied to this prorgam
     transform: canvas::Transform2D,
+}
+
+impl<TPixel, TEdgeDescriptor, TPlanner> PixelProgramForFrame for TransformedSpriteProgram<TPixel, TEdgeDescriptor, TPlanner>
+where
+    TEdgeDescriptor:    'static + EdgeDescriptor,
+    TPixel:             'static + Copy + Send + Sync + AlphaBlend,
+    TPlanner:           Send + Sync + Default + ScanPlanner<Edge=Arc<dyn EdgeDescriptor>>,
+{
+    /// The type of the pixel program that this will run
+    type Program = BasicSpriteProgram<TPixel, Arc<dyn EdgeDescriptor>, TPlanner>;
+
+    ///
+    /// The data that is associated with an instance of this program (can generate the data required for the pixel program itself)
+    ///
+    type FrameData = TransformedSpriteData<TEdgeDescriptor>;
+
+    ///
+    /// Creates a pixel program and the corresponding data that will run for a given frame size
+    ///
+    fn program_for_frame(&self, _pixel_size: PixelSize, program_data: &Arc<Self::FrameData>) -> (BasicSpriteProgram<TPixel, Arc<dyn EdgeDescriptor>, TPlanner>, BasicSpriteData<Arc<dyn EdgeDescriptor>>) {
+        let transformed_edges = {
+            let mut edges = program_data.edges.write().unwrap();
+
+            match &*edges {
+                TransformedEdges::OriginalEdges(original_edges) => {
+                    // Transform the edegs and update the state
+                    let transformed_edges = Arc::new(original_edges.transform(&program_data.transform));
+                    *edges = TransformedEdges::TransformedEdges(transformed_edges.clone());
+
+                    transformed_edges
+                }
+
+                TransformedEdges::TransformedEdges(transformed_edges) => {
+                    // Just use the existing edges
+                    Arc::clone(transformed_edges)
+                }
+            }
+        };
+
+        // Program is a basic sprite program
+        let program = BasicSpriteProgram::default();
+
+        // Data uses the edges we retrieved, with no linear transform
+        let sprite_data = BasicSpriteData::new(transformed_edges, (1.0, 1.0), (0.0, 0.0));
+
+        (program, sprite_data)
+    }
 }
