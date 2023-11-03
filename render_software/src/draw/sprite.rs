@@ -173,7 +173,6 @@ where
                 // Future stuff renders on top of the sprite
                 current_layer.z_index += 1;
 
-                // TOOD: this doesn't work for transforms that generate non-rectangular sprites (these can be rendered using the same 'basic' style that we're using here but the transform needs to change on every line)
                 if (lower_left.1-lower_right.1).abs() < VERY_CLOSE && (upper_left.1-upper_right.1).abs() < VERY_CLOSE {
                     let scale_x     = (max_x - min_x) / (lower_right.0 - lower_left.0) as f64;
                     let scale_y     = (max_y - min_y) / (upper_left.1 - lower_left.1) as f64;
@@ -200,13 +199,36 @@ where
                     // Store in the current layer
                     current_layer.edges.add_shape(shape_id, shape_descriptor, iter::once(sprite_edge));
                     current_layer.used_data.push(data_id);
-
-                    // This 'unprepares' the current layer as for any other drawing operation
-                    self.prepared_layers.remove(self.current_layer.0);
                 } else {
-                    // Need a way to render edge plans at arbitrary angles to implement this
-                    todo!("Only scaling and translations are currently supported for sprites")
+                    // Use the transformed sprite program
+                    // TODO: need to figure out how to map the transform properly here
+                    let data    = TransformedSpriteData::new(sprite_layer.edges, self.current_state.sprite_transform.matrix());
+                    let data_id = self.program_cache.program_cache.store_program_data(&self.program_cache.transformed_sprite, &mut self.program_data_cache, data);
+
+                    // Shape is a polyline for the bounds of the sprite
+                    let shape_descriptor = ShapeDescriptor {
+                        programs:   smallvec![data_id],
+                        is_opaque:  false,
+                        z_index:    z_index,
+                    };
+                    let shape_id = ShapeId::new();
+
+                    // Create a rectangle edge for this data
+                    let lower_left  = canvas::Coord2(lower_left.0 as _, lower_left.1 as _);
+                    let lower_right = canvas::Coord2(lower_right.0 as _, lower_right.1 as _);
+                    let upper_left  = canvas::Coord2(upper_left.0 as _, upper_left.1 as _);
+                    let upper_right = canvas::Coord2(upper_right.0 as _, upper_right.1 as _);
+
+                    let sprite_edge = PolylineNonZeroEdge::new(shape_id, vec![lower_left, lower_right, upper_right, upper_left, lower_left]);
+                    let sprite_edge: Arc<dyn EdgeDescriptor> = Arc::new(sprite_edge);
+
+                    // Store in the current layer
+                    current_layer.edges.add_shape(shape_id, shape_descriptor, iter::once(sprite_edge));
+                    current_layer.used_data.push(data_id);
                 }
+
+                // This 'unprepares' the current layer as for any other drawing operation
+                self.prepared_layers.remove(self.current_layer.0);
             }
         }
     }
