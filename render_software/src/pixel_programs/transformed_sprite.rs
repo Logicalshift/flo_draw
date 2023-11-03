@@ -3,12 +3,10 @@ use super::basic_sprite::*;
 use crate::edgeplan::*;
 use crate::pixel::*;
 use crate::scanplan::*;
-use crate::render::*;
 
 use flo_canvas as canvas;
 
 use std::marker::{PhantomData};
-use std::ops::{Range};
 use std::sync::*;
 
 ///
@@ -37,8 +35,8 @@ where
     TEdgeDescriptor:    'static + EdgeDescriptor,
     TPixel:             'static,
 {
-    basic_program: PhantomData<BasicSpriteProgram<TPixel, Arc<dyn EdgeDescriptor>, TPlanner>>,
-    edge_descriptor: PhantomData<EdgePlan<TEdgeDescriptor>>
+    basic_program:      PhantomData<BasicSpriteProgram<TPixel, Arc<dyn EdgeDescriptor>, TPlanner>>,
+    edge_descriptor:    PhantomData<EdgePlan<TEdgeDescriptor>>
 }
 
 ///
@@ -53,6 +51,34 @@ where
 
     /// The transform that will be applied to this prorgam
     transform: canvas::Transform2D,
+}
+
+impl<TPixel, TEdgeDescriptor, TPlanner> Default for TransformedSpriteProgram<TPixel, TEdgeDescriptor, TPlanner> 
+where
+    TEdgeDescriptor:    'static + EdgeDescriptor,
+    TPixel:             'static,
+{
+    fn default() -> Self {
+        TransformedSpriteProgram {
+            basic_program:      PhantomData, 
+            edge_descriptor:    PhantomData,
+        }
+    }
+}
+
+impl<TEdgeDescriptor> TransformedSpriteData<TEdgeDescriptor>
+where
+    TEdgeDescriptor: EdgeDescriptor,
+{
+    ///
+    /// Creates a new data object for the transformed sprite program
+    ///
+    pub fn new(edges: Arc<EdgePlan<TEdgeDescriptor>>, transform: canvas::Transform2D) -> Self {
+        TransformedSpriteData {
+            edges:      RwLock::new(TransformedEdges::OriginalEdges(edges)),
+            transform:  transform,
+        }
+    }
 }
 
 impl<TPixel, TEdgeDescriptor, TPlanner> PixelProgramForFrame for TransformedSpriteProgram<TPixel, TEdgeDescriptor, TPlanner>
