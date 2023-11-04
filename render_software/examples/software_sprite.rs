@@ -47,7 +47,7 @@ pub fn main() {
     draw.draw_sprite(SpriteId(0));
 
     draw.sprite_transform(SpriteTransform::Identity);
-    draw.sprite_transform(SpriteTransform::Translate(300.0, 100.0));
+    draw.sprite_transform(SpriteTransform::Transform2D(Transform2D::translate(300.0, 100.0)));
     draw.draw_sprite(SpriteId(0));
 
     // Render to the terminal window

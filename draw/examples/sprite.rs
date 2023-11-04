@@ -51,7 +51,7 @@ pub fn main() {
             gc.draw_sprite(SpriteId(0));
 
             gc.sprite_transform(SpriteTransform::Identity);
-            gc.sprite_transform(SpriteTransform::Translate(300.0, 100.0));
+            gc.sprite_transform(SpriteTransform::Transform2D(Transform2D::translate(300.0, 100.0)));
             gc.draw_sprite(SpriteId(0));
         });
     });
