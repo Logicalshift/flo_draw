@@ -173,7 +173,7 @@ where
                 // Future stuff renders on top of the sprite
                 current_layer.z_index += 1;
 
-                if (lower_left.1-lower_right.1).abs() < VERY_CLOSE && (upper_left.1-upper_right.1).abs() < VERY_CLOSE {
+                if (lower_left.1-lower_right.1).abs() < VERY_CLOSE && (upper_left.1-upper_right.1).abs() < VERY_CLOSE && false {
                     let scale_x     = (max_x - min_x) / (lower_right.0 - lower_left.0) as f64;
                     let scale_y     = (max_y - min_y) / (upper_left.1 - lower_left.1) as f64;
                     
