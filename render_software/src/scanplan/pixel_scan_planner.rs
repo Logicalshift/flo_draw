@@ -68,7 +68,7 @@ where
         let mut ordered_intercepts = vec![vec![]; y_positions.len()];
         edge_plan.intercepts_on_scanlines(y_positions, &mut ordered_intercepts);
 
-        for y_idx in 0..y_positions.len() {
+        'next_line: for y_idx in 0..y_positions.len() {
             // Fetch/clear the scanline that we'll be building
             let (scanline_pos, scanline) = &mut scanlines[y_idx];
             scanline.clear();
@@ -91,7 +91,7 @@ where
                 active_shapes.add_intercept(&current_intercept, transform, shape_descriptor);
 
                 // Move to the next intercept (or stop if no intercepts actually fall within the x-range)
-                current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { break; };
+                current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { continue 'next_line; };
             }
 
             // Update all of the existing shapes to have a start position at the left-hand side of the screen
