@@ -200,9 +200,17 @@ where
                     current_layer.edges.add_shape(shape_id, shape_descriptor, iter::once(sprite_edge));
                     current_layer.used_data.push(data_id);
                 } else {
+                    // Transform from the coordinates used in the final sprite back to render coordinates
+                    let transform           = sprite_layer.inverse_transform * self.current_state.transform;
+
+                    // Map the sprite transform to render coordinates
+                    let sprite_transform    = self.current_state.transform * self.current_state.sprite_transform.matrix().invert().unwrap() * self.current_state.transform.invert().unwrap();
+
+                    // Perform a final transform to generate the transformation from sprite render coordinates to canvas render coordinates
+                    let transform           = transform * sprite_transform;
+
                     // Use the transformed sprite program
-                    // TODO: need to figure out how to map the transform properly here
-                    let data    = TransformedSpriteData::new(sprite_layer.edges, self.current_state.sprite_transform.matrix());
+                    let data    = TransformedSpriteData::new(sprite_layer.edges, transform);
                     let data_id = self.program_cache.program_cache.store_program_data(&self.program_cache.transformed_sprite, &mut self.program_data_cache, data);
 
                     // Shape is a polyline for the bounds of the sprite
