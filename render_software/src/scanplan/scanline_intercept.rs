@@ -5,6 +5,7 @@ use crate::edgeplan::*;
 ///
 /// Represents an active intercept on a scanline
 ///
+#[derive(Debug)]
 pub struct ScanlineIntercept<'a> {
     /// The number of times an edge for this shape has been crossed
     count: isize,
@@ -22,6 +23,7 @@ pub struct ScanlineIntercept<'a> {
 ///
 /// Used to keep track of which shapes are being rendered when tracing a scanline
 ///
+#[derive(Debug)]
 pub struct ScanlineInterceptState<'a> {
     /// The currently active shapes, with the most recent one 
     active_shapes: Vec<ScanlineIntercept<'a>>,
