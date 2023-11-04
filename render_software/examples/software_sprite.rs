@@ -35,6 +35,10 @@ pub fn main() {
     draw.draw_sprite(SpriteId(0));
 
     draw.sprite_transform(SpriteTransform::Identity);
+    draw.sprite_transform(SpriteTransform::Rotate(30.0));
+    draw.draw_sprite(SpriteId(0));
+
+    draw.sprite_transform(SpriteTransform::Identity);
     draw.sprite_transform(SpriteTransform::Translate(100.0, 100.0));
     draw.draw_sprite(SpriteId(0));
 
