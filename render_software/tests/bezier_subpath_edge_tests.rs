@@ -3,12 +3,15 @@ use flo_render_software::edges::*;
 use flo_render_software::pixel::*;
 use flo_render_software::render::*;
 use flo_render_software::scanplan::*;
+use flo_render_software::edgeplan::*;
 
 use flo_render_software::curves::geo::*;
 use flo_render_software::curves::bezier::*;
 use flo_render_software::curves::bezier::path::*;
 
 use flo_render_software::canvas::*;
+
+use smallvec::*;
 
 #[cfg(feature = "render_term")]
 fn render_path(path: &BezierSubpath, y_pos: f64) {
@@ -787,4 +790,132 @@ pub fn intercepts_6() {
 
         assert!(intercepts.len()%2 == 0, "Uneven number of intercepts when reversed at ypos {:?} ({:?})", y_pos, intercepts);
     }
+}
+
+#[test]
+pub fn triangle_lower_edge_non_zero() {
+    // Create a triangle subpath
+    let triangle = BezierPathBuilder::<BezierSubpath>::start(Coord2(200.0, 200.0))
+        .line_to(Coord2(800.0, 200.0))
+        .line_to(Coord2(500.0, 800.0))
+        .line_to(Coord2(200.0, 200.0))
+        .build();
+
+    // Non-zero winding rule
+    let mut path = triangle.to_non_zero_edge(ShapeId::new());
+    path.prepare_to_render();
+
+    // Intercepts along the very bottom of the path
+    let mut intercepts = vec![smallvec![]];
+    path.intercepts(&[799.9], &mut intercepts);
+
+    assert!(intercepts[0].len() == 2, "Should be 2 intercepts, found {:?}", intercepts[0]);
+    assert!(intercepts[0][0].0 != intercepts[0][1].0, "Intercept directions should invert (found {:?})", intercepts[0]);
+}
+
+#[test]
+pub fn triangle_lower_edge_flattened_non_zero() {
+    // Create a triangle subpath
+    let triangle = BezierPathBuilder::<BezierSubpath>::start(Coord2(200.0, 200.0))
+        .line_to(Coord2(800.0, 200.0))
+        .line_to(Coord2(500.0, 800.0))
+        .line_to(Coord2(200.0, 200.0))
+        .build();
+
+    // Non-zero winding rule
+    let mut path = triangle.to_flattened_non_zero_edge(ShapeId::new());
+    path.prepare_to_render();
+
+    // Intercepts along the very bottom of the path
+    let mut intercepts = vec![smallvec![]];
+    path.intercepts(&[799.9], &mut intercepts);
+
+    assert!(intercepts[0].len() == 2, "Should be 2 intercepts, found {:?}", intercepts[0]);
+    assert!(intercepts[0][0].0 != intercepts[0][1].0, "Intercept directions should invert (found {:?})", intercepts[0]);
+}
+
+#[test]
+pub fn triangle_lower_edge_non_zero_very_close() {
+    // Create a triangle subpath
+    let triangle = BezierPathBuilder::<BezierSubpath>::start(Coord2(200.0, 200.0))
+        .line_to(Coord2(800.0, 200.0))
+        .line_to(Coord2(500.0, 800.0))
+        .line_to(Coord2(200.0, 200.0))
+        .build();
+
+    // Non-zero winding rule
+    let mut path = triangle.to_non_zero_edge(ShapeId::new());
+    path.prepare_to_render();
+
+    // Intercepts along the very bottom of the path
+    let mut intercepts = vec![smallvec![]];
+    path.intercepts(&[799.9999999999999], &mut intercepts);
+
+    assert!(intercepts[0].len() == 2, "Should be 2 intercepts, found {:?}", intercepts[0]);
+    assert!(intercepts[0][0].0 != intercepts[0][1].0, "Intercept directions should invert (found {:?})", intercepts[0]);
+}
+
+#[test]
+pub fn triangle_lower_edge_flattened_non_zero_very_close() {
+    // Create a triangle subpath
+    let triangle = BezierPathBuilder::<BezierSubpath>::start(Coord2(200.0, 200.0))
+        .line_to(Coord2(800.0, 200.0))
+        .line_to(Coord2(500.0, 800.0))
+        .line_to(Coord2(200.0, 200.0))
+        .build();
+
+    // Non-zero winding rule
+    let mut path = triangle.to_flattened_non_zero_edge(ShapeId::new());
+    path.prepare_to_render();
+
+    // Intercepts along the very bottom of the path
+    let mut intercepts = vec![smallvec![]];
+    path.intercepts(&[799.9999999999999], &mut intercepts);
+
+    assert!(intercepts[0].len() == 2, "Should be 2 intercepts, found {:?}", intercepts[0]);
+    assert!(intercepts[0][0].0 != intercepts[0][1].0, "Intercept directions should invert (found {:?})", intercepts[0]);
+}
+
+/*
+#[test]
+pub fn triangle_lower_edge_non_zero_very_close_translated() {
+    // Create a triangle subpath
+    let triangle = BezierPathBuilder::<BezierSubpath>::start(Coord2(200.0, 200.0))
+        .line_to(Coord2(800.0, 200.0))
+        .line_to(Coord2(500.0, 800.0))
+        .line_to(Coord2(200.0, 200.0))
+        .build();
+
+    // Non-zero winding rule
+    let path = triangle.to_non_zero_edge(ShapeId::new());
+    let path = path.transform(&Transform2D::translate(10.0, 0.0));
+
+    // Intercepts along the very bottom of the path
+    let mut intercepts = vec![smallvec![]];
+    path.intercepts(&[799.9999999999999], &mut intercepts);
+
+    assert!(intercepts[0].len() == 2, "Should be 2 intercepts, found {:?}", intercepts[0]);
+    assert!(intercepts[0][0].0 != intercepts[0][1].0, "Intercept directions should invert (found {:?})", intercepts[0]);
+}
+*/
+
+#[test]
+pub fn triangle_lower_edge_flattened_non_zero_very_close_translated() {
+    // Create a triangle subpath
+    let triangle = BezierPathBuilder::<BezierSubpath>::start(Coord2(200.0, 200.0))
+        .line_to(Coord2(800.0, 200.0))
+        .line_to(Coord2(500.0, 800.0))
+        .line_to(Coord2(200.0, 200.0))
+        .build();
+
+    // Non-zero winding rule
+    let path = triangle.to_flattened_non_zero_edge(ShapeId::new());
+    let path = path.transform(&Transform2D::translate(10.0, 0.0));
+
+    // Intercepts along the very bottom of the path
+    let mut intercepts = vec![smallvec![]];
+    path.intercepts(&[799.9999999999999], &mut intercepts);
+
+    assert!(intercepts[0].len() == 2, "Should be 2 intercepts, found {:?}", intercepts[0]);
+    assert!(intercepts[0][0].0 != intercepts[0][1].0, "Intercept directions should invert (found {:?})", intercepts[0]);
 }
