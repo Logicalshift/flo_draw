@@ -3,7 +3,7 @@ use std::ops::{Range};
 ///
 /// Describes how to transform the x positions in the edge plan to the viewport x positions
 ///
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct ScanlineTransform {
     /// Value to add to the x coordinates before transforming
     offset: f64,
