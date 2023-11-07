@@ -209,6 +209,8 @@ impl Polyline {
                 // Convert to a 1D space
                 self.value          = PolylineValue::Lines(Space1D::from_data(lines));
                 self.bounding_box   = (bounds_min, bounds_max);
+
+                assert!(self.is_closed());
             }
         }
     }
@@ -219,6 +221,26 @@ impl Polyline {
     #[inline]
     pub fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
         self.bounding_box
+    }
+
+    fn is_closed(&self) -> bool {
+        match &self.value {
+            PolylineValue::Lines(lines) => {
+                let all_lines = lines.data().collect::<Vec<_>>();
+
+                let start_y     = all_lines[0].y_range.start;
+                let end_y       = all_lines.last().unwrap().y_range.end;
+                let start_point = all_lines[0].x_pos(start_y);
+                let end_point   = all_lines.last().unwrap().x_pos(end_y);
+
+                assert!((end_y - start_y).abs() < 0.01, "{:?} {:?}", (start_point, start_y), (end_point, end_y));
+                assert!((end_point - start_point).abs() < 0.01, "{:?} {:?}", (start_point, start_y), (end_point, end_y));
+
+                (end_y - start_y).abs() < 0.01 && (end_point - start_point).abs() < 0.01
+            }
+
+            _ => true,
+        }
     }
 
     ///
@@ -239,6 +261,8 @@ impl Polyline {
             }
 
             PolylineValue::Lines(lines) => {
+                // TODO: this is failing (seems to be missing a line?)
+
                 // Recreate the space for the lines
                 let lines = lines.data().map(|line| line.transform(transform)).map(|line| (line.y_range.clone(), line));
                 let lines = Space1D::from_data(lines);
