@@ -189,7 +189,9 @@ impl Polyline {
     ///
     /// Returns a transformed version of this polyline
     ///
-    pub fn transform(&self, transform: &canvas::Transform2D) -> Self {
+    /// The result will need to have 'prepare_to_render' called on it after this call
+    ///
+    pub fn transform_unprepared(&self, transform: &canvas::Transform2D) -> Self {
         match &self.value {
             PolylineValue::Empty => Self { value: PolylineValue::Empty, bounding_box: self.bounding_box },
 
@@ -239,6 +241,8 @@ impl Polyline {
                 intercepts.push((direction, x_pos));
                 last_direction = direction;
             }
+        } else {
+            debug_assert!(false, "Tried to get intercepts for a polyline without preparing it");
         }
     }
 
@@ -298,7 +302,8 @@ impl PolylineNonZeroEdge {
     /// Returns a new polyline edge after a transform
     ///
     pub fn transform_as_self(&self, transform: &canvas::Transform2D) -> Self {
-        let line = self.line.transform(transform);
+        let mut line = self.line.transform_unprepared(transform);
+        line.prepare_to_render();
 
         Self {
             shape_id:   self.shape_id,
@@ -325,13 +330,7 @@ impl EdgeDescriptor for PolylineNonZeroEdge {
     }
 
     fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
-        let mut line = self.line.transform(transform);
-        line.prepare_to_render();
-
-        Arc::new(Self {
-            shape_id:   self.shape_id,
-            line:       line
-        })
+        Arc::new(self.transform_as_self(transform))
     }
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
@@ -367,7 +366,8 @@ impl PolylineEvenOddEdge {
     /// Returns a new polyline edge after a transform
     ///
     pub fn transform_as_self(&self, transform: &canvas::Transform2D) -> Self {
-        let line = self.line.transform(transform);
+        let mut line = self.line.transform_unprepared(transform);
+        line.prepare_to_render();
 
         Self {
             shape_id:   self.shape_id,
@@ -394,13 +394,7 @@ impl EdgeDescriptor for PolylineEvenOddEdge {
     }
 
     fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
-        let mut line = self.line.transform(transform);
-        line.prepare_to_render();
-
-        Arc::new(Self {
-            shape_id:   self.shape_id,
-            line:       line
-        })
+        Arc::new(self.transform_as_self(transform))
     }
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
