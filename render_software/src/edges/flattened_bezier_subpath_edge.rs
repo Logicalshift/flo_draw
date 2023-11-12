@@ -96,7 +96,8 @@ impl FlattenedBezierSubpath {
             },
 
             FlattenedBezierSubpathValue::Polyline(polyline) => {
-                let polyline = polyline.transform(transform);
+                let mut polyline = polyline.transform_unprepared(transform);
+                polyline.prepare_to_render();
                 Self { value: FlattenedBezierSubpathValue::Polyline(polyline) }
             }
         }
