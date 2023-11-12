@@ -160,7 +160,7 @@ where
                 let upper_right = inverse_transform.transform_point(upper_right.0, upper_right.1);
 
                 // Map back on to the canvas using the sprite transform (generates render coordinates again)
-                let canvas_transform = self.current_state.transform * self.current_state.sprite_transform.matrix().invert().unwrap();
+                let canvas_transform = self.current_state.transform * self.current_state.sprite_transform.matrix();
                 let lower_left  = canvas_transform.transform_point(lower_left.0, lower_left.1);
                 let lower_right = canvas_transform.transform_point(lower_right.0, lower_right.1);
                 let upper_left  = canvas_transform.transform_point(upper_left.0, upper_left.1);
@@ -204,7 +204,7 @@ where
                     let transform           = sprite_layer.inverse_transform * self.current_state.transform;
 
                     // Map the sprite transform to render coordinates
-                    let sprite_transform    = self.current_state.transform * self.current_state.sprite_transform.matrix().invert().unwrap() * self.current_state.transform.invert().unwrap();
+                    let sprite_transform    = self.current_state.transform * self.current_state.sprite_transform.matrix() * self.current_state.transform.invert().unwrap();
 
                     // Perform a final transform to generate the transformation from sprite render coordinates to canvas render coordinates
                     let transform           = transform * sprite_transform;
@@ -254,8 +254,8 @@ impl DrawingState {
         match (transform, sprite_transform) {
             (Identity, transform)                                                   => *transform = SpriteTransform::ScaleTransform { scale: (1.0, 1.0), translate: (0.0, 0.0) },
 
-            (Translate(x, y), SpriteTransform::ScaleTransform { translate, scale }) => { translate.0 -= x as f64 * scale.0; translate.1 -= y as f64 * scale.0; }
-            (Scale(x, y), SpriteTransform::ScaleTransform { scale, .. })            => { scale.0 /= x as f64; scale.1 /= y as f64; }
+            (Translate(x, y), SpriteTransform::ScaleTransform { translate, scale }) => { translate.0 += x as f64 * scale.0; translate.1 += y as f64 * scale.0; }
+            (Scale(x, y), SpriteTransform::ScaleTransform { scale, .. })            => { scale.0 *= x as f64; scale.1 *= y as f64; }
 
             (Rotate(theta), sprite_transform)                                       => { *sprite_transform = SpriteTransform::Matrix(sprite_transform.matrix() * canvas::Transform2D::rotate_degrees(theta)); }
             (Transform2D(matrix), sprite_transform)                                 => { *sprite_transform = SpriteTransform::Matrix(sprite_transform.matrix() * matrix); }
