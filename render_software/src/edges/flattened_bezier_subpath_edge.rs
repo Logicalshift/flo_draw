@@ -125,14 +125,7 @@ impl EdgeDescriptor for FlattenedBezierNonZeroEdge {
 
     #[inline]
     fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
-        let path            = self.path.transform(transform);
-        let mut new_edge    = Self {
-            shape_id:   self.shape_id,
-            path:       path,
-        };
-
-        new_edge.prepare_to_render();
-        Arc::new(new_edge)
+        Arc::new(self.transform_as_self(transform))
     }
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
@@ -161,6 +154,7 @@ impl FlattenedBezierEvenOddEdge {
             path:       path,
         };
 
+        new_edge.prepare_to_render();
         new_edge
     }
 }
@@ -176,6 +170,7 @@ impl FlattenedBezierNonZeroEdge {
             path:       path,
         };
 
+        new_edge.prepare_to_render();
         new_edge
     }
 }
@@ -202,14 +197,7 @@ impl EdgeDescriptor for FlattenedBezierEvenOddEdge {
 
     #[inline]
     fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
-        let path            = self.path.transform(transform);
-        let mut new_edge    = Self {
-            shape_id:   self.shape_id,
-            path:       path,
-        };
-
-        new_edge.prepare_to_render();
-        Arc::new(new_edge)
+        Arc::new(self.transform_as_self(transform))
     }
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
