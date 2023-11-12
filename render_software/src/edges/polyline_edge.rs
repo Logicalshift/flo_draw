@@ -40,7 +40,7 @@ enum PolylineValue {
     Points(Vec<Coord2>),
 
     /// Polyline is represented as a space divided in the y-axis
-    Lines(Space1D<PolylineLine>),
+    Lines { space: Space1D<PolylineLine>, points: Vec<Coord2> },
 }
 
 ///
@@ -97,42 +97,6 @@ impl PolylineLine {
             (-b*y - c) / a
         }
     }
-
-    ///
-    /// Applies a canvas transform to this line
-    ///
-    #[inline]
-    pub fn transform(&self, transform: &canvas::Transform2D) -> Self {
-        // Convert the line back to normal coordinates
-        let start   = Coord2(self.x_pos(self.y_range.start), self.y_range.start);
-        let end     = Coord2(self.x_pos(self.y_range.end), self.y_range.end);
-
-        // Transform these coordinates
-        let start   = transform_coord(&start, transform);
-        let end     = transform_coord(&end, transform);
-
-        // Recalculate the coefficients, etc
-        let coefficients = (start, end).coefficients();
-
-        let y_min = start.y().min(end.y());
-        let y_max = start.y().max(end.y());
-        let x_min = start.x().min(end.x());
-
-        let direction = if start.y() == end.y() {
-            EdgeInterceptDirection::Toggle
-        } else if start.y() > end.y() {
-            EdgeInterceptDirection::DirectionIn
-        } else {
-            EdgeInterceptDirection::DirectionOut
-        };
-
-        Self {
-            y_range:        y_min..y_max,
-            coefficients:   coefficients,
-            direction:      direction,
-            min_x:          x_min,
-        }
-    }
 }
 
 #[inline]
@@ -165,15 +129,16 @@ impl Polyline {
     ///
     pub fn prepare_to_render(&mut self) {
         match self.value.take() {
-            PolylineValue::Empty        => { }
-            PolylineValue::Lines(lines) => { self.value = PolylineValue::Lines(lines) }
+            PolylineValue::Empty                    => { }
+            PolylineValue::Lines { space, points }  => { self.value = PolylineValue::Lines { space, points } }
 
-            PolylineValue::Points(coords) => {
+            PolylineValue::Points(coords)           => {
                 // Calculate the coefficients and y-ranges for all of the lines
                 let mut bounds_min = (f64::MAX, f64::MAX);
                 let mut bounds_max = (f64::MIN, f64::MIN);
 
-                let lines = coords.into_iter()
+                let lines = coords.iter()
+                    .copied()
                     .tuple_windows::<(Coord2, Coord2)>()
                     .map(|line| {
                         // Update bounding box
@@ -207,10 +172,8 @@ impl Polyline {
                     .map(|line| (line.y_range.clone(), line));
 
                 // Convert to a 1D space
-                self.value          = PolylineValue::Lines(Space1D::from_data(lines));
+                self.value          = PolylineValue::Lines { space: Space1D::from_data(lines), points: coords };
                 self.bounding_box   = (bounds_min, bounds_max);
-
-                assert!(self.is_closed());
             }
         }
     }
@@ -221,26 +184,6 @@ impl Polyline {
     #[inline]
     pub fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
         self.bounding_box
-    }
-
-    fn is_closed(&self) -> bool {
-        match &self.value {
-            PolylineValue::Lines(lines) => {
-                let all_lines = lines.data().collect::<Vec<_>>();
-
-                let start_y     = all_lines[0].y_range.start;
-                let end_y       = all_lines.last().unwrap().y_range.end;
-                let start_point = all_lines[0].x_pos(start_y);
-                let end_point   = all_lines.last().unwrap().x_pos(end_y);
-
-                assert!((end_y - start_y).abs() < 0.01, "{:?} {:?}", (start_point, start_y), (end_point, end_y));
-                assert!((end_point - start_point).abs() < 0.01, "{:?} {:?}", (start_point, start_y), (end_point, end_y));
-
-                (end_y - start_y).abs() < 0.01 && (end_point - start_point).abs() < 0.01
-            }
-
-            _ => true,
-        }
     }
 
     ///
@@ -260,33 +203,13 @@ impl Polyline {
                 }
             }
 
-            PolylineValue::Lines(lines) => {
-                // TODO: this is failing (seems to be missing a line?)
-
-                // Recreate the space for the lines
-                let lines = lines.data().map(|line| line.transform(transform)).map(|line| (line.y_range.clone(), line));
-                let lines = Space1D::from_data(lines);
-
-                // Recalculate the bounding box
-                let mut bounds_min = (f64::MAX, f64::MAX);
-                let mut bounds_max = (f64::MIN, f64::MIN);
-
-                for line in lines.data() {
-                    // Convert to a normal line
-                    let start   = Coord2(line.x_pos(line.y_range.start), line.y_range.start);
-                    let end     = Coord2(line.x_pos(line.y_range.end), line.y_range.end);
-                    let line    = (start, end);
-
-                    // Combine with the bounding box
-                    bounds_min.0 = bounds_min.0.min(line.0.x()).min(line.1.x());
-                    bounds_min.1 = bounds_min.1.min(line.0.y()).min(line.1.y());
-                    bounds_max.0 = bounds_max.0.max(line.0.x()).max(line.1.x());
-                    bounds_max.1 = bounds_max.1.max(line.0.y()).max(line.1.y());
-                }
+            PolylineValue::Lines { points, .. } => {
+                // Transform the original set of points (it is possible to transform the lines except when they're horizontal)
+                let points = points.iter().map(|point| transform_coord(point, transform)).collect();
 
                 Self {
-                    value:          PolylineValue::Lines(lines),
-                    bounding_box:   (bounds_min, bounds_max),
+                    value:          PolylineValue::Points(points),
+                    bounding_box:   self.bounding_box,
                 }
             }
         }
@@ -297,11 +220,11 @@ impl Polyline {
     ///
     #[inline]
     pub fn intercepts_on_line(&self, y_pos: f64, intercepts: &mut SmallVec<[(EdgeInterceptDirection, f64); 2]>) {
-        if let PolylineValue::Lines(lines) = &self.value {
+        if let PolylineValue::Lines { space, .. } = &self.value {
             // All the lines passing through y_pos are included here (as ranges are exclusive, this will exclude the end point of the line)
             let mut last_direction = EdgeInterceptDirection::Toggle;
 
-            for line in lines.data_at_point(y_pos) {
+            for line in space.data_at_point(y_pos) {
                 let x_pos       = line.x_pos(y_pos);
                 let direction   = if let EdgeInterceptDirection::Toggle = line.direction { 
                     match last_direction {
@@ -326,7 +249,7 @@ impl Polyline {
         match &self.value {
             PolylineValue::Empty                => 0,
             PolylineValue::Points(points)       => points.len(),
-            PolylineValue::Lines(line_space)    => line_space.data().count(),
+            PolylineValue::Lines { points, .. } => points.len(),
         }
     }
 
