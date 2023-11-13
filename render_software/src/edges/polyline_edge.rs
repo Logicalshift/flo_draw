@@ -363,6 +363,17 @@ impl PolylineEvenOddEdge {
     }
 
     ///
+    /// The number of spatial regions in this polyline
+    ///
+    pub fn num_regions(&self) -> usize {
+        match &self.line.value {
+            PolylineValue::Lines { space, .. } => { space.all_regions().count() }
+
+            _ => 0,
+        }
+    }
+
+    ///
     /// Returns a new polyline edge after a transform
     ///
     pub fn transform_as_self(&self, transform: &canvas::Transform2D) -> Self {
