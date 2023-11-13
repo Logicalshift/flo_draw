@@ -276,6 +276,18 @@ impl Polyline {
             line: self
         }
     }
+
+    ///
+    /// Returns the coordinates of the end points of the lines that make up this polyline
+    ///
+    #[inline]
+    pub fn points<'a>(&'a self) -> impl 'a + Iterator<Item=Coord2> {
+        match &self.value {
+            PolylineValue::Empty                => panic!("Polyline is empty"),
+            PolylineValue::Points(points)       => points.iter().copied(),
+            PolylineValue::Lines { points, .. } => points.iter().copied(),
+        }
+    }
 }
 
 impl PolylineNonZeroEdge {
