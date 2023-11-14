@@ -277,12 +277,14 @@ impl Polyline {
 
             for (y_pos, intercepts) in ordered_y_pos.iter().zip(intercepts.iter_mut()) {
                 // Move the current range forward until it overlaps this y-position (we rely on the y positions being in ascending order here)
-                while !current_region.0.contains(y_pos) {
+                while current_region.0.end <= *y_pos {
                     current_region = if let Some(region) = line_regions.next() { region } else { return; };
                 }
 
-                // Fill the intercepts for this y-position
-                Self::fill_intercepts_from_lines(*y_pos, current_region.1.iter().copied(), intercepts);
+                if current_region.0.start <= *y_pos  {
+                    // Fill the intercepts for this y-position
+                    Self::fill_intercepts_from_lines(*y_pos, current_region.1.iter().copied(), intercepts);
+                }
             }
         } else {
             debug_assert!(false, "Tried to get intercepts for a polyline without preparing it");
