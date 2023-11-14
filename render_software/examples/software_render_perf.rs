@@ -255,16 +255,26 @@ fn main() {
     println!("  Flatten (pixel res): {}", flatten.summary());
 
     // Note that `to_flattened_even_odd_edge` assumes a coordinate scheme of -1 to 1 so it tends to generate much higher resolution images than are needed
-    let mut circle_edge         = circle_path.clone().to_even_odd_edge(ShapeId::new());
-    let mut circle_flattened    = circle_path.clone().to_flattened_even_odd_edge(ShapeId::new());
-    let mut circle_polyline     = circle_path.clone().flatten_to_polyline(1.0, 0.25).to_even_odd_edge(ShapeId::new());
-    let mut output              = vec![smallvec![]; 1080];
+    let mut circle_edge             = circle_path.clone().to_even_odd_edge(ShapeId::new());
+    let mut circle_edge_nonzero     = circle_path.clone().to_non_zero_edge(ShapeId::new());
+    let mut circle_flattened        = circle_path.clone().to_flattened_even_odd_edge(ShapeId::new());
+    let mut circle_polyline         = circle_path.clone().flatten_to_polyline(1.0, 0.25).to_even_odd_edge(ShapeId::new());
+    let mut circle_polyline_nonzero = circle_path.clone().flatten_to_polyline(1.0, 0.25).to_non_zero_edge(ShapeId::new());
+    let mut output                  = vec![smallvec![]; 1080];
     circle_edge.prepare_to_render();
+    circle_edge_nonzero.prepare_to_render();
     circle_flattened.prepare_to_render();
     circle_polyline.prepare_to_render();
+    circle_polyline_nonzero.prepare_to_render();
+
+    circle_edge.intercepts(&(500..506).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
 
     let scan_convert_bezier = time(1_000, || { 
         circle_edge.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
+        black_box(&mut output);
+    });
+    let scan_convert_bezier_nonzero = time(1_000, || { 
+        circle_edge_nonzero.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
     let scan_convert_flattened = time(1_000, || { 
@@ -273,6 +283,10 @@ fn main() {
     });
     let scan_convert_polyline = time(1_000, || { 
         circle_polyline.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
+        black_box(&mut output);
+    });
+    let scan_convert_polyline_nonzero = time(1_000, || { 
+        circle_polyline_nonzero.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
     let scan_convert_bezier_partial = time(10_000, || { 
@@ -285,8 +299,10 @@ fn main() {
     });
 
     println!("  Scan convert bezier circle: {}", scan_convert_bezier.summary_fps());
+    println!("  Scan convert bezier circle (non-zero winding rule): {}", scan_convert_bezier_nonzero.summary_fps());
     println!("  Scan convert flattened circle (v high res): {}", scan_convert_flattened.summary_fps());
     println!("  Scan convert flattened circle (pixel res) ({} lines): {}", circle_polyline.len(), scan_convert_polyline.summary_fps());
+    println!("  Scan convert flattened circle (pixel res, non-zero winding rule) ({} lines): {}", circle_polyline.len(), scan_convert_polyline_nonzero.summary_fps());
     println!("  Scan convert bezier circle (partial): {}", scan_convert_bezier_partial.summary());
     println!("  Scan convert flattened circle (partial) ({} lines, {} regions): {}", circle_polyline.len(), circle_polyline.num_regions(), scan_convert_polyline_partial.summary());
 }
