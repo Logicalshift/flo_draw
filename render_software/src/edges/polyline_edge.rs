@@ -218,29 +218,39 @@ impl Polyline {
     }
 
     ///
-    /// Finds all of the intercepts along this line
+    /// Fills in an intercept list given a list of lines that cross that position
+    ///
+    #[inline]
+    fn fill_intercepts_from_lines<'a>(y_pos: f64, lines: impl Iterator<Item=&'a PolylineLine>, intercepts: &mut SmallVec<[(EdgeInterceptDirection, f64); 2]>) {
+        let mut last_direction = EdgeInterceptDirection::Toggle;
+
+        for line in lines {
+            let x_pos       = line.x_pos(y_pos);
+            let direction   = if let EdgeInterceptDirection::Toggle = line.direction { 
+                // TODO: this really requires ordering this intercept according to the other lines 
+                // (This happens only on horizontal lines too, so we probably should instead consider the intercept direction to come from the end point of the previous line)
+                match last_direction {
+                    EdgeInterceptDirection::DirectionOut    => EdgeInterceptDirection::DirectionIn,
+                    EdgeInterceptDirection::DirectionIn     => EdgeInterceptDirection::DirectionOut,
+                    EdgeInterceptDirection::Toggle          => EdgeInterceptDirection::Toggle,
+                }
+            } else {
+                line.direction
+            };
+
+            intercepts.push((direction, x_pos));
+            last_direction = direction;
+        }
+    }
+
+    ///
+    /// Finds all of the intercepts along a line at a given y-position
     ///
     #[inline]
     pub fn intercepts_on_line(&self, y_pos: f64, intercepts: &mut SmallVec<[(EdgeInterceptDirection, f64); 2]>) {
         if let PolylineValue::Lines { space, .. } = &self.value {
             // All the lines passing through y_pos are included here (as ranges are exclusive, this will exclude the end point of the line)
-            let mut last_direction = EdgeInterceptDirection::Toggle;
-
-            for line in space.data_at_point(y_pos) {
-                let x_pos       = line.x_pos(y_pos);
-                let direction   = if let EdgeInterceptDirection::Toggle = line.direction { 
-                    match last_direction {
-                        EdgeInterceptDirection::DirectionOut    => EdgeInterceptDirection::DirectionIn,
-                        EdgeInterceptDirection::DirectionIn     => EdgeInterceptDirection::DirectionOut,
-                        EdgeInterceptDirection::Toggle          => EdgeInterceptDirection::Toggle,
-                    }
-                } else {
-                    line.direction
-                };
-
-                intercepts.push((direction, x_pos));
-                last_direction = direction;
-            }
+            Self::fill_intercepts_from_lines(y_pos, space.data_at_point(y_pos), intercepts);
         } else {
             debug_assert!(false, "Tried to get intercepts for a polyline without preparing it");
         }
