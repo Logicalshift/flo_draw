@@ -58,7 +58,7 @@ pub struct Polyline {
 #[derive(Clone)]
 pub struct PolylineNonZeroEdge {
     shape_id:   ShapeId,
-    line:       Polyline,
+    polyline:   Polyline,
 }
 
 ///
@@ -67,7 +67,7 @@ pub struct PolylineNonZeroEdge {
 #[derive(Clone)]
 pub struct PolylineEvenOddEdge {
     shape_id:   ShapeId,
-    line:       Polyline,
+    polyline:   Polyline,
 }
 
 impl PolylineValue {
@@ -355,7 +355,7 @@ impl Polyline {
     pub fn to_non_zero_edge(self, shape_id: ShapeId) -> PolylineNonZeroEdge {
         PolylineNonZeroEdge {
             shape_id: shape_id,
-            line: self
+            polyline: self
         }
     }
 
@@ -365,7 +365,7 @@ impl Polyline {
     pub fn to_even_odd_edge(self, shape_id: ShapeId) -> PolylineEvenOddEdge {
         PolylineEvenOddEdge {
             shape_id: shape_id,
-            line: self
+            polyline: self
         }
     }
 
@@ -389,8 +389,8 @@ impl PolylineNonZeroEdge {
     #[inline]
     pub fn new(shape_id: ShapeId, points: impl IntoIterator<Item=Coord2>) -> Self {
         Self {
-            shape_id:   shape_id,
-            line:       Polyline::new(points)
+            shape_id: shape_id,
+            polyline: Polyline::new(points)
         }
     }
 
@@ -399,19 +399,19 @@ impl PolylineNonZeroEdge {
     ///
     #[inline]
     pub fn len(&self) -> usize {
-        self.line.len()
+        self.polyline.len()
     }
 
     ///
     /// Returns a new polyline edge after a transform
     ///
     pub fn transform_as_self(&self, transform: &canvas::Transform2D) -> Self {
-        let mut line = self.line.transform_unprepared(transform);
+        let mut line = self.polyline.transform_unprepared(transform);
         line.prepare_to_render();
 
         Self {
             shape_id:   self.shape_id,
-            line:       line
+            polyline:   line
         }
     }
 }
@@ -423,14 +423,14 @@ impl EdgeDescriptor for PolylineNonZeroEdge {
 
     #[inline]
     fn prepare_to_render(&mut self) {
-        self.line.prepare_to_render();
+        self.polyline.prepare_to_render();
     }
 
     #[inline]
     fn shape(&self) -> ShapeId { self.shape_id }
 
     fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
-        self.line.bounding_box
+        self.polyline.bounding_box
     }
 
     fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
@@ -438,7 +438,7 @@ impl EdgeDescriptor for PolylineNonZeroEdge {
     }
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
-        self.line.intercepts_on_lines(y_positions, output)
+        self.polyline.intercepts_on_lines(y_positions, output)
     }
 }
 
@@ -449,8 +449,8 @@ impl PolylineEvenOddEdge {
     #[inline]
     pub fn new(shape_id: ShapeId, points: impl IntoIterator<Item=Coord2>) -> Self {
         Self {
-            shape_id:   shape_id,
-            line:       Polyline::new(points)
+            shape_id: shape_id,
+            polyline: Polyline::new(points)
         }
     }
 
@@ -459,14 +459,14 @@ impl PolylineEvenOddEdge {
     ///
     #[inline]
     pub fn len(&self) -> usize {
-        self.line.len()
+        self.polyline.len()
     }
 
     ///
     /// The number of spatial regions in this polyline
     ///
     pub fn num_regions(&self) -> usize {
-        match &self.line.value {
+        match &self.polyline.value {
             PolylineValue::Lines { space, .. } => { space.all_regions().count() }
 
             _ => 0,
@@ -477,12 +477,12 @@ impl PolylineEvenOddEdge {
     /// Returns a new polyline edge after a transform
     ///
     pub fn transform_as_self(&self, transform: &canvas::Transform2D) -> Self {
-        let mut line = self.line.transform_unprepared(transform);
+        let mut line = self.polyline.transform_unprepared(transform);
         line.prepare_to_render();
 
         Self {
-            shape_id:   self.shape_id,
-            line:       line
+            shape_id: self.shape_id,
+            polyline: line
         }
     }
 }
@@ -494,14 +494,14 @@ impl EdgeDescriptor for PolylineEvenOddEdge {
 
     #[inline]
     fn prepare_to_render(&mut self) {
-        self.line.prepare_to_render();
+        self.polyline.prepare_to_render();
     }
 
     #[inline]
     fn shape(&self) -> ShapeId { self.shape_id }
 
     fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
-        self.line.bounding_box
+        self.polyline.bounding_box
     }
 
     fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
@@ -509,6 +509,6 @@ impl EdgeDescriptor for PolylineEvenOddEdge {
     }
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
-        self.line.toggle_intercepts_on_lines(y_positions, output);
+        self.polyline.toggle_intercepts_on_lines(y_positions, output);
     }
 }
