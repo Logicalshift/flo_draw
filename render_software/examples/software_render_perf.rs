@@ -260,40 +260,44 @@ fn main() {
     let mut circle_flattened        = circle_path.clone().to_flattened_even_odd_edge(ShapeId::new());
     let mut circle_polyline         = circle_path.clone().flatten_to_polyline(1.0, 0.25).to_even_odd_edge(ShapeId::new());
     let mut circle_polyline_nonzero = circle_path.clone().flatten_to_polyline(1.0, 0.25).to_non_zero_edge(ShapeId::new());
-    let mut output                  = vec![smallvec![]; 1080];
     circle_edge.prepare_to_render();
     circle_edge_nonzero.prepare_to_render();
     circle_flattened.prepare_to_render();
     circle_polyline.prepare_to_render();
     circle_polyline_nonzero.prepare_to_render();
 
-    circle_edge.intercepts(&(500..506).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
-
     let scan_convert_bezier = time(1_000, || { 
+        let mut output = vec![smallvec![]; 1080];
         circle_edge.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
     let scan_convert_bezier_nonzero = time(1_000, || { 
+        let mut output = vec![smallvec![]; 1080];
         circle_edge_nonzero.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
     let scan_convert_flattened = time(1_000, || { 
+        let mut output = vec![smallvec![]; 1080];
         circle_flattened.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
     let scan_convert_polyline = time(1_000, || { 
+        let mut output = vec![smallvec![]; 1080];
         circle_polyline.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
     let scan_convert_polyline_nonzero = time(1_000, || { 
+        let mut output = vec![smallvec![]; 1080];
         circle_polyline_nonzero.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
     let scan_convert_bezier_partial = time(10_000, || { 
+        let mut output = vec![smallvec![]; 1080];
         circle_edge.intercepts(&(500..506).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
     let scan_convert_polyline_partial = time(10_000, || { 
+        let mut output = vec![smallvec![]; 1080];
         circle_polyline.intercepts(&(500..506).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
