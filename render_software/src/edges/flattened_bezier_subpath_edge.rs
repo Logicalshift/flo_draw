@@ -200,13 +200,7 @@ impl EdgeDescriptor for FlattenedBezierEvenOddEdge {
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
         match &self.path.value {
             FlattenedBezierSubpathValue::Polyline(line) => {
-                line.intercepts_on_lines(y_positions, output);
-
-                for output in output.iter_mut() {
-                    for (direction, _) in output.iter_mut() {
-                        *direction = EdgeInterceptDirection::Toggle;
-                    }
-                }
+                line.toggle_intercepts_on_lines(y_positions, output);
             }
 
             _ => { debug_assert!(false) }
