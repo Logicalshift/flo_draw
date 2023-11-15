@@ -259,7 +259,6 @@ impl Polyline {
     ///
     /// Finds all of the intercepts along a line at an ordered set of y positions
     ///
-    #[inline]
     pub fn intercepts_on_lines(&self, ordered_y_pos: &[f64], intercepts: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
         // We need an epsilon value to ensure the requested range covers all the y values
         const EPSILON: f64 = 1e-8;
@@ -284,6 +283,54 @@ impl Polyline {
                 if current_region.0.start <= *y_pos  {
                     // Fill the intercepts for this y-position
                     Self::fill_intercepts_from_lines(*y_pos, current_region.1.iter().copied(), intercepts);
+                }
+            }
+        } else {
+            debug_assert!(false, "Tried to get intercepts for a polyline without preparing it");
+        }
+    }
+
+
+    ///
+    /// Fills in an intercept list given a list of lines that cross that position, setting the intercept direction to 'toggle'
+    ///
+    #[inline]
+    fn toggle_fill_intercepts_from_lines<'a>(y_pos: f64, lines: impl Iterator<Item=&'a PolylineLine>, intercepts: &mut SmallVec<[(EdgeInterceptDirection, f64); 2]>) {
+        for line in lines {
+            let x_pos       = line.x_pos(y_pos);
+            let direction   = EdgeInterceptDirection::Toggle;
+
+            intercepts.push((direction, x_pos));
+        }
+    }
+
+    ///
+    /// Finds all of the intercepts along a line at an ordered set of y positions, making all the intercept directions 'Toggle' for even-odd rendering
+    ///
+    pub fn toggle_intercepts_on_lines(&self, ordered_y_pos: &[f64], intercepts: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+        // We need an epsilon value to ensure the requested range covers all the y values
+        const EPSILON: f64 = 1e-8;
+
+        if let PolylineValue::Lines { space, .. } = &self.value {
+            // Calculate the range of y values that we'll be processing
+            let y_range = ordered_y_pos.iter()
+                .map(|y| *y..(y+EPSILON))
+                .reduce(|a, b| (a.start.min(b.start))..(a.end.max(b.end)));
+            let y_range = if let Some(y_range) = y_range { y_range } else { return; };
+
+            // Fetch all the lines in this range
+            let mut line_regions    = space.regions_in_range(y_range);
+            let mut current_region  = if let Some(region) = line_regions.next() { region } else { return; };
+
+            for (y_pos, intercepts) in ordered_y_pos.iter().zip(intercepts.iter_mut()) {
+                // Move the current range forward until it overlaps this y-position (we rely on the y positions being in ascending order here)
+                while current_region.0.end <= *y_pos {
+                    current_region = if let Some(region) = line_regions.next() { region } else { return; };
+                }
+
+                if current_region.0.start <= *y_pos  {
+                    // Fill the intercepts for this y-position
+                    Self::toggle_fill_intercepts_from_lines(*y_pos, current_region.1.iter().copied(), intercepts);
                 }
             }
         } else {
@@ -462,12 +509,6 @@ impl EdgeDescriptor for PolylineEvenOddEdge {
     }
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
-        self.line.intercepts_on_lines(y_positions, output);
-
-        for output in output.iter_mut() {
-            for (direction, _) in output.iter_mut() {
-                *direction = EdgeInterceptDirection::Toggle;
-            }
-        }
+        self.line.toggle_intercepts_on_lines(y_positions, output);
     }
 }
