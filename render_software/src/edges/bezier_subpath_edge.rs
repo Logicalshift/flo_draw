@@ -455,7 +455,7 @@ fn flatten_curve(curve: &SubpathCurve, min_length: f64, flatness: f64) -> Vec<Co
         let sp = section.start_point();
         let ep = section.end_point();
 
-        if (sp.is_near_to(&ep, min_length) && sp.is_near_to(&section.point_at_pos(0.5), min_length)) || section.flatness() < flatness {
+        if section.flatness() < flatness || (sp.is_near_to(&ep, min_length) && sp.is_near_to(&section.point_at_pos(0.5), min_length)) {
             // Section is either very short or flat so can be added to the result
             result.push(section.end_point());
         } else {
