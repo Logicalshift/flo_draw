@@ -13,8 +13,6 @@ use std::sync::*;
 ///
 /// The pixel scan planner is a basic scan planner that performs no anti-aliasing, so it will produce a 'jaggy' drawing.
 ///
-/// This is usually used as the basis for a more precise planner
-///
 pub struct PixelScanPlanner<TEdge> {
     edge: PhantomData<Mutex<TEdge>>
 }
