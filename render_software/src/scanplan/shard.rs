@@ -2,6 +2,8 @@ use crate::edgeplan::*;
 
 use smallvec::*;
 
+use std::ops::{Range};
+
 ///
 /// A shard represents an interception with an edge over a range of y-values (generally a single pixel in height)
 ///
@@ -29,6 +31,24 @@ pub struct ShardIntercept {
     x_end: f64,
 }
 
+impl ShardIntercept {
+    ///
+    /// The direction of this intercept
+    ///
+    #[inline]
+    pub fn direction(&self) -> EdgeInterceptDirection {
+        self.direction
+    }
+
+    ///
+    /// The x-range covered by this intercept
+    ///
+    #[inline]
+    pub fn x_range(&self) -> Range<f64> {
+        self.x_start..self.x_end
+    }
+}
+
 ///
 /// Processes normal intercepts into shards
 ///
@@ -50,14 +70,55 @@ where
     type Item = SmallVec<[ShardIntercept; 2]>;
 
     fn next(&mut self) -> Option<SmallVec<[ShardIntercept; 2]>> {
-        todo!()
+        // Fetch the following line. The preceding line was sorted by the last pass through this routine
+        let previous_line   = &self.previous_line;
+        let mut next_line   = if let Some(next_line) = self.intercepts.next() { next_line } else { return None; };
+
+        // Sort into order so we can match the two lines against each other
+        next_line.sort_by(|(_, x1), (_, x2)| x1.total_cmp(x2));
+
+        // We now need to match the crossing points for the two lines, which we do by pairing up each point with the nearest of the same crossing type form the
+
+        // Every matching pair forms a shard in that direction. Very often this is very simple: both the next and previous line have the same number of intercepts,
+        // and they are all in the same direction
+        let mut intercepts;
+
+        if previous_line.len() == 0 || next_line.len() == 0 {
+            // There are no shards in an empty line, so the other line doesn't matter (this is commonly the initial/final line for a convex shape)
+            intercepts = smallvec![];
+        } else if previous_line.len() == next_line.len() {
+            // Try the simple case, and then try finding the nearest matches if it fails
+            intercepts = smallvec![];
+
+            for (first, second) in previous_line.iter().zip(next_line.iter()) {
+                if first.0 != second.0 {
+                    // Intercept directions changed, so these shapes don't match: use the 'find nearest' algorithm instead (this is a concave shape)
+                    todo!()
+                }
+
+                // Add a new intercept to the list
+                intercepts.push(ShardIntercept {
+                    direction:  first.0,
+                    x_start:    first.1.min(second.1),
+                    x_end:      first.1.max(second.1),
+                })
+            }
+        } else {
+            // Shards are formed by finding the nearest intercept to each point
+            todo!()
+        }
+
+        // The next line now becomes the previous line
+        self.previous_line = next_line;
+
+        Some(intercepts)
     }
 }
 
 ///
 /// Creates an iterator that finds all of the shard intercepts across a range of y values
 ///
-/// There will be one less line returned here than y-values that were passed in
+/// There will be one less line returned here than y-values that were passed in. Intercepts are ordered by x position on return.
 ///
 pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, y_positions: &'a [f64]) -> impl 'a + Iterator<Item=SmallVec<[ShardIntercept; 2]>>{
     // Allocate space for the intercepts
@@ -68,7 +129,9 @@ pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, y_
 
     // Read through the intercepts
     let mut intercepts  = intercepts.into_iter();
-    let first_line      = intercepts.next().expect("Must be at least one y-position to generate a shard iterator");
+    let mut first_line  = intercepts.next().expect("Must be at least one y-position to generate a shard iterator");
+
+    first_line.sort_by(|(_, x1), (_, x2)| x1.total_cmp(x2));
 
     // Create the shard iterator
     ShardIterator {
