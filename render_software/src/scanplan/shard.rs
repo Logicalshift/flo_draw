@@ -93,6 +93,7 @@ where
             for (first, second) in previous_line.iter().zip(next_line.iter()) {
                 if first.0 != second.0 {
                     // Intercept directions changed, so these shapes don't match: use the 'find nearest' algorithm instead (this is a concave shape)
+                    // (Eg: a 'C' shape with a very narrow gap)
                     todo!()
                 }
 
@@ -105,6 +106,7 @@ where
             }
         } else {
             // Shards are formed by finding the nearest intercept to each point
+            // (Eg, the end of a spike in a concave shape)
             todo!()
         }
 
