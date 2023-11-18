@@ -107,3 +107,31 @@ fn triple_horizontal_triangle_line() {
     assert!(intercepts[0].0 == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
     assert!(intercepts[1].0 == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
 }
+
+#[test]
+fn triple_horizontal_triangle_line_multiple() {
+    // This time we have a triangle with three horizontal lines that we detect the intercepts for; once more, this should produce 2 intercepts
+    let mut triangle = Polyline::new(vec![
+        Coord2(100.0, 100.0),
+        Coord2(200.0, 200.0),
+        Coord2(300.0, 100.0),
+        Coord2(166.0, 100.0),
+        Coord2(133.0, 100.0),
+        Coord2(100.0, 100.0),
+    ]);
+    triangle.prepare_to_render();
+
+    // Get the intercepts that exactly hit the lower line
+    let mut intercepts = vec![smallvec![]; 3];
+    triangle.intercepts_on_lines(&[99.0, 100.0, 101.0], &mut intercepts);
+
+    assert!(intercepts[0].len() == 0, "Should be zero intercepts, found {:?}", intercepts);
+
+    assert!(intercepts[1].len() == 2, "Should be two intercepts, found {:?}", intercepts);
+    assert!(intercepts[1][0].0 == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
+    assert!(intercepts[1][1].0 == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
+
+    assert!(intercepts[2].len() == 2, "Should be two intercepts, found {:?}", intercepts);
+    assert!(intercepts[2][0].0 == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
+    assert!(intercepts[2][1].0 == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
+}
