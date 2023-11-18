@@ -14,6 +14,7 @@
 
 pub (crate) mod buffer_stack;
 mod pixel_scan_planner;
+mod shard;
 mod scanspan;
 mod scanline_plan;
 mod scanline_intercept;
@@ -21,6 +22,7 @@ mod scanline_transform;
 mod scan_planner;
 
 pub use pixel_scan_planner::*;
+pub use shard::*;
 pub use scanspan::*;
 pub use scanline_plan::*;
 pub use scanline_intercept::*;
