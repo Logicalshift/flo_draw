@@ -14,6 +14,7 @@ use flo_render_software::edgeplan::EdgeDescriptor;
 use flo_render_software::pixel::*;
 use flo_render_software::edges::*;
 use flo_render_software::edgeplan::*;
+use flo_render_software::scanplan::*;
 use flo_canvas::curves::arc::*;
 use flo_canvas::curves::geo::*;
 
@@ -291,6 +292,12 @@ fn main() {
         circle_polyline_nonzero.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
+    let scan_convert_polyline_nonzero_shards = time(1_000, || { 
+        let y_positions = (0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>();
+        let shards      = shard_intercepts_from_edge(&circle_polyline_nonzero, &y_positions);
+
+        shards.for_each(|shard| { black_box(shard); });
+    });
     let scan_convert_bezier_partial = time(10_000, || { 
         let mut output = vec![smallvec![]; 1080];
         circle_edge.intercepts(&(500..506).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
@@ -307,6 +314,7 @@ fn main() {
     println!("  Scan convert flattened circle (v high res): {}", scan_convert_flattened.summary_fps());
     println!("  Scan convert flattened circle (pixel res) ({} lines): {}", circle_polyline.len(), scan_convert_polyline.summary_fps());
     println!("  Scan convert flattened circle (pixel res, non-zero winding rule) ({} lines): {}", circle_polyline.len(), scan_convert_polyline_nonzero.summary_fps());
+    println!("  Scan convert flattened circle (pixel res, non-zero winding rule, shards) ({} lines): {}", circle_polyline.len(), scan_convert_polyline_nonzero_shards.summary_fps());
     println!("  Scan convert bezier circle (partial): {}", scan_convert_bezier_partial.summary());
     println!("  Scan convert flattened circle (partial) ({} lines, {} regions): {}", circle_polyline.len(), circle_polyline.num_regions(), scan_convert_polyline_partial.summary());
 }
