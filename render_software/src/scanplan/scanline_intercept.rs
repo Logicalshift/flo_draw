@@ -164,7 +164,7 @@ impl<'a> ScanlineInterceptState<'a> {
     /// Adds or removes from the active shapes after an intercept
     ///
     #[inline]
-    pub fn add_intercept(&mut self, intercept: &EdgeIntercept, transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
+    pub fn add_intercept(&mut self, intercept: &EdgePlanIntercept, transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
         if let Some(descriptor) = descriptor {
             let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque);
 

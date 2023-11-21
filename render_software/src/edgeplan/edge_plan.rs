@@ -1,5 +1,5 @@
 use super::edge_descriptor::*;
-use super::edge_intercept::*;
+use super::edge_plan_intercept::*;
 use super::shape_descriptor::*;
 use super::shape_id::*;
 
@@ -310,7 +310,7 @@ where
     ///
     /// Note that `prepare_to_render()` must have been called before this function can be used to retrieve accurate results.
     ///
-    pub fn intercepts_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [Vec<EdgeIntercept>]) {
+    pub fn intercepts_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [Vec<EdgePlanIntercept>]) {
         // Extend the edge intercepts to cover the number of y-positions we have (can be larger than needed but not smaller)
         let mut edge_intercepts = vec![smallvec![]; y_positions.len()];
 
@@ -342,7 +342,7 @@ where
 
             for (output, intercepts) in output.iter_mut().zip(edge_intercepts.iter()) {
                 for (direction, pos) in intercepts.iter() {
-                    output.push(EdgeIntercept { shape: shape_id, direction: *direction, x_pos: *pos });
+                    output.push(EdgePlanIntercept { shape: shape_id, direction: *direction, x_pos: *pos });
                 }
             }
         }
