@@ -6,7 +6,7 @@ use super::shape_id::*;
 ///
 /// These are all generated against a known y position, so only the x-position of the intercept is specified
 ///
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct EdgeIntercept {
     pub shape:      ShapeId,
     pub direction:  EdgeInterceptDirection,
