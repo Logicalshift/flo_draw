@@ -1,4 +1,5 @@
 use super::edge_descriptor::*;
+use super::edge_descriptor_intercept::*;
 use super::edge_plan_intercept::*;
 use super::shape_descriptor::*;
 use super::shape_id::*;
@@ -341,8 +342,8 @@ where
             edge.edge.intercepts(y_positions, &mut edge_intercepts);
 
             for (output, intercepts) in output.iter_mut().zip(edge_intercepts.iter()) {
-                for (direction, pos) in intercepts.iter() {
-                    output.push(EdgePlanIntercept { shape: shape_id, direction: *direction, x_pos: *pos });
+                for EdgeDescriptorIntercept { direction, x_pos } in intercepts.iter() {
+                    output.push(EdgePlanIntercept { shape: shape_id, direction: *direction, x_pos: *x_pos });
                 }
             }
         }

@@ -54,10 +54,10 @@ impl ShardIntercept {
 ///
 struct ShardIterator<TInterceptIterator> 
 where
-    TInterceptIterator: Iterator<Item=SmallVec<[(EdgeInterceptDirection, f64); 2]>>
+    TInterceptIterator: Iterator<Item=SmallVec<[EdgeDescriptorIntercept; 2]>>
 {
     /// The intercepts on the preceding line for this shape
-    previous_line:  SmallVec<[(EdgeInterceptDirection, f64); 2]>,
+    previous_line:  SmallVec<[EdgeDescriptorIntercept; 2]>,
 
     /// The intercepts across the line range to generate shards for
     intercepts:     TInterceptIterator,
@@ -65,7 +65,7 @@ where
 
 impl<TInterceptIterator> Iterator for ShardIterator<TInterceptIterator>
 where
-    TInterceptIterator: Iterator<Item=SmallVec<[(EdgeInterceptDirection, f64); 2]>>
+    TInterceptIterator: Iterator<Item=SmallVec<[EdgeDescriptorIntercept; 2]>>
 {
     type Item = SmallVec<[ShardIntercept; 2]>;
 
@@ -75,7 +75,7 @@ where
         let mut next_line   = if let Some(next_line) = self.intercepts.next() { next_line } else { return None; };
 
         // Sort into order so we can match the two lines against each other
-        next_line.sort_by(|(_, x1), (_, x2)| x1.total_cmp(x2));
+        next_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
 
         // We now need to match the crossing points for the two lines, which we do by pairing up each point with the nearest of the same crossing type form the
 
@@ -91,7 +91,7 @@ where
             intercepts = smallvec![];
 
             for (first, second) in previous_line.iter().zip(next_line.iter()) {
-                if first.0 != second.0 {
+                if first.direction != second.direction {
                     // Intercept directions changed, so these shapes don't match: use the 'find nearest' algorithm instead (this is a concave shape)
                     // (Eg: a 'C' shape with a very narrow gap)
                     todo!()
@@ -99,9 +99,9 @@ where
 
                 // Add a new intercept to the list
                 intercepts.push(ShardIntercept {
-                    direction:  first.0,
-                    x_start:    first.1.min(second.1),
-                    x_end:      first.1.max(second.1),
+                    direction:  first.direction,
+                    x_start:    first.x_pos.min(second.x_pos),
+                    x_end:      first.x_pos.max(second.x_pos),
                 })
             }
         } else {
@@ -133,7 +133,7 @@ pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, y_
     let mut intercepts  = intercepts.into_iter();
     let mut first_line  = intercepts.next().expect("Must be at least one y-position to generate a shard iterator");
 
-    first_line.sort_by(|(_, x1), (_, x2)| x1.total_cmp(x2));
+    first_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
 
     // Create the shard iterator
     ShardIterator {

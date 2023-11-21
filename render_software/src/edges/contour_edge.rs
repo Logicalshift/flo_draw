@@ -85,7 +85,7 @@ where
         (self.corner_offset, (x+w, y+h))
     }
 
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) {
         for idx in 0..y_positions.len() {
             let y_pos = y_positions[idx];
 
@@ -96,7 +96,10 @@ where
             let y_pos = y_pos - y;
             if !(y_pos < 0.0 || y_pos >= h) {
                 output[idx].extend(self.contour.intercepts_on_line(y_pos).into_iter()
-                    .flat_map(|intercept| [(EdgeInterceptDirection::Toggle, intercept.start + x), (EdgeInterceptDirection::Toggle, intercept.end + x)]));
+                    .flat_map(|intercept| [
+                        EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: intercept.start + x }, 
+                        EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: intercept.end + x }
+                    ]));
             }
         }
     }

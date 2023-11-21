@@ -12,6 +12,7 @@
 
 mod edge_intercept_direction;
 mod edge_descriptor;
+mod edge_descriptor_intercept;
 mod edge_id;
 mod shape_descriptor;
 mod shape_id;
@@ -20,6 +21,7 @@ mod edge_plan_intercept;
 
 pub use edge_intercept_direction::*;
 pub use edge_descriptor::*;
+pub use edge_descriptor_intercept::*;
 pub use edge_id::*;
 pub use shape_descriptor::*;
 pub use shape_id::*;

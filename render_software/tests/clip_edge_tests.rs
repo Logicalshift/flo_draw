@@ -36,15 +36,15 @@ pub fn clip_big_rectangle() {
         } else if (200.0..225.0).contains(&y_pos) || (275.0..300.0).contains(&y_pos) {
             // Should hit the full range of the rectangle
             assert!(intercepts[0].len() == 2, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][0].1 == 100.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][1].1 == 200.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][0].x_pos == 100.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][1].x_pos == 200.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
         } else {
             // Other points have a hole in the middle
             assert!(intercepts[0].len() == 4, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][0].1 == 100.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][1].1 == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][2].1 == 175.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][3].1 == 200.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][0].x_pos == 100.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][1].x_pos == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][2].x_pos == 175.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][3].x_pos == 200.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
         }
     }
 }
@@ -80,15 +80,15 @@ pub fn clip_inner_rectangle_1() {
         } else if (200.0..225.0).contains(&y_pos) || (275.0..300.0).contains(&y_pos) {
             // Should hit the full range of the rectangle
             assert!(intercepts[0].len() == 2, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][0].1 == 110.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][1].1 == 190.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][0].x_pos == 110.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][1].x_pos == 190.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
         } else {
             // Other points have a hole in the middle
             assert!(intercepts[0].len() == 4, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][0].1 == 110.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][1].1 == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][2].1 == 175.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][3].1 == 190.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][0].x_pos == 110.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][1].x_pos == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][2].x_pos == 175.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][3].x_pos == 190.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
         }
     }
 }
@@ -124,13 +124,13 @@ pub fn clip_inner_rectangle_2() {
         } else if (200.0..225.0).contains(&y_pos) || (275.0..300.0).contains(&y_pos) {
             // Should hit the full range of the rectangle
             assert!(intercepts[0].len() == 2, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][0].1 == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][1].1 == 175.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][0].x_pos == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][1].x_pos == 175.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
         } else {
             // The shape exactly overlaps the hole so there should be nothing inside
             assert!(intercepts[0].len() == 2, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][0].1 == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][1].1 == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][0].x_pos == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][1].x_pos == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
         }
     }
 }
@@ -166,13 +166,13 @@ pub fn clip_inner_rectangle_3() {
         } else if (200.0..225.0).contains(&y_pos) || (275.0..300.0).contains(&y_pos) {
             // Should hit the full range of the rectangle
             assert!(intercepts[0].len() == 2, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][0].1 == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][1].1 == 150.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][0].x_pos == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][1].x_pos == 150.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
         } else {
             // The shape exactly overlaps the hole so there should be nothing inside
             assert!(intercepts[0].len() == 2, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][0].1 == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][1].1 == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][0].x_pos == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][1].x_pos == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
         }
     }
 }
@@ -208,8 +208,8 @@ pub fn clip_inner_rectangle_4() {
         } else if (200.0..225.0).contains(&y_pos) || (275.0..300.0).contains(&y_pos) {
             // Should hit the full range of the rectangle
             assert!(intercepts[0].len() == 2, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][0].1 == 150.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][1].1 == 175.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][0].x_pos == 150.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][1].x_pos == 175.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
         } else {
             // The shape exactly overlaps the hole so there should be nothing inside
             assert!(intercepts[0].len() == 0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);

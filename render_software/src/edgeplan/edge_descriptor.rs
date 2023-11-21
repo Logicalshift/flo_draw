@@ -1,4 +1,4 @@
-use super::edge_intercept_direction::*;
+use super::edge_descriptor_intercept::*;
 use super::shape_id::*;
 
 use flo_canvas as canvas;
@@ -63,7 +63,7 @@ pub trait EdgeDescriptor : Send + Sync {
     /// edge with a start point at the same position. Apex points, where the following edge moves away in 
     /// the y-axis, also should not be counted as an intercept.
     ///
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]);
+    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]);
 }
 
 impl EdgeDescriptor for Box<dyn EdgeDescriptor> {
@@ -71,7 +71,7 @@ impl EdgeDescriptor for Box<dyn EdgeDescriptor> {
     #[inline] fn prepare_to_render(&mut self)                       { (**self).prepare_to_render() }
     #[inline] fn shape(&self) -> ShapeId                            { (**self).shape() }
     #[inline] fn bounding_box(&self) -> ((f64, f64), (f64, f64))    { (**self).bounding_box() }
-    #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) { 
+    #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) { 
         (**self).intercepts(y_positions, output) 
     }
     #[inline] fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
@@ -84,7 +84,7 @@ impl EdgeDescriptor for Arc<dyn EdgeDescriptor> {
     #[inline] fn shape(&self) -> ShapeId                            { (**self).shape() }
     #[inline] fn bounding_box(&self) -> ((f64, f64), (f64, f64))    { (**self).bounding_box() }
 
-    #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) { 
+    #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) { 
         (**self).intercepts(y_positions, output) 
     }
 

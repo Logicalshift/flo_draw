@@ -167,7 +167,7 @@ impl EdgeDescriptor for LineStrokeEdge {
         ((min_x, min_y), (max_x, max_y))
     }
 
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) {
         match self.bezier_path.len() {
             0 => { }
             1 => { self.bezier_path[0].intercepts(y_positions, output) }
@@ -191,7 +191,7 @@ impl EdgeDescriptor for LineStrokeEdge {
 
                 // Result must be sorted
                 for output in output.iter_mut() {
-                    output.sort_by(|(_, a), (_, b)| a.total_cmp(b));
+                    output.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
                 }
             }
         }
@@ -340,7 +340,7 @@ impl EdgeDescriptor for FlattenedLineStrokeEdge {
         }
     }
 
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) {
         match self.bezier_path.len() {
             0 => { }
             1 => { self.bezier_path[0].intercepts(y_positions, output) }
@@ -364,7 +364,7 @@ impl EdgeDescriptor for FlattenedLineStrokeEdge {
 
                 // Result must be sorted
                 for output in output.iter_mut() {
-                    output.sort_by(|(_, a), (_, b)| a.total_cmp(b));
+                    output.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
                 }
             }
         }

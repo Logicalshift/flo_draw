@@ -188,7 +188,7 @@ where
         Arc::new(new_edge)
     }
 
-    fn intercepts(&self, y_positions: &[f64], output: &mut [smallvec::SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [smallvec::SmallVec<[EdgeDescriptorIntercept; 2]>]) {
         // Collect the clipping range for these y positions
         // TODO: often we'll clip against multiple shapes for the same set of y coordinates, so a way to cache these results would speed things up
         let mut clip_intercepts = vec![smallvec![]; y_positions.len()];
@@ -200,7 +200,7 @@ where
 
         // Sort the intercepts so we can trace the clipping region from left to right
         for intercept_list in clip_intercepts.iter_mut() {
-            intercept_list.sort_by(|(_, a_xpos), (_, b_xpos)| a_xpos.total_cmp(b_xpos));
+            intercept_list.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
         }
 
         // Collect the unclipped versions of the shape edges
@@ -211,7 +211,7 @@ where
 
         // Sort the intercepts so we can trace the clipping region from left to right
         for intercept_list in unclipped_shape.iter_mut() {
-            intercept_list.sort_by(|(_, a_xpos), (_, b_xpos)| a_xpos.total_cmp(b_xpos));
+            intercept_list.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
         }
 
         // Clip the shape by scanning the clipping intercepts
@@ -233,12 +233,15 @@ where
             let mut shape_iter      = unclipped_shape[y_idx].iter();
             let output              = &mut output[y_idx];
 
-            'clip_region: while let Some((shape_dir, shape_pos)) = shape_iter.next() {
+            'clip_region: while let Some(intercept) = shape_iter.next() {
+                let shape_dir = &intercept.direction;
+                let shape_pos = &intercept.x_pos;
+
                 // Advance the 'clip_next' position until it is after the current state
-                while clip_next.1 < *shape_pos {
+                while clip_next.x_pos < *shape_pos {
                     // Update the 'inside' part of the clipping rectangle
                     let was_inside  = clip_inside != 0;
-                    clip_inside     = match clip_next.0 {
+                    clip_inside     = match clip_next.direction {
                         EdgeInterceptDirection::Toggle          => if clip_inside == 0 { 1 } else { 0 },
                         EdgeInterceptDirection::DirectionIn     => clip_inside + 1,
                         EdgeInterceptDirection::DirectionOut    => clip_inside - 1,
@@ -247,7 +250,7 @@ where
 
                     // Enter/leave the shape if we're inside it already
                     if shape_inside != 0 && was_inside != is_inside {
-                        output.push((EdgeInterceptDirection::Toggle, clip_next.1))
+                        output.push(EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: clip_next.x_pos })
                     }
 
                     // Move to the next clip intercept
@@ -270,7 +273,7 @@ where
 
                 // clip_next is the closest following clip region to the current shape, so clip_inside can be used to determine if this point is inside the shape
                 if clip_inside != 0 && was_inside != is_inside {
-                    output.push((EdgeInterceptDirection::Toggle, *shape_pos));
+                    output.push(EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: *shape_pos });
                 }
             }
         }

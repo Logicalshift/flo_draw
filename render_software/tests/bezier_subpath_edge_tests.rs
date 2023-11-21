@@ -810,7 +810,7 @@ pub fn triangle_lower_edge_non_zero() {
     path.intercepts(&[799.9], &mut intercepts);
 
     assert!(intercepts[0].len() == 2, "Should be 2 intercepts, found {:?}", intercepts[0]);
-    assert!(intercepts[0][0].0 != intercepts[0][1].0, "Intercept directions should invert (found {:?})", intercepts[0]);
+    assert!(intercepts[0][0].direction != intercepts[0][1].direction, "Intercept directions should invert (found {:?})", intercepts[0]);
 }
 
 #[test]
@@ -831,7 +831,7 @@ pub fn triangle_lower_edge_flattened_non_zero() {
     path.intercepts(&[799.9], &mut intercepts);
 
     assert!(intercepts[0].len() == 2, "Should be 2 intercepts, found {:?}", intercepts[0]);
-    assert!(intercepts[0][0].0 != intercepts[0][1].0, "Intercept directions should invert (found {:?})", intercepts[0]);
+    assert!(intercepts[0][0].direction != intercepts[0][1].direction, "Intercept directions should invert (found {:?})", intercepts[0]);
 }
 
 #[test]
@@ -852,7 +852,7 @@ pub fn triangle_lower_edge_non_zero_very_close() {
     path.intercepts(&[799.9999999999999], &mut intercepts);
 
     assert!(intercepts[0].len() == 2, "Should be 2 intercepts, found {:?}", intercepts[0]);
-    assert!(intercepts[0][0].0 != intercepts[0][1].0, "Intercept directions should invert (found {:?})", intercepts[0]);
+    assert!(intercepts[0][0].direction != intercepts[0][1].direction, "Intercept directions should invert (found {:?})", intercepts[0]);
 }
 
 #[test]
@@ -873,7 +873,7 @@ pub fn triangle_lower_edge_flattened_non_zero_very_close() {
     path.intercepts(&[799.9999999999999], &mut intercepts);
 
     assert!(intercepts[0].len() == 2, "Should be 2 intercepts, found {:?}", intercepts[0]);
-    assert!(intercepts[0][0].0 != intercepts[0][1].0, "Intercept directions should invert (found {:?})", intercepts[0]);
+    assert!(intercepts[0][0].direction != intercepts[0][1].direction, "Intercept directions should invert (found {:?})", intercepts[0]);
 }
 
 /*
@@ -895,7 +895,7 @@ pub fn triangle_lower_edge_non_zero_very_close_translated() {
     path.intercepts(&[799.9999999999999], &mut intercepts);
 
     assert!(intercepts[0].len() == 2, "Should be 2 intercepts, found {:?}", intercepts[0]);
-    assert!(intercepts[0][0].0 != intercepts[0][1].0, "Intercept directions should invert (found {:?})", intercepts[0]);
+    assert!(intercepts[0][0].direction != intercepts[0][1].direction, "Intercept directions should invert (found {:?})", intercepts[0]);
 }
 */
 
@@ -917,5 +917,5 @@ pub fn triangle_lower_edge_flattened_non_zero_very_close_translated() {
     path.intercepts(&[799.9999999999999], &mut intercepts);
 
     assert!(intercepts[0].len() == 2, "Should be 2 intercepts, found {:?}", intercepts[0]);
-    assert!(intercepts[0][0].0 != intercepts[0][1].0, "Intercept directions should invert (found {:?})", intercepts[0]);
+    assert!(intercepts[0][0].direction != intercepts[0][1].direction, "Intercept directions should invert (found {:?})", intercepts[0]);
 }

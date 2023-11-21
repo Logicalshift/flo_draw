@@ -502,7 +502,7 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
     }
 
     #[inline]
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) {
         let mut y_pos_iter  = y_positions.iter();
         let mut output_iter = output.iter_mut();
 
@@ -511,7 +511,7 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
 
             if self.subpath.y_bounds.contains(y_pos) {
                 output.extend(intercepts.into_iter()
-                    .map(|intercept| (EdgeInterceptDirection::Toggle, intercept.x_pos)));
+                    .map(|intercept| EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: intercept.x_pos }));
             }
         }
     }
@@ -575,7 +575,7 @@ impl EdgeDescriptor for BezierSubpathNonZeroEdge {
     }
 
     #[inline]
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) {
         let mut y_pos_iter  = y_positions.iter();
         let mut output_iter = output.iter_mut();
 
@@ -598,9 +598,9 @@ impl EdgeDescriptor for BezierSubpathNonZeroEdge {
                         //let side    = (normal.x() * 1.0 + normal.y() * 0.0).signum();  // Dot product with the 'ray' direction of the scanline
 
                         if side <= 0.0 {
-                            (EdgeInterceptDirection::DirectionOut, intercept.x_pos)
+                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::DirectionOut, x_pos: intercept.x_pos }
                         } else {
-                            (EdgeInterceptDirection::DirectionIn, intercept.x_pos)
+                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::DirectionIn, x_pos: intercept.x_pos }
                         }
                     }).collect();
             } else {

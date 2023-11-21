@@ -19,8 +19,8 @@ fn triangle_intercepts() {
     triangle.intercepts_on_line(150.0, &mut intercepts);
 
     assert!(intercepts.len() == 2, "Should be two intercepts, found {:?}", intercepts);
-    assert!(intercepts[0].0 == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
-    assert!(intercepts[1].0 == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
+    assert!(intercepts[0].direction == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
+    assert!(intercepts[1].direction == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
 }
 
 #[test]
@@ -40,8 +40,8 @@ fn horizontal_triangle_line() {
     triangle.intercepts_on_line(100.0, &mut intercepts);
 
     assert!(intercepts.len() == 2, "Should be two intercepts, found {:?}", intercepts);
-    assert!(intercepts[0].0 == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
-    assert!(intercepts[1].0 == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
+    assert!(intercepts[0].direction == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
+    assert!(intercepts[1].direction == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
 }
 
 #[test]
@@ -61,8 +61,8 @@ fn horizontal_triangle_line_reversed() {
     triangle.intercepts_on_line(100.0, &mut intercepts);
 
     assert!(intercepts.len() == 2, "Should be two intercepts, found {:?}", intercepts);
-    assert!(intercepts[0].0 == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
-    assert!(intercepts[1].0 == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
+    assert!(intercepts[0].direction == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
+    assert!(intercepts[1].direction == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
 }
 
 #[test]
@@ -82,8 +82,8 @@ fn double_horizontal_triangle_line() {
     triangle.intercepts_on_line(100.0, &mut intercepts);
 
     assert!(intercepts.len() == 2, "Should be two intercepts, found {:?}", intercepts);
-    assert!(intercepts[0].0 == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
-    assert!(intercepts[1].0 == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
+    assert!(intercepts[0].direction == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
+    assert!(intercepts[1].direction == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
 }
 
 #[test]
@@ -104,8 +104,8 @@ fn triple_horizontal_triangle_line() {
     triangle.intercepts_on_line(100.0, &mut intercepts);
 
     assert!(intercepts.len() == 2, "Should be two intercepts, found {:?}", intercepts);
-    assert!(intercepts[0].0 == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
-    assert!(intercepts[1].0 == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
+    assert!(intercepts[0].direction == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
+    assert!(intercepts[1].direction == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
 }
 
 #[test]
@@ -128,10 +128,10 @@ fn triple_horizontal_triangle_line_multiple() {
     assert!(intercepts[0].len() == 0, "Should be zero intercepts, found {:?}", intercepts);
 
     assert!(intercepts[1].len() == 2, "Should be two intercepts, found {:?}", intercepts);
-    assert!(intercepts[1][0].0 == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
-    assert!(intercepts[1][1].0 == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
+    assert!(intercepts[1][0].direction == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
+    assert!(intercepts[1][1].direction == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
 
     assert!(intercepts[2].len() == 2, "Should be two intercepts, found {:?}", intercepts);
-    assert!(intercepts[2][0].0 == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
-    assert!(intercepts[2][1].0 == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
+    assert!(intercepts[2][0].direction == EdgeInterceptDirection::DirectionOut, "First intercept should be DirectionOut, found {:?}", intercepts);
+    assert!(intercepts[2][1].direction == EdgeInterceptDirection::DirectionIn, "Second intercept should be DirectionIn, found {:?}", intercepts);
 }

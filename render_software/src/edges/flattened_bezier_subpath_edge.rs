@@ -129,7 +129,7 @@ impl EdgeDescriptor for FlattenedBezierNonZeroEdge {
         Arc::new(self.transform_as_self(transform))
     }
 
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) {
         match &self.path.value {
             FlattenedBezierSubpathValue::Polyline(line) => {
                 line.intercepts_on_lines(y_positions, output);
@@ -197,13 +197,13 @@ impl EdgeDescriptor for FlattenedBezierEvenOddEdge {
         Arc::new(self.transform_as_self(transform))
     }
 
-    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[(EdgeInterceptDirection, f64); 2]>]) {
+    fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) {
         match &self.path.value {
             FlattenedBezierSubpathValue::Polyline(line) => {
                 line.intercepts_on_lines(y_positions, output);
 
                 for intercepts in output.iter_mut() {
-                    for (direction, _) in intercepts.iter_mut() {
+                    for EdgeDescriptorIntercept { direction, .. } in intercepts.iter_mut() {
                         *direction = EdgeInterceptDirection::Toggle;
                     }
                 }
