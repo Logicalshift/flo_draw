@@ -1,4 +1,4 @@
-use super::edge_descriptor::*;
+use super::edge_intercept_direction::*;
 use super::shape_id::*;
 
 ///

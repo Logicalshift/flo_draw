@@ -10,6 +10,7 @@
 //! edges are linked by 1-pixel high linear sections.
 //!
 
+mod edge_intercept_direction;
 mod edge_descriptor;
 mod edge_id;
 mod shape_descriptor;
@@ -17,6 +18,7 @@ mod shape_id;
 mod edge_plan;
 mod edge_intercept;
 
+pub use edge_intercept_direction::*;
 pub use edge_descriptor::*;
 pub use edge_id::*;
 pub use shape_descriptor::*;
