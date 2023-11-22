@@ -250,7 +250,7 @@ where
 
                     // Enter/leave the shape if we're inside it already
                     if shape_inside != 0 && was_inside != is_inside {
-                        output.push(EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: clip_next.x_pos })
+                        output.push(EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: clip_next.x_pos, position: intercept.position })
                     }
 
                     // Move to the next clip intercept
@@ -273,7 +273,7 @@ where
 
                 // clip_next is the closest following clip region to the current shape, so clip_inside can be used to determine if this point is inside the shape
                 if clip_inside != 0 && was_inside != is_inside {
-                    output.push(EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: *shape_pos });
+                    output.push(EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: *shape_pos, position: intercept.position });
                 }
             }
         }

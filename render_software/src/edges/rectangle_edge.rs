@@ -51,9 +51,11 @@ impl EdgeDescriptor for RectangleEdge {
     #[inline]
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) {
         for idx in 0..y_positions.len() {
-            if !(y_positions[idx] < self.y_bounds.start || y_positions[idx] >= self.y_bounds.end) {
-                output[idx].push(EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: self.x_bounds.start });
-                output[idx].push(EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: self.x_bounds.end });
+            let y_pos = y_positions[idx];
+
+            if !(y_pos < self.y_bounds.start || y_pos >= self.y_bounds.end) {
+                output[idx].push(EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: self.x_bounds.start, position: EdgePosition(0, y_pos-self.y_bounds.start) });
+                output[idx].push(EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: self.x_bounds.end, position: EdgePosition(1, self.y_bounds.end-y_pos) });
             }
         }
     }

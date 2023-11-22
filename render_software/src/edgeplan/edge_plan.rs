@@ -342,7 +342,7 @@ where
             edge.edge.intercepts(y_positions, &mut edge_intercepts);
 
             for (output, intercepts) in output.iter_mut().zip(edge_intercepts.iter()) {
-                for EdgeDescriptorIntercept { direction, x_pos } in intercepts.iter() {
+                for EdgeDescriptorIntercept { direction, x_pos, .. } in intercepts.iter() {
                     output.push(EdgePlanIntercept { shape: shape_id, direction: *direction, x_pos: *x_pos });
                 }
             }

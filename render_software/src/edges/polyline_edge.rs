@@ -238,7 +238,8 @@ impl Polyline {
                 line.direction
             };
 
-            intercepts.push(EdgeDescriptorIntercept { direction, x_pos });
+            // TODO: need a t value (y position relative to line start might do) + an index for the position
+            intercepts.push(EdgeDescriptorIntercept { direction, x_pos, position: EdgePosition(0, 0.0) });
             last_direction = direction;
         }
     }
