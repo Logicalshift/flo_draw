@@ -15,6 +15,9 @@ use std::sync::*;
 ///
 #[derive(Clone)]
 struct PolylineLine {
+    /// The index of this line in the shape
+    idx: usize,
+
     /// The y-range covered by this polyline
     y_range: Range<f64>,
 
@@ -140,7 +143,8 @@ impl Polyline {
                 let lines = coords.iter()
                     .copied()
                     .tuple_windows::<(Coord2, Coord2)>()
-                    .map(|line| {
+                    .enumerate()
+                    .map(|(idx, line)| {
                         // Update bounding box
                         bounds_min.0 = bounds_min.0.min(line.0.x()).min(line.1.x());
                         bounds_min.1 = bounds_min.1.min(line.0.y()).min(line.1.y());
@@ -163,6 +167,7 @@ impl Polyline {
 
                         // Create the line
                         PolylineLine {
+                            idx:            idx,
                             y_range:        min_y..max_y,
                             coefficients:   coefficients,
                             direction:      direction,
@@ -238,8 +243,8 @@ impl Polyline {
                 line.direction
             };
 
-            // TODO: need a t value (y position relative to line start might do) + an index for the position
-            intercepts.push(EdgeDescriptorIntercept { direction, x_pos, position: EdgePosition(0, 0.0) });
+            // TODO: need a t value (y position relative to line start might do)
+            intercepts.push(EdgeDescriptorIntercept { direction, x_pos, position: EdgePosition(line.idx, 0.0) });
             last_direction = direction;
         }
     }
