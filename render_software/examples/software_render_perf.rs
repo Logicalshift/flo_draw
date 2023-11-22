@@ -282,17 +282,17 @@ fn main() {
         circle_flattened.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
-    let scan_convert_polyline = time(1_000, || { 
+    let scan_convert_polyline = time(10_000, || { 
         let mut output = vec![smallvec![]; 1080];
         circle_polyline.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
-    let scan_convert_polyline_nonzero = time(1_000, || { 
+    let scan_convert_polyline_nonzero = time(10_000, || { 
         let mut output = vec![smallvec![]; 1080];
         circle_polyline_nonzero.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
         black_box(&mut output);
     });
-    let scan_convert_polyline_nonzero_shards = time(1_000, || { 
+    let scan_convert_polyline_nonzero_shards = time(10_000, || { 
         let y_positions = (0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>();
         let shards      = shard_intercepts_from_edge(&circle_polyline_nonzero, &y_positions);
 
@@ -317,5 +317,25 @@ fn main() {
     println!("  Scan convert flattened circle (pixel res, non-zero winding rule, shards) ({} lines): {}", circle_polyline.len(), scan_convert_polyline_nonzero_shards.summary_fps());
     println!("  Scan convert bezier circle (partial): {}", scan_convert_bezier_partial.summary());
     println!("  Scan convert flattened circle (partial) ({} lines, {} regions): {}", circle_polyline.len(), circle_polyline.num_regions(), scan_convert_polyline_partial.summary());
+
+    let prepare_and_scan_convert_bezier = time(10_000, || {
+        let mut circle_edge_nonzero = circle_path.clone().to_non_zero_edge(ShapeId::new());
+        circle_edge_nonzero.prepare_to_render();
+
+        let mut output = vec![smallvec![]; 1080];
+        circle_edge_nonzero.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
+        black_box(&mut output);
+    });
+
+    let prepare_and_scan_convert_polyline = time(10_000, || {
+        let mut circle_edge_nonzero = circle_path.clone().to_flattened_non_zero_edge(ShapeId::new());
+        circle_edge_nonzero.prepare_to_render();
+
+        let mut output = vec![smallvec![]; 1080];
+        circle_edge_nonzero.intercepts(&(0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>(), &mut output);
+        black_box(&mut output);
+    });
+    println!("  Prepare and scan convert bezier: {}", prepare_and_scan_convert_bezier.summary_fps());
+    println!("  Prepare and scan convert flattened bezier: {}", prepare_and_scan_convert_polyline.summary_fps());
 }
 
