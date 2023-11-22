@@ -36,3 +36,27 @@ fn scan_triangle() {
     assert!(shards[4].len() == 0, "175-200 should have 0 intercepts ({:?})", shards);
     assert!(shards[5].len() == 0, "200-201 should have 0 intercepts ({:?})", shards);
 }
+
+#[test]
+fn scan_concave() {
+    // This is a simple concave shape that needs some additional processing to render correctly
+    let mut concave_shape = Polyline::new(vec![
+        Coord2(100.0, 100.0),
+        Coord2(150.0, 200.0),
+        Coord2(200.0, 150.0),
+        Coord2(250.0, 200.0),
+        Coord2(300.0, 100.0),
+        Coord2(100.0, 100.0),
+    ]).to_non_zero_edge(ShapeId::new());
+    concave_shape.prepare_to_render();
+
+    // Iterate across the shape to get a series of shards
+    let shards = shard_intercepts_from_edge(&concave_shape, &[99.0, 100.0, 125.0, 150.0, 175.0, 198.0, 199.0, 200.0, 201.0])
+        .collect::<Vec<_>>();
+
+    println!("{:?}", shards);
+    assert!(shards.len() == 8, "Should be 6 shards {:?}", shards);
+
+    // 99.0-100.0 should be empty
+    assert!(shards[0].len() == 0, "99-100 should have no intercepts ({:?})", shards);
+}
