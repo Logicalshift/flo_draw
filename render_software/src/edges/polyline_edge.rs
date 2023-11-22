@@ -243,8 +243,14 @@ impl Polyline {
                 line.direction
             };
 
-            // TODO: need a t value (y position relative to line start might do)
-            intercepts.push(EdgeDescriptorIntercept { direction, x_pos, position: EdgePosition(line.idx, 0.0) });
+            // Line position depends on if the line is moving up or down
+            let line_pos = match last_direction {
+                EdgeInterceptDirection::DirectionOut    => y_pos-line.y_range.start,
+                EdgeInterceptDirection::DirectionIn     => line.y_range.end-y_pos,
+                EdgeInterceptDirection::Toggle          => y_pos-line.y_range.start,
+            };
+
+            intercepts.push(EdgeDescriptorIntercept { direction, x_pos, position: EdgePosition(line.idx, line_pos) });
             last_direction = direction;
         }
     }
