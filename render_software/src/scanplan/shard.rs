@@ -1,5 +1,6 @@
 use crate::edgeplan::*;
 
+use itertools::*;
 use smallvec::*;
 
 use std::ops::{Range};
@@ -63,6 +64,53 @@ where
     intercepts:     TInterceptIterator,
 }
 
+///
+/// For a set of shards where the previous line does not match up with the next line, uses the edge indexes to figure out what the shard intercepts must be
+///
+/// We short-cut this when the intercepts on the previous and next line match up (same number and same direction), so this is onyl used when there isn't an
+/// uninterrupted slice.
+///
+/// We don't find maxima for peaks or minima for troughs, so one artifact this will introduce is that the subpixel peak or trough of a shape will be cut off.
+///
+fn resolve_shards(previous_line: &SmallVec<[EdgeDescriptorIntercept; 2]>, next_line: &SmallVec<[EdgeDescriptorIntercept; 2]>) -> SmallVec<[ShardIntercept; 2]> {
+    // Mix the previous and next lines and then sort them by edge position
+    let mut sorted_lines =
+        previous_line.iter().map(|intercept| (intercept, false))
+            .chain(next_line.iter().map(|intercept| (intercept, true)))
+            .sorted_by(|(a, _), (b, _)| a.position.cmp(&b.position))
+            .collect::<Vec<_>>();
+
+    // The shape is a loop, so push the first element back on to the end
+    if let Some(first) = sorted_lines.get(0) {
+        sorted_lines.push(*first);
+    }
+
+    // When sorted this way, this puts 'connected' intercepts next to each other, so we can create shards from any pair where the first is on the lower edge 
+    // and the second is on the upper edge, then sort again by x position. The shape is a loop, and so the ordering is too
+    let mut shards = smallvec![];
+
+    for ((first_intercept, first_is_next), (second_intercept, second_is_next)) in sorted_lines.iter().tuple_windows() {
+        if first_is_next == second_is_next {
+            // Both intercepts are on the same line, so don't form a shard
+            continue;
+        }
+
+        // The first intercept is on opposite line to the second intercept, indicating that the shape crossed inbetween the two lines
+        let shard = ShardIntercept {
+            direction:  first_intercept.direction,
+            x_start:    first_intercept.x_pos.min(second_intercept.x_pos),
+            x_end:      first_intercept.x_pos.max(second_intercept.x_pos),
+        };
+
+        shards.push(shard);
+    }
+
+    // For a closed shape, there should always be an even number of intercepts, even after this transformation
+    debug_assert!(shards.len()%2 == 0);
+
+    shards
+}
+
 impl<TInterceptIterator> Iterator for ShardIterator<TInterceptIterator>
 where
     TInterceptIterator: Iterator<Item=SmallVec<[EdgeDescriptorIntercept; 2]>>
@@ -94,7 +142,8 @@ where
                 if first.direction != second.direction {
                     // Intercept directions changed, so these shapes don't match: use the 'find nearest' algorithm instead (this is a concave shape)
                     // (Eg: a 'C' shape with a very narrow gap)
-                    todo!()
+                    intercepts = resolve_shards(previous_line, &next_line);
+                    break;
                 }
 
                 // Add a new intercept to the list
@@ -107,7 +156,7 @@ where
         } else {
             // Shards are formed by finding the nearest intercept to each point
             // (Eg, the end of a spike in a concave shape)
-            todo!()
+            intercepts = resolve_shards(previous_line, &next_line);
         }
 
         // The next line now becomes the previous line
