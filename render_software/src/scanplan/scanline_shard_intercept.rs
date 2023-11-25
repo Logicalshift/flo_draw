@@ -2,6 +2,20 @@ use super::scanline_transform::*;
 
 use crate::edgeplan::*;
 
+use std::ops::{Range};
+
+///
+/// Ways that a scanline fragment can be bn
+///
+#[derive(Clone, Debug)]
+pub enum InterceptBlend {
+    /// Only the shape's blending should be used
+    Solid,
+
+    /// This should be alpha-blended using source-over with a linear fade
+    Fade { x_range: Range<f64>, alpha_range: Range<f64> },
+}
+
 ///
 /// Represents an active intercept on a scanline
 ///
@@ -12,6 +26,9 @@ pub struct ScanlineShardIntercept<'a> {
 
     /// The x-position where the shape was first intercepted
     start_x: f64,
+
+    /// How this intercept should be blended with those behind it
+    blend: InterceptBlend,
 
     /// The shape that is being drawn by this scanline
     shape_id: ShapeId,
@@ -223,6 +240,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
                     self.active_shapes.insert(following_idx, ScanlineShardIntercept { 
                         count:      count, 
                         start_x:    transform.source_x_to_pixels(intercept.x_pos),
+                        blend:      InterceptBlend::Solid,
                         shape_id:   intercept.shape,
                         descriptor: descriptor,
                     })
