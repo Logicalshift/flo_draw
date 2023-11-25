@@ -98,7 +98,7 @@ where
                 // Add or remove this intercept's programs to the active list
                 let shape_descriptor = edge_plan.shape_descriptor(current_intercept.shape);
 
-                active_shapes.add_intercept(&current_intercept, transform, shape_descriptor);
+                // active_shapes.add_intercept(&current_intercept, transform, shape_descriptor);
 
                 // Move to the next intercept (or stop if no intercepts actually fall within the x-range)
                 current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { continue 'next_line; };
@@ -160,7 +160,7 @@ where
                 }
 
                 // Update the state from the current intercept
-                active_shapes.add_intercept(&current_intercept, transform, shape_descriptor);
+                // active_shapes.add_intercept(&current_intercept, transform, shape_descriptor);
                 z_floor = active_shapes.z_floor();
 
                 // Stop when the next_x value gets to the end of the range
@@ -172,7 +172,7 @@ where
                 current_intercept = if let Some(next_intercept) = ordered_intercepts.next() { next_intercept } else { break; };
             }
 
-            // Populate the scanlione
+            // Populate the scanline
             #[cfg(debug_assertions)]
             {
                 scanline.fill_from_ordered_stacks(scanplan);
