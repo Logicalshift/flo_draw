@@ -47,6 +47,110 @@ where
     }
 }
 
+///
+/// Represents an intercept against a shard. Every shard produces two intercepts: one where they start to fade in or out, and one where
+/// they finish fading in or out.
+///
+#[derive(Clone, Copy, Debug)]
+enum ShardIntercept {
+    /// Start fading in the effects of an intercept
+    Start(EdgePlanShardIntercept),
+
+    /// Finish fading in the effects of an intercept
+    Finish(EdgePlanShardIntercept),
+}
+
+struct ShardInterceptIterator<TShardIterator>
+where
+    TShardIterator: Iterator<Item=EdgePlanShardIntercept>,
+{
+    /// The shards that remain in the iterator, set to None once the iterator is completed
+    remaining_shards: Option<TShardIterator>,
+
+    /// The next shard to start
+    next_shard: Option<EdgePlanShardIntercept>,
+
+    /// The shards that have been started: a stack, with the first to end at the top
+    started_shards: Vec<EdgePlanShardIntercept>,
+}
+
+impl<TShardIterator> ShardInterceptIterator<TShardIterator> 
+where
+    TShardIterator: Iterator<Item=EdgePlanShardIntercept>,
+{
+    ///
+    /// Creates a new shard intercept iterator
+    ///
+    #[inline]
+    pub fn from_intercepts(intercepts: TShardIterator) -> Self {
+        Self {
+            remaining_shards:   Some(intercepts),
+            next_shard:         None,
+            started_shards:     vec![],
+        }
+    }
+}
+
+impl<TShardIterator> Iterator for ShardInterceptIterator<TShardIterator> 
+where
+    TShardIterator: Iterator<Item=EdgePlanShardIntercept>,
+{
+    type Item = ShardIntercept;
+
+    #[inline]
+    fn next(&mut self) -> Option<ShardIntercept> {
+        // Retrieve/fill in the next shard
+        let next_shard = if let Some(next_shard) = self.next_shard.take() { 
+            Some(next_shard) 
+        } else if let Some(remaining) = self.remaining_shards.as_mut() {
+            remaining.next()
+        } else {
+            None
+        };
+
+        if let Some(next_shard) = next_shard {
+            // If there's a shard finishing before the next shard, return that one
+            if let Some(started) = self.started_shards.pop() {
+                if started.upper_x <= next_shard.lower_x {
+                    // This shard is finishing before this new one starts
+                    self.next_shard = Some(next_shard);
+
+                    return Some(ShardIntercept::Finish(started));
+                } else {
+                    // Leave to process for later
+                    self.started_shards.push(started);
+                }
+            }
+
+            // Starting this shard: add to the list of started shards. The top of the list needs to be the shard that ends next
+            let mut found_place = false;
+
+            for idx in (0..self.started_shards.len()).rev() {
+                if self.started_shards[idx].upper_x > next_shard.upper_x {
+                    self.started_shards.insert(idx+1, next_shard);
+
+                    found_place = true;
+                    break;
+                }
+            }
+
+            if !found_place {
+                self.started_shards.insert(0, next_shard);
+            }
+
+            // Result is that this shard is starting
+            Some(ShardIntercept::Start(next_shard))
+        } else if let Some(started) = self.started_shards.pop() {
+            // Finish this shard
+            Some(ShardIntercept::Finish(started))
+
+        } else {
+            // No more shards remain
+            None
+        }
+    }
+}
+
 impl<TEdge> ScanPlanner for ShardScanPlanner<TEdge>
 where
     TEdge: EdgeDescriptor,
