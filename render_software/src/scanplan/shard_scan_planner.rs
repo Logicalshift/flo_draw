@@ -291,14 +291,14 @@ where
                             },
 
                             InterceptBlend::Fade { x_range, alpha_range } => {
-                                // Blend with the background
-                                program_stack.push(PixelProgramPlan::StartBlend);
+                                // TODO: adjust the alpha range to the actual x-range
+                                program_stack.push(PixelProgramPlan::LinearSourceOver(alpha_range.start as _, alpha_range.end as _));
 
                                 // The pixels to blend
                                 program_stack.extend(shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
 
-                                // TODO: adjust the alpha range to the actual x-range
-                                program_stack.push(PixelProgramPlan::LinearSourceOver(alpha_range.start as _, alpha_range.end as _));
+                                // Blend with the background
+                                program_stack.push(PixelProgramPlan::StartBlend);
                             }
                         }
                         
