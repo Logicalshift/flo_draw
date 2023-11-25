@@ -1,4 +1,4 @@
-use super::scanline_intercept::*;
+use super::scanline_shard_intercept::*;
 use super::scanline_transform::*;
 use super::scanline_plan::*;
 use super::scan_planner::*;
@@ -234,7 +234,7 @@ where
             let mut current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { continue; };
 
             // Trace programs but don't generate fragments until we get an intercept
-            let mut active_shapes = ScanlineInterceptState::new();
+            let mut active_shapes = ScanlineShardInterceptState::new();
 
             while transform.source_x_to_pixels(current_intercept.x_pos()) < x_range.start {
                 // Add or remove this intercept's programs to the active list

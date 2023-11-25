@@ -19,6 +19,7 @@ mod shard_scan_planner;
 mod scanspan;
 mod scanline_plan;
 mod scanline_intercept;
+mod scanline_shard_intercept;
 mod scanline_transform;
 mod scan_planner;
 
@@ -28,5 +29,6 @@ pub use shard_scan_planner::*;
 pub use scanspan::*;
 pub use scanline_plan::*;
 pub use scanline_intercept::*;
+pub use scanline_shard_intercept::*;
 pub use scanline_transform::*;
 pub use scan_planner::*;
