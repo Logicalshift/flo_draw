@@ -285,7 +285,23 @@ where
                         let intercept           = active_shapes.get(shape).unwrap();
                         let shape_descriptor    = intercept.shape_descriptor();
 
-                        program_stack.extend(shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
+                        match intercept.blend() {
+                            InterceptBlend::Solid => {
+                                program_stack.extend(shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
+                            },
+
+                            InterceptBlend::Fade { x_range, alpha_range } => {
+                                // Blend with the background
+                                program_stack.push(PixelProgramPlan::StartBlend);
+
+                                // The pixels to blend
+                                program_stack.extend(shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
+
+                                // TODO: adjust the alpha range to the actual x-range
+                                program_stack.push(PixelProgramPlan::LinearSourceOver(alpha_range.start as _, alpha_range.end as _));
+                            }
+                        }
+                        
 
                         if intercept.is_opaque() {
                             is_opaque = true;
