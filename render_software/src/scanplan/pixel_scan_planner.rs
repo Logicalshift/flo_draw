@@ -160,7 +160,7 @@ where
                 current_intercept = if let Some(next_intercept) = ordered_intercepts.next() { next_intercept } else { break; };
             }
 
-            // Populate the scanlione
+            // Populate the scanline
             #[cfg(debug_assertions)]
             {
                 scanline.fill_from_ordered_stacks(scanplan);
