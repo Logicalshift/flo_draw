@@ -249,6 +249,22 @@ impl<'a> ScanlineShardInterceptState<'a> {
     }
 
     ///
+    /// A partial intercept has finished
+    ///
+    pub fn finish_intercept(&mut self, intercept: &EdgePlanShardIntercept) {
+        for active_shape in self.active_shapes.iter_mut() {
+            if let InterceptBlend::Fade { x_range, .. } = &active_shape.blend {
+                if active_shape.shape_id == intercept.shape && x_range.end == intercept.upper_x {
+                    // TODO: this assumes that we don't do fade-out intercepts (which we don't at the moment)
+
+                    // Intercepts fading in become solid at the point where they finish
+                    active_shape.blend = InterceptBlend::Solid;
+                }
+            }
+        }
+    }
+
+    ///
     /// Adjusts all the existing intercepts so that they have a specified start position (for clipping onto the left-hand side of the visible region)
     ///
     pub fn clip_start_x(&mut self, clip_x: f64) {
