@@ -180,8 +180,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
     ///
     /// Adds or removes from the active shapes after an intercept
     ///
-    #[inline]
-    pub fn add_intercept(&mut self, intercept: &EdgePlanIntercept, transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
+    pub fn start_intercept(&mut self, intercept: &EdgePlanShardIntercept, transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
         if let Some(descriptor) = descriptor {
             let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque);
 
@@ -204,7 +203,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
                     };
 
                     if remove_existing {
-                        // If the count is 0 (or the edge is a toggle edge), then stop intercepting this shape
+                        // If the count is 0 (or the edge is a toggle edge), then fade out this shape (it will be removed when the intercept is stopped)
                         self.active_shapes.remove(existing_idx);
 
                         // If the shape matches the current z-floor, update it
@@ -239,8 +238,8 @@ impl<'a> ScanlineShardInterceptState<'a> {
 
                     self.active_shapes.insert(following_idx, ScanlineShardIntercept { 
                         count:      count, 
-                        start_x:    transform.source_x_to_pixels(intercept.x_pos),
-                        blend:      InterceptBlend::Solid,
+                        start_x:    transform.source_x_to_pixels(intercept.lower_x),
+                        blend:      InterceptBlend::Fade { x_range: intercept.lower_x..intercept.upper_x, alpha_range: 0.0..1.0 },
                         shape_id:   intercept.shape,
                         descriptor: descriptor,
                     })
