@@ -1,3 +1,5 @@
+use crate::scanplan::shard_intercepts_from_edge;
+
 use super::edge_descriptor::*;
 use super::edge_descriptor_intercept::*;
 use super::edge_plan_intercept::*;
@@ -351,6 +353,47 @@ where
         // Sort the intercepts on each line by x position
         output.iter_mut().for_each(|intercepts| {
             intercepts.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
+        });
+    }
+
+    ///
+    /// As for `intercepts_on_scanlines`, except the intercepts will be returned as 'shards' which indicates where they cross two y positions
+    ///
+    /// Note that this means that there is one less output line than input y-position
+    ///
+    pub fn shards_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [Vec<EdgePlanShardIntercept>]) {
+        // Determine the range that is covered by the y-positions
+        let mut y_min = f64::MAX;
+        let mut y_max = f64::MIN;
+
+        y_positions.iter().for_each(|pos| {
+            y_min = y_min.min(*pos);
+            y_max = y_max.max(*pos);
+        });
+
+        // Process every edge description in this range
+        for edge_idx in self.edge_space.data_in_region(y_min..(y_max+1e-6)) {
+            // Process the shards from this edge
+            let edge    = &self.edges[*edge_idx];
+            let shape   = edge.edge.shape();
+
+            for (shards, output_line) in shard_intercepts_from_edge(&edge.edge, y_positions).zip(output.iter_mut()) {
+                for shard in shards {
+                    let x_range = shard.x_range();
+
+                    output_line.push(EdgePlanShardIntercept {
+                        shape:      shape,
+                        direction:  shard.direction(),
+                        lower_x:    x_range.start,
+                        upper_x:    x_range.end
+                    })
+                }
+            }
+        }
+
+        // Sort by the start x position
+        output.iter_mut().for_each(|intercepts| {
+            intercepts.sort_by(|a, b| a.lower_x.total_cmp(&b.lower_x));
         });
     }
 }
