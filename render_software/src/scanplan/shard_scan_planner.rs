@@ -37,16 +37,6 @@ where
     }
 } 
 
-impl<TEdge> Default for ShardScanPlanner<TEdge>
-where
-    TEdge: EdgeDescriptor,
-{
-    #[inline]
-    fn default() -> Self {
-        ShardScanPlanner { edge: PhantomData }
-    }
-}
-
 ///
 /// Represents an intercept against a shard. Every shard produces two intercepts: one where they start to fade in or out, and one where
 /// they finish fading in or out.
@@ -60,23 +50,23 @@ enum ShardIntercept {
     Finish(EdgePlanShardIntercept),
 }
 
-struct ShardInterceptIterator<TShardIterator>
+struct ShardInterceptIterator<'a, TShardIterator>
 where
-    TShardIterator: Iterator<Item=EdgePlanShardIntercept>,
+    TShardIterator: Iterator<Item=&'a EdgePlanShardIntercept>,
 {
     /// The shards that remain in the iterator, set to None once the iterator is completed
     remaining_shards: Option<TShardIterator>,
 
     /// The next shard to start
-    next_shard: Option<EdgePlanShardIntercept>,
+    next_shard: Option<&'a EdgePlanShardIntercept>,
 
     /// The shards that have been started: a stack, with the first to end at the top
-    started_shards: Vec<EdgePlanShardIntercept>,
+    started_shards: Vec<&'a EdgePlanShardIntercept>,
 }
 
-impl<TShardIterator> ShardInterceptIterator<TShardIterator> 
+impl<'a, TShardIterator> ShardInterceptIterator<'a, TShardIterator> 
 where
-    TShardIterator: Iterator<Item=EdgePlanShardIntercept>,
+    TShardIterator: Iterator<Item=&'a EdgePlanShardIntercept>,
 {
     ///
     /// Creates a new shard intercept iterator
@@ -91,9 +81,9 @@ where
     }
 }
 
-impl<TShardIterator> Iterator for ShardInterceptIterator<TShardIterator> 
+impl<'a, TShardIterator> Iterator for ShardInterceptIterator<'a, TShardIterator> 
 where
-    TShardIterator: Iterator<Item=EdgePlanShardIntercept>,
+    TShardIterator: Iterator<Item=&'a EdgePlanShardIntercept>,
 {
     type Item = ShardIntercept;
 
@@ -103,7 +93,13 @@ where
         let next_shard = if let Some(next_shard) = self.next_shard.take() { 
             Some(next_shard) 
         } else if let Some(remaining) = self.remaining_shards.as_mut() {
-            remaining.next()
+            let result = remaining.next();
+            
+            if result.is_none() {
+                self.remaining_shards = None;
+            }
+
+            result
         } else {
             None
         };
@@ -115,7 +111,7 @@ where
                     // This shard is finishing before this new one starts
                     self.next_shard = Some(next_shard);
 
-                    return Some(ShardIntercept::Finish(started));
+                    return Some(ShardIntercept::Finish(*started));
                 } else {
                     // Leave to process for later
                     self.started_shards.push(started);
@@ -139,15 +135,57 @@ where
             }
 
             // Result is that this shard is starting
-            Some(ShardIntercept::Start(next_shard))
+            Some(ShardIntercept::Start(*next_shard))
         } else if let Some(started) = self.started_shards.pop() {
             // Finish this shard
-            Some(ShardIntercept::Finish(started))
+            Some(ShardIntercept::Finish(*started))
 
         } else {
             // No more shards remain
             None
         }
+    }
+}
+
+impl ShardIntercept {
+    ///
+    /// Returns the intercept this is for
+    ///
+    #[inline]
+    pub fn intercept(&self) -> &EdgePlanShardIntercept {
+        match self {
+            ShardIntercept::Start(intercept)    => intercept,
+            ShardIntercept::Finish(intercept)   => intercept,
+        }
+    }
+
+    ///
+    /// Returns the shape ID that this intercept is against
+    ///
+    #[inline]
+    pub fn shape(&self) -> ShapeId {
+        self.intercept().shape
+    }
+
+    ///
+    /// Returns the x position of this intercept
+    ///
+    #[inline]
+    pub fn x_pos(&self) -> f64 {
+        match self {
+            ShardIntercept::Start(intercept)    => intercept.lower_x,
+            ShardIntercept::Finish(intercept)   => intercept.upper_x,
+        }
+    }
+}
+
+impl<TEdge> Default for ShardScanPlanner<TEdge>
+where
+    TEdge: EdgeDescriptor,
+{
+    #[inline]
+    fn default() -> Self {
+        ShardScanPlanner { edge: PhantomData }
     }
 }
 
@@ -187,7 +225,7 @@ where
 
             // Iterate over the intercepts on this line
             let ordered_intercepts      = &ordered_intercepts[y_idx];
-            let mut ordered_intercepts  = ordered_intercepts.into_iter();
+            let mut ordered_intercepts  = ShardInterceptIterator::from_intercepts(ordered_intercepts.into_iter());
 
             // Each shard has two intercepts: the lower is where we start fading into or out of the shape, and the upper is where we finish, either ending up fully inside
             // or outside the shape.
@@ -198,9 +236,9 @@ where
             // Trace programs but don't generate fragments until we get an intercept
             let mut active_shapes = ScanlineInterceptState::new();
 
-            while transform.source_x_to_pixels(current_intercept.lower_x) < x_range.start {
+            while transform.source_x_to_pixels(current_intercept.x_pos()) < x_range.start {
                 // Add or remove this intercept's programs to the active list
-                let shape_descriptor = edge_plan.shape_descriptor(current_intercept.shape);
+                let shape_descriptor = edge_plan.shape_descriptor(current_intercept.shape());
 
                 // active_shapes.add_intercept(&current_intercept, transform, shape_descriptor);
 
@@ -222,15 +260,16 @@ where
                 // TODO: if there are multiple intercepts on the same pixel, we should process them all simultaneously (otherwise we will occasionally start a set of programs one pixel too late)
 
                 // Generate a stack for the current intercept
-                let next_x = transform.source_x_to_pixels(current_intercept.lower_x);
+                let next_x = transform.source_x_to_pixels(current_intercept.x_pos());
 
                 // The end of the current range is the 'next_x' coordinate
                 let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
                 let stack_depth = active_shapes.len();
 
                 // We use the z-index of the current shape to determine if it's in front of or behind the current line
-                let z_index                         = edge_plan.shape_z_index(current_intercept.shape);
-                let shape_descriptor                = edge_plan.shape_descriptor(current_intercept.shape);
+                let shape_id                        = current_intercept.shape();
+                let z_index                         = edge_plan.shape_z_index(shape_id);
+                let shape_descriptor                = edge_plan.shape_descriptor(shape_id);
 
                 if z_index >= z_floor && next_x != last_x {
                     // Create a program stack between the ranges: all the programs until the first opaque layer
