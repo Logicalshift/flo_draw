@@ -240,7 +240,10 @@ where
                 // Add or remove this intercept's programs to the active list
                 let shape_descriptor = edge_plan.shape_descriptor(current_intercept.shape());
 
-                // active_shapes.add_intercept(&current_intercept, transform, shape_descriptor);
+                match &current_intercept {
+                    ShardIntercept::Start(intercept)    => active_shapes.start_intercept(intercept, transform, shape_descriptor),
+                    ShardIntercept::Finish(intercept)   => active_shapes.finish_intercept(intercept),
+                }
 
                 // Move to the next intercept (or stop if no intercepts actually fall within the x-range)
                 current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { continue 'next_line; };
@@ -303,7 +306,11 @@ where
                 }
 
                 // Update the state from the current intercept
-                // active_shapes.add_intercept(&current_intercept, transform, shape_descriptor);
+                match &current_intercept {
+                    ShardIntercept::Start(intercept)    => active_shapes.start_intercept(intercept, transform, shape_descriptor),
+                    ShardIntercept::Finish(intercept)   => active_shapes.finish_intercept(intercept),
+                }
+
                 z_floor = active_shapes.z_floor();
 
                 // Stop when the next_x value gets to the end of the range
