@@ -73,7 +73,7 @@ where
 
         // Ask the edge plan to compute the intercepts on the current scanline
         let mut ordered_intercepts = vec![vec![]; y_positions.len()];
-        edge_plan.intercepts_on_scanlines(y_positions, &mut ordered_intercepts);
+        edge_plan.shards_on_scanlines(&scan_positions, &mut ordered_intercepts);
 
         'next_line: for y_idx in 0..y_positions.len() {
             // Fetch/clear the scanline that we'll be building
@@ -85,13 +85,16 @@ where
             let ordered_intercepts      = &ordered_intercepts[y_idx];
             let mut ordered_intercepts  = ordered_intercepts.into_iter();
 
+            // Each shard has two intercepts: the lower is where we start fading into or out of the shape, and the upper is where we finish, either ending up fully inside
+            // or outside the shape.
+
             // Initial program/position comes from the earliest intercept position
             let mut current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { continue; };
 
             // Trace programs but don't generate fragments until we get an intercept
             let mut active_shapes = ScanlineInterceptState::new();
 
-            while transform.source_x_to_pixels(current_intercept.x_pos) < x_range.start {
+            while transform.source_x_to_pixels(current_intercept.lower_x) < x_range.start {
                 // Add or remove this intercept's programs to the active list
                 let shape_descriptor = edge_plan.shape_descriptor(current_intercept.shape);
 
@@ -115,7 +118,7 @@ where
                 // TODO: if there are multiple intercepts on the same pixel, we should process them all simultaneously (otherwise we will occasionally start a set of programs one pixel too late)
 
                 // Generate a stack for the current intercept
-                let next_x = transform.source_x_to_pixels(current_intercept.x_pos);
+                let next_x = transform.source_x_to_pixels(current_intercept.lower_x);
 
                 // The end of the current range is the 'next_x' coordinate
                 let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
