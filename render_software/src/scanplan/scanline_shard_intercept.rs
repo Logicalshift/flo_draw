@@ -79,7 +79,10 @@ impl<'a> ScanlineShardIntercept<'a> {
     ///
     #[inline]
     pub fn is_opaque(&self) -> bool {
-        self.descriptor.is_opaque
+        match self.blend {
+            InterceptBlend::Solid       => self.descriptor.is_opaque,
+            InterceptBlend::Fade { .. } => false,
+        }
     }
 
     ///
