@@ -89,6 +89,14 @@ impl<'a> ScanlineShardIntercept<'a> {
     pub fn shape_descriptor(&self) -> &ShapeDescriptor {
         self.descriptor
     }
+
+    ///
+    /// The blending mode to use for this intercept
+    ///
+    #[inline]
+    pub fn blend(&self) -> &InterceptBlend {
+        &self.blend
+    }
 }
 
 impl<'a> ScanlineShardInterceptState<'a> {
