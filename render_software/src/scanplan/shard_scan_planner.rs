@@ -59,6 +59,15 @@ where
             panic!("The number of scanline suppled ({}) is less than the number of y positions to fill them ({})", scanlines.len(), y_positions.len());
         }
 
+        // y-positions should be offset by half a pixel (shards are taken from a previous and a next line)
+        let half_pixel = transform.pixel_range_to_x(&(0..1));
+        let half_pixel = (half_pixel.end - half_pixel.start)/2.0;
+
+        let scan_positions = y_positions.iter()
+            .map(|y| y - half_pixel)
+            .chain(y_positions.last().map(|y| y + half_pixel))
+            .collect::<Vec<_>>();
+
         // Map the x-range from the source coordinates to pixel coordinates
         let x_range = transform.source_x_to_pixels(x_range.start)..transform.source_x_to_pixels(x_range.end);
 
