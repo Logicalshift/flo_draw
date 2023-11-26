@@ -95,6 +95,10 @@ fn resolve_shards(previous_line: &SmallVec<[EdgeDescriptorIntercept; 2]>, next_l
             continue;
         }
 
+        if first_intercept.direction != second_intercept.direction {
+            continue;
+        }
+
         // The first intercept is on opposite line to the second intercept, indicating that the shape crossed inbetween the two lines
         let shard = ShardIntercept {
             direction:  first_intercept.direction,
