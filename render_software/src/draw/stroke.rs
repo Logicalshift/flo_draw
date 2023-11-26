@@ -78,7 +78,7 @@ where
         let width = current_state.stroke_width;
 
         // Create the edge
-        let stroke_edge = LineStrokeEdge::new(shape_id, current_state.path_edges.clone(), current_state.subpaths.clone(), width, stroke_options);
+        let stroke_edge = FlattenedLineStrokeEdge::new(shape_id, current_state.path_edges.clone(), current_state.subpaths.clone(), width, stroke_options);
         current_state.clip_shape(shape_id, vec![stroke_edge]).into_iter()
             .for_each(|edge| current_layer.edges.add_edge(edge));
         self.prepared_layers.remove(self.current_layer.0);
