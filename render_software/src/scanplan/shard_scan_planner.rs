@@ -223,14 +223,14 @@ where
             *scanline_pos = y_positions[y_idx];
 
             // Iterate over the intercepts on this line
-            let ordered_intercepts      = &ordered_intercepts[y_idx];
-            let mut ordered_intercepts  = ShardInterceptIterator::from_intercepts(ordered_intercepts.into_iter());
+            let scanline_intercepts     = &ordered_intercepts[y_idx];
+            let mut scanline_intercepts = ShardInterceptIterator::from_intercepts(scanline_intercepts.into_iter());
 
             // Each shard has two intercepts: the lower is where we start fading into or out of the shape, and the upper is where we finish, either ending up fully inside
             // or outside the shape.
 
             // Initial program/position comes from the earliest intercept position
-            let mut current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { continue; };
+            let mut current_intercept = if let Some(intercept) = scanline_intercepts.next() { intercept } else { continue; };
 
             // Trace programs but don't generate fragments until we get an intercept
             let mut active_shapes = ScanlineShardInterceptState::new();
@@ -245,7 +245,7 @@ where
                 }
 
                 // Move to the next intercept (or stop if no intercepts actually fall within the x-range)
-                current_intercept = if let Some(intercept) = ordered_intercepts.next() { intercept } else { continue 'next_line; };
+                current_intercept = if let Some(intercept) = scanline_intercepts.next() { intercept } else { continue 'next_line; };
             }
 
             // Update all of the existing shapes to have a start position at the left-hand side of the screen
@@ -334,7 +334,7 @@ where
                 }
 
                 // Get ready to process the next intercept in the stack
-                current_intercept = if let Some(next_intercept) = ordered_intercepts.next() { next_intercept } else { break; };
+                current_intercept = if let Some(next_intercept) = scanline_intercepts.next() { next_intercept } else { break; };
             }
 
             // Populate the scanline
