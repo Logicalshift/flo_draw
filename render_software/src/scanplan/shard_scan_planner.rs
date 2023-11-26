@@ -241,7 +241,7 @@ where
 
                 match &current_intercept {
                     ShardIntercept::Start(intercept)    => active_shapes.start_intercept(intercept, transform, shape_descriptor),
-                    ShardIntercept::Finish(intercept)   => active_shapes.finish_intercept(intercept),
+                    ShardIntercept::Finish(intercept)   => active_shapes.finish_intercept(intercept, shape_descriptor),
                 }
 
                 // Move to the next intercept (or stop if no intercepts actually fall within the x-range)
@@ -323,7 +323,7 @@ where
                 // Update the state from the current intercept
                 match &current_intercept {
                     ShardIntercept::Start(intercept)    => active_shapes.start_intercept(intercept, transform, shape_descriptor),
-                    ShardIntercept::Finish(intercept)   => active_shapes.finish_intercept(intercept),
+                    ShardIntercept::Finish(intercept)   => active_shapes.finish_intercept(intercept, shape_descriptor),
                 }
 
                 z_floor = active_shapes.z_floor();

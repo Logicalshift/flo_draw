@@ -214,8 +214,13 @@ impl<'a> ScanlineShardInterceptState<'a> {
                     };
 
                     if remove_existing {
-                        // If the count is 0 (or the edge is a toggle edge), then fade out this shape (it will be removed when the intercept is stopped)
-                        self.active_shapes.remove(existing_idx);
+                        // Change the shape to fade out
+                        // TODO: if it's already fading in, then adjust to fade out instead
+                        // TODO: might also have a 'double fade' here where two 'entrances' overlap
+                        self.active_shapes[existing_idx].blend = InterceptBlend::Fade {
+                            x_range: intercept.lower_x..intercept.upper_x,
+                            alpha_range: 1.0..0.0,
+                        };
 
                         // If the shape matches the current z-floor, update it
                         if is_opaque && z_index == self.z_floor {
@@ -244,6 +249,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
 
                     // Opaque shapes update the z-floor (note that if an opaque shape has the same z-index as another shape, the z-floor is not enough to tell which is in front)
                     if is_opaque {
+                        // TODO: should go once the fade has finished
                         self.z_floor = self.z_floor.max(z_index);
                     }
 
@@ -262,14 +268,22 @@ impl<'a> ScanlineShardInterceptState<'a> {
     ///
     /// A partial intercept has finished
     ///
-    pub fn finish_intercept(&mut self, intercept: &EdgePlanShardIntercept) {
-        for active_shape in self.active_shapes.iter_mut() {
-            if let InterceptBlend::Fade { x_range, .. } = &active_shape.blend {
-                if active_shape.shape_id == intercept.shape && x_range.end == intercept.upper_x {
-                    // TODO: this assumes that we don't do fade-out intercepts (which we don't at the moment)
+    pub fn finish_intercept(&mut self, intercept: &EdgePlanShardIntercept, descriptor: Option<&'a ShapeDescriptor>) {
+        if let Some(descriptor) = descriptor {
+            if let Some(existing_idx) = self.find(descriptor.z_index, intercept.shape).ok() {
+                let active_shape    = &mut self.active_shapes[existing_idx];
 
-                    // Intercepts fading in become solid at the point where they finish
-                    active_shape.blend = InterceptBlend::Solid;
+                if let InterceptBlend::Fade { x_range, alpha_range } = &active_shape.blend {
+                    // Shape is fading in or out
+                    if active_shape.shape_id == intercept.shape && x_range.end == intercept.upper_x {
+                        if alpha_range.end == 1.0 {
+                            // Intercepts fading in become solid at the point where they finish
+                            active_shape.blend = InterceptBlend::Solid;
+                        } else {
+                            // If the count is 0 (or the edge is a toggle edge), then fade out this shape (it will be removed when the intercept is stopped)
+                            self.active_shapes.remove(existing_idx);
+                        }
+                    }
                 }
             }
         }
