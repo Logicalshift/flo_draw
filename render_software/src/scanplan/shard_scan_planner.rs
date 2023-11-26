@@ -94,7 +94,7 @@ where
             Some(next_shard) 
         } else if let Some(remaining) = self.remaining_shards.as_mut() {
             let result = remaining.next();
-            
+
             if result.is_none() {
                 self.remaining_shards = None;
             }
