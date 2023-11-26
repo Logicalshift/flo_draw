@@ -139,7 +139,6 @@ where
         } else if let Some(started) = self.started_shards.pop() {
             // Finish this shard
             Some(ShardIntercept::Finish(*started))
-
         } else {
             // No more shards remain
             None
