@@ -119,7 +119,7 @@ fn resolve_shards(previous_line: &SmallVec<[EdgeDescriptorIntercept; 2]>, next_l
     }
 
     // For a closed shape, there should always be an even number of intercepts, even after this transformation
-    assert!(shards.len()%2 == 0);
+    debug_assert!(shards.len()%2 == 0, "Previous line: {:?}\nNext line: {:?}\nSorted lines: {:?}\nShards found: {:?}", previous_line, next_line, sorted_lines, shards);
 
     shards
 }
