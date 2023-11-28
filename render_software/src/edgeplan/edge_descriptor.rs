@@ -76,6 +76,7 @@ impl EdgeDescriptor for Box<dyn EdgeDescriptor> {
     #[inline] fn prepare_to_render(&mut self)                       { (**self).prepare_to_render() }
     #[inline] fn shape(&self) -> ShapeId                            { (**self).shape() }
     #[inline] fn bounding_box(&self) -> ((f64, f64), (f64, f64))    { (**self).bounding_box() }
+    #[inline] fn description(&self) -> String                       { (**self).description() }
     #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) { 
         (**self).intercepts(y_positions, output) 
     }
@@ -88,6 +89,7 @@ impl EdgeDescriptor for Arc<dyn EdgeDescriptor> {
     #[inline] fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor>  { (**self).clone_as_object() }
     #[inline] fn shape(&self) -> ShapeId                            { (**self).shape() }
     #[inline] fn bounding_box(&self) -> ((f64, f64), (f64, f64))    { (**self).bounding_box() }
+    #[inline] fn description(&self) -> String                       { (**self).description() }
 
     #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) { 
         (**self).intercepts(y_positions, output) 
