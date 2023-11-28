@@ -102,6 +102,11 @@ fn resolve_shards(previous_line: &SmallVec<[EdgeDescriptorIntercept; 2]>, next_l
             continue;
         }
 
+        if first_intercept.position.0 != second_intercept.position.0 {
+            // Intercepts are on different subpaths
+            continue;
+        }
+
         if first_intercept.direction != second_intercept.direction {
             // Shouldn't happen?
             continue;
