@@ -61,7 +61,7 @@ pub struct BezierSubpath {
     y_bounds: Range<f64>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct SubpathCurve {
     /// The y bounding box for this curve
     y_bounds: Range<f64>,
@@ -515,6 +515,10 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
             }
         }
     }
+
+    fn description(&self) -> String {
+        format!("Even-odd bezier edge: {:?}", self.subpath.curves)
+    }
 }
 
 impl BezierSubpathEvenOddEdge {
@@ -607,5 +611,9 @@ impl EdgeDescriptor for BezierSubpathNonZeroEdge {
                 *output = smallvec![];
             }
         }
+    }
+
+    fn description(&self) -> String {
+        format!("Non-zero bezier edge: {:?}", self.subpath.curves)
     }
 }
