@@ -64,6 +64,11 @@ pub trait EdgeDescriptor : Send + Sync {
     /// the y-axis, also should not be counted as an intercept.
     ///
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]);
+
+    ///
+    /// For debugging, an optional description of this edge
+    ///
+    fn description(&self) -> String { "no description".to_string() }
 }
 
 impl EdgeDescriptor for Box<dyn EdgeDescriptor> {
