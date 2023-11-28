@@ -191,6 +191,7 @@ where
     fn intercepts(&self, y_positions: &[f64], output: &mut [smallvec::SmallVec<[EdgeDescriptorIntercept; 2]>]) {
         // Collect the clipping range for these y positions
         // TODO: often we'll clip against multiple shapes for the same set of y coordinates, so a way to cache these results would speed things up
+        // TODO: need to use unique subpath IDs when returning different edges
         let mut clip_intercepts = vec![smallvec![]; y_positions.len()];
 
         // Append the edges from each of the shapes making up the clip region
