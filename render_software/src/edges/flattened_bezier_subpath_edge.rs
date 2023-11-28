@@ -138,6 +138,15 @@ impl EdgeDescriptor for FlattenedBezierNonZeroEdge {
             _ => { debug_assert!(false) }
         }
     }
+
+    fn description(&self) -> String {
+        format!("Non-zero flattened polyline {:?}: {}", 
+            self.shape_id,
+            match &self.path.value {
+                FlattenedBezierSubpathValue::Polyline(polyline) => polyline.description(),
+                _ => format!("not prepared"),
+            })
+    }
 }
 
 impl FlattenedBezierEvenOddEdge {
@@ -211,5 +220,14 @@ impl EdgeDescriptor for FlattenedBezierEvenOddEdge {
 
             _ => { debug_assert!(false) }
         }
+    }
+
+    fn description(&self) -> String {
+        format!("Even-odd flattened polyline {:?}: {}", 
+            self.shape_id,
+            match &self.path.value {
+                FlattenedBezierSubpathValue::Polyline(polyline) => polyline.description(),
+                _ => format!("not prepared"),
+            })
     }
 }
