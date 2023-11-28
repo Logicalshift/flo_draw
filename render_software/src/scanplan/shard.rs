@@ -185,6 +185,8 @@ where
 /// There will be one less line returned here than y-values that were passed in. Intercepts are ordered by x position on return.
 ///
 pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, y_positions: &'a [f64]) -> impl 'a + Iterator<Item=SmallVec<[ShardIntercept; 2]>>{
+    // TODO: some edges can have multiple closed shapes (eg: closed lines, for example). This algorithm won't work with those because it assumes a single closed shape
+
     // Allocate space for the intercepts
     let mut intercepts = vec![smallvec![]; y_positions.len()];
 
