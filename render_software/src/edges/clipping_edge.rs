@@ -278,4 +278,9 @@ where
             }
         }
     }
+
+    fn description(&self) -> String {
+        use itertools::*;
+        format!("Clipped edge: {}", self.shape_edges.iter().map(|edge| edge.description()).join(", "))
+    }
 }
