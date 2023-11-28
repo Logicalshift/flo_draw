@@ -87,10 +87,22 @@ fn resolve_shards(previous_line: &SmallVec<[EdgeDescriptorIntercept; 2]>, next_l
 
     // When sorted this way, this puts 'connected' intercepts next to each other, so we can create shards from any pair where the first is on the lower edge 
     // and the second is on the upper edge, then sort again by x position. The shape is a loop, and so the ordering is too
-    let mut shards          = smallvec![];
-    let mut last_matched    = false;
+    let mut shards                      = smallvec![];
+    let mut last_matched                = false;
+    let mut initial_subpath_intercept   = &sorted_lines[0];
 
-    for ((first_intercept, first_is_next), (second_intercept, second_is_next)) in sorted_lines.iter().tuple_windows() {
+    for ((first_intercept, first_is_next), second) in sorted_lines.iter().tuple_windows::<(_, _)>() {
+        let (second_intercept, second_is_next) = if first_intercept.position.0 != second.0.position.0 {
+            // Intercepts are on different, so instead of using the original 'second' path, use the initial one from the current subpath
+            let result = initial_subpath_intercept;
+
+            initial_subpath_intercept = second;
+
+            result
+        } else {
+            second
+        };
+
         if last_matched {
             // Don't use the same intercept in two shards
             last_matched = false;
@@ -99,11 +111,6 @@ fn resolve_shards(previous_line: &SmallVec<[EdgeDescriptorIntercept; 2]>, next_l
 
         if first_is_next == second_is_next {
             // Both intercepts are on the same line, so don't form a shard
-            continue;
-        }
-
-        if first_intercept.position.0 != second_intercept.position.0 {
-            // Intercepts are on different subpaths
             continue;
         }
 
