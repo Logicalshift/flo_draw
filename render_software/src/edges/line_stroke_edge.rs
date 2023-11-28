@@ -369,4 +369,10 @@ impl EdgeDescriptor for FlattenedLineStrokeEdge {
             }
         }
     }
+
+    fn description(&self) -> String {
+        use itertools::*;
+        format!("Flattened line edge: {}", 
+            self.bezier_path.iter().map(|edge| edge.description()).join("\n  "))
+    }
 }
