@@ -511,7 +511,7 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
 
             if self.subpath.y_bounds.contains(y_pos) {
                 output.extend(intercepts.into_iter()
-                    .map(|intercept| EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: intercept.x_pos, position: EdgePosition(intercept.curve_idx, intercept.t) }));
+                    .map(|intercept| EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: intercept.x_pos, position: EdgePosition(0, intercept.curve_idx, intercept.t) }));
             }
         }
     }
@@ -602,9 +602,9 @@ impl EdgeDescriptor for BezierSubpathNonZeroEdge {
                         //let side    = (normal.x() * 1.0 + normal.y() * 0.0).signum();  // Dot product with the 'ray' direction of the scanline
 
                         if side <= 0.0 {
-                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::DirectionOut, x_pos: intercept.x_pos, position: EdgePosition(intercept.curve_idx, intercept.t) }
+                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::DirectionOut, x_pos: intercept.x_pos, position: EdgePosition(0, intercept.curve_idx, intercept.t) }
                         } else {
-                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::DirectionIn, x_pos: intercept.x_pos, position: EdgePosition(intercept.curve_idx, intercept.t) }
+                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::DirectionIn, x_pos: intercept.x_pos, position: EdgePosition(0, intercept.curve_idx, intercept.t) }
                         }
                     }).collect();
             } else {

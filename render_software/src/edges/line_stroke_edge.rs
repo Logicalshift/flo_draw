@@ -179,13 +179,16 @@ impl EdgeDescriptor for LineStrokeEdge {
                 // Also add in the intercepts from the other paths
                 let mut tmp_output = vec![smallvec![]; y_positions.len()];
 
-                for path in self.bezier_path.iter().skip(1) {
+                for (subpath_idx, path) in self.bezier_path.iter().enumerate().skip(1) {
                     // Get the intercepts for this path
                     path.intercepts(y_positions, &mut tmp_output);
 
                     // Append to the result
                     for (tmp, output) in tmp_output.iter_mut().zip(output.iter_mut()) {
-                        output.extend(tmp.drain(..))
+                        output.extend(tmp.drain(..).map(|mut intercept| {
+                            intercept.position.0 = subpath_idx;
+                            intercept
+                        }))
                     }
                 }
 
@@ -352,13 +355,16 @@ impl EdgeDescriptor for FlattenedLineStrokeEdge {
                 // Also add in the intercepts from the other paths
                 let mut tmp_output = vec![smallvec![]; y_positions.len()];
 
-                for path in self.bezier_path.iter().skip(1) {
+                for (subpath_idx, path) in self.bezier_path.iter().enumerate().skip(1) {
                     // Get the intercepts for this path
                     path.intercepts(y_positions, &mut tmp_output);
 
                     // Append to the result
                     for (tmp, output) in tmp_output.iter_mut().zip(output.iter_mut()) {
-                        output.extend(tmp.drain(..))
+                        output.extend(tmp.drain(..).map(|mut intercept| {
+                            intercept.position.0 = subpath_idx;
+                            intercept
+                        }))
                     }
                 }
 

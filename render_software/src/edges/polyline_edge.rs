@@ -250,7 +250,7 @@ impl Polyline {
                 EdgeInterceptDirection::Toggle          => y_pos-line.y_range.start,
             };
 
-            intercepts.push(EdgeDescriptorIntercept { direction, x_pos, position: EdgePosition(line.idx, line_pos) });
+            intercepts.push(EdgeDescriptorIntercept { direction, x_pos, position: EdgePosition(0, line.idx, line_pos) });
             last_direction = direction;
         }
     }

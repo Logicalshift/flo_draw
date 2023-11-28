@@ -5,11 +5,11 @@ use std::cmp::{Ordering};
 ///
 /// Describes a position within an edge descriptor
 ///
-/// These are ordered, and have two parts: the 'edge ID' for where there are multiple edges and the edge position which can 
-/// distinguish multiple intercepts along the same edge (it's usually the 't' value for the intercept)
+/// These are ordered, and have three parts: the subpath ID, the 'edge ID' for where there are multiple edges and the edge position
+/// which can distinguish multiple intercepts along the same edge (it's usually the 't' value for the intercept)
 ///
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct EdgePosition(pub usize, pub f64);
+pub struct EdgePosition(pub usize, pub usize, pub f64);
 
 ///
 /// Describes an intercept from an edge descriptor
@@ -50,8 +50,12 @@ impl Ord for EdgePosition {
             Ordering::Less
         } else if self.0 > other.0 {
             Ordering::Greater
+        } else if self.1 < other.1 {
+            Ordering::Less
+        } else if self.1 > other.1 {
+            Ordering::Greater
         } else {
-            self.1.total_cmp(&other.1)
+            self.2.total_cmp(&other.2)
         }
     }
 }
