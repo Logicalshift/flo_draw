@@ -404,6 +404,16 @@ impl EdgeDescriptor for PolylineNonZeroEdge {
     fn intercepts(&self, y_positions: &[f64], output: &mut [SmallVec<[EdgeDescriptorIntercept; 2]>]) {
         self.polyline.intercepts_on_lines(y_positions, output)
     }
+
+    fn description(&self) -> String {
+        format!("Non-zero polyline {:?}: {}", 
+            self.shape_id,
+            match &self.polyline.value {
+                PolylineValue::Empty                => format!("empty"),
+                PolylineValue::Points(points)       => format!("{:?}", points),
+                PolylineValue::Lines { points, .. } => format!("{:?}", points),
+            })
+    }
 }
 
 impl PolylineEvenOddEdge {
@@ -480,5 +490,15 @@ impl EdgeDescriptor for PolylineEvenOddEdge {
                 *direction = EdgeInterceptDirection::Toggle;
             }
         }
+    }
+
+    fn description(&self) -> String {
+        format!("Even-odd polyline {:?}: {}", 
+            self.shape_id,
+            match &self.polyline.value {
+                PolylineValue::Empty                => format!("empty"),
+                PolylineValue::Points(points)       => format!("{:?}", points),
+                PolylineValue::Lines { points, .. } => format!("{:?}", points),
+            })
     }
 }
