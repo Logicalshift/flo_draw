@@ -344,6 +344,17 @@ impl Polyline {
             PolylineValue::Lines { points, .. } => points.iter().copied(),
         }
     }
+
+    ///
+    /// Returns a description of this polyline
+    ///
+    pub fn description(&self) -> String {
+        match &self.value {
+            PolylineValue::Empty                => format!("empty"),
+            PolylineValue::Points(points)       => format!("{:?}", points),
+            PolylineValue::Lines { points, .. } => format!("{:?}", points),
+        }
+    }
 }
 
 impl PolylineNonZeroEdge {
@@ -406,13 +417,7 @@ impl EdgeDescriptor for PolylineNonZeroEdge {
     }
 
     fn description(&self) -> String {
-        format!("Non-zero polyline {:?}: {}", 
-            self.shape_id,
-            match &self.polyline.value {
-                PolylineValue::Empty                => format!("empty"),
-                PolylineValue::Points(points)       => format!("{:?}", points),
-                PolylineValue::Lines { points, .. } => format!("{:?}", points),
-            })
+        format!("Even-odd polyline {:?}: {}", self.shape_id, self.polyline.description())
     }
 }
 
@@ -493,12 +498,6 @@ impl EdgeDescriptor for PolylineEvenOddEdge {
     }
 
     fn description(&self) -> String {
-        format!("Even-odd polyline {:?}: {}", 
-            self.shape_id,
-            match &self.polyline.value {
-                PolylineValue::Empty                => format!("empty"),
-                PolylineValue::Points(points)       => format!("{:?}", points),
-                PolylineValue::Lines { points, .. } => format!("{:?}", points),
-            })
+        format!("Even-odd polyline {:?}: {}", self.shape_id, self.polyline.description())
     }
 }
