@@ -164,8 +164,8 @@ where
             intercepts = smallvec![];
 
             for (first, second) in previous_line.iter().zip(next_line.iter()) {
-                if first.direction != second.direction {
-                    // Intercept directions changed, so these shapes don't match: use the 'find nearest' algorithm instead (this is a concave shape)
+                if first.direction != second.direction || first.position.0 != second.position.0 {
+                    // Intercept direction or shape has changed, so these shapes don't match: use the 'find nearest' algorithm instead (this is a concave shape)
                     // (Eg: a 'C' shape with a very narrow gap)
                     intercepts = resolve_shards(previous_line, &next_line);
                     break;
