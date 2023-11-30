@@ -245,12 +245,6 @@ impl<'a> ScanlineShardInterceptState<'a> {
                         EdgeInterceptDirection::DirectionIn     => -1,
                     };
 
-                    // Opaque shapes update the z-floor (note that if an opaque shape has the same z-index as another shape, the z-floor is not enough to tell which is in front)
-                    if is_opaque {
-                        // TODO: should go once the fade has finished
-                        self.z_floor = self.z_floor.max(z_index);
-                    }
-
                     self.active_shapes.insert(following_idx, ScanlineShardIntercept { 
                         count:      count, 
                         start_x:    transform.source_x_to_pixels(intercept.lower_x),
@@ -277,6 +271,11 @@ impl<'a> ScanlineShardInterceptState<'a> {
                         if active_shape.count != 0 {
                             // Intercepts fading in become solid at the point where they finish
                             active_shape.blend = InterceptBlend::Solid;
+
+                            // Opaque shapes update the z-floor (note that if an opaque shape has the same z-index as another shape, the z-floor is not enough to tell which is in front)
+                            if descriptor.is_opaque {
+                                self.z_floor = self.z_floor.max(descriptor.z_index);
+                            }
                         } else {
                             // If the count is 0 (or the edge is a toggle edge), then fade out this shape (it will be removed when the intercept is stopped)
                             self.active_shapes.remove(existing_idx);
