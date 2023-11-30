@@ -226,13 +226,11 @@ impl<'a> ScanlineShardInterceptState<'a> {
                         if is_opaque && z_index == self.z_floor {
                             self.z_floor = i64::MIN;
 
-                            if existing_idx > 0 {
-                                // TODO: if multiple shapes are on the same z-index, existing_idx might represent a shape below the 'true' z-floor (so this will set the floor too low)
-                                for idx in (0..(existing_idx-1)).rev() {
-                                    if self.active_shapes[idx].is_opaque() {
-                                        self.z_floor = self.active_shapes[idx].z_index();
-                                        break;
-                                    }
+                            // TODO: if multiple shapes are on the same z-index, existing_idx might represent a shape below the 'true' z-floor (so this will set the floor too low)
+                            for idx in (0..existing_idx).rev() {
+                                if self.active_shapes[idx].is_opaque() {
+                                    self.z_floor = self.active_shapes[idx].z_index();
+                                    break;
                                 }
                             }
                         }
