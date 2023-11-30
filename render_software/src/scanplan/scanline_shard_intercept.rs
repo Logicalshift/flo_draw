@@ -277,12 +277,10 @@ impl<'a> ScanlineShardInterceptState<'a> {
                         if active_shape.count != 0 {
                             // Intercepts fading in become solid at the point where they finish
                             active_shape.blend = InterceptBlend::Solid;
+                        } else {
+                            // If the count is 0 (or the edge is a toggle edge), then fade out this shape (it will be removed when the intercept is stopped)
+                            self.active_shapes.remove(existing_idx);
                         }
-                    }
-
-                    if active_shape.count == 0 {
-                        // If the count is 0 (or the edge is a toggle edge), then fade out this shape (it will be removed when the intercept is stopped)
-                        self.active_shapes.remove(existing_idx);
                     }
                 }
             }
