@@ -337,21 +337,6 @@ where
                 current_intercept = if let Some(next_intercept) = scanline_intercepts.next() { next_intercept } else { break; };
             }
 
-            use itertools::*;
-            assert!(active_shapes.len() == 0, "{} {}: {:?} {:?}\n(\n  {})\n(\n  {})",
-                *scanline_pos,
-                transform.source_x_to_pixels(*scanline_pos),
-                active_shapes.len(),
-                active_shapes.get(0),
-                ordered_intercepts[y_idx]
-                    .iter()
-                    .map(|x| format!("{:?}", x))
-                    .join("\n  "),
-                ShardInterceptIterator::from_intercepts(ordered_intercepts[y_idx].iter())
-                    .map(|x| format!("{:?}", x))
-                    .join("\n  ")
-                );
-
             // Populate the scanline
             #[cfg(debug_assertions)]
             {
