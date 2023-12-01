@@ -62,6 +62,9 @@ where
 
     /// The shards that have been started: a stack, with the first to end at the top
     started_shards: Vec<&'a EdgePlanShardIntercept>,
+
+    /// The transform being used for the current scanline
+    transform: &'a ScanlineTransform,
 }
 
 impl<'a, TShardIterator> ShardInterceptIterator<'a, TShardIterator> 
@@ -72,11 +75,12 @@ where
     /// Creates a new shard intercept iterator
     ///
     #[inline]
-    pub fn from_intercepts(intercepts: TShardIterator) -> Self {
+    pub fn from_intercepts(intercepts: TShardIterator, transform: &'a ScanlineTransform) -> Self {
         Self {
             remaining_shards:   Some(intercepts),
             next_shard:         None,
             started_shards:     vec![],
+            transform:          transform,
         }
     }
 }
@@ -107,7 +111,7 @@ where
         if let Some(next_shard) = next_shard {
             // If there's a shard finishing before the next shard, return that one
             if let Some(started) = self.started_shards.pop() {
-                if started.upper_x.ceil() <= next_shard.lower_x {
+                if self.transform.pixel_ceil_from_source(started.upper_x) <= next_shard.lower_x {
                     // This shard is finishing before this new one starts
                     self.next_shard = Some(next_shard);
 
@@ -120,9 +124,10 @@ where
 
             // Starting this shard: add to the list of started shards. The top of the list needs to be the shard that ends next
             let mut found_place = false;
+            let next_upper_x    = self.transform.pixel_ceil_from_source(next_shard.upper_x);
 
             for idx in (0..self.started_shards.len()).rev() {
-                if self.started_shards[idx].upper_x.ceil() > next_shard.upper_x.ceil() {
+                if self.transform.pixel_ceil_from_source(self.started_shards[idx].upper_x) > next_upper_x {
                     self.started_shards.insert(idx+1, next_shard);
 
                     found_place = true;
@@ -170,10 +175,10 @@ impl ShardIntercept {
     /// Returns the x position of this intercept
     ///
     #[inline]
-    pub fn x_pos(&self) -> f64 {
+    pub fn x_pos(&self, transform: &ScanlineTransform) -> f64 {
         match self {
             ShardIntercept::Start(intercept)    => intercept.lower_x,
-            ShardIntercept::Finish(intercept)   => intercept.upper_x.ceil(),
+            ShardIntercept::Finish(intercept)   => transform.pixel_ceil_from_source(intercept.upper_x),
         }
     }
 }
@@ -224,7 +229,7 @@ where
 
             // Iterate over the intercepts on this line
             let scanline_intercepts     = &ordered_intercepts[y_idx];
-            let mut scanline_intercepts = ShardInterceptIterator::from_intercepts(scanline_intercepts.into_iter());
+            let mut scanline_intercepts = ShardInterceptIterator::from_intercepts(scanline_intercepts.into_iter(), transform);
 
             // Each shard has two intercepts: the lower is where we start fading into or out of the shape, and the upper is where we finish, either ending up fully inside
             // or outside the shape.
@@ -235,7 +240,7 @@ where
             // Trace programs but don't generate fragments until we get an intercept
             let mut active_shapes = ScanlineShardInterceptState::new();
 
-            while transform.source_x_to_pixels(current_intercept.x_pos()) < x_range.start {
+            while transform.source_x_to_pixels(current_intercept.x_pos(transform)) < x_range.start {
                 // Add or remove this intercept's programs to the active list
                 let shape_descriptor = edge_plan.shape_descriptor(current_intercept.shape());
 
@@ -262,7 +267,7 @@ where
                 // TODO: if there are multiple intercepts on the same pixel, we should process them all simultaneously (otherwise we will occasionally start a set of programs one pixel too late)
 
                 // Generate a stack for the current intercept
-                let next_x = transform.source_x_to_pixels(current_intercept.x_pos());
+                let next_x = transform.source_x_to_pixels(current_intercept.x_pos(transform));
 
                 // The end of the current range is the 'next_x' coordinate
                 let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
