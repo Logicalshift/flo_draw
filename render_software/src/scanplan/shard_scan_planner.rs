@@ -123,6 +123,7 @@ where
             }
 
             // Starting this shard: add to the list of started shards. The top of the list needs to be the shard that ends next
+            // TODO: could be useful to cache the pixel ceiling instead of regenerating it
             let mut found_place = false;
             let next_upper_x    = self.transform.pixel_ceil_from_source(next_shard.upper_x);
 
