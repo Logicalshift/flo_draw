@@ -83,6 +83,24 @@ impl ScanlineTransform {
     pub fn pixel_size(&self) -> f64 {
         self.scale_recip
     }
+
+    ///
+    /// Returns the pixel boundary in source coordinates that is above or at the supplied source x position
+    ///
+    #[inline]
+    pub fn pixel_ceil_from_source(&self, source_x: f64) -> f64 {
+        let pixel_ceil = self.source_x_to_pixels(source_x).ceil();
+        (pixel_ceil * self.scale_recip) - self.offset
+    }
+
+    ///
+    /// Returns the pixel boundary in source coordinates that is below or at the supplied source x position
+    ///
+    #[inline]
+    pub fn pixel_floor_from_source(&self, source_x: f64) -> f64 {
+        let pixel_floor = self.source_x_to_pixels(source_x).floor();
+        (pixel_floor * self.scale_recip) - self.offset
+    }
 }
 
 #[cfg(test)]
