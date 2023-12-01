@@ -107,7 +107,7 @@ where
         if let Some(next_shard) = next_shard {
             // If there's a shard finishing before the next shard, return that one
             if let Some(started) = self.started_shards.pop() {
-                if started.upper_x <= next_shard.lower_x {
+                if started.upper_x.ceil() <= next_shard.lower_x {
                     // This shard is finishing before this new one starts
                     self.next_shard = Some(next_shard);
 
@@ -122,7 +122,7 @@ where
             let mut found_place = false;
 
             for idx in (0..self.started_shards.len()).rev() {
-                if self.started_shards[idx].upper_x > next_shard.upper_x {
+                if self.started_shards[idx].upper_x.ceil() > next_shard.upper_x.ceil() {
                     self.started_shards.insert(idx+1, next_shard);
 
                     found_place = true;
@@ -173,7 +173,7 @@ impl ShardIntercept {
     pub fn x_pos(&self) -> f64 {
         match self {
             ShardIntercept::Start(intercept)    => intercept.lower_x,
-            ShardIntercept::Finish(intercept)   => intercept.upper_x,
+            ShardIntercept::Finish(intercept)   => intercept.upper_x.ceil(),
         }
     }
 }

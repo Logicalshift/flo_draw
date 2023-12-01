@@ -267,7 +267,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
 
                 if let InterceptBlend::Fade { x_range, alpha_range } = &active_shape.blend {
                     // Shape is fading in or out
-                    if active_shape.shape_id == intercept.shape && x_range.end == intercept.upper_x {
+                    if active_shape.shape_id == intercept.shape && x_range.end <= intercept.upper_x {
                         if active_shape.count != 0 {
                             // Intercepts fading in become solid at the point where they finish
                             active_shape.blend = InterceptBlend::Solid;
