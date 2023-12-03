@@ -348,8 +348,13 @@ where
 
                                 let alpha_ratio     = (alpha_range.end - alpha_range.start) / (alpha_x_end-alpha_x_start);
 
-                                let corrected_start = (pixel_x_start - alpha_x_start) * alpha_ratio + alpha_range.start;
-                                let corrected_end   = (pixel_x_end - alpha_x_start) * alpha_ratio + alpha_range.start;
+                                let corrected_start_1   = (pixel_x_start - alpha_x_start) * alpha_ratio + alpha_range.start;
+                                let corrected_start_2   = ((pixel_x_start + 1.0) - alpha_x_start) * alpha_ratio + alpha_range.start;
+                                let corrected_end_1     = ((pixel_x_end - 1.0) - alpha_x_start) * alpha_ratio + alpha_range.start;
+                                let corrected_end_2     = (pixel_x_end - alpha_x_start) * alpha_ratio + alpha_range.start;
+
+                                let corrected_start     = alpha_coverage(corrected_start_1, corrected_start_2);
+                                let corrected_end       = alpha_coverage(corrected_end_1, corrected_end_2);
 
                                 let corrected_range = (corrected_start.max(0.0).min(1.0))..(corrected_end.max(0.0).min(1.0));
 
