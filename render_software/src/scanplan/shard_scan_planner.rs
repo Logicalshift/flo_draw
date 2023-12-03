@@ -297,15 +297,15 @@ where
 
                             InterceptBlend::Fade { x_range: alpha_x_range, alpha_range } => {
                                 // Adjust the alpha range to the actual x range
-                                let pixel_start = x_range.start.floor();
-                                let pixel_end   = x_range.end.ceil();
-                                let alpha_start = transform.source_x_to_pixels(alpha_x_range.start);
-                                let alpha_end   = transform.source_x_to_pixels(alpha_x_range.end);
+                                let pixel_x_start   = x_range.start.floor();
+                                let pixel_x_end     = x_range.end.ceil();
+                                let alpha_x_start   = transform.source_x_to_pixels(alpha_x_range.start);
+                                let alpha_x_end     = transform.source_x_to_pixels(alpha_x_range.end);
 
-                                let alpha_ratio = (alpha_range.end - alpha_range.start) / (alpha_end-alpha_start);
+                                let alpha_ratio     = (alpha_range.end - alpha_range.start) / (alpha_x_end-alpha_x_start);
 
-                                let corrected_start = (pixel_start - alpha_start) * alpha_ratio + alpha_range.start;
-                                let corrected_end   = (pixel_end - alpha_start) * alpha_ratio + alpha_range.start;
+                                let corrected_start = (pixel_x_start - alpha_x_start) * alpha_ratio + alpha_range.start;
+                                let corrected_end   = (pixel_x_end - alpha_x_start) * alpha_ratio + alpha_range.start;
 
                                 let corrected_range = (corrected_start.max(0.0).min(1.0))..(corrected_end.max(0.0).min(1.0));
 
