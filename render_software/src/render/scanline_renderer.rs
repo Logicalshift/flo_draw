@@ -188,3 +188,127 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::ops::{Range};
+
+    #[test]
+    pub fn linear_source_over_start_at_zero() {
+        // Create a basic program runner that generates white pixels
+        let white_pixel = BasicPixelProgramRunner::from(|_, data: &mut [F32LinearPixel], x_range: Range<i32>, _: &_, _| {
+            data[(x_range.start as usize)..(x_range.end as usize)].iter_mut().for_each(|pixel| *pixel = F32LinearPixel::white());
+        });
+
+        // Scanline renderer that renders white pixels
+        let renderer    = ScanlineRenderer::new(white_pixel);
+        let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 0.0]); 10];
+
+        // Render a source-over linear blend to the target (note that the programs are reversed)
+        let plan    = ScanlinePlan::from_ordered_stacks(vec![
+                ScanSpanStack::with_reversed_programs(0.0..10.0, false, &vec![PixelProgramPlan::LinearSourceOver(0.0, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend])
+            ]);
+        let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity() };
+
+        renderer.render(&region, &plan, &mut target);
+
+        // The start alpha is 0.0 so that should be the value written to the initial pixel
+        assert!(target[0].alpha_component() == 0.0, "{:?}", target);
+    }
+
+    #[test]
+    pub fn linear_source_over_start_at_half() {
+        // Create a basic program runner that generates white pixels
+        let white_pixel = BasicPixelProgramRunner::from(|_, data: &mut [F32LinearPixel], x_range: Range<i32>, _: &_, _| {
+            data[(x_range.start as usize)..(x_range.end as usize)].iter_mut().for_each(|pixel| *pixel = F32LinearPixel::white());
+        });
+
+        // Scanline renderer that renders white pixels
+        let renderer    = ScanlineRenderer::new(white_pixel);
+        let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 0.0]); 10];
+
+        // Render a source-over linear blend to the target (note that the programs are reversed)
+        let plan    = ScanlinePlan::from_ordered_stacks(vec![
+                ScanSpanStack::with_reversed_programs(0.0..10.0, false, &vec![PixelProgramPlan::LinearSourceOver(0.5, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend])
+            ]);
+        let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity() };
+
+        renderer.render(&region, &plan, &mut target);
+
+        // The start alpha is 0.5 so that should be the value written to the initial pixel
+        assert!(target[0].alpha_component() == 0.5, "{:?}", target);
+    }
+
+    #[test]
+    pub fn linear_source_over_ends_at_one() {
+        // Create a basic program runner that generates white pixels
+        let white_pixel = BasicPixelProgramRunner::from(|_, data: &mut [F32LinearPixel], x_range: Range<i32>, _: &_, _| {
+            data[(x_range.start as usize)..(x_range.end as usize)].iter_mut().for_each(|pixel| *pixel = F32LinearPixel::white());
+        });
+
+        // Scanline renderer that renders white pixels
+        let renderer    = ScanlineRenderer::new(white_pixel);
+        let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 0.0]); 10];
+
+        // Render a source-over linear blend to the target (note that the programs are reversed)
+        let plan    = ScanlinePlan::from_ordered_stacks(vec![
+                ScanSpanStack::with_reversed_programs(0.0..10.0, false, &vec![PixelProgramPlan::LinearSourceOver(0.0, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend])
+            ]);
+        let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity() };
+
+        renderer.render(&region, &plan, &mut target);
+
+        // The end alpha is 1.0 so that should be the value written to the final pixel
+        assert!(target[9].alpha_component() == 1.0, "{}", target[9].alpha_component());
+    }
+
+    #[test]
+    pub fn linear_source_over_ends_at_half() {
+        // Create a basic program runner that generates white pixels
+        let white_pixel = BasicPixelProgramRunner::from(|_, data: &mut [F32LinearPixel], x_range: Range<i32>, _: &_, _| {
+            data[(x_range.start as usize)..(x_range.end as usize)].iter_mut().for_each(|pixel| *pixel = F32LinearPixel::white());
+        });
+
+        // Scanline renderer that renders white pixels
+        let renderer    = ScanlineRenderer::new(white_pixel);
+        let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 0.0]); 10];
+
+        // Render a source-over linear blend to the target (note that the programs are reversed)
+        let plan    = ScanlinePlan::from_ordered_stacks(vec![
+                ScanSpanStack::with_reversed_programs(0.0..10.0, false, &vec![PixelProgramPlan::LinearSourceOver(0.0, 0.5), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend])
+            ]);
+        let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity() };
+
+        renderer.render(&region, &plan, &mut target);
+
+        // The end alpha is 0.5 so that should be the value written to the final pixel
+        assert!(target[9].alpha_component() == 0.5, "{}", target[9].alpha_component());
+    }
+
+    #[test]
+    pub fn linear_source_over_blending() {
+        // Create a basic program runner that generates white pixels
+        let white_pixel = BasicPixelProgramRunner::from(|_, data: &mut [F32LinearPixel], x_range: Range<i32>, _: &_, _| {
+            data[(x_range.start as usize)..(x_range.end as usize)].iter_mut().for_each(|pixel| *pixel = F32LinearPixel::white());
+        });
+
+        // Scanline renderer that renders white pixels
+        let renderer    = ScanlineRenderer::new(white_pixel);
+        let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 1.0]); 10];
+
+        // Render a source-over linear blend to the target (note that the programs are reversed)
+        let plan    = ScanlinePlan::from_ordered_stacks(vec![
+                ScanSpanStack::with_reversed_programs(0.0..10.0, false, &vec![PixelProgramPlan::LinearSourceOver(0.5, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend])
+            ]);
+        let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity() };
+
+        renderer.render(&region, &plan, &mut target);
+
+        // The start alpha is 0.5 so that should be the value written to the initial pixel
+        assert!(target[0].alpha_component() == 1.0, "{}", target[0].alpha_component());
+
+        let components = target[0].to_components();
+        assert!(components[0] == 0.5, "{:?}", components);
+    }
+}
