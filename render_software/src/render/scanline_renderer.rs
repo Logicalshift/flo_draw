@@ -123,7 +123,7 @@ where
                         let x_range     = (x_range.start as usize)..(x_range.end as usize);
                         let start       = *start as f64;
                         let end         = *end as f64;
-                        let multiplier  = (end-start)/(x_range.len() as f64);
+                        let multiplier  = (end-start)/((x_range.len()-1) as f64);
 
                         shadow_pixels.pop_entry(|src, dst| {
                             let start_x = x_range.start;
@@ -163,7 +163,7 @@ where
                         let x_range     = (x_range.start as usize)..(x_range.end as usize);
                         let start       = *start as f64;
                         let end         = *end as f64;
-                        let multiplier  = (end-start)/(x_range.len() as f64);
+                        let multiplier  = (end-start)/((x_range.len()-1) as f64);
 
                         shadow_pixels.pop_entry(|src, dst| {
                             let start_x = x_range.start;
