@@ -39,6 +39,12 @@ where
     TFn:    Send + Sync + Fn(PixelProgramDataId, &mut [TPixel], Range<i32>, &ScanlineTransform, f64),
     TPixel: Send,
 {
+    ///
+    /// Creates a new basic pixel program runner.
+    ///
+    /// The function's definition is of the form `|data_id: PixelProgramDataId, target: &mut [TPixel], x_range: Range<i32>, transform: &ScanlineTransform, y_pos: f64|`
+    /// The target is the whole line:, ie the pixels to be written are `target[(x_range.start as usize)..(x_range.end as usize)]`.
+    ///
     fn from(func: TFn) -> Self {
         BasicPixelProgramRunner { 
             pixel_fn: func, 
