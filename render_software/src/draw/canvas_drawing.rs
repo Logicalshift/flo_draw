@@ -4,6 +4,7 @@ use super::prepared_layer::*;
 use super::pixel_programs::*;
 use super::texture::*;
 
+use crate::edgeplan::*;
 use crate::pixel::*;
 use crate::pixel_programs::*;
 
@@ -266,5 +267,19 @@ where
         // Create a new background colour
         let background = self.program_cache.program_cache.store_program_data(&self.program_cache.solid_color, &mut self.program_data_cache, SolidColorData(new_background_color));
         self.background = background;
+    }
+
+    ///
+    /// Returns the edge plan for a layer in this drawing, if that layer has a plan
+    ///
+    /// This can be used for manual rendering or other types of post-processing beyond the capabilities of `CanvasDrawingRegionRenderer`
+    ///
+    pub fn edges_for_layer<'a>(&'a self, layer_id: canvas::LayerId) -> Option<&'a EdgePlan<Arc<dyn EdgeDescriptor>>> {
+        // Map the layer to a layer handle, if it exists
+        let layer_handle = self.ordered_layers.get(layer_id.0 as usize).copied()?;
+
+        // Retrieve the edges for the layer with this handle
+        self.layers.get(layer_handle.0 as _)
+            .map(|layer| &layer.edges)
     }
 }
