@@ -26,7 +26,7 @@ where
     /// Performs a texture operation on this canvas drawing
     ///
     #[inline]
-    pub fn texture(&mut self, texture_id: canvas::TextureId, texture_op: canvas::TextureOp) {
+    pub (crate) fn texture(&mut self, texture_id: canvas::TextureId, texture_op: canvas::TextureOp) {
         use canvas::TextureOp::*;
 
         match texture_op {
@@ -45,7 +45,7 @@ where
     /// Releases the memory being used by a texture
     ///
     #[inline]
-    pub fn texture_free(&mut self, texture_id: canvas::TextureId) {
+    pub (crate) fn texture_free(&mut self, texture_id: canvas::TextureId) {
         self.textures.remove(&(self.current_namespace, texture_id));
     }
 
@@ -53,7 +53,7 @@ where
     /// Creates a blank RGBA texture of a particular size
     ///
     #[inline]
-    pub fn texture_create_rgba(&mut self, texture_id: canvas::TextureId, canvas::TextureSize(width, height): canvas::TextureSize) {
+    pub (crate) fn texture_create_rgba(&mut self, texture_id: canvas::TextureId, canvas::TextureSize(width, height): canvas::TextureSize) {
         let width   = width as usize;
         let height  = height as usize;
 
@@ -70,7 +70,7 @@ where
     /// Sets the bytes for a region of the texture
     ///
     #[inline]
-    pub fn texture_set_bytes(&mut self, texture_id: canvas::TextureId, canvas::TexturePosition(x, y): canvas::TexturePosition, canvas::TextureSize(width, height): canvas::TextureSize, bytes: Arc<Vec<u8>>) {
+    pub (crate) fn texture_set_bytes(&mut self, texture_id: canvas::TextureId, canvas::TexturePosition(x, y): canvas::TexturePosition, canvas::TextureSize(width, height): canvas::TextureSize, bytes: Arc<Vec<u8>>) {
         if let Some(texture) = self.textures.get_mut(&(self.current_namespace, texture_id)) {
             // The texture exists: prepare to write to it
             let texture     = Arc::make_mut(texture);
@@ -92,7 +92,7 @@ where
     ///
     /// Sets the brush to fill using the specified texture
     ///
-    pub fn fill_texture(&mut self, texture_id: canvas::TextureId, x1: f32, y1: f32, x2: f32, y2: f32) {
+    pub (crate) fn fill_texture(&mut self, texture_id: canvas::TextureId, x1: f32, y1: f32, x2: f32, y2: f32) {
         // Fetch the state from this object
         let textures        = &self.textures;
         let current_state   = &mut self.current_state;

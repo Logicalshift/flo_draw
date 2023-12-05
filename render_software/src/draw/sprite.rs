@@ -18,7 +18,7 @@ impl SpriteTransform {
     /// Returns this transform as a transformation matrix indicating how the points should be transformed
     ///
     #[inline]
-    pub fn matrix(&self) -> canvas::Transform2D {
+    pub (crate) fn matrix(&self) -> canvas::Transform2D {
         match self {
             SpriteTransform::ScaleTransform { scale, translate } =>
                 canvas::Transform2D::scale(scale.0 as _, scale.1 as _) * canvas::Transform2D::translate(translate.0 as _, translate.1 as _),
@@ -36,7 +36,7 @@ where
     /// Selects a sprite for rendering
     ///
     #[inline]
-    pub fn sprite(&mut self, sprite_id: canvas::SpriteId) {
+    pub (crate) fn sprite(&mut self, sprite_id: canvas::SpriteId) {
         let transform       = self.current_state.transform;
         let namespace_id    = self.current_namespace;
 
@@ -71,7 +71,7 @@ where
     ///
     /// Moves the content of the specified sprite to the current layer
     ///
-    pub fn sprite_move_from(&mut self, sprite_id: canvas::SpriteId) {
+    pub (crate) fn sprite_move_from(&mut self, sprite_id: canvas::SpriteId) {
         let namespace_id = self.current_namespace;
 
         // Clear the current layer to release any resources it's using
@@ -90,7 +90,7 @@ where
     ///
     /// Creates or retrieves the 'prepared' version of the current layer, which can be used to render sprites or textures
     ///
-    pub fn prepare_sprite_layer(&mut self, layer_handle: LayerHandle) -> PreparedLayer {
+    pub (crate) fn prepare_sprite_layer(&mut self, layer_handle: LayerHandle) -> PreparedLayer {
         if let Some(layer) = self.prepared_layers.get(layer_handle.0) {
             // Use the existing prepared layer
             layer.clone()
@@ -132,7 +132,7 @@ where
     ///
     /// Draws the sprite with the specified ID
     ///
-    pub fn sprite_draw(&mut self, sprite_id: canvas::SpriteId) {
+    pub (crate) fn sprite_draw(&mut self, sprite_id: canvas::SpriteId) {
         use std::iter;
 
         const VERY_CLOSE: f32 = 1e-12;
@@ -246,7 +246,7 @@ impl DrawingState {
     ///
     /// Applies a canvas sprite transform to the current drawing state
     ///
-    pub fn sprite_transform(&mut self, transform: canvas::SpriteTransform) {
+    pub (crate) fn sprite_transform(&mut self, transform: canvas::SpriteTransform) {
         use canvas::SpriteTransform::*;
 
         let sprite_transform = &mut self.sprite_transform;

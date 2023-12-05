@@ -70,7 +70,7 @@ where
     /// Creates the pixel program data cache to use with the pixel programs
     ///
     #[inline]
-    pub fn create_data_cache(&mut self) -> PixelProgramDataCache<TPixel> {
+    pub (crate) fn create_data_cache(&mut self) -> PixelProgramDataCache<TPixel> {
         self.program_cache.create_data_cache()
     }
 }

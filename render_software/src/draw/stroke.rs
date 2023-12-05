@@ -11,7 +11,7 @@ impl DrawingState {
     ///
     /// Sets the width of the stroke
     ///
-    pub fn line_width(&mut self, width: f64) {
+    pub (crate) fn line_width(&mut self, width: f64) {
         let transform   = &self.transform.0;
         let scale       = (transform[0][0]*transform[0][0] + transform[1][0]*transform[1][0]).sqrt();
         let scale       = scale as f64;
@@ -22,7 +22,7 @@ impl DrawingState {
     ///
     /// Sets the width of the stroke
     ///
-    pub fn line_width_pixels(&mut self, pixel_width: f64, height_pixels: f64) {
+    pub (crate) fn line_width_pixels(&mut self, pixel_width: f64, height_pixels: f64) {
         let pixel_size  = 2.0/height_pixels;
 
         self.stroke_width = pixel_size * pixel_width;

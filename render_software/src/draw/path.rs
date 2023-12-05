@@ -20,7 +20,7 @@ impl DrawingState {
     /// Dispatches a path operation
     ///
     #[inline]
-    pub fn path_op(&mut self, path_op: canvas::PathOp) {
+    pub (crate) fn path_op(&mut self, path_op: canvas::PathOp) {
         use canvas::PathOp::*;
 
         match path_op {
@@ -35,7 +35,7 @@ impl DrawingState {
     ///
     /// Start a new path
     ///
-    pub fn path_new(&mut self) {
+    pub (crate) fn path_new(&mut self) {
         self.path_edges.clear();
         self.subpaths.clear();
         self.subpaths.push(0);
@@ -44,7 +44,7 @@ impl DrawingState {
     ///
     /// Moves to start a new subpath
     ///
-    pub fn path_move(&mut self, x: f32, y: f32) {
+    pub (crate) fn path_move(&mut self, x: f32, y: f32) {
         let (x, y) = self.transform.transform_point(x, y);
         let x = x as f64;
         let y = y as f64;
@@ -61,7 +61,7 @@ impl DrawingState {
     ///
     /// Draws a line to a position
     ///
-    pub fn path_line(&mut self, x: f32, y: f32) {
+    pub (crate) fn path_line(&mut self, x: f32, y: f32) {
         let (x, y) = self.transform.transform_point(x, y);
         let x = x as f64;
         let y = y as f64;
@@ -80,7 +80,7 @@ impl DrawingState {
     ///
     /// Draws a bezier curve to a position
     ///
-    pub fn path_bezier_curve(&mut self, cp1: (f32, f32), cp2: (f32, f32), end: (f32, f32)) {
+    pub (crate) fn path_bezier_curve(&mut self, cp1: (f32, f32), cp2: (f32, f32), end: (f32, f32)) {
         let cp1 = self.transform.transform_point(cp1.0, cp1.1);
         let cp2 = self.transform.transform_point(cp2.0, cp2.1);
         let end = self.transform.transform_point(end.0, end.1);
@@ -101,7 +101,7 @@ impl DrawingState {
     ///
     /// Closes the current path
     ///
-    pub fn path_close(&mut self) {
+    pub (crate) fn path_close(&mut self) {
         // If the path has 0 edges, we can't close it
         if let Some(subpath_idx) = self.subpaths.last().copied() {
             // Are building a subpath (should always be true)
@@ -123,7 +123,7 @@ impl DrawingState {
     /// Makes a shape from the current set of subpaths
     ///
     #[inline]
-    pub fn create_path_shape<TEdge>(&self, make_edge: impl Fn(BezierSubpath) -> TEdge) -> Vec<TEdge> 
+    pub (crate) fn create_path_shape<TEdge>(&self, make_edge: impl Fn(BezierSubpath) -> TEdge) -> Vec<TEdge> 
     where
         TEdge: EdgeDescriptor
     {

@@ -7,7 +7,7 @@ impl DrawingState {
     /// Resets the transform set in this state
     ///
     #[inline]
-    pub fn identity_transform(&mut self) {
+    pub (crate) fn identity_transform(&mut self) {
         self.transform = canvas::Transform2D::scale(1.0, -1.0);
     }
 
@@ -15,7 +15,7 @@ impl DrawingState {
     /// Multiplies the transform by another one
     ///
     #[inline]
-    pub fn multiply_transform(&mut self, transform: canvas::Transform2D) {
+    pub (crate) fn multiply_transform(&mut self, transform: canvas::Transform2D) {
         self.transform = self.transform * transform;
     }
 
@@ -23,7 +23,7 @@ impl DrawingState {
     /// Sets the transform so that the y ranges goes from -(height/2) to (height/2)
     ///
     #[inline]
-    pub fn canvas_height(&mut self, height: f32) {
+    pub (crate) fn canvas_height(&mut self, height: f32) {
         // Default transform gives -1, 1 as the height of the window, so the overall height is 2
         let window_height   = 2.0;
 
