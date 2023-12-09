@@ -424,6 +424,18 @@ mod test {
     use super::*;
 
     #[test]
+    fn alpha_coverage_100_percent() {
+        let coverage = alpha_coverage(1.5, 1.5);
+        assert!((coverage-1.0).abs() < 0.0001, "{:?}", coverage);
+    }
+
+    #[test]
+    fn alpha_coverage_0_percent() {
+        let coverage = alpha_coverage(-0.5, -0.5);
+        assert!((coverage-0.0).abs() < 0.0001, "{:?}", coverage);
+    }
+
+    #[test]
     fn alpha_coverage_50_percent() {
         let coverage = alpha_coverage(0.0, 1.0);
         assert!((coverage-0.5).abs() < 0.0001, "{:?}", coverage);
