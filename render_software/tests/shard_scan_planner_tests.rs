@@ -55,7 +55,7 @@ pub fn ends_on_pixel(x_range: &Range<f64>) -> bool {
 }
 
 #[test]
-pub fn render_45_degree_triangle() {
+pub fn triangle_45_degrees() {
     // Read the center line from a triangle with 45-degree edges
     let plan = plan_layer_0_line_on_drawing(vec![
         Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
@@ -73,7 +73,7 @@ pub fn render_45_degree_triangle() {
     let spans = plan.spans();
 
     // Should be three spans (two spans where the triangle partially covers the pixels, and 1 where it fully covers the pixels)
-    assert!(spans.len() == 3, "Number of spans != 0 {:?}", plan);
+    assert!(spans.len() == 3, "Number of spans != 3 {:?}", plan);
 
     // Order should be 'transparent, opaque, transparent'
     assert!(!spans[0].is_opaque(), "First span should not be opaque {:?}", plan);
@@ -102,4 +102,50 @@ pub fn render_45_degree_triangle() {
     assert!(starts_on_pixel(&spans[1].x_range()), "Second span does not start on pixel (is {:?}), {:?}", spans[1].x_range(), plan);
     assert!(ends_on_pixel(&spans[1].x_range()), "Second span does not end on pixel (is {:?}), {:?}", spans[1].x_range(), plan);
     assert!(starts_on_pixel(&spans[1].x_range()), "Third span does not start on pixel (is {:?}), {:?}", spans[2].x_range(), plan);
+}
+
+#[test]
+fn subpixel_oblique_line() {
+    // Read the center line of an oblique line (should cover a quarter of a pixel, sometimes will cover two pixels)
+    let plan = plan_layer_0_line_on_drawing(vec![
+        Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
+        Draw::CanvasHeight(1080.0),
+        Draw::CenterRegion((-540.0, -540.0), (540.0, 540.0)),
+        Draw::Path(PathOp::NewPath),
+        Draw::Path(PathOp::Move(-0.5, -500.0)),
+        Draw::Path(PathOp::Line(11.0, 500.0)),
+        Draw::Path(PathOp::Line(11.25, 500.0)),
+        Draw::Path(PathOp::Line(-0.25, -500.0)),
+        Draw::Path(PathOp::Line(-0.5, -500.0)),
+        Draw::FillColor(Color::Rgba(1.0, 1.0, 1.0, 1.0)),
+        Draw::Fill
+    ], 0.0);
+
+    let spans = plan.spans();
+
+    // Should be two spans (one entering the line and one leaving it)
+    assert!(spans.len() == 2, "Number of spans != 2 {:?}", plan);
+}
+
+#[test]
+fn subpixel_vertical_line() {
+    // Read the center line of a thin vertical line (should cover quarter of a pixel)
+    let plan = plan_layer_0_line_on_drawing(vec![
+        Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
+        Draw::CanvasHeight(1080.0),
+        Draw::CenterRegion((-540.0, -540.0), (540.0, 540.0)),
+        Draw::Path(PathOp::NewPath),
+        Draw::Path(PathOp::Move(-0.5, -500.0)),
+        Draw::Path(PathOp::Line(-0.5, 500.0)),
+        Draw::Path(PathOp::Line(-0.25, 500.0)),
+        Draw::Path(PathOp::Line(-0.25, -500.0)),
+        Draw::Path(PathOp::Line(-0.5, -500.0)),
+        Draw::FillColor(Color::Rgba(1.0, 1.0, 1.0, 1.0)),
+        Draw::Fill
+    ], 0.0);
+
+    let spans = plan.spans();
+
+    // Should be two spans (one entering the line and one leaving it)
+    assert!(spans.len() == 2, "Number of spans != 2 {:?}", plan);
 }
