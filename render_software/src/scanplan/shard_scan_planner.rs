@@ -178,7 +178,7 @@ impl ShardIntercept {
     #[inline]
     pub fn x_pos(&self) -> f64 {
         match self {
-            ShardIntercept::Start(intercept)    => intercept.lower_x,
+            ShardIntercept::Start(intercept)    => intercept.lower_x_floor,
             ShardIntercept::Finish(intercept)   => intercept.upper_x_ceil,
         }
     }
