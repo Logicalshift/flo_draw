@@ -44,10 +44,10 @@ where
 #[derive(Clone, Copy, Debug)]
 enum ShardIntercept {
     /// Start fading in the effects of an intercept
-    Start(EdgePlanShardIntercept),
+    Start(ShardInterceptLocation),
 
     /// Finish fading in the effects of an intercept
-    Finish(EdgePlanShardIntercept),
+    Finish(ShardInterceptLocation),
 }
 
 struct ShardInterceptIterator<'a, TShardIterator>
@@ -58,10 +58,10 @@ where
     remaining_shards: Option<TShardIterator>,
 
     /// The next shard to start
-    next_shard: Option<&'a EdgePlanShardIntercept>,
+    next_shard: Option<ShardInterceptLocation>,
 
     /// The shards that have been started: a stack, with the first to end at the top
-    started_shards: Vec<&'a EdgePlanShardIntercept>,
+    started_shards: Vec<ShardInterceptLocation>,
 
     /// The transform being used for the current scanline
     transform: &'a ScanlineTransform,
@@ -97,7 +97,7 @@ where
         let next_shard = if let Some(next_shard) = self.next_shard.take() { 
             Some(next_shard) 
         } else if let Some(remaining) = self.remaining_shards.as_mut() {
-            let result = remaining.next();
+            let result = remaining.next().map(|intercept| ShardInterceptLocation::from(intercept, self.transform));
 
             if result.is_none() {
                 self.remaining_shards = None;
@@ -111,11 +111,11 @@ where
         if let Some(next_shard) = next_shard {
             // If there's a shard finishing before the next shard, return that one
             if let Some(started) = self.started_shards.pop() {
-                if self.transform.pixel_ceil_from_source(started.upper_x) <= next_shard.lower_x {
+                if started.upper_x_ceil <= next_shard.lower_x {
                     // This shard is finishing before this new one starts
                     self.next_shard = Some(next_shard);
 
-                    return Some(ShardIntercept::Finish(*started));
+                    return Some(ShardIntercept::Finish(started));
                 } else {
                     // Leave to process for later
                     self.started_shards.push(started);
@@ -125,10 +125,10 @@ where
             // Starting this shard: add to the list of started shards. The top of the list needs to be the shard that ends next
             // TODO: could be useful to cache the pixel ceiling instead of regenerating it
             let mut found_place = false;
-            let next_upper_x    = self.transform.pixel_ceil_from_source(next_shard.upper_x);
+            let next_upper_x    = next_shard.upper_x_ceil;
 
             for idx in (0..self.started_shards.len()).rev() {
-                if self.transform.pixel_ceil_from_source(self.started_shards[idx].upper_x) > next_upper_x {
+                if self.started_shards[idx].upper_x_ceil > next_upper_x {
                     self.started_shards.insert(idx+1, next_shard);
 
                     found_place = true;
@@ -141,10 +141,10 @@ where
             }
 
             // Result is that this shard is starting
-            Some(ShardIntercept::Start(*next_shard))
+            Some(ShardIntercept::Start(next_shard))
         } else if let Some(started) = self.started_shards.pop() {
             // Finish this shard
-            Some(ShardIntercept::Finish(*started))
+            Some(ShardIntercept::Finish(started))
         } else {
             // No more shards remain
             None
@@ -157,7 +157,7 @@ impl ShardIntercept {
     /// Returns the intercept this is for
     ///
     #[inline]
-    pub fn intercept(&self) -> &EdgePlanShardIntercept {
+    pub fn intercept(&self) -> &ShardInterceptLocation {
         match self {
             ShardIntercept::Start(intercept)    => intercept,
             ShardIntercept::Finish(intercept)   => intercept,
@@ -179,7 +179,7 @@ impl ShardIntercept {
     pub fn x_pos(&self, transform: &ScanlineTransform) -> f64 {
         match self {
             ShardIntercept::Start(intercept)    => intercept.lower_x,
-            ShardIntercept::Finish(intercept)   => transform.pixel_ceil_from_source(intercept.upper_x),
+            ShardIntercept::Finish(intercept)   => intercept.upper_x_ceil,
         }
     }
 }

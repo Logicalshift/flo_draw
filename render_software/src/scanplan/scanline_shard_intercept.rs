@@ -5,6 +5,19 @@ use crate::edgeplan::*;
 use std::ops::{Range};
 
 ///
+/// Describes the location of a shard intercept
+///
+#[derive(Clone, Copy, Debug)]
+pub struct ShardInterceptLocation {
+    pub shape:          ShapeId,
+    pub direction:      EdgeInterceptDirection,
+    pub lower_x:        f64,
+    pub upper_x:        f64,
+    pub lower_x_floor:  f64,
+    pub upper_x_ceil:   f64,
+}
+
+///
 /// Ways that a scanline fragment can be bn
 ///
 #[derive(Clone, Debug)]
@@ -47,6 +60,20 @@ pub struct ScanlineShardInterceptState<'a> {
 
     /// The current z-floor
     z_floor: i64,
+}
+
+impl ShardInterceptLocation {
+    #[inline]
+    pub fn from(intercept: &EdgePlanShardIntercept, transform: &ScanlineTransform) -> ShardInterceptLocation {
+        ShardInterceptLocation {
+            shape:          intercept.shape,
+            direction:      intercept.direction,
+            lower_x_floor:  transform.pixel_floor_from_source(intercept.lower_x),
+            upper_x_ceil:   transform.pixel_ceil_from_source(intercept.upper_x),
+            lower_x:        intercept.lower_x,
+            upper_x:        intercept.upper_x,
+        }
+    }
 }
 
 impl<'a> ScanlineShardIntercept<'a> {
@@ -191,7 +218,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
     ///
     /// Adds or removes from the active shapes after an intercept
     ///
-    pub fn start_intercept(&mut self, intercept: &EdgePlanShardIntercept, transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
+    pub  fn start_intercept(&mut self, intercept: &ShardInterceptLocation, transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
         if let Some(descriptor) = descriptor {
             let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque);
 
@@ -260,7 +287,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
     ///
     /// A partial intercept has finished
     ///
-    pub fn finish_intercept(&mut self, intercept: &EdgePlanShardIntercept, descriptor: Option<&'a ShapeDescriptor>) {
+    pub fn finish_intercept(&mut self, intercept: &ShardInterceptLocation, descriptor: Option<&'a ShapeDescriptor>) {
         if let Some(descriptor) = descriptor {
             if let Some(existing_idx) = self.find(descriptor.z_index, intercept.shape).ok() {
                 let active_shape    = &mut self.active_shapes[existing_idx];
