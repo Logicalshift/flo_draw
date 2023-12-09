@@ -201,7 +201,7 @@ where
 fn alpha_coverage(pixel_start: f64, pixel_end: f64) -> f64 {
     // ax = 0, bx = 1
     let ay = pixel_start.min(pixel_end);
-    let by = pixel_end.max(pixel_end);
+    let by = pixel_end.max(pixel_start);
 
     if ay <= 0.0 && by <= 0.0 {
         // Both outside
