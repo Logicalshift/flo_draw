@@ -4,6 +4,8 @@ use flo_render_software::scanplan::*;
 
 use flo_canvas::*;
 
+use std::ops::{Range};
+
 ///
 /// Generates a plan for layer 0 of a drawing at a particular y-position (coordinates are in the -1 to 1 range for a canvas drawing)
 ///
@@ -32,6 +34,24 @@ fn plan_layer_0_line_on_drawing(instructions: impl IntoIterator<Item=Draw>, y_po
     mem::swap(&mut scanlines[0].1, &mut result);
 
     result
+}
+
+///
+/// Returns true if a range starts on a pixel
+///
+pub fn starts_on_pixel(x_range: &Range<f64>) -> bool {
+    let offset = x_range.start - x_range.start.floor();
+
+    offset.abs() < 1e-6
+}
+
+///
+/// Returns true if a range ends on a pixel
+///
+pub fn ends_on_pixel(x_range: &Range<f64>) -> bool {
+    let offset = x_range.end - x_range.end.floor();
+
+    offset.abs() < 1e-6
 }
 
 #[test]
@@ -76,4 +96,12 @@ pub fn render_45_degree_triangle() {
     } else {
         assert!(false, "Last span is not blending {:?}", plan);
     }
+
+    // The ranges should start/end at pixel boundaries
+    assert!(ends_on_pixel(&spans[0].x_range()), "First span does not end on pixel (is {:?}), {:?}", spans[0].x_range(), plan);
+    assert!(starts_on_pixel(&spans[1].x_range()), "Second span does not start on pixel (is {:?}), {:?}", spans[1].x_range(), plan);
+    assert!(ends_on_pixel(&spans[1].x_range()), "Second span does not end on pixel (is {:?}), {:?}", spans[1].x_range(), plan);
+    assert!(starts_on_pixel(&spans[1].x_range()), "Third span does not start on pixel (is {:?}), {:?}", spans[2].x_range(), plan);
+
+    assert!(false, "{:?}", plan);
 }
