@@ -59,4 +59,21 @@ pub fn render_45_degree_triangle() {
     assert!(!spans[0].is_opaque(), "First span should not be opaque {:?}", plan);
     assert!(spans[1].is_opaque(), "Second span should not be transparent {:?}", plan);
     assert!(!spans[2].is_opaque(), "Third span should not be opaque {:?}", plan);
+
+    // Alpha values should switch sides
+    let first_stack = spans[0].programs().collect::<Vec<_>>();
+    assert!(first_stack.len() == 3);
+    if let PixelProgramPlan::LinearSourceOver(alpha1, alpha2) = first_stack[2] {
+        assert!(alpha1 < alpha2, "First span is not fading up {:?}", plan);
+    } else {
+        assert!(false, "First span is not blending {:?}", plan);
+    }
+
+    let last_stack = spans[2].programs().collect::<Vec<_>>();
+    assert!(last_stack.len() == 3);
+    if let PixelProgramPlan::LinearSourceOver(alpha1, alpha2) = last_stack[2] {
+        assert!(alpha1 > alpha2, "Last span is not fading down {:?}", plan);
+    } else {
+        assert!(false, "Last span is not blending {:?}", plan);
+    }
 }
