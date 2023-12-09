@@ -176,7 +176,7 @@ impl ShardIntercept {
     /// Returns the x position of this intercept
     ///
     #[inline]
-    pub fn x_pos(&self, transform: &ScanlineTransform) -> f64 {
+    pub fn x_pos(&self) -> f64 {
         match self {
             ShardIntercept::Start(intercept)    => intercept.lower_x,
             ShardIntercept::Finish(intercept)   => intercept.upper_x_ceil,
@@ -285,7 +285,7 @@ where
             // Trace programs but don't generate fragments until we get an intercept
             let mut active_shapes = ScanlineShardInterceptState::new();
 
-            while transform.source_x_to_pixels(current_intercept.x_pos(transform)) < x_range.start {
+            while transform.source_x_to_pixels(current_intercept.x_pos()) < x_range.start {
                 // Add or remove this intercept's programs to the active list
                 let shape_descriptor = edge_plan.shape_descriptor(current_intercept.shape());
 
@@ -312,7 +312,7 @@ where
                 // TODO: if there are multiple intercepts on the same pixel, we should process them all simultaneously (otherwise we will occasionally start a set of programs one pixel too late)
 
                 // Generate a stack for the current intercept
-                let next_x = transform.source_x_to_pixels(current_intercept.x_pos(transform));
+                let next_x = transform.source_x_to_pixels(current_intercept.x_pos());
 
                 // The end of the current range is the 'next_x' coordinate
                 let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
