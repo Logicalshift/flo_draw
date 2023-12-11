@@ -470,4 +470,10 @@ mod test {
         let coverage = alpha_coverage(0.1, 0.6);
         assert!((coverage-0.35).abs() < 0.0001, "{:?}", coverage);
     }
+
+    #[test]
+    fn alpha_coverage_middle_quarter() {
+        let coverage = alpha_coverage(-0.5, 2.0);
+        assert!((coverage-0.6).abs() < 0.0001, "{:?}", coverage);
+    }
 }
