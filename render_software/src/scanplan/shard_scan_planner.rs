@@ -228,7 +228,7 @@ fn alpha_coverage(pixel_start: f64, pixel_end: f64) -> f64 {
         // LHS intercepts the y-axis
         if by < 1.0 {
             // Both sides intercept the y-axis
-            0.5 * (by-ay) + (1.0-by)
+            0.5 * (by-ay) + ay
         } else {
             // Calculate intercept on x-axis for y=1
             let dx = (1.0-ay)/(by-ay);
