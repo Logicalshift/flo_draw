@@ -325,7 +325,8 @@ where
 
                 if z_index >= z_floor && next_x != last_x {
                     // Create a program stack between the ranges: all the programs until the first opaque layer
-                    let x_range         = last_x..next_x;
+                    // TODO: rounding here because we know that the intercepts all use the pixel floor/ceiling, which creates a bunch of conversions and small errors
+                    let x_range         = (last_x.round())..(next_x.round());
                     let mut is_opaque   = false;
 
                     // We re-use program_stack so we don't have to keep re-allocating a vec as we go
