@@ -106,52 +106,59 @@ pub fn triangle_45_degrees() {
 
 #[test]
 pub fn tall_triangle() {
-    // Read the center line from a triangle with edges with a high angle 
-    let plan = plan_layer_0_line_on_drawing(vec![
-        Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
-        Draw::CanvasHeight(1080.0),
-        Draw::CenterRegion((-540.0, -540.0), (540.0, 540.0)),
-        Draw::Path(PathOp::NewPath),
-        Draw::Path(PathOp::Move(-200.0, -300.0)),
-        Draw::Path(PathOp::Line(0.0, 300.0)),
-        Draw::Path(PathOp::Line(200.0, -300.0)),
-        Draw::Path(PathOp::Line(-200.0, -300.0)),
-        Draw::FillColor(Color::Rgba(1.0, 1.0, 1.0, 1.0)),
-        Draw::Fill
-    ], 0.0);
+    for y in 300..900 {
+        let pix_y = y;
+        let y = (y as f64)/1080.0;
+        let y = 2.0 * y - 1.0;
 
-    let spans = plan.spans();
+        // Read the center line from a triangle with edges with a high angle 
+        let plan = plan_layer_0_line_on_drawing(vec![
+            Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
+            Draw::CanvasHeight(1080.0),
+            Draw::CenterRegion((0.0, 0.0), (1080.0, 1080.0)),
+            Draw::Path(PathOp::NewPath),
+            Draw::Path(PathOp::Move(400.0, 100.0)),
+            Draw::Path(PathOp::Line(540.0, 800.0)),
+            Draw::Path(PathOp::Line(680.0, 100.0)),
+            Draw::FillColor(Color::Rgba(1.0, 1.0, 1.0, 1.0)),
+            Draw::Fill
+        ], y);
 
-    // Should be three spans (two spans where the triangle partially covers the pixels, and 1 where it fully covers the pixels)
-    assert!(spans.len() == 3, "Number of spans != 3 {:?}", plan);
+        let spans = plan.spans();
 
-    // Order should be 'transparent, opaque, transparent'
-    assert!(!spans[0].is_opaque(), "First span should not be opaque {:?}", plan);
-    assert!(spans[1].is_opaque(), "Second span should not be transparent {:?}", plan);
-    assert!(!spans[2].is_opaque(), "Third span should not be opaque {:?}", plan);
+        // Should be three spans (two spans where the triangle partially covers the pixels, and 1 where it fully covers the pixels)
+        assert!(spans.len() == 3, "Number of spans != 3 {:?} (y={:?}, pix_y={:?})", plan, y, pix_y);
 
-    // Alpha values should switch sides
-    let first_stack = spans[0].programs().collect::<Vec<_>>();
-    assert!(first_stack.len() == 3);
-    if let PixelProgramPlan::LinearSourceOver(alpha1, alpha2) = first_stack[2] {
-        assert!(alpha1 < alpha2, "First span is not fading up {:?}", plan);
-    } else {
-        assert!(false, "First span is not blending {:?}", plan);
+        // Order should be 'transparent, opaque, transparent'
+        assert!(!spans[0].is_opaque(), "First span should not be opaque {:?}", plan);
+        assert!(spans[1].is_opaque(), "Second span should not be transparent {:?}", plan);
+        assert!(!spans[2].is_opaque(), "Third span should not be opaque {:?}", plan);
+
+        // Alpha values should switch sides
+        let first_stack = spans[0].programs().collect::<Vec<_>>();
+        assert!(first_stack.len() == 3);
+        if let PixelProgramPlan::LinearSourceOver(alpha1, alpha2) = first_stack[2] {
+            assert!(spans[0].x_range().end - spans[0].x_range().start >= 1.0, "First range uses less than a pixel {:?}, y={:?}, pix_y={:?}", plan, y, pix_y);
+            assert!(alpha1 <= alpha2, "First span is not fading up {:?}", plan);
+            assert!(alpha1 > 0.0 && alpha1 < 1.0, "First span has no alpha {:?}", plan);
+        } else {
+            assert!(false, "First span is not blending {:?}", plan);
+        }
+
+        let last_stack = spans[2].programs().collect::<Vec<_>>();
+        assert!(last_stack.len() == 3);
+        if let PixelProgramPlan::LinearSourceOver(alpha1, alpha2) = last_stack[2] {
+            assert!(alpha1 >= alpha2, "Last span is not fading down {:?}", plan);
+        } else {
+            assert!(false, "Last span is not blending {:?}", plan);
+        }
+
+        // The ranges should start/end at pixel boundaries
+        assert!(ends_on_pixel(&spans[0].x_range()), "First span does not end on pixel (is {:?}), {:?}", spans[0].x_range(), plan);
+        assert!(starts_on_pixel(&spans[1].x_range()), "Second span does not start on pixel (is {:?}), {:?}", spans[1].x_range(), plan);
+        assert!(ends_on_pixel(&spans[1].x_range()), "Second span does not end on pixel (is {:?}), {:?}", spans[1].x_range(), plan);
+        assert!(starts_on_pixel(&spans[1].x_range()), "Third span does not start on pixel (is {:?}), {:?}", spans[2].x_range(), plan);
     }
-
-    let last_stack = spans[2].programs().collect::<Vec<_>>();
-    assert!(last_stack.len() == 3);
-    if let PixelProgramPlan::LinearSourceOver(alpha1, alpha2) = last_stack[2] {
-        assert!(alpha1 > alpha2, "Last span is not fading down {:?}", plan);
-    } else {
-        assert!(false, "Last span is not blending {:?}", plan);
-    }
-
-    // The ranges should start/end at pixel boundaries
-    assert!(ends_on_pixel(&spans[0].x_range()), "First span does not end on pixel (is {:?}), {:?}", spans[0].x_range(), plan);
-    assert!(starts_on_pixel(&spans[1].x_range()), "Second span does not start on pixel (is {:?}), {:?}", spans[1].x_range(), plan);
-    assert!(ends_on_pixel(&spans[1].x_range()), "Second span does not end on pixel (is {:?}), {:?}", spans[1].x_range(), plan);
-    assert!(starts_on_pixel(&spans[1].x_range()), "Third span does not start on pixel (is {:?}), {:?}", spans[2].x_range(), plan);
 }
 
 #[test]
