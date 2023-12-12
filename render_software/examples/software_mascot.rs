@@ -96,8 +96,8 @@ pub fn main() {
     // Render the mascot to the terminal
     let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
 
-    let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(u32_canvas_drawing.program_runner(1080.0)), 1080);
-    term_renderer.render(renderer, &u32_canvas_drawing);
+    let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
+    term_renderer.render(renderer, &canvas_drawing);
 }
 
 /// Mascot in canvas encoding form
