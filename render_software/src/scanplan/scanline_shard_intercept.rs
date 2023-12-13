@@ -65,13 +65,16 @@ pub struct ScanlineShardInterceptState<'a> {
 impl ShardInterceptLocation {
     #[inline]
     pub fn from(intercept: &EdgePlanShardIntercept, transform: &ScanlineTransform) -> ShardInterceptLocation {
+        let lower_x = transform.source_x_to_pixels(intercept.lower_x);
+        let upper_x = transform.source_x_to_pixels(intercept.upper_x);
+
         ShardInterceptLocation {
             shape:          intercept.shape,
             direction:      intercept.direction,
-            lower_x_floor:  transform.pixel_floor_from_source(intercept.lower_x),
-            upper_x_ceil:   transform.pixel_ceil_from_source(intercept.upper_x),
-            lower_x:        intercept.lower_x,
-            upper_x:        intercept.upper_x,
+            lower_x_floor:  lower_x.floor(),
+            upper_x_ceil:   upper_x.ceil(),
+            lower_x:        lower_x,
+            upper_x:        upper_x,
         }
     }
 }

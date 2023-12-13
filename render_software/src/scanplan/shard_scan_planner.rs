@@ -123,7 +123,6 @@ where
             }
 
             // Starting this shard: add to the list of started shards. The top of the list needs to be the shard that ends next
-            // TODO: could be useful to cache the pixel ceiling instead of regenerating it
             let mut found_place = false;
             let next_upper_x    = next_shard.upper_x_ceil;
 
@@ -285,7 +284,7 @@ where
             // Trace programs but don't generate fragments until we get an intercept
             let mut active_shapes = ScanlineShardInterceptState::new();
 
-            while transform.source_x_to_pixels(current_intercept.x_pos()) < x_range.start {
+            while current_intercept.x_pos() < x_range.start {
                 // Add or remove this intercept's programs to the active list
                 let shape_descriptor = edge_plan.shape_descriptor(current_intercept.shape());
 
@@ -312,7 +311,7 @@ where
                 // TODO: if there are multiple intercepts on the same pixel, we should process them all simultaneously (otherwise we will occasionally start a set of programs one pixel too late)
 
                 // Generate a stack for the current intercept
-                let next_x = transform.source_x_to_pixels(current_intercept.x_pos());
+                let next_x = current_intercept.x_pos();
 
                 // The end of the current range is the 'next_x' coordinate
                 let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
@@ -325,8 +324,7 @@ where
 
                 if z_index >= z_floor && next_x != last_x {
                     // Create a program stack between the ranges: all the programs until the first opaque layer
-                    // TODO: rounding here because we know that the intercepts all use the pixel floor/ceiling, which creates a bunch of conversions and small errors
-                    let x_range         = (last_x.round())..(next_x.round());
+                    let x_range         = last_x..next_x;
                     let mut is_opaque   = false;
 
                     // We re-use program_stack so we don't have to keep re-allocating a vec as we go
@@ -344,8 +342,8 @@ where
                                 // Adjust the alpha range to the actual x range
                                 let pixel_x_start   = x_range.start.floor();
                                 let pixel_x_end     = x_range.end.ceil();
-                                let alpha_x_start   = transform.source_x_to_pixels(alpha_x_range.start);
-                                let alpha_x_end     = transform.source_x_to_pixels(alpha_x_range.end);
+                                let alpha_x_start   = alpha_x_range.start;
+                                let alpha_x_end     = alpha_x_range.end;
 
                                 let alpha_ratio     = (alpha_range.end - alpha_range.start) / (alpha_x_end-alpha_x_start);
 
