@@ -357,7 +357,6 @@ where
 
                                 let corrected_range = (corrected_start.max(0.0).min(1.0))..(corrected_end.max(0.0).min(1.0));
 
-                                // TODO: calculate coverage at the start and end of this range
                                 program_stack.push(PixelProgramPlan::LinearSourceOver(corrected_range.start as _, corrected_range.end as _));
 
                                 // The pixels to blend
