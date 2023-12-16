@@ -364,28 +364,47 @@ where
                     for shape in (0..stack_depth).rev() {
                         let intercept           = active_shapes.get(shape).unwrap();
                         let shape_descriptor    = intercept.shape_descriptor();
+                        let mut blend           = intercept.blend();
+                        let mut num_blends      = 0;
 
-                        match intercept.blend() {
-                            InterceptBlend::Solid => {
-                                program_stack.extend(shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
-                            },
+                        // Start the blends for the program
+                        loop {
+                            match blend {
+                                InterceptBlend::Solid => {
+                                    break;
+                                },
 
-                            InterceptBlend::Fade { x_range: alpha_x_range, alpha_range } => {
-                                // Adjust the alpha range to the actual x range
-                                let corrected_range = actual_fade_for_range(&x_range, &alpha_x_range, &alpha_range);
+                                InterceptBlend::Fade { x_range: alpha_x_range, alpha_range } => {
+                                    // Adjust the alpha range to the actual x range
+                                    let corrected_range = actual_fade_for_range(&x_range, &alpha_x_range, &alpha_range);
 
-                                program_stack.push(PixelProgramPlan::LinearSourceOver(corrected_range.start as _, corrected_range.end as _));
+                                    // Run a linear blend using the corrected range
+                                    program_stack.push(PixelProgramPlan::LinearSourceOver(corrected_range.start as _, corrected_range.end as _));
+                                    num_blends += 1;
+                                    break;
+                                },
 
-                                // The pixels to blend
-                                program_stack.extend(shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
+                                InterceptBlend::NestedFade { x_range: alpha_x_range, alpha_range, nested } => {
+                                    // Adjust the alpha range to the actual x range
+                                    let corrected_range = actual_fade_for_range(&x_range, &alpha_x_range, &alpha_range);
 
-                                // Blend with the background
-                                program_stack.push(PixelProgramPlan::StartBlend);
-                            },
+                                    // Run a linear blend using the corrected range
+                                    program_stack.push(PixelProgramPlan::LinearSourceOver(corrected_range.start as _, corrected_range.end as _));
 
-                            InterceptBlend::NestedFade { .. } => todo!(),
+                                    // Apply the nested gradient as well
+                                    blend       = &*nested;
+                                    num_blends += 1;
+                                },
+                            }
                         }
-                        
+
+                        // Run the program for this range
+                        program_stack.extend(shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
+
+                        // Finish the blends
+                        if num_blends > 0 {
+                            program_stack.extend((0..num_blends).map(|_| PixelProgramPlan::StartBlend));
+                        }
 
                         if intercept.is_opaque() {
                             is_opaque = true;
