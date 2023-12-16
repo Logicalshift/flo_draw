@@ -249,11 +249,24 @@ impl<'a> ScanlineShardInterceptState<'a> {
 
                     if remove_existing {
                         // Change the shape to fade out
-                        // TODO: if it's already fading in, then adjust to fade out instead
-                        // TODO: might also have a 'double fade' here where two 'entrances' overlap
-                        self.active_shapes[existing_idx].blend = InterceptBlend::Fade {
-                            x_range: intercept.lower_x..intercept.upper_x,
-                            alpha_range: 1.0..0.0,
+                        self.active_shapes[existing_idx].blend = match &self.active_shapes[existing_idx].blend {
+                            InterceptBlend::Solid => {
+                                InterceptBlend::Fade {
+                                    x_range:        intercept.lower_x..intercept.upper_x,
+                                    alpha_range:    1.0..0.0,
+                                }
+                            }
+
+                            InterceptBlend::Fade { .. }         |
+                            InterceptBlend::NestedFade { .. }   => {
+                                let nested = Box::new(self.active_shapes[existing_idx].blend.clone());
+
+                                InterceptBlend::NestedFade {
+                                    x_range:        intercept.lower_x..intercept.upper_x,
+                                    alpha_range:    1.0..0.0,
+                                    nested:         nested,
+                                }
+                            }
                         };
 
                         // If the shape matches the current z-floor, update it
