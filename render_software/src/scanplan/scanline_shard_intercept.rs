@@ -275,10 +275,9 @@ impl<'a> ScanlineShardInterceptState<'a> {
                         EdgeInterceptDirection::DirectionIn     => -1,
                     };
 
-                    // TODO: we're using absolute pixel coords now
                     self.active_shapes.insert(following_idx, ScanlineShardIntercept { 
                         count:      count, 
-                        start_x:    transform.source_x_to_pixels(intercept.lower_x),
+                        start_x:    intercept.lower_x,
                         blend:      InterceptBlend::Fade { x_range: intercept.lower_x..intercept.upper_x, alpha_range: 0.0..1.0 },
                         shape_id:   intercept.shape,
                         descriptor: descriptor,
