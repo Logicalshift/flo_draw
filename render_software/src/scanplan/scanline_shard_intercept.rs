@@ -486,7 +486,10 @@ mod test {
         // Start re-entering
         intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, lower_x: 125.0, upper_x: 170.0, lower_x_floor: 125.0, upper_x_ceil: 170.0 }, &transform, Some(&descriptor));
 
-        // Should be two intercepts (the 'leaving' intercept and the 'entering' intercept)
-        assert!(intercepts.len() == 2, "Should be two intercepts (entering + leaving) {:?}", intercepts);
+        // Should be one intercept, which should be a nested intercept
+        assert!(intercepts.len() == 1, "Should be one intercept {:?}", intercepts);
+
+        let nested = intercepts.get(0).unwrap();
+        assert!(if let InterceptBlend::NestedFade { .. } = &nested.blend { true } else { false }, "Not nested: {:?}", intercepts);
     }
 }
