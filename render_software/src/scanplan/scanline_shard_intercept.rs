@@ -326,3 +326,84 @@ impl<'a> ScanlineShardInterceptState<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use smallvec::*;
+
+    #[test]
+    fn start_intercept() {
+        let mut intercepts  = ScanlineShardInterceptState::new();
+        let transform       = &ScanlineTransform::for_region(&(-1.0..1.0), 1080);
+        let descriptor      = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 1 };
+
+        // Start entering
+        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, lower_x: 100.0, upper_x: 120.0, lower_x_floor: 100.0, upper_x_ceil: 120.0 }, &transform, Some(&descriptor));
+
+        // Should be one intercept, that's a fading intercept
+        assert!(intercepts.len() == 1, "{:?}", intercepts);
+
+        let fade_in = intercepts.get(0).unwrap();
+        assert!(if let InterceptBlend::Fade { .. } = &fade_in.blend { true } else { false }, "Not fading: {:?}", intercepts);
+    }
+
+    #[test]
+    fn inside_shape() {
+        let mut intercepts  = ScanlineShardInterceptState::new();
+        let transform       = &ScanlineTransform::for_region(&(-1.0..1.0), 1080);
+        let descriptor      = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 1 };
+
+        // Enter the shape
+        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, lower_x: 100.0, upper_x: 120.0, lower_x_floor: 100.0, upper_x_ceil: 120.0 }, &transform, Some(&descriptor));
+        intercepts.finish_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, lower_x: 100.0, upper_x: 120.0, lower_x_floor: 100.0, upper_x_ceil: 120.0 }, Some(&descriptor));
+
+        // Should be one intercept which is solid
+        assert!(intercepts.len() == 1, "{:?}", intercepts);
+
+        let fade_in = intercepts.get(0).unwrap();
+        assert!(if let InterceptBlend::Solid = &fade_in.blend { true } else { false }, "Not fading: {:?}", intercepts);
+    }
+
+    #[test]
+    fn leave_intercept() {
+        let mut intercepts  = ScanlineShardInterceptState::new();
+        let transform       = &ScanlineTransform::for_region(&(-1.0..1.0), 1080);
+        let descriptor      = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 1 };
+
+        // Start entering
+        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, lower_x: 100.0, upper_x: 101.0, lower_x_floor: 100.0, upper_x_ceil: 101.0 }, &transform, Some(&descriptor));
+        intercepts.finish_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, lower_x: 100.0, upper_x: 101.0, lower_x_floor: 100.0, upper_x_ceil: 101.0 }, Some(&descriptor));
+
+        // Start leaving...
+        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionOut, lower_x: 110.0, upper_x: 150.0, lower_x_floor: 110.0, upper_x_ceil: 150.0 }, &transform, Some(&descriptor));
+
+        // Should be one intercept, that's a fading intercept
+        assert!(intercepts.len() == 1, "{:?}", intercepts);
+
+        let fade_in = intercepts.get(0).unwrap();
+        assert!(if let InterceptBlend::Fade { .. } = &fade_in.blend { true } else { false }, "Not fading: {:?}", intercepts);
+    }
+
+    #[test]
+    fn start_overlapping_intercept() {
+        let mut intercepts  = ScanlineShardInterceptState::new();
+        let transform       = &ScanlineTransform::for_region(&(-1.0..1.0), 1080);
+        let descriptor      = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 1 };
+
+        // Enter
+        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, lower_x: 100.0, upper_x: 101.0, lower_x_floor: 100.0, upper_x_ceil: 101.0 }, &transform, Some(&descriptor));
+        intercepts.finish_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, lower_x: 100.0, upper_x: 101.0, lower_x_floor: 100.0, upper_x_ceil: 101.0 }, Some(&descriptor));
+
+        // Start leaving...
+        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionOut, lower_x: 110.0, upper_x: 150.0, lower_x_floor: 110.0, upper_x_ceil: 150.0 }, &transform, Some(&descriptor));
+
+        assert!(intercepts.len() == 1, "Should only be one intercept {:?}", intercepts);
+
+        // Start re-entering
+        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, lower_x: 125.0, upper_x: 170.0, lower_x_floor: 125.0, upper_x_ceil: 170.0 }, &transform, Some(&descriptor));
+
+        // Should be two intercepts (the 'leaving' intercept and the 'entering' intercept)
+        assert!(intercepts.len() == 2, "Should be two intercepts (entering + leaving) {:?}", intercepts);
+    }
+}
