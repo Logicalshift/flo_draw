@@ -27,6 +27,9 @@ pub enum InterceptBlend {
 
     /// This should be alpha-blended using source-over with a linear fade
     Fade { x_range: Range<f64>, alpha_range: Range<f64> },
+
+    /// Nest the second blend inside the first blend
+    NestedFade { x_range: Range<f64>, alpha_range: Range<f64>, nested: Box<InterceptBlend>, },
 }
 
 ///
@@ -110,8 +113,9 @@ impl<'a> ScanlineShardIntercept<'a> {
     #[inline]
     pub fn is_opaque(&self) -> bool {
         match self.blend {
-            InterceptBlend::Solid       => self.descriptor.is_opaque,
-            InterceptBlend::Fade { .. } => false,
+            InterceptBlend::Solid               => self.descriptor.is_opaque,
+            InterceptBlend::Fade { .. }         => false,
+            InterceptBlend::NestedFade { .. }   => false,
         }
     }
 

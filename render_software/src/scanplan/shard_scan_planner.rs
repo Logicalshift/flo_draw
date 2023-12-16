@@ -364,7 +364,9 @@ where
 
                                 // Blend with the background
                                 program_stack.push(PixelProgramPlan::StartBlend);
-                            }
+                            },
+
+                            InterceptBlend::NestedFade { .. } => todo!(),
                         }
                         
 
