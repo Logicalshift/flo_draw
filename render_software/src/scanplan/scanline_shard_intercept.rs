@@ -283,21 +283,44 @@ impl<'a> ScanlineShardInterceptState<'a> {
                 Ok(existing_idx) => {
                     // Update the existing shape depending on the direction of the intercept
                     let existing        = &mut self.active_shapes[existing_idx];
-                    let remove_existing = match intercept.direction {
-                        EdgeInterceptDirection::Toggle          => true,
+                    let was_inside      = existing.count != 0;
+                    match intercept.direction {
+                        EdgeInterceptDirection::Toggle          => {
+                            existing.count = if existing.count != 0 { 1 } else { 0 };
+                        },
 
                         EdgeInterceptDirection::DirectionOut    => {
                             existing.count += 1;
-                            existing.count == 0
                         },
 
                         EdgeInterceptDirection::DirectionIn     => {
                             existing.count -= 1;
-                            existing.count == 0
                         },
                     };
+                    let is_inside       = existing.count != 0;
 
-                    if remove_existing {
+                    if !was_inside && is_inside {
+                        // Need to merge with the existing blend
+                        self.active_shapes[existing_idx].blend = match &self.active_shapes[existing_idx].blend {
+                            InterceptBlend::Solid => {
+                                InterceptBlend::Fade {
+                                    x_range:        intercept.lower_x..intercept.upper_x,
+                                    alpha_range:    0.0..1.0,
+                                }
+                            }
+
+                            InterceptBlend::Fade { .. }         |
+                            InterceptBlend::NestedFade { .. }   => {
+                                let nested = Box::new(self.active_shapes[existing_idx].blend.clone());
+
+                                InterceptBlend::NestedFade {
+                                    x_range:        intercept.lower_x..intercept.upper_x,
+                                    alpha_range:    0.0..1.0,
+                                    nested:         nested,
+                                }
+                            }
+                        };
+                    } else if !is_inside {
                         // Change the shape to fade out
                         self.active_shapes[existing_idx].blend = match &self.active_shapes[existing_idx].blend {
                             InterceptBlend::Solid => {
