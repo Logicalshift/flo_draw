@@ -237,6 +237,38 @@ fn alpha_coverage(pixel_start: f64, pixel_end: f64) -> f64 {
     }
 }
 
+///
+/// Calculates the range of alpha values to use in a rendering program.
+///
+/// The `render_x_range` is the range of values where the pixels will be rendered. The alpha_x_range is the full range of the fade,
+/// and the alpha_range is the range of alpha values that will be covered.
+///
+/// This will the alpha values at the start and end of the pixels to calculate the initial and final coverage of the range (ie, if
+/// the alpha value is 0 at the start of a pixel and non-zero at the end, that pixel will be partially covered rather than clear)
+///
+#[inline]
+fn actual_fade_for_range(render_x_range: &Range<f64>, alpha_x_range: &Range<f64>, alpha_range: &Range<f64>) -> Range<f64> {
+    // Adjust the alpha range to the actual x range
+    let pixel_x_start   = render_x_range.start.floor();
+    let pixel_x_end     = render_x_range.end.ceil();
+    let alpha_x_start   = alpha_x_range.start;
+    let alpha_x_end     = alpha_x_range.end;
+
+    let alpha_ratio     = (alpha_range.end - alpha_range.start) / (alpha_x_end-alpha_x_start);
+
+    let corrected_start_1   = (pixel_x_start - alpha_x_start) * alpha_ratio + alpha_range.start;
+    let corrected_start_2   = ((pixel_x_start + 1.0) - alpha_x_start) * alpha_ratio + alpha_range.start;
+    let corrected_end_1     = ((pixel_x_end - 1.0) - alpha_x_start) * alpha_ratio + alpha_range.start;
+    let corrected_end_2     = (pixel_x_end - alpha_x_start) * alpha_ratio + alpha_range.start;
+
+    let corrected_start     = alpha_coverage(corrected_start_1, corrected_start_2);
+    let corrected_end       = alpha_coverage(corrected_end_1, corrected_end_2);
+
+    let corrected_range = (corrected_start.max(0.0).min(1.0))..(corrected_end.max(0.0).min(1.0));
+
+    corrected_range
+}
+
 impl<TEdge> ScanPlanner for ShardScanPlanner<TEdge>
 where
     TEdge: EdgeDescriptor,
@@ -340,22 +372,7 @@ where
 
                             InterceptBlend::Fade { x_range: alpha_x_range, alpha_range } => {
                                 // Adjust the alpha range to the actual x range
-                                let pixel_x_start   = x_range.start.floor();
-                                let pixel_x_end     = x_range.end.ceil();
-                                let alpha_x_start   = alpha_x_range.start;
-                                let alpha_x_end     = alpha_x_range.end;
-
-                                let alpha_ratio     = (alpha_range.end - alpha_range.start) / (alpha_x_end-alpha_x_start);
-
-                                let corrected_start_1   = (pixel_x_start - alpha_x_start) * alpha_ratio + alpha_range.start;
-                                let corrected_start_2   = ((pixel_x_start + 1.0) - alpha_x_start) * alpha_ratio + alpha_range.start;
-                                let corrected_end_1     = ((pixel_x_end - 1.0) - alpha_x_start) * alpha_ratio + alpha_range.start;
-                                let corrected_end_2     = (pixel_x_end - alpha_x_start) * alpha_ratio + alpha_range.start;
-
-                                let corrected_start     = alpha_coverage(corrected_start_1, corrected_start_2);
-                                let corrected_end       = alpha_coverage(corrected_end_1, corrected_end_2);
-
-                                let corrected_range = (corrected_start.max(0.0).min(1.0))..(corrected_end.max(0.0).min(1.0));
+                                let corrected_range = actual_fade_for_range(&x_range, &alpha_x_range, &alpha_range);
 
                                 program_stack.push(PixelProgramPlan::LinearSourceOver(corrected_range.start as _, corrected_range.end as _));
 
