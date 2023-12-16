@@ -2,7 +2,7 @@ use super::scanline_transform::*;
 
 use crate::edgeplan::*;
 
-use std::ops::{Range};
+use std::{ops::{Range}, process::ExitCode};
 
 ///
 /// Describes the location of a shard intercept
@@ -136,6 +136,56 @@ impl<'a> ScanlineShardIntercept<'a> {
     }
 }
 
+///
+/// Removes any intercepts that end at or before a position in a blend
+///
+/// The result is `InterceptBlend::Solid` if all of the intercepts are removed
+///
+fn clear_finished_intercepts(blend: &InterceptBlend, xpos: f64) -> InterceptBlend {
+    match blend {
+        // Solid intercepts have nothing to clear
+        InterceptBlend::Solid => InterceptBlend::Solid,
+
+        // Fades clear if the x position exceeds the x position
+        InterceptBlend::Fade { x_range, alpha_range } => {
+            if x_range.end <= xpos {
+                InterceptBlend::Solid
+            } else {
+                InterceptBlend::Fade {
+                    x_range:        x_range.clone(),
+                    alpha_range:    alpha_range.clone()
+                }
+            }
+        },
+
+        // Nested fades work like normal fades, except they process their contents recursively
+        InterceptBlend::NestedFade { x_range, alpha_range, nested } => {
+            // Recursively remove any finished intercepts from the nested version
+            let nested_cleared = clear_finished_intercepts(&*nested, xpos);
+
+            if x_range.end <= xpos {
+                // If this blend has finished, then just use the nested version
+                nested_cleared
+            } else {
+                if let InterceptBlend::Solid = &nested_cleared {
+                    // Changes to a normal fade if the nested intercept is entirely cleared
+                    InterceptBlend::Fade {
+                        x_range:        x_range.clone(),
+                        alpha_range:    alpha_range.clone()
+                    }
+                } else {
+                    // Stays nested
+                    InterceptBlend::NestedFade { 
+                        x_range:        x_range.clone(), 
+                        alpha_range:    alpha_range.clone(), 
+                        nested:         Box::new(nested_cleared)
+                    }
+                }
+            }
+        }
+    }
+}
+
 impl<'a> ScanlineShardInterceptState<'a> {
     ///
     /// Creates a new intercept state
@@ -225,7 +275,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
     ///
     /// Adds or removes from the active shapes after an intercept
     ///
-    pub  fn start_intercept(&mut self, intercept: &ShardInterceptLocation, transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
+    pub fn start_intercept(&mut self, intercept: &ShardInterceptLocation, transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
         if let Some(descriptor) = descriptor {
             let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque);
 
@@ -309,25 +359,19 @@ impl<'a> ScanlineShardInterceptState<'a> {
     ///
     pub fn finish_intercept(&mut self, intercept: &ShardInterceptLocation, descriptor: Option<&'a ShapeDescriptor>) {
         if let Some(descriptor) = descriptor {
-            if let Some(existing_idx) = self.find(descriptor.z_index, intercept.shape).ok() {
+            if let Ok(existing_idx) = self.find(descriptor.z_index, intercept.shape) {
                 let active_shape    = &mut self.active_shapes[existing_idx];
+                let new_blend       = clear_finished_intercepts(&active_shape.blend, intercept.upper_x);
 
-                if let InterceptBlend::Fade { x_range, alpha_range } = &active_shape.blend {
-                    // Shape is fading in or out
-                    if active_shape.shape_id == intercept.shape && x_range.end <= intercept.upper_x {
-                        if active_shape.count != 0 {
-                            // Intercepts fading in become solid at the point where they finish
-                            active_shape.blend = InterceptBlend::Solid;
-
-                            // Opaque shapes update the z-floor (note that if an opaque shape has the same z-index as another shape, the z-floor is not enough to tell which is in front)
-                            if descriptor.is_opaque {
-                                self.z_floor = self.z_floor.max(descriptor.z_index);
-                            }
-                        } else {
-                            // If the count is 0 (or the edge is a toggle edge), then fade out this shape (it will be removed when the intercept is stopped)
-                            self.active_shapes.remove(existing_idx);
-                        }
-                    }
+                if active_shape.count != 0 {
+                    // If we're inside the shape, we always update to the new blend (which will be solid when all the blends are gone)
+                    active_shape.blend = new_blend;
+                } else if let InterceptBlend::Solid = &new_blend {
+                    // If we're outside the shape and all blends are gone, then remove the shape from the state
+                    self.active_shapes.remove(existing_idx);
+                } else {
+                    // If we're outside the shape but still blending, then leave the existing blends going
+                    active_shape.blend = new_blend;
                 }
             }
         }
