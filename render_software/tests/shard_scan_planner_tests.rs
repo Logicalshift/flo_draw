@@ -209,7 +209,7 @@ fn subpixel_vertical_line() {
 
 #[test]
 fn overlapping_subpixel_ranges() {
-    // Try planning a concave shape that will force the spans to overlap
+    // Try planning a concave shape that will force the spans to overlap (by switching direction on a subpixel)
     let y_pos = 400.0;
     let plan = plan_layer_0_line_on_drawing(vec![
         Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
@@ -218,7 +218,7 @@ fn overlapping_subpixel_ranges() {
         Draw::Path(PathOp::NewPath),
         Draw::Path(PathOp::Move(100.0, y_pos - 1.0)),
         Draw::Path(PathOp::Line(110.0, y_pos - 1.0)),
-        Draw::Path(PathOp::Line(112.0, y_pos + 1.1)),
+        Draw::Path(PathOp::Line(111.5, y_pos + 0.6)),
         Draw::Path(PathOp::Line(115.0, y_pos - 1.0)),
         Draw::Path(PathOp::Line(130.0, y_pos - 1.0)),
         Draw::Path(PathOp::Line(130.0, y_pos + 100.0)),
@@ -229,5 +229,6 @@ fn overlapping_subpixel_ranges() {
 
     let spans = plan.spans();
 
-    assert!(spans.len() == 6, "{:?}", spans);
+    // Should be 7 spans (3 for each intercept, then another where they overlap)
+    assert!(spans.len() == 7, "Expected 7 spans, got {}: {:?}", spans.len(), spans);
 }
