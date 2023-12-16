@@ -233,5 +233,5 @@ fn overlapping_subpixel_ranges() {
     assert!(spans.len() == 7, "Expected 7 spans, got {}: {:?}", spans.len(), spans);
 
     // One of these ranges should cover both entering and leaving (so be two intercepts)
-    assert!(spans.iter().filter(|span| span.programs().count() > 1).next().is_some(), "Expected an overlapping span (got {:?})", spans);
+    assert!(spans.iter().filter(|span| span.programs().count() >= 5).next().is_some(), "Expected an overlapping span (got {:?})", spans);
 }
