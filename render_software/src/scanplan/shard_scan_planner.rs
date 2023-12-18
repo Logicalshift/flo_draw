@@ -248,25 +248,38 @@ fn alpha_coverage(pixel_start: f64, pixel_end: f64) -> f64 {
 ///
 #[inline]
 fn actual_fade_for_range(render_x_range: &Range<f64>, alpha_x_range: &Range<f64>, alpha_range: &Range<f64>) -> Range<f64> {
-    // Adjust the alpha range to the actual x range
-    let pixel_x_start   = render_x_range.start.floor();
-    let pixel_x_end     = render_x_range.end.ceil();
-    let alpha_x_start   = alpha_x_range.start;
-    let alpha_x_end     = alpha_x_range.end;
+    if (alpha_x_range.end - alpha_x_range.start).abs() < 1e-6 {
+        // Treat the intercept as a vertical line
+        let offset = alpha_x_range.start - render_x_range.start;
+        let offset = offset / (render_x_range.end - render_x_range.start);
 
-    let alpha_ratio     = (alpha_range.end - alpha_range.start) / (alpha_x_end-alpha_x_start);
+        // Assuming that we're covering a single pixel, we can just use the offset here
+        if alpha_range.start > 0.5 {
+            offset..offset
+        } else {
+            (1.0-offset)..(1.0-offset)
+        }
+    } else {
+        // Adjust the alpha range to the actual x range
+        let pixel_x_start   = render_x_range.start.floor();
+        let pixel_x_end     = render_x_range.end.ceil();
+        let alpha_x_start   = alpha_x_range.start;
+        let alpha_x_end     = alpha_x_range.end;
 
-    let corrected_start_1   = (pixel_x_start - alpha_x_start) * alpha_ratio + alpha_range.start;
-    let corrected_start_2   = ((pixel_x_start + 1.0) - alpha_x_start) * alpha_ratio + alpha_range.start;
-    let corrected_end_1     = ((pixel_x_end - 1.0) - alpha_x_start) * alpha_ratio + alpha_range.start;
-    let corrected_end_2     = (pixel_x_end - alpha_x_start) * alpha_ratio + alpha_range.start;
+        let alpha_ratio     = (alpha_range.end - alpha_range.start) / (alpha_x_end-alpha_x_start);
 
-    let corrected_start     = alpha_coverage(corrected_start_1, corrected_start_2);
-    let corrected_end       = alpha_coverage(corrected_end_1, corrected_end_2);
+        let corrected_start_1   = (pixel_x_start - alpha_x_start) * alpha_ratio + alpha_range.start;
+        let corrected_start_2   = ((pixel_x_start + 1.0) - alpha_x_start) * alpha_ratio + alpha_range.start;
+        let corrected_end_1     = ((pixel_x_end - 1.0) - alpha_x_start) * alpha_ratio + alpha_range.start;
+        let corrected_end_2     = (pixel_x_end - alpha_x_start) * alpha_ratio + alpha_range.start;
 
-    let corrected_range = (corrected_start.max(0.0).min(1.0))..(corrected_end.max(0.0).min(1.0));
+        let corrected_start     = alpha_coverage(corrected_start_1, corrected_start_2);
+        let corrected_end       = alpha_coverage(corrected_end_1, corrected_end_2);
 
-    corrected_range
+        let corrected_range = (corrected_start.max(0.0).min(1.0))..(corrected_end.max(0.0).min(1.0));
+
+        corrected_range
+    }
 }
 
 impl<TEdge> ScanPlanner for ShardScanPlanner<TEdge>
