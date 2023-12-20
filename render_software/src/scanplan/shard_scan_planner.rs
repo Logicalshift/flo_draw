@@ -352,7 +352,6 @@ where
             let mut z_floor         = active_shapes.z_floor();
 
             loop {
-                // TODO: if a program range is < 1px, instead of just ignoring it, use a blend program (provides horizontal-only anti-aliasing)
                 // TODO: if there are multiple intercepts on the same pixel, we should process them all simultaneously (otherwise we will occasionally start a set of programs one pixel too late)
 
                 // Generate a stack for the current intercept
