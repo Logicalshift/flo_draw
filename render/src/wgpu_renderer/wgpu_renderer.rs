@@ -1246,6 +1246,7 @@ impl WgpuRenderer {
 
                 state.pipeline_configuration.shader_module              = WgpuShader::Simple(variant, post_processing);
                 state.pipeline_configuration.source_is_premultiplied    = false;
+                state.clip_texture                                      = clip_texture;
             }
 
             DashedLine { .. } => {
@@ -1290,6 +1291,7 @@ impl WgpuRenderer {
 
                 // Set up the state
                 state.texture_settings  = TextureSettings { transform: texture_transform.0, alpha: alpha as _, ..Default::default() };
+                state.clip_texture      = clip_texture;
                 state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
                 if repeat {
                     state.sampler       = Some(self.samplers.default_sampler());
@@ -1335,6 +1337,7 @@ impl WgpuRenderer {
 
                 // Set up the state
                 state.texture_settings  = TextureSettings { transform: texture_transform.0, alpha: alpha as _, ..Default::default() };
+                state.clip_texture      = clip_texture;
                 state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
                 if repeat {
                     state.sampler       = Some(self.samplers.gradient_sampler());
