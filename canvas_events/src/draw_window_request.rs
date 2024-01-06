@@ -21,8 +21,8 @@ pub enum MousePointer {
 ///
 #[derive(Debug)]
 pub enum EventWindowRequest {
-    /// Adds a channel that events generated for this window is relayed to
-    SendEvents(BoxedEntityChannel<'static, DrawEventRequest>),
+    /// Add a subprogram to the list to send events to
+    SendEvents(SubProgramId),
 
     /// Closes the window and shuts down the rendering entity
     CloseWindow,
@@ -49,8 +49,8 @@ pub enum DrawingWindowRequest {
     /// Carry out a drawing request
     Draw(DrawingRequest),
 
-    /// Adds a channel that events generated for this window is relayed to
-    SendEvents(BoxedEntityChannel<'static, DrawEventRequest>),
+    /// Add a subprogram to the list to send events to
+    SendEvents(SubProgramId),
 
     /// Closes the window and shuts down the rendering entity
     CloseWindow,
@@ -75,8 +75,8 @@ pub enum RenderWindowRequest {
     /// Carry out a render request
     Render(RenderRequest),
 
-    /// Adds a channel that events generated for this window is relayed to
-    SendEvents(BoxedEntityChannel<'static, DrawEventRequest>),
+    /// Add a subprogram to the list to send events to
+    SendEvents(SubProgramId),
 
     /// Closes the window and shuts down the rendering entity
     CloseWindow,
