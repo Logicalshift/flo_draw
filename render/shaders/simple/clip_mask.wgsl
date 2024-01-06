@@ -3,12 +3,8 @@
 var clip_texture: texture_multisampled_2d<f32>;
 
 fn clip(color: vec4<f32>, position: vec4<f32>) -> vec4<f32> {
-    let clip_texture_size   = textureDimensions(clip_texture);
-
-    let clip_width          = f32(clip_texture_size[0]);
-    let clip_height         = f32(clip_texture_size[1]);
-    let clip_x              = ((position[0] + 1.0) * 0.5) * clip_width;
-    let clip_y              = ((position[1] + 1.0) * 0.5) * clip_height;
+    let clip_x              = position[0];
+    let clip_y              = position[1];
 
     let clip_pos            = vec2<i32>(i32(clip_x), i32(clip_y));
     var clip_alpha          = f32(0.0);
