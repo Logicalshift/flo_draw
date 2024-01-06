@@ -1,5 +1,7 @@
 use crate::draw::*;
 
+use flo_scene::*;
+
 use std::sync::*;
 
 ///
@@ -10,3 +12,5 @@ pub enum DrawingRequest {
     /// Perform the specified drawing actions
     Draw(Arc<Vec<Draw>>),
 }
+
+impl SceneMessage for DrawingRequest {  }
