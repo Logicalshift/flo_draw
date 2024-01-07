@@ -94,6 +94,9 @@ pub enum RenderWindowRequest {
     SetMousePointer(MousePointer),
 }
 
+impl SceneMessage for RenderWindowRequest { }
+impl SceneMessage for DrawingWindowRequest { }
+
 impl From<RenderRequest> for RenderWindowRequest {
     fn from(req: RenderRequest) -> RenderWindowRequest {
         RenderWindowRequest::Render(req)
