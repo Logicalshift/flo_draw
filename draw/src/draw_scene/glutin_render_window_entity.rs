@@ -14,6 +14,7 @@ use std::sync::*;
 ///
 /// Creates a render window in a scene with the specified entity ID
 ///
+#[allow(dead_code)]
 pub fn create_glutin_render_window_entity(context: &Arc<SceneContext>, entity_id: EntityId, initial_size: (u64, u64)) -> Result<SimpleEntityChannel<RenderWindowRequest>, CreateEntityError> {
     // This window can accept a couple of converted messages
     context.convert_message::<RenderRequest, RenderWindowRequest>()?;

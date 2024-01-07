@@ -7,7 +7,6 @@ use crate::buffer::*;
 use wgpu;
 
 use std::mem;
-use std::num::*;
 use std::sync::*;
 
 ///

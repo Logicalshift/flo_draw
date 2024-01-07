@@ -6,11 +6,10 @@ use crate::wgpu_renderer::*;
 
 use ::desync::*;
 use futures::prelude::*;
-use once_cell::sync::{Lazy};
+use once_cell::sync::Lazy;
 
 use wgpu;
 
-use std::num::*;
 use std::sync::*;
 
 static WGPU_BACKGROUND: Lazy<Desync<()>> = Lazy::new(|| Desync::new(()));
