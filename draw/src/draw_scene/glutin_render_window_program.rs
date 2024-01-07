@@ -20,7 +20,7 @@ pub fn create_glutin_render_window_program(scene: &Arc<Scene>, program_id: SubPr
     //context.convert_message::<EventWindowRequest, RenderWindowRequest>()?;
 
     // Create the window in the scene
-    scene.add_subprogam(
+    scene.add_subprogram(
         program_id,
         move |render_window_requests, context| async move {
             // Create the publisher to send the render actions to the stream
@@ -100,7 +100,7 @@ pub fn create_glutin_render_window_program(scene: &Arc<Scene>, program_id: SubPr
                 }
             }
         },
-        20)?;
+        20);
 
     // Result is a stream to this program
     scene.send_to_scene::<RenderWindowRequest>(program_id)
