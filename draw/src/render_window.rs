@@ -65,7 +65,10 @@ where
                 let channel = context.send::<TRequest>(target);
                 if let Ok(mut channel) = channel {
                     while let Some(request) = requests.next().await {
-                        channel.send(request.into()).await.ok();
+                        match channel.send(request.into()).await {
+                            Ok(_)   => { },
+                            Err(_)  => { break; }
+                        }
                     }
                 }
             }
