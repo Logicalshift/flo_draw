@@ -25,16 +25,16 @@ fn texture_vertex_shader(
 ) -> RasterData {
     var result: RasterData;
 
-    var color = vec4<f32>(f32(color[0]), f32(color[1]), f32(color[2]), f32(color[3]));
-    color[0] /= 255.0;
-    color[1] /= 255.0;
-    color[2] /= 255.0;
-    color[3] /= 255.0;
+    var color_r = vec4<f32>(f32(color[0]), f32(color[1]), f32(color[2]), f32(color[3]));
+    color_r[0] /= 255.0;
+    color_r[1] /= 255.0;
+    color_r[2] /= 255.0;
+    color_r[3] /= 255.0;
 
-    let tex_coord       = texture_position(pos, tex_coord, texture_settings.transform);
+    let tex_coord_r     = texture_position(pos, tex_coord, texture_settings.transform);
 
-    result.color        = color;
-    result.tex_coord    = tex_coord;
+    result.color        = color_r;
+    result.tex_coord    = tex_coord_r;
     result.pos          = vec4<f32>(pos[0], pos[1], 0.0, 1.0) * transform;
 
     return result;

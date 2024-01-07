@@ -37,8 +37,8 @@ raw-window-handle   = { optional = true, version = "0.5" }
 gl                  = { optional = true, version = "0.14" }
 
 winit               = { optional = true, version = "0.28" }
-wgpu                = { optional = true, version = "0.16" }
-wgpu-profiler       = { version = "0.12", optional = true }
+wgpu                = { optional = true, workspace = true }
+wgpu-profiler       = { workspace = true, optional = true }
 
 [dev-dependencies]
 flo_curves          = "0.8"

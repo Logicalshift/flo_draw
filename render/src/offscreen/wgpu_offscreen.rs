@@ -42,7 +42,7 @@ struct WgpuOffscreenRenderTarget {
 ///
 pub async fn wgpu_initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     // Create a new WGPU instance and adapter
-    let instance    = wgpu::Instance::new(wgpu::InstanceDescriptor { backends: wgpu::Backends::all(), dx12_shader_compiler: wgpu::Dx12Compiler::default() });
+    let instance    = wgpu::Instance::new(wgpu::InstanceDescriptor { backends: wgpu::Backends::all(), dx12_shader_compiler: wgpu::Dx12Compiler::default(), ..Default::default() });
     let adapter     = instance.request_adapter(&wgpu::RequestAdapterOptions {
         power_preference:       wgpu::PowerPreference::default(),
         force_fallback_adapter: false,

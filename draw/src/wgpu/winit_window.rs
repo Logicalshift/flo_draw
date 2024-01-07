@@ -99,7 +99,7 @@ where
                         let winit_window    = &**winit_window;
 
                         let backend         = wgpu::util::backend_bits_from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
-                        let instance        = wgpu::Instance::new(wgpu::InstanceDescriptor { backends: backend, dx12_shader_compiler: wgpu::Dx12Compiler::default() });
+                        let instance        = wgpu::Instance::new(wgpu::InstanceDescriptor { backends: backend, ..Default::default() });
                         let surface         = unsafe { instance.create_surface(winit_window).expect("wgpu surface") };
                         let adapter         = instance.request_adapter(&wgpu::RequestAdapterOptions {
                             power_preference:       wgpu::PowerPreference::default(),
