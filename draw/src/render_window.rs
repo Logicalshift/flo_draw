@@ -1,8 +1,10 @@
 use crate::draw_scene::*;
 use crate::events::*;
+use crate::window_properties;
 use crate::window_properties::*;
 
 use flo_scene::*;
+use flo_scene::programs::*;
 use flo_stream::*;
 use flo_render::*;
 use flo_binding::*;
@@ -31,36 +33,43 @@ where
 ///
 /// Sends the events for changing the properties in a set of WindowProperties
 ///
-pub (crate) fn send_window_properties<TRequest>(context: &Arc<SceneContext>, window_properties: WindowProperties, channel: impl 'static + Send + EntityChannel<Message=TRequest>) -> Result<(), EntityFutureError>
+pub (crate) async fn send_window_properties<TRequest>(context: &SceneContext, window_properties: WindowProperties, target: SubProgramId) -> Result<(), ConnectionError>
 where
-    TRequest: Send + From<EventWindowRequest>
+    TRequest: 'static + Send + SceneMessage + From<EventWindowRequest>,
 {
-    context.run_in_background(async move {
-        // Follow the properties
-        let title           = follow(window_properties.title);
-        let fullscreen      = follow(window_properties.fullscreen);
-        let has_decorations = follow(window_properties.has_decorations);
-        let mouse_pointer   = follow(window_properties.mouse_pointer);
+    context.send_message(SceneControl::start_program(SubProgramId::new(),
+        move |_: InputStream<()>, context| {
+            let window_properties = window_properties.clone();
 
-        // Each one generates an event when it changes
-        let title           = title.map(|new_title| EventWindowRequest::SetTitle(new_title));
-        let fullscreen      = fullscreen.map(|fullscreen| EventWindowRequest::SetFullScreen(fullscreen));
-        let has_decorations = has_decorations.map(|has_decorations| EventWindowRequest::SetHasDecorations(has_decorations));
-        let mouse_pointer   = mouse_pointer.map(|mouse_pointer| EventWindowRequest::SetMousePointer(mouse_pointer));
+            async move {
+                // Follow the properties
+                let title           = follow(window_properties.title);
+                let fullscreen      = follow(window_properties.fullscreen);
+                let has_decorations = follow(window_properties.has_decorations);
+                let mouse_pointer   = follow(window_properties.mouse_pointer);
 
-        let mut requests    = stream::select_all(vec![
-            title.boxed(),
-            fullscreen.boxed(),
-            has_decorations.boxed(),
-            mouse_pointer.boxed(),
-        ]);
+                // Each one generates an event when it changes
+                let title           = title.map(|new_title| EventWindowRequest::SetTitle(new_title));
+                let fullscreen      = fullscreen.map(|fullscreen| EventWindowRequest::SetFullScreen(fullscreen));
+                let has_decorations = has_decorations.map(|has_decorations| EventWindowRequest::SetHasDecorations(has_decorations));
+                let mouse_pointer   = mouse_pointer.map(|mouse_pointer| EventWindowRequest::SetMousePointer(mouse_pointer));
 
-        // Pass the requests on to the underlying window
-        let mut channel     = channel;
-        while let Some(request) = requests.next().await {
-            channel.send(request.into()).await.ok();
-        }
-    })?;
+                let mut requests    = stream::select_all(vec![
+                    title.boxed(),
+                    fullscreen.boxed(),
+                    has_decorations.boxed(),
+                    mouse_pointer.boxed(),
+                ]);
+
+                // Pass the requests on to the underlying window
+                let channel = context.send::<TRequest>(target);
+                if let Ok(mut channel) = channel {
+                    while let Some(request) = requests.next().await {
+                        channel.send(request.into()).await.ok();
+                    }
+                }
+            }
+        }, 0));
 
     Ok(())
 }
@@ -102,7 +111,7 @@ where
             let mut render_stream   = render_stream.boxed();
             let mut render_channel  = render_channel;
 
-            send_window_properties(&context, properties, render_window_program).ok();
+            send_window_properties(&context, properties, render_window_program).await.ok();
 
             // Request event actions from the renderer
             render_channel.send(RenderWindowRequest::SendEvents(event_relay_program)).await.ok();
