@@ -1,6 +1,5 @@
 use crate::draw_scene::*;
 use crate::events::*;
-use crate::window_properties;
 use crate::window_properties::*;
 
 use flo_scene::*;
@@ -12,7 +11,6 @@ use flo_binding::*;
 use futures::prelude::*;
 use futures::stream;
 
-use std::sync::*;
 use futures::channel::mpsc;
 
 ///
