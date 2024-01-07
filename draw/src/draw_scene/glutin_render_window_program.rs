@@ -5,6 +5,7 @@ use futures::prelude::*;
 use futures::channel::mpsc;
 
 use flo_scene::*;
+use flo_scene::programs::*;
 use flo_stream::*;
 use flo_binding::*;
 use flo_canvas_events::*;
@@ -63,20 +64,29 @@ pub fn create_glutin_render_window_program(scene: &Arc<Scene>, program_id: SubPr
                     }
 
                     RenderWindowRequest::SendEvents(channel_target) => {
-                        let mut subscriber = event_publisher.subscribe();
+                        // Run a subprogram to send the events to the target program
+                        let subscriber = Mutex::new(Some(event_publisher.subscribe()));
 
-                        context.run_in_background(async move {
-                            let mut channel_target = channel_target;
+                        context.send_message(SceneControl::start_program(SubProgramId::new(), move |_: InputStream<()>, context| {
+                            let subscriber = subscriber.lock().unwrap().take();
 
-                            // Pass on events to everything that's listening, until the channel starts generating errors
-                            while let Some(event) = subscriber.next().await {
-                                let result = channel_target.send(event).await;
+                            async move {
+                                if let Some(mut subscriber) = subscriber {
+                                    let events_target = context.send(channel_target).ok();
 
-                                if result.is_err() {
-                                    break;
+                                    if let Some(mut events_target) = events_target {
+                                        // Pass on events to everything that's listening, until the channel starts generating errors
+                                        while let Some(event) = subscriber.next().await {
+                                            let result = events_target.send(event).await;
+
+                                            if result.is_err() {
+                                                break;
+                                            }
+                                        }
+                                    }
                                 }
                             }
-                        }).ok();
+                        }, 20)).await.ok();
                     }
 
                     RenderWindowRequest::CloseWindow => {
