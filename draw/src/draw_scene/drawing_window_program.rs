@@ -23,11 +23,11 @@ enum DrawingOrEvent {
 
 impl SceneMessage for DrawingOrEvent { }
 
-static FILTER_DRAWING_WINDOW_REQUEST: FilterHandle = Lazy::new(|| FilterHandle::for_filter(|drawing_window_requests| {
+static FILTER_DRAWING_WINDOW_REQUEST: Lazy<FilterHandle> = Lazy::new(|| FilterHandle::for_filter(|drawing_window_requests| {
     drawing_window_requests.ready_chunks(100)
         .map(|requests| DrawingOrEvent::Drawing(requests))
 }));
-static FILTER_DRAWING_EVENT_REQUEST: FilterHandle = Lazy::new(|| FilterHandle::for_filter(|drawing_event_requests| {
+static FILTER_DRAWING_EVENT_REQUEST: Lazy<FilterHandle> = Lazy::new(|| FilterHandle::for_filter(|drawing_event_requests| {
     drawing_event_requests.ready_chunks(100)
         .map(|requests| DrawingOrEvent::Event(requests))
 }));
@@ -214,7 +214,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
             let mut event_publisher = Publisher::new(1000);
 
             // Set up the renderer and window state
-            let mut render_state        = RendererState {
+            let mut render_state = RendererState {
                 renderer:           CanvasRenderer::new(),
                 window_transform:   None,
                 scale:              1.0,
@@ -223,7 +223,8 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
             };
 
             // Request the events from the render target
-            let mut render_target = context.send::<RenderWindowRequest>(render_target);
+            let render_target       = context.send::<RenderWindowRequest>(render_target);
+            let mut render_target   = if let Ok(render_target) = render_target { render_target } else { return; };
             render_target.send(RenderWindowRequest::SendEvents(program_id)).await.ok();
 
             // Initially the window is not ready to render (we need to wait for the first 'redraw' event)
@@ -287,7 +288,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
 
                         // Commit the frame. We'll add backpressure to new drawing events by not accepting them.
                         waiting_for_new_frame           = true;
-                        messages.waiting_for_new_frame  = true;         // TODO: we currently can't stop polling for drawing events here, so we need a way to reimplement this
+                        // messages.waiting_for_new_frame  = true;         // TODO: we currently can't stop polling for drawing events here, so we need a way to reimplement this
 
                         combined_list.push(Arc::new(vec![Draw::ShowFrame]));
                         render_state.draw(combined_list.iter()
