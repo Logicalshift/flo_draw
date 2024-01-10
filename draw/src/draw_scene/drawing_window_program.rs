@@ -288,6 +288,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
 
                         // Commit the frame. We'll add backpressure to new drawing events by not accepting them.
                         waiting_for_new_frame           = true;
+                        // Can reimplement the TODO here by having another program that accepts the drawing events and does the conversion
                         // messages.waiting_for_new_frame  = true;         // TODO: we currently can't stop polling for drawing events here, so we need a way to reimplement this
 
                         combined_list.push(Arc::new(vec![Draw::ShowFrame]));
