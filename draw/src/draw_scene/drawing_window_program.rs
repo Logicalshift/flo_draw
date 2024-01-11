@@ -210,7 +210,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
     scene.add_subprogram(
         program_id, 
         move |drawing_window_requests, context| async move {
-            let mut render_target = render_target;
+            let render_target = render_target;
 
             // We relay events via our own event publisher
             let mut event_publisher = Publisher::new(1000);
@@ -225,8 +225,9 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
             };
 
             // Request the events from the render target
-            let render_target       = context.send::<RenderWindowRequest>(render_target);
-            let mut render_target   = if let Ok(render_target) = render_target { render_target } else { return; };
+            let render_target   = context.send::<RenderWindowRequest>(render_target);
+            let render_target   = if let Ok(render_target) = render_target { render_target } else { return; };
+            pin_mut!(render_target);
             render_target.send(RenderWindowRequest::SendEvents(program_id)).await.ok();
 
             // Initially the window is not ready to render (we need to wait for the first 'redraw' event)
@@ -236,10 +237,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
             let mut closed                      = false;
 
             // Pause the drawing using a start frame event
-            {
-                pin_mut!(render_target);
-                render_state.draw(vec![Draw::StartFrame].iter(), &mut render_target).await;
-            }
+            render_state.draw(vec![Draw::StartFrame].iter(), &mut render_target).await;
 
             // Run the main event loop
             let mut messages = drawing_window_requests;
@@ -299,7 +297,6 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                         // Can reimplement the TODO here by having another program that accepts the drawing events and does the conversion
                         // messages.waiting_for_new_frame  = true;         // TODO: we currently can't stop polling for drawing events here, so we need a way to reimplement this
 
-                        pin_mut!(render_target);
                         combined_list.push(Arc::new(vec![Draw::ShowFrame]));
                         render_state.draw(combined_list.iter()
                             .flat_map(|item| item.iter()), &mut render_target).await;
@@ -336,7 +333,6 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                         ready_to_render = true;
 
                                         // Show the frame from the initial 'StartFrame' request
-                                        pin_mut!(render_target);
                                         render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
                                     }
                                 },
@@ -353,7 +349,6 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                     if drawing_since_last_frame {
                                         // Finalize any drawing that occurred while we were waiting for the new frame to display
                                         waiting_for_new_frame = true;
-                                        pin_mut!(render_target);
                                         render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
                                         drawing_since_last_frame = false;
                                     }
