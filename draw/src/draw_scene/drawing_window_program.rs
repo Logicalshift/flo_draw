@@ -123,7 +123,7 @@ where
 ///
 fn handle_window_event<'a, SendFuture, SendRenderActionsFn>(state: &'a mut RendererState, event: DrawEvent, send_render_actions: &'a mut SendRenderActionsFn) -> impl 'a + Send + Future<Output=Vec<DrawEvent>> 
 where 
-    SendRenderActionsFn:    Send + FnMut(Vec<RenderAction>) -> SendFuture,
+    SendRenderActionsFn:    Send + Fn(Vec<RenderAction>) -> SendFuture,
     SendFuture:             Send + Future<Output=()> 
 {
     async move {
@@ -201,7 +201,7 @@ impl RendererState {
 ///
 /// Creates a drawing window that sends render requests to the specified target
 ///
-pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramId, render_target: SubProgramId) -> Result<impl Sink<DrawingWindowRequest, Error=SceneSendError>, ConnectionError> {
+pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramId, render_target_program: SubProgramId) -> Result<impl Sink<DrawingWindowRequest, Error=SceneSendError>, ConnectionError> {
     // This window can accept a couple of converted messages
     //context.convert_message::<DrawingRequest, DrawingWindowRequest>()?;
     //context.convert_message::<EventWindowRequest, DrawingWindowRequest>()?;
@@ -210,8 +210,6 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
     scene.add_subprogram(
         program_id, 
         move |drawing_window_requests, context| async move {
-            let render_target = render_target;
-
             // We relay events via our own event publisher
             let mut event_publisher = Publisher::new(1000);
 
@@ -225,7 +223,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
             };
 
             // Request the events from the render target
-            let render_target   = context.send::<RenderWindowRequest>(render_target);
+            let render_target   = context.send::<RenderWindowRequest>(render_target_program);
             let render_target   = if let Ok(render_target) = render_target { render_target } else { return; };
             pin_mut!(render_target);
             render_target.send(RenderWindowRequest::SendEvents(program_id)).await.ok();
@@ -364,10 +362,14 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                             event_publisher.publish(evt_message.clone()).await;
 
                             // Handle the next message
-                            handle_window_event(&mut render_state, evt_message, &mut |render_actions| {
-                                let send_rendering = render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions)));
+                            let context = &context;
+                            handle_window_event(&mut render_state, evt_message, &mut move |render_actions| {
+                                let render_target = context.send::<RenderWindowRequest>(render_target_program);
+
                                 async move {
-                                    send_rendering.await.ok();
+                                    if let Ok(mut render_target) = render_target {
+                                        render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
+                                    }
                                 }
                             }).await;
                         }
