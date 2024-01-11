@@ -1,7 +1,9 @@
 use futures::prelude::*;
+use futures::{pin_mut};
 use futures::task::{Poll, Context};
 
 use flo_scene::*;
+use flo_scene::programs::*;
 use flo_stream::*;
 use flo_canvas::*;
 use flo_canvas::scenery::*;
@@ -190,8 +192,9 @@ impl RendererState {
     ///
     /// Performs a drawing action and passes it on to the render target
     ///
-    async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: &mut (impl 'static + Sink<RenderWindowRequest>)) {
-        let render_actions = self.renderer.draw(draw_actions.cloned()).collect::<Vec<_>>().await;
+    async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: Pin<&mut (impl 'static + Sink<RenderWindowRequest>)>) {
+        let mut render_target   = render_target;
+        let render_actions      = self.renderer.draw(draw_actions.cloned()).collect::<Vec<_>>().await;
         render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
     }
 }
@@ -234,7 +237,10 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
             let mut closed                      = false;
 
             // Pause the drawing using a start frame event
-            render_state.draw(vec![Draw::StartFrame].iter(), &mut render_target).await;
+            {
+                pin_mut!(render_target);
+                render_state.draw(vec![Draw::StartFrame].iter(), render_target).await;
+            }
 
             // Run the main event loop
             let mut messages = drawing_window_requests;
@@ -262,21 +268,23 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                     closed = true;
                                 }
 
-                                DrawingWindowRequest::SendEvents(event_channel) => {
-                                    let mut subscriber = event_publisher.subscribe();
+                                DrawingWindowRequest::SendEvents(target_program) => {
+                                    // Output to the target program using another program
+                                    let mut subscriber  = event_publisher.subscribe();
+                                    let channel_target  = context.send::<DrawEvent>(target_program);
 
-                                    context.run_in_background(async move {
-                                        let mut channel_target = event_channel;
+                                    if let Ok(channel_target) = channel_target {
+                                        context.send_message(SceneControl::start_program(SubProgramId::new(), move |_: InputStream<()>, _| async move {
+                                            // Pass on events to everything that's listening, until the channel starts generating errors
+                                            while let Some(event) = subscriber.next().await {
+                                                let result = channel_target.send(event).await;
 
-                                        // Pass on events to everything that's listening, until the channel starts generating errors
-                                        while let Some(event) = subscriber.next().await {
-                                            let result = channel_target.send(event).await;
-
-                                            if result.is_err() {
-                                                break;
+                                                if result.is_err() {
+                                                    break;
+                                                }
                                             }
-                                        }
-                                    }).ok();
+                                        }, 0));
+                                    }
                                 }
 
                                 DrawingWindowRequest::SetTitle(title)                   => { render_target.send(RenderWindowRequest::SetTitle(title)).await.ok(); },
@@ -291,9 +299,10 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                         // Can reimplement the TODO here by having another program that accepts the drawing events and does the conversion
                         // messages.waiting_for_new_frame  = true;         // TODO: we currently can't stop polling for drawing events here, so we need a way to reimplement this
 
+                        pin_mut!(render_target);
                         combined_list.push(Arc::new(vec![Draw::ShowFrame]));
                         render_state.draw(combined_list.iter()
-                            .flat_map(|item| item.iter()), &mut render_target).await;
+                            .flat_map(|item| item.iter()), render_target).await;
 
                         // Update the window transform according to the drawing actions we processed
                         render_state.update_window_transform();
@@ -327,7 +336,8 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                         ready_to_render = true;
 
                                         // Show the frame from the initial 'StartFrame' request
-                                        render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
+                                        pin_mut!(render_target);
+                                        render_state.draw(vec![Draw::ShowFrame].iter(), render_target).await;
                                     }
                                 },
 
@@ -343,7 +353,8 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                     if drawing_since_last_frame {
                                         // Finalize any drawing that occurred while we were waiting for the new frame to display
                                         waiting_for_new_frame = true;
-                                        render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
+                                        pin_mut!(render_target);
+                                        render_state.draw(vec![Draw::ShowFrame].iter(), render_target).await;
                                         drawing_since_last_frame = false;
                                     }
 
@@ -389,8 +400,8 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
         },
         100);
 
-    scene.connect_programs((), StreamTarget::Filtered(FILTER_DRAWING_WINDOW_REQUEST, program_id), StreamId::with_message_type::<DrawingWindowRequest>());
-    scene.connect_programs((), StreamTarget::Filtered(FILTER_DRAWING_EVENT_REQUEST, program_id), StreamId::with_message_type::<DrawEventRequest>());
+    scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_WINDOW_REQUEST, program_id), StreamId::with_message_type::<DrawingWindowRequest>());
+    scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_EVENT_REQUEST, program_id), StreamId::with_message_type::<DrawEventRequest>());
 
     scene.send_to_scene::<DrawingWindowRequest>(program_id)
 }
