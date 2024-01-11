@@ -15,7 +15,7 @@ use std::sync::*;
 ///
 /// Creates a render window in a scene with the specified entity ID
 ///
-pub fn create_glutin_render_window_program(scene: &Arc<Scene>, program_id: SubProgramId, initial_size: (u64, u64)) -> Result<impl Sink<RenderWindowRequest, Error=SceneSendError>, ConnectionError> {
+pub fn create_glutin_render_window_program(scene: &Arc<Scene>, program_id: SubProgramId, initial_size: (u64, u64)) -> Result<(), ConnectionError> {
     // This window can accept a couple of converted messages
     //context.convert_message::<RenderRequest, RenderWindowRequest>()?;
     //context.convert_message::<EventWindowRequest, RenderWindowRequest>()?;
@@ -112,6 +112,5 @@ pub fn create_glutin_render_window_program(scene: &Arc<Scene>, program_id: SubPr
         },
         20);
 
-    // Result is a stream to this program
-    scene.send_to_scene::<RenderWindowRequest>(program_id)
+    Ok(())
 }

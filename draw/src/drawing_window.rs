@@ -124,8 +124,8 @@ where
     let drawing_window_program  = SubProgramId::new();
     let scene_context           = flo_draw_scene_context();
 
-    let render_channel          = create_render_window_sub_program(&scene_context, render_window_program, window_properties.size().get()).unwrap();
-    create_drawing_window_program(&scene_context, drawing_window_program, render_channel).unwrap();
+    create_render_window_sub_program(&scene_context, render_window_program, window_properties.size().get()).unwrap();
+    create_drawing_window_program(&scene_context, drawing_window_program, render_window_program).unwrap();
 
     // Use a channel to get the events out of the program
     let (send_events, recv_events)  = mpsc::channel(20);

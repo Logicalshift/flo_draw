@@ -1,5 +1,5 @@
 #[cfg(all(feature="render-opengl", not(feature="render-wgpu")))]
-use super::glutin_render_window_entity::*;
+use super::glutin_render_window_program::*;
 
 #[cfg(feature="render-wgpu")]
 use super::wgpu_render_window_entity::*;
@@ -13,7 +13,7 @@ use std::sync::*;
 /// Creates a render window in a scene with the specified program ID
 ///
 #[cfg(all(feature="render-opengl", not(feature="render-wgpu")))]
-pub fn create_render_window_sub_program(scene: &Arc<Scene>, program_id: SubProgramId, initial_size: (u64, u64)) -> Result<SimpleEntityChannel<RenderWindowRequest>, CreateEntityError> {
+pub fn create_render_window_sub_program(scene: &Arc<Scene>, program_id: SubProgramId, initial_size: (u64, u64)) -> Result<(), ConnectionError> {
     create_glutin_render_window_program(scene, program_id, initial_size)
 }
 
