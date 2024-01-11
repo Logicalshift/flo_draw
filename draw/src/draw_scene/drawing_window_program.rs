@@ -358,7 +358,8 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                         drawing_since_last_frame = false;
                                     }
 
-                                    messages.waiting_for_new_frame = waiting_for_new_frame;
+                                    // TODO: add a way to add backpressure if we're waiting for a new frame
+                                    //messages.waiting_for_new_frame = waiting_for_new_frame;
                                 }
 
                                 _ => { }
