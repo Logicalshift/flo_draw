@@ -192,9 +192,8 @@ impl RendererState {
     ///
     /// Performs a drawing action and passes it on to the render target
     ///
-    async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: Pin<&mut (impl 'static + Sink<RenderWindowRequest>)>) {
-        let mut render_target   = render_target;
-        let render_actions      = self.renderer.draw(draw_actions.cloned()).collect::<Vec<_>>().await;
+    async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: &mut Pin<&mut (impl 'static + Sink<RenderWindowRequest>)>) {
+        let render_actions = self.renderer.draw(draw_actions.cloned()).collect::<Vec<_>>().await;
         render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
     }
 }
@@ -239,7 +238,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
             // Pause the drawing using a start frame event
             {
                 pin_mut!(render_target);
-                render_state.draw(vec![Draw::StartFrame].iter(), render_target).await;
+                render_state.draw(vec![Draw::StartFrame].iter(), &mut render_target).await;
             }
 
             // Run the main event loop
@@ -303,7 +302,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                         pin_mut!(render_target);
                         combined_list.push(Arc::new(vec![Draw::ShowFrame]));
                         render_state.draw(combined_list.iter()
-                            .flat_map(|item| item.iter()), render_target).await;
+                            .flat_map(|item| item.iter()), &mut render_target).await;
 
                         // Update the window transform according to the drawing actions we processed
                         render_state.update_window_transform();
@@ -338,7 +337,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
 
                                         // Show the frame from the initial 'StartFrame' request
                                         pin_mut!(render_target);
-                                        render_state.draw(vec![Draw::ShowFrame].iter(), render_target).await;
+                                        render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
                                     }
                                 },
 
@@ -355,7 +354,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                         // Finalize any drawing that occurred while we were waiting for the new frame to display
                                         waiting_for_new_frame = true;
                                         pin_mut!(render_target);
-                                        render_state.draw(vec![Draw::ShowFrame].iter(), render_target).await;
+                                        render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
                                         drawing_since_last_frame = false;
                                     }
 
