@@ -9,6 +9,7 @@ use flo_binding::*;
 use flo_scene::*;
 
 use futures::prelude::*;
+use futures::channel::mpsc;
 use futures::task::{Poll, Context};
 
 use std::mem;
@@ -127,9 +128,9 @@ where
     let drawing_channel         = create_drawing_window_program(&scene_context, drawing_window_program, render_channel).unwrap();
 
     // Use a channel to get the events out of the program
-    let (send_events, recv_events)  = mpsc::channel();
+    let (send_events, recv_events)  = mpsc::channel(20);
     let event_relay_program         = SubProgramId::new();
-    scene_context.create_subprogram(event_relay_program,
+    scene_context.add_subprogram(event_relay_program,
         move |mut draw_events: InputStream<DrawEvent>, _| async move {
             while let Some(event) = draw_events.next().await {
                 match send_events.send(event).await {
@@ -142,13 +143,13 @@ where
 
     // Pass events from the render stream onto the window using another entity (potentially this could be a background task for the render window entity?)
     let process_entity = SubProgramId::new();
-    scene_context.create_subprogram(process_entity, move |_: InputStream<()>, context| {
+    scene_context.add_subprogram(process_entity, move |_: InputStream<()>, context| {
         async move {
             let mut canvas_stream   = canvas_stream;
-            let mut drawing_channel = context.send::<DrawingWindowRequest>();
+            let mut drawing_channel = context.send::<DrawingWindowRequest>(drawing_window_program).unwrap();
 
             // Send the window properties to the window
-            send_window_properties(&context, properties, drawing_window_program).ok();
+            send_window_properties(&context, properties, drawing_window_program).await.ok();
 
             // Request event actions from the renderer to the relay program (which sends them on to the stream returned from this function)
             drawing_channel.send(DrawingWindowRequest::SendEvents(event_relay_program)).await.ok();
@@ -163,10 +164,7 @@ where
                 }
             }
         }
-    }).unwrap();
-
-    // We don't process messages in our background entity, so seal it off
-    scene_context.seal_entity(process_entity).unwrap();
+    }, 0);
 
     // The events stream is the result
     recv_events
