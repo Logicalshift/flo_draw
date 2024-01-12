@@ -279,7 +279,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                                     break;
                                                 }
                                             }
-                                        }, 0));
+                                        }, 0)).await.ok();
                                     }
                                 }
 
@@ -398,8 +398,8 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
         },
         100);
 
-    scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_WINDOW_REQUEST, program_id), StreamId::with_message_type::<DrawingWindowRequest>());
-    scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_EVENT_REQUEST, program_id), StreamId::with_message_type::<DrawEventRequest>());
+    scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_WINDOW_REQUEST, program_id), StreamId::with_message_type::<DrawingWindowRequest>()).unwrap();
+    scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_EVENT_REQUEST, program_id), StreamId::with_message_type::<DrawEventRequest>()).unwrap();
 
     Ok(())
 }
