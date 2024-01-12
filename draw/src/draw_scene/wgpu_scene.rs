@@ -19,14 +19,14 @@ pub fn flo_draw_wgpu_scene() -> Arc<Scene> {
     // Start a new scene if none was running
     if scene.is_none() {
         // Create a new scene context, and run it on the winit thread
-        let scene       = Arc::new(Scene::default());
+        let new_scene = Arc::new(Scene::default());
 
         // Store as the active scene
-        *scene = Some(new_scene);
+        *scene = Some(Arc::clone(&new_scene));
 
         // Run on the winit thread
         winit_thread().send_event(WinitThreadEvent::RunProcess(Box::new(move || async move {
-            new_scene.run().await;
+            new_scene.run_scene().await;
         }.boxed())));
     }
 
