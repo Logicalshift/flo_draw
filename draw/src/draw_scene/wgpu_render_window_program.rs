@@ -5,6 +5,7 @@ use futures::prelude::*;
 use futures::channel::mpsc;
 
 use flo_scene::*;
+use flo_scene::programs::*;
 use flo_stream::*;
 use flo_binding::*;
 use flo_canvas_events::*;
@@ -14,13 +15,13 @@ use std::sync::*;
 ///
 /// Creates a render window in a scene with the specified entity ID
 ///
-pub fn create_wgpu_render_window_entity(context: &Arc<SceneContext>, entity_id: EntityId, initial_size: (u64, u64)) -> Result<SimpleEntityChannel<RenderWindowRequest>, CreateEntityError> {
+pub fn create_wgpu_render_window_program(scene: &Arc<Scene>, program_id: SubProgramId, initial_size: (u64, u64)) -> Result<(), ConnectionError> {
     // This window can accept a couple of converted messages
-    context.convert_message::<RenderRequest, RenderWindowRequest>()?;
-    context.convert_message::<EventWindowRequest, RenderWindowRequest>()?;
+    // context.convert_message::<RenderRequest, RenderWindowRequest>()?;
+    // context.convert_message::<EventWindowRequest, RenderWindowRequest>()?;
 
     // Create the window in context
-    context.create_entity(entity_id, move |context, render_window_requests| async move {
+    scene.add_subprogram(program_id, move |render_window_requests, context| async move {
         // Create the publisher to send the render actions to the stream
         let title               = bind("flo_draw".to_string());
         let fullscreen          = bind(false);
@@ -63,18 +64,22 @@ pub fn create_wgpu_render_window_entity(context: &Arc<SceneContext>, entity_id: 
                 RenderWindowRequest::SendEvents(channel_target) => {
                     let mut subscriber = event_publisher.subscribe();
 
-                    context.run_in_background(async move {
-                        let mut channel_target = channel_target;
+                    context.send_message(SceneControl::start_program(SubProgramId::new(), move |_: InputStream<()>, context| {
+                        async move {
+                            let events_target = context.send(channel_target).ok();
 
-                        // Pass on events to everything that's listening, until the channel starts generating errors
-                        while let Some(event) = subscriber.next().await {
-                            let result = channel_target.send(event).await;
+                            if let Some(mut events_target) = events_target {
+                                // Pass on events to everything that's listening, until the channel starts generating errors
+                                while let Some(event) = subscriber.next().await {
+                                    let result = events_target.send(event).await;
 
-                            if result.is_err() {
-                                break;
+                                    if result.is_err() {
+                                        break;
+                                    }
+                                }
                             }
                         }
-                    }).ok();
+                    }, 0)).await.ok();
                 }
 
                 RenderWindowRequest::CloseWindow => {
@@ -97,5 +102,7 @@ pub fn create_wgpu_render_window_entity(context: &Arc<SceneContext>, entity_id: 
                 RenderWindowRequest::SetMousePointer(new_mouse_pointer) => { mouse_pointer.set(new_mouse_pointer); },
             }
         }
-    })
+    }, 20);
+
+    Ok(())
 }
