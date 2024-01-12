@@ -80,7 +80,7 @@ where
 ///
 pub fn create_render_window_from_stream<'a, RenderStream, TProperties>(render_stream: RenderStream, properties: TProperties) -> impl Send + Stream<Item=DrawEvent>
 where
-    RenderStream:   'static + Send + Stream<Item=Vec<RenderAction>>,
+    RenderStream:   'static + Send + Sync + Stream<Item=Vec<RenderAction>>,
     TProperties:    'a + FloWindowProperties,
 {
     let properties              = WindowProperties::from(&properties);
@@ -89,13 +89,15 @@ where
     let render_window_program   = SubProgramId::new();
     let scene_context           = flo_draw_scene_context();
 
-    let render_channel          = create_render_window_sub_program(&scene_context, render_window_program, properties.size().get()).unwrap();
+    create_render_window_sub_program(&scene_context, render_window_program, properties.size().get()).unwrap();
 
     // Use a channel to get the events out of the program
     let (send_events, recv_events)  = mpsc::channel(20);
     let event_relay_program         = SubProgramId::new();
     scene_context.add_subprogram(event_relay_program,
         move |mut draw_events: InputStream<DrawEvent>, _| async move {
+            let mut send_events = send_events;
+            
             while let Some(event) = draw_events.next().await {
                 match send_events.send(event).await {
                     Ok(())  => { },
@@ -110,9 +112,9 @@ where
     scene_context.add_subprogram(process_program, move |_: InputStream<()>, context| {
         async move {
             let mut render_stream   = render_stream.boxed();
-            let mut render_channel  = render_channel;
+            let mut render_channel  = context.send::<RenderWindowRequest>(render_window_program).unwrap();
 
-            send_window_properties(&context, properties, render_window_program).await.ok();
+            send_window_properties::<RenderWindowRequest>(&context, properties, render_window_program).await.ok();
 
             // Request event actions from the renderer
             render_channel.send(RenderWindowRequest::SendEvents(event_relay_program)).await.ok();
