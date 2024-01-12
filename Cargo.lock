@@ -779,7 +779,7 @@ checksum = "850cff252418298aac6a91d359aac10cb22abbaed32e4fac94ec3b145468ff14"
 [[package]]
 name = "flo_scene"
 version = "0.2.0"
-source = "git+https://github.com/Logicalshift/flo_scene?branch=v0.2#2902e9ad88fa03d22722a67ba8ab0a74bae8676e"
+source = "git+https://github.com/Logicalshift/flo_scene?branch=v0.2#2c37b6065d77644f5c0d0a8f24d58aa80ab34ac5"
 dependencies = [
  "desync",
  "futures",
