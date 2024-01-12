@@ -80,7 +80,7 @@ pub fn create_canvas_window<'a, TProperties: 'a+FloWindowProperties>(window_prop
 ///
 /// Creates a drawing target that will render to a window, along with a stream of events from that window
 ///
-pub fn create_canvas_window_with_events<'a, TProperties>(window_properties: TProperties) -> (Canvas, impl Send + Stream<Item=DrawEvent>) 
+pub fn create_canvas_window_with_events<'a, TProperties>(window_properties: TProperties) -> (Canvas, impl Send + Sync + Stream<Item=DrawEvent>) 
 where
     TProperties: 'a + FloWindowProperties,
 {
@@ -132,6 +132,8 @@ where
     let event_relay_program         = SubProgramId::new();
     scene_context.add_subprogram(event_relay_program,
         move |mut draw_events: InputStream<DrawEvent>, _| async move {
+            let mut send_events = send_events;
+
             while let Some(event) = draw_events.next().await {
                 match send_events.send(event).await {
                     Ok(())  => { },
@@ -149,7 +151,7 @@ where
             let mut drawing_channel = context.send::<DrawingWindowRequest>(drawing_window_program).unwrap();
 
             // Send the window properties to the window
-            send_window_properties(&context, properties, drawing_window_program).await.ok();
+            send_window_properties::<DrawingWindowRequest>(&context, properties, drawing_window_program).await.ok();
 
             // Request event actions from the renderer to the relay program (which sends them on to the stream returned from this function)
             drawing_channel.send(DrawingWindowRequest::SendEvents(event_relay_program)).await.ok();
