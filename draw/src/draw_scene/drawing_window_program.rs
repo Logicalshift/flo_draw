@@ -202,10 +202,6 @@ impl RendererState {
 /// Creates a drawing window that sends render requests to the specified target
 ///
 pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramId, render_target_program: SubProgramId) -> Result<(), ConnectionError> {
-    // This window can accept a couple of converted messages
-    //context.convert_message::<DrawingRequest, DrawingWindowRequest>()?;
-    //context.convert_message::<EventWindowRequest, DrawingWindowRequest>()?;
-
     // Create the window in the scene
     scene.add_subprogram(
         program_id, 
@@ -398,6 +394,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
         },
         100);
 
+    // This window can accept a couple of converted messages
     scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_WINDOW_REQUEST, program_id), StreamId::for_target::<DrawingWindowRequest>(program_id)).unwrap();
     scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_EVENT_REQUEST, program_id), StreamId::for_target::<DrawEventRequest>(program_id)).unwrap();
 
