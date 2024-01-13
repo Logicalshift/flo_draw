@@ -71,6 +71,7 @@ pub enum DrawingWindowRequest {
 ///
 /// Messages that can be sent to a flo_draw window that processes low-level 2D graphics instructions
 ///
+#[derive(Debug)]
 pub enum RenderWindowRequest {
     /// Carry out a render request
     Render(RenderRequest),
