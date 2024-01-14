@@ -242,6 +242,13 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
             pin_mut!(render_target);
             render_target.send(RenderWindowRequest::SendEvents(program_id)).await.ok();
 
+            // Wait for the ingress stream to be sent over
+            let request_ingress_stream = recv_drawing_input.await;
+            let request_ingress_stream = if let Ok(ingress) = request_ingress_stream { ingress } else { send_stop.send(()).ok(); return; };
+
+            // Merge into the messages input stream
+            let messages = stream::select(drawing_window_requests, request_ingress_stream.ready_chunks(100).map(|drawing_requests| DrawingOrEvent::Drawing(drawing_requests)));
+
             // Initially the window is not ready to render (we need to wait for the first 'redraw' event)
             let mut ready_to_render             = false;
             let mut waiting_for_new_frame       = false;
@@ -252,7 +259,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
             render_state.draw(vec![Draw::StartFrame].iter(), &mut render_target).await;
 
             // Run the main event loop
-            let mut messages = drawing_window_requests;
+            let mut messages = messages;
             while let Some(message) = messages.next().await {
                 match message {
                     DrawingOrEvent::Drawing(drawing_list) => {
