@@ -3,6 +3,7 @@ use crate::window_properties::*;
 
 use futures::prelude::*;
 use futures::channel::mpsc;
+use once_cell::sync::{Lazy};
 
 use flo_scene::*;
 use flo_scene::programs::*;
@@ -12,14 +13,15 @@ use flo_canvas_events::*;
 
 use std::sync::*;
 
+static FILTER_RENDER_REQUEST: Lazy<FilterHandle> = Lazy::new(|| FilterHandle::for_filter(|render_requests| 
+    render_requests.map(|request: RenderRequest| RenderWindowRequest::from(request))));
+static FILTER_EVENT_WINDOW_REQUEST: Lazy<FilterHandle> = Lazy::new(|| FilterHandle::for_filter(|render_requests| 
+    render_requests.map(|request: EventWindowRequest| RenderWindowRequest::from(request))));
+
 ///
 /// Creates a render window in a scene with the specified entity ID
 ///
 pub fn create_wgpu_render_window_program(scene: &Arc<Scene>, program_id: SubProgramId, initial_size: (u64, u64)) -> Result<(), ConnectionError> {
-    // This window can accept a couple of converted messages
-    // context.convert_message::<RenderRequest, RenderWindowRequest>()?;
-    // context.convert_message::<EventWindowRequest, RenderWindowRequest>()?;
-
     // Create the window in context
     scene.add_subprogram(program_id, move |render_window_requests, context| {
         // Create the publisher to send the render actions to the stream
@@ -106,6 +108,10 @@ pub fn create_wgpu_render_window_program(scene: &Arc<Scene>, program_id: SubProg
             }
         }
     }, 20);
+
+    // This window can accept a couple of converted messages
+    scene.connect_programs((), StreamTarget::Filtered(*FILTER_RENDER_REQUEST, program_id), StreamId::for_target::<RenderRequest>(program_id)).unwrap();
+    scene.connect_programs((), StreamTarget::Filtered(*FILTER_EVENT_WINDOW_REQUEST, program_id), StreamId::for_target::<EventWindowRequest>(program_id)).unwrap();
 
     Ok(())
 }
