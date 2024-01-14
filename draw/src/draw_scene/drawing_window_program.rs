@@ -1,4 +1,5 @@
 use futures::prelude::*;
+use futures::channel::oneshot;
 use futures::{pin_mut};
 use futures::task::{Poll, Context};
 
@@ -203,6 +204,22 @@ impl RendererState {
 /// Creates a drawing window that sends render requests to the specified target
 ///
 pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramId, render_target_program: SubProgramId) -> Result<(), ConnectionError> {
+    // Create an ingress program for the drawing window requests
+    // This will pass on its input stream to the main program, so it's possible to block 
+    let drawing_window_ingress_program              = SubProgramId::new();
+    let (send_drawing_input, recv_drawing_input)    = oneshot::channel();
+    let (send_stop, recv_stop)                      = oneshot::channel::<()>();
+
+    scene.add_subprogram(drawing_window_ingress_program,
+        move |drawing_ingress: InputStream<DrawingWindowRequest>, _context| {
+            send_drawing_input.send(drawing_ingress).ok();
+
+            async move {
+                recv_stop.await.ok();
+            }
+        },
+        100);
+
     // Create the window in the scene
     scene.add_subprogram(
         program_id, 
@@ -221,7 +238,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
 
             // Request the events from the render target
             let render_target   = context.send::<RenderWindowRequest>(render_target_program);
-            let render_target   = if let Ok(render_target) = render_target { render_target } else { return; };
+            let render_target   = if let Ok(render_target) = render_target { render_target } else { send_stop.send(()).ok(); return; };
             pin_mut!(render_target);
             render_target.send(RenderWindowRequest::SendEvents(program_id)).await.ok();
 
@@ -392,11 +409,16 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
 
             // Wait for the publisher to finish up
             when_closed.await;
+
+            // Send the stop message
+            send_stop.send(()).ok();
         },
         100);
 
-    // This window can accept a couple of converted messages
-    scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_WINDOW_REQUEST, program_id), StreamId::for_target::<DrawingWindowRequest>(program_id)).unwrap();
+    // Drawing requests are sent to the ingress program instead of the main program, which allows us to add backpressure to them while a frame is rendering
+    scene.connect_programs((), drawing_window_ingress_program, StreamId::for_target::<DrawingWindowRequest>(program_id)).unwrap();
+
+    // Drawing events are dealt with by combining them and then sending them as the native `DrawingOrEvent` type
     scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_EVENT_REQUEST, program_id), StreamId::for_target::<DrawEventRequest>(program_id)).unwrap();
 
     Ok(())
