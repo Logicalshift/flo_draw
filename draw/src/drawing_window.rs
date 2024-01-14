@@ -144,8 +144,8 @@ where
         20);
 
     // Pass events from the render stream onto the window using another entity (potentially this could be a background task for the render window entity?)
-    let process_entity = SubProgramId::new();
-    scene_context.add_subprogram(process_entity, move |_: InputStream<()>, context| {
+    let processing_subprogram = SubProgramId::new();
+    scene_context.add_subprogram(processing_subprogram, move |_: InputStream<()>, context| {
         async move {
             let mut canvas_stream   = canvas_stream;
             let mut drawing_channel = context.send::<DrawingWindowRequest>(drawing_window_program).unwrap();
