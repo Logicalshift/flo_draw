@@ -212,6 +212,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
 
     scene.add_subprogram(drawing_window_ingress_program,
         move |drawing_ingress: InputStream<DrawingWindowRequest>, _context| {
+            // The ingress program is just a dummy program whose input is used by the main program so we can block drawing window requests independently of event requests
             send_drawing_input.send(drawing_ingress).ok();
 
             async move {
@@ -313,7 +314,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
 
                         // Commit the frame. We'll add backpressure to new drawing events by not accepting them.
                         waiting_for_new_frame           = true;
-                        // Can reimplement the TODO here by having another program that accepts the drawing events and does the conversion
+                        // TODO: block the ingress program's input stream
                         // messages.waiting_for_new_frame  = true;         // TODO: we currently can't stop polling for drawing events here, so we need a way to reimplement this
 
                         combined_list.push(Arc::new(vec![Draw::ShowFrame]));
