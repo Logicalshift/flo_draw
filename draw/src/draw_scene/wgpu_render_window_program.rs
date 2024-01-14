@@ -93,7 +93,7 @@ pub fn create_wgpu_render_window_program(scene: &Arc<Scene>, program_id: SubProg
                         let when_closed = event_publisher.when_closed();
                         mem::drop(event_publisher);
 
-                        // Finally, wait for the publisher to finish up
+                        // Finally, wait for the publisher to finish up, and stop this program
                         when_closed.await;
                         return;
                     }
