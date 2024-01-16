@@ -22,7 +22,7 @@ bindgen = "0.66"
 
 [dependencies]
 gl                      = { version = "0.14", optional = true }
-wgpu                    = { version = "0.16", optional = true }
+wgpu                    = { workspace = true, optional = true }
 metal                   = { version = "0.25", optional = true }
 cocoa                   = { version = "0.25", optional = true }
 libc                    = { version = "0.2", optional = true }
@@ -31,7 +31,7 @@ flo_render_gl_offscreen = { version = "0.4", optional = true }
 desync                  = { version = "0.9", optional = true }
 once_cell               = { version = "1.18", optional = true }
 futures                 = { version = "0.3", optional = true }
-wgpu-profiler           = { version = "0.12", optional = true }
+wgpu-profiler           = { workspace = true, optional = true }
 
 [dev-dependencies]
 winit                   = "0.28"

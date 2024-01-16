@@ -9,6 +9,10 @@ members     = [
     "draw",
 ]
 
+[workspace.dependencies]
+wgpu = "0.18"
+wgpu-profiler = "0.15"
+
 [patch.crates-io]
 flo_canvas              = { path = "./canvas" }
 flo_canvas_events       = { path = "./canvas_events" }

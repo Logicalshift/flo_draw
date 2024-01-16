@@ -1,7 +1,7 @@
 use crate::glutin::*;
 
 use futures::prelude::*;
-use once_cell::sync::{Lazy};
+use once_cell::sync::Lazy;
 
 use flo_scene::*;
 
@@ -13,6 +13,7 @@ static DRAW_SCENE_CONTEXT: Lazy<Mutex<Option<Arc<SceneContext>>>> = Lazy::new(||
 ///
 /// Retrieves or creates a scene context for flo_draw
 ///
+#[allow(dead_code)]
 pub fn flo_draw_glutin_scene_context() -> Arc<SceneContext> {
     let mut context = DRAW_SCENE_CONTEXT.lock().unwrap();
 

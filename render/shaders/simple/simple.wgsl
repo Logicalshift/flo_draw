@@ -15,13 +15,13 @@ fn simple_vertex_shader(
 ) -> RasterData {
     var result: RasterData;
 
-    var color = vec4<f32>(f32(color[0]), f32(color[1]), f32(color[2]), f32(color[3]));
-    color[0]        /= 255.0;
-    color[1]        /= 255.0;
-    color[2]        /= 255.0;
-    color[3]        /= 255.0;
+    var color_r = vec4<f32>(f32(color[0]), f32(color[1]), f32(color[2]), f32(color[3]));
+    color_r[0]        /= 255.0;
+    color_r[1]        /= 255.0;
+    color_r[2]        /= 255.0;
+    color_r[3]        /= 255.0;
 
-    result.color    = color;
+    result.color    = color_r;
     result.pos      = vec4<f32>(pos[0], pos[1], 0.0, 1.0) * transform;
 
     return result;
