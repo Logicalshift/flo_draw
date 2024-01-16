@@ -111,11 +111,15 @@ fn main() {
                 Event::WindowEvent { event: WindowEvent::Resized(size), .. } => {
                     // Configure the surface to the new size
                     renderer.prepare_to_render(size.width, size.height);
-                    renderer.render_to_surface(rendering.clone());
+                    if let Some(next_frame) = renderer.render_to_surface(rendering.clone()) {
+                        next_frame.present();
+                    }
                 }
 
                 Event::RedrawRequested(_)   => {
-                    renderer.render_to_surface(rendering.clone());
+                    if let Some(next_frame) = renderer.render_to_surface(rendering.clone()) {
+                        next_frame.present();
+                    }
                 }
 
                 _ => {}
