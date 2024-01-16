@@ -253,7 +253,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
 
             // Initially the window is not ready to render (we need to wait for the first 'redraw' event)
             let mut ready_to_render             = false;
-            let mut waiting_for_new_frame       = false;
+            let mut waiting_for_new_frame       = None;
             let mut drawing_since_last_frame    = false;
             let mut closed                      = false;
 
@@ -269,7 +269,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                         let mut combined_list   = vec![Arc::new(vec![Draw::StartFrame])];
 
                         // If we've rendered something and 'NewFrame' hasn't yet been generated, add an extra 'StartFrame' to suspend rendering until the last frame is finished
-                        if waiting_for_new_frame && !drawing_since_last_frame {
+                        if waiting_for_new_frame.is_some() && !drawing_since_last_frame {
                             drawing_since_last_frame = true;
                             combined_list.push(Arc::new(vec![Draw::StartFrame]));
                         }
@@ -314,9 +314,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                         }
 
                         // Commit the frame. We'll add backpressure to new drawing events by not accepting them.
-                        waiting_for_new_frame           = true;
-                        // TODO: block the ingress program's input stream
-                        // messages.waiting_for_new_frame  = true;         // TODO: we currently can't stop polling for drawing events here, so we need a way to reimplement this
+                        waiting_for_new_frame = Some(ingress_blocker.block());
 
                         combined_list.push(Arc::new(vec![Draw::ShowFrame]));
                         render_state.draw(combined_list.iter()
@@ -365,17 +363,14 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
 
                                 DrawEvent::NewFrame => {
                                     // A new frame was displayed
-                                    waiting_for_new_frame = false;
+                                    waiting_for_new_frame = None;
 
                                     if drawing_since_last_frame {
                                         // Finalize any drawing that occurred while we were waiting for the new frame to display
-                                        waiting_for_new_frame = true;
+                                        waiting_for_new_frame = Some(ingress_blocker.block());
                                         render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
                                         drawing_since_last_frame = false;
                                     }
-
-                                    // TODO: add a way to add backpressure if we're waiting for a new frame
-                                    //messages.waiting_for_new_frame = waiting_for_new_frame;
                                 }
 
                                 _ => { }
