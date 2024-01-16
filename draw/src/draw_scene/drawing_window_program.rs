@@ -248,7 +248,8 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
             let request_ingress_stream = if let Ok(ingress) = request_ingress_stream { ingress } else { send_stop.send(()).ok(); return; };
 
             // Merge into the messages input stream
-            let messages = stream::select(drawing_window_requests, request_ingress_stream.ready_chunks(100).map(|drawing_requests| DrawingOrEvent::Drawing(drawing_requests)));
+            let ingress_blocker = request_ingress_stream.blocker();
+            let messages        = stream::select(drawing_window_requests, request_ingress_stream.ready_chunks(100).map(|drawing_requests| DrawingOrEvent::Drawing(drawing_requests)));
 
             // Initially the window is not ready to render (we need to wait for the first 'redraw' event)
             let mut ready_to_render             = false;
