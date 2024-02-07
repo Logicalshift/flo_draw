@@ -5,7 +5,7 @@ use flo_stream::*;
 use flo_render::*;
 use flo_binding::*;
 
-use glutin::context::{NotCurrentContext, PossiblyCurrentGlContext, NotCurrentGlContextSurfaceAccessor};
+use glutin::context::{NotCurrentContext, PossiblyCurrentGlContext, NotCurrentGlContext};
 use glutin::display::{GetGlDisplay, GlDisplay};
 use glutin::surface::{Surface, SurfaceTypeTrait};
 use glutin::prelude::{GlConfig, GlSurface};
@@ -182,7 +182,7 @@ where
             }
 
             WindowUpdate::SetSize((size_x, size_y)) => {
-                window.window.as_ref().map(|ctxt| ctxt.set_inner_size(LogicalSize::new(size_x as f64, size_y as _)));
+                let _ = window.window.as_ref().and_then(|ctxt| ctxt.request_inner_size(LogicalSize::new(size_x as f64, size_y as _)));
             }
 
             WindowUpdate::SetFullscreen(is_fullscreen) => {

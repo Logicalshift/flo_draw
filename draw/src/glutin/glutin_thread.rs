@@ -127,7 +127,7 @@ fn create_glutin_thread() -> Arc<GlutinThread> {
 ///
 fn run_glutin_thread(send_proxy: mpsc::Sender<EventLoopProxy<GlutinThreadEvent>>) {
     // Create the event loop
-    let event_loop  = EventLoopBuilder::with_user_event().build();
+    let event_loop  = EventLoopBuilder::with_user_event().build().unwrap();
 
     // We communicate with the event loop via the proxy
     let proxy       = event_loop.create_proxy();
@@ -147,7 +147,7 @@ fn run_glutin_thread(send_proxy: mpsc::Sender<EventLoopProxy<GlutinThreadEvent>>
     };
 
     // Run the glutin event loop
-    event_loop.run(move |event, window_target, control_flow| { 
-        runtime.handle_event(event, window_target, control_flow);
-    });
+    event_loop.run(move |event, window_target| { 
+        runtime.handle_event(event, window_target);
+    }).unwrap();
 }

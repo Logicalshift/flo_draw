@@ -768,7 +768,7 @@ dependencies = [
  "num-complex",
  "once_cell",
  "rand",
- "raw-window-handle 0.6.0",
+ "raw-window-handle 0.5.2",
  "rayon",
  "wgpu",
  "wgpu-profiler",
