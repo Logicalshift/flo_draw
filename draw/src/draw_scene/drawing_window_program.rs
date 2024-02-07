@@ -420,10 +420,10 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
         100);
 
     // Drawing requests are sent to the ingress program instead of the main program, which allows us to add backpressure to them while a frame is rendering
-    scene.connect_programs((), drawing_window_ingress_program, StreamId::for_target::<DrawingWindowRequest>(program_id)).unwrap();
+    scene.connect_programs((), drawing_window_ingress_program, StreamId::with_message_type::<DrawingWindowRequest>().for_target(program_id)).unwrap();
 
     // Drawing events are dealt with by combining them and then sending them as the native `DrawingOrEvent` type
-    scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_EVENT_REQUEST, program_id), StreamId::for_target::<DrawEventRequest>(program_id)).unwrap();
+    scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_EVENT_REQUEST, program_id), StreamId::with_message_type::<DrawEventRequest>().for_target(program_id)).unwrap();
 
     Ok(())
 }

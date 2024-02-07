@@ -118,8 +118,8 @@ pub fn create_glutin_render_window_program(scene: &Arc<Scene>, program_id: SubPr
         20);
 
     // This window can accept a couple of converted messages
-    scene.connect_programs((), StreamTarget::Filtered(*FILTER_RENDER_REQUEST, program_id), StreamId::for_target::<RenderRequest>(program_id)).unwrap();
-    scene.connect_programs((), StreamTarget::Filtered(*FILTER_EVENT_WINDOW_REQUEST, program_id), StreamId::for_target::<EventWindowRequest>(program_id)).unwrap();
+    scene.connect_programs((), StreamTarget::Filtered(*FILTER_RENDER_REQUEST, program_id), StreamId::with_message_type::<RenderRequest>().for_target(program_id)).unwrap();
+    scene.connect_programs((), StreamTarget::Filtered(*FILTER_EVENT_WINDOW_REQUEST, program_id), StreamId::with_message_type::<EventWindowRequest>().for_target(program_id)).unwrap();
 
     Ok(())
 }
