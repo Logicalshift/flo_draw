@@ -21,8 +21,8 @@ pub enum MousePointer {
 ///
 #[derive(Debug)]
 pub enum EventWindowRequest {
-    /// Adds a channel that events generated for this window is relayed to
-    SendEvents(BoxedEntityChannel<'static, DrawEventRequest>),
+    /// Add a subprogram to the list to send events to
+    SendEvents(SubProgramId),
 
     /// Closes the window and shuts down the rendering entity
     CloseWindow,
@@ -49,8 +49,8 @@ pub enum DrawingWindowRequest {
     /// Carry out a drawing request
     Draw(DrawingRequest),
 
-    /// Adds a channel that events generated for this window is relayed to
-    SendEvents(BoxedEntityChannel<'static, DrawEventRequest>),
+    /// Add a subprogram to the list to send events to
+    SendEvents(SubProgramId),
 
     /// Closes the window and shuts down the rendering entity
     CloseWindow,
@@ -71,12 +71,13 @@ pub enum DrawingWindowRequest {
 ///
 /// Messages that can be sent to a flo_draw window that processes low-level 2D graphics instructions
 ///
+#[derive(Debug)]
 pub enum RenderWindowRequest {
     /// Carry out a render request
     Render(RenderRequest),
 
-    /// Adds a channel that events generated for this window is relayed to
-    SendEvents(BoxedEntityChannel<'static, DrawEventRequest>),
+    /// Add a subprogram to the list to send events to
+    SendEvents(SubProgramId),
 
     /// Closes the window and shuts down the rendering entity
     CloseWindow,
@@ -93,6 +94,10 @@ pub enum RenderWindowRequest {
     /// Sets the mouse pointer to display for the window
     SetMousePointer(MousePointer),
 }
+
+impl SceneMessage for EventWindowRequest { }
+impl SceneMessage for RenderWindowRequest { }
+impl SceneMessage for DrawingWindowRequest { }
 
 impl From<RenderRequest> for RenderWindowRequest {
     fn from(req: RenderRequest) -> RenderWindowRequest {

@@ -12,20 +12,20 @@
 //! to obtain the events and rendering event channels for a particular window.
 //!
 
-mod render_window_entity;
-mod drawing_window_entity;
+mod render_window_program;
+mod drawing_window_program;
 mod scene;
 
 #[cfg(feature="render-opengl")]
-mod glutin_render_window_entity;
+mod glutin_render_window_program;
 #[cfg(feature="render-opengl")]
 mod glutin_scene;
 
 #[cfg(feature="render-wgpu")]
-mod wgpu_render_window_entity;
+mod wgpu_render_window_program;
 #[cfg(feature="render-wgpu")]
 mod wgpu_scene;
 
-pub use self::render_window_entity::*;
-pub use self::drawing_window_entity::*;
+pub use self::render_window_program::*;
+pub use self::drawing_window_program::*;
 pub use self::scene::*;

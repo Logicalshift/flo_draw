@@ -25,7 +25,7 @@ flo_render          = { version = "0.4", features = [ "opengl" ] }
 flo_render_canvas   = "0.4"
 flo_stream          = "0.7"
 flo_binding         = "3.0"
-flo_scene           = "0.1"
+flo_scene           = "0.2"
 desync              = "0.9"
 
 once_cell           = "1.18"
