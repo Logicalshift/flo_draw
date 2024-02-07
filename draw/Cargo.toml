@@ -31,12 +31,12 @@ desync              = "0.9"
 once_cell           = "1.18"
 futures             = "0.3"
 
-glutin              = { optional = true, version = "0.30.0" }
-glutin-winit        = { optional = true, version = "0.3.0" }
-raw-window-handle   = { optional = true, version = "0.5" }
+glutin              = { optional = true, version = "0.31.0" }
+glutin-winit        = { optional = true, version = "0.4.0" }
+raw-window-handle   = { optional = true, version = "0.6" }
 gl                  = { optional = true, version = "0.14" }
 
-winit               = { optional = true, version = "0.28" }
+winit               = { optional = true, version = "0.29" }
 wgpu                = { optional = true, workspace = true }
 wgpu-profiler       = { workspace = true, optional = true }
 
