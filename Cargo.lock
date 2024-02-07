@@ -220,29 +220,6 @@ dependencies = [
 
 [[package]]
 name = "bindgen"
-version = "0.66.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2b84e06fc203107bfbad243f4aba2af864eb7db3b1cf46ea0a023b0b433d2a7"
-dependencies = [
- "bitflags 2.4.2",
- "cexpr",
- "clang-sys",
- "lazy_static",
- "lazycell",
- "log",
- "peeking_take_while",
- "prettyplease",
- "proc-macro2",
- "quote",
- "regex",
- "rustc-hash",
- "shlex",
- "syn 2.0.48",
- "which",
-]
-
-[[package]]
-name = "bindgen"
 version = "0.69.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a00dc851838a2120612785d195287475a3ac45514741da670b735818822129a0"
@@ -866,7 +843,7 @@ dependencies = [
 name = "flo_render"
 version = "0.4.0"
 dependencies = [
- "bindgen 0.69.4",
+ "bindgen",
  "cocoa",
  "core-foundation",
  "desync",
@@ -902,10 +879,10 @@ dependencies = [
 name = "flo_render_gl_offscreen"
 version = "0.4.0"
 dependencies = [
- "bindgen 0.66.1",
+ "bindgen",
  "cgl",
  "egl",
- "glutin_wgl_sys 0.4.0",
+ "glutin_wgl_sys 0.5.0",
  "winapi",
 ]
 
@@ -2164,12 +2141,6 @@ checksum = "0444332826c70dc47be74a7c6a5fc44e23a7905ad6858d4162b658320455ef93"
 dependencies = [
  "rustc_version",
 ]
-
-[[package]]
-name = "peeking_take_while"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
 
 [[package]]
 name = "percent-encoding"
