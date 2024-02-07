@@ -99,7 +99,7 @@ dependencies = [
  "libc 0.2.153",
  "log",
  "num-traits",
- "ouroboros",
+ "ouroboros 0.17.2",
  "pathfinder_geometry",
  "rustc-hash",
  "tinyvec",
@@ -662,16 +662,16 @@ dependencies = [
  "flo_stream",
  "futures",
  "image",
- "itertools 0.11.0",
+ "itertools 0.12.1",
  "once_cell",
- "ouroboros",
+ "ouroboros 0.18.3",
  "pathfinder_geometry",
  "rust-hsluv",
  "serde",
  "serde_derive",
  "serde_json",
  "smallvec",
- "ttf-parser 0.19.2",
+ "ttf-parser",
  "uuid",
 ]
 
@@ -690,7 +690,7 @@ version = "0.8.0"
 source = "git+https://github.com/Logicalshift/flo_curves?branch=v0.8#1ca91ca32d270eb67da1544b465b6124980aeb17"
 dependencies = [
  "itertools 0.11.0",
- "ouroboros",
+ "ouroboros 0.17.2",
  "roots",
  "smallvec",
 ]
@@ -779,7 +779,7 @@ checksum = "850cff252418298aac6a91d359aac10cb22abbaed32e4fac94ec3b145468ff14"
 [[package]]
 name = "flo_scene"
 version = "0.2.0"
-source = "git+https://github.com/Logicalshift/flo_scene?branch=v0.2#e904bb08e1234655683352ff4faa2d0f70b2a57a"
+source = "git+https://github.com/Logicalshift/flo_scene?branch=v0.2#d7f85b1384a04ad8bab9e796254c5bf90ed043eb"
 dependencies = [
  "futures",
  "futures-timer",
@@ -1268,6 +1268,15 @@ name = "itertools"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba291022dbbd398a455acf126c1e341954079855bc60dfdda641363bd6922569"
 dependencies = [
  "either",
 ]
@@ -1820,7 +1829,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2ba07320d39dfea882faa70554b4bd342a5f273ed59ba7c1c6b4c840492c954"
 dependencies = [
  "aliasable",
- "ouroboros_macro",
+ "ouroboros_macro 0.17.2",
+ "static_assertions",
+]
+
+[[package]]
+name = "ouroboros"
+version = "0.18.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97b7be5a8a3462b752f4be3ff2b2bf2f7f1d00834902e46be2a4d68b87b0573c"
+dependencies = [
+ "aliasable",
+ "ouroboros_macro 0.18.3",
  "static_assertions",
 ]
 
@@ -1838,12 +1858,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "ouroboros_macro"
+version = "0.18.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b645dcde5f119c2c454a92d0dfa271a2a3b205da92e4292a68ead4bdbfde1f33"
+dependencies = [
+ "heck",
+ "itertools 0.12.1",
+ "proc-macro2",
+ "proc-macro2-diagnostics",
+ "quote",
+ "syn 2.0.48",
+]
+
+[[package]]
 name = "owned_ttf_parser"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4586edfe4c648c71797a74c84bacb32b52b212eff5dfe2bb9f2c599844023e7"
 dependencies = [
- "ttf-parser 0.20.0",
+ "ttf-parser",
 ]
 
 [[package]]
@@ -2000,6 +2034,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2422ad645d89c99f8f3e6b88a9fdeca7fabeac836b1002371c4367c8f984aae"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "proc-macro2-diagnostics"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af066a9c399a26e020ada66a034357a868728e72cd426f3adcd35f80d88d88c8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
+ "version_check",
+ "yansi",
 ]
 
 [[package]]
@@ -2465,12 +2512,6 @@ dependencies = [
  "toml_datetime",
  "winnow",
 ]
-
-[[package]]
-name = "ttf-parser"
-version = "0.19.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49d64318d8311fc2668e48b63969f4343e0a85c4a109aa8460d6672e364b8bd1"
 
 [[package]]
 name = "ttf-parser"
@@ -3165,6 +3206,12 @@ name = "xml-rs"
 version = "0.8.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fcb9cbac069e033553e8bb871be2fbdffcab578eb25bd0f7c508cedc6dcd75a"
+
+[[package]]
+name = "yansi"
+version = "1.0.0-rc.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1367295b8f788d371ce2dbc842c7b709c73ee1364d30351dd300ec2203b12377"
 
 [[package]]
 name = "zerocopy"
