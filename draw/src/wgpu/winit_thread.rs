@@ -127,7 +127,7 @@ fn create_winit_thread() -> Arc<WinitThread> {
 ///
 fn run_winit_thread(send_proxy: mpsc::Sender<EventLoopProxy<WinitThreadEvent>>) {
     // Create the event loop
-    let event_loop  = EventLoopBuilder::<WinitThreadEvent>::with_user_event().build();
+    let event_loop  = EventLoopBuilder::<WinitThreadEvent>::with_user_event().build().unwrap();
 
     // We communicate with the event loop via the proxy
     let proxy       = event_loop.create_proxy();
@@ -148,7 +148,7 @@ fn run_winit_thread(send_proxy: mpsc::Sender<EventLoopProxy<WinitThreadEvent>>) 
     };
 
     // Run the winit event loop
-    event_loop.run(move |event, window_target, control_flow| { 
-        runtime.handle_event(event, window_target, control_flow);
-    });
+    event_loop.run(move |event, window_target| { 
+        runtime.handle_event(event, window_target);
+    }).unwrap();
 }

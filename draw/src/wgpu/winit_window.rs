@@ -173,7 +173,7 @@ where
 
                 WindowUpdate::SetSize((size_x, size_y)) => {
                     if let Some(winit_window) = &window.window {
-                        winit_window.set_inner_size(LogicalSize::new(size_x as f64, size_y as _));
+                        let _ = winit_window.request_inner_size(LogicalSize::new(size_x as f64, size_y as _));
                     }
                 }
 
