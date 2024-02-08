@@ -12,7 +12,7 @@ categories          = [ "graphics", "rendering", "gui" ]
 include             = [ "Cargo.toml", "src/**/*", "examples/**/*", "images/**/*", "guide_images/**/*", "GUIDE.md", "README.md" ]
 
 [features]
-default             = [ "render-opengl" ]
+default             = [ "render-wgpu" ]
 render-opengl       = [ "gl", "glutin", "winit", "glutin-winit", "raw-window-handle", "flo_render/opengl" ]
 render-wgpu         = [ "winit", "wgpu", "flo_render/render-wgpu" ]
 profile             = [ "flo_render/profile" ]
