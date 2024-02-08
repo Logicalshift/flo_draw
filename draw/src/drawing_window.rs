@@ -135,10 +135,16 @@ where
             let mut send_events = send_events;
 
             while let Some(event) = draw_events.next().await {
+                let is_closed = event == DrawEvent::Closed;
+
                 match send_events.send(event).await {
                     Ok(())  => { },
                     Err(_)  => { break; }
                 };
+
+                if is_closed {
+                    break;
+                }
             }
         },
         20);
