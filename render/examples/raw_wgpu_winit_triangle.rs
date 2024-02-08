@@ -46,7 +46,7 @@ fn main() {
     let rendering = triangle;
 
     // Set up an event loop and a window that reports to it
-    let event_loop  = EventLoop::new();
+    let event_loop  = EventLoop::new().unwrap();
     let window      = window::Window::new(&event_loop).unwrap();
 
     // Bits of wgpu are async so we need an async blocker here
@@ -80,12 +80,10 @@ fn main() {
         renderer.prepare_to_render(size.width, size.height);
 
         // Run the main event loop (which is not async)
-        event_loop.run(move |event, _, control_flow| {
-            *control_flow = ControlFlow::Wait;
-
+        event_loop.run(move |event, window_target| {
             match event {
                 Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => { 
-                    *control_flow = ControlFlow::Exit;
+                    window_target.exit();
                 }
 
                 Event::WindowEvent { event: WindowEvent::Resized(size), .. } => {
@@ -96,7 +94,7 @@ fn main() {
                     }
                 }
 
-                Event::RedrawRequested(_)   => {
+                Event::WindowEvent { event: WindowEvent::RedrawRequested, .. } => {
                     if let Some(next_frame) = renderer.render_to_surface(rendering.clone()) {
                         next_frame.present();
                     }
@@ -104,6 +102,6 @@ fn main() {
 
                 _ => {}
             }
-        });
+        }).unwrap();
     });
 }
