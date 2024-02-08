@@ -133,6 +133,7 @@ where
     scene_context.add_subprogram(event_relay_program,
         move |mut draw_events: InputStream<DrawEvent>, _| async move {
             let mut send_events = send_events;
+            draw_events.allow_thread_stealing(true);
 
             while let Some(event) = draw_events.next().await {
                 let is_closed = event == DrawEvent::Closed;
@@ -147,7 +148,7 @@ where
                 }
             }
         },
-        20);
+        0);
 
     // Pass events from the render stream onto the window using another entity (potentially this could be a background task for the render window entity?)
     let processing_subprogram = SubProgramId::new();
