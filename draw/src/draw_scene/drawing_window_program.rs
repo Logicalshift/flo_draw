@@ -292,7 +292,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                     let channel_target  = context.send::<DrawEvent>(target_program);
 
                                     if let Ok(channel_target) = channel_target {
-                                        context.send_message(SceneControl::start_program(SubProgramId::new(), move |_: InputStream<()>, _| async move {
+                                        context.send_message(SceneControl::start_program(SubProgramId::new(), move |_: InputStream<()>, context| async move {
                                             // Pass on events to everything that's listening, until the channel starts generating errors
                                             let mut channel_target = channel_target;
                                             while let Some(event) = subscriber.next().await {
@@ -302,6 +302,8 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                                     break;
                                                 }
                                             }
+
+                                            context.send_message(SceneControl::Close(target_program)).await.ok();
                                         }, 0)).await.ok();
                                     }
                                 }
