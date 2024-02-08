@@ -10,8 +10,8 @@ members     = [
 ]
 
 [workspace.dependencies]
-wgpu = "0.18"
-wgpu-profiler = "0.15"
+wgpu            = "0.18"
+wgpu-profiler   = "0.15"
 
 [patch.crates-io]
 flo_canvas              = { path = "./canvas" }
@@ -28,4 +28,10 @@ desync                  = { git = "https://github.com/Logicalshift/desync", bran
 
 # allsorts is very slow when built for debug, so packages using flo_draw should consider optimising it even in debug builds
 [profile.dev.package.allsorts]
+opt-level = 2
+
+[profile.dev.package.wgpu]
+opt-level = 2
+
+[profile.dev.package.lyon]
 opt-level = 2
