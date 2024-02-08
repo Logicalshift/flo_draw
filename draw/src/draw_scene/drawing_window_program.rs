@@ -4,8 +4,6 @@ use futures::{pin_mut};
 use futures::task::{Poll, Context};
 
 use flo_scene::*;
-use flo_scene::programs::*;
-use flo_stream::*;
 use flo_canvas::*;
 use flo_canvas::scenery::*;
 use flo_canvas_events::*;
