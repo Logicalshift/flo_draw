@@ -225,8 +225,8 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
     scene.add_subprogram(
         program_id, 
         move |drawing_window_requests, context| async move {
-            // We relay events via our own event publisher
-            let mut event_publisher = Publisher::new(1000);
+            // List of programs that are subscribed to events from this window
+            let mut subscribers = vec![];
 
             // Set up the renderer and window state
             let mut render_state = RendererState {
@@ -287,24 +287,8 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                 }
 
                                 DrawingWindowRequest::SendEvents(target_program) => {
-                                    // Output to the target program using another program
-                                    let mut subscriber  = event_publisher.subscribe();
-                                    let channel_target  = context.send::<DrawEvent>(target_program);
-
-                                    if let Ok(channel_target) = channel_target {
-                                        context.send_message(SceneControl::start_program(SubProgramId::new(), move |_: InputStream<()>, context| async move {
-                                            // Pass on events to everything that's listening, until the channel starts generating errors
-                                            let mut channel_target = channel_target;
-                                            while let Some(event) = subscriber.next().await {
-                                                let result = channel_target.send(event).await;
-
-                                                if result.is_err() {
-                                                    break;
-                                                }
-                                            }
-
-                                            context.send_message(SceneControl::Close(target_program)).await.ok();
-                                        }, 0)).await.ok();
+                                    if let Ok(target) = context.send::<DrawEvent>(target_program) {
+                                        subscribers.push(target);
                                     }
                                 }
 
@@ -379,7 +363,13 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                             }
 
                             // Publish the event to any subscribers
-                            event_publisher.publish(evt_message.clone()).await;
+                            for idx in (0..subscribers.len()).rev() {
+                                let target = &mut subscribers[idx];
+
+                                if target.send(evt_message.clone()).await.is_err() {
+                                    subscribers.remove(idx);
+                                }
+                            }
 
                             // Handle the next message
                             let context = &context;
@@ -407,14 +397,9 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
 
             use std::mem;
 
-            let when_closed = event_publisher.when_closed();
-
             // Drop the receivers
             mem::drop(messages);
-            mem::drop(event_publisher);
-
-            // Wait for the publisher to finish up
-            when_closed.await;
+            mem::drop(subscribers);
 
             // Send the stop message
             send_stop.send(()).ok();
