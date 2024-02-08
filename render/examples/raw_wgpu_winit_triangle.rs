@@ -19,7 +19,7 @@ fn main() {
 
     use winit::window;
     use winit::event::{Event, WindowEvent};
-    use winit::event_loop::{ControlFlow, EventLoop};
+    use winit::event_loop::{EventLoop};
 
     use futures::executor;
     use std::sync::*;
