@@ -27,7 +27,7 @@ pub fn flo_draw_glutin_scene() -> Arc<Scene> {
 
         // Run on the glutin thread
         glutin_thread().send_event(GlutinThreadEvent::RunProcess(Box::new(move || async move {
-            new_scene.run_scene().await;
+            new_scene.run_scene_with_threads(4).await;
         }.boxed())));
     }
 

@@ -26,7 +26,7 @@ pub fn flo_draw_wgpu_scene() -> Arc<Scene> {
 
         // Run on the winit thread
         winit_thread().send_event(WinitThreadEvent::RunProcess(Box::new(move || async move {
-            new_scene.run_scene().await;
+            new_scene.run_scene_with_threads(4).await;
         }.boxed())));
     }
 
