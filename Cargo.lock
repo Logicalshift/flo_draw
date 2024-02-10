@@ -835,7 +835,7 @@ dependencies = [
  "base64",
  "flo_canvas",
  "flo_sparse_array",
- "itertools 0.11.0",
+ "itertools 0.12.1",
  "once_cell",
  "png",
  "rayon",
