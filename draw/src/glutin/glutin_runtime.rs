@@ -16,6 +16,7 @@ use glutin_winit::{DisplayBuilder};
 use winit::event::{DeviceId, Event, WindowEvent, ElementState};
 use winit::event_loop::{ControlFlow, EventLoopWindowTarget};
 use winit::window::{WindowId, Fullscreen}; 
+use winit::keyboard::{PhysicalKey, NativeKeyCode};
 use raw_window_handle::{HasRawWindowHandle};
 
 use futures::task;
@@ -92,12 +93,8 @@ impl GlutinRuntime {
     ///
     /// Handles an event from the rest of the process and updates the state
     ///
-    pub fn handle_event(&mut self, event: Event<'_, GlutinThreadEvent>, window_target: &EventLoopWindowTarget<GlutinThreadEvent>, control_flow: &mut ControlFlow) {
+    pub fn handle_event(&mut self, event: Event<GlutinThreadEvent>, window_target: &EventLoopWindowTarget<GlutinThreadEvent>) {
         use Event::*;
-
-        if *control_flow != ControlFlow::Exit {
-            *control_flow = ControlFlow::Wait;
-        }
 
         match event {
             NewEvents(_cause)                       => { }
@@ -106,17 +103,16 @@ impl GlutinRuntime {
             UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target); }
             Suspended                               => { self.request_suspended(); }
             Resumed                                 => { self.request_resumed(); }
-            RedrawRequested(window_id)              => { self.request_redraw(window_id); }
             
-            MainEventsCleared                       => {
+            AboutToWait                             => {
                 // Glutin doesn't always respond to ControlFlow::Exit requests, setting it after the other events have cleared is an attempt
                 // to make it exit more reliably (only partially successful).
                 if self.will_exit {
-                    *control_flow = ControlFlow::Exit;
+                    window_target.exit();
                 }
             }
-            RedrawEventsCleared                     => { }
-            LoopDestroyed                           => { }
+            MemoryWarning                           => { }
+            LoopExiting                             => { }
         }
     }
 
@@ -138,6 +134,7 @@ impl GlutinRuntime {
 
         // Generate draw_events for the window event
         let draw_events = match event {
+            ActivationTokenDone { .. }                                      => vec![],
             Resized(new_size)                                               => vec![DrawEvent::Resize(new_size.width as f64, new_size.height as f64)],
             Moved(_position)                                                => vec![],
             CloseRequested                                                  => vec![DrawEvent::Closed],
@@ -145,7 +142,6 @@ impl GlutinRuntime {
             DroppedFile(_path)                                              => vec![],
             HoveredFile(_path)                                              => vec![],
             HoveredFileCancelled                                            => vec![],
-            ReceivedCharacter(_c)                                           => vec![],
             Focused(_focused)                                               => vec![],
             ModifiersChanged(_state)                                        => vec![],
             TouchpadPressure { device_id: _, pressure: _, stage: _ }        => vec![],
@@ -156,21 +152,35 @@ impl GlutinRuntime {
             Touch(_touch)                                                   => vec![],
             Ime(_)                                                          => vec![],
             Occluded(_)                                                     => vec![],
-            ScaleFactorChanged { scale_factor, new_inner_size }             => vec![DrawEvent::Scale(scale_factor), DrawEvent::Resize(new_inner_size.width as f64, new_inner_size.height as f64)],
+            ScaleFactorChanged { scale_factor, inner_size_writer: _ }       => vec![DrawEvent::Scale(scale_factor)],
             ThemeChanged(_theme)                                            => vec![],
 
+            RedrawRequested                                                 => {
+                self.request_redraw(window_id);
+                vec![]
+            }
+
             // Keyboard events
-            KeyboardInput { device_id: _, input, is_synthetic: _, }         => {
+            KeyboardInput { device_id: _, event, is_synthetic: _, }         => {
                 // Convert the keycode
-                let key = input.virtual_keycode.map(|keycode| key_from_glutin(&keycode));
-                let key = if key == Some(Key::Unknown) { None } else { key };
+                let key = key_from_glutin(&event.physical_key);
 
                 // TODO: for modifier keys, generate keydown/up using the modifier state
 
+                let scancode = match event.physical_key {
+                    PhysicalKey::Code(_)                                    => 0,
+                    PhysicalKey::Unidentified(NativeKeyCode::Unidentified)  => 0,
+                    PhysicalKey::Unidentified(NativeKeyCode::Android(code)) => code as u64,
+                    PhysicalKey::Unidentified(NativeKeyCode::MacOS(code))   => code as u64,
+                    PhysicalKey::Unidentified(NativeKeyCode::Windows(code)) => code as u64,
+                    PhysicalKey::Unidentified(NativeKeyCode::Xkb(code))     => code as u64,
+
+                };
+
                 // Generate the event for this keypress
-                match input.state {
-                    ElementState::Pressed   => vec![DrawEvent::KeyDown(input.scancode as _, key)],
-                    ElementState::Released  => vec![DrawEvent::KeyUp(input.scancode as _, key)]
+                match event.state {
+                    ElementState::Pressed   => vec![DrawEvent::KeyDown(scancode, key)],
+                    ElementState::Released  => vec![DrawEvent::KeyUp(scancode, key)]
                 }
             },
 

@@ -99,7 +99,7 @@ impl RenderPassResources {
                 Some(wgpu::RenderPassColorAttachment {
                     view:           &**target_view,
                     resolve_target: None,
-                    ops:            wgpu::Operations { load: load_op, store: true }
+                    ops:            wgpu::Operations { load: load_op, store: wgpu::StoreOp::Store },
                 })
             ]
         } else {

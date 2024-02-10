@@ -2,6 +2,7 @@ use crate::key::*;
 use crate::pointer_event::*;
 
 use flo_canvas::*;
+use flo_scene::*;
 
 ///
 /// Events that can arrive from a flo_draw window
@@ -35,3 +36,5 @@ pub enum DrawEvent {
     /// Window has been closed
     Closed
 }
+
+impl SceneMessage for DrawEvent { }

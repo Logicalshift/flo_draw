@@ -11,8 +11,9 @@ use flo_binding::*;
 
 use wgpu;
 use winit::event::{DeviceId, Event, WindowEvent, ElementState};
-use winit::event_loop::{ControlFlow, EventLoopWindowTarget};
+use winit::event_loop::{EventLoopWindowTarget};
 use winit::window::{Window, WindowId, Fullscreen};
+use winit::keyboard::{PhysicalKey, NativeKeyCode};
 use futures::task;
 use futures::prelude::*;
 use futures::channel::oneshot;
@@ -96,12 +97,8 @@ impl WinitRuntime {
     ///
     /// Handles an event from the rest of the process and updates the state
     ///
-    pub fn handle_event(&mut self, event: Event<'_, WinitThreadEvent>, window_target: &EventLoopWindowTarget<WinitThreadEvent>, control_flow: &mut ControlFlow) {
+    pub fn handle_event(&mut self, event: Event<WinitThreadEvent>, window_target: &EventLoopWindowTarget<WinitThreadEvent>) {
         use Event::*;
-
-        if *control_flow != ControlFlow::Exit {
-            *control_flow = ControlFlow::Wait;
-        }
 
         match event {
             NewEvents(_cause)                       => { }
@@ -110,33 +107,21 @@ impl WinitRuntime {
             UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target); }
             Suspended                               => { }
             Resumed                                 => { }
-            RedrawRequested(window_id)              => { 
-                if let Some((pending_surface, redraw_finished)) = self.pending_redraws.remove(&window_id) {
-                    // Present the surface
-                    pending_surface.present();
-
-                    // Signal the 'finished' event when the redraw events are all clear
-                    self.pending_yields.push(redraw_finished);
-                } else {
-                    // self.request_redraw(window_id); 
-                }
-            }
+            LoopExiting                             => { }
+            MemoryWarning                           => { }
             
-            MainEventsCleared                       => {
+            AboutToWait                             => {
                 // Winit doesn't always respond to ControlFlow::Exit requests, setting it after the other events have cleared is an attempt
                 // to make it exit more reliably (only partially successful).
                 if self.will_exit {
-                    *control_flow = ControlFlow::Exit;
+                    window_target.exit();
                 }
-            }
-            RedrawEventsCleared                     => {
+
                 // Clear any pending yield requests
                 for yield_sender in self.pending_yields.drain(..) {
                     yield_sender.send(()).ok();
                 }
             }
-
-            LoopDestroyed                           => { }
         }
     }
 
@@ -162,20 +147,20 @@ impl WinitRuntime {
                 vec![DrawEvent::Resize(new_size.width as f64, new_size.height as f64), DrawEvent::Redraw]
             },
 
-            ScaleFactorChanged { scale_factor, new_inner_size }             => {
-                vec![DrawEvent::Scale(scale_factor), DrawEvent::Resize(new_inner_size.width as f64, new_inner_size.height as f64), DrawEvent::Redraw]
+            ScaleFactorChanged { scale_factor, inner_size_writer: _ }       => {
+                vec![DrawEvent::Scale(scale_factor), DrawEvent::Redraw]
             },
 
+            ActivationTokenDone { .. }                                      => vec![],
             Moved(_position)                                                => vec![],
             CloseRequested                                                  => vec![DrawEvent::Closed],
             Destroyed                                                       => vec![],
             DroppedFile(_path)                                              => vec![],
             HoveredFile(_path)                                              => vec![],
             HoveredFileCancelled                                            => vec![],
-            ReceivedCharacter(_c)                                           => vec![],
             Focused(_focused)                                               => vec![],
             ModifiersChanged(_state)                                        => vec![],
-            TouchpadPressure { device_id: _, pressure: _, stage: _ }        => vec![],
+            TouchpadPressure { .. }                                         => vec![],
             TouchpadMagnify { .. }                                          => vec![],
             TouchpadRotate { .. }                                           => vec![],
             SmartMagnify { .. }                                             => vec![],
@@ -184,18 +169,41 @@ impl WinitRuntime {
             ThemeChanged(_theme)                                            => vec![],
             Occluded(_)                                                     => vec![],
 
+            RedrawRequested                                                 => { 
+                if let Some((pending_surface, redraw_finished)) = self.pending_redraws.remove(&window_id) {
+                    // Present the surface
+                    pending_surface.present();
+
+                    // Signal the 'finished' event when the redraw events are all clear
+                    self.pending_yields.push(redraw_finished);
+                } else {
+                    // self.request_redraw(window_id); 
+                }
+
+                vec![]
+            }
+
             // Keyboard events
-            KeyboardInput { device_id: _, input, is_synthetic: _, }         => {
+            KeyboardInput { device_id: _, event, is_synthetic: _, }         => {
                 // Convert the keycode
-                let key = input.virtual_keycode.map(|keycode| key_from_winit(&keycode));
-                let key = if key == Some(Key::Unknown) { None } else { key };
+                let key = key_from_winit(&event.physical_key);
 
                 // TODO: for modifier keys, generate keydown/up using the modifier state
 
+                let scancode = match event.physical_key {
+                    PhysicalKey::Code(_)                                    => 0,
+                    PhysicalKey::Unidentified(NativeKeyCode::Unidentified)  => 0,
+                    PhysicalKey::Unidentified(NativeKeyCode::Android(code)) => code as u64,
+                    PhysicalKey::Unidentified(NativeKeyCode::MacOS(code))   => code as u64,
+                    PhysicalKey::Unidentified(NativeKeyCode::Windows(code)) => code as u64,
+                    PhysicalKey::Unidentified(NativeKeyCode::Xkb(code))     => code as u64,
+
+                };
+
                 // Generate the event for this keypress
-                match input.state {
-                    ElementState::Pressed   => vec![DrawEvent::KeyDown(input.scancode as _, key)],
-                    ElementState::Released  => vec![DrawEvent::KeyUp(input.scancode as _, key)]
+                match event.state {
+                    ElementState::Pressed   => vec![DrawEvent::KeyDown(scancode, key)],
+                    ElementState::Released  => vec![DrawEvent::KeyUp(scancode, key)]
                 }
             },
 

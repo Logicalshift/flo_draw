@@ -10,6 +10,10 @@ members     = [
     "draw",
 ]
 
+[workspace.dependencies]
+wgpu            = "0.18"
+wgpu-profiler   = "0.15"
+
 [patch.crates-io]
 flo_canvas              = { path = "./canvas" }
 flo_canvas_events       = { path = "./canvas_events" }
@@ -20,9 +24,15 @@ flo_draw                = { path = "./draw" }
 
 flo_curves              = { git = "https://github.com/Logicalshift/flo_curves", branch = "v0.8" }
 flo_binding             = { git = "https://github.com/Logicalshift/flo_binding", branch = "v3.0" }
-flo_scene               = { git = "https://github.com/Logicalshift/flo_scene", branch = "v0.1" }
+flo_scene               = { git = "https://github.com/Logicalshift/flo_scene", branch = "v0.2" }
 desync                  = { git = "https://github.com/Logicalshift/desync", branch = "v0.9" }
 
 # allsorts is very slow when built for debug, so packages using flo_draw should consider optimising it even in debug builds
 [profile.dev.package.allsorts]
+opt-level = 2
+
+[profile.dev.package.wgpu]
+opt-level = 2
+
+[profile.dev.package.lyon]
 opt-level = 2

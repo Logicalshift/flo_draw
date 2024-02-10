@@ -25,14 +25,14 @@ use flo_canvas;
 
 use wgpu;
 use wgpu::util;
-use wgpu::util::{DeviceExt};
+use wgpu::util::DeviceExt;
 
 use std::mem;
 use std::slice;
-use std::ops::{Range};
+use std::ops::Range;
 use std::sync::*;
-use std::collections::{HashMap};
-use std::ffi::{c_void};
+use std::collections::HashMap;
+use std::ffi::c_void;
 
 #[cfg(feature="profile")]
 use std::cell::*;
@@ -40,9 +40,9 @@ use std::cell::*;
 use std::rc::*;
 
 #[cfg(feature="wgpu-profiler")]
-use wgpu_profiler::{wgpu_profiler, GpuProfiler};
+use wgpu_profiler::{GpuProfiler, GpuProfilerSettings};
 #[cfg(feature="wgpu-profiler")]
-use std::path::{Path};
+use std::path::Path;
 
 ///
 /// Renderer that uses the `wgpu` abstract library as a render target
@@ -120,12 +120,12 @@ impl WgpuRenderer {
     ///
     pub fn from_surface(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer {
         #[cfg(feature="wgpu-profiler")]
-        let wgpu_profiler = GpuProfiler::new(4, queue.get_timestamp_period(), GpuProfiler::ALL_WGPU_TIMER_FEATURES);
+        let wgpu_profiler = GpuProfiler::new(GpuProfilerSettings { max_num_pending_frames: 4, ..Default::default()}).expect("Failed to create WGPU profiler");
 
         WgpuRenderer {
             adapter:                target_adapter,
             device:                 device.clone(),
-            queue:                  queue,
+            queue,
             target_surface:         Some(target_surface),
             target_format:          None,
             target_surface_texture: None,
@@ -147,7 +147,7 @@ impl WgpuRenderer {
             profiler:               Rc::new(RefCell::new(RenderProfiler::new())),
 
             #[cfg(feature="wgpu-profiler")]
-            wgpu_profiler:          wgpu_profiler,
+            wgpu_profiler,
         }
     }
     ///
@@ -155,12 +155,12 @@ impl WgpuRenderer {
     ///
     pub fn from_texture(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_texture: Arc<wgpu::Texture>, target_adapter: Arc<wgpu::Adapter>, texture_format: wgpu::TextureFormat, texture_size: (u32, u32)) -> WgpuRenderer {
         #[cfg(feature="wgpu-profiler")]
-        let wgpu_profiler = GpuProfiler::new(4, queue.get_timestamp_period(), GpuProfiler::ALL_WGPU_TIMER_FEATURES);
+        let wgpu_profiler = GpuProfiler::new(GpuProfilerSettings { max_num_pending_frames: 4, ..Default::default()}).expect("Failed to create WGPU profiler");
 
         WgpuRenderer {
             adapter:                target_adapter,
             device:                 device.clone(),
-            queue:                  queue,
+            queue,
             target_surface:         None,
             target_format:          Some(texture_format),
             target_surface_texture: None,
@@ -182,7 +182,7 @@ impl WgpuRenderer {
             profiler:               Rc::new(RefCell::new(RenderProfiler::new())),
 
             #[cfg(feature="wgpu-profiler")]
-            wgpu_profiler:          wgpu_profiler,
+            wgpu_profiler,
         }
     }
 
@@ -319,7 +319,7 @@ impl WgpuRenderer {
 
         // Rewrite the chrometrace file every frame (TODO: some other cadence/write multiple files)
         #[cfg(feature="wgpu-profiler")]
-        if let Some(profiling_data) = self.wgpu_profiler.process_finished_frame() {
+        if let Some(profiling_data) = self.wgpu_profiler.process_finished_frame(self.queue.get_timestamp_period()) {
             wgpu_profiler::chrometrace::write_chrometrace(Path::new("flo_draw_profile.json"), &profiling_data);
         }
         
@@ -1246,6 +1246,7 @@ impl WgpuRenderer {
 
                 state.pipeline_configuration.shader_module              = WgpuShader::Simple(variant, post_processing);
                 state.pipeline_configuration.source_is_premultiplied    = false;
+                state.clip_texture                                      = clip_texture;
             }
 
             DashedLine { .. } => {
@@ -1290,6 +1291,7 @@ impl WgpuRenderer {
 
                 // Set up the state
                 state.texture_settings  = TextureSettings { transform: texture_transform.0, alpha: alpha as _, ..Default::default() };
+                state.clip_texture      = clip_texture;
                 state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
                 if repeat {
                     state.sampler       = Some(self.samplers.default_sampler());
@@ -1335,6 +1337,7 @@ impl WgpuRenderer {
 
                 // Set up the state
                 state.texture_settings  = TextureSettings { transform: texture_transform.0, alpha: alpha as _, ..Default::default() };
+                state.clip_texture      = clip_texture;
                 state.input_texture     = texture.map(|t| Arc::clone(&t.texture));
                 if repeat {
                     state.sampler       = Some(self.samplers.gradient_sampler());

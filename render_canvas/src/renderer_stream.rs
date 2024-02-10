@@ -328,6 +328,7 @@ impl RenderCore {
     ///
     /// Draws some bounds using viewport coordinates
     ///
+    #[allow(dead_code)]
     fn render_debug_region(&mut self, active_transform: canvas::Transform2D, viewport_size: render::Size2D, debug_region: LayerBounds, invalid_bounds: &mut LayerBounds) -> Vec<render::RenderAction> {
         // Reverse the active transform (so we figure out coordinates that will map to the debug region)
         let render::Size2D(w, h)    = viewport_size;

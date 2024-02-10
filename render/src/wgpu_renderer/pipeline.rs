@@ -317,7 +317,7 @@ impl Pipeline {
                 // Group 2 is bound to an empty set if no texture is defined (or the sampler is missing when it was expected)
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label:      Some("bind_input_texture_no_sampler"),
-                    layout:     &*self.clip_mask_layout,
+                    layout:     &*self.texture_layout,
                     entries:    &[
                         wgpu::BindGroupEntry {
                             binding:    0,
@@ -333,7 +333,7 @@ impl Pipeline {
                 // Group 2 is bound to an empty set if not using a texture shader
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label:      Some("bind_input_texture_not_texture_shader"),
-                    layout:     &*self.clip_mask_layout,
+                    layout:     &*self.texture_layout,
                     entries:    &[]
                 })
             }

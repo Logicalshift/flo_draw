@@ -11,7 +11,7 @@ description = "Re-exports platform-appropriate libraries for initialising offscr
 # 'gtk' on linux), so we need a separate crate to re-export egl/wgl/cgl based on the platform we're compiling on
 
 [target.'cfg(target_os = "linux")'.build-dependencies]
-bindgen = "0.66"
+bindgen = "0.69"
 
 [dependencies]
 
@@ -22,5 +22,5 @@ egl             = "0.2"
 cgl             = "0.3"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-glutin_wgl_sys  = "0.4"
+glutin_wgl_sys  = "0.5"
 winapi 			= { version = "0.3", features = [ "winnt", "winuser", "wingdi", "libloaderapi" ] }
