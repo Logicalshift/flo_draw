@@ -88,7 +88,7 @@ where
         let eyf     = e * y_pos + f;
         let dx      = x_transform.pixel_size();
 
-        // Calculate the position of teh 
+        // Calculate the position of the texture across the pixels we want to read
         let mut x_pos = x_pos;
         for pixel in target[(pixel_range.start as usize)..(pixel_range.end as usize)].iter_mut() {
             // Calculate the texture position
