@@ -39,15 +39,15 @@ impl TextureReader<RgbaTexture> for F32LinearPixel {
             let [r, g, b, a] = texture.read_pixel(x.floor() as _, y.floor() as _);
 
             // Use the 2.2 gamma conversion table to convert to a F32 pixel (we assume non-premultiplied RGBA pixels with a gamma of 2.2)
-            let alpha   = (a as usize) << 8;
-            let ri      = (r as usize) | alpha;
-            let gi      = (g as usize) | alpha;
-            let bi      = (b as usize) | alpha;
+            let alpha   = (*a as usize) << 8;
+            let ri      = (*r as usize) | alpha;
+            let gi      = (*g as usize) | alpha;
+            let bi      = (*b as usize) | alpha;
 
             let rf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(ri) };
             let gf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(gi) };
             let bf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(bi) };
-            let af      = (a as f32) / 255.0;
+            let af      = (*a as f32) / 255.0;
 
             *target_pixel = F32LinearPixel::from_components([rf, gf, bf, af]);
         }

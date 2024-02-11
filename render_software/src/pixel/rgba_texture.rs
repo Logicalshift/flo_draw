@@ -1,3 +1,5 @@
+use std::convert::{TryFrom};
+
 ///
 /// An 8-bpp, non-premultiplied RGBA texture
 ///
@@ -111,7 +113,7 @@ impl RgbaTexture {
     /// Finds a pixel at the specified coordinate in this texture
     ///
     #[inline]
-    pub fn read_pixel(&self, x: i64, y: i64) -> [u8; 4] {
+    pub fn read_pixel(&self, x: i64, y: i64) -> &[u8; 4] {
         // The texture is treated as repeating infinitely
         let x   = if x >= 0 { x%self.width } else { (x%self.width) + self.width };
         let y   = if y >= 0 { y%self.height } else { (y%self.height) + self.height };
@@ -123,8 +125,6 @@ impl RgbaTexture {
 
         // Because of the assertion in new() we know that 'idx' must be in the range covered by this texture
         debug_assert!(idx + 4 <= pixels.len());
-        unsafe {
-            [*pixels.get_unchecked(idx), *pixels.get_unchecked(idx+1), *pixels.get_unchecked(idx+2), *pixels.get_unchecked(idx+3)]
-        }
+        <&[u8; 4]>::try_from(&pixels[idx..idx+4]).unwrap()
     }
 }
