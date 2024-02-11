@@ -180,8 +180,13 @@ fn subpixel_oblique_line() {
 
     let spans = plan.spans();
 
-    // Should be two spans (one entering the line and one leaving it)
-    assert!(spans.len() == 2, "Number of spans != 2 {:?}", plan);
+    // Should be one span with two blending instructions
+    assert!(spans.len() == 1, "Number of spans != 1 {:?}", plan);
+
+    let programs = spans[0].programs().collect::<Box<[_]>>();
+    assert!(programs.len() == 5, "Programs: {:?}", programs);
+    assert!(programs.iter().filter(|prog| if let PixelProgramPlan::StartBlend = prog { true } else { false }).count() == 2, "Incorrect number of StartBlend instructions: {:?}",programs);
+    assert!(programs.iter().filter(|prog| if let PixelProgramPlan::LinearSourceOver(_, _) = prog { true } else { false }).count() == 2, "Incorrect number of LinearSourecOver instructions: {:?}",programs);
 }
 
 #[test]
@@ -203,8 +208,13 @@ fn subpixel_vertical_line() {
 
     let spans = plan.spans();
 
-    // Should be two spans (one entering the line and one leaving it)
-    assert!(spans.len() == 2, "Number of spans != 2 {:?}", plan);
+    // Should be one span with two blending instructions
+    assert!(spans.len() == 1, "Number of spans != 1 {:?}", plan);
+
+    let programs = spans[0].programs().collect::<Box<[_]>>();
+    assert!(programs.len() == 5, "Programs: {:?}", programs);
+    assert!(programs.iter().filter(|prog| if let PixelProgramPlan::StartBlend = prog { true } else { false }).count() == 2, "Incorrect number of StartBlend instructions: {:?}",programs);
+    assert!(programs.iter().filter(|prog| if let PixelProgramPlan::LinearSourceOver(_, _) = prog { true } else { false }).count() == 2, "Incorrect number of LinearSourecOver instructions: {:?}",programs);
 }
 
 #[test]
