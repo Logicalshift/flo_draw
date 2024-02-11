@@ -88,19 +88,8 @@ where
         let eyf     = e * y_pos + f;
         let dx      = x_transform.pixel_size();
 
-        // Calculate the position of the texture across the pixels we want to read
-        let positions = (0..pixel_range.len())
-            .map(|idx| {
-                let x_pos   = x_pos + (dx * (idx as f64));
-                let tx      = a * x_pos + byc;
-                let ty      = d * x_pos + eyf;
-
-                (tx, ty)
-            })
-            .collect::<Box<[_]>>();
-
         // Read from the texture into the pixel range
-        let mut texture_pixels = TTextureReader::read_pixels(texture, &positions);
+        let mut texture_pixels = TTextureReader::read_pixels_linear(texture, x_pos, dx, (a, byc), (d, eyf), pixel_range.len());
 
         // Alpha-blend the pixels into the final result
         for (texture_pixel, tgt_pixel) in texture_pixels.into_iter().zip((&mut target[(pixel_range.start as usize)..(pixel_range.end as usize)]).iter_mut()) {
