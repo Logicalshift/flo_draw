@@ -35,10 +35,9 @@ static TO_PREMULTIPLIED_LINEAR_WITH_ALPHA: Lazy<[u16; 65536]> = Lazy::new(|| {
 impl TextureReader<RgbaTexture> for U32LinearPixel {
     #[inline]
     fn read_pixels(texture: &RgbaTexture, pixels: &mut [Self], positions: &[(f64, f64)]) {
-        for (target_pixel, (x, y)) in pixels.iter_mut().zip(positions.iter()) {
-            // Read the pixel at the floor of the supplied position
-            let [r, g, b, a] = texture.read_pixel(x.floor() as _, y.floor() as _);
+        let u8pixels = texture.read_pixels(positions.iter().map(|(x, y)| (*x as i64, *y as i64)));
 
+        for (target_pixel, [r, g, b, a]) in pixels.iter_mut().zip(u8pixels) {
             // Use the 2.2 gamma conversion table to convert to a F32 pixel (we assume non-premultiplied RGBA pixels with a gamma of 2.2)
             let alpha   = (*a as usize) << 8;
             let ri      = (*r as usize) | alpha;

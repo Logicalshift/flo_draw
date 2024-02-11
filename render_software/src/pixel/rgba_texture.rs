@@ -127,4 +127,12 @@ impl RgbaTexture {
         debug_assert!(idx + 4 <= pixels.len());
         <&[u8; 4]>::try_from(&pixels[idx..idx+4]).unwrap()
     }
+
+    ///
+    /// Reads a set of pixels at arbitrary coordinates from the texture
+    ///
+    #[inline]
+    pub fn read_pixels(&self, coords: impl Iterator<Item=(i64, i64)>) -> impl Iterator<Item=&[u8; 4]> {
+        coords.map(move |(x, y)| self.read_pixel(x, y))
+    }
 }
