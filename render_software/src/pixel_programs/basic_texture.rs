@@ -21,10 +21,10 @@ where
 ///
 /// Program that pixels from a texture, without doing any filtering or mipmapping
 ///
-pub struct BasicTextureProgram<TTextureReader, TTexture>
+pub struct BasicTextureProgram<TTextureReader, TTexture, const N: usize>
 where
     TTexture:       Send + Sync,
-    TTextureReader: TextureReader<TTexture>,
+    TTextureReader: Copy + Pixel<N> + TextureReader<TTexture>,
 {
     /// Placeholder for the texture data
     texture: PhantomData<Arc<TTexture>>,
@@ -33,15 +33,15 @@ where
     texture_reader: PhantomData<TTextureReader>
 }
 
-impl<TTextureReader, TTexture> Default for BasicTextureProgram<TTextureReader, TTexture>
+impl<TTextureReader, TTexture, const N: usize> Default for BasicTextureProgram<TTextureReader, TTexture, N>
 where
     TTexture:       Send + Sync,
-    TTextureReader: TextureReader<TTexture>,
+    TTextureReader: Copy + Pixel<N> + TextureReader<TTexture>,
 {
     ///
     /// Creates a basic texture program that will read from the specified texture
     ///
-    fn default() -> BasicTextureProgram<TTextureReader, TTexture> {
+    fn default() -> BasicTextureProgram<TTextureReader, TTexture, N> {
         BasicTextureProgram {
             texture:        PhantomData,
             texture_reader: PhantomData,
@@ -66,10 +66,10 @@ where
     }
 }
 
-impl<TTextureReader, TTexture> PixelProgram for BasicTextureProgram<TTextureReader, TTexture>
+impl<TTextureReader, TTexture, const N: usize> PixelProgram for BasicTextureProgram<TTextureReader, TTexture, N>
 where
     TTexture:       Send + Sync,
-    TTextureReader: TextureReader<TTexture> + Copy + AlphaBlend,
+    TTextureReader: Copy + Pixel<N> + TextureReader<TTexture>,
 {
     type Pixel          = TTextureReader;
     type ProgramData    = TextureData<TTexture>;
@@ -89,16 +89,23 @@ where
         let dx      = x_transform.pixel_size();
 
         // Calculate the position of the texture across the pixels we want to read
-        let mut x_pos = x_pos;
-        for pixel in target[(pixel_range.start as usize)..(pixel_range.end as usize)].iter_mut() {
-            // Calculate the texture position
-            let tx = a * x_pos + byc;
-            let ty = d * x_pos + eyf;
+        let positions = (0..pixel_range.len())
+            .map(|idx| {
+                let x_pos   = x_pos + (dx * (idx as f64));
+                let tx      = a * x_pos + byc;
+                let ty      = d * x_pos + eyf;
 
-            *pixel = TTextureReader::read_pixel(texture, tx, ty).source_over(*pixel);
+                (tx, ty)
+            })
+            .collect::<Box<[_]>>();
 
-            // Move the x position along
-            x_pos += dx;
+        // Read from the texture into the pixel range
+        let mut texture_pixels = vec![Self::Pixel::black(); pixel_range.len()];
+        TTextureReader::read_pixels(texture, &mut texture_pixels, &positions);
+
+        // Alpha-blend the pixels into the final result
+        for (texture_pixel, tgt_pixel) in texture_pixels.into_iter().zip((&mut target[(pixel_range.start as usize)..(pixel_range.end as usize)]).iter_mut()) {
+            *tgt_pixel = texture_pixel.source_over(*tgt_pixel);
         }
     }
 }

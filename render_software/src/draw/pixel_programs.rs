@@ -28,7 +28,7 @@ where
     pub (super) blend_color: StoredPixelProgramFromProgram<BlendColorProgram<TPixel>>,
 
     /// The basic texture rendering program
-    pub (super) basic_texture: StoredPixelProgramFromProgram<BasicTextureProgram<TPixel, RgbaTexture>>,
+    pub (super) basic_texture: StoredPixelProgramFromProgram<BasicTextureProgram<TPixel, RgbaTexture, N>>,
 
     /// The basic sprite rendering program (can scale or transform the sprite, and will render it as source over with 100% transparency)
     pub (super) basic_sprite: StoredPixelProgramFromProgram<SimpleSpriteProgram<TPixel>>,
