@@ -100,8 +100,7 @@ where
             .collect::<Box<[_]>>();
 
         // Read from the texture into the pixel range
-        let mut texture_pixels = vec![Self::Pixel::black(); pixel_range.len()];
-        TTextureReader::read_pixels(texture, &mut texture_pixels, &positions);
+        let mut texture_pixels = TTextureReader::read_pixels(texture, &positions);
 
         // Alpha-blend the pixels into the final result
         for (texture_pixel, tgt_pixel) in texture_pixels.into_iter().zip((&mut target[(pixel_range.start as usize)..(pixel_range.end as usize)]).iter_mut()) {

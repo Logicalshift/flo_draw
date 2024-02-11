@@ -33,10 +33,15 @@ static TO_PREMULTIPLIED_LINEAR_WITH_ALPHA: Lazy<[f32; 65536]> = Lazy::new(|| {
 
 impl TextureReader<RgbaTexture> for F32LinearPixel {
     #[inline]
-    fn read_pixels(texture: &RgbaTexture, pixels: &mut [Self], positions: &[(f64, f64)]) {
+    fn read_pixels(texture: &RgbaTexture, positions: &[(f64, f64)]) -> Vec<Self> {
+        // Pre-allocate the space for the pixels
+        let mut pixels = Vec::with_capacity(positions.len());
+
+        // Read the pixel from the texture
         let u8pixels = texture.read_pixels(positions.iter().map(|(x, y)| (*x as i64, *y as i64)));
 
-        for (target_pixel, [r, g, b, a]) in pixels.iter_mut().zip(u8pixels) {
+        // Convert to F32LinearPixels
+        pixels.extend(u8pixels.map(|[r, g, b, a]| {
             // Use the 2.2 gamma conversion table to convert to a F32 pixel (we assume non-premultiplied RGBA pixels with a gamma of 2.2)
             let alpha   = (*a as usize) << 8;
             let ri      = (*r as usize) | alpha;
@@ -48,7 +53,10 @@ impl TextureReader<RgbaTexture> for F32LinearPixel {
             let bf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(bi) };
             let af      = (*a as f32) / 255.0;
 
-            *target_pixel = F32LinearPixel::from_components([rf, gf, bf, af]);
-        }
+            // We should always have enough space to write the pixels here
+            F32LinearPixel::from_components([rf, gf, bf, af])
+        }));
+
+        pixels
     }
 }

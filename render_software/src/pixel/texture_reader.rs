@@ -10,5 +10,5 @@ where
     ///
     /// Coordinates are in fractions of pixels to allow for a texture reader to support bilinear interpolation or mipmapping
     ///
-    fn read_pixels(texture: &TTexture, pixels: &mut [Self], positions: &[(f64, f64)]);
+    fn read_pixels(texture: &TTexture, positions: &[(f64, f64)]) -> Vec<Self>;
 }
