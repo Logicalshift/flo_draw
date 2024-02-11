@@ -34,21 +34,23 @@ static TO_PREMULTIPLIED_LINEAR_WITH_ALPHA: Lazy<[u16; 65536]> = Lazy::new(|| {
 
 impl TextureReader<RgbaTexture> for U32LinearPixel {
     #[inline]
-    fn read_pixel(texture: &RgbaTexture, x: f64, y: f64) -> Self {
-        // Read the pixel at the floor of the supplied position
-        let [r, g, b, a] = texture.read_pixel(x.floor() as _, y.floor() as _);
+    fn read_pixels(texture: &RgbaTexture, pixels: &mut [Self], positions: &[(f64, f64)]) {
+        for (target_pixel, (x, y)) in pixels.iter_mut().zip(positions.iter()) {
+            // Read the pixel at the floor of the supplied position
+            let [r, g, b, a] = texture.read_pixel(x.floor() as _, y.floor() as _);
 
-        // Use the 2.2 gamma conversion table to convert to a F32 pixel (we assume non-premultiplied RGBA pixels with a gamma of 2.2)
-        let alpha   = (a as usize) << 8;
-        let ri      = (r as usize) | alpha;
-        let gi      = (g as usize) | alpha;
-        let bi      = (b as usize) | alpha;
+            // Use the 2.2 gamma conversion table to convert to a F32 pixel (we assume non-premultiplied RGBA pixels with a gamma of 2.2)
+            let alpha   = (a as usize) << 8;
+            let ri      = (r as usize) | alpha;
+            let gi      = (g as usize) | alpha;
+            let bi      = (b as usize) | alpha;
 
-        let rf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(ri) };
-        let gf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(gi) };
-        let bf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(bi) };
-        let af      = (a as u16) << 8;
+            let rf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(ri) };
+            let gf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(gi) };
+            let bf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(bi) };
+            let af      = (a as u16) << 8;
 
-        U32LinearPixel::from_components([rf.into(), gf.into(), bf.into(), af.into()])
+            *target_pixel = U32LinearPixel::from_components([rf.into(), gf.into(), bf.into(), af.into()]);
+        }
     }
 }
