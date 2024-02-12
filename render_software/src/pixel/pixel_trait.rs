@@ -40,6 +40,22 @@ where
     /// Returns the components that make up this pixel
     fn to_components(&self) -> [Self::Component; N];
 
-    /// Retrieves an individual component from this 
+    /// Performs bilinear filtering on a set of pixels
+    ///
+    /// `x` and `y` are in the range `0.0..1.0` and the pixels in the order top-left, top-right, bottom-left, bottom-right (or
+    /// `(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)` in x-y coordinates. The return value is the values for the pixels 
+    /// blended for the sub-pixel location.
+    #[inline]
+    fn filter_bilinear(pixels: [&Self; 4], x: Self::Component, y: Self::Component) -> Self {
+        let one_minus_x = Self::Component::one()-x;
+        let one_minus_y = Self::Component::one()-y;
+
+        let x1 = (*pixels[0])*x + (*pixels[1])*(one_minus_x);
+        let x2 = (*pixels[2])*x + (*pixels[3])*(one_minus_x);
+
+        x1*y + x2*one_minus_y
+    }
+
+    /// Retrieves an individual component from this pixel
     fn get(&self, component: usize) -> Self::Component { self.to_components()[component] }
 }
