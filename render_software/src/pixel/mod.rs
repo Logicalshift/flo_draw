@@ -12,6 +12,7 @@ mod pixel_program;
 mod pixel_program_cache;
 mod pixel_program_runner;
 mod rgba_texture;
+mod u16_linear_texture;
 mod texture_reader;
 
 pub use pixel_trait::*;
@@ -28,3 +29,4 @@ pub use pixel_program_cache::*;
 pub use pixel_program_runner::*;
 pub use rgba_texture::*;
 pub use texture_reader::*;
+pub use u16_linear_texture::*;
