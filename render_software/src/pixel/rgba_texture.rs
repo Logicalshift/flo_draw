@@ -21,7 +21,7 @@ impl RgbaTexture {
     ///
     /// Creates a new RGBA texture
     ///
-    pub fn new(width: usize, height: usize, pixels: Vec<u8>) -> RgbaTexture {
+    pub fn from_pixels(width: usize, height: usize, pixels: Vec<u8>) -> RgbaTexture {
         // SAFETY: we later rely on this to use get_unchecked
         assert!(width * height * 4 == pixels.len());
 
