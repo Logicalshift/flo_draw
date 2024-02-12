@@ -3,8 +3,16 @@ use flo_render_software::canvas::*;
 
 use std::io;
 
+fn draw_scaled_mascot(canvas: &mut impl GraphicsPrimitives, x: f32, y: f32, width: f32, height: f32) {
+    canvas.new_path();
+    canvas.rect(x, y, x+width, y+height);
+
+    canvas.fill_texture(TextureId(0), x, y+height, x+width, y);
+    canvas.fill();
+}
+
 ///
-/// Draws FlowBetween's mascot as a texture
+/// Draws FlowBetween's mascot as a texture at different scales
 ///
 pub fn main() {
     // Load a png file
@@ -22,16 +30,13 @@ pub fn main() {
     let (flo_w, flo_h) = canvas.load_texture(TextureId(0), io::Cursor::new(flo_bytes)).unwrap();
 
     let ratio   = (flo_w as f32)/(flo_h as f32);
-    let height  = 1000.0 / ratio;
-    let y_pos   = (1000.0-height)/2.0;
 
-    // Draw a rectangle...
-    canvas.new_path();
-    canvas.rect(0.0, y_pos, 1000.0, y_pos+height);
-
-    // Fill with the texture we just loaded
-    canvas.fill_texture(TextureId(0), 0.0, y_pos+height as f32, 1000.0, y_pos);
-    canvas.fill();
+    // Draw a bunch of mascots
+    draw_scaled_mascot(&mut canvas, 87.5 + 0.0, 0.0, 50.0, 50.0/ratio);
+    draw_scaled_mascot(&mut canvas, 87.5 + 75.0, 0.0, 100.0, 100.0/ratio);
+    draw_scaled_mascot(&mut canvas, 87.5 + 200.0, 0.0, 200.0, 200.0/ratio);
+    draw_scaled_mascot(&mut canvas, 87.5 + 425.0, 0.0, 400.0, 400.0/ratio);
+    draw_scaled_mascot(&mut canvas, 250.0, 500.0, 500.0, 500.0/ratio);
 
     // Render to the terminal window
     render_drawing(&mut TerminalRenderTarget::new(1920, 1080), canvas.iter().cloned());
