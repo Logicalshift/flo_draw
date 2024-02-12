@@ -1,8 +1,7 @@
 use std::convert::{TryFrom};
 
 ///
-/// An RGBA texture where the values are stored as linear intensities between 0-65535, with the alpha value
-/// multiplied in.
+/// An RGBA texture where the values are stored as linear intensities between 0-65535, with a premultipled alpha.
 ///
 /// This can be rendered much more quickly than the 8-bit RGBA texture, which
 ///
@@ -86,5 +85,13 @@ impl U16LinearTexture {
         let pixels  = &self.pixels[idx..(idx+4)];
 
         <&[u16; 4]>::try_from(pixels).unwrap()
+    }
+
+    ///
+    /// Reads a set of pixels at arbitrary coordinates from the texture
+    ///
+    #[inline]
+    pub fn read_pixels(&self, coords: impl Iterator<Item=(i64, i64)>) -> impl Iterator<Item=&[u16; 4]> {
+        coords.map(move |(x, y)| self.read_pixel(x, y))
     }
 }

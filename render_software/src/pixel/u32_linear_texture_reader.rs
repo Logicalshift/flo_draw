@@ -2,6 +2,7 @@ use super::Pixel;
 use super::u32_linear::*;
 use super::rgba_texture::*;
 use super::texture_reader::*;
+use super::u16_linear_texture::*;
 
 use once_cell::sync::{Lazy};
 
@@ -56,6 +57,22 @@ impl TextureReader<RgbaTexture> for U32LinearPixel {
 
             U32LinearPixel::from_components([rf.into(), gf.into(), bf.into(), af.into()])
         }));
+
+        pixels
+    }
+}
+
+impl TextureReader<U16LinearTexture> for U32LinearPixel {
+    #[inline]
+    fn read_pixels(texture: &U16LinearTexture, positions: &[(f64, f64)]) -> Vec<Self> {
+        // Pre-allocate the space for the pixels
+        let mut pixels = Vec::with_capacity(positions.len());
+
+        // Read the pixel from the texture
+        let u8pixels = texture.read_pixels(positions.iter().map(|(x, y)| (*x as i64, *y as i64)));
+
+        // Convert to F32LinearPixels
+        pixels.extend(u8pixels.map(|[r, g, b, a]| U32LinearPixel::from_components([r.into(), g.into(), b.into(), a.into()])));
 
         pixels
     }
