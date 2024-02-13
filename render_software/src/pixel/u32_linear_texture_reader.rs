@@ -53,7 +53,7 @@ impl TextureReader<RgbaTexture> for U32LinearPixel {
             let rf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(ri) };
             let gf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(gi) };
             let bf      = unsafe { *(*TO_PREMULTIPLIED_LINEAR_WITH_ALPHA).get_unchecked(bi) };
-            let af      = (*a as u16) << 8;
+            let af      = (*a as u16) * 257;
 
             U32LinearPixel::from_components([rf.into(), gf.into(), bf.into(), af.into()])
         }));
