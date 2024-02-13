@@ -143,7 +143,7 @@ where
                 },
 
                 Action::ReadPixel(offset_x, offset_y) => {
-                    result.push(Self::filter_bilinear(current_pixels, offset_x, offset_y));
+                    result.push(Self::filter_bilinear(current_pixels, TPixel::Component::with_value(offset_x), TPixel::Component::with_value(offset_y)));
                 }
             }
         }
