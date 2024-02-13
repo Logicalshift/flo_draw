@@ -55,7 +55,7 @@ where
         let x1 = (*pixels[0])*one_minus_x + (*pixels[1])*x;
         let x2 = (*pixels[2])*one_minus_x + (*pixels[3])*x;
 
-        x1*y + x2*one_minus_y
+        x1*one_minus_y + x2*y
     }
 
     /// Retrieves an individual component from this pixel
