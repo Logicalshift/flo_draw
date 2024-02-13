@@ -89,7 +89,7 @@ where
         let dx      = x_transform.pixel_size();
 
         // Read from the texture into the pixel range
-        let mut texture_pixels = TTextureReader::read_pixels_linear(texture, x_pos, dx, (a, byc), (d, eyf), pixel_range.len());
+        let mut texture_pixels = TTextureReader::read_pixels_linear_bilinear_filter(texture, x_pos, dx, (a, byc), (d, eyf), pixel_range.len());
 
         // Alpha-blend the pixels into the final result
         for (texture_pixel, tgt_pixel) in texture_pixels.into_iter().zip((&mut target[(pixel_range.start as usize)..(pixel_range.end as usize)]).iter_mut()) {
