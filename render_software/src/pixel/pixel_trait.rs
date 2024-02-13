@@ -50,8 +50,8 @@ where
         let one_minus_x = Self::Component::one()-x;
         let one_minus_y = Self::Component::one()-y;
 
-        let x1 = (*pixels[0])*x + (*pixels[1])*(one_minus_x);
-        let x2 = (*pixels[2])*x + (*pixels[3])*(one_minus_x);
+        let x1 = (*pixels[0])*one_minus_x + (*pixels[1])*x;
+        let x2 = (*pixels[2])*one_minus_x + (*pixels[3])*x;
 
         x1*y + x2*one_minus_y
     }
