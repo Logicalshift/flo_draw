@@ -58,4 +58,74 @@ where
 
     /// Retrieves an individual component from this pixel
     fn get(&self, component: usize) -> Self::Component { self.to_components()[component] }
+
+    ///
+    /// Reads pixels and applies bilinear filtering to approximate values found at subpixels
+    ///
+    /// This can be used for scaling up an image or scaling down an image to about half size
+    ///
+    fn read_pixels_bilinear_filter(texture: &TTexture, positions: &[(f64, f64)]) -> Vec<Self> {
+        // Create the resulting pixels for this read
+        let mut result          = Vec::with_capacity(positions.len());
+
+        // If there's nothing to read, then short-circuit
+        if positions.is_empty() {
+            return result;
+        }
+
+        // In order to minimize the amount of reading we do, we make a plan of the pixels we're going to read (for each pixel in the output we need a 2x2 sample set)
+        enum Action {
+            NextQuad,
+            ReadPixel(f64, f64),
+        }
+        let mut actions         = Vec::with_capacity(positions.len()*2);
+        let mut pixels_to_read  = Vec::with_capacity(positions.len()*4);
+
+        // We always start by reading the first position (the 4 pixels surrounding xpos, ypos)
+        let (mut xpos, mut ypos) = positions[0];
+
+        xpos = xpos.floor();
+        ypos = ypos.floor();
+
+        pixels_to_read.extend([
+            (xpos, ypos), (xpos+1.0, ypos), (xpos, ypos+1.0), (xpos+1.0, ypos+1.0)
+        ]);
+
+        // Generate the actions and the pixels to read
+        for (next_x, next_y) in positions {
+            // Read another set of pixels if the current pixel doesn't match
+            if xpos != next_x.floor() || ypos != next_y.floor() {
+                xpos = next_x.floor();
+                ypos = next_y.floor();
+
+                pixels_to_read.extend([
+                    (xpos, ypos), (xpos+1.0, ypos), (xpos, ypos+1.0), (xpos+1.0, ypos+1.0)
+                ]);
+                actions.push(Action::NextQuad);
+            }
+
+            // Interpolate the next pixel
+            actions.push(Action::ReadPixel(next_x - xpos, next_y - ypos));
+        }
+
+        // Read the data we need from the texture and then perform the actions
+        let source_pixels       = Self::read_pixels(texture, &pixels_to_read);
+        let mut pos             = 0;
+        let mut current_pixels  = [&source_pixels[0], &source_pixels[1], &source_pixels[2], &source_pixels[3]];
+
+        for action in actions {
+            match action {
+                Action::NextQuad => {
+                    pos             += 4;
+                    current_pixels  = [&source_pixels[pos+0], &source_pixels[pos+1], &source_pixels[pos+2], &source_pixels[pos+3]];
+                },
+
+                Action::ReadPixel(offset_x, offset_y) => {
+                    result.push(Self::filter_bilinear(current_pixels, offset_x, offset_y));
+                }
+            }
+        }
+
+        result
+    }
 }
