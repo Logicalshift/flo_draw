@@ -58,7 +58,29 @@ where
 
     /// Retrieves an individual component from this pixel
     fn get(&self, component: usize) -> Self::Component { self.to_components()[component] }
+}
 
+///
+/// Trait implemented for types that can read from a texture using bilinear interpolation
+///
+pub trait BilinearTextureReader<TTexture, const N: usize>
+where
+    Self:       TextureReader<TTexture>,
+    TTexture:   Send + Sync
+{
+    ///
+    /// Reads pixels and applies bilinear filtering to approximate values found at subpixels
+    ///
+    /// This can be used for scaling up an image or scaling down an image to about half size
+    ///
+    fn read_pixels_bilinear_filter(texture: &TTexture, positions: &[(f64, f64)]) -> Vec<Self>;
+}
+
+impl<TPixel, TTexture, const N: usize> BilinearTextureReader<TTexture, N> for TPixel
+where
+    TPixel:     Pixel<N> + TextureReader<TTexture>,
+    TTexture:   Send + Sync
+{
     ///
     /// Reads pixels and applies bilinear filtering to approximate values found at subpixels
     ///
