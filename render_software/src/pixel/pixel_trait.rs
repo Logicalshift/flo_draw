@@ -1,5 +1,6 @@
 use super::alpha_blend_trait::*;
 use super::rgba_texture::*;
+use super::u16_linear_texture::*;
 use super::texture_reader::*;
 use super::to_gamma_colorspace_trait::*;
 use super::u8_rgba::*;
@@ -21,6 +22,7 @@ where
     Self: AlphaBlend,
     Self: ToGammaColorSpace<U8RgbaPremultipliedPixel>,
     Self: TextureReader<RgbaTexture>,
+    Self: TextureReader<U16LinearTexture>,
 {
     /// A pixel representing the 'black' colour
     fn black() -> Self;
