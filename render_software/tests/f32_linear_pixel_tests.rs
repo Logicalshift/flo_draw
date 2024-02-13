@@ -122,3 +122,71 @@ fn source_over_3() {
     debug_assert!(b == 209, "b({}, {}, {}, {})", r, g, b, a);
     debug_assert!(a == 255, "a({}, {}, {}, {})", r, g, b, a);
 }
+
+#[test]
+fn bilinear_interpolate_1() {
+    let col1 = F32LinearPixel::from_color(Color::Rgba(0.0, 1.0, 0.25, 1.0), 1.0);
+    let col2 = F32LinearPixel::from_color(Color::Rgba(1.0, 0.0, 0.75, 1.0), 1.0);
+    let col3 = F32LinearPixel::from_color(Color::Rgba(0.0, 1.0, 0.25, 1.0), 1.0);
+    let col4 = F32LinearPixel::from_color(Color::Rgba(1.0, 0.0, 0.75, 1.0), 1.0);
+
+    let interpolate_mid = F32LinearPixel::filter_bilinear([&col1, &col2, &col3, &col4], 0.5, 0.5);
+
+    let [r, g, b, a] = interpolate_mid.to_components();
+
+    assert!((r-0.5).abs() < 0.001, "{:?}", [r, g, b, a]);
+    assert!((g-0.5).abs() < 0.001, "{:?}", [r, g, b, a]);
+    assert!((b-0.5).abs() < 0.001, "{:?}", [r, g, b, a]);
+    assert!((a-1.0).abs() < 0.001, "{:?}", [r, g, b, a]);
+}
+
+#[test]
+fn bilinear_interpolate_2() {
+    let col1 = F32LinearPixel::from_color(Color::Rgba(0.0, 1.0, 0.25, 1.0), 1.0);
+    let col2 = F32LinearPixel::from_color(Color::Rgba(1.0, 0.0, 0.75, 1.0), 1.0);
+    let col3 = F32LinearPixel::from_color(Color::Rgba(0.0, 1.0, 0.25, 1.0), 1.0);
+    let col4 = F32LinearPixel::from_color(Color::Rgba(1.0, 0.0, 0.75, 1.0), 1.0);
+
+    let interpolate_mid = F32LinearPixel::filter_bilinear([&col1, &col2, &col3, &col4], 0.0, 0.0);
+
+    let [r, g, b, a] = interpolate_mid.to_components();
+
+    assert!((r-0.0).abs() < 0.001, "{:?}", [r, g, b, a]);
+    assert!((g-1.0).abs() < 0.001, "{:?}", [r, g, b, a]);
+    assert!((b-0.25).abs() < 0.001, "{:?}", [r, g, b, a]);
+    assert!((a-1.0).abs() < 0.001, "{:?}", [r, g, b, a]);
+}
+
+#[test]
+fn bilinear_interpolate_3() {
+    let col1 = F32LinearPixel::from_color(Color::Rgba(0.0, 1.0, 0.25, 1.0), 1.0);
+    let col2 = F32LinearPixel::from_color(Color::Rgba(1.0, 0.0, 0.75, 1.0), 1.0);
+    let col3 = F32LinearPixel::from_color(Color::Rgba(0.0, 1.0, 0.25, 1.0), 1.0);
+    let col4 = F32LinearPixel::from_color(Color::Rgba(1.0, 0.0, 0.75, 1.0), 1.0);
+
+    let interpolate_mid = F32LinearPixel::filter_bilinear([&col1, &col2, &col3, &col4], 1.0, 1.0);
+
+    let [r, g, b, a] = interpolate_mid.to_components();
+
+    assert!((r-1.0).abs() < 0.001, "{:?}", [r, g, b, a]);
+    assert!((g-0.0).abs() < 0.001, "{:?}", [r, g, b, a]);
+    assert!((b-0.75).abs() < 0.001, "{:?}", [r, g, b, a]);
+    assert!((a-1.0).abs() < 0.001, "{:?}", [r, g, b, a]);
+}
+
+#[test]
+fn bilinear_interpolate_4() {
+    let col1 = F32LinearPixel::from_color(Color::Rgba(0.0, 1.0, 0.25, 1.0), 1.0);
+    let col2 = F32LinearPixel::from_color(Color::Rgba(1.0, 0.0, 0.75, 1.0), 1.0);
+    let col3 = F32LinearPixel::from_color(Color::Rgba(0.0, 1.0, 0.25, 1.0), 1.0);
+    let col4 = F32LinearPixel::from_color(Color::Rgba(1.0, 0.0, 0.75, 1.0), 1.0);
+
+    let interpolate_mid = F32LinearPixel::filter_bilinear([&col1, &col2, &col3, &col4], 0.25, 0.25);
+
+    let [r, g, b, a] = interpolate_mid.to_components();
+
+    assert!((r-0.25).abs() < 0.001, "{:?}", [r, g, b, a]);
+    assert!((g-0.75).abs() < 0.001, "{:?}", [r, g, b, a]);
+    assert!((b-0.375).abs() < 0.001, "{:?}", [r, g, b, a]);
+    assert!((a-1.0).abs() < 0.001, "{:?}", [r, g, b, a]);
+}
