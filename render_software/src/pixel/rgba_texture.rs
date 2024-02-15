@@ -1,3 +1,5 @@
+use super::u16_linear_texture::*;
+
 use std::convert::{TryFrom};
 
 ///
@@ -29,6 +31,52 @@ impl RgbaTexture {
             width:  width as i64, 
             height: height as i64, 
             pixels: pixels
+        }
+    }
+
+    ///
+    /// Creates an RGBA texture from a premultiplied linear texture
+    ///
+    pub fn from_linear_texture(texture: &U16LinearTexture, gamma: f64) -> RgbaTexture {
+        let mut pixels = Vec::with_capacity(texture.width()*texture.height() * 4);
+
+        // Create a look-up table for converting u16 values to gamma-corrected u8 values
+        let inverse_gamma   = 1.0 / gamma;
+        let gamma_lut       = (0u16..65535u16).map(|t| ((t as f64 / 65535.0).powf(inverse_gamma) * 255.0) as u8).collect::<Box<[u8]>>();
+
+        for ypos in 0..texture.height() {
+            // Read the pixels on this line
+            let pixel_line = texture.read_pixels((0..texture.width()).map(|xpos| (xpos as _, ypos as _)));
+
+            // Convert to 8bpp
+            for [r, g, b, a] in pixel_line {
+                // Convert to u32 to do some fixed-point conversions
+                let r = *r as u32;
+                let g = *g as u32;
+                let b = *b as u32;
+                let a = *a as u32;
+
+                // Remove premultiplication from the rgba values
+                let inverse_a = ((65535<<16) / a) >> 16;
+                let r = (r * inverse_a) >> 16;
+                let g = (g * inverse_a) >> 16;
+                let b = (b * inverse_a) >> 16;
+
+                // Perform a lookup to get the 8-bit values
+                let r = gamma_lut[r as usize];
+                let g = gamma_lut[g as usize];
+                let b = gamma_lut[b as usize];
+                let a = (a >> 8) as u8;
+
+                // Add to the pixels
+                pixels.extend([r, g, b, a]);
+            }
+        }
+
+        RgbaTexture {
+            width:  texture.width() as _,
+            height: texture.height() as _,
+            pixels: pixels,
         }
     }
 
