@@ -23,7 +23,7 @@ fn rgba_u16_rgba_round_trip() {
 fn generate_mipmap_level() {
     // 256 * 256 image with all the alpha values
     let pixels = (0..=255)
-        .flat_map(|y_pos| (0..=255).flat_map(move |x_pos| [x_pos*256, x_pos*256, x_pos*256, y_pos*256]))
+        .flat_map(|y_pos| (0..=255).flat_map(move |x_pos| [x_pos*257, x_pos*257, x_pos*257, y_pos*257]))
         .collect::<Vec<u16>>();
 
     // Generate a mip-map texture from the initial one
@@ -40,8 +40,8 @@ fn generate_mipmap_level() {
         for x_pos in 0..128 {
             let original_x = x_pos*2;
             let original_y = y_pos*2;
-            let expected_r = (original_x*256 + (original_x+1)*256) / 2;
-            let expected_a = (original_y*256 + (original_y+1)*256) / 2;
+            let expected_r = (original_x*257 + (original_x+1)*257) / 2;
+            let expected_a = (original_y*257 + (original_y+1)*257) / 2;
 
             let [r, _g, _b, a] = mip_map_pixels[x_pos];
 
