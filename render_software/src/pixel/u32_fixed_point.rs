@@ -49,6 +49,11 @@ impl Into<u32> for U32FixedPoint {
     fn into(self) -> u32 { self.0 }
 }
 
+impl Into<u16> for U32FixedPoint {
+    #[inline]
+    fn into(self) -> u16 { self.0 as _ }
+}
+
 impl AlphaValue for U32FixedPoint {
     #[inline] fn zero() -> U32FixedPoint { U32FixedPoint(0) }
     #[inline] fn one() -> U32FixedPoint { U32FixedPoint(65535) }

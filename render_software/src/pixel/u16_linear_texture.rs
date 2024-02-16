@@ -1,4 +1,7 @@
+use super::pixel_trait::*;
 use super::rgba_texture::*;
+use super::u32_linear::*;
+use super::u32_fixed_point::*;
 
 use std::cell::{RefCell};
 use std::convert::{TryFrom};
@@ -101,6 +104,102 @@ impl U16LinearTexture {
                 pixels: pixels,
             }
         }))
+    }
+
+    ///
+    /// Creates a lower mip-map level from this texture
+    ///
+    pub fn create_mipmap(&self) -> Option<Self> {
+        if self.width == 0 || self.height == 0 {
+            // Texture is already empty
+            None
+        } else if self.width == 1 && self.height == 1 {
+            // We can't half the size of this texture
+            None
+        } else {
+            // Generate a texture of half the size of the original (treating it as if it wraps around)
+            let width       = self.width as usize;
+            let height      = self.height as usize;
+
+            let x_wrap      = width % 2;
+            let y_wrap      = width % 2;
+            let new_width   = width / 2 + x_wrap;
+            let new_height  = height / 2 + y_wrap;
+
+            let mut new_pixels = Vec::with_capacity((new_width * new_height * 4) as usize);
+
+            let mut upper_pixels = vec![U32LinearPixel::black(); width+x_wrap];
+            let mut lower_pixels = vec![U32LinearPixel::black(); width+x_wrap];
+
+            // Blend the pixels from this texture to create a half-size texture
+            for y_pos in 0..new_height {
+                // Fetch the two rows to combine
+                let offset      = y_pos * (width * 4 * 2);
+                let offset_2    = offset + (width * 4);
+                let offset_2    = if offset_2 >= self.pixels.len() { 0 } else { offset_2 };
+                let upper_row   = &self.pixels[offset..(offset+(width*4))];
+                let lower_row   = &self.pixels[offset_2..(offset_2+(width*4))];
+
+                // Convert to U32LinearPixels
+                for x_pos in 0..width {
+                    // Read the rgba values for the upper and lower rows
+                    let r1 = upper_row[(x_pos*4)+0];
+                    let g1 = upper_row[(x_pos*4)+1];
+                    let b1 = upper_row[(x_pos*4)+2];
+                    let a1 = upper_row[(x_pos*4)+3];
+
+                    let r2 = lower_row[(x_pos*4)+0];
+                    let g2 = lower_row[(x_pos*4)+1];
+                    let b2 = lower_row[(x_pos*4)+2];
+                    let a2 = lower_row[(x_pos*4)+3];
+
+                    // Convert and store the pixels
+                    upper_pixels[x_pos] = U32LinearPixel::from_components([r1.into(), g1.into(), b1.into(), a1.into()]);
+                    lower_pixels[x_pos] = U32LinearPixel::from_components([r2.into(), g2.into(), b2.into(), a2.into()]);
+                }
+
+                // Add the x wrap-around pixel if there is one
+                if x_wrap == 1 {
+                    let r1 = upper_row[0];
+                    let g1 = upper_row[1];
+                    let b1 = upper_row[2];
+                    let a1 = upper_row[3];
+
+                    let r2 = lower_row[0];
+                    let g2 = lower_row[1];
+                    let b2 = lower_row[2];
+                    let a2 = lower_row[3];
+
+                    upper_pixels[width] = U32LinearPixel::from_components([r1.into(), g1.into(), b1.into(), a1.into()]);
+                    lower_pixels[width] = U32LinearPixel::from_components([r2.into(), g2.into(), b2.into(), a2.into()]);
+                }
+
+                // Combine the pixels in groups of 4 to generate the result
+                let one_quarter = U32FixedPoint(16384);
+
+                for x_pos in 0..new_width {
+                    // Average the pixels to create the output pixel
+                    let p1 = upper_pixels[x_pos * 2];
+                    let p2 = upper_pixels[x_pos * 2+1];
+                    let p3 = lower_pixels[x_pos * 2];
+                    let p4 = lower_pixels[x_pos * 2+1];
+
+                    let output_pixel = (p1 + p2 + p3 + p4) * one_quarter;
+                    let [r, g, b, a] = output_pixel.to_components();
+
+                    new_pixels.push(r.into());
+                    new_pixels.push(g.into());
+                    new_pixels.push(b.into());
+                    new_pixels.push(a.into());
+                }
+            }
+
+            Some(U16LinearTexture {
+                width:  new_width as _,
+                height: new_height as _,
+                pixels: new_pixels,
+            })
+        }
     }
 
     ///
