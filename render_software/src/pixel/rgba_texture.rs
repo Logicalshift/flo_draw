@@ -42,7 +42,7 @@ impl RgbaTexture {
 
         // Create a look-up table for converting u16 values to gamma-corrected u8 values
         let inverse_gamma   = 1.0 / gamma;
-        let gamma_lut       = (0u16..=65535u16).map(|t| ((t as f64 / 65535.0).powf(inverse_gamma) * 255.0) as u8).collect::<Box<[u8]>>();
+        let gamma_lut       = (0u16..=65535u16).map(|t| (((t as f64 / 65535.0).powf(inverse_gamma) * 255.0).round()) as u8).collect::<Box<[u8]>>();
 
         for ypos in 0..texture.height() {
             // Read the pixels on this line
