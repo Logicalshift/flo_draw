@@ -42,7 +42,7 @@ impl RgbaTexture {
 
         // Create a look-up table for converting u16 values to gamma-corrected u8 values
         let inverse_gamma   = 1.0 / gamma;
-        let gamma_lut       = (0u16..65535u16).map(|t| ((t as f64 / 65535.0).powf(inverse_gamma) * 255.0) as u8).collect::<Box<[u8]>>();
+        let gamma_lut       = (0u16..=65535u16).map(|t| ((t as f64 / 65535.0).powf(inverse_gamma) * 255.0) as u8).collect::<Box<[u8]>>();
 
         for ypos in 0..texture.height() {
             // Read the pixels on this line
@@ -58,9 +58,9 @@ impl RgbaTexture {
 
                 // Remove premultiplication from the rgba values
                 let inverse_a = if a != 0 { ((65535<<16) / a) >> 16 } else { 0 };
-                let r = (r * inverse_a) >> 16;
-                let g = (g * inverse_a) >> 16;
-                let b = (b * inverse_a) >> 16;
+                let r = r * inverse_a;
+                let g = g * inverse_a;
+                let b = b * inverse_a;
 
                 // Perform a lookup to get the 8-bit values
                 let r = gamma_lut[r as usize];
