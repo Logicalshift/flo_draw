@@ -57,7 +57,7 @@ impl RgbaTexture {
                 let a = *a as u32;
 
                 // Remove premultiplication from the rgba values
-                let inverse_a = ((65535<<16) / a) >> 16;
+                let inverse_a = if a != 0 { ((65535<<16) / a) >> 16 } else { 0 };
                 let r = (r * inverse_a) >> 16;
                 let g = (g * inverse_a) >> 16;
                 let b = (b * inverse_a) >> 16;
