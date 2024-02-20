@@ -38,4 +38,27 @@ impl<TTexture> MipMapTexture<TTexture> {
 
         MipMapTexture { width, height, mip_levels }
     }
+
+    ///
+    /// Returns the mip level to use for reading a texture where the samples are taken at a particular offset (measured in pixels)
+    ///
+    #[inline]
+    pub fn level_for_pixel_step(&self, dx: f64, dy: f64) -> usize {
+        // Get the number of pixels covered by each step
+        let pixel_step          = (dx*dx + dy*dy).sqrt();
+        let approx_pixel_step   = pixel_step.floor() as usize;
+
+        // The mip level is the log2 of the pixel step
+        let level = approx_pixel_step.ilog2() as usize;
+
+        level.min(self.mip_levels.len()-1)
+    }
+
+    ///
+    /// Retrieves the texture for a particular mip level
+    ///
+    #[inline]
+    pub fn mip_level(&self, level: usize) -> &TTexture {
+        &self.mip_levels[level]
+    }
 }
