@@ -127,7 +127,7 @@ where
     ///
     pub (crate) fn fill_texture(&mut self, texture_id: canvas::TextureId, x1: f32, y1: f32, x2: f32, y2: f32) {
         // Fetch the state from this object
-        let textures        = &self.textures;
+        let textures        = &mut self.textures;
         let current_state   = &mut self.current_state;
         let data_cache      = &mut self.program_data_cache;
 
@@ -135,8 +135,10 @@ where
         let (x1, y1) = current_state.transform.transform_point(x1, y1);
         let (x2, y2) = current_state.transform.transform_point(x2, y2);
 
-        if let Some(texture) = textures.get(&(self.current_namespace, texture_id)) {
+        if let Some(texture) = textures.get_mut(&(self.current_namespace, texture_id)) {
             // Texture exists
+            texture.make_mip_map(self.gamma);
+
             match texture {
                 Texture::Rgba(rgba_texture) => {
                     // We want to make a transformation that maps x1, y1 to 0,0 and x2, y2 to w, h
