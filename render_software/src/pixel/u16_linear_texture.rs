@@ -122,7 +122,7 @@ impl U16LinearTexture {
             let height      = self.height as usize;
 
             let x_wrap      = width % 2;
-            let y_wrap      = width % 2;
+            let y_wrap      = height % 2;
             let new_width   = width / 2 + x_wrap;
             let new_height  = height / 2 + y_wrap;
 
