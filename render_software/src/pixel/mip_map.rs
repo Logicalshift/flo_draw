@@ -4,7 +4,7 @@
 /// This can be used to estimate the colour of a pixel when scaling a texture down
 ///
 #[derive(Clone)]
-pub struct MipMapTexture<TTexture> {
+pub struct MipMap<TTexture> {
     /// The width of the texture
     width: usize,
 
@@ -15,7 +15,7 @@ pub struct MipMapTexture<TTexture> {
     mip_levels: Vec<TTexture>,
 }
 
-impl<TTexture> MipMapTexture<TTexture> {
+impl<TTexture> MipMap<TTexture> {
     ///
     /// Creates a new mip-map by calculating the levels from a texture
     ///
@@ -36,7 +36,7 @@ impl<TTexture> MipMapTexture<TTexture> {
         // last_level will contain the final level of the mipmap
         mip_levels.push(last_level);
 
-        MipMapTexture { width, height, mip_levels }
+        MipMap { width, height, mip_levels }
     }
 
     ///

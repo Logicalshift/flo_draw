@@ -14,7 +14,7 @@ mod pixel_program_runner;
 mod rgba_texture;
 mod u16_linear_texture;
 mod texture_reader;
-mod mip_map_texture;
+mod mip_map;
 
 pub use pixel_trait::*;
 pub use alpha_blend_trait::*;
@@ -31,4 +31,4 @@ pub use pixel_program_runner::*;
 pub use rgba_texture::*;
 pub use texture_reader::*;
 pub use u16_linear_texture::*;
-pub use mip_map_texture::*;
+pub use mip_map::*;
