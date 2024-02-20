@@ -215,6 +215,17 @@ where
                     z_index:    0
                 }
             }
+
+            (_, TransparentMipMapTexture(texture, transform)) => {
+                let texture_data    = TextureData::with_texture(Arc::clone(texture), transform);
+                let brush_data      = program_cache.program_cache.store_program_data(&program_cache.mipmap_texture, data_cache, texture_data);
+
+                ShapeDescriptor {
+                    programs:   smallvec![brush_data],
+                    is_opaque:  false,
+                    z_index:    0
+                }
+            }
         };
 
         descriptor

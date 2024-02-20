@@ -1,5 +1,4 @@
 use super::canvas_drawing::*;
-use super::texture::*;
 
 use crate::edgeplan::*;
 use crate::edges::*;
@@ -37,6 +36,9 @@ pub enum Brush {
 
     /// A transformed texture, known to have transparent pixels in it
     TransparentTexture(Arc<RgbaTexture>, canvas::Transform2D),
+
+    /// A transformed texture that will be rendered using mip-maps
+    TransparentMipMapTexture(Arc<MipMap<Arc<U16LinearTexture>>>, canvas::Transform2D),
 }
 
 #[derive(Clone)]

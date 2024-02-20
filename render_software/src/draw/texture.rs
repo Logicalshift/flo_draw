@@ -16,6 +16,9 @@ use std::sync::*;
 pub enum Texture {
     /// A texture in Rgba format
     Rgba(Arc<RgbaTexture>),
+
+    /// A texture prepared for rendering as a mipmap
+    MipMap(Arc<RgbaTexture>, Arc<MipMap<Arc<U16LinearTexture>>>),
 }
 
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N>
@@ -85,6 +88,13 @@ where
                     let rgba = Arc::make_mut(rgba);
                     rgba.set_bytes(x, y, width, height, &*bytes);
                 }
+
+                Texture::MipMap(rgba, _) => {
+                    let rgba_bytes = Arc::make_mut(rgba);
+                    rgba_bytes.set_bytes(x, y, width, height, &*bytes);
+
+                    *texture = Texture::Rgba(Arc::clone(rgba));
+                }
             }
         }
     }
@@ -120,6 +130,23 @@ where
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
                     current_state.next_fill_brush = Brush::TransparentTexture(Arc::clone(rgba_texture), transform);
+                },
+
+                Texture::MipMap(_, mipmap) => {
+                    // We want to make a transformation that maps x1, y1 to 0,0 and x2, y2 to w, h
+                    let w = mipmap.mip_level(0).width() as f32;
+                    let h = mipmap.mip_level(0).height() as f32;
+
+                    let transform = canvas::Transform2D::translate(-x1, -y1);
+                    let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
+                    let transform = canvas::Transform2D::scale(w, h) * transform;
+
+                    debug_assert!((transform.transform_point(x1, y1).0 - 0.0).abs() < 0.01, "{:?} {:?}", transform.transform_point(x1, y1), (0.0, 0.0));
+                    debug_assert!((transform.transform_point(x2, y2).1 - h).abs() < 0.01, "{:?} {:?}", transform.transform_point(x2, y2), (w, h));
+
+                    // Set as the brush state
+                    DrawingState::release_program(&mut current_state.fill_program, data_cache);
+                    current_state.next_fill_brush = Brush::TransparentMipMapTexture(Arc::clone(mipmap), transform);
                 }
             }
         }
