@@ -17,6 +17,19 @@ where
     texture_reader: PhantomData<TTextureReader>
 }
 
+impl<TTextureReader, TTexture, const N: usize> Default for MipMapTextureProgram<TTextureReader, TTexture, N> 
+where
+    TTexture:       Send + Sync,
+    TTextureReader: Copy + Pixel<N> + TextureReader<TTexture>,
+{
+    fn default() -> Self {
+        Self {
+            texture:        PhantomData,
+            texture_reader: PhantomData,
+        }
+    }
+}
+
 impl<TTextureReader, TTexture, const N: usize> PixelProgramForFrame for MipMapTextureProgram<TTextureReader, TTexture, N>
 where
     TTexture:       Send + Sync,

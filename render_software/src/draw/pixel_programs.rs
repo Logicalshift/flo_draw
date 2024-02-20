@@ -30,6 +30,9 @@ where
     /// The basic texture rendering program
     pub (super) basic_texture: StoredPixelProgramFromProgram<BilinearTextureProgram<TPixel, RgbaTexture, N>>,
 
+    /// The mipmap texture rendering program
+    pub (super) mipmap_texture: StoredPixelProgramFromFrameProgram<MipMapTextureProgram<TPixel, U16LinearTexture, N>>,
+
     /// The basic sprite rendering program (can scale or transform the sprite, and will render it as source over with 100% transparency)
     pub (super) basic_sprite: StoredPixelProgramFromProgram<SimpleSpriteProgram<TPixel>>,
 
@@ -47,6 +50,7 @@ where
         let source_over         = cache.add_pixel_program(SourceOverColorProgram::default());
         let blend_color         = cache.add_pixel_program(BlendColorProgram::default());
         let basic_texture       = cache.add_pixel_program(BilinearTextureProgram::default());
+        let mipmap_texture      = cache.add_frame_pixel_program(MipMapTextureProgram::default());
         let basic_sprite        = cache.add_pixel_program::<SimpleSpriteProgram<TPixel>>(BasicSpriteProgram::default());
         let transformed_sprite  = cache.add_frame_pixel_program::<AffineSpriteProgram<TPixel>>(TransformedSpriteProgram::default());
 
@@ -56,6 +60,7 @@ where
             source_over_color:  source_over,
             blend_color:        blend_color,
             basic_texture:      basic_texture,
+            mipmap_texture:     mipmap_texture,
             basic_sprite:       basic_sprite,
             transformed_sprite: transformed_sprite,
         }
