@@ -21,6 +21,30 @@ pub enum Texture {
     MipMap(Arc<RgbaTexture>, Arc<MipMap<Arc<U16LinearTexture>>>),
 }
 
+impl Texture {
+    ///
+    /// Converts this texture to a mip-mapped texture
+    ///
+    pub fn make_mip_map(&mut self, gamma: f64) {
+        match self {
+            Texture::Rgba(rgba_texture) => {
+                // Convert the texture to a U16 linear texture
+                let u16_texture = U16LinearTexture::from_rgba(rgba_texture, gamma);
+                let width       = u16_texture.width();
+                let height      = u16_texture.height();
+                let mipmaps     = MipMap::from_texture(Arc::new(u16_texture), |previous_level| previous_level.create_mipmap().map(|new_level| Arc::new(new_level)), width, height);
+
+                // Change this texture to a mipmap
+                *self = Texture::MipMap(Arc::clone(rgba_texture), Arc::new(mipmaps));
+            }
+
+            Texture::MipMap(_, _) => {
+                // Already mipmapped
+            }
+        }
+    }
+}
+
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N>
 where
     TPixel: 'static + Send + Sync + Pixel<N>,
