@@ -6,6 +6,11 @@ where
     TTexture: Send + Sync,
 {
     ///
+    /// Returns the size of a texture in pixels
+    ///
+    fn texture_size(texture: &TTexture) -> (f64, f64);
+
+    ///
     /// Reads a sequence of pixels from this texture into a target array
     ///
     /// Coordinates are in fractions of pixels to allow for a texture reader to support bilinear interpolation or mipmapping

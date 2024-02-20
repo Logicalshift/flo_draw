@@ -34,6 +34,11 @@ static TO_PREMULTIPLIED_LINEAR_WITH_ALPHA: Lazy<[f32; 65536]> = Lazy::new(|| {
 
 impl TextureReader<RgbaTexture> for F32LinearPixel {
     #[inline]
+    fn texture_size(texture: &RgbaTexture) -> (f64, f64) {
+        (texture.width() as _, texture.height() as _)
+    }
+
+    #[inline]
     fn read_pixels(texture: &RgbaTexture, positions: &[(f64, f64)]) -> Vec<Self> {
         // Pre-allocate the space for the pixels
         let mut pixels = Vec::with_capacity(positions.len());
@@ -63,6 +68,11 @@ impl TextureReader<RgbaTexture> for F32LinearPixel {
 }
 
 impl TextureReader<U16LinearTexture> for F32LinearPixel {
+    #[inline]
+    fn texture_size(texture: &U16LinearTexture) -> (f64, f64) {
+        (texture.width() as _, texture.height() as _)
+    }
+
     #[inline]
     fn read_pixels(texture: &U16LinearTexture, positions: &[(f64, f64)]) -> Vec<Self> {
         // Pre-allocate the space for the pixels
