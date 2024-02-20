@@ -90,7 +90,7 @@ where
         let texture = Texture::Rgba(Arc::new(texture));
 
         // Store it, replacing any existing texture with this ID
-        self.textures.insert((self.current_namespace, texture_id), Arc::new(texture));
+        self.textures.insert((self.current_namespace, texture_id), texture);
     }
 
     ///
@@ -100,7 +100,6 @@ where
     pub (crate) fn texture_set_bytes(&mut self, texture_id: canvas::TextureId, canvas::TexturePosition(x, y): canvas::TexturePosition, canvas::TextureSize(width, height): canvas::TextureSize, bytes: Arc<Vec<u8>>) {
         if let Some(texture) = self.textures.get_mut(&(self.current_namespace, texture_id)) {
             // The texture exists: prepare to write to it
-            let texture     = Arc::make_mut(texture);
             let x           = x as usize;
             let y           = y as usize;
             let width       = width as usize;
@@ -138,7 +137,7 @@ where
 
         if let Some(texture) = textures.get(&(self.current_namespace, texture_id)) {
             // Texture exists
-            match &**texture {
+            match texture {
                 Texture::Rgba(rgba_texture) => {
                     // We want to make a transformation that maps x1, y1 to 0,0 and x2, y2 to w, h
                     let w = rgba_texture.width() as f32;

@@ -65,7 +65,7 @@ where
     pub (super) state_stack:        Vec<DrawingState>,
 
     /// The textures in this drawing
-    pub (super) textures:           HashMap<(canvas::NamespaceId, canvas::TextureId), Arc<Texture>>,
+    pub (super) textures:           HashMap<(canvas::NamespaceId, canvas::TextureId), Texture>,
 }
 
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N> 
