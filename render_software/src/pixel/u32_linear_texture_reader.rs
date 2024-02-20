@@ -79,10 +79,10 @@ impl TextureReader<U16LinearTexture> for U32LinearPixel {
         let mut pixels = Vec::with_capacity(positions.len());
 
         // Read the pixel from the texture
-        let u8pixels = texture.read_pixels(positions.iter().map(|(x, y)| (*x as i64, *y as i64)));
+        let u16pixels = texture.read_pixels(positions.iter().map(|(x, y)| (*x as i64, *y as i64)));
 
         // Convert to F32LinearPixels
-        pixels.extend(u8pixels.map(|[r, g, b, a]| U32LinearPixel::from_components([r.into(), g.into(), b.into(), a.into()])));
+        pixels.extend(u16pixels.map(|[r, g, b, a]| U32LinearPixel::from_components([r.into(), g.into(), b.into(), a.into()])));
 
         pixels
     }
