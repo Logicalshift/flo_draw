@@ -40,6 +40,18 @@ impl<TTexture> MipMap<TTexture> {
     }
 
     ///
+    /// The width of the top-level mipmap
+    ///
+    #[inline]
+    pub fn width(&self) -> usize { self.width }
+
+    ///
+    /// The height of the top-level mipmap
+    ///
+    #[inline]
+    pub fn height(&self) -> usize { self.height }
+
+    ///
     /// Returns the mip level to use for reading a texture where the samples are taken at a particular offset (measured in pixels)
     ///
     #[inline]

@@ -51,13 +51,21 @@ where
         let mip_level = mipmap.level_for_pixel_step(dx, dy);
 
         // Figure out the scaling for the mipmap
-        // TODO: use the actual texture size here
-        let scale = 1.0 / (2.0f64.powi(mip_level as _));
+        let (scale_x, scale_y) = if mip_level == 0 { 
+            (1.0, 1.0)
+        } else {
+            let render_level = mipmap.mip_level(mip_level);
+
+            let (top_width, top_height) = (mipmap.width(), mipmap.height());
+            let (mip_width, mip_height) = TTextureReader::texture_size(&**render_level);
+
+            (mip_width/(top_width as f64), mip_height/(top_height as f64))
+        };
 
         // Create texture data for reading from this mip-map level
         let mipmap_texture = TextureData {
             texture:    Arc::clone(mipmap.mip_level(mip_level)),
-            transform:  [[a*scale, b*scale, c*scale], [d*scale, e*scale, f*scale]]
+            transform:  [[a*scale_x, b*scale_x, c*scale_x], [d*scale_y, e*scale_y, f*scale_y]]
         };
 
         // Result is a bilinear filter and the texture
