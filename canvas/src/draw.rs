@@ -162,13 +162,13 @@ pub enum Draw {
     /// Set the fill color
     FillColor(Color),
 
-    /// Sets the fill to be a texture (coordinates are the lower-left and upper-right coordinates where the image should appear)
+    /// Sets the fill to be a texture (coordinates are the lower-left and upper-right coordinates where the image should appear). This will reset any existing fill transform.
     FillTexture(TextureId, (f32, f32), (f32, f32)),
 
-    /// Sets the fill to be a gradient (coordinates are the start and end of the gradient)
+    /// Sets the fill to be a gradient (coordinates are the start and end of the gradient). This will reset any existing fill transform.
     FillGradient(GradientId, (f32, f32), (f32, f32)),
 
-    /// For a gradient or texture fill, apply a transformation matrix
+    /// For a gradient or texture fill, apply a transformation matrix to the existing transform
     FillTransform(Transform2D),
 
     /// Set the line color
