@@ -9,7 +9,7 @@ fn draw_scaled_mascot(canvas: &mut impl GraphicsPrimitives, x: f32, y: f32, widt
 
     canvas.fill_texture(TextureId(0), x, y+height, x+width, y);
     canvas.fill_transform(Transform2D::translate(-flo_w/2.0, -flo_h/2.0));
-    canvas.fill_transform(Transform2D::rotate(30.0));
+    canvas.fill_transform(Transform2D::rotate_degrees(30.0));
     canvas.fill_transform(Transform2D::translate(flo_w/2.0, flo_h/2.0));
     canvas.fill();
 }
