@@ -148,9 +148,7 @@ where
                     let transform = canvas::Transform2D::translate(-x1, -y1);
                     let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
                     let transform = canvas::Transform2D::scale(w, h) * transform;
-
-                    debug_assert!((transform.transform_point(x1, y1).0 - 0.0).abs() < 0.01, "{:?} {:?}", transform.transform_point(x1, y1), (0.0, 0.0));
-                    debug_assert!((transform.transform_point(x2, y2).1 - h).abs() < 0.01, "{:?} {:?}", transform.transform_point(x2, y2), (w, h));
+                    let transform = current_state.fill_transform.transform * transform;
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
@@ -165,9 +163,7 @@ where
                     let transform = canvas::Transform2D::translate(-x1, -y1);
                     let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
                     let transform = canvas::Transform2D::scale(w, h) * transform;
-
-                    debug_assert!((transform.transform_point(x1, y1).0 - 0.0).abs() < 0.01, "{:?} {:?}", transform.transform_point(x1, y1), (0.0, 0.0));
-                    debug_assert!((transform.transform_point(x2, y2).1 - h).abs() < 0.01, "{:?} {:?}", transform.transform_point(x2, y2), (w, h));
+                    let transform = current_state.fill_transform.transform * transform;
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
