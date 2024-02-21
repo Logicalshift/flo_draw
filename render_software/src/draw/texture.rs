@@ -60,7 +60,7 @@ where
             Create(size, canvas::TextureFormat::Rgba)       => { self.texture_create_rgba(texture_id, size); },
             Free                                            => { self.texture_free(texture_id); },
             SetBytes(position, size, bytes)                 => { self.texture_set_bytes(texture_id, position, size, bytes); },
-            SetFromSprite(sprite_id, bounds)                => { /* todo!() */ },
+            SetFromSprite(sprite_id, bounds)                => { self.texture_set_from_sprite(texture_id, sprite_id, bounds); },
             CreateDynamicSprite(sprite_id, bounds, size)    => { /* todo!() */ },
             FillTransparency(alpha)                         => { /* todo!() */ },
             Copy(target_texture)                            => { /* todo!() */ },
@@ -169,5 +169,12 @@ where
                 }
             }
         }
+    }
+
+    ///
+    /// Creates a texture by rendering a region from the specified sprite bounds
+    ///
+    pub (crate) fn texture_set_from_sprite(&mut self, texture_id: canvas::TextureId, sprite_id: canvas::SpriteId, bounds: canvas::SpriteBounds) {
+        todo!()
     }
 }
