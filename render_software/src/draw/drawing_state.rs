@@ -24,14 +24,6 @@ pub enum SpriteTransform {
 }
 
 ///
-/// The transformation applied to the current texture when rendering
-///
-#[derive(Copy, Clone)]
-pub struct FillTransform {
-    pub (crate) transform: canvas::Transform2D,
-}
-
-///
 /// A brush represents what will be used to fill in the next region 
 ///
 #[derive(Clone)]
@@ -118,9 +110,6 @@ pub struct DrawingState {
 
     /// The transform that's applied to the next sprite to be drawn
     pub (super) sprite_transform: SpriteTransform,
-
-    /// The transform to apply to the fill that we're rendering
-    pub (super) fill_transform: FillTransform,
 }
 
 impl Default for DrawingState {
@@ -142,7 +131,6 @@ impl Default for DrawingState {
             clip_path:          DrawingClipRegion::None,
             blend_mode:         AlphaOperation::SourceOver,
             sprite_transform:   SpriteTransform::ScaleTransform { scale: (1.0, 1.0), translate: (0.0, 0.0) },
-            fill_transform:     FillTransform { transform: canvas::Transform2D::identity() }
         }
     }
 }
