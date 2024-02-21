@@ -153,7 +153,7 @@ where
                 FillColor(fill_color)                               => { self.current_state.fill_solid_color(fill_color, &mut self.program_data_cache); },
                 FillTexture(texture, (x1, y1), (x2, y2))            => { self.fill_texture(texture, x1, y1, x2, y2); },
                 FillGradient(gradient, (x1, y1), (x2, y2))          => { /* todo!() */ },
-                FillTransform(transform)                            => { /* todo!() */ },
+                FillTransform(transform)                            => { self.current_state.fill_transform(transform); },
                 StrokeColor(stroke_color)                           => { self.current_state.stroke_solid_color(stroke_color, &mut self.program_data_cache); },
                 WindingRule(winding_rule)                           => { self.current_state.winding_rule(winding_rule); },
                 BlendMode(blend_mode)                               => { self.current_state.blend_mode(blend_mode, &mut self.program_data_cache); },

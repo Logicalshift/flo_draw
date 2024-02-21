@@ -300,6 +300,14 @@ impl DrawingState {
             DrawingClipRegion::Nested(region)   => vec![Arc::new(ClippedShapeEdge::new(shape_id, Arc::clone(region), shape))],
         }
     }
+
+    ///
+    /// Sets the fill transform to a particular transformation
+    ///
+    #[inline]
+    pub (crate) fn fill_transform(&mut self, transform: canvas::Transform2D) {
+        self.fill_transform.transform = transform;
+    }
 }
 
 
