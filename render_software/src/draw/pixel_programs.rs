@@ -28,7 +28,7 @@ where
     pub (super) blend_color: StoredPixelProgramFromProgram<BlendColorProgram<TPixel>>,
 
     /// The basic texture rendering program
-    pub (super) basic_texture: StoredPixelProgramFromProgram<BilinearTextureProgram<TPixel, RgbaTexture, N>>,
+    pub (super) bilinear_texture: StoredPixelProgramFromProgram<BilinearTextureProgram<TPixel, RgbaTexture, N>>,
 
     /// The mipmap texture rendering program
     pub (super) mipmap_texture: StoredPixelProgramFromFrameProgram<MipMapTextureProgram<TPixel, U16LinearTexture, N>>,
@@ -49,7 +49,7 @@ where
         let solid_color         = cache.add_pixel_program(SolidColorProgram::default());
         let source_over         = cache.add_pixel_program(SourceOverColorProgram::default());
         let blend_color         = cache.add_pixel_program(BlendColorProgram::default());
-        let basic_texture       = cache.add_pixel_program(BilinearTextureProgram::default());
+        let bilinear_texture    = cache.add_pixel_program(BilinearTextureProgram::default());
         let mipmap_texture      = cache.add_frame_pixel_program(MipMapTextureProgram::default());
         let basic_sprite        = cache.add_pixel_program::<SimpleSpriteProgram<TPixel>>(BasicSpriteProgram::default());
         let transformed_sprite  = cache.add_frame_pixel_program::<AffineSpriteProgram<TPixel>>(TransformedSpriteProgram::default());
@@ -59,7 +59,7 @@ where
             solid_color:        solid_color,
             source_over_color:  source_over,
             blend_color:        blend_color,
-            basic_texture:      basic_texture,
+            bilinear_texture:   bilinear_texture,
             mipmap_texture:     mipmap_texture,
             basic_sprite:       basic_sprite,
             transformed_sprite: transformed_sprite,
