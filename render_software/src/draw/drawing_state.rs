@@ -306,7 +306,13 @@ impl DrawingState {
     ///
     #[inline]
     pub (crate) fn fill_transform(&mut self, transform: canvas::Transform2D) {
-        self.fill_transform.transform = transform;
+        match &mut self.next_fill_brush {
+            Brush::OpaqueSolidColor(_) |
+            Brush::TransparentSolidColor(_)                      => { }
+
+            Brush::TransparentTexture(_, fill_transform)        => { *fill_transform = transform * *fill_transform; }
+            Brush::TransparentMipMapTexture(_, fill_transform)  => { *fill_transform = transform * *fill_transform; }
+        }
     }
 }
 
