@@ -5,8 +5,8 @@ use crate::scanplan::*;
 
 use std::sync::*;
 
-type SimpleSpriteProgram<TPixel> = BasicSpriteProgram<TPixel, Arc<dyn EdgeDescriptor>, PixelScanPlanner<Arc<dyn EdgeDescriptor>>>;
-type AffineSpriteProgram<TPixel> = TransformedSpriteProgram<TPixel, Arc<dyn EdgeDescriptor>, PixelScanPlanner<Arc<dyn EdgeDescriptor>>>;
+type SimpleSpriteProgram<TPixel> = BasicSpriteProgram<TPixel, Arc<dyn EdgeDescriptor>, ShardScanPlanner<Arc<dyn EdgeDescriptor>>>;
+type AffineSpriteProgram<TPixel> = TransformedSpriteProgram<TPixel, Arc<dyn EdgeDescriptor>, ShardScanPlanner<Arc<dyn EdgeDescriptor>>>;
 
 ///
 /// The standard set of pixel programs for a canvas drawing
