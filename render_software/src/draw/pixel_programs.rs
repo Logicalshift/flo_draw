@@ -30,6 +30,9 @@ where
     /// The basic texture rendering program
     pub (super) bilinear_texture: StoredPixelProgramFromProgram<BilinearTextureProgram<TPixel, RgbaTexture, N>>,
 
+    /// The basic texture rendering program
+    pub (super) bilinear_u16_texture: StoredPixelProgramFromProgram<BilinearTextureProgram<TPixel, U16LinearTexture, N>>,
+
     /// The mipmap texture rendering program
     pub (super) mipmap_texture: StoredPixelProgramFromFrameProgram<MipMapTextureProgram<TPixel, U16LinearTexture, N>>,
 
@@ -45,24 +48,26 @@ where
     TPixel: 'static + Send + Sync + Pixel<N>,
 {
     fn default() -> Self {
-        let mut cache           = PixelProgramCache::empty();
-        let solid_color         = cache.add_pixel_program(SolidColorProgram::default());
-        let source_over         = cache.add_pixel_program(SourceOverColorProgram::default());
-        let blend_color         = cache.add_pixel_program(BlendColorProgram::default());
-        let bilinear_texture    = cache.add_pixel_program(BilinearTextureProgram::default());
-        let mipmap_texture      = cache.add_frame_pixel_program(MipMapTextureProgram::default());
-        let basic_sprite        = cache.add_pixel_program::<SimpleSpriteProgram<TPixel>>(BasicSpriteProgram::default());
-        let transformed_sprite  = cache.add_frame_pixel_program::<AffineSpriteProgram<TPixel>>(TransformedSpriteProgram::default());
+        let mut cache               = PixelProgramCache::empty();
+        let solid_color             = cache.add_pixel_program(SolidColorProgram::default());
+        let source_over             = cache.add_pixel_program(SourceOverColorProgram::default());
+        let blend_color             = cache.add_pixel_program(BlendColorProgram::default());
+        let bilinear_texture        = cache.add_pixel_program(BilinearTextureProgram::default());
+        let bilinear_u16_texture    = cache.add_pixel_program(BilinearTextureProgram::default());
+        let mipmap_texture          = cache.add_frame_pixel_program(MipMapTextureProgram::default());
+        let basic_sprite            = cache.add_pixel_program::<SimpleSpriteProgram<TPixel>>(BasicSpriteProgram::default());
+        let transformed_sprite      = cache.add_frame_pixel_program::<AffineSpriteProgram<TPixel>>(TransformedSpriteProgram::default());
 
         CanvasPixelPrograms { 
-            program_cache:      cache, 
-            solid_color:        solid_color,
-            source_over_color:  source_over,
-            blend_color:        blend_color,
-            bilinear_texture:   bilinear_texture,
-            mipmap_texture:     mipmap_texture,
-            basic_sprite:       basic_sprite,
-            transformed_sprite: transformed_sprite,
+            program_cache:          cache, 
+            solid_color:            solid_color,
+            source_over_color:      source_over,
+            blend_color:            blend_color,
+            bilinear_texture:       bilinear_texture,
+            bilinear_u16_texture:   bilinear_u16_texture,
+            mipmap_texture:         mipmap_texture,
+            basic_sprite:           basic_sprite,
+            transformed_sprite:     transformed_sprite,
         }
     }
 }

@@ -17,6 +17,9 @@ pub enum Texture {
     /// A texture in Rgba format
     Rgba(Arc<RgbaTexture>),
 
+    /// A texture in 16-bit linear format
+    Linear(Arc<U16LinearTexture>),
+
     /// A texture prepared for rendering as a mipmap (with no RGBA original)
     MipMap(Arc<MipMap<Arc<U16LinearTexture>>>),
 
@@ -39,6 +42,17 @@ impl Texture {
 
                 // Change this texture to a mipmap
                 *self = Texture::MipMapWithOriginal(Arc::clone(rgba_texture), Arc::new(mipmaps));
+            }
+
+            Texture::Linear(u16_texture) => {
+                // Generate mip-maps for this texture
+                let u16_texture = Arc::clone(u16_texture);
+                let width       = u16_texture.width();
+                let height      = u16_texture.height();
+                let mipmaps     = MipMap::from_texture(u16_texture, |previous_level| previous_level.create_mipmap().map(|new_level| Arc::new(new_level)), width, height);
+
+                // Change this texture to a mipmap
+                *self = Texture::MipMap(Arc::new(mipmaps));
             }
 
             Texture::MipMapWithOriginal(_, _) |
@@ -116,8 +130,15 @@ where
                     rgba.set_bytes(x, y, width, height, &*bytes);
                 }
 
+                Texture::Linear(linear) => {
+                    let mut rgba = RgbaTexture::from_linear_texture(&**linear, self.gamma);
+                    rgba.set_bytes(x, y, width, height, &*bytes);
+
+                    *texture = Texture::Rgba(Arc::new(rgba));
+                }
+
                 Texture::MipMap(mipmap) => {
-                    let mut rgba = RgbaTexture::from_linear_texture(mipmap.mip_level(0), 2.2);
+                    let mut rgba = RgbaTexture::from_linear_texture(mipmap.mip_level(0), self.gamma);
                     rgba.set_bytes(x, y, width, height, &*bytes);
 
                     *texture = Texture::Rgba(Arc::new(rgba));
@@ -165,6 +186,20 @@ where
                     current_state.next_fill_brush = Brush::TransparentTexture(Arc::clone(rgba_texture), transform);
                 },
 
+                Texture::Linear(linear_texture) => {
+                    // We want to make a transformation that maps x1, y1 to 0,0 and x2, y2 to w, h
+                    let w = linear_texture.width() as f32;
+                    let h = linear_texture.height() as f32;
+
+                    let transform = canvas::Transform2D::translate(-x1, -y1);
+                    let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
+                    let transform = canvas::Transform2D::scale(w, h) * transform;
+
+                    // Set as the brush state
+                    DrawingState::release_program(&mut current_state.fill_program, data_cache);
+                    current_state.next_fill_brush = Brush::TransparentLinearTexture(Arc::clone(linear_texture), transform);
+                },
+
                 Texture::MipMap(mipmap) | Texture::MipMapWithOriginal(_, mipmap) => {
                     // We want to make a transformation that maps x1, y1 to 0,0 and x2, y2 to w, h
                     let w = mipmap.mip_level(0).width() as f32;
@@ -195,6 +230,7 @@ where
         // Start with the width & height of the existing texture
         let (width, height) = match existing_texture {
             Texture::Rgba(rgba_texture)             => (rgba_texture.width(), rgba_texture.height()),
+            Texture::Linear(linear_texture)         => (linear_texture.width(), linear_texture.height()),
             Texture::MipMap(mipmap)                 |
             Texture::MipMapWithOriginal(_, mipmap)  => (mipmap.width(), mipmap.height())
         };

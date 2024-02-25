@@ -37,6 +37,9 @@ pub enum Brush {
     /// A transformed texture, known to have transparent pixels in it
     TransparentTexture(Arc<RgbaTexture>, canvas::Transform2D),
 
+    /// A transformed texture, known to have transparent pixels in it
+    TransparentLinearTexture(Arc<U16LinearTexture>, canvas::Transform2D),
+
     /// A transformed texture that will be rendered using mip-maps
     TransparentMipMapTexture(Arc<MipMap<Arc<U16LinearTexture>>>, canvas::Transform2D),
 }
@@ -299,6 +302,7 @@ impl DrawingState {
             Brush::TransparentSolidColor(_)                      => { }
 
             Brush::TransparentTexture(_, fill_transform)        => { *fill_transform = transform * *fill_transform; }
+            Brush::TransparentLinearTexture(_, fill_transform)  => { *fill_transform = transform * *fill_transform; }
             Brush::TransparentMipMapTexture(_, fill_transform)  => { *fill_transform = transform * *fill_transform; }
         }
     }

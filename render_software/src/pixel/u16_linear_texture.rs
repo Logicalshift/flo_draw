@@ -11,6 +11,7 @@ use std::convert::{TryFrom};
 ///
 /// This can be rendered much more quickly than the 8-bit RGBA texture, which
 ///
+#[derive(Clone)]
 pub struct U16LinearTexture {
     /// The width of the texture in pixels (a row is 4x this value)
     width: i64,
