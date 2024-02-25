@@ -17,8 +17,8 @@ pub enum Texture {
     /// A texture in Rgba format
     Rgba(Arc<RgbaTexture>),
 
-    /// A texture prepared for rendering as a mipmap
-    MipMap(Arc<RgbaTexture>, Arc<MipMap<Arc<U16LinearTexture>>>),
+    /// A texture prepared for rendering as a mipmap (with RGBA original)
+    MipMapWithOriginal(Arc<RgbaTexture>, Arc<MipMap<Arc<U16LinearTexture>>>),
 }
 
 impl Texture {
@@ -35,10 +35,10 @@ impl Texture {
                 let mipmaps     = MipMap::from_texture(Arc::new(u16_texture), |previous_level| previous_level.create_mipmap().map(|new_level| Arc::new(new_level)), width, height);
 
                 // Change this texture to a mipmap
-                *self = Texture::MipMap(Arc::clone(rgba_texture), Arc::new(mipmaps));
+                *self = Texture::MipMapWithOriginal(Arc::clone(rgba_texture), Arc::new(mipmaps));
             }
 
-            Texture::MipMap(_, _) => {
+            Texture::MipMapWithOriginal(_, _) => {
                 // Already mipmapped
             }
         }
@@ -112,7 +112,7 @@ where
                     rgba.set_bytes(x, y, width, height, &*bytes);
                 }
 
-                Texture::MipMap(rgba, _) => {
+                Texture::MipMapWithOriginal(rgba, _) => {
                     let rgba_bytes = Arc::make_mut(rgba);
                     rgba_bytes.set_bytes(x, y, width, height, &*bytes);
 
@@ -154,7 +154,7 @@ where
                     current_state.next_fill_brush = Brush::TransparentTexture(Arc::clone(rgba_texture), transform);
                 },
 
-                Texture::MipMap(_, mipmap) => {
+                Texture::MipMapWithOriginal(_, mipmap) => {
                     // We want to make a transformation that maps x1, y1 to 0,0 and x2, y2 to w, h
                     let w = mipmap.mip_level(0).width() as f32;
                     let h = mipmap.mip_level(0).height() as f32;
