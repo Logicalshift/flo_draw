@@ -186,6 +186,23 @@ where
     /// Creates a texture by rendering a region from the specified sprite bounds
     ///
     pub (crate) fn texture_set_from_sprite(&mut self, texture_id: canvas::TextureId, sprite_id: canvas::SpriteId, bounds: canvas::SpriteBounds) {
+        let textures = &mut self.textures;
+
+        // This has no effect if no texture is defined at this location
+        let existing_texture = textures.get_mut(&(self.current_namespace, texture_id));
+        let existing_texture = if let Some(existing_texture) = existing_texture { existing_texture } else { return; };
+
+        // Start with the width & height of the existing texture
+        let (width, height) = match existing_texture {
+            Texture::Rgba(rgba_texture)             => (rgba_texture.width(), rgba_texture.height()),
+            Texture::MipMap(mipmap)                 |
+            Texture::MipMapWithOriginal(_, mipmap)  => (mipmap.width(), mipmap.height())
+        };
+
+        // Drop the existing texture so we can replace it
+        textures.remove(&(self.current_namespace, texture_id));
+
+        // Render the new texture
         todo!()
     }
 }
