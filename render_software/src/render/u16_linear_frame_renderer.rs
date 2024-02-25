@@ -40,7 +40,7 @@ where
     }
 }
 
-//#[cfg(not(feature="multithreading"))]
+#[cfg(not(feature="multithreading"))]
 impl<'a, TPixel, TRegionRenderer> Renderer for U16LinearFrameRenderer<TPixel, TRegionRenderer> 
 where
     TPixel:                 Sized + Send + Clone + Default,
@@ -94,32 +94,31 @@ where
     } 
 }
 
-/*
 #[cfg(feature="multithreading")]
-impl<'a, TPixel, TRegionRenderer> Renderer for U8FrameRenderer<TPixel, TRegionRenderer> 
+impl<'a, TPixel, TRegionRenderer> Renderer for U16LinearFrameRenderer<TPixel, TRegionRenderer> 
 where
-    TPixel:                     Sized + Send + Clone + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
-    TRegionRenderer:            Renderer<Region=RenderSlice, Dest=[TPixel]>,
+    TPixel:                 Sized + Send + Clone + Default,
+    for <'b> &'b TPixel:    Into<U32LinearPixel>,
+    TRegionRenderer:        Renderer<Region=RenderSlice, Dest=[TPixel]>,
 {
     type Region = GammaFrameSize;
     type Source = TRegionRenderer::Source;
-    type Dest   = [U8RgbaPremultipliedPixel];
+    type Dest   = [u16];
 
-    fn render(&self, region: &GammaFrameSize, source: &TRegionRenderer::Source, dest: &mut [U8RgbaPremultipliedPixel]) {
+    fn render(&self, region: &GammaFrameSize, source: &TRegionRenderer::Source, dest: &mut [u16]) {
         const LINES_AT_ONCE: usize = 8;
 
         use rayon::prelude::*;
 
         // Rendering fails if there are insufficient lines to complete
-        if dest.len() < region.width * region.height {
-            panic!("Cannot render: needed an output buffer large enough to fit {} lines but found {} lines", region.height, dest.len()/region.width);
+        if dest.len() < region.width * region.height * 4 {
+            panic!("Cannot render: needed an output buffer large enough to fit {} lines but found {} lines", region.height, dest.len()/(region.width*4));
         }
 
         // Cut the destination into chunks to form the lines
-        let chunks      = dest.par_chunks_mut(region.width*LINES_AT_ONCE);
+        let chunks      = dest.par_chunks_mut(region.width*4*LINES_AT_ONCE);
         let renderer    = &self.region_renderer;
 
-        // Render in chunks of LINES_AT_ONCE lines
         chunks.enumerate().map(|(chunk_idx, chunk)| {
             let start_y = chunk_idx * LINES_AT_ONCE;
             let end_y   = if start_y + LINES_AT_ONCE > region.height { region.height } else { start_y + LINES_AT_ONCE };
@@ -137,11 +136,18 @@ where
                 render_slice.y_positions.extend(y_positions.map(|idx| idx as f64));
 
                 // Render these lines
-                renderer.render(render_slice, source, buffer);
+                renderer.render(&render_slice, source, buffer);
 
                 // Convert to the final pixel format
-                TPixel::to_gamma_colorspace(&buffer, chunk, region.gamma);
+                for (source, target) in buffer.iter().zip(chunk.chunks_mut(4)) {
+                    let as_linear       = source.into();
+                    let [r, g, b, a]    = as_linear.to_components();
+
+                    target[0] = r.0 as u16;
+                    target[1] = g.0 as u16;
+                    target[2] = b.0 as u16;
+                    target[3] = a.0 as u16;
+                }
             });
     } 
 }
-*/
