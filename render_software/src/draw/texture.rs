@@ -14,6 +14,9 @@ use std::sync::*;
 ///
 #[derive(Clone)]
 pub enum Texture {
+    /// An empty texture with a width and a height
+    Empty(usize, usize),
+
     /// A texture in Rgba format
     Rgba(Arc<RgbaTexture>),
 
@@ -33,6 +36,8 @@ impl Texture {
     ///
     pub fn make_mip_map(&mut self, gamma: f64) {
         match self {
+            Texture::Empty(_, _) => { }
+
             Texture::Rgba(rgba_texture) => {
                 // Convert the texture to a U16 linear texture
                 let u16_texture = U16LinearTexture::from_rgba(rgba_texture, gamma);
@@ -102,10 +107,8 @@ where
         let width   = width as usize;
         let height  = height as usize;
 
-        // Build the texture structure
-        let pixels  = vec![0u8; width * height * 4];
-        let texture = RgbaTexture::from_pixels(width, height, pixels);
-        let texture = Texture::Rgba(Arc::new(texture));
+        // Texture is initially just empty
+        let texture = Texture::Empty(width, height);
 
         // Store it, replacing any existing texture with this ID
         self.textures.insert((self.current_namespace, texture_id), texture);
@@ -125,6 +128,15 @@ where
 
             // How the bytes are written depend on the format of the texture
             match texture {
+                Texture::Empty(texture_w, texture_h) => {
+                    let texture_w   = *texture_w;
+                    let texture_h   = *texture_h;
+                    let mut rgba    = RgbaTexture::from_pixels(texture_w, texture_h, vec![0u8; texture_w * texture_h*4]);
+                    rgba.set_bytes(x, y, width, height, &*bytes);
+
+                    *texture = Texture::Rgba(Arc::new(rgba));
+                }
+
                 Texture::Rgba(rgba) => {
                     let rgba = Arc::make_mut(rgba);
                     rgba.set_bytes(x, y, width, height, &*bytes);
@@ -172,6 +184,11 @@ where
             texture.make_mip_map(self.gamma);
 
             match texture {
+                Texture::Empty(_, _) => {
+                    DrawingState::release_program(&mut current_state.fill_program, data_cache);
+                    current_state.next_fill_brush = Brush::TransparentSolidColor(canvas::Color::Rgba(0.0, 0.0, 0.0, 0.0));
+                }
+
                 Texture::Rgba(rgba_texture) => {
                     // We want to make a transformation that maps x1, y1 to 0,0 and x2, y2 to w, h
                     let w = rgba_texture.width() as f32;
@@ -229,6 +246,7 @@ where
 
         // Start with the width & height of the existing texture
         let (width, height) = match existing_texture {
+            Texture::Empty(w, h)                    => (*w, *h),
             Texture::Rgba(rgba_texture)             => (rgba_texture.width(), rgba_texture.height()),
             Texture::Linear(linear_texture)         => (linear_texture.width(), linear_texture.height()),
             Texture::MipMap(mipmap)                 |
