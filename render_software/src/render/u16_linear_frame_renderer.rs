@@ -12,8 +12,7 @@ use std::sync::*;
 ///
 pub struct U16LinearFrameRenderer<TPixel, TRegionRenderer>
 where
-    TPixel:             Sized + Send + Default,
-    for <'b> &'b TPixel:    Into<U32LinearPixel>,
+    TPixel:             Sized + Send + Copy + Clone + Default + Into<U32LinearPixel>,
     TRegionRenderer:    Renderer<Region=RenderSlice, Dest=[TPixel]>,
 {
     region_renderer:    TRegionRenderer,
@@ -23,8 +22,7 @@ where
 
 impl<TPixel, TRegionRenderer> U16LinearFrameRenderer<TPixel, TRegionRenderer>
 where
-    TPixel:                 Sized + Send + Clone + Default,
-    for <'b> &'b TPixel:    Into<U32LinearPixel>,
+    TPixel:                 Sized + Send + Copy + Clone + Default + Into<U32LinearPixel>,
     TRegionRenderer:        Renderer<Region=RenderSlice, Dest=[TPixel]>,
 {
     ///
@@ -43,8 +41,7 @@ where
 #[cfg(not(feature="multithreading"))]
 impl<'a, TPixel, TRegionRenderer> Renderer for U16LinearFrameRenderer<TPixel, TRegionRenderer> 
 where
-    TPixel:                 Sized + Send + Clone + Default,
-    for <'b> &'b TPixel:    Into<U32LinearPixel>,
+    TPixel:                 Sized + Send + Copy + Clone + Default + Into<U32LinearPixel>,
     TRegionRenderer:        Renderer<Region=RenderSlice, Dest=[TPixel]>,
 {
     type Region = GammaFrameSize;
@@ -82,7 +79,7 @@ where
 
             // Convert to the final pixel format
             for (source, target) in buffer.iter().zip(chunk.chunks_mut(4)) {
-                let as_linear       = source.into();
+                let as_linear       = (*source).into();
                 let [r, g, b, a]    = as_linear.to_components();
 
                 target[0] = r.0 as u16;
@@ -97,8 +94,7 @@ where
 #[cfg(feature="multithreading")]
 impl<'a, TPixel, TRegionRenderer> Renderer for U16LinearFrameRenderer<TPixel, TRegionRenderer> 
 where
-    TPixel:                 Sized + Send + Clone + Default,
-    for <'b> &'b TPixel:    Into<U32LinearPixel>,
+    TPixel:                 Sized + Send + Copy + Clone + Default + Into<U32LinearPixel>,
     TRegionRenderer:        Renderer<Region=RenderSlice, Dest=[TPixel]>,
 {
     type Region = GammaFrameSize;
@@ -140,7 +136,7 @@ where
 
                 // Convert to the final pixel format
                 for (source, target) in buffer.iter().zip(chunk.chunks_mut(4)) {
-                    let as_linear       = source.into();
+                    let as_linear       = (*source).into();
                     let [r, g, b, a]    = as_linear.to_components();
 
                     target[0] = r.0 as u16;
