@@ -33,6 +33,7 @@ mod render_png {
         pub fn from_stream(target: TStream, width: usize, height: usize, gamma: f64) -> Self {
             Self::from_bufwriter(BufWriter::new(target), width, height, gamma)
         }
+
         ///
         /// Creates a PNG writer that will write to a bufwriter
         ///
