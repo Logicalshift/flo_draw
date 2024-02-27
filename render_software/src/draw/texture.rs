@@ -1,7 +1,10 @@
 use super::canvas_drawing::*;
 use super::drawing_state::*;
+use super::renderer::*;
 
 use crate::pixel::*;
+use crate::render::*;
+use crate::scanplan::*;
 
 use flo_canvas as canvas;
 
@@ -257,6 +260,9 @@ where
         textures.remove(&(self.current_namespace, texture_id));
 
         // Render the new texture
+        let mut pixels      = vec![0u16; width*height*4];
+        //let renderer        = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(self.program_runner(height as _)), height);
+        //let frame_renderer  = U16LinearFrameRenderer::new(renderer);
         todo!()
     }
 }
