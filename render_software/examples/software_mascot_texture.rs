@@ -38,8 +38,8 @@ pub fn main() {
     gc.layer(LayerId(0));
 
     // Draw the sprite to a texture
-    let flo_w       = 128;
-    let flo_h       = 128;
+    let flo_w       = 256;
+    let flo_h       = 256;
 
     gc.create_texture(TextureId(0), flo_w, flo_h, TextureFormat::Rgba);
     gc.set_texture_from_sprite(TextureId(0), SpriteId(0), 0.0, 0.0, 1024.0, 1024.0);
