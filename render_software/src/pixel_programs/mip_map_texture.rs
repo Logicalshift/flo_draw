@@ -45,7 +45,7 @@ where
 
         // Calculate the transform parameters for the texture (we want to know how far we advance in the texture for every x position)
         let dx = a * pixel_size.0;
-        let dy = d * pixel_size.0;
+        let dy = e * pixel_size.0;
 
         // Fetch the mip level that corresponds to this level
         let mip_level = mipmap.level_for_pixel_step(dx, dy);
