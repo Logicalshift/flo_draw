@@ -44,11 +44,11 @@ where
     TPixel:                 Sized + Send + Copy + Clone + Default + ToLinearColorSpace<U16LinearPixel>,
     TRegionRenderer:        Renderer<Region=RenderSlice, Dest=[TPixel]>,
 {
-    type Region = GammaFrameSize;
+    type Region = FrameSize;
     type Source = TRegionRenderer::Source;
     type Dest   = [u16];
 
-    fn render(&self, region: &GammaFrameSize, source: &TRegionRenderer::Source, dest: &mut [u16]) {
+    fn render(&self, region: &FrameSize, source: &TRegionRenderer::Source, dest: &mut [u16]) {
         const LINES_AT_ONCE: usize = 8;
 
         // Rendering fails if there are insufficient lines to complete
@@ -90,11 +90,11 @@ where
     TPixel:                 Sized + Send + Copy + Clone + Default + ToLinearColorSpace<U16LinearPixel>,
     TRegionRenderer:        Renderer<Region=RenderSlice, Dest=[TPixel]>,
 {
-    type Region = GammaFrameSize;
+    type Region = FrameSize;
     type Source = TRegionRenderer::Source;
     type Dest   = [u16];
 
-    fn render(&self, region: &GammaFrameSize, source: &TRegionRenderer::Source, dest: &mut [u16]) {
+    fn render(&self, region: &FrameSize, source: &TRegionRenderer::Source, dest: &mut [u16]) {
         const LINES_AT_ONCE: usize = 8;
 
         use rayon::prelude::*;

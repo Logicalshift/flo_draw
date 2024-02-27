@@ -281,7 +281,7 @@ where
             let frame_renderer  = U16LinearFrameRenderer::new(renderer);
 
             // The source is a sprite renderer
-            let region = GammaFrameSize { width: width, height: height, gamma: 1.0 };
+            let region = FrameSize { width, height };
             let source = &sprite_layer.edges;
 
             frame_renderer.render(&region, source, &mut pixels);
