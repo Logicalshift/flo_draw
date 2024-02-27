@@ -835,6 +835,7 @@ dependencies = [
  "base64",
  "flo_canvas",
  "flo_sparse_array",
+ "futures",
  "itertools 0.12.1",
  "once_cell",
  "png",
