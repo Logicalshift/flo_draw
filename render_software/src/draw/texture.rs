@@ -286,7 +286,7 @@ where
         // Render the new texture (TODO: we need to take account of the bounds here)
         let pixels = {
             let mut pixels      = vec![0u16; width*height*4];
-            let renderer        = EdgePlanRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(self.program_runner(height as _)));
+            let renderer        = EdgePlanRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(self.program_runner(height as _)));
             let frame_renderer  = U16LinearFrameRenderer::new(renderer);
 
             // The source is a sprite renderer
