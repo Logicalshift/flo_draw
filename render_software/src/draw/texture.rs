@@ -274,6 +274,15 @@ where
             return;
         };
 
+        // The sprite transform maps from the sprite coordinates (which are also the bounds) to the 
+        let sprite_transform = sprite_layer.last_transform;
+        let sprite_transform = canvas::Transform2D::scale(128.0, 128.0) * canvas::Transform2D::translate(1.0, 1.0);
+
+        // Transform the edges from the layer to prepare them to render
+        // TODO: could be better to use a transform in the renderer instead (which is what the canvas renderer does)
+        let mut edges = sprite_layer.edges.transform(&sprite_transform);
+        edges.prepare_to_render();
+
         // Render the new texture (TODO: we need to take account of the bounds here)
         let pixels = {
             let mut pixels      = vec![0u16; width*height*4];
@@ -282,9 +291,8 @@ where
 
             // The source is a sprite renderer
             let region = FrameSize { width, height };
-            let source = &sprite_layer.edges;
 
-            frame_renderer.render(&region, source, &mut pixels);
+            frame_renderer.render(&region, &edges, &mut pixels);
             pixels
         };
 
