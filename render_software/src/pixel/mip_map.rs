@@ -60,10 +60,14 @@ impl<TTexture> MipMap<TTexture> {
         let pixel_step          = (dx*dx + dy*dy).sqrt();
         let approx_pixel_step   = pixel_step.floor() as usize;
 
-        // The mip level is the log2 of the pixel step
-        let level = approx_pixel_step.ilog2() as usize;
+        if approx_pixel_step == 0 {
+            0
+        } else {
+            // The mip level is the log2 of the pixel step
+            let level = approx_pixel_step.ilog2() as usize;
 
-        level.min(self.mip_levels.len()-1)
+            level.min(self.mip_levels.len()-1)
+        }
     }
 
     ///
