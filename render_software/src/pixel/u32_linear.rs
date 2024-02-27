@@ -2,8 +2,10 @@ use super::alpha_blend_trait::*;
 use super::gamma_lut::*;
 use super::pixel_trait::*;
 use super::to_gamma_colorspace_trait::*;
+use super::to_linear_colorspace_trait::*;
 use super::u32_fixed_point::*;
 use super::u8_rgba::*;
+use super::u16_rgba::*;
 
 use flo_canvas as canvas;
 
@@ -113,6 +115,23 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for U32LinearPixel {
                     (a >> 8) as u8]);
             }
         })
+    }
+}
+
+impl ToLinearColorSpace<U16LinearPixel> for U32LinearPixel {
+    fn to_linear_colorspace(input_pixels: &[Self], output_pixels: &mut [U16LinearPixel]) {
+        let u32_65535 = u32x4::splat(65535);
+
+        for (u32_pixel, u16_pixel) in input_pixels.iter().zip(output_pixels.iter_mut()) {
+            // Convert to a set of U32 values between 0-65535
+            let rgba = u32_pixel.0.min(u32_65535).max(u32x4::ZERO);
+
+            // Convert to a U16 pixel
+            let [r, g, b, a] = rgba.to_array();
+            *u16_pixel = U16LinearPixel::from_components([
+                r as _, g as _, b as _, a as _
+            ]);
+        }
     }
 }
 

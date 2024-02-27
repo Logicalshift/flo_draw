@@ -3,7 +3,9 @@ use super::rgba_texture::*;
 use super::u16_linear_texture::*;
 use super::texture_reader::*;
 use super::to_gamma_colorspace_trait::*;
+use super::to_linear_colorspace_trait::*;
 use super::u8_rgba::*;
+use super::u16_rgba::*;
 
 use flo_canvas as canvas;
 
@@ -21,6 +23,7 @@ where
     Self: Add<Self::Component, Output=Self> + Sub<Self::Component, Output=Self> + Mul<Self::Component, Output=Self> + Div<Self::Component, Output=Self>,
     Self: AlphaBlend,
     Self: ToGammaColorSpace<U8RgbaPremultipliedPixel>,
+    Self: ToLinearColorSpace<U16LinearPixel>,
     Self: TextureReader<RgbaTexture>,
     Self: TextureReader<U16LinearTexture>,
 {
