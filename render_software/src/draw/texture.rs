@@ -241,10 +241,13 @@ where
     /// Creates a texture by rendering a region from the specified sprite bounds
     ///
     pub (crate) fn texture_set_from_sprite(&mut self, texture_id: canvas::TextureId, sprite_id: canvas::SpriteId, bounds: canvas::SpriteBounds) {
-        let textures = &mut self.textures;
-
+        let current_namespace   = self.current_namespace;
+        let textures            = &mut self.textures;
+        let sprites             = &self.sprites;
+        let layers              = &self.layers;
+        
         // This has no effect if no texture is defined at this location
-        let existing_texture = textures.get_mut(&(self.current_namespace, texture_id));
+        let existing_texture = textures.get_mut(&(current_namespace, texture_id));
         let existing_texture = if let Some(existing_texture) = existing_texture { existing_texture } else { return; };
 
         // Start with the width & height of the existing texture
@@ -257,12 +260,36 @@ where
         };
 
         // Drop the existing texture so we can replace it
-        textures.remove(&(self.current_namespace, texture_id));
+        textures.remove(&(current_namespace, texture_id));
 
-        // Render the new texture
-        let mut pixels      = vec![0u16; width*height*4];
-        let renderer        = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(self.program_runner(height as _)), height);
-        let frame_renderer  = U16LinearFrameRenderer::new(renderer);
-        todo!()
+        // Fetch the sprite corresponding to the sprite ID
+        let sprite_layer = sprites.get(&(current_namespace, sprite_id))
+            .and_then(|layer_handle| layers.get(layer_handle.0));
+
+        let sprite_layer = if let Some(sprite_layer) = sprite_layer {
+            sprite_layer
+        } else {
+            // Replace the texture with an empty texture if the sprite does not exist
+            textures.insert((current_namespace, texture_id), Texture::Empty(width, height));
+            return;
+        };
+
+        // Render the new texture (TODO: we need to take account of the bounds here)
+        let pixels = {
+            let mut pixels      = vec![0u16; width*height*4];
+            let renderer        = EdgePlanRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(self.program_runner(height as _)));
+            let frame_renderer  = U16LinearFrameRenderer::new(renderer);
+
+            // The source is a sprite renderer
+            let region = GammaFrameSize { width: width, height: height, gamma: 1.0 };
+            let source = &sprite_layer.edges;
+
+            frame_renderer.render(&region, source, &mut pixels);
+            pixels
+        };
+
+        // Save the pixels to the texture
+        let texture = U16LinearTexture::from_pixels(width, height, pixels);
+        self.textures.insert((current_namespace, texture_id), Texture::Linear(Arc::new(texture)));
     }
 }
