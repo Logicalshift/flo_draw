@@ -16,7 +16,7 @@ use std::ops::*;
 ///
 pub trait Pixel<const N: usize>
 where
-    Self: Sized + Copy + Clone,
+    Self: Sized + Copy + Default + Clone,
     Self: Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self>,
     Self: Add<Self::Component, Output=Self> + Sub<Self::Component, Output=Self> + Mul<Self::Component, Output=Self> + Div<Self::Component, Output=Self>,
     Self: AlphaBlend,
