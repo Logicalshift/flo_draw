@@ -261,8 +261,8 @@ where
 
         // Render the new texture
         let mut pixels      = vec![0u16; width*height*4];
-        //let renderer        = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(self.program_runner(height as _)), height);
-        //let frame_renderer  = U16LinearFrameRenderer::new(renderer);
+        let renderer        = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(self.program_runner(height as _)), height);
+        let frame_renderer  = U16LinearFrameRenderer::new(renderer);
         todo!()
     }
 }
