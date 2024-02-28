@@ -274,13 +274,15 @@ where
             return;
         };
 
-        // The sprite transform maps from the sprite coordinates (which are also the bounds) to the 
-        let sprite_transform = sprite_layer.last_transform;
-        let sprite_transform = canvas::Transform2D::scale(128.0, 128.0) * canvas::Transform2D::translate(1.0, 1.0);
+        // The sprite transform maps from the sprite coordinates (which are also the bounds) to the pixels in the texture
+        let sprite_transform    = sprite_layer.last_transform;
+        let inverse_transform   = sprite_transform.invert().unwrap();
+        let to_bounds           = canvas::Transform2D::scale(1.0/bounds.1.0, 1.0/bounds.1.1) * canvas::Transform2D::translate(-bounds.0.0, bounds.0.1) * inverse_transform;
+        let to_texture_pixels   = canvas::Transform2D::scale(width as _, height as _) * to_bounds;
 
         // Transform the edges from the layer to prepare them to render
         // TODO: could be better to use a transform in the renderer instead (which is what the canvas renderer does)
-        let mut edges = sprite_layer.edges.transform(&sprite_transform);
+        let mut edges = sprite_layer.edges.transform(&to_texture_pixels);
         edges.prepare_to_render();
 
         // Render the new texture (TODO: we need to take account of the bounds here)
