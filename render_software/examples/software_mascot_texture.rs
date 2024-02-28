@@ -4,7 +4,7 @@ use flo_render_software::render::*;
 use flo_render_software::scanplan::*;
 
 use flo_render_software::canvas::*;
-use flo_render_software::curves::bezier::path::*;
+use flo_render_software::curves::bezier::path::{SimpleBezierPath};
 
 use futures::prelude::*;
 use futures::executor;
@@ -31,6 +31,7 @@ pub fn main() {
     // Draw the mascot to a sprite
     gc.sprite(SpriteId(0));
     gc.clear_sprite();
+    gc.line_join(LineJoin::Miter);
     for (attributes, path_set) in mascot_paths.iter() {
         gc.render_bezier_shape(attributes, path_set);
     }
