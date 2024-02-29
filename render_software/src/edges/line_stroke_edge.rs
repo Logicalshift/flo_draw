@@ -100,6 +100,10 @@ impl EdgeDescriptor for LineStrokeEdge {
     }
 
     fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        let scale           = (transform.0[0][0]*transform.0[0][0] + transform.0[1][0]*transform.0[1][0]).sqrt();
+        let scale           = scale as f64;
+        let transform_width = self.width * scale;
+
         // Convert the edges
         let path_edges = self.path_edges.iter()
             .map(|curve| {
@@ -126,7 +130,7 @@ impl EdgeDescriptor for LineStrokeEdge {
             Arc::new(LineStrokeEdge {
                 shape_id:       self.shape_id,
                 stroke_options: self.stroke_options,
-                width:          self.width,
+                width:          transform_width,
                 path_edges:     path_edges,
                 subpaths:       self.subpaths.clone(),
                 bezier_path:    bezier_path,
@@ -136,7 +140,7 @@ impl EdgeDescriptor for LineStrokeEdge {
             let mut new_edge = LineStrokeEdge {
                 shape_id:       self.shape_id,
                 stroke_options: self.stroke_options,
-                width:          self.width,
+                width:          transform_width,
                 path_edges:     path_edges,
                 subpaths:       self.subpaths.clone(),
                 bezier_path:    vec![],
@@ -300,6 +304,10 @@ impl EdgeDescriptor for FlattenedLineStrokeEdge {
     }
 
     fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+        let scale           = (transform.0[0][0]*transform.0[0][0] + transform.0[1][0]*transform.0[1][0]).sqrt();
+        let scale           = scale as f64;
+        let transform_width = self.width * scale;
+
         // Convert the edges
         let path_edges = self.path_edges.iter()
             .map(|curve| {
@@ -322,7 +330,7 @@ impl EdgeDescriptor for FlattenedLineStrokeEdge {
             Arc::new(FlattenedLineStrokeEdge {
                 shape_id:       self.shape_id,
                 stroke_options: self.stroke_options,
-                width:          self.width,
+                width:          transform_width,
                 path_edges:     path_edges,
                 subpaths:       self.subpaths.clone(),
                 bezier_path:    bezier_path,
@@ -332,7 +340,7 @@ impl EdgeDescriptor for FlattenedLineStrokeEdge {
             let mut new_edge = LineStrokeEdge {
                 shape_id:       self.shape_id,
                 stroke_options: self.stroke_options,
-                width:          self.width,
+                width:          transform_width,
                 path_edges:     path_edges,
                 subpaths:       self.subpaths.clone(),
                 bezier_path:    vec![],
