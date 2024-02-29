@@ -244,7 +244,7 @@ where
         let current_namespace   = self.current_namespace;
         let textures            = &mut self.textures;
         let sprites             = &self.sprites;
-        let layers              = &self.layers;
+        let layers              = &mut self.layers;
         
         // This has no effect if no texture is defined at this location
         let existing_texture = textures.get_mut(&(current_namespace, texture_id));
@@ -264,7 +264,7 @@ where
 
         // Fetch the sprite corresponding to the sprite ID
         let sprite_layer = sprites.get(&(current_namespace, sprite_id))
-            .and_then(|layer_handle| layers.get(layer_handle.0));
+            .and_then(|layer_handle| layers.get_mut(layer_handle.0));
 
         let sprite_layer = if let Some(sprite_layer) = sprite_layer {
             sprite_layer
@@ -282,6 +282,7 @@ where
 
         // Transform the edges from the layer to prepare them to render
         // TODO: could be better to use a transform in the renderer instead (which is what the canvas renderer does)
+        sprite_layer.edges.prepare_to_render();
         let mut edges = sprite_layer.edges.transform(&to_texture_pixels);
         edges.prepare_to_render();
 
