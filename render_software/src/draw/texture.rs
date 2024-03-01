@@ -3,6 +3,7 @@ use super::drawing_state::*;
 use super::renderer::*;
 
 use crate::pixel::*;
+use crate::pixel_programs::SolidColorData;
 use crate::render::*;
 use crate::scanplan::*;
 
@@ -286,18 +287,28 @@ where
         let mut edges = sprite_layer.edges.transform(&to_texture_pixels);
         edges.prepare_to_render();
 
-        // Render the new texture (TODO: we need to take account of the bounds here)
+        // Create a background scan planner using the default pixel colour for the sprite
+        // We need a background planner to clear the background colour
+        let background_col  = SolidColorData(TPixel::default());
+        let background_data = self.program_cache.program_cache.store_program_data(&self.program_cache.solid_color, &mut self.program_data_cache, background_col);
+        let background      = BackgroundScanPlanner::new(ShardScanPlanner::default(), background_data);
+
+        // Render the new texture
         let pixels = {
+            // Use the scan planner to create a frame renderer
             let mut pixels      = vec![0u16; width*height*4];
-            let renderer        = EdgePlanRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(self.program_runner(height as _)));
+            let renderer        = EdgePlanRegionRenderer::new(background, ScanlineRenderer::new(self.program_runner(height as _)));
             let frame_renderer  = U16LinearFrameRenderer::new(renderer);
 
-            // The source is a sprite renderer
+            // Call the frame renderer to generate the pixels
             let region = FrameSize { width, height };
-
             frame_renderer.render(&region, &edges, &mut pixels);
+
             pixels
         };
+
+        // Release the data we were using in the planner
+        self.program_data_cache.release_program_data(background_data);
 
         // Save the pixels to the texture
         let texture = U16LinearTexture::from_pixels(width, height, pixels);
