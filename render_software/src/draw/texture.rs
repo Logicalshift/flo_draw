@@ -90,7 +90,7 @@ where
             SetFromSprite(sprite_id, bounds)                => { self.texture_set_from_sprite(texture_id, sprite_id, bounds); },
             CreateDynamicSprite(sprite_id, bounds, size)    => { /* todo!() */ },
             FillTransparency(alpha)                         => { /* todo!() */ },
-            Copy(target_texture)                            => { /* todo!() */ },
+            Copy(target_texture)                            => { self.texture_copy(texture_id, target_texture); },
             Filter(filter)                                  => { /* todo!() */ }
         }
     }
@@ -313,5 +313,23 @@ where
         // Save the pixels to the texture
         let texture = U16LinearTexture::from_pixels(width, height, pixels);
         self.textures.insert((current_namespace, texture_id), Texture::Linear(Arc::new(texture)));
+    }
+
+    ///
+    /// Creates a copy of a texture in another texture
+    ///
+    pub fn texture_copy(&mut self, source_texture: canvas::TextureId, target_texture: canvas::TextureId) {
+        let current_namespace   = self.current_namespace;
+        let textures            = &mut self.textures;
+        let source_texture      = textures.get_mut(&(current_namespace, source_texture));
+
+        if let Some(source_texture) = source_texture {
+            // Clone the texture and add a copied texture
+            let copied_texture = source_texture.clone();
+            textures.insert((current_namespace, target_texture), copied_texture);
+        } else {
+            // Source texture doesn't exist: delete the target texture
+            textures.remove(&(current_namespace, target_texture));
+        }
     }
 }
