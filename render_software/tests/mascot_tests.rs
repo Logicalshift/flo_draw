@@ -5,18 +5,27 @@
 
 use flo_render_software::draw::*;
 use flo_render_software::canvas::*;
+use flo_render_software::edgeplan::EdgeDescriptor;
 use flo_render_software::pixel::*;
 use flo_render_software::scanplan::*;
 use flo_render_software::curves::bezier::path::{SimpleBezierPath};
 
 use flo_render_software::scanplan::ScanPlanner;
 use flo_render_software::scanplan::ShardScanPlanner;
+
 use futures::prelude::*;
 use futures::stream;
 use futures::executor;
 
-#[test]
-fn shard_scan_planner_line_59_always_the_same() {
+use std::sync::*;
+
+///
+/// Checks that a particular line when planned by the specified scan planner produces the same result for every result slot
+///
+fn check_mascot_scanlines_always_the_same<TScanPlanner>(y_pos: f64, scan_planner: TScanPlanner) 
+where
+    TScanPlanner: ScanPlanner<Edge=Arc<dyn EdgeDescriptor>>,
+{
     // Render the mascot to a canvas
     let mut canvas  = CanvasDrawing::<F32LinearPixel, 4>::empty();
     let mut gc      = vec![];
@@ -39,12 +48,10 @@ fn shard_scan_planner_line_59_always_the_same() {
     let mascot_layer        = mascot_layer.transform(&mascot_transform);
 
     // The bug happens with the shard scan planner: it produces different results for the last line of a batch
-    let scanplanner = ShardScanPlanner::default();
-
     // To test this, we render one line over and over and make sure that all the scanlines produce the same result (for this rendering, line 59 is known to produce the bug)
-    let y_positions     = (0..8).map(|_| 59.0).collect::<Box<[_]>>();
+    let y_positions     = (0..8).map(|_| y_pos).collect::<Box<[_]>>();
     let mut scanlines   = vec![(0.0, ScanlinePlan::default()); 8];
-    scanplanner.plan_scanlines(&mascot_layer, &ScanlineTransform::identity(), &y_positions, 0.0..256.0, &mut scanlines);
+    scan_planner.plan_scanlines(&mascot_layer, &ScanlineTransform::identity(), &y_positions, 0.0..256.0, &mut scanlines);
 
     // All scanlines should match the first one
     let first_line = scanlines[0].clone();
@@ -54,6 +61,40 @@ fn shard_scan_planner_line_59_always_the_same() {
     }
 
     assert!(scanlines.iter().all(|scanline| scanline.1 == first_line.1), "{:?}", scanlines);
+}
+
+#[test]
+fn pixel_scan_planner_line_59_always_the_same() {
+    check_mascot_scanlines_always_the_same(59.0, PixelScanPlanner::default());
+}
+
+#[test]
+fn pixel_scan_planner_line_60_always_the_same() {
+    check_mascot_scanlines_always_the_same(60.0, PixelScanPlanner::default());
+}
+
+#[test]
+fn shard_scan_planner_line_59_always_the_same() {
+    check_mascot_scanlines_always_the_same(59.0, ShardScanPlanner::default());
+}
+
+#[test]
+fn shard_scan_planner_line_61_always_the_same() {
+    check_mascot_scanlines_always_the_same(60.0, ShardScanPlanner::default());
+}
+
+#[test]
+fn pixel_scan_planner_all_lines_always_the_same() {
+    for y_pos in 0..256 {
+        check_mascot_scanlines_always_the_same(y_pos as f64, PixelScanPlanner::default());
+    }
+}
+
+#[test]
+fn shard_scan_planner_all_lines_always_the_same() {
+    for y_pos in 0..256 {
+        check_mascot_scanlines_always_the_same(y_pos as f64, ShardScanPlanner::default());
+    }
 }
 
 ///
