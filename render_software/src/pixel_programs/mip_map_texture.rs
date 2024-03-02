@@ -35,7 +35,7 @@ where
     TTexture:       Send + Sync,
     TTextureReader: Copy + Pixel<N> + TextureReader<TTexture>,
 {
-    type Program    = BilinearTextureProgram<TTextureReader, TTexture, N>;
+    type Program    = BasicTextureProgram<TTextureReader, TTexture, N>;
     type FrameData  = TextureData<MipMap<Arc<TTexture>>>;
 
     fn program_for_frame(&self, pixel_size: PixelSize, program_data: &Arc<TextureData<MipMap<Arc<TTexture>>>>) -> (Self::Program, TextureData<TTexture>) {
@@ -69,6 +69,6 @@ where
         };
 
         // Result is a bilinear filter and the texture
-        (BilinearTextureProgram::default(), mipmap_texture)
+        (BasicTextureProgram::default(), mipmap_texture)
     }
 }

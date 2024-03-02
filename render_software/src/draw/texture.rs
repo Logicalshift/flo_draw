@@ -3,7 +3,7 @@ use super::drawing_state::*;
 use super::renderer::*;
 
 use crate::pixel::*;
-use crate::pixel_programs::SolidColorData;
+use crate::pixel_programs::*;
 use crate::render::*;
 use crate::scanplan::*;
 
@@ -291,7 +291,12 @@ where
         // We need a background planner to clear the background colour
         let background_col  = SolidColorData(TPixel::default());
         let background_data = self.program_cache.program_cache.store_program_data(&self.program_cache.solid_color, &mut self.program_data_cache, background_col);
-        let background      = BackgroundScanPlanner::new(ShardScanPlanner::default(), background_data);
+
+        let debug_program   = self.program_cache.program_cache.add_pixel_program(DebugYposProgram::default());
+        let debug_data      = self.program_cache.program_cache.store_program_data(&debug_program, &mut self.program_data_cache, 0.1);
+        let debug_planner   = DebugYposScanPlanner::new(ShardScanPlanner::default(), debug_data);
+
+        let background      = BackgroundScanPlanner::new(debug_planner, background_data);
 
         // Render the new texture
         let pixels = {
