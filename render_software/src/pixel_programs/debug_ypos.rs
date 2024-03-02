@@ -14,6 +14,15 @@ pub struct DebugYposProgram<TPixel, const N: usize> {
     pixel: PhantomData<TPixel>
 }
 
+impl<TPixel, const N: usize> Default for DebugYposProgram<TPixel, N>
+where
+    TPixel: Pixel<N>,
+{
+    fn default() -> Self {
+        DebugYposProgram { pixel: PhantomData }
+    }
+}
+
 impl<TPixel, const N: usize> PixelProgram for DebugYposProgram<TPixel, N>
 where
     TPixel: Pixel<N>,
