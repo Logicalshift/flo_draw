@@ -122,7 +122,7 @@ where
             |(ref mut render_slice, ref mut buffer), (y_positions, _chunk_idx, chunk)| {
                 // Write the y positions
                 render_slice.y_positions.clear();
-                render_slice.y_positions.extend(y_positions.map(|idx| idx as f64));
+                render_slice.y_positions.extend(y_positions.map(|idx| 59.0 as f64));
 
                 // Render these lines
                 renderer.render(&render_slice, source, buffer);
