@@ -159,7 +159,7 @@ pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, st
             if previous_line.len() == 0 || next_line.len() == 0 {
                 // There are no shards in an empty line, so the other line doesn't matter (this is commonly the initial/final line for a convex shape)
                 intercepts = smallvec![];
-            } else if previous_line.len() == next_line.len() {
+            } else if previous_line.len() == next_line.len() && false {
                 // Try the simple case, and then try finding the nearest matches if it fails
                 intercepts = smallvec![];
 
