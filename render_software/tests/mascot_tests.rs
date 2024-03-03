@@ -75,6 +75,11 @@ fn pixel_scan_planner_line_60_always_the_same() {
 
 #[test]
 fn shard_scan_planner_line_59_always_the_same() {
+    // Between coordinates 58.5 and 58.9 a weird thing happens to ShapeId(8) (which is the main fill for the mascot in case the IDs get changed around, they aren't guaranteed to be fixed)
+    // That is: the neck joins the body, but the wingtip separates from the rest of the wing. The 'simple' algorithm can
+    // trigger here and think that the neck joins to the wingtip instead of there being a single body and a new wingtip
+    // (The effect is a gap where the body should be, fading from where the neck ends)
+
     check_mascot_scanlines_always_the_same(59.0, ShardScanPlanner::default());
 }
 
