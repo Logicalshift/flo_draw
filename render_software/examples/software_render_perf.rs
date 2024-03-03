@@ -293,8 +293,9 @@ fn main() {
         black_box(&mut output);
     });
     let scan_convert_polyline_nonzero_shards = time(10_000, || { 
-        let y_positions = (0..1080).map(|y_pos| y_pos as f64).collect::<Vec<_>>();
-        let shards      = shard_intercepts_from_edge(&circle_polyline_nonzero, &y_positions);
+        let start_y_positions   = (0..1080).map(|y_pos| y_pos as f64 - 0.5).collect::<Vec<_>>();
+        let end_y_positions     = (0..1080).map(|y_pos| y_pos as f64 + 0.5).collect::<Vec<_>>();
+        let shards              = shard_intercepts_from_edge(&circle_polyline_nonzero, &start_y_positions, &end_y_positions);
 
         shards.for_each(|shard| { black_box(shard); });
     });
