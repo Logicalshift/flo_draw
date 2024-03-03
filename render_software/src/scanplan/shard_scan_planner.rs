@@ -298,9 +298,11 @@ where
         let half_pixel = transform.pixel_range_to_x(&(0..1));
         let half_pixel = (half_pixel.end - half_pixel.start)/2.0;
 
-        let scan_positions = y_positions.iter()
+        let scan_positions_start = y_positions.iter()
             .map(|y| y - half_pixel)
-            .chain(y_positions.last().map(|y| y + half_pixel))
+            .collect::<Vec<_>>();
+        let scan_positions_end = y_positions.iter()
+            .map(|y| y + half_pixel)
             .collect::<Vec<_>>();
 
         // Map the x-range from the source coordinates to pixel coordinates
@@ -308,7 +310,7 @@ where
 
         // Ask the edge plan to compute the intercepts on the current scanline
         let mut ordered_intercepts = vec![vec![]; y_positions.len()];
-        edge_plan.shards_on_scanlines(&scan_positions, &mut ordered_intercepts);
+        edge_plan.shards_on_scanlines(&scan_positions_start, &scan_positions_end, &mut ordered_intercepts);
 
         'next_line: for y_idx in 0..y_positions.len() {
             // Fetch/clear the scanline that we'll be building
