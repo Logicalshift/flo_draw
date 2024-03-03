@@ -79,6 +79,17 @@ fn shard_scan_planner_line_59_always_the_same() {
     // That is: the neck joins the body, but the wingtip separates from the rest of the wing. The 'simple' algorithm can
     // trigger here and think that the neck joins to the wingtip instead of there being a single body and a new wingtip
     // (The effect is a gap where the body should be, fading from where the neck ends)
+    //
+    // ASCII art to hopefully clarify. The two scanlines are shown with '->'. Note that both have 4 intercepts but one is from a part of the shape that is being joined
+    // and another is from a part that is being split, so the 'middle' section can be misinterpreted if we just assume that there are 2 shards here
+    //
+    //    +-      /---+
+    //    | \    /    |
+    //    |  \  /     |
+    // -> |   \/      |
+    // -> |        /\ |
+    //    |       /  \|
+    //    +-------    +
 
     check_mascot_scanlines_always_the_same(59.0, ShardScanPlanner::default());
 }
