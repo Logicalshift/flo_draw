@@ -359,14 +359,16 @@ where
     ///
     /// As for `intercepts_on_scanlines`, except the intercepts will be returned as 'shards' which indicates where they cross two y positions
     ///
-    /// Note that this means that there is one less output line than input y-position
-    ///
-    pub fn shards_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [Vec<EdgePlanShardIntercept>]) {
+    pub fn shards_on_scanlines<'a>(&'a self, start_y_positions: &[f64], end_y_positions: &[f64], output: &mut [Vec<EdgePlanShardIntercept>]) {
         // Determine the range that is covered by the y-positions
         let mut y_min = f64::MAX;
         let mut y_max = f64::MIN;
 
-        y_positions.iter().for_each(|pos| {
+        start_y_positions.iter().for_each(|pos| {
+            y_min = y_min.min(*pos);
+            y_max = y_max.max(*pos);
+        });
+        end_y_positions.iter().for_each(|pos| {
             y_min = y_min.min(*pos);
             y_max = y_max.max(*pos);
         });
@@ -377,7 +379,7 @@ where
             let edge    = &self.edges[*edge_idx];
             let shape   = edge.edge.shape();
 
-            for (shards, output_line) in shard_intercepts_from_edge(&edge.edge, y_positions).zip(output.iter_mut()) {
+            for (shards, output_line) in shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions).zip(output.iter_mut()) {
                 for shard in shards {
                     let x_range = shard.x_range();
 
