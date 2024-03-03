@@ -64,3 +64,43 @@ fn scan_concave() {
     // 99.0-100.0 should be empty
     assert!(shards[0].len() == 0, "99-100 should have no intercepts ({:?})", shards);
 }
+
+#[test]
+fn scan_disjointed() {
+    // This shape can confuse the algorithm, as we'll generate two slices that have different gaps in them
+    //
+    //    +-      /---+
+    //    | \    /    |
+    //    |  \  /     |
+    // -> |   \/      |
+    // -> |        /\ |
+    //    |       /  \|
+    //    +-------    +
+
+    let mut concave_shape = Polyline::new(vec![
+        Coord2(0.0, 0.0),
+        Coord2(0.0, 100.0),
+        Coord2(10.0, 100.0),
+        Coord2(50.0, 50.0),
+        Coord2(100.0, 100.0),
+        Coord2(150.0, 100.0),
+        Coord2(150.0, 100.0),
+        Coord2(150.0, 0.0),
+        Coord2(125.0, 50.0),
+        Coord2(75.0, 0.0),
+        Coord2(0.0, 0.0),
+    ]).to_non_zero_edge(ShapeId::new());
+    concave_shape.prepare_to_render();
+
+    // Get the shards for the conflicting region. 49 is one set of intersections, 51 is another
+    let shards = shard_intercepts_from_edge(&concave_shape, 
+        &[49.0],
+        &[51.0])
+        .collect::<Vec<_>>();
+
+    println!("{:?}", shards);
+
+    // 99.0-100.0 should be empty
+    assert!(shards[0].len() == 2, "49-51 should have only two intercepts ({:?})", shards);
+
+}
