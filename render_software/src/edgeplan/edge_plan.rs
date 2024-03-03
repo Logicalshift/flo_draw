@@ -1,4 +1,4 @@
-use crate::scanplan::shard_intercepts_from_edge;
+use crate::scanplan::*;
 
 use super::edge_descriptor::*;
 use super::edge_descriptor_intercept::*;
