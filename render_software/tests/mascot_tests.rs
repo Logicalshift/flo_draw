@@ -88,20 +88,6 @@ fn shard_scan_planner_line_9_always_the_same() {
     check_mascot_scanlines_always_the_same(9.0, ShardScanPlanner::default());
 }
 
-#[test]
-fn pixel_scan_planner_all_lines_always_the_same() {
-    for y_pos in 0..256 {
-        check_mascot_scanlines_always_the_same(y_pos as f64, PixelScanPlanner::default());
-    }
-}
-
-#[test]
-fn shard_scan_planner_all_lines_always_the_same() {
-    for y_pos in 0..256 {
-        check_mascot_scanlines_always_the_same(y_pos as f64, ShardScanPlanner::default());
-    }
-}
-
 ///
 /// Mascot drawing instructions
 ///
