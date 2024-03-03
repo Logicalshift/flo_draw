@@ -14,7 +14,9 @@ fn scan_triangle() {
     triangle.prepare_to_render();
 
     // Iterate across the triangle to get a series of shards
-    let shards = shard_intercepts_from_edge(&triangle, &[99.0, 100.0, 125.0, 150.0, 175.0, 200.0, 201.0])
+    let shards = shard_intercepts_from_edge(&triangle, 
+        &[99.0, 100.0, 125.0, 150.0, 175.0, 200.0],
+        &[100.0, 125.0, 150.0, 175.0, 200.0, 201.0])
         .collect::<Vec<_>>();
 
     println!("{:?}", shards);
@@ -51,11 +53,13 @@ fn scan_concave() {
     concave_shape.prepare_to_render();
 
     // Iterate across the shape to get a series of shards
-    let shards = shard_intercepts_from_edge(&concave_shape, &[99.0, 100.0, 125.0, 150.0, 175.0, 198.0, 199.0, 200.0, 201.0])
+    let shards = shard_intercepts_from_edge(&concave_shape, 
+        &[99.0, 100.0, 125.0, 150.0, 175.0, 198.0, 199.0, 200.0],
+        &[100.0, 125.0, 150.0, 175.0, 198.0, 199.0, 200.0, 201.0])
         .collect::<Vec<_>>();
 
     println!("{:?}", shards);
-    assert!(shards.len() == 8, "Should be 6 shards {:?}", shards);
+    assert!(shards.len() == 8, "Should be 8 shards {:?}", shards);
 
     // 99.0-100.0 should be empty
     assert!(shards[0].len() == 0, "99-100 should have no intercepts ({:?})", shards);
