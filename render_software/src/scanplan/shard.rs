@@ -160,6 +160,8 @@ pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, st
                 // There are no shards in an empty line, so the other line doesn't matter (this is commonly the initial/final line for a convex shape)
                 intercepts = smallvec![];
             } else if previous_line.len() == next_line.len() && false {
+                // TODO: is this optimisation worth it? It's faster to just match everything rather than resolve them, but the time is spent elsewhere at the moment
+
                 // Try the simple case, and then try finding the nearest matches if it fails
                 intercepts = smallvec![];
 
