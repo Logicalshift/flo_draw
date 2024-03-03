@@ -51,20 +51,6 @@ impl ShardIntercept {
 }
 
 ///
-/// Processes normal intercepts into shards
-///
-struct ShardIterator<TInterceptIterator> 
-where
-    TInterceptIterator: Iterator<Item=SmallVec<[EdgeDescriptorIntercept; 2]>>
-{
-    /// The intercepts on the preceding line for this shape
-    previous_line:  SmallVec<[EdgeDescriptorIntercept; 2]>,
-
-    /// The intercepts across the line range to generate shards for
-    intercepts:     TInterceptIterator,
-}
-
-///
 /// For a set of shards where the previous line does not match up with the next line, uses the edge indexes to figure out what the shard intercepts must be
 ///
 /// We short-cut this when the intercepts on the previous and next line match up (same number and same direction), so this is onyl used when there isn't an
@@ -136,84 +122,68 @@ fn resolve_shards(previous_line: &SmallVec<[EdgeDescriptorIntercept; 2]>, next_l
     shards
 }
 
-impl<TInterceptIterator> Iterator for ShardIterator<TInterceptIterator>
-where
-    TInterceptIterator: Iterator<Item=SmallVec<[EdgeDescriptorIntercept; 2]>>
-{
-    type Item = SmallVec<[ShardIntercept; 2]>;
-
-    fn next(&mut self) -> Option<SmallVec<[ShardIntercept; 2]>> {
-        // Fetch the following line. The preceding line was sorted by the last pass through this routine
-        let previous_line   = &self.previous_line;
-        let mut next_line   = if let Some(next_line) = self.intercepts.next() { next_line } else { return None; };
-
-        // Sort into order so we can match the two lines against each other
-        next_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
-
-        // We now need to match the crossing points for the two lines, which we do by pairing up each point with the nearest of the same crossing type form the
-
-        // Every matching pair forms a shard in that direction. Very often this is very simple: both the next and previous line have the same number of intercepts,
-        // and they are all in the same direction
-        let mut intercepts;
-
-        if previous_line.len() == 0 || next_line.len() == 0 {
-            // There are no shards in an empty line, so the other line doesn't matter (this is commonly the initial/final line for a convex shape)
-            intercepts = smallvec![];
-        } else if previous_line.len() == next_line.len() {
-            // Try the simple case, and then try finding the nearest matches if it fails
-            intercepts = smallvec![];
-
-            for (first, second) in previous_line.iter().zip(next_line.iter()) {
-                if first.direction != second.direction || first.position.0 != second.position.0 {
-                    // Intercept direction or shape has changed, so these shapes don't match: use the 'find nearest' algorithm instead (this is a concave shape)
-                    // (Eg: a 'C' shape with a very narrow gap)
-                    intercepts = resolve_shards(previous_line, &next_line);
-                    break;
-                }
-
-                // Add a new intercept to the list
-                intercepts.push(ShardIntercept {
-                    direction:  first.direction,
-                    x_start:    first.x_pos.min(second.x_pos),
-                    x_end:      first.x_pos.max(second.x_pos),
-                })
-            }
-        } else {
-            // Shards are formed by finding the nearest intercept to each point
-            // (Eg, the end of a spike in a concave shape)
-            intercepts = resolve_shards(previous_line, &next_line);
-        }
-
-        // The next line now becomes the previous line
-        self.previous_line = next_line;
-
-        Some(intercepts)
-    }
-}
-
 ///
 /// Creates an iterator that finds all of the shard intercepts across a range of y values
 ///
-/// There will be one less line returned here than y-values that were passed in. Intercepts are ordered by x position on return.
+/// The start_y_positions and end_y_positions slices should be the same length. A slice will be generated for each pair of y values in these
+/// two slices.
 ///
-pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, y_positions: &'a [f64]) -> impl 'a + Iterator<Item=SmallVec<[ShardIntercept; 2]>>{
+pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, start_y_positions: &'a [f64], end_y_positions: &'a [f64]) -> impl 'a + Iterator<Item=SmallVec<[ShardIntercept; 2]>>{
     // TODO: some edges can have multiple closed shapes (eg: closed lines, for example). This algorithm won't work with those because it assumes a single closed shape
 
-    // Allocate space for the intercepts
-    let mut intercepts = vec![smallvec![]; y_positions.len()];
+    // Read the positions of the start intercepts for each y-position
+    let mut start_intercepts = vec![smallvec![]; start_y_positions.len()];
+    edge.intercepts(start_y_positions, &mut start_intercepts);
 
-    // Read the intercepts from the edge
-    edge.intercepts(y_positions, &mut intercepts);
+    start_intercepts.iter_mut()
+        .for_each(|intercept_line| intercept_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos)));
 
-    // Read through the intercepts
-    let mut intercepts  = intercepts.into_iter();
-    let mut first_line  = intercepts.next().expect("Must be at least one y-position to generate a shard iterator");
+    // Read the end intercepts (TODO: can maybe speed this up and only read the last one as very often end_y_positions[x] = start_y_positions[x+1])
+    let mut end_intercepts = vec![smallvec![]; end_y_positions.len()];
+    edge.intercepts(end_y_positions, &mut end_intercepts);
 
-    first_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
+    // TODO: can avoid sorting things that we already fetched with the start intercepts
+    end_intercepts.iter_mut()
+        .for_each(|intercept_line| intercept_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos)));
 
-    // Create the shard iterator
-    ShardIterator {
-        previous_line:  first_line,
-        intercepts:     intercepts
-    }
+    // Generate the shart intercepts
+    start_intercepts.into_iter()
+        .zip(end_intercepts.into_iter())
+        .map(|(previous_line, next_line)| {
+            // We now need to match the crossing points for the two lines, which we do by pairing up each point with the nearest of the same crossing type form the
+
+            // Every matching pair forms a shard in that direction. Very often this is very simple: both the next and previous line have the same number of intercepts,
+            // and they are all in the same direction
+            let mut intercepts;
+
+            if previous_line.len() == 0 || next_line.len() == 0 {
+                // There are no shards in an empty line, so the other line doesn't matter (this is commonly the initial/final line for a convex shape)
+                intercepts = smallvec![];
+            } else if previous_line.len() == next_line.len() {
+                // Try the simple case, and then try finding the nearest matches if it fails
+                intercepts = smallvec![];
+
+                for (first, second) in previous_line.iter().zip(next_line.iter()) {
+                    if first.direction != second.direction || first.position.0 != second.position.0 {
+                        // Intercept direction or shape has changed, so these shapes don't match: use the 'find nearest' algorithm instead (this is a concave shape)
+                        // (Eg: a 'C' shape with a very narrow gap)
+                        intercepts = resolve_shards(&previous_line, &next_line);
+                        break;
+                    }
+
+                    // Add a new intercept to the list
+                    intercepts.push(ShardIntercept {
+                        direction:  first.direction,
+                        x_start:    first.x_pos.min(second.x_pos),
+                        x_end:      first.x_pos.max(second.x_pos),
+                    })
+                }
+            } else {
+                // Shards are formed by finding the nearest intercept to each point
+                // (Eg, the end of a spike in a concave shape)
+                intercepts = resolve_shards(&previous_line, &next_line);
+            }
+
+            intercepts
+        })
 }
