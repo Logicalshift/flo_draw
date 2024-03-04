@@ -268,7 +268,6 @@ impl U16LinearTexture {
     }
 }
 
-
 impl From<RgbaTexture> for U16LinearTexture {
     #[inline]
     fn from(texture: RgbaTexture) -> U16LinearTexture {

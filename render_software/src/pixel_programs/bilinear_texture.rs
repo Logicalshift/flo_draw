@@ -49,6 +49,7 @@ where
     fn draw_pixels(&self, _data_cache: &PixelProgramRenderCache<Self::Pixel>, target: &mut [Self::Pixel], pixel_range: Range<i32>, x_transform: &ScanlineTransform, y_pos: f64, data: &Self::ProgramData) {
         // Read the data
         let texture                 = &*data.texture;
+        let alpha                   = data.alpha;
         let [[a, b, c], [d, e, f]]  = data.transform;
 
         // Convert the start x position to source pixels
@@ -63,8 +64,16 @@ where
         let mut texture_pixels = TTextureReader::read_pixels_linear_bilinear_filter(texture, x_pos, dx, (a, byc), (d, eyf), pixel_range.len());
 
         // Alpha-blend the pixels into the final result
-        for (texture_pixel, tgt_pixel) in texture_pixels.into_iter().zip((&mut target[(pixel_range.start as usize)..(pixel_range.end as usize)]).iter_mut()) {
-            *tgt_pixel = texture_pixel.source_over(*tgt_pixel);
+        if alpha >= 1.0 {
+            for (texture_pixel, tgt_pixel) in texture_pixels.into_iter().zip((&mut target[(pixel_range.start as usize)..(pixel_range.end as usize)]).iter_mut()) {
+                *tgt_pixel = texture_pixel.source_over(*tgt_pixel);
+            }
+        } else {
+            let alpha = TTextureReader::Component::with_value(alpha);
+
+            for (texture_pixel, tgt_pixel) in texture_pixels.into_iter().zip((&mut target[(pixel_range.start as usize)..(pixel_range.end as usize)]).iter_mut()) {
+                *tgt_pixel = (texture_pixel * alpha).source_over(*tgt_pixel);
+            }
         }
     }
 }

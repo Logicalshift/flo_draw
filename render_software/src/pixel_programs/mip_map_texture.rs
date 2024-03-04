@@ -41,6 +41,7 @@ where
     fn program_for_frame(&self, pixel_size: PixelSize, program_data: &Arc<TextureData<MipMap<Arc<TTexture>>>>) -> (Self::Program, TextureData<TTexture>) {
         // Read the transform from the program_data
         let mipmap                  = &*program_data.texture;
+        let alpha                   = program_data.alpha;
         let [[a, b, c], [d, e, f]]  = program_data.transform;
 
         // Calculate the transform parameters for the texture (we want to know how far we advance in the texture for every x position)
@@ -65,6 +66,7 @@ where
         // Create texture data for reading from this mip-map level
         let mipmap_texture = TextureData {
             texture:    Arc::clone(mipmap.mip_level(mip_level)),
+            alpha:      alpha,
             transform:  [[a*scale_x, b*scale_x, c*scale_x], [d*scale_y, e*scale_y, f*scale_y]]
         };
 
