@@ -35,13 +35,13 @@ pub enum Brush {
     TransparentSolidColor(canvas::Color),
 
     /// A transformed texture, known to have transparent pixels in it
-    TransparentTexture(Arc<RgbaTexture>, canvas::Transform2D),
+    TransparentTexture(f64, Arc<RgbaTexture>, canvas::Transform2D),
 
     /// A transformed texture, known to have transparent pixels in it
-    TransparentLinearTexture(Arc<U16LinearTexture>, canvas::Transform2D),
+    TransparentLinearTexture(f64, Arc<U16LinearTexture>, canvas::Transform2D),
 
     /// A transformed texture that will be rendered using mip-maps
-    TransparentMipMapTexture(Arc<MipMap<Arc<U16LinearTexture>>>, canvas::Transform2D),
+    TransparentMipMapTexture(f64, Arc<MipMap<Arc<U16LinearTexture>>>, canvas::Transform2D),
 }
 
 #[derive(Clone)]
@@ -299,11 +299,11 @@ impl DrawingState {
     pub (crate) fn fill_transform(&mut self, transform: canvas::Transform2D) {
         match &mut self.next_fill_brush {
             Brush::OpaqueSolidColor(_) |
-            Brush::TransparentSolidColor(_)                      => { }
+            Brush::TransparentSolidColor(_)                         => { }
 
-            Brush::TransparentTexture(_, fill_transform)        => { *fill_transform = transform * *fill_transform; }
-            Brush::TransparentLinearTexture(_, fill_transform)  => { *fill_transform = transform * *fill_transform; }
-            Brush::TransparentMipMapTexture(_, fill_transform)  => { *fill_transform = transform * *fill_transform; }
+            Brush::TransparentTexture(_, _, fill_transform)         => { *fill_transform = transform * *fill_transform; }
+            Brush::TransparentLinearTexture(_, _, fill_transform)   => { *fill_transform = transform * *fill_transform; }
+            Brush::TransparentMipMapTexture(_, _, fill_transform)   => { *fill_transform = transform * *fill_transform; }
         }
     }
 }

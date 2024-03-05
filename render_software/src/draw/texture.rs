@@ -198,6 +198,7 @@ where
         if let Some(texture) = textures.get_mut(&(self.current_namespace, texture_id)) {
             // Texture exists
             texture.make_mip_map(self.gamma);
+            let fill_alpha = texture.fill_alpha;
 
             match &texture.pixels {
                 TexturePixels::Empty(_, _) => {
@@ -216,7 +217,7 @@ where
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
-                    current_state.next_fill_brush = Brush::TransparentTexture(Arc::clone(rgba_texture), transform);
+                    current_state.next_fill_brush = Brush::TransparentTexture(fill_alpha, Arc::clone(rgba_texture), transform);
                 },
 
                 TexturePixels::Linear(linear_texture) => {
@@ -230,7 +231,7 @@ where
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
-                    current_state.next_fill_brush = Brush::TransparentLinearTexture(Arc::clone(linear_texture), transform);
+                    current_state.next_fill_brush = Brush::TransparentLinearTexture(fill_alpha, Arc::clone(linear_texture), transform);
                 },
 
                 TexturePixels::MipMap(mipmap) | TexturePixels::MipMapWithOriginal(_, mipmap) => {
@@ -244,7 +245,7 @@ where
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
-                    current_state.next_fill_brush = Brush::TransparentMipMapTexture(Arc::clone(mipmap), transform);
+                    current_state.next_fill_brush = Brush::TransparentMipMapTexture(fill_alpha, Arc::clone(mipmap), transform);
                 }
             }
         }

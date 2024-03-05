@@ -205,8 +205,8 @@ where
                 }
             }
 
-            (_, TransparentTexture(texture, transform)) => {
-                let texture_data    = TextureData::with_texture(Arc::clone(texture), transform);
+            (_, TransparentTexture(alpha, texture, transform)) => {
+                let texture_data    = TextureData::with_texture_alpha(Arc::clone(texture), transform, *alpha);
                 let brush_data      = program_cache.program_cache.store_program_data(&program_cache.bilinear_texture, data_cache, texture_data);
 
                 ShapeDescriptor {
@@ -216,8 +216,8 @@ where
                 }
             }
 
-            (_, TransparentLinearTexture(texture, transform)) => {
-                let texture_data    = TextureData::with_texture(Arc::clone(texture), transform);
+            (_, TransparentLinearTexture(alpha, texture, transform)) => {
+                let texture_data    = TextureData::with_texture_alpha(Arc::clone(texture), transform, *alpha);
                 let brush_data      = program_cache.program_cache.store_program_data(&program_cache.bilinear_u16_texture, data_cache, texture_data);
 
                 ShapeDescriptor {
@@ -227,8 +227,8 @@ where
                 }
             }
 
-            (_, TransparentMipMapTexture(texture, transform)) => {
-                let texture_data    = TextureData::with_texture(Arc::clone(texture), transform);
+            (_, TransparentMipMapTexture(alpha, texture, transform)) => {
+                let texture_data    = TextureData::with_texture_alpha(Arc::clone(texture), transform, *alpha);
                 let brush_data      = program_cache.program_cache.store_program_data(&program_cache.mipmap_texture, data_cache, texture_data);
 
                 ShapeDescriptor {
