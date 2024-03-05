@@ -108,7 +108,7 @@ where
         let dx      = x_transform.pixel_size();
 
         // Read from the texture into the pixel range
-        let mut texture_pixels = TTextureReader::read_pixels_linear(texture, x_pos, dx, (a, byc), (d, eyf), pixel_range.len());
+        let texture_pixels = TTextureReader::read_pixels_linear(texture, x_pos, dx, (a, byc), (d, eyf), pixel_range.len());
 
         // Alpha-blend the pixels into the final result
         if alpha >= 1.0 {
