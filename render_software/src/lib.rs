@@ -13,6 +13,9 @@ pub mod pixel;
 /// Well-known pixel programs
 pub mod pixel_programs;
 
+/// The filters module implements filters that can be run against pixel output
+pub mod filters;
+
 /// Renderers convert from data represented by a series of instructions to a simpler form
 pub mod render;
 
