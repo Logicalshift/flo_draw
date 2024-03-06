@@ -101,7 +101,7 @@ where
             SetBytes(position, size, bytes)                 => { self.texture_set_bytes(texture_id, position, size, bytes); },
             SetFromSprite(sprite_id, bounds)                => { self.texture_set_from_sprite(texture_id, sprite_id, bounds); },
             CreateDynamicSprite(sprite_id, bounds, size)    => { /* todo!() */ },
-            FillTransparency(alpha)                         => { /* todo!() */ },
+            FillTransparency(alpha)                         => { self.texture_fill_transparency(texture_id, alpha as f64); },
             Copy(target_texture)                            => { self.texture_copy(texture_id, target_texture); },
             Filter(filter)                                  => { /* todo!() */ }
         }
@@ -345,6 +345,15 @@ where
         } else {
             // Source texture doesn't exist: delete the target texture
             textures.remove(&(current_namespace, target_texture));
+        }
+    }
+
+    ///
+    /// Sets the transparency to use with a texture when rendering it
+    ///
+    pub fn texture_fill_transparency(&mut self, texture: canvas::TextureId, alpha: f64) {
+        if let Some(texture) = self.textures.get_mut(&(self.current_namespace, texture)) {
+            texture.fill_alpha = alpha;
         }
     }
 }
