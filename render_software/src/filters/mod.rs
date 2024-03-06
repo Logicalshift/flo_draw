@@ -1,3 +1,3 @@
-mod filter_trait;
+mod pixel_filter_trait;
 
-pub use filter_trait::*;
+pub use pixel_filter_trait::*;
