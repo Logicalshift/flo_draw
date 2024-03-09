@@ -34,6 +34,6 @@ where
     let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
     canvas_drawing.draw(drawing);
 
-    let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(target.height() as _)), target.height());
+    let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(target.height() as _)), target.height());
     target.render(renderer, &canvas_drawing);
 }
