@@ -8,6 +8,7 @@ readme              = "README.md"
 repository          = "https://github.com/Logicalshift/flo_draw"
 description         = "Software renderer for flo_canvas vector graphics"
 categories          = [ "graphics", "rendering", "gui" ]
+include             = [ "Cargo.toml", "examples/**/*", "src/**/*", "test_data/**/*", "README.md" ]
 
 [features]
 default             = [ "render_png", "render_term", "multithreading" ]
