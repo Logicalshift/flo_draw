@@ -1,4 +1,7 @@
+use flo_render_software::draw::*;
+use flo_render_software::pixel::*;
 use flo_render_software::render::*;
+use flo_render_software::scanplan::*;
 
 use flo_render_software::canvas::*;
 
@@ -44,6 +47,43 @@ pub fn main() {
     let drawing = drawing_with_laid_out_text(drawing);
     let drawing = drawing_with_text_as_paths(drawing);
     let drawing = executor::block_on(async move { drawing.collect::<Vec<_>>().await });
+
+    // Time how long it takes to draw the text to the canvas
+    for _ in 0..10 {
+        let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
+        canvas_drawing.draw(drawing.iter().cloned());
+    }
+
+    let render_start = Instant::now();
+    for _ in 0..100 {
+        let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
+        canvas_drawing.draw(drawing.iter().cloned());
+    }
+    let render_time = Instant::now().duration_since(render_start);
+    let avg_micros  = render_time.as_micros() / 100;
+    println!("Canvas drawing time: {}.{}ms", avg_micros/1000, avg_micros%1000);
+
+    // Time some rendering (useful for profiling/optimisation)
+    let mut canvas_drawing  = CanvasDrawing::<F32LinearPixel, 4>::empty();
+    let mut frame           = vec![0u8; 1920*1080*4];
+    let mut rgba            = RgbaFrame::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
+
+    canvas_drawing.draw(drawing.iter().cloned());
+
+    // Warm up before timing the rendering
+    for _ in 0..10 {
+        let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
+        rgba.render(renderer, &canvas_drawing);
+    }
+
+    let render_start = Instant::now();
+    for _ in 0..100 {
+        let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
+        rgba.render(renderer, &canvas_drawing);
+    }
+    let render_time = Instant::now().duration_since(render_start);
+    let avg_micros  = render_time.as_micros() / 100;
+    println!("F32 frame render time: {}.{}ms", avg_micros/1000, avg_micros%1000);
 
     // Render to the terminal window
     render_drawing(&mut TerminalRenderTarget::new(1920, 1080), drawing.iter().cloned());
