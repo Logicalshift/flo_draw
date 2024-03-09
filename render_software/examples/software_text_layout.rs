@@ -14,7 +14,8 @@ use std::time::{Instant};
 ///
 pub fn main() {
     // Load the Lato font that we'll use for the test
-    let lato = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
+    let lato        = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
+    let lato_bold   = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Bold.ttf"));
 
     // Create some drawing commands to render the text
     let mut gc = vec![];
@@ -24,10 +25,11 @@ pub fn main() {
     gc.center_region(0.0, 0.0, 1920.0, 1080.0);
 
     gc.define_font_data(FontId(0), Arc::clone(&lato));
+    gc.define_font_data(FontId(1), Arc::clone(&lato_bold));
 
     // Lay out some text in the graphics context
-    gc.set_font_size(FontId(0), 48.0);
-    gc.draw_text(FontId(0), "Rendering text with the software renderer".to_string(), 64.0, 1080.0 - 48.0 - 64.0);
+    gc.set_font_size(FontId(1), 48.0);
+    gc.draw_text(FontId(1), "Rendering text with the software renderer".to_string(), 64.0, 1080.0 - 48.0 - 64.0);
     gc.set_font_size(FontId(0), 16.0);
 
     gc.draw_text(FontId(0), "This is performing text rendering by first converting this text to paths. This is something of a torture test for the software renderer for a few reasons:".to_string(), 64.0, 1080.0 - 48.0*2.0 - 64.0);
