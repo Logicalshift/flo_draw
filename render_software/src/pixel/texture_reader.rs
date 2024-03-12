@@ -27,7 +27,7 @@ where
     /// `y = y_gradient.0 * u + y_gradient.1`.
     ///
     #[inline]
-    fn read_pixels_linear(texture: &TTexture, offset:f64, dx: f64, x_gradient: (f64, f64), y_gradient: (f64, f64), count: usize) -> Vec<Self> {
+    fn read_pixels_linear(texture: &TTexture, offset: f64, dx: f64, x_gradient: (f64, f64), y_gradient: (f64, f64), count: usize) -> Vec<Self> {
         // Allocate enough space to store the pixels
         let mut positions = Vec::with_capacity(count);
 
