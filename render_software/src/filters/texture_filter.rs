@@ -63,13 +63,20 @@ where
                 match pixel_cache_read.get(&read_row_num) {
                     None => {
                         // Read a row from the source
-                        let new_row = if read_row_num < 0 || read_row_num >= num_rows {
+                        let mut new_row = if read_row_num < 0 || read_row_num >= num_rows {
                             vec![TPixel::default(); width]
                         } else {
                             read_row(read_row_num as usize)
                         };
 
-                        // TODO: add the 'add_left' and 'add_right' pixels
+                        // Add the 'add_left' and 'add_right' pixels
+                        if add_left > 0 {
+                            new_row.splice(0..0, (0..add_left).map(|_| TPixel::default()));
+                        }
+
+                        if add_right > 0 {
+                            new_row.extend((0..add_right).map(|_| TPixel::default()));
+                        }
 
                         // Keep the row with a reference
                         let new_row = Arc::new(new_row);
