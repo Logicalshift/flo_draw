@@ -69,7 +69,7 @@ where
                             read_row(read_row_num as usize)
                         };
 
-                        // Add the 'add_left' and 'add_right' pixels
+                        // Add the 'add_left' and 'add_right' pixels (TODO: better to ask the read_row function to do this)
                         if add_left > 0 {
                             new_row.splice(0..0, (0..add_left).map(|_| TPixel::default()));
                         }
