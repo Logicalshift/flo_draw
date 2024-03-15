@@ -36,7 +36,7 @@ fn weights_for_radius(radius: f64) -> Vec<f64> {
 
     // Get the count for this radius
     let pixel_radius    = radius.ceil().max(1.0) as usize;
-    let kernel_size     = ((pixel_radius-1)/2+1).min(1);
+    let kernel_size     = ((pixel_radius-1)/2+1).max(1);
 
     let sigma   = 0.25;
     let step    = 1.0 / radius;
