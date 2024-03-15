@@ -65,7 +65,8 @@ pub fn horizontal_blur_0() {
 
         // Check the pixels that are generated against their expected values
         for (x_pos, pixel) in pixels.into_iter().enumerate() {
-            assert!(pixel == F32LinearPixel::from_components([0.0, 0.0, (y_pos as f32)/256.0, (x_pos as f32)/256.0]));
+            let expected = F32LinearPixel::from_components([0.0, 0.0, (y_pos as f32)/256.0, (x_pos as f32)/256.0]);
+            assert!(pixel == expected, "{:?} != {:?} ({:?})", pixel, expected, pixel - expected);
         }
     }
 }
@@ -83,7 +84,8 @@ pub fn vertical_blur_0() {
 
         // Check the pixels that are generated against their expected values
         for (x_pos, pixel) in pixels.into_iter().enumerate() {
-            assert!(pixel == F32LinearPixel::from_components([0.0, 0.0, (y_pos as f32)/256.0, (x_pos as f32)/256.0]));
+            let expected = F32LinearPixel::from_components([0.0, 0.0, (y_pos as f32)/256.0, (x_pos as f32)/256.0]);
+            assert!(pixel == expected, "{:?} != {:?} ({:?})", pixel, expected, pixel - expected);
         }
     }
 }
