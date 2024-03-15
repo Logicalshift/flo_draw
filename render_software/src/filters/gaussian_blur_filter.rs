@@ -32,7 +32,9 @@ fn weights_for_gaussian_blur(sigma: f64, step: f64, count: usize) -> Vec<f64> {
 /// Generates the weights for a gaussian blur with a particular radius
 ///
 fn weights_for_radius(radius: f64) -> Vec<f64> {
-    // Get the count for this radius0
+    if radius <= 0.0 { return vec![1.0] }
+
+    // Get the count for this radius
     let pixel_radius    = radius.ceil().max(1.0) as usize;
     let kernel_size     = ((pixel_radius-1)/2+1).min(1);
 
