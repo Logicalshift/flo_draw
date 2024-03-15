@@ -132,7 +132,7 @@ where
                 pixel = pixel + (input_line[idx + kern_idx] * kernel_val) + (input_line[idx - kern_idx] * kernel_val);
             }
 
-            output_line[idx - kernel_len] = pixel;
+            output_line[idx - (kernel_len-1)] = pixel;
         }
     }
 }
@@ -165,7 +165,7 @@ where
                 pixel = pixel + (input_lines[mid_pos+kern_idx][idx] * kernel_val) + (input_lines[mid_pos-kern_idx][idx] * kernel_val);
             }
 
-            output_line[idx - kernel_len] = pixel;
+            output_line[idx - (kernel_len-1)] = pixel;
         }
     }
 }
