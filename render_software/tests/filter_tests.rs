@@ -29,3 +29,25 @@ pub fn alpha_blend_filter() {
 
     assert!(visited_lines.len() == 256);
 }
+
+#[test]
+pub fn smoke_test_horizontal_blur() {
+    // We can apply the filter to some pixels we generate on the fly
+    let filter          = HorizontalKernelFilter::<F32LinearPixel, 4>::with_gaussian_blur_radius(20.0);
+    let alpha_blended   = apply_pixel_filter(256, |y_pos| {
+        (0..256).map(|x_pos| F32LinearPixel::from_components([0.0, 0.0, (y_pos as f32)/256.0, (x_pos as f32)/256.0])).collect()
+    }, 256, &filter);
+
+    let _ = alpha_blended.collect::<Vec<_>>();
+}
+
+#[test]
+pub fn smoke_test_vertical_blur() {
+    // We can apply the filter to some pixels we generate on the fly
+    let filter          = HorizontalKernelFilter::<F32LinearPixel, 4>::with_gaussian_blur_radius(20.0);
+    let alpha_blended   = apply_pixel_filter(256, |y_pos| {
+        (0..256).map(|x_pos| F32LinearPixel::from_components([0.0, 0.0, (y_pos as f32)/256.0, (x_pos as f32)/256.0])).collect()
+    }, 256, &filter);
+
+    let _ = alpha_blended.collect::<Vec<_>>();
+}
