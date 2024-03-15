@@ -88,6 +88,7 @@ where
                             let mut pixel_cache_write = pixel_cache.write().unwrap();
 
                             pixel_cache_write.insert(read_row_num, (Arc::clone(&new_row), AtomicIsize::new(add_above + add_below)));
+                            mem::drop(pixel_cache_write);
 
                             pixel_cache_read = pixel_cache.read().unwrap();
                         }
@@ -107,6 +108,7 @@ where
                             let mut pixel_cache_write = pixel_cache.write().unwrap();
 
                             pixel_cache_write.remove(&read_row_num);
+                            mem::drop(pixel_cache_write);
 
                             pixel_cache_read = pixel_cache.read().unwrap();
                         }
