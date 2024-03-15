@@ -1,6 +1,33 @@
 use super::pixel_filter_trait::*;
 use crate::pixel::*;
 
+use std::f32;
+
+///
+/// Computes the 1D weights for a gaussian blur for a particular standard deviation
+///
+fn weights_for_gaussian_blur(sigma: f32, step: f32, count: usize) -> Vec<f32> {
+    // Short-circuit the case where count is 0
+    if count == 0 { return vec![]; }
+
+    let sigma_squared   = sigma * sigma;
+
+    // Compute the weight at each position
+    let uncorrected     = (0..count).into_iter()
+        .map(|x| {
+            let x = x as f32;
+            let x = x * step;
+            (1.0/((2.0*f32::consts::PI*sigma_squared).sqrt())) * (f32::consts::E.powf(-(x*x)/(2.0*sigma_squared)))
+        })
+        .collect::<Vec<_>>();
+
+    // Correct the blur so that the weights all add up to 1
+    let sum             = uncorrected[0] + uncorrected.iter().skip(1).fold(0.0, |x, y| x+*y)*2.0;
+    let corrected       = uncorrected.into_iter().map(|weight| weight/sum).collect();
+
+    corrected
+}
+
 ///
 /// Filter that applies a one-dimensional kernel in the horizontal direction
 ///
