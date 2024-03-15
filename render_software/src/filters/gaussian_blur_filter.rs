@@ -1,12 +1,12 @@
 use super::pixel_filter_trait::*;
 use crate::pixel::*;
 
-use std::f32;
+use std::f64;
 
 ///
 /// Computes the 1D weights for a gaussian blur for a particular standard deviation
 ///
-fn weights_for_gaussian_blur(sigma: f32, step: f32, count: usize) -> Vec<f32> {
+fn weights_for_gaussian_blur(sigma: f64, step: f64, count: usize) -> Vec<f64> {
     // Short-circuit the case where count is 0
     if count == 0 { return vec![]; }
 
@@ -15,9 +15,9 @@ fn weights_for_gaussian_blur(sigma: f32, step: f32, count: usize) -> Vec<f32> {
     // Compute the weight at each position
     let uncorrected     = (0..count).into_iter()
         .map(|x| {
-            let x = x as f32;
+            let x = x as f64;
             let x = x * step;
-            (1.0/((2.0*f32::consts::PI*sigma_squared).sqrt())) * (f32::consts::E.powf(-(x*x)/(2.0*sigma_squared)))
+            (1.0/((2.0*f64::consts::PI*sigma_squared).sqrt())) * (f64::consts::E.powf(-(x*x)/(2.0*sigma_squared)))
         })
         .collect::<Vec<_>>();
 
@@ -26,6 +26,30 @@ fn weights_for_gaussian_blur(sigma: f32, step: f32, count: usize) -> Vec<f32> {
     let corrected       = uncorrected.into_iter().map(|weight| weight/sum).collect();
 
     corrected
+}
+
+///
+/// Generates the weights for a gaussian blur with a particular radius
+///
+fn weights_for_radius(radius: f64) -> Vec<f64> {
+    // Get the count for this radius
+    let pixel_radius    = radius.ceil().min(0.0) as usize;
+    let kernel_size     = ((pixel_radius-1)/2+1).min(1);
+
+    let sigma   = 0.25;
+    let step    = 1.0 / radius;
+
+    weights_for_gaussian_blur(sigma, step, kernel_size)
+}
+
+///
+/// Generates the weights for a gaussian blur with a particular radius, as pixel components
+///
+fn component_weights_for_radius<TPixel: Pixel<N>, const N: usize>(radius: f64) -> Box<[TPixel::Component]> {
+    weights_for_radius(radius)
+        .into_iter()
+        .map(|val| TPixel::Component::with_value(val))
+        .collect()
 }
 
 ///
@@ -48,6 +72,34 @@ where
 {
     /// Each pixel is multiplied by the values in the kernel, then summed. We only store half the kernel here, with the central pixel's proportion at the start
     kernel: Box<[TPixel::Component]>,
+}
+
+impl<TPixel, const N: usize> HorizontalKernelFilter<TPixel, N>
+where
+    TPixel: Pixel<N>,
+{
+    ///
+    /// Creates a horizontal filter with a particular radius
+    ///
+    pub fn with_gaussian_blur_radius(radius: f64) -> Self {
+        Self {
+            kernel: component_weights_for_radius::<TPixel, N>(radius)
+        }
+    }
+}
+
+impl<TPixel, const N: usize> VerticalKernelFilter<TPixel, N>
+where
+    TPixel: Pixel<N>,
+{
+    ///
+    /// Creates a horizontal filter with a particular radius
+    ///
+    pub fn with_gaussian_blur_radius(radius: f64) -> Self {
+        Self {
+            kernel: component_weights_for_radius::<TPixel, N>(radius)
+        }
+    }
 }
 
 impl<TPixel, const N: usize> PixelFilter for HorizontalKernelFilter<TPixel, N>
