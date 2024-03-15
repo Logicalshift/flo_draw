@@ -73,6 +73,20 @@ where
     }
 
     fn filter_line(&self, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]) {
-        todo!()
+        let kernel      = &self.kernel;
+        let kernel_len  = kernel.len();
+        let mid_pos     = kernel_len-1;
+
+        for idx in 0..output_line.len() {
+            let mut pixel = input_lines[mid_pos][idx] * kernel[0];
+
+            for kern_idx in 1..kernel_len {
+                let kernel_val = kernel[kern_idx];
+
+                pixel = pixel + (input_lines[mid_pos+kern_idx][idx] * kernel_val) + (input_lines[mid_pos-kern_idx][idx] * kernel_val);
+            }
+
+            output_line[idx - kernel_len] = pixel;
+        }
     }
 }
