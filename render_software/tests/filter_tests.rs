@@ -33,21 +33,57 @@ pub fn alpha_blend_filter() {
 #[test]
 pub fn smoke_test_horizontal_blur() {
     // We can apply the filter to some pixels we generate on the fly
-    let filter          = HorizontalKernelFilter::<F32LinearPixel, 4>::with_gaussian_blur_radius(20.0);
-    let alpha_blended   = apply_pixel_filter(256, |y_pos| {
+    let filter  = HorizontalKernelFilter::<F32LinearPixel, 4>::with_gaussian_blur_radius(20.0);
+    let blurred = apply_pixel_filter(256, |y_pos| {
         (0..256).map(|x_pos| F32LinearPixel::from_components([0.0, 0.0, (y_pos as f32)/256.0, (x_pos as f32)/256.0])).collect()
     }, 256, &filter);
 
-    let _ = alpha_blended.collect::<Vec<_>>();
+    let _ = blurred.collect::<Vec<_>>();
 }
 
 #[test]
 pub fn smoke_test_vertical_blur() {
     // We can apply the filter to some pixels we generate on the fly
-    let filter          = HorizontalKernelFilter::<F32LinearPixel, 4>::with_gaussian_blur_radius(20.0);
-    let alpha_blended   = apply_pixel_filter(256, |y_pos| {
+    let filter  = VerticalKernelFilter::<F32LinearPixel, 4>::with_gaussian_blur_radius(20.0);
+    let blurred = apply_pixel_filter(256, |y_pos| {
         (0..256).map(|x_pos| F32LinearPixel::from_components([0.0, 0.0, (y_pos as f32)/256.0, (x_pos as f32)/256.0])).collect()
     }, 256, &filter);
 
-    let _ = alpha_blended.collect::<Vec<_>>();
+    let _ = blurred.collect::<Vec<_>>();
+}
+
+#[test]
+pub fn horizontal_blur_0() {
+    // We can apply the filter to some pixels we generate on the fly
+    let filter  = HorizontalKernelFilter::<F32LinearPixel, 4>::with_gaussian_blur_radius(0.0);
+    let blurred = apply_pixel_filter(256, |y_pos| {
+        (0..256).map(|x_pos| F32LinearPixel::from_components([0.0, 0.0, (y_pos as f32)/256.0, (x_pos as f32)/256.0])).collect()
+    }, 256, &filter);
+
+    for (y_pos, pixels) in blurred {
+        assert!(y_pos < 256);
+
+        // Check the pixels that are generated against their expected values
+        for (x_pos, pixel) in pixels.into_iter().enumerate() {
+            assert!(pixel == F32LinearPixel::from_components([0.0, 0.0, (y_pos as f32)/256.0, (x_pos as f32)/256.0]));
+        }
+    }
+}
+
+#[test]
+pub fn vertical_blur_0() {
+    // We can apply the filter to some pixels we generate on the fly
+    let filter  = VerticalKernelFilter::<F32LinearPixel, 4>::with_gaussian_blur_radius(0.0);
+    let blurred = apply_pixel_filter(256, |y_pos| {
+        (0..256).map(|x_pos| F32LinearPixel::from_components([0.0, 0.0, (y_pos as f32)/256.0, (x_pos as f32)/256.0])).collect()
+    }, 256, &filter);
+
+    for (y_pos, pixels) in blurred {
+        assert!(y_pos < 256);
+
+        // Check the pixels that are generated against their expected values
+        for (x_pos, pixel) in pixels.into_iter().enumerate() {
+            assert!(pixel == F32LinearPixel::from_components([0.0, 0.0, (y_pos as f32)/256.0, (x_pos as f32)/256.0]));
+        }
+    }
 }
