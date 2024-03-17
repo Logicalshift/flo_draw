@@ -2,6 +2,7 @@ use super::canvas_drawing::*;
 use super::drawing_state::*;
 use super::renderer::*;
 
+use crate::filters::*;
 use crate::pixel::*;
 use crate::pixel_programs::SolidColorData;
 use crate::render::*;
@@ -103,7 +104,7 @@ where
             CreateDynamicSprite(sprite_id, bounds, size)    => { /* todo!() */ },
             FillTransparency(alpha)                         => { self.texture_fill_transparency(texture_id, alpha as f64); },
             Copy(target_texture)                            => { self.texture_copy(texture_id, target_texture); },
-            Filter(filter)                                  => { /* todo!() */ }
+            Filter(filter)                                  => { self.texture_filter(texture_id, filter); }
         }
     }
 
@@ -354,6 +355,62 @@ where
     pub fn texture_fill_transparency(&mut self, texture: canvas::TextureId, alpha: f64) {
         if let Some(texture) = self.textures.get_mut(&(self.current_namespace, texture)) {
             texture.fill_alpha = alpha;
+        }
+    }
+
+    ///
+    /// Applies a filter to a texture
+    ///
+    pub fn texture_filter(&mut self, texture_id: canvas::TextureId, filter: canvas::TextureFilter) {
+        use canvas::TextureFilter::*;
+
+        // TODO: for gaussian blur we can apply both filters at the same time (which is more efficient, but a bit more complicated to implement)
+        match filter {
+            GaussianBlur(radius)        => { self.texture_apply_filter(texture_id, HorizontalKernelFilter::with_gaussian_blur_radius(radius as _)); self.texture_apply_filter(texture_id, VerticalKernelFilter::with_gaussian_blur_radius(radius as _)); }
+            AlphaBlend(alpha)           => { self.texture_apply_filter(texture_id, AlphaBlendFilter::with_alpha(alpha as _)); },
+            Mask(_)                     => { /* todo!() */ },
+            DisplacementMap(_, _, _)    => { /* todo!() */ },
+        }
+    }
+
+    ///
+    /// Applies a filter to the texture with the specified ID (replacing the texture)
+    ///
+    pub fn texture_apply_filter(&mut self, texture_id: canvas::TextureId, filter: impl PixelFilter<Pixel=TPixel>) {
+        // Load the texture
+        let texture = self.textures.get_mut(&(self.current_namespace, texture_id));
+
+        // Replace the texture with a filtered version
+        if let Some(texture) = texture {
+            // Convert the texture, apply the filter and convert back to pixels
+            let new_texture_pixels = match &texture.pixels {
+                TexturePixels::Empty(width, height) => { 
+                    // Assuming the filter has no effect on empty pixels
+                    TexturePixels::Empty(*width, *height) 
+                }
+
+                TexturePixels::Rgba(rgba_texture) => {
+                    // Convert to pixels on the fly
+                    let new_pixels = filter_texture(&**rgba_texture, &filter);
+                    todo!()
+                }
+
+                TexturePixels::Linear(linear_texture) => {
+                    // Convert to pixels on the fly
+                    let new_pixels = filter_texture(&**linear_texture, &filter);
+                    todo!()
+                }
+
+                TexturePixels::MipMap(mipmap) |
+                TexturePixels::MipMapWithOriginal(_, mipmap) => {
+                    // Use the first mip level to do the filtering
+                    let new_pixels = filter_texture(&**mipmap.mip_level(0), &filter);
+                    todo!()
+                }
+            };
+
+            // Store the new pixels
+            texture.pixels = new_texture_pixels;
         }
     }
 }
