@@ -62,7 +62,7 @@ where
             // Read from the input using the offsets from the displacement map
             let line_pixels = U16LinearPixel::u16_slice_as_linear_pixels_immutable(line_pixels);
 
-            for (xpos, px) in line_pixels.iter().copied().chain((0..num_extra).map(|_| U16LinearPixel::from_components([32767, 32767, 32767, 32767]))).enumerate() {
+            for (xpos, px) in line_pixels.iter().copied().chain((0..num_extra).map(|_| U16LinearPixel::from_components([32767, 32767, 32767, 32767]))).enumerate().take(output_line.len()) {
                 // Read the x and y offsets from the texture
                 let x_off = ((px.r() as f64)/65535.0) * self.offset_x;
                 let y_off = ((px.g() as f64)/65535.0) * self.offset_y;
