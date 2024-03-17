@@ -50,7 +50,7 @@ where
         (self.offset_x.ceil() as usize, self.offset_x.ceil() as usize)
     }
 
-    fn filter_line(&self, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]) {
+    fn filter_line(&self, ypos: usize, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]) {
         // Read a line from the displacement map
         todo!()
     }

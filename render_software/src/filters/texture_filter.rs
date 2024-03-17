@@ -175,11 +175,12 @@ where
     // The pixel cache stores the lines we've read from the source that we're going to supply to the filter. If we're rendering extra lines, 
     // then we allow each line to be read a certain number of times
     RollingPixelCache::from_iterator(read_row, width, add_above, add_below, add_left, add_right)
-        .map(move |pixel_rows| {
+        .enumerate()
+        .map(move |(y_pos, pixel_rows)| {
             // Filter the pixels
             let input_lines     = pixel_rows.iter().map(|pixels| &***pixels).collect::<Box<[_]>>();
             let mut output_line = vec![TPixel::default(); width];
-            filter.filter_line(&*input_lines, &mut output_line);
+            filter.filter_line(y_pos, &*input_lines, &mut output_line);
 
             output_line
         })

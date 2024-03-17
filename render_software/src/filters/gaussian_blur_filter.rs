@@ -120,7 +120,7 @@ where
         (self.kernel.len()-1, self.kernel.len()-1)
     }
 
-    fn filter_line(&self, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]) {
+    fn filter_line(&self, _ypos: usize, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]) {
         let input_line  = input_lines[0];
         let kernel      = &self.kernel;
         let kernel_len  = kernel.len();
@@ -153,7 +153,7 @@ where
         (0, 0)
     }
 
-    fn filter_line(&self, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]) {
+    fn filter_line(&self, _ypos: usize, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]) {
         let kernel      = &self.kernel;
         let kernel_len  = kernel.len();
         let mid_pos     = kernel_len-1;

@@ -41,7 +41,7 @@ where
         (0, 0)
     }
 
-    fn filter_line(&self, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]) {
+    fn filter_line(&self, _ypos: usize, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]) {
         for (input, output) in input_lines[0].iter().zip(output_line.iter_mut()) {
             *output = *input * self.alpha;
         }

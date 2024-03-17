@@ -28,5 +28,5 @@ pub trait PixelFilter {
     /// Filters a single line of pixels from an input set of pixels. For lines outside of the input range, the pixels are always returned as
     /// the default '0' value.
     ///
-    fn filter_line(&self, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]);
+    fn filter_line(&self, y_pos: usize, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]);
 }
