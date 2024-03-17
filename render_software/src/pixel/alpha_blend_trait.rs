@@ -135,6 +135,7 @@ pub trait AlphaValue {
     fn zero() -> Self;
     fn one() -> Self;
     fn with_value(value: f64) -> Self;
+    fn to_value(&self) -> f64;
 }
 
 impl AlphaFunction {
@@ -181,10 +182,12 @@ impl AlphaValue for f32 {
     #[inline] fn zero() -> f32 { 0.0 }
     #[inline] fn one() -> f32 { 1.0 }
     #[inline] fn with_value(value: f64) -> f32 { value as _ }
+    #[inline] fn to_value(&self) -> f64 { *self as f64 }
 }
 
 impl AlphaValue for f64 {
     #[inline] fn zero() -> f64 { 0.0 }
     #[inline] fn one() -> f64 { 1.0 }
     #[inline] fn with_value(value: f64) -> f64 { value }
+    #[inline] fn to_value(&self) -> f64 { *self }
 }

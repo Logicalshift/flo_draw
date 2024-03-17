@@ -58,6 +58,7 @@ impl AlphaValue for U32FixedPoint {
     #[inline] fn zero() -> U32FixedPoint { U32FixedPoint(0) }
     #[inline] fn one() -> U32FixedPoint { U32FixedPoint(65535) }
     #[inline] fn with_value(value: f64) -> U32FixedPoint { U32FixedPoint((value * 65535.0) as u32) }
+    #[inline] fn to_value(&self) -> f64 { (self.0 as f64) / 65535.0 }
 }
 
 impl Add<U32FixedPoint> for U32FixedPoint {
