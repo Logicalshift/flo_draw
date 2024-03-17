@@ -26,6 +26,15 @@ impl U16LinearPixel {
         self.0
     }
 
+    #[inline]
+    pub fn r(&self) -> u16 { self.0[0] }
+    #[inline]
+    pub fn g(&self) -> u16 { self.0[1] }
+    #[inline]
+    pub fn b(&self) -> u16 { self.0[2] }
+    #[inline]
+    pub fn a(&self) -> u16 { self.0[3] }
+
     ///
     /// Reinterprets a slice of u16 values as a set of U16LinearPixel values
     ///
@@ -37,6 +46,20 @@ impl U16LinearPixel {
             let data    = data as *mut U16LinearPixel;
 
             slice::from_raw_parts_mut(data, len/4)
+        }
+    }
+
+    ///
+    /// Reinterprets a slice of u16 values as a set of U16LinearPixel values
+    ///
+    #[inline]
+    pub fn u16_slice_as_linear_pixels_immutable(data: &[u16]) -> &[U16LinearPixel] {
+        unsafe {
+            let len     = data.len();
+            let data    = data.as_ptr();
+            let data    = data as *const U16LinearPixel;
+
+            slice::from_raw_parts(data, len/4)
         }
     }
 }
