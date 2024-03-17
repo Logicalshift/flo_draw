@@ -36,8 +36,8 @@ where
     TPixel:     Default,
     TIterator:  Iterator<Item=Vec<TPixel>>
 {
-    /// The number of pixels to define in a line
-    width: usize,
+    /// A blank line that we can re-use at the start and end of the cache
+    blank_line: Arc<Vec<TPixel>>,
 
     /// The number of blank pixels to add to the start of each line
     padding_left: usize,
@@ -64,8 +64,12 @@ where
     /// Creates a rolling pixel cache from an iterator
     ///
     pub fn from_iterator(iterator: TIterator, width: usize, add_above: usize, add_below: usize, add_left: usize, add_right: usize) -> Self {
+        // If we're not adding blank lines, then use an empty vec, otherwise create a common blank line for the iterator to use
+        let blank_line = if add_above + add_below > 0 { vec![TPixel::default(); width+add_left+add_right] } else { vec![] };
+        let blank_line = Arc::new(blank_line);
+
         // Start by creating blank lines in the initial cache (up to add_above, plus one extra to be overwritten by the first iteration)
-        let mut initial_cache = (0..=add_above).map(|_| Arc::new(vec![TPixel::default(); width+add_left+add_right])).collect::<VecDeque<_>>();
+        let mut initial_cache = (0..=add_above).map(|_| Arc::clone(&blank_line)).collect::<VecDeque<_>>();
 
         // Read extra lines to put 'underneath'
         let mut iterator    = Some(iterator);
@@ -88,13 +92,13 @@ where
                 remaining   = if remaining > 0 { remaining - 1 } else { 0 };
 
                 // Add default pixels
-                initial_cache.push_back(Arc::new(vec![TPixel::default(); width+add_left+add_right]));
+                initial_cache.push_back(Arc::clone(&blank_line));
             }
         }
 
         // Fill up the final cache
         RollingPixelCache { 
-            width:              width, 
+            blank_line:         blank_line,
             cache:              initial_cache,
             iterator:           iterator, 
             remaining_lines:    remaining,
@@ -123,7 +127,7 @@ where
                     pixels.extend((0..self.padding_right).map(|_| TPixel::default()));
                 }
 
-                pixels
+                Arc::new(pixels)
             } else {
                 // Done with the iterator
                 self.iterator = None;
@@ -131,7 +135,7 @@ where
                 if self.remaining_lines > 0 {
                     // Iterator has run out, so return a blank line while there are remaining lines to consider
                     self.remaining_lines -= 1;
-                    vec![TPixel::default(); self.width]
+                    Arc::clone(&self.blank_line)
                 } else {
                     // No more remaining lines
                     return None;
@@ -141,7 +145,7 @@ where
             if self.remaining_lines > 0 {
                 // Iterator has run out, so return a blank line while there are remaining lines to consider
                 self.remaining_lines -= 1;
-                vec![TPixel::default(); self.width+self.padding_left+self.padding_right]
+                Arc::clone(&self.blank_line)
             } else {
                 // No more remaining lines
                 return None;
@@ -150,7 +154,7 @@ where
 
         // Add to the cache
         self.cache.pop_front();
-        self.cache.push_back(Arc::new(pixels));
+        self.cache.push_back(pixels);
 
         // Generate the result
         Some(self.cache.iter().cloned().collect())
