@@ -64,8 +64,8 @@ where
 
             for (output_x, px) in line_pixels.iter().copied().chain((0..num_extra).map(|_| U16LinearPixel::from_components([32767, 32767, 32767, 32767]))).enumerate().take(output_line.len()) {
                 // Read the x and y offsets from the texture
-                let x_off = ((px.r() as f64)/65535.0) * self.offset_x;
-                let y_off = ((px.g() as f64)/65535.0) * self.offset_y;
+                let x_off = ((px.r() as f64)/65535.0) * self.offset_x * 2.0;
+                let y_off = ((px.g() as f64)/65535.0) * self.offset_y * 2.0;
 
                 // The pixel we read is at a particular x, y position
                 let xpos = output_x + x_off as usize;
