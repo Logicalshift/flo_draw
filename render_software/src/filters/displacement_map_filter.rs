@@ -62,13 +62,13 @@ where
             // Read from the input using the offsets from the displacement map
             let line_pixels = U16LinearPixel::u16_slice_as_linear_pixels_immutable(line_pixels);
 
-            for (xpos, px) in line_pixels.iter().copied().chain((0..num_extra).map(|_| U16LinearPixel::from_components([32767, 32767, 32767, 32767]))).enumerate().take(output_line.len()) {
+            for (output_x, px) in line_pixels.iter().copied().chain((0..num_extra).map(|_| U16LinearPixel::from_components([32767, 32767, 32767, 32767]))).enumerate().take(output_line.len()) {
                 // Read the x and y offsets from the texture
                 let x_off = ((px.r() as f64)/65535.0) * self.offset_x;
                 let y_off = ((px.g() as f64)/65535.0) * self.offset_y;
 
                 // The pixel we read is at a particular x, y position
-                let xpos = xpos + x_off as usize;
+                let xpos = output_x + x_off as usize;
                 let ypos = y_off as usize;
 
                 // Read the 4 pixels for bilinear filtering
@@ -80,7 +80,7 @@ where
                 ];
 
                 // Filter the result to generate the final pixel
-                output_line[xpos] = TPixel::filter_bilinear(pixels, TPixel::Component::with_value(x_off.fract()), TPixel::Component::with_value(y_off.fract()));
+                output_line[output_x] = TPixel::filter_bilinear(pixels, TPixel::Component::with_value(x_off.fract()), TPixel::Component::with_value(y_off.fract()));
             }
         } else {
             // Just copy the mid-point pixels to the output (outside of the displacement map)
