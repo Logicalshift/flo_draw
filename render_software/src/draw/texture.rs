@@ -369,8 +369,47 @@ where
             GaussianBlur(radius)        => { self.texture_apply_filter(texture_id, HorizontalKernelFilter::with_gaussian_blur_radius(radius as _)); self.texture_apply_filter(texture_id, VerticalKernelFilter::with_gaussian_blur_radius(radius as _)); }
             AlphaBlend(alpha)           => { self.texture_apply_filter(texture_id, AlphaBlendFilter::with_alpha(alpha as _)); },
             Mask(_)                     => { /* todo!() */ },
-            DisplacementMap(_, _, _)    => { /* todo!() */ },
+
+            DisplacementMap(displacement_texture, x_offset, y_offset) => { 
+                let filter = self.texture_displacement_filter(displacement_texture, x_offset as _, y_offset as _);
+
+                self.texture_apply_filter(texture_id, filter); 
+            },
         }
+    }
+
+    ///
+    /// Creates a displacement filter from a texture
+    ///
+    pub fn texture_displacement_filter(&mut self, texture_id: canvas::TextureId, x_offset: f64, y_offset: f64) -> DisplacementMapFilter<TPixel, N> {
+        // Read the displacement map texture (we use a 1x1 empty texture if the texture is missing)
+        let texture = loop {
+            let texture = self.textures.get(&(self.current_namespace, texture_id));
+            let texture = if let Some(texture) = texture { texture } else { break Arc::new(U16LinearTexture::from_pixels(1, 1, vec![0, 0, 0, 0])); };
+
+            match &texture.pixels {
+                TexturePixels::Empty(_, _) => {
+                    break Arc::new(U16LinearTexture::from_pixels(1, 1, vec![0, 0, 0, 0]))
+                }
+
+                TexturePixels::Rgba(_) => {
+                    // Convert to a mip-map so we can read as a U16 texture
+                    self.textures.get_mut(&(self.current_namespace, texture_id))
+                        .unwrap().make_mip_map(self.gamma);                    
+                }
+
+                TexturePixels::Linear(texture) => {
+                    break Arc::clone(texture);
+                }
+
+                TexturePixels::MipMap(texture) | TexturePixels::MipMapWithOriginal(_, texture) => {
+                    break Arc::clone(texture.mip_level(0));
+                }
+            }
+        };
+
+        // Create the filter from the texture
+        DisplacementMapFilter::with_displacement_map(&texture, x_offset, y_offset)
     }
 
     ///
