@@ -377,6 +377,10 @@ where
     /// Applies a filter to the texture with the specified ID (replacing the texture)
     ///
     pub fn texture_apply_filter(&mut self, texture_id: canvas::TextureId, filter: impl PixelFilter<Pixel=TPixel>) {
+        // TODO: it should be possible to filter the texture entirely in-place, as the filter will always be reading ahead of the pixels where we need to write to
+        // this is much more memory efficient as it saves us allocating a whole new buffer for the filtered texture (but it's a bit tricky to wrangle in Rust as
+        // we're writing to the same buffer that we're reading from)
+
         // Load the texture
         let texture = self.textures.get_mut(&(self.current_namespace, texture_id));
 
@@ -391,21 +395,30 @@ where
 
                 TexturePixels::Rgba(rgba_texture) => {
                     // Convert to pixels on the fly
+                    let width   = rgba_texture.width();
+                    let height  = rgba_texture.height();
+
                     let new_pixels = filter_texture(&**rgba_texture, &filter);
-                    todo!()
+                    texture_load_from_pixels(new_pixels, width, height)
                 }
 
                 TexturePixels::Linear(linear_texture) => {
+                    let width   = linear_texture.width();
+                    let height  = linear_texture.height();
+
                     // Convert to pixels on the fly
                     let new_pixels = filter_texture(&**linear_texture, &filter);
-                    todo!()
+                    texture_load_from_pixels(new_pixels, width, height)
                 }
 
                 TexturePixels::MipMap(mipmap) |
                 TexturePixels::MipMapWithOriginal(_, mipmap) => {
+                    let width   = mipmap.width();
+                    let height  = mipmap.height();
+
                     // Use the first mip level to do the filtering
                     let new_pixels = filter_texture(&**mipmap.mip_level(0), &filter);
-                    todo!()
+                    texture_load_from_pixels(new_pixels, width, height)
                 }
             };
 
@@ -413,4 +426,24 @@ where
             texture.pixels = new_texture_pixels;
         }
     }
+}
+
+///
+/// Creates a texture by loading from an iterator of pixels
+///
+pub fn texture_load_from_pixels<TPixel: Pixel<N>, const N: usize>(pixels: impl Iterator<Item=Vec<TPixel>>, width: usize, height: usize) -> TexturePixels {
+    // Convert the pixels to u16 values
+    let mut converted_pixels = vec![0u16; width * height * 4];
+
+    for (ypos, pixel_line) in pixels.enumerate() {
+        let start_pos   = width * ypos * 4;
+        let end_pos     = start_pos + width * 4;
+
+        let target_pixel = U16LinearPixel::u16_slice_as_linear_pixels(&mut converted_pixels[start_pos..end_pos]);
+        TPixel::to_linear_colorspace(&pixel_line, target_pixel);
+    }
+
+    // Create the texture from the result
+    let linear_texture = U16LinearTexture::from_pixels(width, height, converted_pixels);
+    TexturePixels::Linear(Arc::new(linear_texture))
 }
