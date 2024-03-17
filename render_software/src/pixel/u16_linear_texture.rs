@@ -226,6 +226,22 @@ impl U16LinearTexture {
     }
 
     ///
+    /// Returns the pixels for a particular line in this texture
+    ///
+    #[inline]
+    pub fn pixel_line(&self, y_pos: usize) -> Option<&[u16]> {
+        if (y_pos as i64) < self.height {
+            let width       = self.width as usize;
+            let start_pos   = y_pos * width * 4;
+            let end_pos     = start_pos + width * 4;
+
+            Some(&self.pixels[start_pos..end_pos])
+        } else {
+            None
+        }
+    }
+
+    ///
     /// Calculates the index of a pixel in the pixels array for a given x and y position
     ///
     /// The x, y positions wrap around
