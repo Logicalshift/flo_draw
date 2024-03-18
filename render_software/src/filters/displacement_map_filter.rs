@@ -11,6 +11,7 @@ pub struct DisplacementMapFilter<TPixel, const N: usize>
 where
     TPixel: Pixel<N>,
 {
+    gamma_lookup:       Box<[u16; 65536]>,
     displacement_map:   Arc<U16LinearTexture>,
     offset_x:           f64,
     offset_y:           f64,
@@ -26,8 +27,18 @@ where
     ///
     /// The offsets here are the maximum value in pixels that the image can move away from its original value
     ///
-    pub fn with_displacement_map(map: &Arc<U16LinearTexture>, offset_x: f64, offset_y: f64) -> Self {
+    /// The gamma correction value is applied after reading from the map texture (so we can get linear distortions
+    /// from a gamma-corrected texture)
+    ///
+    pub fn with_displacement_map(map: &Arc<U16LinearTexture>, offset_x: f64, offset_y: f64, gamma: f64) -> Self {
+        let mut gamma_lookup = [0u16; 65536];
+
+        for pos in 0..65536 {
+            gamma_lookup[pos] = ((pos as f64/65535.0).powf(1.0/gamma) * 65535.0).round() as u16;
+        }
+
         DisplacementMapFilter {
+            gamma_lookup:       Box::new(gamma_lookup),
             displacement_map:   Arc::clone(map),
             offset_x:           offset_x,
             offset_y:           offset_y,
@@ -61,11 +72,12 @@ where
         if let Some(line_pixels) = line_pixels {
             // Read from the input using the offsets from the displacement map
             let line_pixels = U16LinearPixel::u16_slice_as_linear_pixels_immutable(line_pixels);
+            let gamma_lut   = &*self.gamma_lookup;
 
             for (output_x, px) in line_pixels.iter().copied().chain((0..num_extra).map(|_| U16LinearPixel::from_components([32767, 32767, 32767, 32767]))).enumerate().take(output_line.len()) {
                 // Read the x and y offsets from the texture
-                let x_off = ((px.r() as f64)/65535.0) * self.offset_x * 2.0;
-                let y_off = ((px.g() as f64)/65535.0) * self.offset_y * 2.0;
+                let x_off = ((gamma_lut[px.r() as usize] as f64)/65535.0) * self.offset_x * 2.0;
+                let y_off = ((gamma_lut[px.g() as usize] as f64)/65535.0) * self.offset_y * 2.0;
 
                 // The pixel we read is at a particular x, y position
                 let xpos = output_x + x_off as usize;

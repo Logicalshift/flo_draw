@@ -409,7 +409,7 @@ where
         };
 
         // Create the filter from the texture
-        DisplacementMapFilter::with_displacement_map(&texture, x_offset, y_offset)
+        DisplacementMapFilter::with_displacement_map(&texture, x_offset, y_offset, self.gamma)
     }
 
     ///
