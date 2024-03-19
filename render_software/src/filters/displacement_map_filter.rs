@@ -50,6 +50,47 @@ where
             pixel:              PhantomData,
         }
     }
+
+    ///
+    /// Reads the red and green fraction of the pixels given the lower and upper lines, x position and y fraction
+    ///
+    #[inline]
+    fn read_px(&self, xpos: usize, line_pixels_1: &[U16LinearPixel], line_pixels_2: &[U16LinearPixel], ypos_fract: u32) -> (u16, u16) {
+        // Calculate the x position along the lines by multiplying by the map position
+        let xpos        = xpos as f64 * self.map_mult_x;
+        let xpos        = xpos.abs() % line_pixels_1.len() as f64;
+        let xpos_fract  = xpos.fract();
+        let xpos_fract  = (xpos_fract * 65535.0) as u32;
+        let xpos        = xpos as usize;
+        let xpos_1      = (xpos+1) % line_pixels_1.len();
+
+        // Read the 4 corners of the pixel
+        let px1 = line_pixels_1[xpos];
+        let px2 = line_pixels_1[xpos_1];
+        let px3 = line_pixels_2[xpos];
+        let px4 = line_pixels_2[xpos];
+
+        // We need the red and green channels only. Use bilinear interpolation to calculate the final value.
+        let r1 = px1.r() as u32;
+        let r2 = px2.r() as u32;
+        let r3 = px3.r() as u32;
+        let r4 = px4.r() as u32;
+
+        let g1 = px1.g() as u32;
+        let g2 = px2.g() as u32;
+        let g3 = px3.g() as u32;
+        let g4 = px4.g() as u32;
+
+        let r12 = ((r1 * xpos_fract)>>16) + ((r2 * (65535-xpos_fract))>>16);
+        let r34 = ((r3 * xpos_fract)>>16) + ((r4 * (65535-xpos_fract))>>16);
+        let g12 = ((g1 * xpos_fract)>>16) + ((g2 * (65535-xpos_fract))>>16);
+        let g34 = ((g3 * xpos_fract)>>16) + ((g4 * (65535-xpos_fract))>>16);
+
+        let r = ((r12 * ypos_fract)>>16) + ((r34 * (65535-ypos_fract))>>16);
+        let g = ((g12 * ypos_fract)>>16) + ((g34 * (65535-ypos_fract))>>16);
+
+        (r as u16, g as u16)
+    }
 }
 
 impl<TPixel, const N: usize> PixelFilter for DisplacementMapFilter<TPixel, N>
@@ -70,19 +111,27 @@ where
         let mid_point_x = self.offset_x.abs().ceil();
         let mid_point_y = self.offset_y.abs().ceil();
 
+        let displace_y          = (ypos as f64) * self.map_mult_y;
+        let displace_y_fract    = displace_y.abs().fract();
+        let displace_y          = displace_y.abs() as usize;
+        let displace_y_fract    = (displace_y_fract * 65535.0) as u32;
+
         // Read a line from the displacement map
-        let line_pixels = self.displacement_map.pixel_line(ypos);
-        let num_extra   = (output_line.len() as isize - self.displacement_map.width() as isize).max(0);
+        let line_pixels_1   = self.displacement_map.pixel_line(displace_y);
+        let line_pixels_2   = self.displacement_map.pixel_line(displace_y+1);
 
-        if let Some(line_pixels) = line_pixels {
+        if let (Some(line_pixels_1), Some(line_pixels_2)) = (line_pixels_1, line_pixels_2) {
             // Read from the input using the offsets from the displacement map
-            let line_pixels = U16LinearPixel::u16_slice_as_linear_pixels_immutable(line_pixels);
-            let gamma_lut   = &*self.gamma_lookup;
+            let line_pixels_1   = U16LinearPixel::u16_slice_as_linear_pixels_immutable(line_pixels_1);
+            let line_pixels_2   = U16LinearPixel::u16_slice_as_linear_pixels_immutable(line_pixels_2);
+            let gamma_lut       = &*self.gamma_lookup;
 
-            for (output_x, px) in line_pixels.iter().copied().chain((0..num_extra).map(|_| U16LinearPixel::from_components([32767, 32767, 32767, 32767]))).enumerate().take(output_line.len()) {
+            for output_x in 0..output_line.len() {
+                let (r, g) = self.read_px(output_x, line_pixels_1, line_pixels_2, displace_y_fract);
+
                 // Read the x and y offsets from the texture
-                let x_off = ((gamma_lut[px.r() as usize] as f64)/65535.0) * self.offset_x * 2.0;
-                let y_off = ((gamma_lut[px.g() as usize] as f64)/65535.0) * self.offset_y * 2.0;
+                let x_off = ((gamma_lut[r as usize] as f64)/65535.0) * self.offset_x * 2.0;
+                let y_off = ((gamma_lut[g as usize] as f64)/65535.0) * self.offset_y * 2.0;
 
                 // The pixel we read is at a particular x, y position
                 let xpos = output_x + x_off as usize;
