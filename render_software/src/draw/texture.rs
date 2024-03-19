@@ -1,6 +1,5 @@
 use super::canvas_drawing::*;
 use super::drawing_state::*;
-use super::renderer::*;
 
 use crate::filters::*;
 use crate::pixel::*;
