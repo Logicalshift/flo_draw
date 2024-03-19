@@ -417,8 +417,8 @@ where
         };
 
         let (displ_width, displ_height) = (displacement_texture.width(), displacement_texture.height());
-        let mult_x = texture_width as f64 / displ_width as f64;
-        let mult_y = texture_height as f64 / displ_height as f64;
+        let mult_x = displ_width as f64 / texture_width as f64;
+        let mult_y = displ_height as f64 / texture_height as f64;
 
         // Create the filter from the texture
         DisplacementMapFilter::with_displacement_map(&displacement_texture, x_offset, y_offset, mult_x, mult_y, self.gamma)
