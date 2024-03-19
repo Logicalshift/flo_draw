@@ -15,6 +15,8 @@ where
     displacement_map:   Arc<U16LinearTexture>,
     offset_x:           f64,
     offset_y:           f64,
+    map_mult_x:         f64,
+    map_mult_y:         f64,
     pixel:              PhantomData<TPixel>,
 }
 
@@ -25,12 +27,13 @@ where
     ///
     /// Creates a new displacement map filter
     ///
-    /// The offsets here are the maximum value in pixels that the image can move away from its original value
+    /// The offsets here are the maximum value in pixels that the image can move away from its original value. The multiplication factors
+    /// are used to translate coordinates from the displacement map to the 
     ///
     /// The gamma correction value is applied after reading from the map texture (so we can get linear distortions
     /// from a gamma-corrected texture)
     ///
-    pub fn with_displacement_map(map: &Arc<U16LinearTexture>, offset_x: f64, offset_y: f64, gamma: f64) -> Self {
+    pub fn with_displacement_map(map: &Arc<U16LinearTexture>, offset_x: f64, offset_y: f64, multiply_x: f64, multiply_y: f64, gamma: f64) -> Self {
         let mut gamma_lookup = [0u16; 65536];
 
         for pos in 0..65536 {
@@ -42,6 +45,8 @@ where
             displacement_map:   Arc::clone(map),
             offset_x:           offset_x,
             offset_y:           offset_y,
+            map_mult_x:         multiply_x,
+            map_mult_y:         multiply_y,
             pixel:              PhantomData,
         }
     }

@@ -371,7 +371,7 @@ where
             Mask(_)                     => { /* todo!() */ },
 
             DisplacementMap(displacement_texture, x_offset, y_offset) => { 
-                let filter = self.texture_displacement_filter(displacement_texture, x_offset as _, y_offset as _);
+                let filter = self.texture_displacement_filter(displacement_texture, texture_id, x_offset as _, y_offset as _);
 
                 self.texture_apply_filter(texture_id, filter); 
             },
@@ -381,10 +381,23 @@ where
     ///
     /// Creates a displacement filter from a texture
     ///
-    pub fn texture_displacement_filter(&mut self, texture_id: canvas::TextureId, x_offset: f64, y_offset: f64) -> DisplacementMapFilter<TPixel, N> {
+    pub fn texture_displacement_filter(&mut self, displacement_texture_id: canvas::TextureId, target_texture_id: canvas::TextureId, x_offset: f64, y_offset: f64) -> DisplacementMapFilter<TPixel, N> {
+        // Fetch the size of the target texture
+        let (texture_width, texture_height) = if let Some(texture) = self.textures.get(&(self.current_namespace, target_texture_id)) {
+            match &texture.pixels {
+                TexturePixels::Empty(w, h)                      => (*w, *h),
+                TexturePixels::Rgba(rgba)                       => (rgba.width(), rgba.height()),
+                TexturePixels::Linear(linear)                   => (linear.width(), linear.height()),
+                TexturePixels::MipMap(mipmap)                   |
+                TexturePixels::MipMapWithOriginal(_, mipmap)    => (mipmap.width(), mipmap.height()),
+            }
+        } else {
+            (1, 1)
+        };
+
         // Read the displacement map texture (we use a 1x1 empty texture if the texture is missing)
-        let texture = loop {
-            let texture = self.textures.get(&(self.current_namespace, texture_id));
+        let displacement_texture = loop {
+            let texture = self.textures.get(&(self.current_namespace, displacement_texture_id));
             let texture = if let Some(texture) = texture { texture } else { break Arc::new(U16LinearTexture::from_pixels(1, 1, vec![0, 0, 0, 0])); };
 
             match &texture.pixels {
@@ -392,14 +405,10 @@ where
                     break Arc::new(U16LinearTexture::from_pixels(1, 1, vec![0, 0, 0, 0]))
                 }
 
-                TexturePixels::Rgba(_) => {
+                TexturePixels::Rgba(_) | TexturePixels::Linear(_) => {
                     // Convert to a mip-map so we can read as a U16 texture
-                    self.textures.get_mut(&(self.current_namespace, texture_id))
+                    self.textures.get_mut(&(self.current_namespace, displacement_texture_id))
                         .unwrap().make_mip_map(self.gamma);                    
-                }
-
-                TexturePixels::Linear(texture) => {
-                    break Arc::clone(texture);
                 }
 
                 TexturePixels::MipMap(texture) | TexturePixels::MipMapWithOriginal(_, texture) => {
@@ -408,8 +417,12 @@ where
             }
         };
 
+        let (displ_width, displ_height) = (displacement_texture.width(), displacement_texture.height());
+        let mult_x = texture_width as f64 / displ_width as f64;
+        let mult_y = texture_height as f64 / displ_height as f64;
+
         // Create the filter from the texture
-        DisplacementMapFilter::with_displacement_map(&texture, x_offset, y_offset, self.gamma)
+        DisplacementMapFilter::with_displacement_map(&displacement_texture, x_offset, y_offset, mult_x, mult_y, self.gamma)
     }
 
     ///
