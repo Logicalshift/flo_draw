@@ -1,6 +1,10 @@
 use flo_render_software::render::*;
 use flo_render_software::canvas::*;
 
+use futures::prelude::*;
+use futures::stream;
+use futures::executor;
+
 use std::f64;
 use std::io;
 use std::sync::*;
@@ -10,7 +14,8 @@ use std::sync::*;
 ///
 pub fn main() {
     // Load a png file
-    let flo_bytes: &[u8] = include_bytes!["flo_drawing_on_window.png"];
+    let flo_bytes: &[u8]    = include_bytes!["flo_drawing_on_window.png"];
+    let lato                = CanvasFontFace::from_slice(include_bytes!("../test_data/Lato-Regular.ttf"));
 
     for filter in [TextureFilter::AlphaBlend(0.7), TextureFilter::GaussianBlur(16.0), TextureFilter::DisplacementMap(TextureId(1), 8.0, 8.0), TextureFilter::Mask(TextureId(2))] {
         // Create drawing instructions for the png
@@ -52,10 +57,12 @@ pub fn main() {
 
         // Make 1000.0 units our width, and define the height based on the size of the image
         let sprite_height = 1000.0*(flo_h as f32)/(flo_w as f32);
+        canvas.define_font_data(FontId(1), Arc::clone(&lato));
 
         // Define sprite 0 as our mask
         canvas.sprite(SpriteId(0));
         canvas.clear_sprite();
+        canvas.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
         canvas.set_font_size(FontId(1), 200.0);
         canvas.begin_line_layout(500.0, sprite_height/2.0-100.0, TextAlignment::Center);
         canvas.layout_text(FontId(1), "MASK".to_string());
@@ -77,9 +84,14 @@ pub fn main() {
         canvas.fill_texture(TextureId(0), 0.0, y_pos+height as f32, 1000.0, y_pos);
         canvas.fill();
 
+        let drawing = stream::iter(canvas);
+        let drawing = drawing_with_laid_out_text(drawing);
+        let drawing = drawing_with_text_as_paths(drawing);
+        let drawing = executor::block_on(async move { drawing.collect::<Vec<_>>().await });
+
         // Render to the terminal window
         println!("{:?}", filter);
-        render_drawing(&mut TerminalRenderTarget::new(1920, 1080), canvas.iter().cloned());
+        render_drawing(&mut TerminalRenderTarget::new(1920, 1080), drawing.iter().cloned());
         println!();
     }
 }
