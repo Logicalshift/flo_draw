@@ -90,6 +90,9 @@ pub fn main() {
         canvas.new_path();
         canvas.rect(0.0, y_pos, 1000.0, y_pos+height);
 
+        canvas.fill_texture(TextureId(2), 0.0, y_pos+height as f32, 1000.0, y_pos);
+        canvas.fill();
+
         canvas.fill_texture(TextureId(0), 0.0, y_pos+height as f32, 1000.0, y_pos);
         canvas.fill();
 
