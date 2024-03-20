@@ -367,7 +367,12 @@ where
         match filter {
             GaussianBlur(radius)        => { self.texture_apply_filter(texture_id, HorizontalKernelFilter::with_gaussian_blur_radius(radius as _)); self.texture_apply_filter(texture_id, VerticalKernelFilter::with_gaussian_blur_radius(radius as _)); }
             AlphaBlend(alpha)           => { self.texture_apply_filter(texture_id, AlphaBlendFilter::with_alpha(alpha as _)); },
-            Mask(_)                     => { /* todo!() */ },
+
+            Mask(mask_texture_id) => {
+                let filter = self.texture_mask_filter(mask_texture_id, texture_id);
+
+                self.texture_apply_filter(texture_id, filter); 
+            },
 
             DisplacementMap(displacement_texture, x_offset, y_offset) => { 
                 let filter = self.texture_displacement_filter(displacement_texture, texture_id, x_offset as _, y_offset as _);
@@ -375,6 +380,53 @@ where
                 self.texture_apply_filter(texture_id, filter); 
             },
         }
+    }
+
+    ///
+    /// Creates a mask filter from a texture
+    ///
+    pub fn texture_mask_filter(&mut self, mask_texture_id: canvas::TextureId, target_texture_id: canvas::TextureId) -> MaskFilter<TPixel, N> {
+        // Fetch the size of the target texture
+        let (texture_width, texture_height) = if let Some(texture) = self.textures.get(&(self.current_namespace, target_texture_id)) {
+            match &texture.pixels {
+                TexturePixels::Empty(w, h)                      => (*w, *h),
+                TexturePixels::Rgba(rgba)                       => (rgba.width(), rgba.height()),
+                TexturePixels::Linear(linear)                   => (linear.width(), linear.height()),
+                TexturePixels::MipMap(mipmap)                   |
+                TexturePixels::MipMapWithOriginal(_, mipmap)    => (mipmap.width(), mipmap.height()),
+            }
+        } else {
+            (1, 1)
+        };
+
+        // Read the mask texture (we use a 1x1 empty texture if the texture is missing)
+        let mask_texture = loop {
+            let texture = self.textures.get(&(self.current_namespace, mask_texture_id));
+            let texture = if let Some(texture) = texture { texture } else { break Arc::new(U16LinearTexture::from_pixels(1, 1, vec![0, 0, 0, 0])); };
+
+            match &texture.pixels {
+                TexturePixels::Empty(_, _) => {
+                    break Arc::new(U16LinearTexture::from_pixels(1, 1, vec![0, 0, 0, 0]))
+                }
+
+                TexturePixels::Rgba(_) | TexturePixels::Linear(_) => {
+                    // Convert to a mip-map so we can read as a U16 texture
+                    self.textures.get_mut(&(self.current_namespace, mask_texture_id))
+                        .unwrap().make_mip_map(self.gamma);                    
+                }
+
+                TexturePixels::MipMap(texture) | TexturePixels::MipMapWithOriginal(_, texture) => {
+                    break Arc::clone(texture.mip_level(0));
+                }
+            }
+        };
+
+
+        let (mask_width, mask_height) = (mask_texture.width(), mask_texture.height());
+        let mult_x = mask_width as f64 / texture_width as f64;
+        let mult_y = mask_height as f64 / texture_height as f64;
+
+        MaskFilter::with_mask(&mask_texture, mult_x, mult_y)
     }
 
     ///
