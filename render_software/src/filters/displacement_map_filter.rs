@@ -11,12 +11,24 @@ pub struct DisplacementMapFilter<TPixel, const N: usize>
 where
     TPixel: Pixel<N>,
 {
+    /// Lookup table used to convert the linear values back to gamma-corrected values (so that displacements are linear based on a gamma-corrected input RGBA texture)
     gamma_lookup:       Box<[u16; 65536]>,
+
+    /// The displacement map is a texture used to get the distance to move each point from the source texture
     displacement_map:   Arc<U16LinearTexture>,
+
+    /// The maximum distance to move a point in the x direction
     offset_x:           f64,
+
+    /// The maximum distance to move a point in the y direction
     offset_y:           f64,
+
+    /// The multiplier is applied to coordinates from the source texture to find the corresponding point in the dispacement map
     map_mult_x:         f64,
+
+    /// The multiplier is applied to coordinates from the source texture to find the corresponding point in the dispacement map
     map_mult_y:         f64,
+    
     pixel:              PhantomData<TPixel>,
 }
 
