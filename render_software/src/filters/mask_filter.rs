@@ -1,3 +1,4 @@
+use super::pixel_filter_trait::*;
 use crate::pixel::*;
 
 use std::sync::*;
@@ -64,4 +65,47 @@ where
 
         a as u16
     }
-  }
+}
+
+impl<TPixel, const N: usize> PixelFilter for MaskFilter<TPixel, N> 
+where
+    TPixel: Pixel<N>,
+{
+    type Pixel = TPixel;
+
+    #[inline]
+    fn input_lines(&self) -> (usize, usize) {
+        (0, 0)
+    }
+
+    #[inline]
+    fn extra_columns(&self) -> (usize, usize) {
+        (0, 0)
+    }
+
+    fn filter_line(&self, y_pos: usize, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]) {
+        // Read two lines from the mask (for bilinear filtering)
+        let mask_y          = (y_pos as f64) * self.mult_y;
+        let mask_y_fract    = mask_y.abs().fract();
+        let mask_y          = mask_y.abs() as usize;
+        let mask_y_fract    = (mask_y_fract * 65535.0) as u32;
+
+        let mask_line_1     = self.mask.pixel_line(mask_y);
+        let mask_line_2     = self.mask.pixel_line(mask_y+1);
+
+        if let (Some(mask_line_1), Some(mask_line_2)) = (mask_line_1, mask_line_2) {
+            let mask_line_1 = U16LinearPixel::u16_slice_as_linear_pixels_immutable(mask_line_1);
+            let mask_line_2 = U16LinearPixel::u16_slice_as_linear_pixels_immutable(mask_line_2);
+
+            // Read from the mask for each input pixel
+            for (x_pos, (input_px, output_px)) in input_lines[0].iter().zip(output_line.iter_mut()).enumerate() {
+                // Read the alpha value from the mask at this position
+                let mask_alpha = self.read_px(x_pos, mask_line_1, mask_line_2, mask_y_fract);
+                let mask_alpha = (mask_alpha as f64) / 65535.0;
+                let mask_alpha = TPixel::Component::with_value(mask_alpha);
+
+                *output_px = *input_px * mask_alpha;
+            }
+        }
+    }
+}
