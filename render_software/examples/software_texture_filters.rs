@@ -71,7 +71,8 @@ pub fn main() {
         // Render the mask to texture 2
         canvas.layer(LayerId(0));
         canvas.create_texture(TextureId(2), flo_w as _, flo_h as _, TextureFormat::Rgba);
-        canvas.set_texture_from_sprite(TextureId(2), SpriteId(0), 0.0, sprite_height, 1000.0, -sprite_height);
+        // canvas.set_texture_from_sprite(TextureId(2), SpriteId(0), 0.0, sprite_height, 1000.0, -sprite_height); // -- TODO
+        canvas.set_texture_from_sprite(TextureId(2), SpriteId(0), 0.0, 0.0, 1000.0, sprite_height);
 
         // Filter the texture
         canvas.layer(LayerId(0));
