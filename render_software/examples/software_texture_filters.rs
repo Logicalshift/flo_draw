@@ -68,6 +68,14 @@ pub fn main() {
         canvas.layout_text(FontId(1), "MASK".to_string());
         canvas.draw_text_layout();
 
+        canvas.new_path();
+        canvas.circle(500.0, 600.0, 100.0);
+        canvas.fill();
+
+        canvas.new_path();
+        canvas.circle(500.0, 200.0, 100.0);
+        canvas.fill();
+
         // Render the mask to texture 2
         canvas.layer(LayerId(0));
         canvas.create_texture(TextureId(2), flo_w as _, flo_h as _, TextureFormat::Rgba);
