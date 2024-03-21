@@ -290,11 +290,17 @@ where
             return;
         };
 
-        // The sprite transform maps from the sprite coordinates (which are also the bounds) to the pixels in the texture
-        let sprite_transform    = sprite_layer.last_transform;
-        let inverse_transform   = sprite_transform.invert().unwrap();
-        let to_bounds           = canvas::Transform2D::scale(1.0/bounds.1.0, 1.0/bounds.1.1) * canvas::Transform2D::translate(-bounds.0.0, bounds.0.1) * inverse_transform;
-        let to_texture_pixels   = canvas::Transform2D::scale(width as _, height as _) * to_bounds;
+        // The sprite transform maps from the sprite coordinates to the range -1,1 to 1,1
+        let sprite_transform = sprite_layer.last_transform;
+
+        // Upper and lower bounds are the coordinates that are the bounds of the area to render to the texture
+        let lower_bounds    = sprite_transform.transform_point(bounds.0.0 as _, bounds.0.1 as _);
+        let upper_bounds    = sprite_transform.transform_point(bounds.1.0 as _, bounds.1.1 as _);
+        let bounds_w        = upper_bounds.0-lower_bounds.0;
+        let bounds_h        = upper_bounds.1-lower_bounds.1;
+
+        // Map the bounds to the texture pixels
+        let to_texture_pixels = canvas::Transform2D::scale((width as f32)/bounds_w, (height as f32)/bounds_h) * canvas::Transform2D::translate(-lower_bounds.0, -lower_bounds.1);
 
         // Transform the edges from the layer to prepare them to render
         // TODO: could be better to use a transform in the renderer instead (which is what the canvas renderer does)
