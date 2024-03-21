@@ -254,12 +254,12 @@ where
     ///
     /// Creates a texture by rendering a region from the specified sprite bounds
     ///
-    pub (crate) fn texture_set_from_sprite(&mut self, texture_id: canvas::TextureId, sprite_id: canvas::SpriteId, bounds: canvas::SpriteBounds) {
+    pub (crate) fn texture_set_from_sprite(&mut self, texture_id: canvas::TextureId, sprite_id: canvas::SpriteId, canvas::SpriteBounds(origin, size): canvas::SpriteBounds) {
         let current_namespace   = self.current_namespace;
         let textures            = &mut self.textures;
         let sprites             = &self.sprites;
         let layers              = &mut self.layers;
-        
+
         // This has no effect if no texture is defined at this location
         let existing_texture = textures.get_mut(&(current_namespace, texture_id));
         let existing_texture = if let Some(existing_texture) = existing_texture { existing_texture } else { return; };
@@ -294,8 +294,8 @@ where
         let sprite_transform = sprite_layer.last_transform;
 
         // Upper and lower bounds are the coordinates that are the bounds of the area to render to the texture
-        let lower_bounds    = sprite_transform.transform_point(bounds.0.0 as _, bounds.0.1 as _);
-        let upper_bounds    = sprite_transform.transform_point(bounds.1.0 as _, bounds.1.1 as _);
+        let lower_bounds    = sprite_transform.transform_point(origin.0 as _, origin.1 as _);
+        let upper_bounds    = sprite_transform.transform_point((origin.0 + size.0) as _, (origin.1 + size.1) as _);
         let bounds_w        = upper_bounds.0-lower_bounds.0;
         let bounds_h        = upper_bounds.1-lower_bounds.1;
 
