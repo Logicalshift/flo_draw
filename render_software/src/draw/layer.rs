@@ -40,6 +40,9 @@ pub struct Layer {
 
     /// The z-index for the next shape we add to the edge plan
     pub (super) z_index: i64,
+
+    /// The total number of times this layer has been changed
+    pub (super) edit_count: usize,
 }
 
 impl Default for Layer {
@@ -53,6 +56,7 @@ impl Default for Layer {
             used_data:      vec![],
             stored_data:    vec![],
             z_index:        0,
+            edit_count:     0,
         }
     }
 }
@@ -193,6 +197,7 @@ where
                 stored_edges:   layer.stored_edges.clone(),
                 stored_data:    layer.stored_data.clone(),
                 z_index:        layer.z_index,
+                edit_count:     layer.edit_count,
             }
         } else {
             // Just use an empty default layer if this layer isn't created yet
@@ -323,6 +328,7 @@ where
                 program_data_cache.retain_program_data(*data_id);
                 *data_id
             }));
+        layer.edit_count += 1;
 
         self.prepared_layers.remove(self.current_layer.0);
     }

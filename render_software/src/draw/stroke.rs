@@ -67,6 +67,7 @@ where
         // Write the edges using this program
         let shape_id = ShapeId::new();
         current_layer.edges.declare_shape_description(shape_id, shape_descriptor);
+        current_layer.edit_count += 1;
 
         // Create the stroke options
         let stroke_options = StrokeOptions::default()
