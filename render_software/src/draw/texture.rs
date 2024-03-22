@@ -3,7 +3,7 @@ use super::drawing_state::*;
 
 use crate::filters::*;
 use crate::pixel::*;
-use crate::pixel_programs::SolidColorData;
+use crate::pixel_programs::*;
 use crate::render::*;
 use crate::scanplan::*;
 
