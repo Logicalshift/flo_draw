@@ -8,6 +8,7 @@ mod stroke;
 mod transform;
 mod renderer;
 mod texture;
+mod dynamic_sprites;
 mod sprite;
 
 pub use canvas_drawing::*;
