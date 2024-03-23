@@ -222,6 +222,11 @@ where
     /// unless the parameters change.
     ///
     pub fn texture_create_dynamic_sprite(&mut self, texture_id: canvas::TextureId, sprite_id: canvas::SpriteId, bounds: canvas::SpriteBounds, size: canvas::CanvasSize) {
+        let lower_left  = self.current_state.transform.transform_point(0.0, 0.0);
+        let upper_right = self.current_state.transform.transform_point(size.0, size.1);
+
+        let size        = canvas::CanvasSize((upper_right.0 - lower_left.0).abs(), (upper_right.1 - lower_left.1).abs());
+
         // Create a structure to represent the dynamic sprite, which is not currently rendered
         let new_sprite = DynamicSprite {
             namespace_id:               self.current_namespace,
