@@ -6,6 +6,7 @@ mod bilinear_texture;
 mod mip_map_texture;
 mod basic_sprite;
 mod transformed_sprite;
+mod gradient_linear;
 mod debug_ypos;
 
 pub use solid_color::*;
@@ -16,4 +17,5 @@ pub use bilinear_texture::*;
 pub use mip_map_texture::*;
 pub use basic_sprite::*;
 pub use transformed_sprite::*;
+pub use gradient_linear::*;
 pub use debug_ypos::*;
