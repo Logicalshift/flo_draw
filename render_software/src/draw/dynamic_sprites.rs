@@ -1,5 +1,6 @@
 use super::canvas_drawing::*;
 use super::drawing_state::*;
+use super::texture::*;
 
 use crate::filters::*;
 use crate::pixel::*;
@@ -102,6 +103,11 @@ where
             last_render_layer_count:    0
         };
 
-        // todo
+        // Store as a dynamic texture
+        let texture = Texture {
+            pixels: TexturePixels::DynamicSprite(Arc::new(Mutex::new(new_sprite))),
+            fill_alpha: 1.0,
+        };
+        self.textures.insert((self.current_namespace, texture_id), texture);
     }
 }

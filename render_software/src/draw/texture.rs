@@ -20,10 +20,10 @@ use std::sync::*;
 #[derive(Clone)]
 pub struct Texture {
     /// The pixels that make up the texture
-    pixels: TexturePixels,
+    pub (super) pixels: TexturePixels,
 
     /// The alpha value to apply to the texture when drawing it
-    fill_alpha: f64,
+    pub (super) fill_alpha: f64,
 }
 
 ///
