@@ -151,9 +151,12 @@ impl DynamicSprite {
             self.last_render = None;
 
             // Render a new texture
-            let new_texture = self.render(drawing);
+            let mut new_texture = self.render(drawing);
 
-            // TODO: apply filters
+            // Apply filters
+            for filter in self.filters.iter() {
+                new_texture = filter(new_texture);
+            }
 
             // Store the new texture
             self.last_render                = Some(Arc::new(new_texture));
