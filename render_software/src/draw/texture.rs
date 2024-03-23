@@ -439,6 +439,7 @@ where
                 TexturePixels::MipMap(mipmap)                   |
                 TexturePixels::MipMapWithOriginal(_, mipmap)    => (mipmap.width(), mipmap.height()),
                 TexturePixels::DynamicSprite(dynamic)           => {
+                    let dynamic = Arc::clone(dynamic);
                     let texture = dynamic.lock().unwrap().get_u16_texture(self);
 
                     (texture.width(), texture.height())
@@ -469,6 +470,7 @@ where
                 }
 
                 TexturePixels::DynamicSprite(dynamic) => {
+                    let dynamic = Arc::clone(dynamic);
                     break dynamic.lock().unwrap().get_u16_texture(self);
                 }
             }
@@ -495,6 +497,7 @@ where
                 TexturePixels::MipMap(mipmap)                   |
                 TexturePixels::MipMapWithOriginal(_, mipmap)    => (mipmap.width(), mipmap.height()),
                 TexturePixels::DynamicSprite(dynamic)           => {
+                    let dynamic = Arc::clone(dynamic);
                     let texture = dynamic.lock().unwrap().get_u16_texture(self);
 
                     (texture.width(), texture.height())
@@ -525,6 +528,7 @@ where
                 }
 
                 TexturePixels::DynamicSprite(dynamic) => {
+                    let dynamic = Arc::clone(dynamic);
                     break dynamic.lock().unwrap().get_u16_texture(self);
                 }
             }
