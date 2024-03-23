@@ -541,7 +541,7 @@ where
     ///
     /// Applies a filter to the texture with the specified ID (replacing the texture)
     ///
-    pub fn texture_apply_filter(&mut self, texture_id: canvas::TextureId, filter: impl 'static + PixelFilter<Pixel=TPixel>) {
+    pub fn texture_apply_filter(&mut self, texture_id: canvas::TextureId, filter: impl 'static + Send + Sync + PixelFilter<Pixel=TPixel>) {
         // TODO: it should be possible to filter the texture entirely in-place, as the filter will always be reading ahead of the pixels where we need to write to
         // this is much more memory efficient as it saves us allocating a whole new buffer for the filtered texture (but it's a bit tricky to wrangle in Rust as
         // we're writing to the same buffer that we're reading from)

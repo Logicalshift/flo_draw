@@ -49,7 +49,7 @@ impl DynamicSprite {
     ///
     /// Adds a filter to the dynamic sprite
     ///
-    pub fn apply_filter<TPixel, const N: usize>(&mut self, filter: impl PixelFilter<Pixel=TPixel>)
+    pub fn apply_filter<TPixel, const N: usize>(&mut self, filter: impl 'static + Send + Sync + PixelFilter<Pixel=TPixel>)
     where
         TPixel: Pixel<N>
     {

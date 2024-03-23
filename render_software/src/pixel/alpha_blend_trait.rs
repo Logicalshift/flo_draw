@@ -41,7 +41,7 @@ where
     Self: Mul<Self::Component, Output=Self>,
 {
     /// The type of a component of this value
-    type Component: Sized + Copy + Clone + AlphaValue + Add<Output=Self::Component> + Sub<Output=Self::Component> + Mul<Output=Self::Component> + Div<Output=Self::Component>;
+    type Component: Sized + Copy + Clone + Send + Sync + AlphaValue + Add<Output=Self::Component> + Sub<Output=Self::Component> + Mul<Output=Self::Component> + Div<Output=Self::Component>;
 
     /// Performs alpha blending with a chosen source and target functions (for premultiplied alphas)
     fn alpha_blend_with_function(self, dest: Self, source_alpha: AlphaFunction, dest_alpha: AlphaFunction) -> Self;
