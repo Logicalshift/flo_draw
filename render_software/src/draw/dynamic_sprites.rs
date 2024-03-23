@@ -80,8 +80,11 @@ impl DynamicSprite {
         let size        = self.sprite_bounds.1;
 
         // Figure out the width and height of the new texture
-        let width   = 100;
-        let height  = 100;
+        let pixel_height    = (drawing.height_pixels * 0.5) as f32;
+        let width           = self.canvas_bounds.0 * pixel_height;
+        let height          = self.canvas_bounds.1 * pixel_height;
+        let width           = width.abs().ceil() as usize;
+        let height          = height.abs().ceil() as usize;
 
         // Fetch the sprite corresponding to the sprite ID
         let sprite_layer = sprites.get(&(self.namespace_id, self.sprite_id))
