@@ -1,5 +1,6 @@
 use super::canvas_drawing::*;
 use super::drawing_state::*;
+use super::dynamic_sprites::*;
 
 use crate::filters::*;
 use crate::pixel::*;
@@ -44,6 +45,9 @@ pub enum TexturePixels {
 
     /// A texture prepared for rendering as a mipmap (with RGBA original)
     MipMapWithOriginal(Arc<RgbaTexture>, Arc<MipMap<Arc<U16LinearTexture>>>),
+
+    /// A dynamic sprite, which renders on demand
+    DynamicSprite(Arc<Mutex<DynamicSprite>>),
 }
 
 impl Texture {
@@ -79,6 +83,10 @@ impl Texture {
             TexturePixels::MipMapWithOriginal(_, _) |
             TexturePixels::MipMap(_)                => {
                 // Already mipmapped
+            },
+
+            TexturePixels::DynamicSprite(_)         => {
+                // Counts as already mipmapped
             }
         }
     }
@@ -178,6 +186,10 @@ where
 
                     texture.pixels = TexturePixels::Rgba(Arc::clone(rgba));
                 }
+
+                TexturePixels::DynamicSprite(_) => {
+                    // This has no effect
+                }
             }
         }
     }
@@ -247,6 +259,31 @@ where
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
                     current_state.next_fill_brush = Brush::TransparentMipMapTexture(fill_alpha, Arc::clone(mipmap), transform);
                 }
+
+                TexturePixels::DynamicSprite(dynamic) => {
+                    // Retrieve/render the texture
+                    let dynamic = Arc::clone(dynamic);
+                    let dynamic_texture = {
+                        let mut dynamic = dynamic.lock().unwrap();
+                        dynamic.get_u16_texture(self)
+                    };
+            
+                    // Reborrow
+                    let current_state   = &mut self.current_state;
+                    let data_cache      = &mut self.program_data_cache;
+
+                    // We want to make a transformation that maps x1, y1 to 0,0 and x2, y2 to w, h
+                    let w = dynamic_texture.width() as f32;
+                    let h = dynamic_texture.height() as f32;
+
+                    let transform = canvas::Transform2D::translate(-x1, -y1);
+                    let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
+                    let transform = canvas::Transform2D::scale(w, h) * transform;
+
+                    // Set as the brush state
+                    DrawingState::release_program(&mut current_state.fill_program, data_cache);
+                    current_state.next_fill_brush = Brush::TransparentLinearTexture(fill_alpha, dynamic_texture, transform);
+                }
             }
         }
     }
@@ -272,7 +309,8 @@ where
             TexturePixels::Rgba(rgba_texture)             => (rgba_texture.width(), rgba_texture.height()),
             TexturePixels::Linear(linear_texture)         => (linear_texture.width(), linear_texture.height()),
             TexturePixels::MipMap(mipmap)                 |
-            TexturePixels::MipMapWithOriginal(_, mipmap)  => (mipmap.width(), mipmap.height())
+            TexturePixels::MipMapWithOriginal(_, mipmap)  => (mipmap.width(), mipmap.height()),
+            TexturePixels::DynamicSprite(_)               => (1, 1),
         };
 
         // Drop the existing texture so we can replace it
@@ -400,6 +438,11 @@ where
                 TexturePixels::Linear(linear)                   => (linear.width(), linear.height()),
                 TexturePixels::MipMap(mipmap)                   |
                 TexturePixels::MipMapWithOriginal(_, mipmap)    => (mipmap.width(), mipmap.height()),
+                TexturePixels::DynamicSprite(dynamic)           => {
+                    let texture = dynamic.lock().unwrap().get_u16_texture(self);
+
+                    (texture.width(), texture.height())
+                }
             }
         } else {
             (1, 1)
@@ -424,6 +467,10 @@ where
                 TexturePixels::MipMap(texture) | TexturePixels::MipMapWithOriginal(_, texture) => {
                     break Arc::clone(texture.mip_level(0));
                 }
+
+                TexturePixels::DynamicSprite(dynamic) => {
+                    break dynamic.lock().unwrap().get_u16_texture(self);
+                }
             }
         };
 
@@ -447,6 +494,11 @@ where
                 TexturePixels::Linear(linear)                   => (linear.width(), linear.height()),
                 TexturePixels::MipMap(mipmap)                   |
                 TexturePixels::MipMapWithOriginal(_, mipmap)    => (mipmap.width(), mipmap.height()),
+                TexturePixels::DynamicSprite(dynamic)           => {
+                    let texture = dynamic.lock().unwrap().get_u16_texture(self);
+
+                    (texture.width(), texture.height())
+                }
             }
         } else {
             (1, 1)
@@ -471,6 +523,10 @@ where
                 TexturePixels::MipMap(texture) | TexturePixels::MipMapWithOriginal(_, texture) => {
                     break Arc::clone(texture.mip_level(0));
                 }
+
+                TexturePixels::DynamicSprite(dynamic) => {
+                    break dynamic.lock().unwrap().get_u16_texture(self);
+                }
             }
         };
 
@@ -485,7 +541,7 @@ where
     ///
     /// Applies a filter to the texture with the specified ID (replacing the texture)
     ///
-    pub fn texture_apply_filter(&mut self, texture_id: canvas::TextureId, filter: impl PixelFilter<Pixel=TPixel>) {
+    pub fn texture_apply_filter(&mut self, texture_id: canvas::TextureId, filter: impl 'static + PixelFilter<Pixel=TPixel>) {
         // TODO: it should be possible to filter the texture entirely in-place, as the filter will always be reading ahead of the pixels where we need to write to
         // this is much more memory efficient as it saves us allocating a whole new buffer for the filtered texture (but it's a bit tricky to wrangle in Rust as
         // we're writing to the same buffer that we're reading from)
@@ -528,6 +584,11 @@ where
                     // Use the first mip level to do the filtering
                     let new_pixels = filter_texture(&**mipmap.mip_level(0), &filter);
                     texture_load_from_pixels(new_pixels, width, height)
+                }
+
+                TexturePixels::DynamicSprite(dynamic) => {
+                    dynamic.lock().unwrap().apply_filter(filter);
+                    return;
                 }
             };
 

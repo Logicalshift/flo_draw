@@ -1,6 +1,7 @@
 use super::canvas_drawing::*;
 use super::drawing_state::*;
 
+use crate::filters::PixelFilter;
 use crate::pixel::*;
 
 use flo_canvas as canvas;
@@ -22,7 +23,7 @@ pub (crate) struct DynamicSprite {
     canvas_bounds: canvas::CanvasSize,
 
     /// The filters that are applied to this dynamic sprite
-    filters: Vec<canvas::TextureFilter>,
+    filters: Vec<Arc<dyn Send + Sync + Fn(Arc<U16LinearTexture>) -> U16LinearTexture>>,
 
     /// The most recent render of this sprite (or None if it has never been rendered)
     last_render: Option<Arc<U16LinearTexture>>,
@@ -32,6 +33,28 @@ pub (crate) struct DynamicSprite {
 
     /// The layer edit count used the last time this sprite was re-rendered
     last_render_layer_count: usize,
+}
+
+impl DynamicSprite {
+    ///
+    /// Retrieves the texture (possibly rendering it if needed)
+    ///
+    pub fn get_u16_texture<TPixel, const N: usize>(&mut self, drawing: &CanvasDrawing<TPixel, N>) -> Arc<U16LinearTexture>
+    where
+        TPixel: Pixel<N>
+    {
+        todo!()
+    }
+
+    ///
+    /// Adds a filter to the dynamic sprite
+    ///
+    pub fn apply_filter<TPixel, const N: usize>(&mut self, filter: impl PixelFilter<Pixel=TPixel>)
+    where
+        TPixel: Pixel<N>
+    {
+        // todo
+    }
 }
 
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N>
