@@ -23,7 +23,7 @@ pub (crate) struct DynamicSprite {
     canvas_bounds: canvas::CanvasSize,
 
     /// The filters that are applied to this dynamic sprite
-    filters: Vec<Arc<dyn Send + Sync + Fn(Arc<U16LinearTexture>) -> U16LinearTexture>>,
+    filters: Vec<Arc<dyn Send + Sync + Fn(U16LinearTexture) -> U16LinearTexture>>,
 
     /// The most recent render of this sprite (or None if it has never been rendered)
     last_render: Option<Arc<U16LinearTexture>>,
