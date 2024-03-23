@@ -37,14 +37,14 @@ pub fn main() {
     let mut draw_sprite = vec![];
     draw_sprite.create_dynamic_texture(TextureId(0), SpriteId(0), 0.0, 0.0, 1000.0, 1000.0, 400.0, 400.0);
 
-    draw_sprite.fill_texture(TextureId(0), 0.0, 0.0, 400.0, 400.0);
+    draw_sprite.fill_texture(TextureId(0), 0.0, 100.0, 400.0, 500.0);
     draw_sprite.new_path();
-    draw_sprite.rect(0.0, 0.0, 400.0, 400.0);
+    draw_sprite.rect(0.0, 50.0, 400.0, 450.0);
     draw_sprite.fill();
 
-    draw_sprite.fill_texture(TextureId(0), 600.0, 600.0, 1000.0, 1000.0);
+    draw_sprite.fill_texture(TextureId(0), 600.0, 400.0, 1000.0, 800.0);
     draw_sprite.new_path();
-    draw_sprite.rect(600.0, 600.0, 1000.0, 1000.0);
+    draw_sprite.rect(600.0, 400.0, 1000.0, 800.0);
     draw_sprite.fill();
 
     canvas_drawing.draw(draw_sprite.iter().cloned());
