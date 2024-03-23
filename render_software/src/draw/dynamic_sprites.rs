@@ -187,6 +187,8 @@ impl DynamicSprite {
     where
         TPixel: Pixel<N>
     {
+        // TODO: gaussian blur radius should probably be in canvas coordinates and not texture coordinates here
+
         // Clear the 'last rendered' value (we could also apply the filter to it immediately if it exists to avoid a complete re-render)
         self.last_render = None;
 
