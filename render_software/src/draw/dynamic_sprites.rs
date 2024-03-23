@@ -1,7 +1,7 @@
 use super::canvas_drawing::*;
 use super::drawing_state::*;
 
-use crate::filters::PixelFilter;
+use crate::filters::*;
 use crate::pixel::*;
 
 use flo_canvas as canvas;
@@ -53,7 +53,29 @@ impl DynamicSprite {
     where
         TPixel: Pixel<N>
     {
-        // todo
+        // Clear the 'last rendered' value (we could also apply the filter to it immediately if it exists to avoid a complete re-render)
+        self.last_render = None;
+
+        // Add the filter
+        self.filters.push(Arc::new(move |input_texture| {
+            let width  = input_texture.width();
+            let height = input_texture.height();
+
+            let mut converted_pixels = vec![0u16; width * height * 4];
+
+            // Write to the output by filtering the input texture
+            for (ypos, pixel_line) in filter_texture(&input_texture, &filter).enumerate() {
+                let start_pos   = width * ypos * 4;
+                let end_pos     = start_pos + width * 4;
+
+                let target_pixel = U16LinearPixel::u16_slice_as_linear_pixels(&mut converted_pixels[start_pos..end_pos]);
+                TPixel::to_linear_colorspace(&pixel_line, target_pixel);
+            }
+
+            // Create the texture from the result
+            let linear_texture = U16LinearTexture::from_pixels(width, height, converted_pixels);
+            linear_texture
+        }));
     }
 }
 
