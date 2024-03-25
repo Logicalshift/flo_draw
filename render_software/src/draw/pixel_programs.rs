@@ -36,6 +36,9 @@ where
     /// The mipmap texture rendering program
     pub (super) mipmap_texture: StoredPixelProgramFromFrameProgram<MipMapTextureProgram<TPixel, U16LinearTexture, N>>,
 
+    /// The linear gradient program
+    pub (super) linear_gradient: StoredPixelProgramFromProgram<LinearGradientProgram<TPixel>>,
+
     /// The basic sprite rendering program (can scale or transform the sprite, and will render it as source over with 100% transparency)
     pub (super) basic_sprite: StoredPixelProgramFromProgram<SimpleSpriteProgram<TPixel>>,
 
@@ -55,6 +58,7 @@ where
         let bilinear_texture        = cache.add_pixel_program(BilinearTextureProgram::default());
         let bilinear_u16_texture    = cache.add_pixel_program(BilinearTextureProgram::default());
         let mipmap_texture          = cache.add_frame_pixel_program(MipMapTextureProgram::default());
+        let linear_gradient         = cache.add_pixel_program(LinearGradientProgram::default());
         let basic_sprite            = cache.add_pixel_program::<SimpleSpriteProgram<TPixel>>(BasicSpriteProgram::default());
         let transformed_sprite      = cache.add_frame_pixel_program::<AffineSpriteProgram<TPixel>>(TransformedSpriteProgram::default());
 
@@ -66,6 +70,7 @@ where
             bilinear_texture:       bilinear_texture,
             bilinear_u16_texture:   bilinear_u16_texture,
             mipmap_texture:         mipmap_texture,
+            linear_gradient:        linear_gradient,
             basic_sprite:           basic_sprite,
             transformed_sprite:     transformed_sprite,
         }
