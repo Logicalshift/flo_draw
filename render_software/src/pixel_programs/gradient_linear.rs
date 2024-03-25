@@ -62,9 +62,9 @@ where
         let end_x   = (t[0] * end_x * t[1] * y_pos * t[2]) * len;
         let step    = (end_x - start_x) / (x_range.len() as f64);
 
-        for (target_x, target) in x_range.clone().zip(target[(x_range.start as usize)..(x_range.end as usize)].iter_mut()) {
+        for (xpos, target) in (0..x_range.len()).zip(target[(x_range.start as usize)..(x_range.end as usize)].iter_mut()) {
             // Read two pixels from the gradient and interpolate them
-            let xpos    = target_x as f64;
+            let xpos    = xpos as f64;
             let x1      = start_x + xpos * step;
             let x2      = x1 + 1.0;
             let x1      = x1.max(0.0).min(max_x);
