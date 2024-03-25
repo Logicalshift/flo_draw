@@ -16,6 +16,9 @@ pub struct Gradient<TPixel> {
 
     /// The stops in this gradient
     stops: Vec<(f32, TPixel)>,
+
+    /// True if this gradient is fully opaque
+    is_opaque: bool,
 }
 
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N> 
@@ -39,12 +42,14 @@ where
     ///
     pub fn gradient_create(&mut self, gradient_id: canvas::GradientId, initial_color: canvas::Color) {
         // Convert the colour
-        let initial_color = TPixel::from_color(initial_color, self.gamma);
+        let is_opaque       = initial_color.alpha_component() >= 1.0;
+        let initial_color   = TPixel::from_color(initial_color, self.gamma);
 
         // Create a gradient with 0 stops
         let new_gradient = Gradient {
             gradient_pixels:    None,
             stops:              vec![(0.0, initial_color)],
+            is_opaque:          is_opaque,
         };
 
         // Store in this object
@@ -56,11 +61,14 @@ where
     ///
     pub fn gradient_add_stop(&mut self, gradient_id: canvas::GradientId, pos: f32, color: canvas::Color) {
         if let Some(gradient) = self.gradients.get_mut(&(self.current_namespace, gradient_id)) {
+            let is_opaque = color.alpha_component() >= 1.0;
+
             // Clear the pixels if any are set so we regenerate the gradient
             gradient.gradient_pixels = None;
 
             // Add the stop
             gradient.stops.push((pos, TPixel::from_color(color, self.gamma)));
+            gradient.is_opaque = gradient.is_opaque && is_opaque;
         }
     }
 }
