@@ -79,7 +79,7 @@ where
 
             // Interpolate to generate the final pixel
             let fract = TPixel::Component::with_value(fract);
-            *target = (px1 * fract + px2 * (TPixel::Component::one() - fract)) * alpha;
+            *target = (px2 * fract + px1 * (TPixel::Component::one() - fract)) * alpha;
         }
     }
 }
