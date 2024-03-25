@@ -179,8 +179,25 @@ where
             let fill_alpha = gradient.alpha;
 
             // Figure out the initial transform
-            let transform = canvas::Transform2D::translate(-x1, -y1);
-            let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
+            // Avoid division by zero
+            let x2 = if x2 == x1 { x1 + 0.0000001 } else { x2 };
+            let y2 = if y2 == y1 { y1 + 0.0000001 } else { y2 };
+
+            let dx      = x2-x1;
+            let dy      = y2-y1;
+
+            let theta   = f32::atan2(dy, dx);
+            let scale   = 1.0/f32::sqrt(dx*dx + dy*dy);
+
+            let cos     = f32::cos(-theta);
+            let sin     = f32::sin(-theta);
+
+            let a       = cos * scale;
+            let b       = -sin * scale;
+
+            let c       = -x1 * a - y1 * b;
+
+            let transform = canvas::Transform2D([[a, b, c], [a, b, c], [0.0, 0.0, 1.0]]);
 
             // Release the current fill program
             DrawingState::release_program(&mut current_state.fill_program, program_data_cache);
