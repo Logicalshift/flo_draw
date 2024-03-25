@@ -58,10 +58,10 @@ where
         let a3 = px3.a() as u32;
         let a4 = px4.a() as u32;
 
-        let a12 = ((a1 * xpos_fract)>>16) + ((a2 * (65535-xpos_fract))>>16);
-        let a34 = ((a3 * xpos_fract)>>16) + ((a4 * (65535-xpos_fract))>>16);
+        let a12 = ((a2 * xpos_fract)>>16) + ((a1 * (65535-xpos_fract))>>16);
+        let a34 = ((a4 * xpos_fract)>>16) + ((a3 * (65535-xpos_fract))>>16);
 
-        let a = ((a12 * ypos_fract)>>16) + ((a34 * (65535-ypos_fract))>>16);
+        let a = ((a34 * ypos_fract)>>16) + ((a12 * (65535-ypos_fract))>>16);
 
         a as u16
     }
