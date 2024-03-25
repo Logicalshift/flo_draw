@@ -237,6 +237,32 @@ where
                     z_index:    0
                 }
             }
+
+            (AlphaOperation::SourceOver, LinearGradient(alpha, namespace_id, gradient_id, transform)) => {
+                let gradient_data   = self.gradient_data(*alpha, *namespace_id, *gradient_id, transform);
+                let program_cache   = &self.program_cache;
+                let data_cache      = &mut self.program_data_cache;
+                let brush_data      = program_cache.program_cache.store_program_data(&program_cache.linear_gradient, data_cache, gradient_data);
+
+                ShapeDescriptor {
+                    programs:   smallvec![brush_data],
+                    is_opaque:  *alpha >= 1.0 && self.gradient_is_opaque(*namespace_id, *gradient_id),
+                    z_index:    0,
+                }
+            }
+
+            (_, LinearGradient(alpha, namespace_id, gradient_id, transform)) => {
+                let gradient_data   = self.gradient_data(*alpha, *namespace_id, *gradient_id, transform);
+                let program_cache   = &self.program_cache;
+                let data_cache      = &mut self.program_data_cache;
+                let brush_data      = program_cache.program_cache.store_program_data(&program_cache.linear_gradient, data_cache, gradient_data);
+
+                ShapeDescriptor {
+                    programs:   smallvec![brush_data],
+                    is_opaque:  false,
+                    z_index:    0,
+                }
+            }
         };
 
         descriptor

@@ -42,6 +42,9 @@ pub enum Brush {
 
     /// A transformed texture that will be rendered using mip-maps
     TransparentMipMapTexture(f64, Arc<MipMap<Arc<U16LinearTexture>>>, canvas::Transform2D),
+
+    /// A linear gradient
+    LinearGradient(f64, canvas::NamespaceId, canvas::GradientId, canvas::Transform2D),
 }
 
 #[derive(Clone)]
@@ -304,6 +307,8 @@ impl DrawingState {
             Brush::TransparentTexture(_, _, fill_transform)         => { *fill_transform = transform * *fill_transform; }
             Brush::TransparentLinearTexture(_, _, fill_transform)   => { *fill_transform = transform * *fill_transform; }
             Brush::TransparentMipMapTexture(_, _, fill_transform)   => { *fill_transform = transform * *fill_transform; }
+
+            Brush::LinearGradient(_, _, _, gradient_transform)      => { *gradient_transform = transform * *gradient_transform; }
         }
     }
 }

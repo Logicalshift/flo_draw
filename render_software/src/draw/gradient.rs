@@ -1,6 +1,7 @@
 use super::canvas_drawing::*;
 
 use crate::pixel::*;
+use crate::pixel_programs::*;
 
 use flo_canvas as canvas;
 
@@ -15,7 +16,7 @@ pub struct Gradient<TPixel> {
     gradient_pixels: Option<Arc<Vec<TPixel>>>,
 
     /// The stops in this gradient
-    stops: Vec<(f32, TPixel)>,
+    stops: Vec<(f64, TPixel)>,
 
     /// True if this gradient is fully opaque
     is_opaque: bool,
@@ -28,7 +29,7 @@ where
     ///
     /// Performs an operation on a gradient in this drawing
     ///
-    pub fn gradient(&mut self, gradient_id: canvas::GradientId, gradient_op: canvas::GradientOp) {
+    pub (super) fn gradient(&mut self, gradient_id: canvas::GradientId, gradient_op: canvas::GradientOp) {
         use canvas::GradientOp::*;
 
         match gradient_op {
@@ -40,7 +41,7 @@ where
     ///
     /// Creates/replaces an existing gradient
     ///
-    pub fn gradient_create(&mut self, gradient_id: canvas::GradientId, initial_color: canvas::Color) {
+    pub (super) fn gradient_create(&mut self, gradient_id: canvas::GradientId, initial_color: canvas::Color) {
         // Convert the colour
         let is_opaque       = initial_color.alpha_component() >= 1.0;
         let initial_color   = TPixel::from_color(initial_color, self.gamma);
@@ -59,7 +60,7 @@ where
     ///
     /// Adds a colour stop to a gradient that we're building
     ///
-    pub fn gradient_add_stop(&mut self, gradient_id: canvas::GradientId, pos: f32, color: canvas::Color) {
+    pub (super) fn gradient_add_stop(&mut self, gradient_id: canvas::GradientId, pos: f32, color: canvas::Color) {
         if let Some(gradient) = self.gradients.get_mut(&(self.current_namespace, gradient_id)) {
             let is_opaque = color.alpha_component() >= 1.0;
 
@@ -67,8 +68,92 @@ where
             gradient.gradient_pixels = None;
 
             // Add the stop
-            gradient.stops.push((pos, TPixel::from_color(color, self.gamma)));
+            gradient.stops.push((pos as f64, TPixel::from_color(color, self.gamma)));
             gradient.is_opaque = gradient.is_opaque && is_opaque;
+        }
+    }
+
+    ///
+    /// True if the specified gradient is opaque
+    ///
+    #[inline]
+    pub (super) fn gradient_is_opaque(&self, namespace_id: canvas::NamespaceId, gradient_id: canvas::GradientId) -> bool {
+        if let Some(gradient) = self.gradients.get(&(namespace_id, gradient_id)) {
+            gradient.is_opaque
+        } else {
+            true
+        }
+    }
+
+    ///
+    /// Returns or generates the gradient data for a particular gradient
+    ///
+    pub (super) fn gradient_data(&mut self, alpha: f64, namespace_id: canvas::NamespaceId, gradient_id: canvas::GradientId, transform: &canvas::Transform2D) -> GradientData<TPixel> {
+        let [[a, b, c], [d, e, f], [_, _, _]] = transform.0;
+        let transform = [[a as f64, b as _, c as _], [d as _, e as _, f as _]];
+
+        if let Some(gradient) = self.gradients.get_mut(&(namespace_id, gradient_id)) {
+            // Generate the stops if needed
+            let gradient = if let Some(gradient) = gradient.gradient_pixels.clone() {
+                // Gradient already generated
+                gradient
+            } else {
+                // Sort the stops in the gradient
+                let stops = &mut gradient.stops;
+                stops.sort_by(|(pos1, _), (pos2, _)| pos1.total_cmp(pos2));
+
+                let start_pos   = stops.first().unwrap().0 as f64;
+                let end_pos     = stops.last().unwrap().0 as f64;
+
+                if start_pos >= end_pos {
+                    // Only one stop or all stops on the same positions
+                    Arc::new(vec![stops.first().unwrap().1.clone()])
+                } else {
+                    // Generate the pixels for this gradient
+                    let len             = end_pos - start_pos;
+
+                    let mut pixels      = vec![TPixel::white(); 1024];
+                    let mut stops       = stops.iter().cloned();
+                    let mut last_stop   = stops.next().unwrap();
+                    let mut next_stop   = stops.next().unwrap();
+
+                    for pixel_num in 0..1024 {
+                        // Get the x position in 
+                        let xpos = pixel_num as f64;
+                        let xpos = (xpos / 1024.0) * len + start_pos;
+
+                        // Move on to the next stop while we can (we shouldn't overflow the end as xpos never quite reaches 1024)
+                        while next_stop.0 <= xpos {
+                            last_stop = next_stop;
+                            next_stop = stops.next().unwrap();
+                        }
+
+                        // Calculate the pixel at this position by blending between the two stops
+                        let diff        = next_stop.0 - last_stop.0;
+                        let rel_pos     = xpos - last_stop.0;
+                        let fraction    = rel_pos / diff;
+                        let fraction    = TPixel::Component::with_value(fraction);
+
+                        pixels[pixel_num] = (last_stop.1 * fraction) + (next_stop.1 * (TPixel::Component::one() - fraction));
+                    }
+
+                    // Store the result in the gradient
+                    let pixels = Arc::new(pixels);
+                    gradient.gradient_pixels = Some(Arc::clone(&pixels));
+
+                    pixels
+                }
+            };
+
+            // Fill in the data
+            GradientData { gradient, alpha, transform }
+        } else {
+            // Just use the default data
+            GradientData {
+                gradient:   Arc::new(vec![TPixel::black()]),
+                alpha:      alpha,
+                transform:  transform,
+            }
         }
     }
 }
