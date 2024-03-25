@@ -1,4 +1,5 @@
 use super::drawing_state::*;
+use super::gradient::*;
 use super::layer::*;
 use super::prepared_layer::*;
 use super::pixel_programs::*;
@@ -66,6 +67,9 @@ where
 
     /// The textures in this drawing
     pub (super) textures:           HashMap<(canvas::NamespaceId, canvas::TextureId), Texture>,
+
+    /// The gradients in this drawing
+    pub (super) gradients:          HashMap<(canvas::NamespaceId, canvas::GradientId), Gradient<TPixel>>,
 }
 
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N> 
@@ -105,6 +109,7 @@ where
             program_data_cache: data_cache,
             state_stack:        vec![],
             textures:           HashMap::new(),
+            gradients:          HashMap::new(),
         }
     }
 
@@ -179,7 +184,7 @@ where
                 DrawSpriteWithFilters(sprite_id, filters)           => { /* todo!() */ },
 
                 Texture(texture_id, texture_op)                     => { self.texture(texture_id, texture_op); },
-                Gradient(gradient_id, gradient_op)                  => { /* todo!() */ },
+                Gradient(gradient_id, gradient_op)                  => { self.gradient(gradient_id, gradient_op); },
 
                 Font(_font_id, _font_op)                            => { /* Use the glyph and font streams in flo_canvas */ },
                 BeginLineLayout(_x, _y, _alignment)                 => { /* Use the glyph and font streams in flo_canvas */ },
