@@ -203,7 +203,7 @@ where
         let current_state   = &mut self.current_state;
         let data_cache      = &mut self.program_data_cache;
 
-        // Transform the coordiantes to screen coordinates
+        // Transform the coordinates to screen coordinates
         let (x1, y1) = current_state.transform.transform_point(x1, y1);
         let (x2, y2) = current_state.transform.transform_point(x2, y2);
 
