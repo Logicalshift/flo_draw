@@ -139,7 +139,7 @@ where
                         let fraction    = rel_pos / diff;
                         let fraction    = TPixel::Component::with_value(fraction);
 
-                        pixels[pixel_num] = (last_stop.1 * fraction) + (next_stop.1 * (TPixel::Component::one() - fraction));
+                        pixels[pixel_num] = (next_stop.1 * fraction) + (last_stop.1 * (TPixel::Component::one() - fraction));
                     }
 
                     // Store the result in the gradient
