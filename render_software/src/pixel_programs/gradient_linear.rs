@@ -59,7 +59,7 @@ where
         let max_x   = len;
 
         let start_x = (t[0] * start_x + t[1] * y_pos + t[2]) * len;
-        let end_x   = (t[0] * end_x * t[1] * y_pos * t[2]) * len;
+        let end_x   = (t[0] * end_x + t[1] * y_pos + t[2]) * len;
         let step    = (end_x - start_x) / (x_range.len() as f64);
 
         for (xpos, target) in (0..x_range.len()).zip(target[(x_range.start as usize)..(x_range.end as usize)].iter_mut()) {
