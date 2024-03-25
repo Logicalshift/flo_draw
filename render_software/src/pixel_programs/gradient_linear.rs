@@ -55,11 +55,12 @@ where
         let start_x = x_transform.pixel_x_to_source_x(x_range.start);
         let end_x   = x_transform.pixel_x_to_source_x(x_range.end);
 
-        let start_x = t[0] * start_x + t[1] * y_pos + t[2];
-        let end_x   = t[0] * end_x * t[1] * y_pos * t[2];
-        let step    = (end_x - start_x) / (x_range.len() as f64);
+        let len     = (program_data.gradient.len()-1) as f64;
+        let max_x   = len;
 
-        let max_x   = (program_data.gradient.len()-1) as f64;
+        let start_x = (t[0] * start_x + t[1] * y_pos + t[2]) * len;
+        let end_x   = (t[0] * end_x * t[1] * y_pos * t[2]) * len;
+        let step    = (end_x - start_x) / (x_range.len() as f64);
 
         for (target_x, target) in x_range.clone().zip(target[(x_range.start as usize)..(x_range.end as usize)].iter_mut()) {
             // Read two pixels from the gradient and interpolate them
