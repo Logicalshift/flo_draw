@@ -1,4 +1,5 @@
 use super::canvas_drawing::*;
+use super::drawing_state::*;
 
 use crate::pixel::*;
 use crate::pixel_programs::*;
@@ -14,6 +15,9 @@ use std::sync::*;
 pub struct Gradient<TPixel> {
     /// Pixels in the gradient, if they've been generated
     gradient_pixels: Option<Arc<Vec<TPixel>>>,
+
+    /// The alpha value set for this gradient
+    alpha: f64,
 
     /// The stops in this gradient
     stops: Vec<(f64, TPixel)>,
@@ -49,6 +53,7 @@ where
         // Create a gradient with 0 stops
         let new_gradient = Gradient {
             gradient_pixels:    None,
+            alpha:              1.0,
             stops:              vec![(0.0, initial_color)],
             is_opaque:          is_opaque,
         };
@@ -154,6 +159,34 @@ where
                 alpha:      alpha,
                 transform:  transform,
             }
+        }
+    }
+
+    ///
+    /// Sets the brush to fill using the specified gradient
+    ///
+    pub (crate) fn fill_gradient(&mut self, gradient_id: canvas::GradientId, x1: f32, y1: f32, x2: f32, y2: f32) {
+        let current_state       = &mut self.current_state;
+        let program_data_cache  = &mut self.program_data_cache;
+        let gradients           = &self.gradients;
+        let current_namespace   = self.current_namespace;
+
+        // Transform the coordinates to screen coordinates
+        let (x1, y1) = current_state.transform.transform_point(x1, y1);
+        let (x2, y2) = current_state.transform.transform_point(x2, y2);
+
+        if let Some(gradient) = gradients.get(&(self.current_namespace, gradient_id)) {
+            let fill_alpha = gradient.alpha;
+
+            // Figure out the initial transform
+            let transform = canvas::Transform2D::translate(-x1, -y1);
+            let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
+
+            // Release the current fill program
+            DrawingState::release_program(&mut current_state.fill_program, program_data_cache);
+
+            // Choose the gradient brush
+            current_state.next_fill_brush = Brush::LinearGradient(fill_alpha, current_namespace, gradient_id, transform);
         }
     }
 }
