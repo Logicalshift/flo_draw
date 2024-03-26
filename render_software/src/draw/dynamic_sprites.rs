@@ -1,5 +1,4 @@
 use super::canvas_drawing::*;
-use super::drawing_state::*;
 use super::texture::*;
 
 use crate::filters::*;
