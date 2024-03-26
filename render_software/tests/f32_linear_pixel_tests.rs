@@ -190,3 +190,14 @@ fn bilinear_interpolate_4() {
     assert!((b-0.375).abs() < 0.001, "{:?}", [r, g, b, a]);
     assert!((a-1.0).abs() < 0.001, "{:?}", [r, g, b, a]);
 }
+
+#[test]
+fn source_over_transparent() {
+    let col1        = F32LinearPixel::from_color(Color::Rgba(0.2, 0.8, 0.4, 0.7), 2.2);
+    let transparent = F32LinearPixel::from_color(Color::Rgba(0.0, 0.0, 0.0, 0.0), 2.2);
+    let transparent = transparent * 0.38484883;
+
+    let result      = transparent.source_over(col1);
+
+    assert!(col1 == result, "{:?} {:?}", col1, result);
+}
