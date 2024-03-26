@@ -393,7 +393,7 @@ where
                                     let corrected_range = actual_fade_for_range(&x_range, &alpha_x_range, &alpha_range);
 
                                     // Run a linear blend using the corrected range
-                                    program_stack.push(PixelProgramPlan::LinearSourceOver(corrected_range.start as _, corrected_range.end as _));
+                                    program_stack.push(PixelProgramPlan::LinearMerge(corrected_range.start as _, corrected_range.end as _));
                                     num_blends += 1;
                                     break;
                                 },
@@ -403,7 +403,7 @@ where
                                     let corrected_range = actual_fade_for_range(&x_range, &alpha_x_range, &alpha_range);
 
                                     // Run a linear blend using the corrected range
-                                    program_stack.push(PixelProgramPlan::LinearSourceOver(corrected_range.start as _, corrected_range.end as _));
+                                    program_stack.push(PixelProgramPlan::LinearMerge(corrected_range.start as _, corrected_range.end as _));
 
                                     // Apply the nested gradient as well
                                     blend       = &*nested;
