@@ -196,6 +196,8 @@ mod test {
     use super::*;
     use std::ops::{Range};
 
+    use flo_canvas::*;
+
     #[test]
     pub fn linear_source_over_start_at_zero() {
         // Create a basic program runner that generates white pixels
@@ -335,5 +337,42 @@ mod test {
 
         let components = target[0].to_components();
         assert!(components[0] == 0.5, "{:?}", components);
+    }
+
+    #[test]
+    pub fn linear_source_over_blending_transparent() {
+        // We want a program that generates transparent pixles and a program that generates a background colour
+        let background  = F32LinearPixel::from_color(Color::Rgba(0.2, 0.8, 0.4, 0.7), 2.2);
+        let transparent = F32LinearPixel::from_color(Color::Rgba(0.0, 0.0, 0.0, 0.0), 2.2);
+
+        let pixel_runner = BasicPixelProgramRunner::from(move |data_id, data: &mut [F32LinearPixel], x_range: Range<i32>, _: &_, _| {
+            let pixel_color = match data_id {
+                PixelProgramDataId(0)   => background,
+                PixelProgramDataId(1)   => transparent,
+                _                       => transparent,
+            };
+
+            data[(x_range.start as usize)..(x_range.end as usize)].iter_mut().for_each(|pixel| *pixel = pixel_color);
+        });
+
+        // Scanline renderer that renders white pixels
+        let renderer    = ScanlineRenderer::new(pixel_runner);
+        let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 1.0]); 1];
+
+        // Render a source-over linear blend to the target (note that the programs are reversed)
+        let plan    = ScanlinePlan::from_ordered_stacks(vec![
+                ScanSpanStack::with_reversed_programs(0.0..1.0, false, &vec![
+                    PixelProgramPlan::LinearSourceOver(0.38484883, 0.38484883), 
+                    PixelProgramPlan::Run(PixelProgramDataId(1)), 
+                    PixelProgramPlan::StartBlend,
+                    PixelProgramPlan::Run(PixelProgramDataId(0))])
+            ]);
+        let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity() };
+
+        renderer.render(&region, &plan, &mut target);
+
+        // The start alpha is 0.5 so that should be the value written to the initial pixel
+        assert!(target[0].alpha_component() == 0.7, "{:?} != {:?}", target[0], background);
+        assert!(target[0] == background, "{:?} != {:?}", target[0], background);
     }
 }
