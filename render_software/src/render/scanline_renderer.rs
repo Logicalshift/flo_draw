@@ -368,7 +368,12 @@ mod test {
                     PixelProgramPlan::Run(PixelProgramDataId(1)), 
                     PixelProgramPlan::StartBlend,
                     PixelProgramPlan::Run(PixelProgramDataId(0))]),
-                ScanSpanStack::with_reversed_programs(5.0..10.0, false, &vec![
+                ScanSpanStack::with_reversed_programs(5.0..6.0, false, &vec![
+                    PixelProgramPlan::LinearSourceOver(0.38484883, 0.38484883), 
+                    PixelProgramPlan::Run(PixelProgramDataId(1)), 
+                    PixelProgramPlan::StartBlend,
+                    PixelProgramPlan::Run(PixelProgramDataId(0))]),
+                ScanSpanStack::with_reversed_programs(6.0..10.0, false, &vec![
                     PixelProgramPlan::Run(PixelProgramDataId(0))]),
             ]);
         let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity() };
