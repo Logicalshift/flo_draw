@@ -21,22 +21,22 @@ pub fn main() {
     draw_rectangles.center_region(0.0, 0.0, 1000.0, 1000.0);
 
     // Draw some blank rectangles
-    draw_rectangles.fill_color(Color::Rgba(0.0, 0.0, 0.0, 0.0));
+    draw_rectangles.fill_color(Color::Rgba(0.0, 0.0, 0.0, 0.1));
     draw_rectangles.new_path();
     draw_rectangles.rect(0.0, 50.0, 400.0, 450.0);
     draw_rectangles.fill();
 
-    draw_rectangles.fill_texture(TextureId(0), 600.0, 400.0, 1000.0, 800.0);
+    draw_rectangles.fill_color(Color::Rgba(0.0, 0.0, 0.0, 0.1));
     draw_rectangles.new_path();
     draw_rectangles.rect(600.0, 400.0, 1000.0, 800.0);
     draw_rectangles.fill();
 
-    draw_rectangles.fill_texture(TextureId(1), 600.0, 50.0, 1000.0, 450.0);
+    draw_rectangles.fill_color(Color::Rgba(0.0, 0.0, 0.0, 0.1));
     draw_rectangles.new_path();
     draw_rectangles.rect(600.0, 50.0, 1000.0, 450.0);
     draw_rectangles.fill();
 
-    draw_rectangles.fill_texture(TextureId(1), 0.0, 400.0, 400.0, 800.0);
+    draw_rectangles.fill_color(Color::Rgba(0.0, 0.0, 0.0, 0.1));
     draw_rectangles.new_path();
     draw_rectangles.rect(0.0, 400.0, 400.0, 800.0);
     draw_rectangles.fill();
