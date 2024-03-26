@@ -99,6 +99,46 @@ where
                         shadow_pixels.push_entry((x_range.start as _)..(x_range.end as _));
                     },
 
+                    PixelProgramPlan::Merge(ratio) => {
+                        // Can skip the factor multiplication step if the blend factor is 1.0 (which should be fairly common)
+                        if *ratio >= 1.0 {
+                            shadow_pixels.pop_entry(|src, dst| {
+                                for x in (x_range.start as usize)..(x_range.end as usize) {
+                                    dst[x] = src[x].source_over(dst[x]);
+                                }
+                            });
+                        } else {
+                            let ratio = TProgramRunner::TPixel::component_with_value(*ratio as _);
+
+                            shadow_pixels.pop_entry(|src, dst| {
+                                let range           = (x_range.start as usize)..(x_range.end as usize);
+
+                                for (src, dst) in src[range.clone()].iter().zip(dst[range].iter_mut()) {
+                                    *dst = src.merge(*dst, ratio);
+                                }
+                            });
+                        }
+                    }
+
+                    PixelProgramPlan::LinearMerge(start, end) => {
+                        // Change the alpha factor across the range of the blend
+                        let x_range     = (x_range.start as usize)..(x_range.end as usize);
+                        let start       = *start as f64;
+                        let end         = *end as f64;
+                        let x_len       = x_range.len();
+                        let multiplier  = if x_len > 1 { (end-start)/((x_len-1) as f64) } else { 0.0 };
+
+                        shadow_pixels.pop_entry(|src, dst| {
+                            for (x, (src, dst)) in src[x_range.clone()].iter().zip(dst[x_range].iter_mut()).enumerate() {
+                                let pos     = x as f64;
+                                let ratio   = start + pos * multiplier;
+                                let ratio   = TProgramRunner::TPixel::component_with_value(ratio);
+
+                                *dst = src.merge(*dst, ratio);
+                            }
+                        });
+                    }
+
                     PixelProgramPlan::SourceOver(factor) => {
                         let factor = *factor as f64;
 
@@ -362,12 +402,12 @@ mod test {
                 ScanSpanStack::with_reversed_programs(0.0..4.0, false, &vec![
                     PixelProgramPlan::Run(PixelProgramDataId(0))]),
                 ScanSpanStack::with_reversed_programs(4.0..5.0, false, &vec![
-                    PixelProgramPlan::LinearSourceOver(0.38484883, 0.38484883), 
+                    PixelProgramPlan::LinearMerge(0.38484883, 0.38484883), 
                     PixelProgramPlan::Run(PixelProgramDataId(1)), 
                     PixelProgramPlan::StartBlend,
                     PixelProgramPlan::Run(PixelProgramDataId(0))]),
                 ScanSpanStack::with_reversed_programs(5.0..6.0, false, &vec![
-                    PixelProgramPlan::LinearSourceOver(0.38484883, 0.38484883), 
+                    PixelProgramPlan::LinearMerge(0.38484883, 0.38484883), 
                     PixelProgramPlan::Run(PixelProgramDataId(1)), 
                     PixelProgramPlan::StartBlend,
                     PixelProgramPlan::Run(PixelProgramDataId(0))]),

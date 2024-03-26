@@ -532,6 +532,8 @@ impl ScanlinePlan {
                 let mut programs    = span.programs().filter_map(|program| match program {
                     PixelProgramPlan::Run(program)              => Some(program),
                     PixelProgramPlan::StartBlend                => None,
+                    PixelProgramPlan::Merge(_)                  => None,
+                    PixelProgramPlan::LinearMerge(_, _)         => None,
                     PixelProgramPlan::SourceOver(_)             => None,
                     PixelProgramPlan::LinearSourceOver(_, _)    => None,
                     PixelProgramPlan::Blend(_, _)               => None,

@@ -175,6 +175,12 @@ pub enum PixelProgramPlan {
     /// to nest blending operations.
     StartBlend,
 
+    /// Take a ratio of the original pixel value and the buffered pixel value to produce a result
+    Merge(f32),
+
+    /// As for merge, but the ratio change linearly over the range
+    LinearMerge(f32, f32),
+
     /// Blend the contents of the blend buffer with the current set of pixels, using the source-over operation, and release
     /// the buffer.
     SourceOver(f32),
