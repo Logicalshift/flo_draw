@@ -6,11 +6,11 @@ mod pixel_programs;
 mod path;
 mod stroke;
 mod transform;
-mod renderer;
+mod canvas_drawing_region_renderer;
 mod texture;
 mod gradient;
 mod dynamic_sprites;
 mod sprite;
 
 pub use canvas_drawing::*;
-pub use renderer::*;
+pub use canvas_drawing_region_renderer::*;
