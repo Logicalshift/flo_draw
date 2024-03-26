@@ -357,22 +357,28 @@ mod test {
 
         // Scanline renderer that renders white pixels
         let renderer    = ScanlineRenderer::new(pixel_runner);
-        let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 1.0]); 1];
+        let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 1.0]); 10];
 
         // Render a source-over linear blend to the target (note that the programs are reversed)
         let plan    = ScanlinePlan::from_ordered_stacks(vec![
-                ScanSpanStack::with_reversed_programs(0.0..1.0, false, &vec![
+                ScanSpanStack::with_reversed_programs(0.0..4.0, false, &vec![
+                    PixelProgramPlan::Run(PixelProgramDataId(0))]),
+                ScanSpanStack::with_reversed_programs(4.0..5.0, false, &vec![
                     PixelProgramPlan::LinearSourceOver(0.38484883, 0.38484883), 
                     PixelProgramPlan::Run(PixelProgramDataId(1)), 
                     PixelProgramPlan::StartBlend,
-                    PixelProgramPlan::Run(PixelProgramDataId(0))])
+                    PixelProgramPlan::Run(PixelProgramDataId(0))]),
+                ScanSpanStack::with_reversed_programs(5.0..10.0, false, &vec![
+                    PixelProgramPlan::Run(PixelProgramDataId(0))]),
             ]);
         let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity() };
 
         renderer.render(&region, &plan, &mut target);
 
-        // The start alpha is 0.5 so that should be the value written to the initial pixel
-        assert!(target[0].alpha_component() == 0.7, "{:?} != {:?}", target[0], background);
-        assert!(target[0] == background, "{:?} != {:?}", target[0], background);
+        for x in 0..10 {
+            // The start alpha is 0.5 so that should be the value written to the initial pixel
+            assert!(target[x].alpha_component() == 0.7, "x={}: {:?} != {:?}", x, target[x], background);
+            assert!(target[x] == background, "x={}: {:?} != {:?}", x, target[x], background);
+        }
     }
 }
