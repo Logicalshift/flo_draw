@@ -46,6 +46,13 @@ where
     /// Performs alpha blending with a chosen source and target functions (for premultiplied alphas)
     fn alpha_blend_with_function(self, dest: Self, source_alpha: AlphaFunction, dest_alpha: AlphaFunction) -> Self;
 
+    /// Creates a component of this item with the specified value
+    #[inline]
+    fn component_with_value(value: f64) -> Self::Component {
+        // This is useful because sometimes Rust can't handle something like 'ProgramRunner::Pixel::Component' without very verbose syntax
+        Self::Component::with_value(value)
+    }
+
     /// Performs the specified alpha blending operation
     #[inline]
     fn alpha_blend(self, dest: Self, operation: AlphaOperation) -> Self {
@@ -67,6 +74,14 @@ where
     #[inline] fn dest_held_out(self, dest: Self) -> Self      { self.alpha_blend(dest, AlphaOperation::DestHeldOut) }
     #[inline] fn source_atop(self, dest: Self) -> Self        { self.alpha_blend(dest, AlphaOperation::SourceAtop) }
     #[inline] fn dest_atop(self, dest: Self) -> Self          { self.alpha_blend(dest, AlphaOperation::DestAtop) }
+
+    /// Merges 'ratio' of this item and another item
+    #[inline]
+    fn merge(self, dest: Self, ratio: Self::Component) -> Self {
+        let inverse = Self::Component::one() - ratio;
+
+        self * ratio + dest * inverse
+    }
 }
 
 impl AlphaOperation {
