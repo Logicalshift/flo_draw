@@ -346,13 +346,11 @@ mod test {
         let transparent = F32LinearPixel::from_color(Color::Rgba(0.0, 0.0, 0.0, 0.0), 2.2);
 
         let pixel_runner = BasicPixelProgramRunner::from(move |data_id, data: &mut [F32LinearPixel], x_range: Range<i32>, _: &_, _| {
-            let pixel_color = match data_id {
-                PixelProgramDataId(0)   => background,
-                PixelProgramDataId(1)   => transparent,
-                _                       => transparent,
-            };
-
-            data[(x_range.start as usize)..(x_range.end as usize)].iter_mut().for_each(|pixel| *pixel = pixel_color);
+            match data_id {
+                PixelProgramDataId(0) => { data[(x_range.start as usize)..(x_range.end as usize)].iter_mut().for_each(|pixel| *pixel = background); }
+                PixelProgramDataId(1) => { data[(x_range.start as usize)..(x_range.end as usize)].iter_mut().for_each(|pixel| *pixel = transparent.source_over(*pixel)); },
+                _ => { }
+            }
         });
 
         // Scanline renderer that renders white pixels
