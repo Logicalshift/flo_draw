@@ -36,7 +36,8 @@ struct EglOffscreenRenderContext {
 pub fn opengl_initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     unsafe {
         // Open the card0 file descriptor
-        let card0_file = CString::new("/dev/dri/card0").unwrap();
+        let card_number = std::env::var("FLO_CARD").unwrap_or("0".to_owned());
+        let card0_file = CString::new(format!("/dev/dri/card{card_number}")).unwrap();
         let card0 = open(card0_file.as_ptr(), O_RDWR);
         if card0 == 0 { Err(RenderInitError::CannotOpenGraphicsDevice)? }
 
