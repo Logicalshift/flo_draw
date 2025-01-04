@@ -457,14 +457,14 @@ impl BezierSubpath {
     ///
     /// Creates a polyline from this path
     ///
-    pub fn flatten_to_polyline(self, min_length: f64, flatness: f64) -> Polyline {
+    pub fn flatten_to_polyline(&self, min_length: f64, flatness: f64) -> Polyline {
         use std::iter;
 
         // TODO: this just creates the most basic polygon possible
         let start_point = Coord2(self.curves[0].wx.0, self.curves[0].wy.0);
         Polyline::new(iter::once(start_point)
-            .chain(self.curves.into_iter()
-                .flat_map(|curve| flatten_curve(&curve, min_length, flatness))))
+            .chain(self.curves.iter()
+                .flat_map(|curve| flatten_curve(curve, min_length, flatness))))
     }
 
     ///

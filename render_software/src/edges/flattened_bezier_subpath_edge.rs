@@ -16,7 +16,7 @@ enum FlattenedBezierSubpathValue {
     BezierSubPath { path: BezierSubpath, min_distance: f64, flatness: f64 },
 
     /// Converted polyline
-    Polyline(Polyline),
+    Polyline(Polyline, BezierSubpath),
 }
 
 ///
@@ -69,13 +69,13 @@ impl FlattenedBezierSubpath {
 
         // Generate the polyline by flattening
         match value {
-            FlattenedBezierSubpathValue::None            => {},
-            FlattenedBezierSubpathValue::Polyline(line)  => { self.value = FlattenedBezierSubpathValue::Polyline(line); },
+            FlattenedBezierSubpathValue::None                       => {},
+            FlattenedBezierSubpathValue::Polyline(line, original)   => { self.value = FlattenedBezierSubpathValue::Polyline(line, original); },
 
             FlattenedBezierSubpathValue::BezierSubPath { path, min_distance, flatness } => {
                 let mut polyline = path.flatten_to_polyline(min_distance, flatness);
                 polyline.prepare_to_render();
-                self.value = FlattenedBezierSubpathValue::Polyline(polyline);
+                self.value = FlattenedBezierSubpathValue::Polyline(polyline, path);
             },
         }
     }
@@ -94,10 +94,11 @@ impl FlattenedBezierSubpath {
                 Self { value: FlattenedBezierSubpathValue::BezierSubPath { path: path, min_distance: *min_distance, flatness: *flatness } }
             },
 
-            FlattenedBezierSubpathValue::Polyline(polyline) => {
-                let mut polyline = polyline.transform_unprepared(transform);
+            FlattenedBezierSubpathValue::Polyline(polyline, original) => {
+                let mut polyline    = polyline.transform_unprepared(transform);
+                let original        = original.transform(transform);
                 polyline.prepare_to_render();
-                Self { value: FlattenedBezierSubpathValue::Polyline(polyline) }
+                Self { value: FlattenedBezierSubpathValue::Polyline(polyline, original) }
             }
         }
     }
@@ -118,8 +119,8 @@ impl EdgeDescriptor for FlattenedBezierNonZeroEdge {
 
     fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
         match &self.path.value {
-            FlattenedBezierSubpathValue::Polyline(line) => line.bounding_box(),
-            _                                           => { debug_assert!(false); ((f64::MIN, f64::MIN), (f64::MAX, f64::MAX)) },
+            FlattenedBezierSubpathValue::Polyline(line, _)  => line.bounding_box(),
+            _                                               => { debug_assert!(false); ((f64::MIN, f64::MIN), (f64::MAX, f64::MAX)) },
         }
     }
 
@@ -130,7 +131,7 @@ impl EdgeDescriptor for FlattenedBezierNonZeroEdge {
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<EdgeDescriptorIntercept>]) {
         match &self.path.value {
-            FlattenedBezierSubpathValue::Polyline(line) => {
+            FlattenedBezierSubpathValue::Polyline(line, _) => {
                 line.intercepts_on_lines(y_positions, output);
             }
 
@@ -142,7 +143,7 @@ impl EdgeDescriptor for FlattenedBezierNonZeroEdge {
         format!("Non-zero flattened polyline {:?}: {}", 
             self.shape_id,
             match &self.path.value {
-                FlattenedBezierSubpathValue::Polyline(polyline) => polyline.description(),
+                FlattenedBezierSubpathValue::Polyline(polyline, _) => polyline.description(),
                 _ => format!("not prepared"),
             })
     }
@@ -199,8 +200,8 @@ impl EdgeDescriptor for FlattenedBezierEvenOddEdge {
 
     fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
         match &self.path.value {
-            FlattenedBezierSubpathValue::Polyline(line) => line.bounding_box(),
-            _                                           => ((f64::MIN, f64::MIN), (f64::MAX, f64::MAX)),
+            FlattenedBezierSubpathValue::Polyline(line, _)  => line.bounding_box(),
+            _                                               => ((f64::MIN, f64::MIN), (f64::MAX, f64::MAX)),
         }
     }
 
@@ -211,7 +212,7 @@ impl EdgeDescriptor for FlattenedBezierEvenOddEdge {
 
     fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<EdgeDescriptorIntercept>]) {
         match &self.path.value {
-            FlattenedBezierSubpathValue::Polyline(line) => {
+            FlattenedBezierSubpathValue::Polyline(line, _) => {
                 line.intercepts_on_lines(y_positions, output);
 
                 for intercepts in output.iter_mut() {
@@ -229,7 +230,7 @@ impl EdgeDescriptor for FlattenedBezierEvenOddEdge {
         format!("Even-odd flattened polyline {:?}: {}", 
             self.shape_id,
             match &self.path.value {
-                FlattenedBezierSubpathValue::Polyline(polyline) => polyline.description(),
+                FlattenedBezierSubpathValue::Polyline(polyline, _) => polyline.description(),
                 _ => format!("not prepared"),
             })
     }
