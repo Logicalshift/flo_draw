@@ -6,7 +6,9 @@ use flo_canvas as canvas;
 use std::sync::*;
 
 ///
-/// Describes an edge that can be used as part of an edge plan
+/// Describes the edge of a shape. Shapes are described by determining where a ray cast along the x axis intercepts their edges.
+///
+/// Edge descriptors are used as part of an edge plan to describe a scene. The shape ID is used to apply attributes to the shape.
 ///
 pub trait EdgeDescriptor : Send + Sync {
     ///
