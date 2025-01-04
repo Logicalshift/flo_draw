@@ -67,6 +67,19 @@ pub trait EdgeDescriptor : Send + Sync {
     fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<EdgeDescriptorIntercept>]);
 
     ///
+    /// Finds the apexes for this shape and appends them to the output Vec
+    ///
+    /// These are the points along the y-axis for this shape where the direction the edge is moving in changes
+    /// direction (from moving up to moving down or vice-versa). These can be used to multi-sample lines where
+    /// a shape only partially overlaps it, which can reduce the number of artifacts that appear for intricate
+    /// shapes with small lines - particularly for cases where there's a horizontal line with sub-pixel,
+    /// or small shapes where single-pixel inaccuracies are noticeable.
+    ///
+    /// The output can be left empty if this shape does not support calculating apexes.
+    ///
+    fn apexes(&self, output: &mut Vec<f64>);
+
+    ///
     /// For debugging, an optional description of this edge
     ///
     fn description(&self) -> String { "no description".to_string() }
@@ -78,6 +91,7 @@ impl EdgeDescriptor for Box<dyn EdgeDescriptor> {
     #[inline] fn shape(&self) -> ShapeId                            { (**self).shape() }
     #[inline] fn bounding_box(&self) -> ((f64, f64), (f64, f64))    { (**self).bounding_box() }
     #[inline] fn description(&self) -> String                       { (**self).description() }
+    #[inline] fn apexes(&self, output: &mut Vec<f64>)               { (**self).apexes(output) }
     #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<EdgeDescriptorIntercept>]) { 
         (**self).intercepts(y_positions, output) 
     }
@@ -91,6 +105,8 @@ impl EdgeDescriptor for Arc<dyn EdgeDescriptor> {
     #[inline] fn shape(&self) -> ShapeId                            { (**self).shape() }
     #[inline] fn bounding_box(&self) -> ((f64, f64), (f64, f64))    { (**self).bounding_box() }
     #[inline] fn description(&self) -> String                       { (**self).description() }
+
+    #[inline] fn apexes(&self, output: &mut Vec<f64>)               { (**self).apexes(output) }
 
     #[inline] fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<EdgeDescriptorIntercept>]) { 
         (**self).intercepts(y_positions, output) 

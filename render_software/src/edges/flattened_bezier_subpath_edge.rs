@@ -146,6 +146,10 @@ impl EdgeDescriptor for FlattenedBezierNonZeroEdge {
                 _ => format!("not prepared"),
             })
     }
+
+    fn apexes(&self, output: &mut Vec<f64>) {
+        todo!("Apexes for a flattened bezier curve should be pre-calculated")
+    }
 }
 
 impl FlattenedBezierEvenOddEdge {
@@ -228,5 +232,9 @@ impl EdgeDescriptor for FlattenedBezierEvenOddEdge {
                 FlattenedBezierSubpathValue::Polyline(polyline) => polyline.description(),
                 _ => format!("not prepared"),
             })
+    }
+
+    fn apexes(&self, output: &mut Vec<f64>) {
+        todo!("Apexes for a flattened bezier curve should be pre-calculated")
     }
 }

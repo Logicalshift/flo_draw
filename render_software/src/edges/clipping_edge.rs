@@ -283,4 +283,8 @@ where
         use itertools::*;
         format!("Clipped edge: {}", self.shape_edges.iter().map(|edge| edge.description()).join(", "))
     }
+
+    fn apexes(&self, output: &mut Vec<f64>) {
+        todo!("Apexes for a clipping edge combine the original edge and the clipped edge")
+    }
 }

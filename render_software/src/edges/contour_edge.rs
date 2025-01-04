@@ -104,4 +104,8 @@ where
             }
         }
     }
+
+    fn apexes(&self, output: &mut Vec<f64>) {
+        // Contours have no apexes
+    }
 }

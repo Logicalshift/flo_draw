@@ -526,6 +526,10 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
     fn description(&self) -> String {
         format!("Even-odd bezier edge: {:?}", self.subpath.curves)
     }
+
+    fn apexes(&self, output: &mut Vec<f64>) {
+        todo!("Should be able to calculate apexes for a bezier shape")
+    }
 }
 
 impl BezierSubpathEvenOddEdge {
@@ -622,5 +626,9 @@ impl EdgeDescriptor for BezierSubpathNonZeroEdge {
 
     fn description(&self) -> String {
         format!("Non-zero bezier edge: {:?}", self.subpath.curves)
+    }
+
+    fn apexes(&self, output: &mut Vec<f64>) {
+        todo!("Should be able to calculate apexes for a bezier shape")
     }
 }

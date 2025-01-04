@@ -58,4 +58,8 @@ impl EdgeDescriptor for RectangleEdge {
             }
         }
     }
+
+    fn apexes(&self, output: &mut Vec<f64>) {
+        output.extend([self.y_bounds.start, self.y_bounds.end]);
+    }
 }

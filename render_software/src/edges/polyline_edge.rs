@@ -418,6 +418,10 @@ impl EdgeDescriptor for PolylineNonZeroEdge {
     fn description(&self) -> String {
         format!("Even-odd polyline {:?}: {}", self.shape_id, self.polyline.description())
     }
+
+    fn apexes(&self, output: &mut Vec<f64>) {
+        todo!("Polylines with low numbers of edges should be easy to calculate apexes, good idea to pre-cache if they are generated with a lot of edges from curves though")
+    }
 }
 
 impl PolylineEvenOddEdge {
@@ -498,5 +502,9 @@ impl EdgeDescriptor for PolylineEvenOddEdge {
 
     fn description(&self) -> String {
         format!("Even-odd polyline {:?}: {}", self.shape_id, self.polyline.description())
+    }
+
+    fn apexes(&self, output: &mut Vec<f64>) {
+        todo!("Polylines with low numbers of edges should be easy to calculate apexes, good idea to pre-cache if they are generated with a lot of edges from curves though")
     }
 }

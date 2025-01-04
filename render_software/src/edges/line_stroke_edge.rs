@@ -202,6 +202,10 @@ impl EdgeDescriptor for LineStrokeEdge {
             }
         }
     }
+
+    fn apexes(&self, output: &mut Vec<f64>) {
+        todo!("calculated apexes for line strokes should be possible")
+    }
 }
 
 ///
@@ -387,5 +391,9 @@ impl EdgeDescriptor for FlattenedLineStrokeEdge {
         use itertools::*;
         format!("Flattened line edge: {}", 
             self.bezier_path.iter().map(|edge| edge.description()).join("\n  "))
+    }
+
+    fn apexes(&self, output: &mut Vec<f64>) {
+        todo!("Apexes for a flattened line stroke need to be calculated before flattening")
     }
 }
