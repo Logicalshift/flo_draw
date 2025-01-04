@@ -2,7 +2,7 @@ use super::scanline_transform::*;
 
 use crate::edgeplan::*;
 
-use std::{ops::{Range}, process::ExitCode};
+use std::ops::{Range};
 
 ///
 /// Describes the location of a shard intercept
