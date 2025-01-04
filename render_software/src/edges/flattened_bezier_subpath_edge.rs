@@ -149,7 +149,11 @@ impl EdgeDescriptor for FlattenedBezierNonZeroEdge {
     }
 
     fn apexes(&self, output: &mut Vec<f64>) {
-        todo!("Apexes for a flattened bezier curve should be pre-calculated")
+        match &self.path.value {
+            FlattenedBezierSubpathValue::None                       => { }
+            FlattenedBezierSubpathValue::BezierSubPath { path, .. } => { path.apexes(output); }
+            FlattenedBezierSubpathValue::Polyline(_, path)          => { path.apexes(output); }
+        }
     }
 }
 
@@ -236,6 +240,10 @@ impl EdgeDescriptor for FlattenedBezierEvenOddEdge {
     }
 
     fn apexes(&self, output: &mut Vec<f64>) {
-        todo!("Apexes for a flattened bezier curve should be pre-calculated")
+        match &self.path.value {
+            FlattenedBezierSubpathValue::None                       => { }
+            FlattenedBezierSubpathValue::BezierSubPath { path, .. } => { path.apexes(output); }
+            FlattenedBezierSubpathValue::Polyline(_, path)          => { path.apexes(output); }
+        }
     }
 }
