@@ -474,7 +474,7 @@ impl BezierSubpath {
         let num_curves = self.curves.len();
 
         for idx in 0..num_curves {
-            let next_idx         = if idx >= num_curves { 0 } else { idx + 1 };
+            let next_idx         = if idx >= num_curves-1 { 0 } else { idx + 1 };
             let (curve1, curve2) = (&self.curves[idx], &self.curves[next_idx]);
 
             // Add the apex for this curve
