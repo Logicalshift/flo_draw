@@ -138,6 +138,32 @@ impl SubpathCurve {
             wdy:        wdy,
         }
     }
+
+    ///
+    /// Finds the apexes for this curve and adds them to the supplied list
+    ///
+    #[inline]
+    fn apexes(&self, apexes: &mut Vec<f64>) {
+        // Fetch the parameters for this component
+        let p1 = self.wy.0;
+        let p2 = self.wy.1;
+        let p3 = self.wy.2;
+        let p4 = self.wy.3;
+
+        // Compute the bezier coefficients
+        let a = (-p1 + p2*3.0 - p3*3.0 + p4)*3.0;
+        let b = (p1 - p2*2.0 + p3)*6.0;
+        let c = (p2 - p1)*3.0;
+
+        if a != 0.0 {
+            // Extremities are points at which the curve has a 0 gradient (in any of its dimensions)
+            let root1 = (-b + f64::sqrt(b*b - a*c*4.0)) / (a*2.0);
+            let root2 = (-b - f64::sqrt(b*b - a*c*4.0)) / (a*2.0);
+
+            if root1 > 0.0 && root1 < 1.0 { apexes.push(root1); }
+            if root2 > 0.0 && root2 < 1.0 { apexes.push(root2); }
+        }
+    }
 }
 
 impl BezierPath for BezierSubpath {
@@ -440,6 +466,29 @@ impl BezierSubpath {
             .chain(self.curves.into_iter()
                 .flat_map(|curve| flatten_curve(&curve, min_length, flatness))))
     }
+
+    ///
+    /// Finds the apexes for this subpath (the points where the path changes direction)
+    ///
+    pub fn apexes(&self, apexes: &mut Vec<f64>) {
+        let num_curves = self.curves.len();
+
+        for idx in 0..num_curves {
+            let next_idx         = if idx >= num_curves { 0 } else { idx + 1 };
+            let (curve1, curve2) = (&self.curves[idx], &self.curves[next_idx]);
+
+            // Add the apex for this curve
+            curve1.apexes(apexes);
+            
+            // If the preceding and following curve form an apex, add that too
+            let curve1_dir = (curve1.wy.2 - curve1.wy.3).signum();
+            let curve2_dir = (curve2.wy.0 - curve2.wy.1).signum();
+
+            if curve1_dir != curve2_dir {
+                apexes.push(curve1.wy.3);
+            }
+        }
+    }
 }
 
 ///
@@ -528,7 +577,7 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
     }
 
     fn apexes(&self, output: &mut Vec<f64>) {
-        todo!("Should be able to calculate apexes for a bezier shape")
+        self.subpath.apexes(output);
     }
 }
 
@@ -629,6 +678,6 @@ impl EdgeDescriptor for BezierSubpathNonZeroEdge {
     }
 
     fn apexes(&self, output: &mut Vec<f64>) {
-        todo!("Should be able to calculate apexes for a bezier shape")
+        self.subpath.apexes(output);
     }
 }
