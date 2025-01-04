@@ -416,6 +416,12 @@ where
                             }
                         }
 
+                        // Apply opacity if needed
+                        let opacity = intercept.opacity();
+                        if opacity < 1.0 {
+                            program_stack.push(PixelProgramPlan::Merge(opacity))
+                        }
+
                         // Run the program for this range
                         program_stack.extend(shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
 

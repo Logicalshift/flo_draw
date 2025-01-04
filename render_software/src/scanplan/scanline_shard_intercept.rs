@@ -11,7 +11,7 @@ use std::ops::{Range};
 pub struct ShardInterceptLocation {
     pub shape:          ShapeId,
     pub direction:      EdgeInterceptDirection,
-    pub opacity:        f64,
+    pub opacity:        f32,
     pub lower_x:        f64,
     pub upper_x:        f64,
     pub lower_x_floor:  f64,
@@ -47,6 +47,9 @@ pub struct ScanlineShardIntercept<'a> {
     /// How this intercept should be blended with those behind it
     blend: InterceptBlend,
 
+    /// The opacity of this shard
+    opacity: f32,
+
     /// The shape that is being drawn by this scanline
     shape_id: ShapeId,
 
@@ -75,7 +78,7 @@ impl ShardInterceptLocation {
         ShardInterceptLocation {
             shape:          intercept.shape,
             direction:      intercept.direction,
-            opacity:        intercept.opacity,
+            opacity:        intercept.opacity as _,
             lower_x_floor:  lower_x.floor(),
             upper_x_ceil:   upper_x.ceil(),
             lower_x:        lower_x,
@@ -110,12 +113,20 @@ impl<'a> ScanlineShardIntercept<'a> {
     }
 
     ///
+    /// The opacity of this shape
+    ///
+    #[inline]
+    pub fn opacity(&self) -> f32 {
+        self.opacity
+    }
+
+    ///
     /// Returns true if this intercept is opaque
     ///
     #[inline]
     pub fn is_opaque(&self) -> bool {
         match self.blend {
-            InterceptBlend::Solid               => self.descriptor.is_opaque,
+            InterceptBlend::Solid               => self.descriptor.is_opaque && self.opacity >= 1.0,
             InterceptBlend::Fade { .. }         => false,
             InterceptBlend::NestedFade { .. }   => false,
         }
@@ -371,6 +382,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
                         count:      count, 
                         start_x:    intercept.lower_x,
                         blend:      InterceptBlend::Fade { x_range: intercept.lower_x..intercept.upper_x, alpha_range: 0.0..1.0 },
+                        opacity:    intercept.opacity,
                         shape_id:   intercept.shape,
                         descriptor: descriptor,
                     })
