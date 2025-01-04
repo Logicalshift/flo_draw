@@ -23,6 +23,9 @@ pub struct EdgePlanShardIntercept {
     /// The shape that was intercepted
     pub shape:      ShapeId,
 
+    /// The maximum opacity to apply once inside the shape 
+    pub opacity:    f64,
+
     /// The direction that the line that was crossed was intercepted
     pub direction:  EdgeInterceptDirection,
 

@@ -384,6 +384,7 @@ where
 
                     output_line.push(EdgePlanShardIntercept {
                         shape:      shape,
+                        opacity:    1.0,
                         direction:  shard.direction(),
                         lower_x:    x_range.start,
                         upper_x:    x_range.end
