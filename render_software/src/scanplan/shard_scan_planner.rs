@@ -50,6 +50,10 @@ enum ShardIntercept {
     Finish(ShardInterceptLocation),
 }
 
+///
+/// The shard intercept iterator takes a list of EdgePlanShardIntercepts from left to right, and turns them into 
+/// ordered `ShardIntercepts` at each point where an action is needed.
+///
 struct ShardInterceptIterator<'a, TShardIterator>
 where
     TShardIterator: Iterator<Item=&'a EdgePlanShardIntercept>,
