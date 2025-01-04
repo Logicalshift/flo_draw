@@ -24,6 +24,7 @@ where
 {
     edge:       TEdge,
     y_bounds:   Range<f64>,
+    apexes:     Vec<f64>,
 }
 
 ///
@@ -117,10 +118,15 @@ where
                 // Transform the edge. Transforming also prepares it so we can get the y-bounds
                 let edge                        = edge_data.edge.transform(transform);
                 let ((_, min_y), (_, max_y))    = edge.bounding_box();
+                let mut apexes                  = Vec::with_capacity(4);
+                edge.apexes(&mut apexes);
+
+                apexes.sort_by(|a, b| a.total_cmp(b));
 
                 EdgeData {
                     edge:       edge,
-                    y_bounds:    min_y..max_y,
+                    y_bounds:   min_y..max_y,
+                    apexes:     apexes,
                 }
             }).collect::<Vec<_>>()
         };
@@ -222,10 +228,14 @@ where
     ///
     #[inline]
     pub fn add_edge(&mut self, new_edge: TEdge) {
+        let mut apexes = Vec::with_capacity(4);
+        new_edge.apexes(&mut apexes);
+
         // The y-bounds are calculated later on when we prepare to render
         self.edges.push(EdgeData {
             edge:       new_edge,
             y_bounds:   f64::MIN..f64::MAX,
+            apexes:     apexes,
         });
     }
 
