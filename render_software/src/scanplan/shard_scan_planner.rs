@@ -419,7 +419,8 @@ where
                         // Apply opacity if needed
                         let opacity = intercept.opacity();
                         if opacity < 1.0 {
-                            program_stack.push(PixelProgramPlan::Merge(opacity))
+                            program_stack.push(PixelProgramPlan::Merge(opacity));
+                            num_blends += 1;
                         }
 
                         // Run the program for this range
