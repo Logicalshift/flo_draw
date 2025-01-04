@@ -332,7 +332,6 @@ where
         //  - group up the edges by y position (we can use regions here) so that it's easy to find which edges are on a particular scanline
         //  - pre-sort the edges and only re-sort if there are overlapping edges. Most of the time in an edge region the edges will be intercepted in the
         //      same order
-        //  - for anti-aliasing we need a way to track intercepts on the previous scanline for the same shape (usually the same edge, but sometimes the preceding or following edge)
         for edge_idx in self.edge_space.data_in_region(y_min..(y_max+1e-6)) {
             let edge = &self.edges[*edge_idx];
 
