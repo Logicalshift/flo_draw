@@ -401,7 +401,8 @@ where
                 shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
 
                 for (shards, output_line) in intercepts.iter().zip(output.iter_mut()) {
-                    fill_output_line_from_shards(shape, shards, 1.0, output_line);
+                    fill_output_line_from_shards(shape, shards, 0.5, output_line);
+                    fill_output_line_from_shards(shape, shards, 0.5, output_line);
                 }
             } else {
                 // Fill the intercepts for this shape (optimistically: we can't use the results we calculate here with an apex, so we assume only a few lines will be affected)
@@ -452,16 +453,18 @@ where
                             let row_height                  = y_range.end - y_range.start;
 
                             for (sub_pixel_shards, sp_range) in sub_pixel_intercepts.into_iter().zip(sub_pixel_ranges) {
-                                let opacity = (sp_range.end - sp_range.start) / row_height;
+                                let opacity = (sp_range.end - sp_range.start) / row_height / 2.0;
                                 fill_output_line_from_shards(shape, &sub_pixel_shards, opacity, output_line);
                             }
                         } else {
                             // No apexes on this line
-                            fill_output_line_from_shards(shape, shards, 1.0, output_line);
+                            fill_output_line_from_shards(shape, shards, 0.5, output_line);
+                            fill_output_line_from_shards(shape, shards, 0.5, output_line);
                         }
                     } else {
                         // No more apexes
-                        fill_output_line_from_shards(shape, shards, 1.0, output_line);
+                        fill_output_line_from_shards(shape, shards, 0.5, output_line);
+                        fill_output_line_from_shards(shape, shards, 0.5, output_line);
                     }
                 }
             }
