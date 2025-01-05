@@ -411,20 +411,24 @@ where
                 let mut apex_iter = apexes.iter();
                 let mut next_apex = apex_iter.next();
 
-                let y_ranges      = start_y_positions.iter().zip(end_y_positions).map(|(y1, y2)| y1..y2);
+                let y_ranges      = start_y_positions.iter().zip(end_y_positions).map(|(y1, y2)| (*y1)..(*y2));
 
                 // Generate the intercepts for each line
                 for ((shards, output_line), y_range) in intercepts.iter().zip(output.iter_mut()).zip(y_ranges) {
                     // Find if any of the apexes lie within this y-range
                     if let Some(apex_pos) = next_apex {
-                        if apex_pos < y_range.end {
+                        if *apex_pos < y_range.end {
                             // Find the apexes that apply to this line
                             let mut line_apexes = vec![y_range.start];
+                            let mut last_apex   = y_range.start;
                             loop {
                                 if let Some(apex_pos) = next_apex {
-                                    if apex_pos < y_range.end {
-                                        // Apex included in this line
-                                        line_apexes.push(apex_pos);
+                                    if *apex_pos < y_range.end {
+                                        // Apex included in this line (skip overlapping apexes)
+                                        if *apex_pos > last_apex {
+                                            line_apexes.push(*apex_pos);
+                                            last_apex = *apex_pos;
+                                        }
                                         next_apex = apex_iter.next();
                                     } else {
                                         // Apex is for a future line
@@ -435,6 +439,22 @@ where
                                 }
                             }
                             line_apexes.push(y_range.end);
+
+                            // Compute sub-pixel shards for each pair of apexes
+                            let mut sub_pixel_intercepts    = vec![Vec::with_capacity(4); line_apexes.len()-1];
+                            let sub_pixel_y_starts          = &line_apexes[0..(line_apexes.len()-1)];
+                            let sub_pixel_y_ends            = &line_apexes[1..line_apexes.len()];
+
+                            shard_intercepts_from_edge(&edge.edge, sub_pixel_y_starts, sub_pixel_y_ends, &mut sub_pixel_intercepts);
+
+                            // Generate sub-pixel shards from these results
+                            let sub_pixel_ranges            = sub_pixel_y_starts.iter().zip(sub_pixel_y_ends).map(|(y1, y2)| y1..y2);
+                            let row_height                  = y_range.end - y_range.start;
+
+                            for (sub_pixel_shards, sp_range) in sub_pixel_intercepts.into_iter().zip(sub_pixel_ranges) {
+                                let opacity = (sp_range.end - sp_range.start) / row_height;
+                                fill_output_line_from_shards(shape, &sub_pixel_shards, 1.0, output_line);
+                            }
                         } else {
                             // No apexes on this line
                             fill_output_line_from_shards(shape, shards, 1.0, output_line);
