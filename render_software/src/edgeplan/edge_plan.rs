@@ -395,20 +395,54 @@ where
             // Check for apexes in the range of values that have been requested for this shape
             edge.find_apexes(y_min, y_max, &mut apexes);
 
-            // Fill the intercepts for this shape
-            shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
+            // Usually there are no apexes in a region, so we don't bother trying to track them
+            if apexes.is_empty() {
+                // Fill the intercepts for this shape
+                shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
 
-            for (shards, output_line) in intercepts.iter().zip(output.iter_mut()) {
-                for shard in shards {
-                    let x_range = shard.x_range();
+                for (shards, output_line) in intercepts.iter().zip(output.iter_mut()) {
+                    fill_output_line_from_shards(shape, shards, 1.0, output_line);
+                }
+            } else {
+                // Fill the intercepts for this shape (optimistically: we can't use the results we calculate here with an apex, so we assume only a few lines will be affected)
+                shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
 
-                    output_line.push(EdgePlanShardIntercept {
-                        shape:      shape,
-                        opacity:    1.0,
-                        direction:  shard.direction(),
-                        lower_x:    x_range.start,
-                        upper_x:    x_range.end
-                    })
+                // Iterate through the apexes. We assume the y positions will be in ascending order (as will the apexes), so we'll get apexes relating to each y position as we go
+                let mut apex_iter = apexes.iter();
+                let mut next_apex = apex_iter.next();
+
+                let y_ranges      = start_y_positions.iter().zip(end_y_positions).map(|(y1, y2)| y1..y2);
+
+                // Generate the intercepts for each line
+                for ((shards, output_line), y_range) in intercepts.iter().zip(output.iter_mut()).zip(y_ranges) {
+                    // Find if any of the apexes lie within this y-range
+                    if let Some(apex_pos) = next_apex {
+                        if apex_pos < y_range.end {
+                            // Find the apexes that apply to this line
+                            let mut line_apexes = vec![y_range.start];
+                            loop {
+                                if let Some(apex_pos) = next_apex {
+                                    if apex_pos < y_range.end {
+                                        // Apex included in this line
+                                        line_apexes.push(apex_pos);
+                                        next_apex = apex_iter.next();
+                                    } else {
+                                        // Apex is for a future line
+                                        break;
+                                    }
+                                } else {
+                                    break;
+                                }
+                            }
+                            line_apexes.push(y_range.end);
+                        } else {
+                            // No apexes on this line
+                            fill_output_line_from_shards(shape, shards, 1.0, output_line);
+                        }
+                    } else {
+                        // No more apexes
+                        fill_output_line_from_shards(shape, shards, 1.0, output_line);
+                    }
                 }
             }
         }
@@ -417,6 +451,23 @@ where
         output.iter_mut().for_each(|intercepts| {
             intercepts.sort_by(|a, b| a.lower_x.total_cmp(&b.lower_x));
         });
+    }
+}
+
+///
+/// Creates the EdgePlanShardIntercept values for a line
+///
+fn fill_output_line_from_shards(shape: ShapeId, shards: &[ShardIntercept], opacity: f64, output_line: &mut Vec<EdgePlanShardIntercept>) {
+    for shard in shards {
+        let x_range = shard.x_range();
+
+        output_line.push(EdgePlanShardIntercept {
+            shape:      shape,
+            opacity:    opacity,
+            direction:  shard.direction(),
+            lower_x:    x_range.start,
+            upper_x:    x_range.end
+        })
     }
 }
 
