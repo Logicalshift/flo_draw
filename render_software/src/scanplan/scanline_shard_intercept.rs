@@ -290,7 +290,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
     ///
     pub fn start_intercept(&mut self, intercept: &ShardInterceptLocation, transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
         if let Some(descriptor) = descriptor {
-            let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque);
+            let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque && intercept.opacity == 1.0);
 
             match self.find(z_index, intercept.shape) {
                 Ok(existing_idx) => {
