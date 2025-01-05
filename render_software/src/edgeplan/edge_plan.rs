@@ -453,7 +453,7 @@ where
 
                             for (sub_pixel_shards, sp_range) in sub_pixel_intercepts.into_iter().zip(sub_pixel_ranges) {
                                 let opacity = (sp_range.end - sp_range.start) / row_height;
-                                fill_output_line_from_shards(shape, &sub_pixel_shards, 1.0, output_line);
+                                fill_output_line_from_shards(shape, &sub_pixel_shards, opacity, output_line);
                             }
                         } else {
                             // No apexes on this line
