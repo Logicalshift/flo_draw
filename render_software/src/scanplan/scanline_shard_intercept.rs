@@ -314,10 +314,8 @@ impl<'a> ScanlineShardInterceptState<'a> {
 
                     if is_inside {
                         existing.opacity += intercept.opacity;
-                    } else {
-                        existing.opacity -= intercept.opacity;
                     }
-
+                    
                     if !was_inside && is_inside {
                         // Need to merge with the existing blend
                         self.active_shapes[existing_idx].blend = match &self.active_shapes[existing_idx].blend {
