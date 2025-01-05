@@ -14,10 +14,11 @@ fn scan_triangle() {
     triangle.prepare_to_render();
 
     // Iterate across the triangle to get a series of shards
-    let shards = shard_intercepts_from_edge(&triangle, 
+    let mut shards = vec![Vec::with_capacity(4); 6];
+    shard_intercepts_from_edge(&triangle, 
         &[99.0, 100.0, 125.0, 150.0, 175.0, 200.0],
-        &[100.0, 125.0, 150.0, 175.0, 200.0, 201.0])
-        .collect::<Vec<_>>();
+        &[100.0, 125.0, 150.0, 175.0, 200.0, 201.0],
+        &mut shards);
 
     println!("{:?}", shards);
     assert!(shards.len() == 6, "Should be 6 shards {:?}", shards);
@@ -53,10 +54,11 @@ fn scan_concave() {
     concave_shape.prepare_to_render();
 
     // Iterate across the shape to get a series of shards
-    let shards = shard_intercepts_from_edge(&concave_shape, 
+    let mut shards = vec![Vec::with_capacity(4); 8];
+    shard_intercepts_from_edge(&concave_shape, 
         &[99.0, 100.0, 125.0, 150.0, 175.0, 198.0, 199.0, 200.0],
-        &[100.0, 125.0, 150.0, 175.0, 198.0, 199.0, 200.0, 201.0])
-        .collect::<Vec<_>>();
+        &[100.0, 125.0, 150.0, 175.0, 198.0, 199.0, 200.0, 201.0],
+        &mut shards);
 
     println!("{:?}", shards);
     assert!(shards.len() == 8, "Should be 8 shards {:?}", shards);
@@ -93,10 +95,11 @@ fn scan_disjointed() {
     concave_shape.prepare_to_render();
 
     // Get the shards for the conflicting region. 49 is one set of intersections, 51 is another
-    let shards = shard_intercepts_from_edge(&concave_shape, 
+    let mut shards = vec![Vec::with_capacity(4); 1];
+    shard_intercepts_from_edge(&concave_shape, 
         &[49.0],
-        &[51.0])
-        .collect::<Vec<_>>();
+        &[51.0],
+        &mut shards);
 
     println!("{:?}", shards);
 
