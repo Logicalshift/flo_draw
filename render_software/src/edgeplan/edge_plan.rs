@@ -384,12 +384,16 @@ where
         });
 
         // Process every edge description in this range
-        let mut intercepts = vec![Vec::with_capacity(4); output.len()];
+        let mut intercepts  = vec![Vec::with_capacity(4); output.len()];
+        let mut apexes      = Vec::with_capacity(8);
 
         for edge_idx in self.edge_space.data_in_region(y_min..(y_max+1e-6)) {
             // Process the shards from this edge
             let edge    = &self.edges[*edge_idx];
             let shape   = edge.edge.shape();
+
+            // Check for apexes in the range of values that have been requested for this shape
+            edge.find_apexes(y_min, y_max, &mut apexes);
 
             // Fill the intercepts for this shape
             shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
@@ -413,5 +417,32 @@ where
         output.iter_mut().for_each(|intercepts| {
             intercepts.sort_by(|a, b| a.lower_x.total_cmp(&b.lower_x));
         });
+    }
+}
+
+impl<TEdge> EdgeData<TEdge>
+where
+    TEdge: EdgeDescriptor,
+{
+    ///
+    /// Finds any apexes for this shape for the specified range
+    ///
+    #[inline]
+    fn find_apexes(&self, y_min: f64, y_max: f64, apexes: &mut Vec<f64>) {
+        // Apexes are cleared here (so the caller shouldn't do this as well)
+        apexes.clear();
+
+        if !self.apexes.is_empty() {
+            // Binary search for the min/max in the apexes
+            let min = self.apexes.binary_search_by(|y_probe| y_probe.total_cmp(&y_min));
+            let max = self.apexes.binary_search_by(|y_probe| y_probe.total_cmp(&y_max));
+
+            if min != max {
+                let min = match min { Ok(min) => min, Err(min) => min };
+                let max = match max { Ok(max) => max, Err(max) => max };
+
+                apexes.extend(self.apexes[min..max].iter().copied());
+            }
+        }
     }
 }
