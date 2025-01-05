@@ -231,6 +231,8 @@ where
         let mut apexes = Vec::with_capacity(4);
         new_edge.apexes(&mut apexes);
 
+        apexes.sort_by(|a, b| a.total_cmp(b));
+
         // The y-bounds are calculated later on when we prepare to render
         self.edges.push(EdgeData {
             edge:       new_edge,
