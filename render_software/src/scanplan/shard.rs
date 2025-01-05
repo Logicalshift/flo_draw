@@ -127,7 +127,7 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
 /// The start_y_positions and end_y_positions slices should be the same length. A slice will be generated for each pair of y values in these
 /// two slices.
 ///
-pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, start_y_positions: &'a [f64], end_y_positions: &'a [f64]) -> impl 'a + Iterator<Item=Vec<ShardIntercept>>{
+pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, start_y_positions: &'a [f64], end_y_positions: &'a [f64], output: &mut Vec<Vec<ShardIntercept>>) {
     // TODO: some edges can have multiple closed shapes (eg: closed lines, for example). This algorithm won't work with those because it assumes a single closed shape
 
     // Read the positions of the start intercepts for each y-position
@@ -146,45 +146,39 @@ pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, st
         .for_each(|intercept_line| intercept_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos)));
 
     // Generate the shart intercepts
-    start_intercepts.into_iter()
-        .zip(end_intercepts.into_iter())
-        .map(|(previous_line, next_line)| {
-            // We now need to match the crossing points for the two lines, which we do by pairing up each point with the nearest of the same crossing type form the
+    for ((previous_line, next_line), intercepts) in start_intercepts.into_iter().zip(end_intercepts.into_iter()).zip(output.iter_mut()) {
+        // We now need to match the crossing points for the two lines, which we do by pairing up each point with the nearest of the same crossing type form the
 
-            // Every matching pair forms a shard in that direction. Very often this is very simple: both the next and previous line have the same number of intercepts,
-            // and they are all in the same direction
-            let mut intercepts;
+        // Every matching pair forms a shard in that direction. Very often this is very simple: both the next and previous line have the same number of intercepts,
+        // and they are all in the same direction
+        if previous_line.len() == 0 || next_line.len() == 0 {
+            // There are no shards in an empty line, so the other line doesn't matter (this is commonly the initial/final line for a convex shape)
+            intercepts.clear();
+        } else if previous_line.len() == next_line.len() && false {
+            // TODO: is this optimisation worth it? It's faster to just match everything rather than resolve them, but the time is spent elsewhere at the moment
 
-            if previous_line.len() == 0 || next_line.len() == 0 {
-                // There are no shards in an empty line, so the other line doesn't matter (this is commonly the initial/final line for a convex shape)
-                intercepts = vec![];
-            } else if previous_line.len() == next_line.len() && false {
-                // TODO: is this optimisation worth it? It's faster to just match everything rather than resolve them, but the time is spent elsewhere at the moment
+            // Try the simple case, and then try finding the nearest matches if it fails
+            intercepts.clear();
 
-                // Try the simple case, and then try finding the nearest matches if it fails
-                intercepts = vec![];
-
-                for (first, second) in previous_line.iter().zip(next_line.iter()) {
-                    if first.direction != second.direction || first.position.0 != second.position.0 {
-                        // Intercept direction or shape has changed, so these shapes don't match: use the 'find nearest' algorithm instead (this is a concave shape)
-                        // (Eg: a 'C' shape with a very narrow gap)
-                        intercepts = resolve_shards(&previous_line, &next_line);
-                        break;
-                    }
-
-                    // Add a new intercept to the list
-                    intercepts.push(ShardIntercept {
-                        direction:  first.direction,
-                        x_start:    first.x_pos.min(second.x_pos),
-                        x_end:      first.x_pos.max(second.x_pos),
-                    })
+            for (first, second) in previous_line.iter().zip(next_line.iter()) {
+                if first.direction != second.direction || first.position.0 != second.position.0 {
+                    // Intercept direction or shape has changed, so these shapes don't match: use the 'find nearest' algorithm instead (this is a concave shape)
+                    // (Eg: a 'C' shape with a very narrow gap)
+                    *intercepts = resolve_shards(&previous_line, &next_line);
+                    break;
                 }
-            } else {
-                // Shards are formed by finding the nearest intercept to each point
-                // (Eg, the end of a spike in a concave shape)
-                intercepts = resolve_shards(&previous_line, &next_line);
-            }
 
-            intercepts
-        })
+                // Add a new intercept to the list
+                intercepts.push(ShardIntercept {
+                    direction:  first.direction,
+                    x_start:    first.x_pos.min(second.x_pos),
+                    x_end:      first.x_pos.max(second.x_pos),
+                })
+            }
+        } else {
+            // Shards are formed by finding the nearest intercept to each point
+            // (Eg, the end of a spike in a concave shape)
+            *intercepts = resolve_shards(&previous_line, &next_line);
+        }
+    }
 }

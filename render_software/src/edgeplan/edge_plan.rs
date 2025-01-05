@@ -382,12 +382,17 @@ where
         });
 
         // Process every edge description in this range
+        let mut intercepts = vec![Vec::with_capacity(4); output.len()];
+
         for edge_idx in self.edge_space.data_in_region(y_min..(y_max+1e-6)) {
             // Process the shards from this edge
             let edge    = &self.edges[*edge_idx];
             let shape   = edge.edge.shape();
 
-            for (shards, output_line) in shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions).zip(output.iter_mut()) {
+            // Fill the intercepts for this shape
+            shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
+
+            for (shards, output_line) in intercepts.iter().zip(output.iter_mut()) {
                 for shard in shards {
                     let x_range = shard.x_range();
 
