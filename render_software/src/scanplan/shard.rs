@@ -57,7 +57,10 @@ impl ShardIntercept {
 ///
 /// We don't find maxima for peaks or minima for troughs, so one artifact this will introduce is that the subpixel peak or trough of a shape will be cut off.
 ///
-fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<EdgeDescriptorIntercept>) -> Vec<ShardIntercept> {
+fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<EdgeDescriptorIntercept>, shards: &mut Vec<ShardIntercept>) {
+    // Clear out any existing values from the result
+    shards.clear();
+
     // Mix the previous and next lines and then sort them by edge position
     let mut sorted_lines =
         previous_line.iter().map(|intercept| (intercept, false))
@@ -72,7 +75,6 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
 
     // When sorted this way, this puts 'connected' intercepts next to each other, so we can create shards from any pair where the first is on the lower edge 
     // and the second is on the upper edge, then sort again by x position. The shape is a loop, and so the ordering is too
-    let mut shards                      = vec![];
     let mut last_matched                = false;
     let mut initial_subpath_intercept   = &sorted_lines[0];
 
@@ -117,8 +119,6 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
 
     // For a closed shape, there should always be an even number of intercepts, even after this transformation
     debug_assert!(shards.len()%2 == 0, "Previous line: {:?}\nNext line: {:?}\nSorted lines: {:?}\nShards found: {:?}", previous_line, next_line, sorted_lines, shards);
-
-    shards
 }
 
 ///
@@ -164,7 +164,7 @@ pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, st
                 if first.direction != second.direction || first.position.0 != second.position.0 {
                     // Intercept direction or shape has changed, so these shapes don't match: use the 'find nearest' algorithm instead (this is a concave shape)
                     // (Eg: a 'C' shape with a very narrow gap)
-                    *intercepts = resolve_shards(&previous_line, &next_line);
+                    resolve_shards(&previous_line, &next_line, intercepts);
                     break;
                 }
 
@@ -178,7 +178,7 @@ pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, st
         } else {
             // Shards are formed by finding the nearest intercept to each point
             // (Eg, the end of a spike in a concave shape)
-            *intercepts = resolve_shards(&previous_line, &next_line);
+            resolve_shards(&previous_line, &next_line, intercepts);
         }
     }
 }
