@@ -290,7 +290,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
     ///
     pub fn start_intercept(&mut self, intercept: &ShardInterceptLocation, transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
         if let Some(descriptor) = descriptor {
-            let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque && intercept.opacity == 1.0);
+            let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque && intercept.opacity >= 1.0);
 
             match self.find(z_index, intercept.shape) {
                 Ok(existing_idx) => {
@@ -311,6 +311,12 @@ impl<'a> ScanlineShardInterceptState<'a> {
                         },
                     };
                     let is_inside       = existing.count != 0;
+
+                    if is_inside {
+                        existing.opacity += intercept.opacity;
+                    } else {
+                        existing.opacity -= intercept.opacity;
+                    }
 
                     if !was_inside && is_inside {
                         // Need to merge with the existing blend
