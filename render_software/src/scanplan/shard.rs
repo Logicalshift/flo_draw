@@ -2,7 +2,7 @@ use crate::edgeplan::*;
 
 use itertools::*;
 
-use std::ops::{Range, Deref};
+use std::ops::{Range};
 
 ///
 /// A shard represents an interception with an edge over a range of y-values (generally a single pixel in height)
@@ -31,15 +31,6 @@ pub struct ShardIntercept {
     x_end: f64,
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct PartialShardIntercept {
-    /// Where an intercept was found on the shape
-    shard_intercept: ShardIntercept,
-
-    /// The maximum coverage of this shape across the range that was sampled, from 0-1
-    coverage: f64,
-}
-
 impl ShardIntercept {
     ///
     /// The direction of this intercept
@@ -55,24 +46,6 @@ impl ShardIntercept {
     #[inline]
     pub fn x_range(&self) -> Range<f64> {
         self.x_start..self.x_end
-    }
-}
-
-impl PartialShardIntercept {
-    ///
-    /// The maximum coverage of this shape across the range that was sampled, from 0-1
-    ///
-    #[inline]
-    pub fn coverage(&self) -> f64 {
-        self.coverage
-    }
-}
-
-impl Deref for PartialShardIntercept {
-    type Target = ShardIntercept;
-
-    fn deref(&self) -> &Self::Target {
-        &self.shard_intercept
     }
 }
 
@@ -152,7 +125,7 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
 /// Fills the output with a list of shard intercepts for a set positions
 ///
 /// The start_y_positions, end_y_positions and output slices should be the same length. Each entry in the output slice will be cleared and
-/// updated to contain the intercepts from the corresponding start/end region.
+/// updated to contain the intercepts fro the corresponding start/end region.
 ///
 pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, start_y_positions: &'a [f64], end_y_positions: &'a [f64], output: &mut [Vec<ShardIntercept>]) {
     // TODO: some edges can have multiple closed shapes (eg: closed lines, for example). This algorithm won't work with those because it assumes a single closed shape
@@ -208,21 +181,4 @@ pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, st
             resolve_shards(&previous_line, &next_line, intercepts);
         }
     }
-}
-
-///
-/// This deals with the case where a shape only partially covers a region in the y direction by finding partial shards.
-///
-/// The y positions are used as sample points on a single line. These should be passed in in ascending order, and are used
-/// to generate 'sub-pixel' shard intercepts. These intercepts are then joined together wherever they can to produce 'partial'
-/// intercepts, which are shard intercepts with a coverage value indicating how much of the overall line is covered by each
-/// shard.
-///
-/// This is a little more efficient than super-sampling these lines as these shards can be rendered using a single pass, so
-/// only a single set of pixels needs to be blended with the result (in practice this might not matter so much as these tend
-/// to be short runs of pixels). This also helps by removing the need to have an edge case where the extremeties of a region
-/// use super-sampling but the other parts do not.
-///
-pub fn partial_shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, y_positions: &'a [f64], output: &mut [Vec<PartialShardIntercept>]) {
-    todo!()
 }
