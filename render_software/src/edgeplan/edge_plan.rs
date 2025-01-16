@@ -401,7 +401,7 @@ where
                 shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
 
                 for (shards, output_line) in intercepts.iter().zip(output.iter_mut()) {
-                    fill_output_line_from_shards(shape, shards, 1.0, output_line);
+                    fill_output_line_from_shards(shape, shards, 0, 1.0, output_line);
                 }
             } else {
                 // Fill the intercepts for this shape (optimistically: we can't use the results we calculate here with an apex, so we assume only a few lines will be affected)
@@ -453,17 +453,17 @@ where
                             let sub_pixel_ranges            = sub_pixel_y_starts.iter().zip(sub_pixel_y_ends).map(|(y1, y2)| y1..y2);
                             let row_height                  = y_range.end - y_range.start;
 
-                            for (sub_pixel_shards, sp_range) in sub_pixel_intercepts.into_iter().zip(sub_pixel_ranges) {
+                            for (subpixel_idx, (sub_pixel_shards, sp_range)) in sub_pixel_intercepts.into_iter().zip(sub_pixel_ranges).enumerate() {
                                 let opacity = (sp_range.end - sp_range.start) / row_height;
-                                fill_output_line_from_shards(shape, &sub_pixel_shards, opacity, output_line);
+                                fill_output_line_from_shards(shape, &sub_pixel_shards, subpixel_idx as _, opacity, output_line);
                             }
                         } else {
                             // No apexes on this line
-                            fill_output_line_from_shards(shape, shards, 1.0, output_line);
+                            fill_output_line_from_shards(shape, shards, 0, 1.0, output_line);
                         }
                     } else {
                         // No more apexes
-                        fill_output_line_from_shards(shape, shards, 1.0, output_line);
+                        fill_output_line_from_shards(shape, shards, 0, 1.0, output_line);
                     }
                 }
             }
@@ -479,12 +479,13 @@ where
 ///
 /// Creates the EdgePlanShardIntercept values for a line
 ///
-fn fill_output_line_from_shards(shape: ShapeId, shards: &[ShardIntercept], opacity: f64, output_line: &mut Vec<EdgePlanShardIntercept>) {
+fn fill_output_line_from_shards(shape: ShapeId, shards: &[ShardIntercept], subpixel: u8, opacity: f64, output_line: &mut Vec<EdgePlanShardIntercept>) {
     for shard in shards {
         let x_range = shard.x_range();
 
         output_line.push(EdgePlanShardIntercept {
             shape:      shape,
+            subpixel:   subpixel,
             opacity:    opacity,
             direction:  shard.direction(),
             lower_x:    x_range.start,

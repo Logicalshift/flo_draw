@@ -23,6 +23,9 @@ pub struct EdgePlanShardIntercept {
     /// The shape that was intercepted
     pub shape:      ShapeId,
 
+    /// The subpixel along the shape that was intercepted (when multiple intercepts might appear on a scanline, otherwise 0)
+    pub subpixel:   u8,
+
     /// The maximum opacity to apply once inside the shape
     ///
     /// Opacity is used around shape 'apexes', where a shape only partially covers a scanline
