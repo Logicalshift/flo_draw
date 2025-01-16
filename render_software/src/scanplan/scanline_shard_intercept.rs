@@ -9,6 +9,7 @@ use std::ops::{Range};
 ///
 #[derive(Clone, Copy, Debug)]
 pub struct ShardInterceptLocation {
+    pub subpixel:       u8,
     pub shape:          ShapeId,
     pub direction:      EdgeInterceptDirection,
     pub opacity:        f32,
@@ -76,6 +77,7 @@ impl ShardInterceptLocation {
         let upper_x = transform.source_x_to_pixels(intercept.upper_x);
 
         ShardInterceptLocation {
+            subpixel:       intercept.subpixel,
             shape:          intercept.shape,
             direction:      intercept.direction,
             opacity:        intercept.opacity as _,
