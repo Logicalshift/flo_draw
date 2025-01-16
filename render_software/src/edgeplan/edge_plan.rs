@@ -441,6 +441,8 @@ where
                             line_apexes.push(y_range.end);
 
                             // Compute sub-pixel shards for each pair of apexes
+                            // TODO: the overlapping regions we generate here don't work, we need to combine them into non-overlapping regions
+                            // TODO: a better approach might be to send rays in the middle of the regions here, and use those rays to figure out where the intercepts are
                             let mut sub_pixel_intercepts    = vec![Vec::with_capacity(4); line_apexes.len()-1];
                             let sub_pixel_y_starts          = &line_apexes[0..(line_apexes.len()-1)];
                             let sub_pixel_y_ends            = &line_apexes[1..line_apexes.len()];
