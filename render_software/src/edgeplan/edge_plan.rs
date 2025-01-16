@@ -455,7 +455,7 @@ where
 
                             for (subpixel_idx, (sub_pixel_shards, sp_range)) in sub_pixel_intercepts.into_iter().zip(sub_pixel_ranges).enumerate() {
                                 let opacity = (sp_range.end - sp_range.start) / row_height;
-                                fill_output_line_from_shards(shape, &sub_pixel_shards, subpixel_idx as _, opacity, output_line);
+                                fill_output_line_from_shards(shape, &sub_pixel_shards, subpixel_idx as _, opacity as _, output_line);
                             }
                         } else {
                             // No apexes on this line
@@ -479,7 +479,7 @@ where
 ///
 /// Creates the EdgePlanShardIntercept values for a line
 ///
-fn fill_output_line_from_shards(shape: ShapeId, shards: &[ShardIntercept], subpixel: u8, opacity: f64, output_line: &mut Vec<EdgePlanShardIntercept>) {
+fn fill_output_line_from_shards(shape: ShapeId, shards: &[ShardIntercept], subpixel: u8, opacity: f32, output_line: &mut Vec<EdgePlanShardIntercept>) {
     for shard in shards {
         let x_range = shard.x_range();
 

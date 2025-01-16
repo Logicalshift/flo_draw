@@ -29,7 +29,7 @@ pub struct EdgePlanShardIntercept {
     /// The maximum opacity to apply once inside the shape
     ///
     /// Opacity is used around shape 'apexes', where a shape only partially covers a scanline
-    pub opacity:    f64,
+    pub opacity:    f32,
 
     /// The direction that the line that was crossed was intercepted
     pub direction:  EdgeInterceptDirection,
