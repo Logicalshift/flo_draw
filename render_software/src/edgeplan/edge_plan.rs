@@ -401,7 +401,7 @@ where
                 shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
 
                 for (shards, output_line) in intercepts.iter().zip(output.iter_mut()) {
-                    fill_output_line_from_shards(shape, shards, 0, 1.0, output_line);
+                    fill_output_line_from_shards(shape, shards, 255, 1.0, output_line);
                 }
             } else {
                 // Fill the intercepts for this shape (optimistically: we can't use the results we calculate here with an apex, so we assume only a few lines will be affected)
@@ -467,11 +467,11 @@ where
                             }
                         } else {
                             // No apexes on this line
-                            fill_output_line_from_shards(shape, shards, 0, 1.0, output_line);
+                            fill_output_line_from_shards(shape, shards, 255, 1.0, output_line);
                         }
                     } else {
                         // No more apexes
-                        fill_output_line_from_shards(shape, shards, 0, 1.0, output_line);
+                        fill_output_line_from_shards(shape, shards, 255, 1.0, output_line);
                     }
                 }
             }
