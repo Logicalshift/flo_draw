@@ -51,6 +51,9 @@ pub struct ScanlineShardIntercept<'a> {
     /// The opacity of this shard
     opacity: f32,
 
+    /// The subpixel of the shape that this intercept represents
+    subpixel: u8,
+
     /// The shape that is being drawn by this scanline
     shape_id: ShapeId,
 
@@ -227,7 +230,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
     /// Returns Ok(index) if we find an exact match, or Err(index) if we don't
     ///
     #[inline]
-    pub fn find(&self, z_index: i64, shape_id: ShapeId) -> Result<usize, usize> {
+    pub fn find(&self, z_index: i64, shape_id: ShapeId, subpixel: u8) -> Result<usize, usize> {
         // min is inclusive, max is exclusive
         let mut min = 0;
         let mut max = self.active_shapes.len();
@@ -244,6 +247,10 @@ impl<'a> ScanlineShardInterceptState<'a> {
             } else if intercept.shape_id < shape_id {
                 min = mid + 1;
             } else if intercept.shape_id > shape_id {
+                max = mid;
+            } else if intercept.subpixel < subpixel {
+                min = mid + 1;
+            } else if intercept.subpixel > subpixel {
                 max = mid;
             } else {
                 return Ok(mid);
@@ -294,7 +301,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
         if let Some(descriptor) = descriptor {
             let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque && intercept.opacity >= 1.0);
 
-            match self.find(z_index, intercept.shape) {
+            match self.find(z_index, intercept.shape, intercept.subpixel) {
                 Ok(existing_idx) => {
                     // Update the existing shape depending on the direction of the intercept
                     let existing        = &mut self.active_shapes[existing_idx];
@@ -386,6 +393,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
                         blend:      InterceptBlend::Fade { x_range: intercept.lower_x..intercept.upper_x, alpha_range: 0.0..1.0 },
                         opacity:    intercept.opacity,
                         shape_id:   intercept.shape,
+                        subpixel:   intercept.subpixel,
                         descriptor: descriptor,
                     })
                 }
@@ -398,7 +406,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
     ///
     pub fn finish_intercept(&mut self, intercept: &ShardInterceptLocation, descriptor: Option<&'a ShapeDescriptor>) {
         if let Some(descriptor) = descriptor {
-            if let Ok(existing_idx) = self.find(descriptor.z_index, intercept.shape) {
+            if let Ok(existing_idx) = self.find(descriptor.z_index, intercept.shape, intercept.subpixel) {
                 let active_shape    = &mut self.active_shapes[existing_idx];
                 let new_blend       = clear_finished_intercepts(&active_shape.blend, intercept.upper_x);
 
@@ -438,7 +446,7 @@ mod test {
         let descriptor      = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 1 };
 
         // Start entering
-        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 120.0, lower_x_floor: 100.0, upper_x_ceil: 120.0 }, &transform, Some(&descriptor));
+        intercepts.start_intercept(&ShardInterceptLocation { subpixel: 0, shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 120.0, lower_x_floor: 100.0, upper_x_ceil: 120.0 }, &transform, Some(&descriptor));
 
         // Should be one intercept, that's a fading intercept
         assert!(intercepts.len() == 1, "{:?}", intercepts);
@@ -454,8 +462,8 @@ mod test {
         let descriptor      = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 1 };
 
         // Enter the shape
-        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 120.0, lower_x_floor: 100.0, upper_x_ceil: 120.0 }, &transform, Some(&descriptor));
-        intercepts.finish_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 120.0, lower_x_floor: 100.0, upper_x_ceil: 120.0 }, Some(&descriptor));
+        intercepts.start_intercept(&ShardInterceptLocation { subpixel: 0, shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 120.0, lower_x_floor: 100.0, upper_x_ceil: 120.0 }, &transform, Some(&descriptor));
+        intercepts.finish_intercept(&ShardInterceptLocation { subpixel: 0, shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 120.0, lower_x_floor: 100.0, upper_x_ceil: 120.0 }, Some(&descriptor));
 
         // Should be one intercept which is solid
         assert!(intercepts.len() == 1, "{:?}", intercepts);
@@ -471,11 +479,11 @@ mod test {
         let descriptor      = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 1 };
 
         // Start entering
-        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 101.0, lower_x_floor: 100.0, upper_x_ceil: 101.0 }, &transform, Some(&descriptor));
-        intercepts.finish_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 101.0, lower_x_floor: 100.0, upper_x_ceil: 101.0 }, Some(&descriptor));
+        intercepts.start_intercept(&ShardInterceptLocation { subpixel: 0, shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 101.0, lower_x_floor: 100.0, upper_x_ceil: 101.0 }, &transform, Some(&descriptor));
+        intercepts.finish_intercept(&ShardInterceptLocation { subpixel: 0, shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 101.0, lower_x_floor: 100.0, upper_x_ceil: 101.0 }, Some(&descriptor));
 
         // Start leaving...
-        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionOut, opacity: 1.0, lower_x: 110.0, upper_x: 150.0, lower_x_floor: 110.0, upper_x_ceil: 150.0 }, &transform, Some(&descriptor));
+        intercepts.start_intercept(&ShardInterceptLocation { subpixel: 0, shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionOut, opacity: 1.0, lower_x: 110.0, upper_x: 150.0, lower_x_floor: 110.0, upper_x_ceil: 150.0 }, &transform, Some(&descriptor));
 
         // Should be one intercept, that's a fading intercept
         assert!(intercepts.len() == 1, "{:?}", intercepts);
@@ -491,16 +499,16 @@ mod test {
         let descriptor      = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 1 };
 
         // Enter
-        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 101.0, lower_x_floor: 100.0, upper_x_ceil: 101.0 }, &transform, Some(&descriptor));
-        intercepts.finish_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 101.0, lower_x_floor: 100.0, upper_x_ceil: 101.0 }, Some(&descriptor));
+        intercepts.start_intercept(&ShardInterceptLocation { subpixel: 0, shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 101.0, lower_x_floor: 100.0, upper_x_ceil: 101.0 }, &transform, Some(&descriptor));
+        intercepts.finish_intercept(&ShardInterceptLocation { subpixel: 0, shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 100.0, upper_x: 101.0, lower_x_floor: 100.0, upper_x_ceil: 101.0 }, Some(&descriptor));
 
         // Start leaving...
-        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionOut, opacity: 1.0, lower_x: 110.0, upper_x: 150.0, lower_x_floor: 110.0, upper_x_ceil: 150.0 }, &transform, Some(&descriptor));
+        intercepts.start_intercept(&ShardInterceptLocation { subpixel: 0, shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionOut, opacity: 1.0, lower_x: 110.0, upper_x: 150.0, lower_x_floor: 110.0, upper_x_ceil: 150.0 }, &transform, Some(&descriptor));
 
         assert!(intercepts.len() == 1, "Should only be one intercept {:?}", intercepts);
 
         // Start re-entering
-        intercepts.start_intercept(&ShardInterceptLocation { shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 125.0, upper_x: 170.0, lower_x_floor: 125.0, upper_x_ceil: 170.0 }, &transform, Some(&descriptor));
+        intercepts.start_intercept(&ShardInterceptLocation { subpixel: 0, shape: ShapeId(1), direction: EdgeInterceptDirection::DirectionIn, opacity: 1.0, lower_x: 125.0, upper_x: 170.0, lower_x_floor: 125.0, upper_x_ceil: 170.0 }, &transform, Some(&descriptor));
 
         // Should be one intercept, which should be a nested intercept
         assert!(intercepts.len() == 1, "Should be one intercept {:?}", intercepts);
