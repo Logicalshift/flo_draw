@@ -438,6 +438,14 @@ where
                                     break;
                                 }
                             }
+
+                            // Instead of using the apexes as the intercept points, use fixed-width subpixels
+                            let mut line_apexes = vec![y_range.start];
+                            for p in 1..8 {
+                                let p = (p as f64)/8.0;
+                                line_apexes.push(y_range.start + (y_range.end-y_range.start)*p);
+                            }
+
                             line_apexes.push(y_range.end);
 
                             // Compute sub-pixel shards for each pair of apexes
