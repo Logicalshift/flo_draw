@@ -396,7 +396,7 @@ where
             edge.find_apexes(y_min, y_max, &mut apexes);
 
             // Usually there are no apexes in a region, so we don't bother trying to track them
-            if apexes.is_empty() {
+            if apexes.is_empty() && false {
                 // Fill the intercepts for this shape
                 shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
 
@@ -416,8 +416,8 @@ where
                 // Generate the intercepts for each line
                 for ((shards, output_line), y_range) in intercepts.iter().zip(output.iter_mut()).zip(y_ranges) {
                     // Find if any of the apexes lie within this y-range
-                    if let Some(apex_pos) = next_apex {
-                        if *apex_pos < y_range.end || true {
+                    /* if let Some(apex_pos) = next_apex */ {
+                        if /* *apex_pos < y_range.end || */ true {
                             /* -- commenting this out means we always operate in supersampling mode (which should work, it's just suboptimal)
                             // Find the apexes that apply to this line
                             let mut line_apexes = vec![y_range.start];
@@ -469,10 +469,10 @@ where
                             // No apexes on this line
                             fill_output_line_from_shards(shape, shards, 255, 1.0, output_line);
                         }
-                    } else {
+                    } /* else {
                         // No more apexes
                         fill_output_line_from_shards(shape, shards, 255, 1.0, output_line);
-                    }
+                    } */
                 }
             }
         }
