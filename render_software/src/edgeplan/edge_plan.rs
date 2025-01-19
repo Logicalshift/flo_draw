@@ -452,8 +452,8 @@ where
 
                             // Instead of using the apexes as the intercept points, use fixed-width subpixels
                             let mut line_apexes = vec![y_range.start];
-                            for p in 1..16 {
-                                let p = (p as f64)/16.0;
+                            for p in 1..4 {
+                                let p = (p as f64)/4.0;
                                 line_apexes.push(y_range.start + (y_range.end-y_range.start)*p);
                             }
 
