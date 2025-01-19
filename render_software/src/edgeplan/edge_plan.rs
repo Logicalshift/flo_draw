@@ -38,6 +38,9 @@ where
     /// Describes the shapes
     shapes: SparseArray<ShapeDescriptor>,
 
+    /// The indexes of the edges for each shape
+    shape_edges: SparseArray<Vec<usize>>,
+
     /// The edges themselves
     edges: Vec<EdgeData<TEdge>>,
 
@@ -58,6 +61,7 @@ where
     pub fn new() -> EdgePlan<TEdge> {
         EdgePlan {
             shapes:         SparseArray::empty(),
+            shape_edges:    SparseArray::empty(),
             edges:          vec![],
             edge_space:     Space1D::empty(),
             max_prepared:   0,
@@ -155,6 +159,7 @@ where
         // Create a new edge plan based on this
         EdgePlan {
             shapes:         self.shapes.clone(),
+            shape_edges:    SparseArray::empty(),
             edge_space:     edge_space,
             max_prepared:   transformed_edges.len(),
             edges:          transformed_edges,
@@ -443,8 +448,8 @@ where
 
                             // Instead of using the apexes as the intercept points, use fixed-width subpixels
                             let mut line_apexes = vec![y_range.start];
-                            for p in 1..8 {
-                                let p = (p as f64)/8.0;
+                            for p in 1..16 {
+                                let p = (p as f64)/16.0;
                                 line_apexes.push(y_range.start + (y_range.end-y_range.start)*p);
                             }
 
