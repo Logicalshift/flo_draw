@@ -24,7 +24,6 @@ where
 {
     edge:       TEdge,
     y_bounds:   Range<f64>,
-    apexes:     Vec<f64>,
 }
 
 ///
@@ -38,8 +37,8 @@ where
     /// Describes the shapes
     shapes: SparseArray<ShapeDescriptor>,
 
-    /// The indexes of the edges for each shape
-    shape_edges: SparseArray<Vec<usize>>,
+    /// The apexes for the edges that make up a shape
+    shape_apexes: SparseArray<Vec<f64>>,
 
     /// The edges themselves
     edges: Vec<EdgeData<TEdge>>,
@@ -61,7 +60,7 @@ where
     pub fn new() -> EdgePlan<TEdge> {
         EdgePlan {
             shapes:         SparseArray::empty(),
-            shape_edges:    SparseArray::empty(),
+            shape_apexes:   SparseArray::empty(),
             edges:          vec![],
             edge_space:     Space1D::empty(),
             max_prepared:   0,
@@ -130,7 +129,6 @@ where
                 EdgeData {
                     edge:       edge,
                     y_bounds:   min_y..max_y,
-                    apexes:     apexes,
                 }
             }).collect::<Vec<_>>()
         };
@@ -159,7 +157,7 @@ where
         // Create a new edge plan based on this
         EdgePlan {
             shapes:         self.shapes.clone(),
-            shape_edges:    SparseArray::empty(),
+            shape_apexes:   SparseArray::empty(),
             edge_space:     edge_space,
             max_prepared:   transformed_edges.len(),
             edges:          transformed_edges,
@@ -233,16 +231,24 @@ where
     ///
     #[inline]
     pub fn add_edge(&mut self, new_edge: TEdge) {
-        let mut apexes = Vec::with_capacity(4);
-        new_edge.apexes(&mut apexes);
+        let shape_id = new_edge.shape();
 
-        apexes.sort_by(|a, b| a.total_cmp(b));
+        // Append the apexes for this shape to the edge
+        if let Some(apexes) = self.shape_apexes.get_mut(shape_id.0) {
+            new_edge.apexes(apexes);
+            apexes.sort_by(|a, b| a.total_cmp(b));
+        } else {
+            let mut apexes = Vec::with_capacity(4);
+            new_edge.apexes(&mut apexes);
+            apexes.sort_by(|a, b| a.total_cmp(b));
+
+            self.shape_apexes.insert(shape_id.0, apexes);
+        }
 
         // The y-bounds are calculated later on when we prepare to render
         self.edges.push(EdgeData {
             edge:       new_edge,
             y_bounds:   f64::MIN..f64::MAX,
-            apexes:     apexes,
         });
     }
 
@@ -398,7 +404,7 @@ where
             let shape   = edge.edge.shape();
 
             // Check for apexes in the range of values that have been requested for this shape
-            edge.find_apexes(y_min, y_max, &mut apexes);
+            self.find_apexes(shape, y_min, y_max, &mut apexes);
 
             // Usually there are no apexes in a region, so we don't bother trying to track them
             if apexes.is_empty() && false {
@@ -487,6 +493,30 @@ where
             intercepts.sort_by(|a, b| a.lower_x.total_cmp(&b.lower_x));
         });
     }
+
+    ///
+    /// Finds any apexes for a shape in the specified range
+    ///
+    #[inline]
+    fn find_apexes(&self, shape_id: ShapeId, y_min: f64, y_max: f64, apexes: &mut Vec<f64>) {
+        // Apexes are cleared here (so the caller shouldn't do this as well)
+        apexes.clear();
+
+        if let Some(shape_apexes) = self.shape_apexes.get(shape_id.0) {
+            if !shape_apexes.is_empty() {
+                // Binary search for the min/max in the apexes
+                let min = shape_apexes.binary_search_by(|y_probe| y_probe.total_cmp(&y_min));
+                let max = shape_apexes.binary_search_by(|y_probe| y_probe.total_cmp(&y_max));
+
+                if min != max {
+                    let min = match min { Ok(min) => min, Err(min) => min };
+                    let max = match max { Ok(max) => max, Err(max) => max };
+
+                    apexes.extend(shape_apexes[min..max].iter().copied());
+                }
+            }
+        }
+    }
 }
 
 ///
@@ -504,32 +534,5 @@ fn fill_output_line_from_shards(shape: ShapeId, shards: &[ShardIntercept], subpi
             lower_x:    x_range.start,
             upper_x:    x_range.end
         })
-    }
-}
-
-impl<TEdge> EdgeData<TEdge>
-where
-    TEdge: EdgeDescriptor,
-{
-    ///
-    /// Finds any apexes for this shape for the specified range
-    ///
-    #[inline]
-    fn find_apexes(&self, y_min: f64, y_max: f64, apexes: &mut Vec<f64>) {
-        // Apexes are cleared here (so the caller shouldn't do this as well)
-        apexes.clear();
-
-        if !self.apexes.is_empty() {
-            // Binary search for the min/max in the apexes
-            let min = self.apexes.binary_search_by(|y_probe| y_probe.total_cmp(&y_min));
-            let max = self.apexes.binary_search_by(|y_probe| y_probe.total_cmp(&y_max));
-
-            if min != max {
-                let min = match min { Ok(min) => min, Err(min) => min };
-                let max = match max { Ok(max) => max, Err(max) => max };
-
-                apexes.extend(self.apexes[min..max].iter().copied());
-            }
-        }
     }
 }
