@@ -35,7 +35,12 @@ where
 
         scanlines
     }
-} 
+}
+
+struct ShardSubPixel {
+    shape_id:   ShapeId,
+    blend:      InterceptBlend,
+}
 
 ///
 /// Represents an intercept against a shard. Every shard produces two intercepts: one where they start to fade in or out, and one where
@@ -376,13 +381,42 @@ where
                     // Create a program stack between the ranges: all the programs until the first opaque layer
                     let x_range         = last_x..next_x;
                     let mut is_opaque   = false;
+                    let mut subpixel    = None;
 
                     // We re-use program_stack so we don't have to keep re-allocating a vec as we go
                     program_stack.clear();
                     for shape in (0..stack_depth).rev() {
                         let intercept           = active_shapes.get(shape).unwrap();
-                        let shape_descriptor    = intercept.shape_descriptor();
                         let mut blend           = intercept.blend();
+
+                        if intercept.subpixel() != 255 {
+                            // TODO: combine subpixels into a single intercept
+                            match &mut subpixel {
+                                None => {
+                                    // Start a new subpixel
+                                    subpixel = Some(ShardSubPixel {
+                                        shape_id:   intercept.shape_id(),
+                                        blend:      blend.clone(),
+                                    });
+
+                                    // Continue iterating
+                                    continue;
+                                }
+
+                                Some(subpixel) => {
+                                    if subpixel.shape_id != intercept.shape_id() {
+                                        // Render the subpixel and start a new one
+                                    } else {
+                                        // Combine with the existing subpixel
+                                    }
+                                }
+                            }
+                            continue;
+                        } else if let Some(subpixel) = subpixel.take() {
+                            // TODO: Blend in the subpixel first
+                        }
+
+                        let shape_descriptor    = intercept.shape_descriptor();
                         let mut num_blends      = 0;
 
                         // Start the blends for the program
@@ -435,6 +469,10 @@ where
                             is_opaque = true;
                             break;
                         }
+                    }
+
+                    if let Some(subpixel) = subpixel.take() {
+                        // TODO: Blend in the subpixel first
                     }
 
                     if !program_stack.is_empty() {

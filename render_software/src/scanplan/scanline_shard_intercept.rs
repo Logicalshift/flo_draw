@@ -110,6 +110,14 @@ impl<'a> ScanlineShardIntercept<'a> {
     }
 
     ///
+    /// Returns the subpixel ID of this intercept
+    ///
+    #[inline]
+    pub fn subpixel(&self) -> u8 {
+        self.subpixel
+    }
+
+    ///
     /// Returns the z-index of this shape (higher is in front of lower)
     ///
     #[inline]
