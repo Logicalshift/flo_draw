@@ -38,8 +38,10 @@ where
 }
 
 struct ShardSubPixel {
-    shape_id:   ShapeId,
-    blend:      InterceptBlend,
+    shape_id:           ShapeId,
+    shape_descriptor:   ShapeDescriptor,
+    blend:              InterceptBlend,
+    opacity:            f32,
 }
 
 ///
@@ -291,6 +293,81 @@ fn actual_fade_for_range(render_x_range: &Range<f64>, alpha_x_range: &Range<f64>
     }
 }
 
+impl ShardSubPixel {
+    ///
+    /// Combines the effect of an intercept into this subpixel
+    ///
+    fn combine(&mut self, intercept: &ScanlineShardIntercept<'_>) {
+        // TODO: for fade blends, we need to combine the fades (although the opacity is probably the most important thing to add up here)
+        // (This will use the first blend ratio, which is pretty close, but will not look right for things like a gap in the middle, or where the
+        // slope changes a lot over the subpixels)
+        self.opacity += intercept.opacity();
+    }
+
+    ///
+    /// Adds the rendering of this subpixel into the program stack
+    ///
+    #[inline]
+    fn render(&self, program_stack: &mut Vec<PixelProgramPlan>, x_range: &Range<f64>) {
+        self.blend.render(program_stack, &self.shape_descriptor, self.opacity, x_range);
+    }
+}
+
+impl InterceptBlend {
+    ///
+    /// Adds this blend to a pixel program stack
+    ///
+    pub fn render(&self, program_stack: &mut Vec<PixelProgramPlan>, shape_descriptor: &ShapeDescriptor, opacity: f32, x_range: &Range<f64>) {
+        let mut blend       = self;
+        let mut num_blends  = 0;
+
+        // Start the blends for the program
+        loop {
+            match blend {
+                InterceptBlend::Solid => {
+                    break;
+                },
+
+                InterceptBlend::Fade { x_range: alpha_x_range, alpha_range } => {
+                    // Adjust the alpha range to the actual x range
+                    let corrected_range = actual_fade_for_range(&x_range, &alpha_x_range, &alpha_range);
+
+                    // Run a linear blend using the corrected range
+                    program_stack.push(PixelProgramPlan::LinearMerge(corrected_range.start as _, corrected_range.end as _));
+                    num_blends += 1;
+                    break;
+                },
+
+                InterceptBlend::NestedFade { x_range: alpha_x_range, alpha_range, nested } => {
+                    // Adjust the alpha range to the actual x range
+                    let corrected_range = actual_fade_for_range(&x_range, &alpha_x_range, &alpha_range);
+
+                    // Run a linear blend using the corrected range
+                    program_stack.push(PixelProgramPlan::LinearMerge(corrected_range.start as _, corrected_range.end as _));
+
+                    // Apply the nested gradient as well
+                    blend       = &*nested;
+                    num_blends += 1;
+                },
+            }
+        }
+
+        // Apply opacity if needed
+        if opacity < 1.0 {
+            program_stack.push(PixelProgramPlan::Merge(opacity));
+            num_blends += 1;
+        }
+
+        // Run the program for this range
+        program_stack.extend(shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
+
+        // Finish the blends
+        if num_blends > 0 {
+            program_stack.extend((0..num_blends).map(|_| PixelProgramPlan::StartBlend));
+        }
+    }
+}
+
 impl<TEdge> ScanPlanner for ShardScanPlanner<TEdge>
 where
     TEdge: EdgeDescriptor,
@@ -386,17 +463,19 @@ where
                     // We re-use program_stack so we don't have to keep re-allocating a vec as we go
                     program_stack.clear();
                     for shape in (0..stack_depth).rev() {
-                        let intercept           = active_shapes.get(shape).unwrap();
-                        let mut blend           = intercept.blend();
+                        let intercept = active_shapes.get(shape).unwrap();
 
                         if intercept.subpixel() != 255 {
-                            // TODO: combine subpixels into a single intercept
+                            // Combine subpixels into a single intercept (they're grouped by the ordering, and we defer
+                            // rendering until we receive a different shape or a shape without subpixels)
                             match &mut subpixel {
                                 None => {
                                     // Start a new subpixel
                                     subpixel = Some(ShardSubPixel {
-                                        shape_id:   intercept.shape_id(),
-                                        blend:      blend.clone(),
+                                        shape_id:           intercept.shape_id(),
+                                        blend:              intercept.blend().clone(),
+                                        opacity:            intercept.opacity(),
+                                        shape_descriptor:   intercept.shape_descriptor().clone(),
                                     });
 
                                     // Continue iterating
@@ -406,64 +485,21 @@ where
                                 Some(subpixel) => {
                                     if subpixel.shape_id != intercept.shape_id() {
                                         // Render the subpixel and start a new one
+                                        subpixel.render(&mut program_stack, &x_range)
                                     } else {
                                         // Combine with the existing subpixel
+                                        subpixel.combine(intercept);
                                     }
                                 }
                             }
                             continue;
                         } else if let Some(subpixel) = subpixel.take() {
-                            // TODO: Blend in the subpixel first
+                            // Blend in the subpixel first
+                            subpixel.render(&mut program_stack, &x_range);
                         }
-
-                        let shape_descriptor    = intercept.shape_descriptor();
-                        let mut num_blends      = 0;
 
                         // Start the blends for the program
-                        loop {
-                            match blend {
-                                InterceptBlend::Solid => {
-                                    break;
-                                },
-
-                                InterceptBlend::Fade { x_range: alpha_x_range, alpha_range } => {
-                                    // Adjust the alpha range to the actual x range
-                                    let corrected_range = actual_fade_for_range(&x_range, &alpha_x_range, &alpha_range);
-
-                                    // Run a linear blend using the corrected range
-                                    program_stack.push(PixelProgramPlan::LinearMerge(corrected_range.start as _, corrected_range.end as _));
-                                    num_blends += 1;
-                                    break;
-                                },
-
-                                InterceptBlend::NestedFade { x_range: alpha_x_range, alpha_range, nested } => {
-                                    // Adjust the alpha range to the actual x range
-                                    let corrected_range = actual_fade_for_range(&x_range, &alpha_x_range, &alpha_range);
-
-                                    // Run a linear blend using the corrected range
-                                    program_stack.push(PixelProgramPlan::LinearMerge(corrected_range.start as _, corrected_range.end as _));
-
-                                    // Apply the nested gradient as well
-                                    blend       = &*nested;
-                                    num_blends += 1;
-                                },
-                            }
-                        }
-
-                        // Apply opacity if needed
-                        let opacity = intercept.opacity();
-                        if opacity < 1.0 {
-                            program_stack.push(PixelProgramPlan::Merge(opacity));
-                            num_blends += 1;
-                        }
-
-                        // Run the program for this range
-                        program_stack.extend(shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
-
-                        // Finish the blends
-                        if num_blends > 0 {
-                            program_stack.extend((0..num_blends).map(|_| PixelProgramPlan::StartBlend));
-                        }
+                        intercept.blend().render(&mut program_stack, intercept.shape_descriptor(), intercept.opacity(), &x_range);
 
                         if intercept.is_opaque() {
                             is_opaque = true;
@@ -472,7 +508,8 @@ where
                     }
 
                     if let Some(subpixel) = subpixel.take() {
-                        // TODO: Blend in the subpixel first
+                        // Blend in the subpixel first
+                        subpixel.render(&mut program_stack, &x_range);
                     }
 
                     if !program_stack.is_empty() {
