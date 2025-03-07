@@ -47,7 +47,7 @@ use std::path::Path;
 ///
 /// Renderer that uses the `wgpu` abstract library as a render target
 ///
-pub struct WgpuRenderer {
+pub struct WgpuRenderer<'surface> {
     /// A reference to the adapter this will render to
     adapter: Arc<wgpu::Adapter>,
 
@@ -58,7 +58,7 @@ pub struct WgpuRenderer {
     queue: Arc<wgpu::Queue>,
 
     /// The surface that this renderer will target
-    target_surface: Option<Arc<wgpu::Surface>>,
+    target_surface: Option<Arc<wgpu::Surface<'surface>>>,
 
     /// The surface texture that is being written to
     target_surface_texture: Option<wgpu::SurfaceTexture>,
@@ -114,11 +114,11 @@ pub struct WgpuRenderer {
     wgpu_profiler: GpuProfiler,
 }
 
-impl WgpuRenderer {
+impl<'surface> WgpuRenderer<'surface> {
     ///
     /// Creates a new WGPU renderer
     ///
-    pub fn from_surface(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer {
+    pub fn from_surface(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface<'surface>>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer<'surface> {
         #[cfg(feature="wgpu-profiler")]
         let wgpu_profiler = GpuProfiler::new(GpuProfilerSettings { max_num_pending_frames: 4, ..Default::default()}).expect("Failed to create WGPU profiler");
 
@@ -153,7 +153,7 @@ impl WgpuRenderer {
     ///
     /// Creates a new WGPU renderer
     ///
-    pub fn from_texture(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_texture: Arc<wgpu::Texture>, target_adapter: Arc<wgpu::Adapter>, texture_format: wgpu::TextureFormat, texture_size: (u32, u32)) -> WgpuRenderer {
+    pub fn from_texture(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_texture: Arc<wgpu::Texture>, target_adapter: Arc<wgpu::Adapter>, texture_format: wgpu::TextureFormat, texture_size: (u32, u32)) -> WgpuRenderer<'surface> {
         #[cfg(feature="wgpu-profiler")]
         let wgpu_profiler = GpuProfiler::new(GpuProfilerSettings { max_num_pending_frames: 4, ..Default::default()}).expect("Failed to create WGPU profiler");
 
@@ -205,13 +205,14 @@ impl WgpuRenderer {
             let actual_format       = actual_format.unwrap_or(possible_formats[0]);
 
             let surface_config      = wgpu::SurfaceConfiguration {
-                usage:          wgpu::TextureUsages::RENDER_ATTACHMENT,
-                format:         actual_format,
-                width:          width,
-                height:         height,
-                present_mode:   wgpu::PresentMode::AutoVsync,
-                alpha_mode:     wgpu::CompositeAlphaMode::Auto,
-                view_formats:   vec![actual_format]
+                usage:                          wgpu::TextureUsages::RENDER_ATTACHMENT,
+                format:                         actual_format,
+                width:                          width,
+                height:                         height,
+                present_mode:                   wgpu::PresentMode::AutoVsync,
+                alpha_mode:                     wgpu::CompositeAlphaMode::Auto,
+                view_formats:                   vec![actual_format],
+                desired_maximum_frame_latency:  2,
             };
 
             target_surface.configure(&*self.device, &surface_config);
@@ -964,7 +965,7 @@ impl WgpuRenderer {
             let pixel_offset    = (x1 as u64) * bytes_per_pixel;
             let bytes_per_row   = (texture.descriptor.size.width as u64) * bytes_per_pixel;
 
-            let layout          = wgpu::ImageDataLayout {
+            let layout          = wgpu::TexelCopyBufferLayout {
                 offset:         line_offset + pixel_offset,
                 bytes_per_row:  Some(bytes_per_row as u32),
                 rows_per_image: None,
@@ -981,7 +982,7 @@ impl WgpuRenderer {
     fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: Arc<Vec<u8>>, state: &mut RendererState) {
         if let Some(Some(texture)) = self.textures.get(texture_id) {
             let bytes_per_pixel = texture.descriptor.format.block_size(None).unwrap() as u64;
-            let layout          = wgpu::ImageDataLayout {
+            let layout          = wgpu::TexelCopyBufferLayout {
                 offset:         (x1 as u64) * bytes_per_pixel,
                 bytes_per_row:  Some(((texture.descriptor.size.width as u64) * bytes_per_pixel) as u32),
                 rows_per_image: None,
@@ -1399,6 +1400,10 @@ impl WgpuRenderer {
     /// Renders a set of triangles by looking up vertices referenced by an index buffer
     ///
     fn draw_indexed_triangles(&mut self, VertexBufferId(vertex_buffer_id): VertexBufferId, IndexBufferId(index_buffer_id): IndexBufferId, num_vertices: usize, state: &mut RendererState) {
+        if num_vertices == 0 {
+            return;
+        }
+
         if let (Some(Some(vertex_buffer)), Some(Some(index_buffer))) = (self.vertex_buffers.get(vertex_buffer_id), self.index_buffers.get(index_buffer_id)) {
             #[cfg(feature="profile")]
             self.profiler.borrow_mut().count_primitives(num_vertices);

@@ -18,6 +18,7 @@ use std::sync::*;
 /// Combines rendering and event messages into one enum
 ///
 #[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 enum DrawingOrEvent {
     Drawing(Vec<DrawingWindowRequest>),
     Event(Vec<DrawEventRequest>),
@@ -408,7 +409,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
     scene.connect_programs((), drawing_window_ingress_program, StreamId::with_message_type::<DrawingWindowRequest>().for_target(program_id)).unwrap();
 
     // Drawing events are dealt with by combining them and then sending them as the native `DrawingOrEvent` type
-    scene.connect_programs((), StreamTarget::Filtered(*FILTER_DRAWING_EVENT_REQUEST, program_id), StreamId::with_message_type::<DrawEventRequest>().for_target(program_id)).unwrap();
+    scene.connect_programs((), StreamTarget::Filtered(FILTER_DRAWING_EVENT_REQUEST.clone(), program_id), StreamId::with_message_type::<DrawEventRequest>().for_target(program_id)).unwrap();
 
     Ok(())
 }

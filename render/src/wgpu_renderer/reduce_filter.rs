@@ -49,7 +49,8 @@ pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandE
         base_mip_level:     source_mip_level,
         mip_level_count:    Some(1),
         base_array_layer:   0,
-        array_layer_count:  None
+        array_layer_count:  None,
+        usage:              Some(wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING),
     };
     let source_view             = source_texture.texture.create_view(&source_view_descriptor);
     let layout                  = &*reduce_pipeline.reduce_layout;
@@ -80,7 +81,8 @@ pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandE
             base_mip_level:     mip_level,
             mip_level_count:    Some(1),
             base_array_layer:   0,
-            array_layer_count:  None
+            array_layer_count:  None,
+            usage:              Some(wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING),
         };
         let target_view         = target_texture.texture.create_view(&view_descriptor);
         let color_attachments   = vec![
@@ -124,12 +126,12 @@ pub (crate) fn create_mipmaps(device: &wgpu::Device, encoder: &mut wgpu::Command
     let target_texture                  = device.create_texture(&target_descriptor);
 
     // Copy the top-level of the source texture to the top level of the new texture
-    encoder.copy_texture_to_texture(wgpu::ImageCopyTexture {
+    encoder.copy_texture_to_texture(wgpu::TexelCopyTextureInfo {
         texture:    &source_texture.texture,
         mip_level:  0,
         origin:     wgpu::Origin3d::default(),
         aspect:     wgpu::TextureAspect::All
-    }, wgpu::ImageCopyTexture {
+    }, wgpu::TexelCopyTextureInfo {
         texture:    &target_texture,
         mip_level:  0,
         origin:     wgpu::Origin3d::default(),

@@ -8,6 +8,7 @@ use flo_scene::*;
 /// Events that can arrive from a flo_draw window
 ///
 #[derive(Clone, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum DrawEvent {
     /// Request to re-render the window (this is automatic for canvas windows)
     Redraw,

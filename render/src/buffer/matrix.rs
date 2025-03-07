@@ -2,6 +2,7 @@
 /// Represents an OpenGL transformation matrix
 ///
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Matrix(pub [[f32; 4]; 4]);
 
 impl Matrix {

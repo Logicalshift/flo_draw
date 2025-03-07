@@ -3,6 +3,7 @@
 /// multiple pointer devices)
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct PointerId(pub u64);
 
 ///
@@ -12,6 +13,7 @@ pub struct PointerId(pub u64);
 /// this is considered to be the 'Left' button.
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum Button {
     Left,
     Middle,
@@ -23,6 +25,7 @@ pub enum Button {
 /// The action associated with a pointer event
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum PointerAction {
     /// The pointer has entered the window
     Enter,
@@ -53,6 +56,7 @@ pub enum PointerAction {
 /// this information to us, so these values are currently always set to 'None'.
 ///
 #[derive(Clone, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct PointerState {
     /// The x and y coordinates of the pointer's location in the window
     pub location_in_window: (f64, f64),

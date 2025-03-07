@@ -2,6 +2,7 @@
 /// The types of render target that can be created by the render layer
 ///
 #[derive(Clone, Copy, PartialEq, Debug, Hash)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum RenderTargetType {
     /// Standard off-screen render target (with a texture)
     Standard,

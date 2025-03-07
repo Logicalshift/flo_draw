@@ -2,6 +2,7 @@
 /// 2D vertex representation
 ///
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[repr(C, packed)]
 pub struct Vertex2D {
     pub pos:        [f32; 2],

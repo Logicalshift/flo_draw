@@ -4,15 +4,9 @@ use super::offscreen_trait::*;
 use crate::action::*;
 use crate::wgpu_renderer::*;
 
-use ::desync::*;
-use futures::prelude::*;
-use once_cell::sync::Lazy;
-
 use wgpu;
 
 use std::sync::*;
-
-static WGPU_BACKGROUND: Lazy<Desync<()>> = Lazy::new(|| Desync::new(()));
 
 ///
 /// A WGPU offscreen render context
@@ -27,7 +21,7 @@ struct WgpuOffscreenRenderTarget {
     texture:    Arc<wgpu::Texture>,
     device:     Arc<wgpu::Device>,
     queue:      Arc<wgpu::Queue>,
-    renderer:   WgpuRenderer,
+    renderer:   WgpuRenderer<'static>,
     size:       (u32, u32),
 }
 
@@ -41,7 +35,7 @@ struct WgpuOffscreenRenderTarget {
 ///
 pub async fn wgpu_initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     // Create a new WGPU instance and adapter
-    let instance    = wgpu::Instance::new(wgpu::InstanceDescriptor { backends: wgpu::Backends::all(), dx12_shader_compiler: wgpu::Dx12Compiler::default(), ..Default::default() });
+    let instance    = wgpu::Instance::new(&wgpu::InstanceDescriptor { backends: wgpu::Backends::all(), ..Default::default() });
     let adapter     = instance.request_adapter(&wgpu::RequestAdapterOptions {
         power_preference:       wgpu::PowerPreference::default(),
         force_fallback_adapter: false,
@@ -50,9 +44,10 @@ pub async fn wgpu_initialize_offscreen_rendering() -> Result<impl OffscreenRende
 
     // Fetch the device and the queue
     let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
-            label:      None,
-            features:   wgpu::Features::empty(),
-            limits:     wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits())
+            label:              None,
+            required_features:  wgpu::Features::empty(),
+            required_limits:    wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits()),
+            ..Default::default()
         }, None).await.unwrap();
 
     // Result is a WGPU offscreen render context
@@ -135,7 +130,7 @@ impl OffscreenRenderTarget for WgpuOffscreenRenderTarget {
 
         // Copy the texture to the buffer
         let mut encoder     = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("WgpuOffscreenRenderTarget::realize") });
-        let buffer_copy     = wgpu::ImageCopyBuffer { buffer: &buffer, layout: wgpu::ImageDataLayout { offset: 0, bytes_per_row: Some(bytes_per_row), rows_per_image: None } };
+        let buffer_copy     = wgpu::TexelCopyBufferInfo { buffer: &buffer, layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(bytes_per_row), rows_per_image: None } };
         encoder.copy_texture_to_buffer(self.texture.as_image_copy(), buffer_copy, wgpu::Extent3d { width: self.size.0, height: self.size.1, depth_or_array_layers: 1 });
         self.queue.submit(Some(encoder.finish()));
 
