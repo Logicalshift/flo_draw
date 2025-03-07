@@ -6,7 +6,7 @@ use super::wgpu_shader::*;
 use crate::buffer::*;
 
 use wgpu;
-use wgpu::util::{DeviceExt};
+use wgpu::util::{DeviceExt, TextureDataOrder};
 
 use std::mem;
 use std::num::*;
@@ -181,8 +181,8 @@ pub (crate) fn blur_texture(device: &wgpu::Device, queue: &wgpu::Queue, encoder:
         view_formats:       &[],
     };
 
-    let weights_texture = device.create_texture_with_data(queue, &weights_offsets_descriptor, weights.to_u8_slice());
-    let offsets_texture = device.create_texture_with_data(queue, &weights_offsets_descriptor, offsets.to_u8_slice());
+    let weights_texture = device.create_texture_with_data(queue, &weights_offsets_descriptor, TextureDataOrder::MipMajor, weights.to_u8_slice());
+    let offsets_texture = device.create_texture_with_data(queue, &weights_offsets_descriptor, TextureDataOrder::MipMajor, offsets.to_u8_slice());
 
     // Bind the resources
     let source_view     = source_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
