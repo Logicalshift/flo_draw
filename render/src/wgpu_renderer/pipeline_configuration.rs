@@ -232,9 +232,10 @@ impl PipelineConfiguration {
         let (shader_module, vertex_fn, _) = shader_cache.get_shader(&self.shader_module).unwrap();
 
         wgpu::VertexState {
-            module:         shader_module,
-            entry_point:    vertex_fn,
-            buffers:        self.vertex_buffer_layout(),
+            module:                 shader_module,
+            entry_point:            Some(vertex_fn),
+            buffers:                self.vertex_buffer_layout(),
+            compilation_options:    Default::default(),
         }
     }
 
@@ -247,9 +248,10 @@ impl PipelineConfiguration {
         let (shader_module, _, fragment_fn) = shader_cache.get_shader(&self.shader_module).unwrap();
 
         Some(wgpu::FragmentState {
-            module:         shader_module,
-            entry_point:    fragment_fn,
-            targets:        &temp_storage.color_targets,
+            module:                 shader_module,
+            entry_point:            Some(fragment_fn),
+            targets:                &temp_storage.color_targets,
+            compilation_options:    Default::default(),
         })
     }
 
@@ -779,6 +781,7 @@ impl PipelineConfiguration {
             depth_stencil:  None,
             multisample:    multisampling,
             multiview:      None,
+            cache:          None,
         }
     }
 }
