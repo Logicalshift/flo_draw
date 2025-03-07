@@ -1400,6 +1400,10 @@ impl<'surface> WgpuRenderer<'surface> {
     /// Renders a set of triangles by looking up vertices referenced by an index buffer
     ///
     fn draw_indexed_triangles(&mut self, VertexBufferId(vertex_buffer_id): VertexBufferId, IndexBufferId(index_buffer_id): IndexBufferId, num_vertices: usize, state: &mut RendererState) {
+        if num_vertices == 0 {
+            return;
+        }
+
         if let (Some(Some(vertex_buffer)), Some(Some(index_buffer))) = (self.vertex_buffers.get(vertex_buffer_id), self.index_buffers.get(index_buffer_id)) {
             #[cfg(feature="profile")]
             self.profiler.borrow_mut().count_primitives(num_vertices);
