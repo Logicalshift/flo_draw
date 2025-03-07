@@ -126,12 +126,12 @@ pub (crate) fn create_mipmaps(device: &wgpu::Device, encoder: &mut wgpu::Command
     let target_texture                  = device.create_texture(&target_descriptor);
 
     // Copy the top-level of the source texture to the top level of the new texture
-    encoder.copy_texture_to_texture(wgpu::ImageCopyTexture {
+    encoder.copy_texture_to_texture(wgpu::TexelCopyTextureInfo {
         texture:    &source_texture.texture,
         mip_level:  0,
         origin:     wgpu::Origin3d::default(),
         aspect:     wgpu::TextureAspect::All
-    }, wgpu::ImageCopyTexture {
+    }, wgpu::TexelCopyTextureInfo {
         texture:    &target_texture,
         mip_level:  0,
         origin:     wgpu::Origin3d::default(),
