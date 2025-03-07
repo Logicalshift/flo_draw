@@ -156,7 +156,7 @@ impl RendererState {
 
             // Bind as the next step in the pending render pass
             self.render_pass.push(Box::new(move |resources, render_pass| {
-                render_pass.set_bind_group(clip_group, &resources.bind_groups[clip_index], &[]);
+                render_pass.set_bind_group(clip_group, Some(&*resources.bind_groups[clip_index]), &[]);
             }));
         }
     }
