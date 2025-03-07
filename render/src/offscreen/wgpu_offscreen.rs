@@ -4,15 +4,9 @@ use super::offscreen_trait::*;
 use crate::action::*;
 use crate::wgpu_renderer::*;
 
-use ::desync::*;
-use futures::prelude::*;
-use once_cell::sync::Lazy;
-
 use wgpu;
 
 use std::sync::*;
-
-static WGPU_BACKGROUND: Lazy<Desync<()>> = Lazy::new(|| Desync::new(()));
 
 ///
 /// A WGPU offscreen render context
@@ -27,7 +21,7 @@ struct WgpuOffscreenRenderTarget {
     texture:    Arc<wgpu::Texture>,
     device:     Arc<wgpu::Device>,
     queue:      Arc<wgpu::Queue>,
-    renderer:   WgpuRenderer,
+    renderer:   WgpuRenderer<'static>,
     size:       (u32, u32),
 }
 
@@ -136,7 +130,7 @@ impl OffscreenRenderTarget for WgpuOffscreenRenderTarget {
 
         // Copy the texture to the buffer
         let mut encoder     = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("WgpuOffscreenRenderTarget::realize") });
-        let buffer_copy     = wgpu::ImageCopyBuffer { buffer: &buffer, layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(bytes_per_row), rows_per_image: None } };
+        let buffer_copy     = wgpu::TexelCopyBufferInfo { buffer: &buffer, layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(bytes_per_row), rows_per_image: None } };
         encoder.copy_texture_to_buffer(self.texture.as_image_copy(), buffer_copy, wgpu::Extent3d { width: self.size.0, height: self.size.1, depth_or_array_layers: 1 });
         self.queue.submit(Some(encoder.finish()));
 
