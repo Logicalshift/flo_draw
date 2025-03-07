@@ -136,7 +136,7 @@ impl OffscreenRenderTarget for WgpuOffscreenRenderTarget {
 
         // Copy the texture to the buffer
         let mut encoder     = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("WgpuOffscreenRenderTarget::realize") });
-        let buffer_copy     = wgpu::ImageCopyBuffer { buffer: &buffer, layout: wgpu::ImageDataLayout { offset: 0, bytes_per_row: Some(bytes_per_row), rows_per_image: None } };
+        let buffer_copy     = wgpu::ImageCopyBuffer { buffer: &buffer, layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(bytes_per_row), rows_per_image: None } };
         encoder.copy_texture_to_buffer(self.texture.as_image_copy(), buffer_copy, wgpu::Extent3d { width: self.size.0, height: self.size.1, depth_or_array_layers: 1 });
         self.queue.submit(Some(encoder.finish()));
 

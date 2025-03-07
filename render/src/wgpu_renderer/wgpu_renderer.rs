@@ -965,7 +965,7 @@ impl WgpuRenderer {
             let pixel_offset    = (x1 as u64) * bytes_per_pixel;
             let bytes_per_row   = (texture.descriptor.size.width as u64) * bytes_per_pixel;
 
-            let layout          = wgpu::ImageDataLayout {
+            let layout          = wgpu::TexelCopyBufferLayout {
                 offset:         line_offset + pixel_offset,
                 bytes_per_row:  Some(bytes_per_row as u32),
                 rows_per_image: None,
@@ -982,7 +982,7 @@ impl WgpuRenderer {
     fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: Arc<Vec<u8>>, state: &mut RendererState) {
         if let Some(Some(texture)) = self.textures.get(texture_id) {
             let bytes_per_pixel = texture.descriptor.format.block_size(None).unwrap() as u64;
-            let layout          = wgpu::ImageDataLayout {
+            let layout          = wgpu::TexelCopyBufferLayout {
                 offset:         (x1 as u64) * bytes_per_pixel,
                 bytes_per_row:  Some(((texture.descriptor.size.width as u64) * bytes_per_pixel) as u32),
                 rows_per_image: None,
