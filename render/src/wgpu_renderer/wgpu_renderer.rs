@@ -58,7 +58,7 @@ pub struct WgpuRenderer {
     queue: Arc<wgpu::Queue>,
 
     /// The surface that this renderer will target
-    target_surface: Option<Arc<wgpu::Surface>>,
+    target_surface: Option<Arc<wgpu::Surface<'static>>>,
 
     /// The surface texture that is being written to
     target_surface_texture: Option<wgpu::SurfaceTexture>,
