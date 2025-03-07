@@ -2,6 +2,7 @@
 /// Represents a key
 ///
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum Key {
     Unknown,
 

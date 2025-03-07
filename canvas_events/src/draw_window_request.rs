@@ -1,5 +1,4 @@
 use super::render_request::*;
-use super::draw_event_request::*;
 
 use flo_scene::*;
 use flo_canvas::scenery::*;
@@ -8,6 +7,7 @@ use flo_canvas::scenery::*;
 /// The types of mouse pointer that can be displayed in a window
 ///
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum MousePointer {
     /// No pointer
     None,
@@ -20,6 +20,7 @@ pub enum MousePointer {
 /// Messages that can be sent to a flo_draw window that can generate events
 ///
 #[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum EventWindowRequest {
     /// Add a subprogram to the list to send events to
     SendEvents(SubProgramId),
@@ -45,6 +46,7 @@ pub enum EventWindowRequest {
 /// Messages that can be sent to a flo_draw window that processes 2D graphics instructions
 ///
 #[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum DrawingWindowRequest {
     /// Carry out a drawing request
     Draw(DrawingRequest),
@@ -72,6 +74,7 @@ pub enum DrawingWindowRequest {
 /// Messages that can be sent to a flo_draw window that processes low-level 2D graphics instructions
 ///
 #[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum RenderWindowRequest {
     /// Carry out a render request
     Render(RenderRequest),

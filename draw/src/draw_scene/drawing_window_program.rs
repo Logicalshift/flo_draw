@@ -18,6 +18,7 @@ use std::sync::*;
 /// Combines rendering and event messages into one enum
 ///
 #[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 enum DrawingOrEvent {
     Drawing(Vec<DrawingWindowRequest>),
     Event(Vec<DrawEventRequest>),

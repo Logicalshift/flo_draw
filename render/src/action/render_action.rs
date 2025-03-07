@@ -14,30 +14,35 @@ use std::sync::*;
 /// Represents an alpha blend level
 ///
 #[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Alpha(pub f64);
 
 ///
 /// Position in pixels in 1D space
 ///
 #[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Position1D(pub usize);
 
 ///
 /// Position in pixels in 2D space
 ///
 #[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Position2D(pub usize, pub usize);
 
 ///
 /// The size of something one-dimensional in pixels
 ///
 #[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Size1D(pub usize);
 
 ///
 /// The size of something two-dimensional in pixels
 ///
 #[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Size2D(pub usize, pub usize);
 
 ///
@@ -45,12 +50,14 @@ pub struct Size2D(pub usize, pub usize);
 /// to render during a DrawFrameBuffer operation
 ///
 #[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct FrameBufferRegion(pub (f32, f32), pub (f32, f32));
 
 ///
 /// Represents an action for a render target
 ///
 #[derive(Clone, PartialEq, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum RenderAction {
     ///
     /// Sets the transformation matrix to use for future renderings

@@ -32,6 +32,7 @@ desync                  = { version = "0.9", optional = true }
 once_cell               = { version = "1.18", optional = true }
 futures                 = { version = "0.3", optional = true }
 wgpu-profiler           = { workspace = true, optional = true }
+serde                   = "1.0"
 
 [dev-dependencies]
 winit                   = "0.29"

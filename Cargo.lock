@@ -752,6 +752,7 @@ dependencies = [
  "flo_canvas",
  "flo_render",
  "flo_scene",
+ "serde",
 ]
 
 [[package]]
@@ -788,6 +789,7 @@ dependencies = [
  "rand",
  "raw-window-handle 0.5.2",
  "rayon",
+ "serde",
  "wgpu",
  "wgpu-profiler",
  "winit",
@@ -808,6 +810,7 @@ dependencies = [
  "libc 0.2.170",
  "metal 0.27.0",
  "once_cell",
+ "serde",
  "wgpu",
  "wgpu-profiler",
  "winit",
