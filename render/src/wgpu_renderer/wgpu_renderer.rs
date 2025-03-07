@@ -118,7 +118,7 @@ impl WgpuRenderer {
     ///
     /// Creates a new WGPU renderer
     ///
-    pub fn from_surface(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer {
+    pub fn from_surface(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface<'static>>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer {
         #[cfg(feature="wgpu-profiler")]
         let wgpu_profiler = GpuProfiler::new(GpuProfilerSettings { max_num_pending_frames: 4, ..Default::default()}).expect("Failed to create WGPU profiler");
 
@@ -205,13 +205,14 @@ impl WgpuRenderer {
             let actual_format       = actual_format.unwrap_or(possible_formats[0]);
 
             let surface_config      = wgpu::SurfaceConfiguration {
-                usage:          wgpu::TextureUsages::RENDER_ATTACHMENT,
-                format:         actual_format,
-                width:          width,
-                height:         height,
-                present_mode:   wgpu::PresentMode::AutoVsync,
-                alpha_mode:     wgpu::CompositeAlphaMode::Auto,
-                view_formats:   vec![actual_format]
+                usage:                          wgpu::TextureUsages::RENDER_ATTACHMENT,
+                format:                         actual_format,
+                width:                          width,
+                height:                         height,
+                present_mode:                   wgpu::PresentMode::AutoVsync,
+                alpha_mode:                     wgpu::CompositeAlphaMode::Auto,
+                view_formats:                   vec![actual_format],
+                desired_maximum_frame_latency:  2,
             };
 
             target_surface.configure(&*self.device, &surface_config);
