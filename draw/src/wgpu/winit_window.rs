@@ -40,7 +40,7 @@ pub struct WinitWindow {
     instance: Option<wgpu::Instance>,
 
     /// The renderer for this window (or none if there isn't one yet)
-    renderer: Option<WgpuRenderer>
+    renderer: Option<WgpuRenderer<'static>>
 }
 
 impl WinitWindow {
@@ -96,7 +96,7 @@ where
                     // Create the renderer if it doesn't already exist
                     if let (Some(winit_window), None) = (&window.window, &window.renderer) {
                         // Create a new WGPU instance, surface and adapter
-                        let winit_window    = &**winit_window;
+                        let winit_window    = winit_window.clone();
 
                         let backend         = wgpu::Backends::from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
                         let instance        = wgpu::Instance::new(&wgpu::InstanceDescriptor { backends: backend, ..Default::default() });
