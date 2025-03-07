@@ -98,9 +98,9 @@ where
                         // Create a new WGPU instance, surface and adapter
                         let winit_window    = &**winit_window;
 
-                        let backend         = wgpu::util::backend_bits_from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
-                        let instance        = wgpu::Instance::new(wgpu::InstanceDescriptor { backends: backend, ..Default::default() });
-                        let surface         = unsafe { instance.create_surface(winit_window).expect("wgpu surface") };
+                        let backend         = wgpu::Backends::from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
+                        let instance        = wgpu::Instance::new(&wgpu::InstanceDescriptor { backends: backend, ..Default::default() });
+                        let surface         = instance.create_surface(winit_window).expect("wgpu surface");
                         let adapter         = instance.request_adapter(&wgpu::RequestAdapterOptions {
                             power_preference:       wgpu::PowerPreference::default(),
                             force_fallback_adapter: false,
@@ -111,9 +111,10 @@ where
                         let features        = wgpu::Features::empty();
                         #[cfg(feature="wgpu-profiler")] let features = features | GpuProfiler::ALL_WGPU_TIMER_FEATURES;
                         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
-                            label:      None,
-                            features:   features,
-                            limits:     wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits())
+                            label:              None,
+                            required_features:  features,
+                            required_limits:    wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits()),
+                            ..Default::default()
                         }, None).await.expect("Create WGPU device and queue");
 
                         // Create the WGPU renderer
