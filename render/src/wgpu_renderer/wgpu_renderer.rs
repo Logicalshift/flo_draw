@@ -47,7 +47,7 @@ use std::path::Path;
 ///
 /// Renderer that uses the `wgpu` abstract library as a render target
 ///
-pub struct WgpuRenderer {
+pub struct WgpuRenderer<'surface> {
     /// A reference to the adapter this will render to
     adapter: Arc<wgpu::Adapter>,
 
@@ -58,7 +58,7 @@ pub struct WgpuRenderer {
     queue: Arc<wgpu::Queue>,
 
     /// The surface that this renderer will target
-    target_surface: Option<Arc<wgpu::Surface<'static>>>,
+    target_surface: Option<Arc<wgpu::Surface<'surface>>>,
 
     /// The surface texture that is being written to
     target_surface_texture: Option<wgpu::SurfaceTexture>,
@@ -114,11 +114,11 @@ pub struct WgpuRenderer {
     wgpu_profiler: GpuProfiler,
 }
 
-impl WgpuRenderer {
+impl<'surface> WgpuRenderer<'surface> {
     ///
     /// Creates a new WGPU renderer
     ///
-    pub fn from_surface(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface<'static>>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer {
+    pub fn from_surface(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_surface: Arc<wgpu::Surface<'surface>>, target_adapter: Arc<wgpu::Adapter>) -> WgpuRenderer<'surface> {
         #[cfg(feature="wgpu-profiler")]
         let wgpu_profiler = GpuProfiler::new(GpuProfilerSettings { max_num_pending_frames: 4, ..Default::default()}).expect("Failed to create WGPU profiler");
 
@@ -153,7 +153,7 @@ impl WgpuRenderer {
     ///
     /// Creates a new WGPU renderer
     ///
-    pub fn from_texture(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_texture: Arc<wgpu::Texture>, target_adapter: Arc<wgpu::Adapter>, texture_format: wgpu::TextureFormat, texture_size: (u32, u32)) -> WgpuRenderer {
+    pub fn from_texture(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, target_texture: Arc<wgpu::Texture>, target_adapter: Arc<wgpu::Adapter>, texture_format: wgpu::TextureFormat, texture_size: (u32, u32)) -> WgpuRenderer<'surface> {
         #[cfg(feature="wgpu-profiler")]
         let wgpu_profiler = GpuProfiler::new(GpuProfilerSettings { max_num_pending_frames: 4, ..Default::default()}).expect("Failed to create WGPU profiler");
 
