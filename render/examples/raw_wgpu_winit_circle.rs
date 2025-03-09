@@ -72,8 +72,8 @@ fn main() {
     // Bits of wgpu are async so we need an async blocker here
     executor::block_on(async move {
         // Create a new WGPU instance, surface and adapter
-        let instance    = wgpu::Instance::new(Default::default());
-        let surface     = unsafe { instance.create_surface(&window).expect("Failed to create surface") };
+        let instance    = wgpu::Instance::new(&Default::default());
+        let surface     = instance.create_surface(&window).expect("Failed to create surface");
         let adapter     = instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference:       wgpu::PowerPreference::default(),
             force_fallback_adapter: false,
@@ -82,9 +82,10 @@ fn main() {
 
         // Fetch the device and the queue
         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
-            label:      None,
-            features:   wgpu::Features::empty(),
-            limits:     wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits())
+            label:              None,
+            required_features:  wgpu::Features::empty(),
+            required_limits:    wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits()),
+            ..Default::default()
         }, None).await.unwrap();
 
         // Create the WGPU renderer
