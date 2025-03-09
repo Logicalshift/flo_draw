@@ -438,7 +438,6 @@ fn multisampling_missing_one_half() {
     // The three lines we're interested in (before, after, with apexes)
     let before_apexes   = &scanlines[0];
     let with_apexes     = &scanlines[1];
-    let after_apexes    = &scanlines[2];
 
     // Try rendering the lines
     let scanline_renderer = ScanlineRenderer::new(data_cache.create_program_runner(PixelSize(2.0/1000.0)));
@@ -625,6 +624,8 @@ fn diagonal_partial_overlap() {
     assert!(pixels[10 + 10*2].alpha_component() == 0.75 * 0.375 * 0.5, "1st pixel wrong: {:?}", pixels[10 + 10*2]);
 
     // 2nd pixel: divider between y=0.375 and y=0.875 (plus fill in between 0-0.375)
+    // TODO: reason this is wrong is the linear merge: it is linear between pixel boundaries, but the fade here is not, so the
+    // intermediate values are slightly off as a result
     assert!(pixels[11 + 10*2].alpha_component() == (1.0*(0.875-0.375)*0.5) + 0.375, "2nd pixel wrong: {:?}", pixels[11 + 10*2]);
 
     // 3rd pixel: from x=0, y=0.875 to x=0.25, y=1.0
