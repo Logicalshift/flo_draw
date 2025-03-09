@@ -2,6 +2,7 @@ use flo_render_software::draw::*;
 use flo_render_software::edgeplan::*;
 use flo_render_software::pixel::*;
 use flo_render_software::pixel_programs::*;
+use flo_render_software::render::*;
 use flo_render_software::scanplan::*;
 
 use flo_canvas::*;
@@ -281,7 +282,7 @@ fn vertical_multisampling_creates_solid_rendering() {
                 .zip(y_positions.iter())
                 .for_each(|(output, y_pos)| {
                     // We leave the line blank in the middle of the 'apexes' so the scan plan will be different there (effectively a vetical subpixel)
-                    if *y_pos != 10.5 {
+                    if *y_pos <= 10.25 || *y_pos >= 10.75 {
                         output.extend(vec![
                             // We draw at a slight angle here, the start and end pixels should both be 50% covered after rendering
                             EdgeDescriptorIntercept {
@@ -320,11 +321,32 @@ fn vertical_multisampling_creates_solid_rendering() {
     edgeplan.prepare_to_render();
     scan_planner.plan_scanlines(&edgeplan, &transform, &[9.5, 10.5, 11.5, 15.5], 0.0..1000.0, &mut scanlines);
 
-    // For the purposes of the test, we don't really care that
+    // The three lines we're interested in (before, after, with apexes)
     let before_apexes   = &scanlines[0];
     let with_apexes     = &scanlines[1];
     let after_apexes    = &scanlines[2];
 
+    // Try rendering the lines
+    let scanline_renderer = ScanlineRenderer::new(data_cache.create_program_runner(PixelSize(2.0/1000.0)));
+    let mut pixels = vec![F32LinearPixel::default(); 1000];
+
+    // Normal line
+    scanline_renderer.render(&ScanlineRenderRegion { y_pos: 9.5, transform: transform }, &before_apexes.1, &mut pixels);
+
+    assert!(pixels[10+9].alpha_component() == 0.5, "before_apexes initial pixel wrong: {:?}", pixels[10+9]);
+    assert!(pixels[11+9].alpha_component() == 1.0, "before_apexes mid pixel wrong: {:?}", pixels[11+9]);
+    assert!(pixels[20+9].alpha_component() == 0.5, "before_apexes final pixel wrong: {:?}", pixels[20+9]);
+
+    // Apexes line: 1/4 lines are missing when supersampling so we should get a 25% reduction in brightness
+    let mut pixels = vec![F32LinearPixel::default(); 1000];
+    scanline_renderer.render(&ScanlineRenderRegion { y_pos: 10.5, transform: transform }, &with_apexes.1, &mut pixels);
+
+    assert!(pixels[11+10].alpha_component() == 0.75, "with_apexes mid pixel wrong: {:?} {:?}", pixels[11+10], &pixels[10..40]);
+    assert!(pixels[10+10].alpha_component() == 0.5-(0.5*0.25), "with_apexes initial pixel wrong: {:?} {:?}", pixels[10+10], &pixels[10..40]);
+    assert!(pixels[20+10].alpha_component() == 0.5-(0.5*0.25), "with_apexes final pixel wrong: {:?} {:?}", pixels[20+10], &pixels[10..40]);
+
+    // For the purposes of the test, we don't really care precisely what the plan is, the important part is that the rendering is correct
+    // However, we check the plan here anyway to make sure the test still makes sense and we're not missing anything
     assert!(before_apexes.0 == 9.5, "before_apexes wrong y pos {:?}", before_apexes);
     assert!(with_apexes.0 == 10.5, "with_apexes wrong y pos {:?}", with_apexes);
     assert!(after_apexes.0 == 11.5, "after_apexes wrong y pos{:?}", after_apexes);
