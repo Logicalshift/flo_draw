@@ -252,7 +252,7 @@ fn overlapping_subpixel_ranges() {
 }
 
 #[test]
-fn vertical_multisampling_creates_solid_rendering() {
+fn multisampling_missing_one_quarter() {
     // Create an edge plan that forces multi-sampling
     #[derive(Clone)]
     struct TestEdge(ShapeId);
@@ -282,7 +282,7 @@ fn vertical_multisampling_creates_solid_rendering() {
                 .zip(y_positions.iter())
                 .for_each(|(output, y_pos)| {
                     // We leave the line blank in the middle of the 'apexes' so the scan plan will be different there (effectively a vetical subpixel)
-                    if *y_pos <= 10.25 || *y_pos >= 10.75 {
+                    if *y_pos <= 10.375 || *y_pos >= 10.625 {
                         output.extend(vec![
                             // We draw at a slight angle here, the start and end pixels should both be 50% covered after rendering
                             EdgeDescriptorIntercept {
@@ -363,6 +363,101 @@ fn vertical_multisampling_creates_solid_rendering() {
     assert!(after_apexes.1.spans().len() == 3, "Should only be 3 spans after_apexes {:?} (lead-in, actual program, lead-out)", before_apexes);
     assert!(after_apexes.1.spans()[0].programs().count() == 3, "Lead in should be 3 programs after_apexes {:?}", after_apexes.1.spans()[0]);
     assert!(after_apexes.1.spans()[1].programs().count() == 1, "Central span should be one program after_apexes {:?}", after_apexes.1.spans()[1]);
+}
+
+#[test]
+fn multisampling_missing_one_half() {
+    // Create an edge plan that forces multi-sampling
+    #[derive(Clone)]
+    struct TestEdge(ShapeId);
+    impl EdgeDescriptor for TestEdge {
+        fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+            Arc::new(TestEdge(self.0))
+        }
+
+        fn prepare_to_render(&mut self) {
+        }
+
+        fn transform(&self, _transform: &flo_canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+            Arc::new(TestEdge(self.0))
+        }
+
+        fn shape(&self) -> ShapeId {
+            self.0
+        }
+
+        fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
+            ((0.0, 0.0), (1000.0, 1000.0))
+        }
+
+        fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<EdgeDescriptorIntercept>]) {
+            // Intercepts are on solid pixel boundaries
+            output.iter_mut()
+                .zip(y_positions.iter())
+                .for_each(|(output, y_pos)| {
+                    // We leave the line blank in the middle of the 'apexes' so the scan plan will be different there (effectively a vetical subpixel)
+                    if *y_pos <= 10.5 || *y_pos >= 11.0 {
+                        output.extend(vec![
+                            // We draw at a slight angle here, the start and end pixels should both be 50% covered after rendering
+                            EdgeDescriptorIntercept {
+                                x_pos:      10.0 + y_pos,
+                                direction:  EdgeInterceptDirection::DirectionIn,
+                                position:   EdgePosition(0, 0, 0.0),
+                            },
+                            EdgeDescriptorIntercept {
+                                x_pos:      20.0 + y_pos,
+                                direction:  EdgeInterceptDirection::DirectionOut,
+                                position:   EdgePosition(0, 0, 1.0),
+                            }
+                        ])
+                    }
+                })
+        }
+
+        fn apexes(&self, output: &mut Vec<f64>) {
+            // We create a bunch of apexes between 10.0 and 11.0 (so we force a multisample there)
+            output.extend(vec![10.0, 10.1, 10.4, 10.7, 10.9, 11.0, 11.1])
+        }
+    }
+
+    // Create an edge plan with this shape in it
+    let shape_id            = ShapeId::new();
+    let transform           = ScanlineTransform::for_region(&(0.0..1000.0), 1000);
+    let mut program_cache   = PixelProgramCache::empty();
+    let mut data_cache      = program_cache.create_data_cache();
+    let solid_color         = program_cache.add_pixel_program(SolidColorProgram::default());
+    let background_color    = program_cache.store_program_data(&solid_color, &mut data_cache, SolidColorData(F32LinearPixel::from_components([0.1, 0.2, 0.3, 1.0])));
+    let mut edgeplan        = EdgePlan::new().with_shape(shape_id, ShapeDescriptor { programs: smallvec![background_color], is_opaque: false, z_index: 0 }, vec![TestEdge(shape_id)]);
+
+    // Check that the scan planner produces a multisampling scanline here
+    let scan_planner    = ShardScanPlanner::default();
+    let mut scanlines   = vec![Default::default(); 4];
+    edgeplan.prepare_to_render();
+    scan_planner.plan_scanlines(&edgeplan, &transform, &[9.5, 10.5, 11.5, 15.5], 0.0..1000.0, &mut scanlines);
+
+    // The three lines we're interested in (before, after, with apexes)
+    let before_apexes   = &scanlines[0];
+    let with_apexes     = &scanlines[1];
+    let after_apexes    = &scanlines[2];
+
+    // Try rendering the lines
+    let scanline_renderer = ScanlineRenderer::new(data_cache.create_program_runner(PixelSize(2.0/1000.0)));
+    let mut pixels = vec![F32LinearPixel::default(); 1000];
+
+    // Normal line
+    scanline_renderer.render(&ScanlineRenderRegion { y_pos: 9.5, transform: transform }, &before_apexes.1, &mut pixels);
+
+    assert!(pixels[10+9].alpha_component() == 0.5, "before_apexes initial pixel wrong: {:?}", pixels[10+9]);
+    assert!(pixels[11+9].alpha_component() == 1.0, "before_apexes mid pixel wrong: {:?}", pixels[11+9]);
+    assert!(pixels[20+9].alpha_component() == 0.5, "before_apexes final pixel wrong: {:?}", pixels[20+9]);
+
+    // Apexes line: 1/4 lines are missing when supersampling so we should get a 25% reduction in brightness
+    let mut pixels = vec![F32LinearPixel::default(); 1000];
+    scanline_renderer.render(&ScanlineRenderRegion { y_pos: 10.5, transform: transform }, &with_apexes.1, &mut pixels);
+
+    assert!(pixels[11+10].alpha_component() == 0.5, "with_apexes mid pixel wrong: {:?} {:?}", pixels[11+10], &pixels[10..40]);
+    assert!(pixels[10+10].alpha_component() == 0.5-(0.5*0.5), "with_apexes initial pixel wrong: {:?} {:?}", pixels[10+10], &pixels[10..40]);
+    assert!(pixels[20+10].alpha_component() == 0.5-(0.5*0.5), "with_apexes final pixel wrong: {:?} {:?}", pixels[20+10], &pixels[10..40]);
 }
 
 #[test]
