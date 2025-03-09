@@ -1,10 +1,14 @@
 use flo_render_software::draw::*;
+use flo_render_software::edgeplan::*;
 use flo_render_software::pixel::*;
+use flo_render_software::pixel_programs::*;
 use flo_render_software::scanplan::*;
 
 use flo_canvas::*;
+use smallvec::*;
 
 use std::ops::{Range};
+use std::sync::*;
 
 ///
 /// Generates a plan for layer 0 of a drawing at a particular y-position (coordinates are in the -1 to 1 range for a canvas drawing)
@@ -244,4 +248,71 @@ fn overlapping_subpixel_ranges() {
 
     // One of these ranges should cover both entering and leaving (so be two intercepts)
     assert!(spans.iter().filter(|span| span.programs().count() >= 5).next().is_some(), "Expected an overlapping span (got {:?})", spans);
+}
+
+#[test]
+fn vertical_multisampling_creates_solid_rendering() {
+    // Create an edge plan that forces multi-sampling
+    #[derive(Clone)]
+    struct TestEdge(ShapeId);
+    impl EdgeDescriptor for TestEdge {
+        fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+            Arc::new(TestEdge(self.0))
+        }
+
+        fn prepare_to_render(&mut self) {
+        }
+
+        fn transform(&self, _transform: &flo_canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+            Arc::new(TestEdge(self.0))
+        }
+
+        fn shape(&self) -> ShapeId {
+            self.0
+        }
+
+        fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
+            ((0.0, 0.0), (1000.0, 1000.0))
+        }
+
+        fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<EdgeDescriptorIntercept>]) {
+            // Intercepts are on solid pixel boundaries
+            output.iter_mut()
+                .zip(y_positions.iter())
+                .for_each(|(output, _y_pos)| {
+                    output.extend(vec![
+                        EdgeDescriptorIntercept {
+                            x_pos:      10.0,
+                            direction:  EdgeInterceptDirection::DirectionIn,
+                            position:   EdgePosition(0, 0, 0.0),
+                        },
+                        EdgeDescriptorIntercept {
+                            x_pos:      20.0,
+                            direction:  EdgeInterceptDirection::DirectionOut,
+                            position:   EdgePosition(0, 0, 0.0),
+                        }
+                    ])
+                })
+        }
+
+        fn apexes(&self, output: &mut Vec<f64>) {
+            // We create a bunch of apexes between 10.0 and 11.0 (so we force a multisample there)
+            output.extend(vec![10.0, 10.1, 10.4, 10.7, 10.9, 11.0, 11.1])
+        }
+    }
+
+    // Create an edge plan with this shape in it
+    let shape_id            = ShapeId::new();
+    let mut program_cache   = PixelProgramCache::empty();
+    let mut data_cache      = program_cache.create_data_cache();
+    let solid_color         = program_cache.add_pixel_program(SolidColorProgram::default());
+    let background_color    = program_cache.store_program_data(&solid_color, &mut data_cache, SolidColorData(F32LinearPixel::from_components([0.1, 0.2, 0.3, 1.0])));
+    let edgeplan            = EdgePlan::new().with_shape(shape_id, ShapeDescriptor { programs: smallvec![background_color], is_opaque: false, z_index: 0 }, vec![TestEdge(shape_id)]);
+
+    // Check that the scan planner produces a multisampling scanline here
+    let scan_planner    = ShardScanPlanner::default();
+    let mut scanlines   = vec![Default::default(); 2];
+    scan_planner.plan_scanlines(&edgeplan, &ScanlineTransform::identity(1000), &[10.0, 15.0], 0.0..1000.0, &mut scanlines);
+
+    assert!(false, "{:?}", scanlines);
 }
