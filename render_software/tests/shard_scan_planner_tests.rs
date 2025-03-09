@@ -280,18 +280,22 @@ fn vertical_multisampling_creates_solid_rendering() {
             output.iter_mut()
                 .zip(y_positions.iter())
                 .for_each(|(output, y_pos)| {
-                    output.extend(vec![
-                        EdgeDescriptorIntercept {
-                            x_pos:      10.0 + y_pos/10.0,
-                            direction:  EdgeInterceptDirection::DirectionIn,
-                            position:   EdgePosition(0, 0, 0.0),
-                        },
-                        EdgeDescriptorIntercept {
-                            x_pos:      20.0 + y_pos/10.0,
-                            direction:  EdgeInterceptDirection::DirectionOut,
-                            position:   EdgePosition(0, 0, 1.0),
-                        }
-                    ])
+                    // We leave the line blank in the middle of the 'apexes' so the scan plan will be different there (effectively a vetical subpixel)
+                    if *y_pos != 10.5 {
+                        output.extend(vec![
+                            // We draw at a slight angle here, the start and end pixels should both be 50% covered after rendering
+                            EdgeDescriptorIntercept {
+                                x_pos:      10.0 + y_pos,
+                                direction:  EdgeInterceptDirection::DirectionIn,
+                                position:   EdgePosition(0, 0, 0.0),
+                            },
+                            EdgeDescriptorIntercept {
+                                x_pos:      20.0 + y_pos,
+                                direction:  EdgeInterceptDirection::DirectionOut,
+                                position:   EdgePosition(0, 0, 1.0),
+                            }
+                        ])
+                    }
                 })
         }
 
@@ -314,7 +318,27 @@ fn vertical_multisampling_creates_solid_rendering() {
     let scan_planner    = ShardScanPlanner::default();
     let mut scanlines   = vec![Default::default(); 4];
     edgeplan.prepare_to_render();
-    scan_planner.plan_scanlines(&edgeplan, &transform, &[9.0, 10.0, 11.0, 15.0], 0.0..1000.0, &mut scanlines);
+    scan_planner.plan_scanlines(&edgeplan, &transform, &[9.5, 10.5, 11.5, 15.5], 0.0..1000.0, &mut scanlines);
 
-    assert!(false, "{:?}", scanlines);
+    // For the purposes of the test, we don't really care that
+    let before_apexes   = &scanlines[0];
+    let with_apexes     = &scanlines[1];
+    let after_apexes    = &scanlines[2];
+
+    assert!(before_apexes.0 == 9.5, "before_apexes wrong y pos {:?}", before_apexes);
+    assert!(with_apexes.0 == 10.5, "with_apexes wrong y pos {:?}", with_apexes);
+    assert!(after_apexes.0 == 11.5, "after_apexes wrong y pos{:?}", after_apexes);
+
+    assert!(before_apexes.1.spans().len() == 3, "Should only be 3 spans before_apexes {:?} (lead-in, actual program, lead-out)", before_apexes);
+    assert!(before_apexes.1.spans()[0].programs().count() == 3, "Lead in should be 3 programs before_apexes {:?}", before_apexes.1.spans()[0]);
+    assert!(before_apexes.1.spans()[1].programs().count() == 1, "Central span should be one program before_apexes {:?}", before_apexes.1.spans()[1]);
+
+    // We're assuming that the algorithm works a certain way here, the final pixel rendering is all that really matters
+    assert!(with_apexes.1.spans().len() == 3, "Should only be 3 spans with_apexes {:?} (lead-in, actual program, lead-out)", with_apexes);
+    assert!(with_apexes.1.spans()[0].programs().count() > 3, "Lead in should be >3 programs with_apexes {:?}", with_apexes.1.spans()[0]);
+    assert!(with_apexes.1.spans()[1].programs().count() > 1, "Central span should be >1 program with_apexes {:?}", with_apexes.1.spans()[1]);
+
+    assert!(after_apexes.1.spans().len() == 3, "Should only be 3 spans after_apexes {:?} (lead-in, actual program, lead-out)", before_apexes);
+    assert!(after_apexes.1.spans()[0].programs().count() == 3, "Lead in should be 3 programs after_apexes {:?}", after_apexes.1.spans()[0]);
+    assert!(after_apexes.1.spans()[1].programs().count() == 1, "Central span should be one program after_apexes {:?}", after_apexes.1.spans()[1]);
 }
