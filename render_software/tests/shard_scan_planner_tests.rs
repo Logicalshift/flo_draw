@@ -279,15 +279,15 @@ fn vertical_multisampling_creates_solid_rendering() {
             // Intercepts are on solid pixel boundaries
             output.iter_mut()
                 .zip(y_positions.iter())
-                .for_each(|(output, _y_pos)| {
+                .for_each(|(output, y_pos)| {
                     output.extend(vec![
                         EdgeDescriptorIntercept {
-                            x_pos:      10.0,
+                            x_pos:      10.0 + y_pos/10.0,
                             direction:  EdgeInterceptDirection::DirectionIn,
                             position:   EdgePosition(0, 0, 0.0),
                         },
                         EdgeDescriptorIntercept {
-                            x_pos:      20.0,
+                            x_pos:      20.0 + y_pos/10.0,
                             direction:  EdgeInterceptDirection::DirectionOut,
                             position:   EdgePosition(0, 0, 1.0),
                         }
