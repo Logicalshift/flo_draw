@@ -365,7 +365,6 @@ fn vertical_multisampling_creates_solid_rendering() {
     assert!(after_apexes.1.spans()[1].programs().count() == 1, "Central span should be one program after_apexes {:?}", after_apexes.1.spans()[1]);
 }
 
-
 #[test]
 fn vertical_partial_overlap() {
     // Create an edge plan that forces multi-sampling
@@ -446,4 +445,89 @@ fn vertical_partial_overlap() {
     // The edge pixels should both be filled to 50% as they have a 50% vertical overlap
     assert!(pixels[10].alpha_component() == 0.25, "initial pixel wrong: {:?}", pixels[10]);
     assert!(pixels[20].alpha_component() == 0.75, "final pixel wrong: {:?}", pixels[20]);
+}
+
+#[test]
+fn diagonal_partial_overlap() {
+    // Create an edge plan that forces multi-sampling
+    #[derive(Clone)]
+    struct TestEdge(ShapeId);
+    impl EdgeDescriptor for TestEdge {
+        fn clone_as_object(&self) -> Arc<dyn EdgeDescriptor> {
+            Arc::new(TestEdge(self.0))
+        }
+
+        fn prepare_to_render(&mut self) {
+        }
+
+        fn transform(&self, _transform: &flo_canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
+            Arc::new(TestEdge(self.0))
+        }
+
+        fn shape(&self) -> ShapeId {
+            self.0
+        }
+
+        fn bounding_box(&self) -> ((f64, f64), (f64, f64)) {
+            ((0.0, 0.0), (1000.0, 1000.0))
+        }
+
+        fn intercepts(&self, y_positions: &[f64], output: &mut [Vec<EdgeDescriptorIntercept>]) {
+            // Intercepts are on solid pixel boundaries
+            output.iter_mut()
+                .zip(y_positions.iter())
+                .for_each(|(output, y_pos)| {
+                    output.extend(vec![
+                        // This creates a diagonal intercept starting at 0.25 of the way along and moving up across two pixels
+                        EdgeDescriptorIntercept {
+                            x_pos:      10.25 + y_pos * 2.0,
+                            direction:  EdgeInterceptDirection::DirectionIn,
+                            position:   EdgePosition(0, 0, 0.0),
+                        },
+                        EdgeDescriptorIntercept {
+                            x_pos:      20.75 + y_pos * 2.0,
+                            direction:  EdgeInterceptDirection::DirectionOut,
+                            position:   EdgePosition(0, 0, 1.0),
+                        }
+                    ])
+                })
+        }
+
+        fn apexes(&self, _output: &mut Vec<f64>) {
+        }
+    }
+
+    // Create an edge plan with this shape in it
+    let shape_id            = ShapeId::new();
+    let transform           = ScanlineTransform::for_region(&(0.0..1000.0), 1000);
+    let mut program_cache   = PixelProgramCache::empty();
+    let mut data_cache      = program_cache.create_data_cache();
+    let solid_color         = program_cache.add_pixel_program(SolidColorProgram::default());
+    let background_color    = program_cache.store_program_data(&solid_color, &mut data_cache, SolidColorData(F32LinearPixel::from_components([0.1, 0.2, 0.3, 1.0])));
+    let mut edgeplan        = EdgePlan::new().with_shape(shape_id, ShapeDescriptor { programs: smallvec![background_color], is_opaque: false, z_index: 0 }, vec![TestEdge(shape_id)]);
+
+    // Check that the scan planner produces a multisampling scanline here
+    let scan_planner    = ShardScanPlanner::default();
+    let mut scanlines   = vec![Default::default()];
+    edgeplan.prepare_to_render();
+    scan_planner.plan_scanlines(&edgeplan, &transform, &[10.5], 0.0..1000.0, &mut scanlines);
+
+    // The three lines we're interested in (before, after, with apexes)
+    let scanline = &scanlines[0];
+
+    // Try rendering the scanline (they're all the same with this layout)
+    let scanline_renderer = ScanlineRenderer::new(data_cache.create_program_runner(PixelSize(2.0/1000.0)));
+    let mut pixels = vec![F32LinearPixel::default(); 1000];
+
+    scanline_renderer.render(&ScanlineRenderRegion { y_pos: 9.5, transform: transform }, &scanline.1, &mut pixels);
+    println!("{:?}", &pixels[0..40]);
+
+    // Mid pixel should be filled (we need to add 9*2 to account for the y positioning as we're reading at y=9)
+    assert!(pixels[13 + 10*2].alpha_component() == 1.0, "mid pixel wrong: {:?}", pixels[13 + 9*2]);
+
+    // The edge pixels should both be filled to 50% as they have a 50% vertical overlap
+    assert!(pixels[10 + 10*2].alpha_component() == 0.140625, "1st pixel wrong: {:?}", pixels[10 + 10*2]);
+    assert!(pixels[11 + 10*2].alpha_component() == 0.625, "2nd pixel wrong: {:?}", pixels[11 + 10*2]);
+    assert!(pixels[12 + 10*2].alpha_component() == 0.984375, "3rd pixel wrong: {:?}", pixels[12 + 10*2]);
+    assert!(pixels[20 + 10*2].alpha_component() == 0.75, "final pixel wrong: {:?}", pixels[20 + 10*2]);
 }
