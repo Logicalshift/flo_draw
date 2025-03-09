@@ -526,10 +526,14 @@ fn diagonal_partial_overlap() {
     assert!(pixels[13 + 10*2].alpha_component() == 1.0, "mid pixel wrong: {:?}", pixels[13 + 9*2]);
 
     // The edge pixels should both be filled to 50% as they have a 50% vertical overlap
-    assert!(pixels[10 + 10*2].alpha_component() == 0.140625, "1st pixel wrong: {:?}", pixels[10 + 10*2]);
-    assert!(pixels[11 + 10*2].alpha_component() == 0.625, "2nd pixel wrong: {:?}", pixels[11 + 10*2]);
-    assert!(pixels[12 + 10*2].alpha_component() == 0.984375, "3rd pixel wrong: {:?}", pixels[12 + 10*2]);
-    assert!(pixels[20 + 10*2].alpha_component() == 0.75, "final pixel wrong: {:?}", pixels[20 + 10*2]);
+    // 1st pixel: triangle from x=0.25 to y=0.375
+    assert!(pixels[10 + 10*2].alpha_component() == 0.75 * 0.375 * 0.5, "1st pixel wrong: {:?}", pixels[10 + 10*2]);
+
+    // 2nd pixel: divider between y=0.375 and y=0.875 (plus fill in between 0-0.375)
+    assert!(pixels[11 + 10*2].alpha_component() == (1.0*(0.875-0.375)*0.5) + 0.375, "2nd pixel wrong: {:?}", pixels[11 + 10*2]);
+
+    // 3rd pixel: from x=0, y=0.875 to x=0.25, y=1.0
+    assert!(pixels[12 + 10*2].alpha_component() == (((1.0-0.875)*0.25)*0.5) + (0.875*0.25) + (0.75 * 1.0), "3rd pixel wrong: {:?}", pixels[12 + 10*2]);
 }
 
 #[test]
