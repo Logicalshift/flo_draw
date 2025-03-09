@@ -289,7 +289,7 @@ fn vertical_multisampling_creates_solid_rendering() {
                         EdgeDescriptorIntercept {
                             x_pos:      20.0,
                             direction:  EdgeInterceptDirection::DirectionOut,
-                            position:   EdgePosition(0, 0, 0.0),
+                            position:   EdgePosition(0, 0, 1.0),
                         }
                     ])
                 })
@@ -303,16 +303,18 @@ fn vertical_multisampling_creates_solid_rendering() {
 
     // Create an edge plan with this shape in it
     let shape_id            = ShapeId::new();
+    let transform           = ScanlineTransform::for_region(&(0.0..1000.0), 1000);
     let mut program_cache   = PixelProgramCache::empty();
     let mut data_cache      = program_cache.create_data_cache();
     let solid_color         = program_cache.add_pixel_program(SolidColorProgram::default());
     let background_color    = program_cache.store_program_data(&solid_color, &mut data_cache, SolidColorData(F32LinearPixel::from_components([0.1, 0.2, 0.3, 1.0])));
-    let edgeplan            = EdgePlan::new().with_shape(shape_id, ShapeDescriptor { programs: smallvec![background_color], is_opaque: false, z_index: 0 }, vec![TestEdge(shape_id)]);
+    let mut edgeplan        = EdgePlan::new().with_shape(shape_id, ShapeDescriptor { programs: smallvec![background_color], is_opaque: false, z_index: 0 }, vec![TestEdge(shape_id)]);
 
     // Check that the scan planner produces a multisampling scanline here
     let scan_planner    = ShardScanPlanner::default();
-    let mut scanlines   = vec![Default::default(); 2];
-    scan_planner.plan_scanlines(&edgeplan, &ScanlineTransform::identity(1000), &[10.0, 15.0], 0.0..1000.0, &mut scanlines);
+    let mut scanlines   = vec![Default::default(); 4];
+    edgeplan.prepare_to_render();
+    scan_planner.plan_scanlines(&edgeplan, &transform, &[9.0, 10.0, 11.0, 15.0], 0.0..1000.0, &mut scanlines);
 
     assert!(false, "{:?}", scanlines);
 }
