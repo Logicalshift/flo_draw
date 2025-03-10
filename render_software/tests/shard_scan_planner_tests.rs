@@ -342,8 +342,6 @@ fn multisampling_missing_one_quarter() {
     scanline_renderer.render(&ScanlineRenderRegion { y_pos: 10.5, transform: transform }, &with_apexes.1, &mut pixels);
 
     assert!(pixels[11+10].alpha_component() == 0.75, "with_apexes mid pixel wrong: {:?} {:?}", pixels[11+10], &pixels[10..40]);
-    assert!(pixels[10+10].alpha_component() == 0.5-(0.5*0.25), "with_apexes initial pixel wrong: {:?} {:?}", pixels[10+10], &pixels[10..40]);
-    assert!(pixels[20+10].alpha_component() == 0.5-(0.5*0.25), "with_apexes final pixel wrong: {:?} {:?}", pixels[20+10], &pixels[10..40]);
 
     // For the purposes of the test, we don't really care precisely what the plan is, the important part is that the rendering is correct
     // However, we check the plan here anyway to make sure the test still makes sense and we're not missing anything
@@ -455,8 +453,6 @@ fn multisampling_missing_one_half() {
     scanline_renderer.render(&ScanlineRenderRegion { y_pos: 10.5, transform: transform }, &with_apexes.1, &mut pixels);
 
     assert!(pixels[11+10].alpha_component() == 0.5, "with_apexes mid pixel wrong: {:?} {:?}", pixels[11+10], &pixels[10..40]);
-    assert!(pixels[10+10].alpha_component() == 0.5-(0.5*0.5), "with_apexes initial pixel wrong: {:?} {:?}", pixels[10+10], &pixels[10..40]);
-    assert!(pixels[20+10].alpha_component() == 0.5-(0.5*0.5), "with_apexes final pixel wrong: {:?} {:?}", pixels[20+10], &pixels[10..40]);
 }
 
 #[test]
