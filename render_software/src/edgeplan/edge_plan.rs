@@ -493,7 +493,7 @@ where
     }
 
     ///
-    /// Finds any apexes for a shape in the specified range
+    /// Replaces the contents of the `apexes` Vec with the apexes for a shape in the specified range
     ///
     #[inline]
     fn find_apexes(&self, shape_id: ShapeId, y_min: f64, y_max: f64, apexes: &mut Vec<f64>) {
