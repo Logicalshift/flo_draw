@@ -407,7 +407,7 @@ where
             self.find_apexes(shape, y_min, y_max, &mut apexes);
 
             // Usually there are no apexes in a region, so we don't bother trying to track them
-            if apexes.is_empty() && false {
+            if apexes.is_empty() {
                 // Fill the intercepts for this shape
                 shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
 
