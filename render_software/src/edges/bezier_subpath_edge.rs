@@ -481,10 +481,10 @@ impl BezierSubpath {
             curve1.apexes(apexes);
             
             // If the preceding and following curve form an apex, add that too
-            let curve1_dir = (curve1.wy.2 - curve1.wy.3).signum();
-            let curve2_dir = (curve2.wy.0 - curve2.wy.1).signum();
+            let curve1_dir = curve1.wy.2 - curve1.wy.3;
+            let curve2_dir = curve2.wy.0 - curve2.wy.1;
 
-            if curve1_dir != curve2_dir {
+            if curve1_dir.signum() != curve2_dir.signum() || curve1_dir == 0.0 || curve2_dir == 0.0 {
                 apexes.push(curve1.wy.3);
             }
         }
