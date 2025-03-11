@@ -85,5 +85,14 @@ pub fn main() {
     println!("F32 frame render time: {}.{}ms", avg_micros/1000, avg_micros%1000);
 
     // Render to the terminal window
-    render_drawing(&mut TerminalRenderTarget::new(1920, 1080), drawing.iter().cloned());
+    use std::io::*;
+    use std::fs::*;
+    use std::path::*;
+
+    let path    = Path::new(r"text.png");
+    let file    = File::create(path).unwrap();
+    let writer  = BufWriter::new(file);
+    let mut png = PngRenderTarget::from_bufwriter(writer, 1920, 1080, 2.2);
+
+    render_drawing(&mut png, drawing.iter().cloned());
 }
