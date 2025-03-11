@@ -1,17 +1,19 @@
+//!
+//! 'Apexes' are the points where a curve changes from moving up to down or vice versa. We use them to determine which lines along an edge
+//! require vertical supersampling (for example, the top of the letter 'o' or the crossbar in the letter 'H')
+//!
+//! These tests use 'real' renderings to check the behaviour of the code that detects apexes.
+//!
+
 use flo_render_software::draw::*;
 use flo_render_software::edgeplan::*;
 use flo_render_software::pixel::*;
-use flo_render_software::pixel_programs::*;
-use flo_render_software::render::*;
-use flo_render_software::scanplan::*;
 
 use flo_canvas::*;
-use smallvec::*;
 
 use futures::prelude::*;
 use futures::executor;
 
-use std::ops::{Range};
 use std::sync::*;
 
 static LATO: &[u8] = include_bytes!("../test_data/Lato-Regular.ttf");
