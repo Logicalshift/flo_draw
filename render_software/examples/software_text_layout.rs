@@ -40,7 +40,6 @@ pub fn main() {
     gc.draw_text(FontId(0), "• This generates a large number of fairly complicated paths to render".to_string(), 64.0 + 48.0, 1080.0 - 48.0*2.0-18.0*2.0 - 64.0);
     gc.draw_text(FontId(0), "• 'Good' font rendering is a hugely subjective thing with arguments about what makes something 'crisp' or otherwise".to_string(), 64.0 + 48.0, 1080.0 - 48.0*2.0-18.0*3.0 - 64.0);
     gc.draw_text(FontId(0), "• 'Good' font rendering is also pretty objective with things like vertical spacing and kerning to consider".to_string(), 64.0 + 48.0, 1080.0 - 48.0*2.0-18.0*4.0 - 64.0);
-    gc.draw_text(FontId(0), "• The standard 'shard' scan planner only considers anti-aliasing in the horizontal plane, which doesn't work well for fonts with thin horizontal lines".to_string(), 64.0 + 48.0, 1080.0 - 48.0*2.0-18.0*5.0 - 64.0);
 
     // Convert the font instructions to 'normal' drawing instructions (bypassing any renderer that might be added by the software renderer)
     let drawing = stream::iter(gc);
