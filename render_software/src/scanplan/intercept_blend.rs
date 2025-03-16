@@ -309,4 +309,33 @@ mod test {
         assert!(((40.0*a + b)-0.0).abs() <= 0.00001);
         assert!(((900.0*a + b)-1.0).abs() <= 0.00001);
     }
+
+    #[test]
+    fn linear_fade_range() {
+        let range = InterceptBlend::linear_fade(2.0, 3.0).range();
+
+        assert!(range.start == 2.0, "{:?}", range);
+        assert!(range.end == 3.0, "{:?}", range);
+
+        let range = InterceptBlend::linear_fade(3.0, 2.0).range();
+
+        assert!(range.start == 2.0, "{:?}", range);
+        assert!(range.end == 3.0, "{:?}", range);
+    }
+
+    #[test]
+    fn linear_fade_multiply() {
+        let (a, b) = match InterceptBlend::linear_fade(2.0, 3.0).multiply_fade(0.5) 
+            { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
+        assert!(2.0*a + b == 0.0);
+        assert!(3.0*a + b == 0.5);
+    }
+
+    #[test]
+    fn linear_fade_multiply_simple_nest() {
+        let (a, b) = match InterceptBlend::linear_fade(2.0, 3.0).multiply_fade(0.5).nest(InterceptBlend::linear_fade(2.0, 3.0).multiply_fade(0.5))
+            { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
+        assert!(2.0*a + b == 0.0);
+        assert!(3.0*a + b == 1.0);
+    }
 }
