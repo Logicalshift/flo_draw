@@ -11,6 +11,9 @@ pub enum InterceptBlend {
     /// Only the shape's blending should be used
     Solid,
 
+    /// This should be alpha-blended with a linear fade, where the alpha value `a = a*x + b`
+    LinearFade { a: f64, b: f64 },
+
     /// This should be alpha-blended using source-over with a linear fade
     Fade { x_range: Range<f64>, alpha_range: Range<f64> },
 
@@ -25,6 +28,7 @@ impl InterceptBlend {
     pub fn multiply_fade(&self, factor: f64) -> InterceptBlend {
         match self {
             InterceptBlend::Solid                                       => InterceptBlend::Solid,
+            InterceptBlend::LinearFade { a, b }                         => todo!(),
             InterceptBlend::Fade { x_range, alpha_range }               => InterceptBlend::Fade { x_range: x_range.clone(), alpha_range: (alpha_range.start*factor)..(alpha_range.end*factor) },
             InterceptBlend::NestedFade { x_range, alpha_range, nested } => InterceptBlend::NestedFade { x_range: x_range.clone(), alpha_range: (alpha_range.start*factor)..(alpha_range.end*factor), nested: Box::new(nested.multiply_fade(factor)) },
         }
@@ -36,6 +40,7 @@ impl InterceptBlend {
     pub fn nest(self, blend: InterceptBlend) -> InterceptBlend {
         match self {
             InterceptBlend::Solid                                       => InterceptBlend::Solid,
+            InterceptBlend::LinearFade { a, b }                         => todo!(),
             InterceptBlend::Fade { x_range, alpha_range }               => InterceptBlend::NestedFade { x_range, alpha_range, nested: Box::new(blend) },
             InterceptBlend::NestedFade { x_range, alpha_range, nested } => InterceptBlend::NestedFade { x_range, alpha_range, nested: Box::new(nested.nest(blend)) }
         }
@@ -54,6 +59,8 @@ impl InterceptBlend {
                 InterceptBlend::Solid => {
                     break;
                 },
+
+                InterceptBlend::LinearFade { a, b } => todo!(),
 
                 InterceptBlend::Fade { x_range: alpha_x_range, alpha_range } => {
                     // Adjust the alpha range to the actual x range

@@ -126,6 +126,7 @@ impl<'a> ScanlineShardIntercept<'a> {
     pub fn is_opaque(&self) -> bool {
         match self.blend {
             InterceptBlend::Solid               => self.descriptor.is_opaque && self.opacity >= 1.0,
+            InterceptBlend::LinearFade { .. }   => false,
             InterceptBlend::Fade { .. }         => false,
             InterceptBlend::NestedFade { .. }   => false,
         }
@@ -157,6 +158,8 @@ fn clear_finished_intercepts(blend: &InterceptBlend, xpos: f64) -> InterceptBlen
     match blend {
         // Solid intercepts have nothing to clear
         InterceptBlend::Solid => InterceptBlend::Solid,
+
+        InterceptBlend::LinearFade { .. } => todo!(),
 
         // Fades clear if the x position exceeds the x position
         InterceptBlend::Fade { x_range, alpha_range } => {
@@ -325,6 +328,8 @@ impl<'a> ScanlineShardInterceptState<'a> {
                                 }
                             }
 
+                            InterceptBlend::LinearFade { a, b } => todo!(),
+
                             InterceptBlend::Fade { .. }         |
                             InterceptBlend::NestedFade { .. }   => {
                                 let nested = Box::new(self.active_shapes[existing_idx].blend.clone());
@@ -345,6 +350,8 @@ impl<'a> ScanlineShardInterceptState<'a> {
                                     alpha_range:    1.0..0.0,
                                 }
                             }
+
+                            InterceptBlend::LinearFade { a, b } => todo!(),
 
                             InterceptBlend::Fade { .. }         |
                             InterceptBlend::NestedFade { .. }   => {
