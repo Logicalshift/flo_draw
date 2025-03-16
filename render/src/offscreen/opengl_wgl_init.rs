@@ -182,9 +182,9 @@ pub fn opengl_initialize_offscreen_rendering() -> Result<impl OffscreenRenderCon
 /// Only required if not using a toolkit renderer (eg, in an HTTP renderer or command-line tool). Will likely replace
 /// the bindings for any GUI toolkit, so this is not appropriate for desktop-type apps.
 ///
-/// This version is the Metal version for Mac OS X
+/// This version is the WGL version for Windows
 ///
-#[cfg(not(feature="osx-metal"))]
+#[cfg(all(not(feature="osx-metal"), not(feature="render-wgpu")))]
 pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     opengl_initialize_offscreen_rendering()
 }

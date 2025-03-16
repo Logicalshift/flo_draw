@@ -50,6 +50,7 @@ pub fn metal_initialize_offscreen_rendering() -> Result<impl OffscreenRenderCont
 ///
 /// This version is the Metal version for Mac OS X
 ///
+#[cfg(not(feature="render-wgpu"))]
 pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     metal_initialize_offscreen_rendering()
 }
