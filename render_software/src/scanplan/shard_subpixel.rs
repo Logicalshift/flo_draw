@@ -18,7 +18,7 @@ pub struct ShardSubPixel {
     shape_id:           ShapeId,
     shape_descriptor:   ShapeDescriptor,
     blend:              InterceptBlend,
-    opacity:            f32,
+    opacity:            f64,
 }
 
 impl<'a, 'b> From<&'a ScanlineShardIntercept<'b>> for ShardSubPixel {
@@ -27,7 +27,7 @@ impl<'a, 'b> From<&'a ScanlineShardIntercept<'b>> for ShardSubPixel {
         ShardSubPixel {
             shape_id:           intercept.shape_id(),
             blend:              intercept.blend().clone(),
-            opacity:            intercept.opacity(),
+            opacity:            intercept.opacity() as f64,
             shape_descriptor:   intercept.shape_descriptor().clone(),
         }
     }
@@ -46,12 +46,49 @@ impl ShardSubPixel {
     /// Combines the effect of an intercept into this subpixel
     ///
     pub fn combine(&mut self, intercept: &ScanlineShardIntercept<'_>) {
-        // TODO: for fade blends, we need to combine the fades (although the opacity is probably the most important thing to add up here)
-        // (This will use the first blend ratio, which is pretty close, but will not look right for things like a gap in the middle, or where the
-        // slope changes a lot over the subpixels)
+        // TODO: mixing f64 (from the blend) and f32 (from the intercept) here, want to make these consistent
 
-        // Overall opacity of the current 
-        self.opacity += intercept.opacity();
+        // Combine the blends
+        let total_opacity       = self.opacity + (intercept.opacity() as f64);
+        let our_opacity_ratio   = self.opacity/total_opacity;
+        let their_opacity_ratio = 1.0 - our_opacity_ratio;
+
+        let new_blend = match (&self.blend, intercept.blend()) {
+            (InterceptBlend::Solid, InterceptBlend::Solid) => InterceptBlend::Solid,
+
+            (InterceptBlend::Solid, InterceptBlend::Fade { x_range, alpha_range }) => {
+                InterceptBlend::Fade {
+                    x_range:        x_range.clone(),
+                    alpha_range:    (1.0*our_opacity_ratio + alpha_range.start*their_opacity_ratio)..(1.0*our_opacity_ratio + alpha_range.end*their_opacity_ratio)
+                }
+            },
+
+            (InterceptBlend::Fade { x_range, alpha_range }, InterceptBlend::Solid) => {
+                InterceptBlend::Fade {
+                    x_range:        x_range.clone(),
+                    alpha_range:    (alpha_range.start*our_opacity_ratio + 1.0*their_opacity_ratio)..(alpha_range.end*our_opacity_ratio + 1.0*their_opacity_ratio)
+                }
+            },
+
+            (InterceptBlend::Fade { x_range, alpha_range }, InterceptBlend::Fade { .. }) => {
+                InterceptBlend::NestedFade {
+                    x_range:        x_range.clone(),
+                    alpha_range:    alpha_range.clone(),
+                    nested:         Box::new(intercept.blend().clone()),
+                }
+            },
+
+            // TODO: nested fades...
+            (InterceptBlend::Fade { .. }, InterceptBlend::NestedFade { .. })        => { InterceptBlend::Solid },
+            (InterceptBlend::Solid, InterceptBlend::NestedFade { .. })              => { InterceptBlend::Solid },
+            (InterceptBlend::NestedFade { .. }, InterceptBlend::Solid)              => { InterceptBlend::Solid },
+            (InterceptBlend::NestedFade { .. }, InterceptBlend::Fade { .. })        => { InterceptBlend::Solid },
+            (InterceptBlend::NestedFade { .. }, InterceptBlend::NestedFade { .. })  => { InterceptBlend::Solid },
+        };
+
+        // Overall opacity of the current shard is increased by the newly added shard
+        self.blend  = new_blend;
+        self.opacity += intercept.opacity() as f64;
     }
 
     ///
@@ -59,6 +96,6 @@ impl ShardSubPixel {
     ///
     #[inline]
     pub fn render(&self, program_stack: &mut Vec<PixelProgramPlan>, x_range: &Range<f64>) {
-        self.blend.render(program_stack, &self.shape_descriptor, self.opacity, x_range);
+        self.blend.render(program_stack, &self.shape_descriptor, self.opacity as f32, x_range);
     }
 }
