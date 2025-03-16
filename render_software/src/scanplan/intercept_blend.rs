@@ -58,6 +58,28 @@ impl InterceptBlend {
     }
 
     ///
+    /// Returns the range where this fade moves between 0 and 1
+    ///
+    pub fn range(&self) -> Range<f64> {
+        match self {
+            InterceptBlend::Solid => 0.0..0.0,
+
+            InterceptBlend::LinearFade { a, b } => {
+                if a == b {
+                    0.0..0.0
+                } else {
+                    let zero_pos    = (0.0-b)/a;
+                    let one_pos     = (1.0-b)/a;
+
+                    (zero_pos.min(one_pos))..(zero_pos.max(one_pos))
+                }
+            }
+
+            _ => todo!()
+        }
+    }
+
+    ///
     /// Adds this blend to a pixel program stack
     ///
     pub fn render(&self, program_stack: &mut Vec<PixelProgramPlan>, shape_descriptor: &ShapeDescriptor, opacity: f32, x_range: &Range<f64>) {
