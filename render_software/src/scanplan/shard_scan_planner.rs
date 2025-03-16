@@ -2,6 +2,7 @@ use super::scanline_shard_intercept::*;
 use super::scanline_transform::*;
 use super::scanline_plan::*;
 use super::scan_planner::*;
+use super::shard_subpixel::*;
 
 use crate::edgeplan::*;
 use crate::pixel::*;
@@ -35,13 +36,6 @@ where
 
         scanlines
     }
-}
-
-struct ShardSubPixel {
-    shape_id:           ShapeId,
-    shape_descriptor:   ShapeDescriptor,
-    blend:              InterceptBlend,
-    opacity:            f32,
 }
 
 ///
@@ -293,26 +287,6 @@ fn actual_fade_for_range(render_x_range: &Range<f64>, alpha_x_range: &Range<f64>
     }
 }
 
-impl ShardSubPixel {
-    ///
-    /// Combines the effect of an intercept into this subpixel
-    ///
-    fn combine(&mut self, intercept: &ScanlineShardIntercept<'_>) {
-        // TODO: for fade blends, we need to combine the fades (although the opacity is probably the most important thing to add up here)
-        // (This will use the first blend ratio, which is pretty close, but will not look right for things like a gap in the middle, or where the
-        // slope changes a lot over the subpixels)
-        self.opacity += intercept.opacity();
-    }
-
-    ///
-    /// Adds the rendering of this subpixel into the program stack
-    ///
-    #[inline]
-    fn render(&self, program_stack: &mut Vec<PixelProgramPlan>, x_range: &Range<f64>) {
-        self.blend.render(program_stack, &self.shape_descriptor, self.opacity, x_range);
-    }
-}
-
 impl InterceptBlend {
     ///
     /// Adds this blend to a pixel program stack
@@ -471,19 +445,14 @@ where
                             match &mut subpixel {
                                 None => {
                                     // Start a new subpixel
-                                    subpixel = Some(ShardSubPixel {
-                                        shape_id:           intercept.shape_id(),
-                                        blend:              intercept.blend().clone(),
-                                        opacity:            intercept.opacity(),
-                                        shape_descriptor:   intercept.shape_descriptor().clone(),
-                                    });
+                                    subpixel = Some(ShardSubPixel::from(intercept));
 
                                     // Continue iterating
                                     continue;
                                 }
 
                                 Some(subpixel) => {
-                                    if subpixel.shape_id != intercept.shape_id() {
+                                    if subpixel.shape_id() != intercept.shape_id() {
                                         // Render the subpixel and start a new one
                                         subpixel.render(&mut program_stack, &x_range)
                                     } else {

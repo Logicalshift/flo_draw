@@ -15,6 +15,7 @@
 pub (crate) mod buffer_stack;
 mod pixel_scan_planner;
 mod shard;
+mod shard_subpixel;
 mod shard_scan_planner;
 mod background_scan_planner;
 mod debug_ypos_scan_planner;
