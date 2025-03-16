@@ -20,7 +20,7 @@ pub struct ShardInterceptLocation {
 }
 
 ///
-/// Ways that a scanline fragment can be bn
+/// Ways that a scanline fragment can be blended with the background
 ///
 #[derive(Clone, Debug)]
 pub enum InterceptBlend {
