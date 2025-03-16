@@ -472,7 +472,6 @@ where
 
                             for (subpixel_idx, (sub_pixel_shards, sp_range)) in sub_pixel_intercepts.into_iter().zip(sub_pixel_ranges).enumerate() {
                                 let opacity = (sp_range.end - sp_range.start) / row_height;
-                                let opacity = 1.0;
                                 fill_output_line_from_shards(shape, &sub_pixel_shards, subpixel_idx as _, opacity as _, output_line);
                             }
                         } else {
