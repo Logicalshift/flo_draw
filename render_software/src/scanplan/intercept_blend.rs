@@ -23,12 +23,23 @@ pub enum InterceptBlend {
 
 impl InterceptBlend {
     ///
+    /// Creates a linear fade that has an alpha of 0 at zero_x and 1 at one_x
+    ///
+    #[inline]
+    pub fn linear_fade(zero_x: f64, one_x: f64) -> InterceptBlend {
+        let a = 1.0/(one_x-zero_x);
+        let b = 1.0-a*one_x;
+
+        InterceptBlend::LinearFade { a, b }
+    }
+
+    ///
     /// If this is a fade blend, multiply the ratios by the specified number
     ///
     pub fn multiply_fade(&self, factor: f64) -> InterceptBlend {
         match self {
             InterceptBlend::Solid                                       => InterceptBlend::Solid,
-            InterceptBlend::LinearFade { a, b }                         => todo!(),
+            InterceptBlend::LinearFade { a, b }                         => InterceptBlend::LinearFade { a: a*factor, b: b*factor },
             InterceptBlend::Fade { x_range, alpha_range }               => InterceptBlend::Fade { x_range: x_range.clone(), alpha_range: (alpha_range.start*factor)..(alpha_range.end*factor) },
             InterceptBlend::NestedFade { x_range, alpha_range, nested } => InterceptBlend::NestedFade { x_range: x_range.clone(), alpha_range: (alpha_range.start*factor)..(alpha_range.end*factor), nested: Box::new(nested.multiply_fade(factor)) },
         }
@@ -247,5 +258,20 @@ mod test {
     fn alpha_coverage_middle_quarter() {
         let coverage = alpha_coverage(-0.5, 2.0);
         assert!((coverage-0.6).abs() < 0.0001, "{:?}", coverage);
+    }
+
+    #[test]
+    fn linear_fade() {
+        let (a, b) = match InterceptBlend::linear_fade(2.0, 3.0) { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
+        assert!(2.0*a + b == 0.0);
+        assert!(3.0*a + b == 1.0);
+
+        let (a, b) = match InterceptBlend::linear_fade(3.0, 2.0) { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
+        assert!(3.0*a + b == 0.0);
+        assert!(2.0*a + b == 1.0);
+
+        let (a, b) = match InterceptBlend::linear_fade(40.0, 900.0) { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
+        assert!(((40.0*a + b)-0.0).abs() <= 0.00001);
+        assert!(((900.0*a + b)-1.0).abs() <= 0.00001);
     }
 }
