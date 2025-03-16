@@ -1,4 +1,5 @@
 use super::scanline_transform::*;
+use super::intercept_blend::*;
 
 use crate::edgeplan::*;
 
@@ -17,21 +18,6 @@ pub struct ShardInterceptLocation {
     pub upper_x:        f64,
     pub lower_x_floor:  f64,
     pub upper_x_ceil:   f64,
-}
-
-///
-/// Ways that a scanline fragment can be blended with the background
-///
-#[derive(Clone, Debug)]
-pub enum InterceptBlend {
-    /// Only the shape's blending should be used
-    Solid,
-
-    /// This should be alpha-blended using source-over with a linear fade
-    Fade { x_range: Range<f64>, alpha_range: Range<f64> },
-
-    /// Nest the second blend inside the first blend
-    NestedFade { x_range: Range<f64>, alpha_range: Range<f64>, nested: Box<InterceptBlend>, },
 }
 
 ///

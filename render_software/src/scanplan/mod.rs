@@ -13,6 +13,7 @@
 //!
 
 pub (crate) mod buffer_stack;
+mod intercept_blend;
 mod pixel_scan_planner;
 mod shard;
 mod shard_subpixel;

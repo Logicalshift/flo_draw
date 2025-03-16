@@ -1,5 +1,6 @@
 use crate::pixel::*;
 use crate::edgeplan::*;
+use super::intercept_blend::*;
 use super::scanline_shard_intercept::*;
 
 use std::ops::{Range};
