@@ -31,6 +31,17 @@ impl InterceptBlend {
     }
 
     ///
+    /// Nests another fade blend inside this one
+    ///
+    pub fn nest(self, blend: InterceptBlend) -> InterceptBlend {
+        match self {
+            InterceptBlend::Solid                                       => InterceptBlend::Solid,
+            InterceptBlend::Fade { x_range, alpha_range }               => InterceptBlend::NestedFade { x_range, alpha_range, nested: Box::new(blend) },
+            InterceptBlend::NestedFade { x_range, alpha_range, nested } => InterceptBlend::NestedFade { x_range, alpha_range, nested: Box::new(nested.nest(blend)) }
+        }
+    }
+
+    ///
     /// Adds this blend to a pixel program stack
     ///
     pub fn render(&self, program_stack: &mut Vec<PixelProgramPlan>, shape_descriptor: &ShapeDescriptor, opacity: f32, x_range: &Range<f64>) {
