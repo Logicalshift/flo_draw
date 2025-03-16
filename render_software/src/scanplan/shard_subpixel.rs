@@ -71,20 +71,9 @@ impl ShardSubPixel {
                 }
             },
 
-            (InterceptBlend::Fade { x_range, alpha_range }, InterceptBlend::Fade { .. }) => {
-                InterceptBlend::NestedFade {
-                    x_range:        x_range.clone(),
-                    alpha_range:    alpha_range.clone(),
-                    nested:         Box::new(intercept.blend().clone()),
-                }
+            (_, _) => {
+                intercept.blend().multiply_fade(their_opacity_ratio).nest(self.blend.multiply_fade(our_opacity_ratio))
             },
-
-            // TODO: nested fades...
-            (InterceptBlend::Fade { .. }, InterceptBlend::NestedFade { .. })        => { InterceptBlend::Solid },
-            (InterceptBlend::Solid, InterceptBlend::NestedFade { .. })              => { InterceptBlend::Solid },
-            (InterceptBlend::NestedFade { .. }, InterceptBlend::Solid)              => { InterceptBlend::Solid },
-            (InterceptBlend::NestedFade { .. }, InterceptBlend::Fade { .. })        => { InterceptBlend::Solid },
-            (InterceptBlend::NestedFade { .. }, InterceptBlend::NestedFade { .. })  => { InterceptBlend::Solid },
         };
 
         // Overall opacity of the current shard is increased by the newly added shard
