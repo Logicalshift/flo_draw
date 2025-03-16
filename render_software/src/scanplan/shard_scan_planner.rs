@@ -458,14 +458,15 @@ where
                     // Create a program stack between the ranges: all the programs until the first opaque layer
                     let x_range         = last_x..next_x;
                     let mut is_opaque   = false;
-                    let mut subpixel    = None;
+                    let mut subpixel: Option<ShardSubPixel>    = None;
 
                     // We re-use program_stack so we don't have to keep re-allocating a vec as we go
                     program_stack.clear();
                     for shape in (0..stack_depth).rev() {
                         let intercept = active_shapes.get(shape).unwrap();
 
-                        if intercept.subpixel() != 255 {
+                        if intercept.subpixel() != 255 && intercept.subpixel() != 0 {
+                            /*
                             // Combine subpixels into a single intercept (they're grouped by the ordering, and we defer
                             // rendering until we receive a different shape or a shape without subpixels)
                             match &mut subpixel {
@@ -492,6 +493,7 @@ where
                                     }
                                 }
                             }
+                            */
                             continue;
                         } else if let Some(subpixel) = subpixel.take() {
                             // Blend in the subpixel first
