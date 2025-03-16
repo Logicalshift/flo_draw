@@ -100,10 +100,14 @@ impl InterceptBlend {
                     break;
                 },
 
-                InterceptBlend::LinearFade { .. } => {
+                InterceptBlend::LinearFade { a, b } => {
                     // Convert to a range to use on the program stack
-                    let fade_range = blend.range();
-                    program_stack.push(PixelProgramPlan::LinearMerge((fade_range.start-x_range.start) as _, (fade_range.end-x_range.start) as _));
+                    let initial_fade    = a*x_range.start + b;
+                    let final_fade      = a*x_range.end + b;
+                    let initial_fade    = initial_fade.max(0.0).min(1.0);
+                    let final_fade      = final_fade.max(0.0).min(1.0);
+
+                    program_stack.push(PixelProgramPlan::LinearMerge(initial_fade as _, final_fade as _));
                     num_blends += 1;
                     break;
                 },
