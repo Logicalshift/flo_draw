@@ -68,6 +68,12 @@ pub async fn wgpu_initialize_offscreen_rendering() -> Result<impl OffscreenRende
 ///
 #[cfg(not(any(feature="opengl", feature="osx-metal")))]
 pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+    use once_cell::sync::{Lazy};
+    use ::desync::*;
+    use futures::prelude::*;
+
+    static WGPU_BACKGROUND: Lazy<Desync<()>> = Lazy::new(|| Desync::new(()));
+
     WGPU_BACKGROUND.future_desync(|_| async { wgpu_initialize_offscreen_rendering().await }.boxed()).sync().unwrap()
 }
 
