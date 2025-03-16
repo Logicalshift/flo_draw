@@ -159,7 +159,14 @@ fn clear_finished_intercepts(blend: &InterceptBlend, xpos: f64) -> InterceptBlen
         // Solid intercepts have nothing to clear
         InterceptBlend::Solid => InterceptBlend::Solid,
 
-        InterceptBlend::LinearFade { .. } => todo!(),
+        InterceptBlend::LinearFade { .. } => {
+            let range = blend.range();
+            if range.end <= xpos {
+                InterceptBlend::Solid
+            } else {
+                blend.clone()
+            }
+        },
 
         // Fades clear if the x position exceeds the x position
         InterceptBlend::Fade { x_range, alpha_range } => {
