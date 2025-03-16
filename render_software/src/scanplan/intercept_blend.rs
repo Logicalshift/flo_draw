@@ -27,10 +27,14 @@ impl InterceptBlend {
     ///
     #[inline]
     pub fn linear_fade(zero_x: f64, one_x: f64) -> InterceptBlend {
-        let a = 1.0/(one_x-zero_x);
-        let b = 1.0-a*one_x;
+        if zero_x == one_x {
+            InterceptBlend::Solid
+        } else {
+            let a = 1.0/(one_x-zero_x);
+            let b = 1.0-a*one_x;
 
-        InterceptBlend::LinearFade { a, b }
+            InterceptBlend::LinearFade { a, b }
+        }
     }
 
     ///
@@ -102,10 +106,10 @@ impl InterceptBlend {
 
                 InterceptBlend::LinearFade { a, b } => {
                     // Convert to a range to use on the program stack
-                    let initial_fade    = a*x_range.start + b;
-                    let final_fade      = a*x_range.end + b;
-                    let initial_fade    = initial_fade.max(0.0).min(1.0);
-                    let final_fade      = final_fade.max(0.0).min(1.0);
+                    let x1              = x_range.start.floor();
+                    let x2              = x_range.end.floor();
+                    let initial_fade    = alpha_coverage(a*x1+b, a*(x1+1.0)+b);
+                    let final_fade      = alpha_coverage(a*x2+b, a*(x2+1.0)+b);
 
                     program_stack.push(PixelProgramPlan::LinearMerge(initial_fade as _, final_fade as _));
                     num_blends += 1;
