@@ -71,6 +71,22 @@ impl ShardSubPixel {
                 }
             },
 
+            (InterceptBlend::Solid, InterceptBlend::NestedFade { x_range, alpha_range, nested }) => {
+                InterceptBlend::NestedFade {
+                    x_range:        x_range.clone(),
+                    alpha_range:    (1.0*our_opacity_ratio + alpha_range.start*their_opacity_ratio)..(1.0*our_opacity_ratio + alpha_range.end*their_opacity_ratio),
+                    nested:         nested.clone(),
+                }
+            },
+
+            (InterceptBlend::NestedFade { x_range, alpha_range, nested }, InterceptBlend::Solid) => {
+                InterceptBlend::NestedFade {
+                    x_range:        x_range.clone(),
+                    alpha_range:    (alpha_range.start*our_opacity_ratio + 1.0*their_opacity_ratio)..(alpha_range.end*our_opacity_ratio + 1.0*their_opacity_ratio),
+                    nested:         nested.clone(),
+                }
+            },
+
             (_, _) => {
                 intercept.blend().multiply_fade(their_opacity_ratio).nest(self.blend.multiply_fade(our_opacity_ratio))
             },
