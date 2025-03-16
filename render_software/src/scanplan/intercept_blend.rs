@@ -20,6 +20,17 @@ pub enum InterceptBlend {
 
 impl InterceptBlend {
     ///
+    /// If this is a fade blend, multiply the ratios by the specified number
+    ///
+    pub fn multiply_fade(&self, factor: f64) -> InterceptBlend {
+        match self {
+            InterceptBlend::Solid                                       => InterceptBlend::Solid,
+            InterceptBlend::Fade { x_range, alpha_range }               => InterceptBlend::Fade { x_range: x_range.clone(), alpha_range: (alpha_range.start*factor)..(alpha_range.end*factor) },
+            InterceptBlend::NestedFade { x_range, alpha_range, nested } => InterceptBlend::NestedFade { x_range: x_range.clone(), alpha_range: (alpha_range.start*factor)..(alpha_range.end*factor), nested: Box::new(nested.multiply_fade(factor)) },
+        }
+    }
+
+    ///
     /// Adds this blend to a pixel program stack
     ///
     pub fn render(&self, program_stack: &mut Vec<PixelProgramPlan>, shape_descriptor: &ShapeDescriptor, opacity: f32, x_range: &Range<f64>) {
