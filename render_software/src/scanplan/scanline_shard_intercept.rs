@@ -364,7 +364,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
                     self.active_shapes.insert(following_idx, ScanlineShardIntercept { 
                         count:      count, 
                         start_x:    intercept.lower_x,
-                        blend:      InterceptBlend::Fade { x_range: intercept.lower_x..intercept.upper_x, alpha_range: 0.0..1.0 },
+                        blend:      InterceptBlend::linear_fade(intercept.lower_x, intercept.upper_x),
                         opacity:    intercept.opacity,
                         shape_id:   intercept.shape,
                         subpixel:   intercept.subpixel,
