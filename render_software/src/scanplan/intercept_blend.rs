@@ -93,7 +93,13 @@ impl InterceptBlend {
                     break;
                 },
 
-                InterceptBlend::LinearFade { a, b } => todo!(),
+                InterceptBlend::LinearFade { .. } => {
+                    // Convert to a range to use on the program stack
+                    let fade_range = blend.range();
+                    program_stack.push(PixelProgramPlan::LinearMerge((fade_range.start-x_range.start) as _, (fade_range.end-x_range.start) as _));
+                    num_blends += 1;
+                    break;
+                },
 
                 InterceptBlend::Fade { x_range: alpha_x_range, alpha_range } => {
                     // Adjust the alpha range to the actual x range
