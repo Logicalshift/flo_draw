@@ -321,48 +321,14 @@ impl<'a> ScanlineShardInterceptState<'a> {
                     if !was_inside && is_inside {
                         // Need to merge with the existing blend
                         self.active_shapes[existing_idx].blend = match &self.active_shapes[existing_idx].blend {
-                            InterceptBlend::Solid => {
-                                InterceptBlend::Fade {
-                                    x_range:        intercept.lower_x..intercept.upper_x,
-                                    alpha_range:    0.0..1.0,
-                                }
-                            }
-
-                            InterceptBlend::LinearFade { a, b } => todo!(),
-
-                            InterceptBlend::Fade { .. }         |
-                            InterceptBlend::NestedFade { .. }   => {
-                                let nested = Box::new(self.active_shapes[existing_idx].blend.clone());
-
-                                InterceptBlend::NestedFade {
-                                    x_range:        intercept.lower_x..intercept.upper_x,
-                                    alpha_range:    0.0..1.0,
-                                    nested:         nested,
-                                }
-                            }
+                            InterceptBlend::Solid   => InterceptBlend::linear_fade(intercept.lower_x, intercept.upper_x),
+                            other                   => other.nest(InterceptBlend::linear_fade(intercept.lower_x, intercept.upper_x)),
                         };
                     } else if !is_inside {
                         // Change the shape to fade out
                         self.active_shapes[existing_idx].blend = match &self.active_shapes[existing_idx].blend {
-                            InterceptBlend::Solid => {
-                                InterceptBlend::Fade {
-                                    x_range:        intercept.lower_x..intercept.upper_x,
-                                    alpha_range:    1.0..0.0,
-                                }
-                            }
-
-                            InterceptBlend::LinearFade { a, b } => todo!(),
-
-                            InterceptBlend::Fade { .. }         |
-                            InterceptBlend::NestedFade { .. }   => {
-                                let nested = Box::new(self.active_shapes[existing_idx].blend.clone());
-
-                                InterceptBlend::NestedFade {
-                                    x_range:        intercept.lower_x..intercept.upper_x,
-                                    alpha_range:    1.0..0.0,
-                                    nested:         nested,
-                                }
-                            }
+                            InterceptBlend::Solid   => InterceptBlend::linear_fade(intercept.upper_x, intercept.lower_x),
+                            other                   => other.nest(InterceptBlend::linear_fade(intercept.upper_x, intercept.lower_x)),
                         };
 
                         // If the shape matches the current z-floor, update it
