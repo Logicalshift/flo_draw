@@ -51,7 +51,14 @@ impl InterceptBlend {
     pub fn nest(&self, blend: InterceptBlend) -> InterceptBlend {
         match self {
             InterceptBlend::Solid                                       => InterceptBlend::Solid,
-            InterceptBlend::LinearFade { a, b }                         => todo!(),
+            InterceptBlend::LinearFade { a, b }                         => {
+                match blend {
+                    InterceptBlend::Solid                       => InterceptBlend::Solid,
+                    InterceptBlend::LinearFade { a: a2, b: b2 } => InterceptBlend::LinearFade { a: a+a2, b: b+b2 },
+
+                    _ => todo!()
+                }
+            },
             InterceptBlend::Fade { x_range, alpha_range }               => InterceptBlend::NestedFade { x_range: x_range.clone(), alpha_range: alpha_range.clone(), nested: Box::new(blend) },
             InterceptBlend::NestedFade { x_range, alpha_range, nested } => InterceptBlend::NestedFade { x_range: x_range.clone(), alpha_range: alpha_range.clone(), nested: Box::new(nested.nest(blend)) }
         }
