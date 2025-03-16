@@ -64,10 +64,16 @@ pub async fn wgpu_initialize_offscreen_rendering() -> Result<impl OffscreenRende
 /// Only required if not using a toolkit renderer (eg, in an HTTP renderer or command-line tool). Will likely replace
 /// the bindings for any GUI toolkit, so this is not appropriate for desktop-type apps.
 ///
-/// This version is the Metal version for Mac OS X
+/// This version is the WGPU version
 ///
-#[cfg(not(any(feature="opengl", feature="osx-metal")))]
+#[cfg(feature="render-wgpu")]
 pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+    use once_cell::sync::{Lazy};
+    use ::desync::*;
+    use futures::prelude::*;
+
+    static WGPU_BACKGROUND: Lazy<Desync<()>> = Lazy::new(|| Desync::new(()));
+
     WGPU_BACKGROUND.future_desync(|_| async { wgpu_initialize_offscreen_rendering().await }.boxed()).sync().unwrap()
 }
 
