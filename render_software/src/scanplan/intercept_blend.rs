@@ -107,11 +107,11 @@ impl InterceptBlend {
         match self {
             InterceptBlend::Solid                                               => InterceptBlend::Solid,
             InterceptBlend::LinearFade { a, b }                                 => {
-                match blend {
+                match &blend {
                     InterceptBlend::Solid                                       => InterceptBlend::Solid,
-                    InterceptBlend::LinearFade { a: a2, b: b2 }                 => split(*a, *b, a2, b2),
+                    InterceptBlend::LinearFade { a: a2, b: b2 }                 => split(*a, *b, *a2, *b2),
                     InterceptBlend::LinearFadeWithLimit { a: a2, b: b2, limit, next }   => {
-                        self.clone() // TODO
+                        blend.clone() // TODO
                     }
                 }
             },
@@ -119,7 +119,7 @@ impl InterceptBlend {
             InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
                 match blend {
                     InterceptBlend::Solid   => InterceptBlend::Solid,
-                    _                       => self.clone() // TODO
+                    _                       => blend.clone() // TODO
                 }
             }
         }
