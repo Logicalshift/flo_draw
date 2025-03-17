@@ -387,6 +387,10 @@ mod test {
 
         let fade_in = intercepts.get(0).unwrap();
         assert!(if let InterceptBlend::LinearFade { .. } = &fade_in.blend { true } else { false }, "Not fading: {:?}", intercepts);
+
+        let range = fade_in.blend.range();
+        assert!(range.start == 100.0, "{:?}", range);
+        assert!(range.end == 120.0, "{:?}", range);
     }
 
     #[test]
@@ -424,6 +428,10 @@ mod test {
 
         let fade_in = intercepts.get(0).unwrap();
         assert!(if let InterceptBlend::LinearFade { .. } = &fade_in.blend { true } else { false }, "Not fading: {:?}", intercepts);
+
+        let range = fade_in.blend.range();
+        assert!(range.start == 110.0, "{:?}", range);
+        assert!(range.end == 150.0, "{:?}", range);
     }
 
     #[test]
@@ -449,5 +457,9 @@ mod test {
 
         let nested = intercepts.get(0).unwrap();
         assert!(if let InterceptBlend::LinearFade { .. } = &nested.blend { true } else { false }, "Not nested: {:?}", intercepts);
+
+        let range = nested.blend.range();
+        assert!(range.start == 100.0, "{:?}", range);
+        assert!(range.end == 170.0, "{:?}", range);
     }
 }
