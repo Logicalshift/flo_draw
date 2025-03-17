@@ -13,12 +13,6 @@ pub enum InterceptBlend {
 
     /// This should be alpha-blended with a linear fade, where the alpha value `a = a*x + b`
     LinearFade { a: f64, b: f64 },
-
-    /// This should be alpha-blended using source-over with a linear fade
-    Fade { x_range: Range<f64>, alpha_range: Range<f64> },
-
-    /// Nest the second blend inside the first blend
-    NestedFade { x_range: Range<f64>, alpha_range: Range<f64>, nested: Box<InterceptBlend>, },
 }
 
 impl InterceptBlend {
@@ -44,8 +38,6 @@ impl InterceptBlend {
         match self {
             InterceptBlend::Solid                                       => InterceptBlend::Solid,
             InterceptBlend::LinearFade { a, b }                         => InterceptBlend::LinearFade { a: a*factor, b: b*factor },
-            InterceptBlend::Fade { x_range, alpha_range }               => InterceptBlend::Fade { x_range: x_range.clone(), alpha_range: (alpha_range.start*factor)..(alpha_range.end*factor) },
-            InterceptBlend::NestedFade { x_range, alpha_range, nested } => InterceptBlend::NestedFade { x_range: x_range.clone(), alpha_range: (alpha_range.start*factor)..(alpha_range.end*factor), nested: Box::new(nested.multiply_fade(factor)) },
         }
     }
 
@@ -59,12 +51,8 @@ impl InterceptBlend {
                 match blend {
                     InterceptBlend::Solid                       => InterceptBlend::Solid,
                     InterceptBlend::LinearFade { a: a2, b: b2 } => InterceptBlend::LinearFade { a: a+a2, b: b+b2 },
-
-                    _ => todo!()
                 }
             },
-            InterceptBlend::Fade { x_range, alpha_range }               => InterceptBlend::NestedFade { x_range: x_range.clone(), alpha_range: alpha_range.clone(), nested: Box::new(blend) },
-            InterceptBlend::NestedFade { x_range, alpha_range, nested } => InterceptBlend::NestedFade { x_range: x_range.clone(), alpha_range: alpha_range.clone(), nested: Box::new(nested.nest(blend)) }
         }
     }
 
@@ -85,8 +73,6 @@ impl InterceptBlend {
                     (zero_pos.min(one_pos))..(zero_pos.max(one_pos))
                 }
             }
-
-            _ => todo!()
         }
     }
 
@@ -94,7 +80,7 @@ impl InterceptBlend {
     /// Adds this blend to a pixel program stack
     ///
     pub fn render(&self, program_stack: &mut Vec<PixelProgramPlan>, shape_descriptor: &ShapeDescriptor, opacity: f32, x_range: &Range<f64>) {
-        let mut blend       = self;
+        let blend           = self;
         let mut num_blends  = 0;
 
         // Start the blends for the program
@@ -114,28 +100,6 @@ impl InterceptBlend {
                     program_stack.push(PixelProgramPlan::LinearMerge(initial_fade as _, final_fade as _));
                     num_blends += 1;
                     break;
-                },
-
-                InterceptBlend::Fade { x_range: alpha_x_range, alpha_range } => {
-                    // Adjust the alpha range to the actual x range
-                    let corrected_range = actual_fade_for_range(&x_range, &alpha_x_range, &alpha_range);
-
-                    // Run a linear blend using the corrected range
-                    program_stack.push(PixelProgramPlan::LinearMerge(corrected_range.start as _, corrected_range.end as _));
-                    num_blends += 1;
-                    break;
-                },
-
-                InterceptBlend::NestedFade { x_range: alpha_x_range, alpha_range, nested } => {
-                    // Adjust the alpha range to the actual x range
-                    let corrected_range = actual_fade_for_range(&x_range, &alpha_x_range, &alpha_range);
-
-                    // Run a linear blend using the corrected range
-                    program_stack.push(PixelProgramPlan::LinearMerge(corrected_range.start as _, corrected_range.end as _));
-
-                    // Apply the nested gradient as well
-                    blend       = &*nested;
-                    num_blends += 1;
                 },
             }
         }

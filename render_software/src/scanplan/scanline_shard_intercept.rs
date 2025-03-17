@@ -127,8 +127,6 @@ impl<'a> ScanlineShardIntercept<'a> {
         match self.blend {
             InterceptBlend::Solid               => self.descriptor.is_opaque && self.opacity >= 1.0,
             InterceptBlend::LinearFade { .. }   => false,
-            InterceptBlend::Fade { .. }         => false,
-            InterceptBlend::NestedFade { .. }   => false,
         }
     }
 
@@ -167,44 +165,6 @@ fn clear_finished_intercepts(blend: &InterceptBlend, xpos: f64) -> InterceptBlen
                 blend.clone()
             }
         },
-
-        // Fades clear if the x position exceeds the x position
-        InterceptBlend::Fade { x_range, alpha_range } => {
-            if x_range.end <= xpos {
-                InterceptBlend::Solid
-            } else {
-                InterceptBlend::Fade {
-                    x_range:        x_range.clone(),
-                    alpha_range:    alpha_range.clone()
-                }
-            }
-        },
-
-        // Nested fades work like normal fades, except they process their contents recursively
-        InterceptBlend::NestedFade { x_range, alpha_range, nested } => {
-            // Recursively remove any finished intercepts from the nested version
-            let nested_cleared = clear_finished_intercepts(&*nested, xpos);
-
-            if x_range.end <= xpos {
-                // If this blend has finished, then just use the nested version
-                nested_cleared
-            } else {
-                if let InterceptBlend::Solid = &nested_cleared {
-                    // Changes to a normal fade if the nested intercept is entirely cleared
-                    InterceptBlend::Fade {
-                        x_range:        x_range.clone(),
-                        alpha_range:    alpha_range.clone()
-                    }
-                } else {
-                    // Stays nested
-                    InterceptBlend::NestedFade { 
-                        x_range:        x_range.clone(), 
-                        alpha_range:    alpha_range.clone(), 
-                        nested:         Box::new(nested_cleared)
-                    }
-                }
-            }
-        }
     }
 }
 
