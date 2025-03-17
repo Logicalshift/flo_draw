@@ -166,6 +166,14 @@ fn clear_finished_intercepts(blend: &InterceptBlend, xpos: f64) -> InterceptBlen
                 blend.clone()
             }
         },
+
+        InterceptBlend::LinearFadeWithLimit { limit, next, .. } => {
+            if *limit <= xpos {
+                (**next).clone()
+            } else {
+                blend.clone()
+            }
+        }
     }
 }
 
