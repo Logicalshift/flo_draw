@@ -13,6 +13,64 @@ pub enum InterceptBlend {
 
     /// This should be alpha-blended with a linear fade, where the alpha value `a = a*x + b`
     LinearFade { a: f64, b: f64 },
+
+    /// Specifies a linear fade that changes to a different blend after a certain point
+    LinearFadeWithLimit { a: f64, b: f64, limit: f64, next: Box<InterceptBlend> }
+}
+
+///
+/// Computes the range that a line `ax + b` where it crosses y=0 and y=1
+///
+fn range_for_line(a: f64, b: f64) -> Range<f64> {
+    if a == b {
+        0.0..0.0
+    } else {
+        let zero_pos    = (0.0-b)/a;
+        let one_pos     = (1.0-b)/a;
+
+        (zero_pos.min(one_pos))..(zero_pos.max(one_pos))
+    }
+}
+
+///
+/// Given two linear fades, creates a 'split' blend (at the point that one fade reaches 0 or 1)
+///
+fn split(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
+    let range1 = range_for_line(a1, b1);
+    let range2 = range_for_line(a2, b2);
+
+    // End points are either 0 or 1
+    let end1 = a1*range1.end + b1;
+    let end2 = a2*range2.end + b2;
+
+    if range2.end == range1.end {
+        // Rare: both end at the same point
+        InterceptBlend::LinearFade { a: a1+a2, b: b1+b2 }
+    } else if range2.end > range1.end {
+        // a1, b1 ends first
+        if end1 < 0.5 {
+            // a1, b1 blends to 0 before a2, b2 completes (after that point, we just follow a2, b2)
+            InterceptBlend::LinearFadeWithLimit { 
+                a: a1+a2, b: b1+b2, limit: end1, 
+                next: Box::new(InterceptBlend::LinearFade { a: a2, b: b2 }) 
+            }
+        } else {
+            // a1, b1 blends to 1 before a2, b2 completes, is saturated after this point
+            InterceptBlend::LinearFade { a: a1+a2, b: b1+b2 }
+        }
+    } else {
+        // a2, b2 ends first
+        if end2 < 0.5 {
+            // a2, b2 blends to 0 before a1, b1 completes (after that point, we just follow a1, b1)
+            InterceptBlend::LinearFadeWithLimit { 
+                a: a1+a2, b: b1+b2, limit: end2, 
+                next: Box::new(InterceptBlend::LinearFade { a: a1, b: b1 }) 
+            }
+        } else {
+            // a2, b2 blends to 1 before a1, b1 completes, is saturated after this point
+            InterceptBlend::LinearFade { a: a1+a2, b: b1+b2 }
+        }
+    }
 }
 
 impl InterceptBlend {
@@ -38,6 +96,7 @@ impl InterceptBlend {
         match self {
             InterceptBlend::Solid                                       => InterceptBlend::Solid,
             InterceptBlend::LinearFade { a, b }                         => InterceptBlend::LinearFade { a: a*factor, b: b*factor },
+            InterceptBlend::LinearFadeWithLimit { a, b, limit, next }   => InterceptBlend::LinearFadeWithLimit { a: a*factor, b: b*factor, limit: *limit, next: Box::new(next.multiply_fade(factor)) }
         }
     }
 
@@ -73,6 +132,13 @@ impl InterceptBlend {
                     (zero_pos.min(one_pos))..(zero_pos.max(one_pos))
                 }
             }
+
+            InterceptBlend::LinearFadeWithLimit { next, a, b, .. } => {
+                let start   = InterceptBlend::LinearFade { a: *a, b: *b }.range().start;
+                let finish  = next.range().end;
+
+                start..finish
+            }
         }
     }
 
@@ -90,7 +156,9 @@ impl InterceptBlend {
                     break;
                 },
 
-                InterceptBlend::LinearFade { a, b } => {
+                InterceptBlend::LinearFade { a, b } |
+                InterceptBlend::LinearFadeWithLimit { a, b, .. } => {
+                    // For a 'limit' fade, we assume the limit is not hit
                     // Convert to a range to use on the program stack
                     let x1              = x_range.start.floor();
                     let x2              = x_range.end.floor();

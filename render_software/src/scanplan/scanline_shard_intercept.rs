@@ -125,8 +125,9 @@ impl<'a> ScanlineShardIntercept<'a> {
     #[inline]
     pub fn is_opaque(&self) -> bool {
         match self.blend {
-            InterceptBlend::Solid               => self.descriptor.is_opaque && self.opacity >= 1.0,
-            InterceptBlend::LinearFade { .. }   => false,
+            InterceptBlend::Solid                       => self.descriptor.is_opaque && self.opacity >= 1.0,
+            InterceptBlend::LinearFade { .. }           => false,
+            InterceptBlend::LinearFadeWithLimit { .. }  => false,
         }
     }
 
