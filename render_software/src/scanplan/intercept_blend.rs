@@ -105,13 +105,23 @@ impl InterceptBlend {
     ///
     pub fn nest(&self, blend: InterceptBlend) -> InterceptBlend {
         match self {
-            InterceptBlend::Solid                                       => InterceptBlend::Solid,
-            InterceptBlend::LinearFade { a, b }                         => {
+            InterceptBlend::Solid                                               => InterceptBlend::Solid,
+            InterceptBlend::LinearFade { a, b }                                 => {
                 match blend {
-                    InterceptBlend::Solid                       => InterceptBlend::Solid,
-                    InterceptBlend::LinearFade { a: a2, b: b2 } => InterceptBlend::LinearFade { a: a+a2, b: b+b2 },
+                    InterceptBlend::Solid                                       => InterceptBlend::Solid,
+                    InterceptBlend::LinearFade { a: a2, b: b2 }                 => split(*a, *b, a2, b2),
+                    InterceptBlend::LinearFadeWithLimit { a: a2, b: b2, limit, next }   => {
+                        self.clone() // TODO
+                    }
                 }
             },
+
+            InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
+                match blend {
+                    InterceptBlend::Solid   => InterceptBlend::Solid,
+                    _                       => self.clone() // TODO
+                }
+            }
         }
     }
 
