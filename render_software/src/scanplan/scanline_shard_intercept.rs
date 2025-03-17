@@ -386,7 +386,7 @@ mod test {
         assert!(intercepts.len() == 1, "{:?}", intercepts);
 
         let fade_in = intercepts.get(0).unwrap();
-        assert!(if let InterceptBlend::Fade { .. } = &fade_in.blend { true } else { false }, "Not fading: {:?}", intercepts);
+        assert!(if let InterceptBlend::LinearFade { .. } = &fade_in.blend { true } else { false }, "Not fading: {:?}", intercepts);
     }
 
     #[test]
@@ -423,7 +423,7 @@ mod test {
         assert!(intercepts.len() == 1, "{:?}", intercepts);
 
         let fade_in = intercepts.get(0).unwrap();
-        assert!(if let InterceptBlend::Fade { .. } = &fade_in.blend { true } else { false }, "Not fading: {:?}", intercepts);
+        assert!(if let InterceptBlend::LinearFade { .. } = &fade_in.blend { true } else { false }, "Not fading: {:?}", intercepts);
     }
 
     #[test]
@@ -448,6 +448,6 @@ mod test {
         assert!(intercepts.len() == 1, "Should be one intercept {:?}", intercepts);
 
         let nested = intercepts.get(0).unwrap();
-        assert!(if let InterceptBlend::NestedFade { .. } = &nested.blend { true } else { false }, "Not nested: {:?}", intercepts);
+        assert!(if let InterceptBlend::LinearFade { .. } = &nested.blend { true } else { false }, "Not nested: {:?}", intercepts);
     }
 }
