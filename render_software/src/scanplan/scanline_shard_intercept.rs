@@ -160,7 +160,7 @@ fn clear_finished_intercepts(blend: &InterceptBlend, xpos: f64) -> InterceptBlen
 
         InterceptBlend::LinearFade { .. } => {
             let range = blend.range();
-            if range.end <= xpos {
+            if range.end <= xpos + 1e-6 {
                 InterceptBlend::Solid
             } else {
                 blend.clone()
@@ -168,7 +168,7 @@ fn clear_finished_intercepts(blend: &InterceptBlend, xpos: f64) -> InterceptBlen
         },
 
         InterceptBlend::LinearFadeWithLimit { limit, next, .. } => {
-            if *limit <= xpos {
+            if *limit <= xpos + 1e-6 {
                 clear_finished_intercepts(&**next, xpos)
             } else {
                 blend.clone()
