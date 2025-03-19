@@ -104,6 +104,8 @@ impl InterceptBlend {
     /// Nests another fade blend inside this one
     ///
     pub fn nest(&self, blend: InterceptBlend) -> InterceptBlend {
+        blend
+        /*
         match self {
             InterceptBlend::Solid                                               => InterceptBlend::Solid,
             InterceptBlend::LinearFade { a, b }                                 => {
@@ -123,6 +125,7 @@ impl InterceptBlend {
                 }
             }
         }
+        */
     }
 
     ///
