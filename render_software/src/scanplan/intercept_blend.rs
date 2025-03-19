@@ -173,7 +173,7 @@ impl InterceptBlend {
                     let x1              = x_range.start.floor();
                     let x2              = x_range.end.floor();
                     let initial_fade    = alpha_coverage(a*x1+b, a*(x1+1.0)+b);
-                    let final_fade      = alpha_coverage(a*x2+b, a*(x2+1.0)+b);
+                    let final_fade      = alpha_coverage(a*(x2-1.0)+b, a*x2+b);
 
                     // TODO: remove this
                     #[cfg(debug_assertions)]
