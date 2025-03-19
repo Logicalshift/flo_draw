@@ -175,6 +175,16 @@ impl InterceptBlend {
                     let initial_fade    = alpha_coverage(a*x1+b, a*(x1+1.0)+b);
                     let final_fade      = alpha_coverage(a*x2+b, a*(x2+1.0)+b);
 
+                    // TODO: remove this
+                    #[cfg(debug_assertions)]
+                    {
+                        if initial_fade != final_fade {
+                            let range = range_for_line(*a, *b);
+                            debug_assert!(range.start <= x_range.end+1.0, "{:?} {:?} {:?}", range, x_range, (initial_fade, final_fade));
+                            debug_assert!(range.end >= x_range.start-1.0, "{:?} {:?} {:?}", range, x_range, (initial_fade, final_fade));
+                        }
+                    }
+
                     program_stack.push(PixelProgramPlan::LinearMerge(initial_fade as _, final_fade as _));
                     num_blends += 1;
                     break;
