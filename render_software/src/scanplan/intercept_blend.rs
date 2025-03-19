@@ -43,6 +43,7 @@ fn split(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
     let end1 = a1*range1.end + b1;
     let end2 = a2*range2.end + b2;
 
+    // We assume that we'll be getting ranges after the start of both regions
     if range2.end == range1.end {
         // Rare: both end at the same point
         InterceptBlend::LinearFade { a: a1+a2, b: b1+b2 }
@@ -51,7 +52,7 @@ fn split(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
         if end1 < 0.5 {
             // a1, b1 blends to 0 before a2, b2 completes (after that point, we just follow a2, b2)
             InterceptBlend::LinearFadeWithLimit { 
-                a: a1+a2, b: b1+b2, limit: end1, 
+                a: a1+a2, b: b1+b2, limit: range1.end, 
                 next: Box::new(InterceptBlend::LinearFade { a: a2, b: b2 }) 
             }
         } else {
@@ -63,7 +64,7 @@ fn split(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
         if end2 < 0.5 {
             // a2, b2 blends to 0 before a1, b1 completes (after that point, we just follow a1, b1)
             InterceptBlend::LinearFadeWithLimit { 
-                a: a1+a2, b: b1+b2, limit: end2, 
+                a: a1+a2, b: b1+b2, limit: range2.end, 
                 next: Box::new(InterceptBlend::LinearFade { a: a1, b: b1 }) 
             }
         } else {
@@ -104,8 +105,6 @@ impl InterceptBlend {
     /// Nests another fade blend inside this one
     ///
     pub fn nest(&self, blend: InterceptBlend) -> InterceptBlend {
-        blend
-        /*
         match self {
             InterceptBlend::Solid                                               => InterceptBlend::Solid,
             InterceptBlend::LinearFade { a, b }                                 => {
@@ -125,7 +124,6 @@ impl InterceptBlend {
                 }
             }
         }
-        */
     }
 
     ///
