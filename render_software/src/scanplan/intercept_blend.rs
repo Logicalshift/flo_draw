@@ -399,4 +399,76 @@ mod test {
         assert!(2.0*a + b == 0.0);
         assert!(3.0*a + b == 1.0);
     }
+
+    fn blend_factor(blend: &InterceptBlend, x_pos: f64) -> f64 {
+        match blend {
+            InterceptBlend::Solid => 1.0,
+            InterceptBlend::LinearFade { a, b } => a*x_pos + b,
+            InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
+                if x_pos < *limit {
+                    a*x_pos + b
+                } else {
+                    blend_factor(&**next, x_pos)
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn split_fading_in_same_origin() {
+        let blend1 = InterceptBlend::linear_fade(1.0, 3.0);
+        let blend2 = InterceptBlend::linear_fade(1.0, 4.0);
+        let nested = blend1.nest(blend2.clone());
+
+        // Should create a fade with limit
+        match &nested {
+            InterceptBlend::LinearFade { a, b } => {
+                // The initial section should combine the two blends, then the next section should be solid, as blend1 is saturated
+                let blend_at_one    = a*1.0 + b;
+                let blend_at_three  = a*3.0 + b;
+
+                // Calculate the expected values by adding the blends
+                let expected_at_one     = blend_factor(&blend1, 1.0) + blend_factor(&blend2, 1.0);
+                let expected_at_three   = blend_factor(&blend1, 3.0) + blend_factor(&blend2, 3.0);
+
+                // Check the values
+                assert!((blend_at_three-expected_at_three).abs() < 1e-6, "f(1.0) = {:?} f(3.0) = {:?} (!= {:?})", blend_at_one, blend_at_three, expected_at_three);
+                assert!((blend_at_one-expected_at_one).abs() < 1e-6,     "f(1.0) = {:?} (!= {:?}) f(3.0) = {:?}", blend_at_one, blend_at_three, expected_at_one);
+            }
+
+            _ => assert!(false, "{:?}", nested)
+        }
+    }
+
+    #[test]
+    fn split_fading_out_same_origin() {
+        let blend1 = InterceptBlend::linear_fade(3.0, 1.0);
+        let blend2 = InterceptBlend::linear_fade(4.0, 1.0);
+        let nested = blend1.nest(blend2.clone());
+
+        // Should create a fade with limit
+        match &nested {
+            InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
+                // The limit should be at the 3.0 point where the first blend peters out
+                // TODO: there's a section where the blend is greater than saturation that we need to take account of
+                assert!(*limit == 3.0, "{:?}", nested);
+
+                // The initial section should combine the two blends, then the next section should be just blend2
+                let blend_at_one    = a*1.0 + b;
+                let blend_at_three  = a*3.0 + b;
+                let next_at_three   = blend_factor(&**next, 3.0);
+
+                // Calculate the expected values by adding the blends
+                let expected_at_one     = blend_factor(&blend1, 1.0) + blend_factor(&blend2, 1.0);
+                let expected_at_three   = blend_factor(&blend1, 3.0) + blend_factor(&blend2, 3.0);
+
+                // Check the values
+                assert!((next_at_three-expected_at_three).abs() < 1e-6,  "f'(3.0) = {:?} (!= {:?})", next_at_three, expected_at_three);
+                assert!((blend_at_three-expected_at_three).abs() < 1e-6, "f(1.0) = {:?} f(3.0) = {:?} (!= {:?})", blend_at_one, blend_at_three, expected_at_three);
+                assert!((blend_at_one-expected_at_one).abs() < 1e-6,     "f(1.0) = {:?} (!= {:?}) f(3.0) = {:?}", blend_at_one, blend_at_three, expected_at_one);
+            }
+
+            _ => assert!(false, "{:?}", nested)
+        }
+    }
 }
