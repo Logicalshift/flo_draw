@@ -98,7 +98,7 @@ where
         match next_action {
             WindowUpdate::Resumed => {
                 // Create surface
-                let surface_attributes  = window.window.as_ref().unwrap().build_surface_attributes(<_>::default());
+                let surface_attributes  = window.window.as_ref().unwrap().build_surface_attributes(<_>::default()).unwrap();
                 window.surface          = unsafe {
                     Some(window.gl_config.display().create_window_surface(&window.gl_config, &surface_attributes).unwrap())
                 };
