@@ -11,7 +11,7 @@ use flo_binding::*;
 
 use wgpu;
 use winit::event::{DeviceId, Event, WindowEvent, ElementState};
-use winit::event_loop::{EventLoopWindowTarget};
+use winit::event_loop::{ActiveEventLoop};
 use winit::window::{Window, WindowId, Fullscreen};
 use winit::keyboard::{PhysicalKey, NativeKeyCode};
 use futures::task;
@@ -97,7 +97,7 @@ impl WinitRuntime {
     ///
     /// Handles an event from the rest of the process and updates the state
     ///
-    pub fn handle_event(&mut self, event: Event<WinitThreadEvent>, window_target: &EventLoopWindowTarget<WinitThreadEvent>) {
+    pub fn handle_event(&mut self, event: Event<WinitThreadEvent>, window_target: &ActiveEventLoop) {
         use Event::*;
 
         match event {
@@ -161,10 +161,10 @@ impl WinitRuntime {
             Focused(_focused)                                               => vec![],
             ModifiersChanged(_state)                                        => vec![],
             TouchpadPressure { .. }                                         => vec![],
-            PinchGesture { device_id, delta, phase }                        => vec![],
-            PanGesture { device_id, delta, phase }                          => vec![],
-            DoubleTapGesture { device_id }                                  => vec![],
-            RotationGesture { device_id, delta, phase }                     => vec![],
+            PinchGesture { .. }                                             => vec![],
+            PanGesture { .. }                                               => vec![],
+            DoubleTapGesture { .. }                                         => vec![],
+            RotationGesture { .. }                                          => vec![],
             AxisMotion { device_id: _, axis: _, value: _ }                  => vec![],
             Touch(_touch)                                                   => vec![],
             ThemeChanged(_theme)                                            => vec![],
