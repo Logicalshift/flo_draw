@@ -14,7 +14,7 @@ use glutin::context::{ContextApi, ContextAttributesBuilder, Version};
 use glutin::display::{GetGlDisplay, GlDisplay};
 use glutin_winit::{DisplayBuilder};
 use winit::event::{DeviceId, Event, WindowEvent, ElementState};
-use winit::event_loop::{ControlFlow, EventLoopWindowTarget};
+use winit::event_loop::{ControlFlow, ActiveEventLoop};
 use winit::window::{WindowId, Fullscreen}; 
 use winit::keyboard::{PhysicalKey, NativeKeyCode};
 use raw_window_handle::{HasRawWindowHandle};
@@ -93,7 +93,7 @@ impl GlutinRuntime {
     ///
     /// Handles an event from the rest of the process and updates the state
     ///
-    pub fn handle_event(&mut self, event: Event<GlutinThreadEvent>, window_target: &EventLoopWindowTarget<GlutinThreadEvent>) {
+    pub fn handle_event(&mut self, event: Event<GlutinThreadEvent>, window_target: &ActiveEventLoop) {
         use Event::*;
 
         match event {
@@ -318,7 +318,7 @@ impl GlutinRuntime {
     ///
     /// Handles one of our user events from the GlutinThreadEvent enum
     ///
-    fn handle_thread_event(&mut self, event: GlutinThreadEvent, window_target: &EventLoopWindowTarget<GlutinThreadEvent>) {
+    fn handle_thread_event(&mut self, event: GlutinThreadEvent, window_target: &ActiveEventLoop) {
         use GlutinThreadEvent::*;
 
         match event {
@@ -332,13 +332,13 @@ impl GlutinRuntime {
                 let fullscreen          = if fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
 
                 // Create a window
-                let window_builder      = winit::window::WindowBuilder::new()
+                let window_attributes   = winit::window::Window::default_attributes()
                     .with_title(title)
                     .with_inner_size(winit::dpi::LogicalSize::new(size_x as f64, size_y as _))
                     .with_fullscreen(fullscreen)
                     .with_decorations(decorations);
                 let display_builder     = DisplayBuilder::new()
-                    .with_window_builder(Some(window_builder));
+                    .with_window_attributes(Some(window_attributes));
                 let template            = ConfigTemplateBuilder::new()
                     .prefer_hardware_accelerated(Some(true))
                     .with_alpha_size(8);
