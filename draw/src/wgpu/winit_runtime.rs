@@ -10,7 +10,8 @@ use flo_stream::*;
 use flo_binding::*;
 
 use wgpu;
-use winit::event::{DeviceId, Event, WindowEvent, ElementState};
+use winit::application::{ApplicationHandler};
+use winit::event::{DeviceId, Event, WindowEvent, DeviceEvent, ElementState};
 use winit::event_loop::{ActiveEventLoop};
 use winit::window::{Window, WindowId, Fullscreen};
 use winit::keyboard::{PhysicalKey, NativeKeyCode};
@@ -453,5 +454,39 @@ impl task::ArcWake for WinitFutureWaker {
             // Send a wake request to winit
             winit_thread().send_event(WinitThreadEvent::WakeFuture(future_id));
         }
+    }
+}
+
+impl ApplicationHandler<WinitThreadEvent> for WinitRuntime {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        self.handle_event(Event::Resumed, event_loop);
+    }
+
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WindowId, event: WindowEvent) {
+        self.handle_event(Event::WindowEvent { window_id: window_id, event: event }, event_loop);
+    }
+
+    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: WinitThreadEvent) {
+        self.handle_event(Event::UserEvent(event), event_loop);
+    }
+
+    fn device_event(&mut self, event_loop: &ActiveEventLoop, device_id: DeviceId, event: DeviceEvent) {
+        self.handle_event(Event::DeviceEvent { device_id: device_id, event: event }, event_loop);
+    }
+
+    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        self.handle_event(Event::AboutToWait, event_loop);
+    }
+
+    fn suspended(&mut self, event_loop: &ActiveEventLoop) {
+        self.handle_event(Event::Suspended, event_loop)
+    }
+
+    fn exiting(&mut self, event_loop: &ActiveEventLoop) {
+        self.handle_event(Event::LoopExiting, event_loop)
+    }
+
+    fn memory_warning(&mut self, event_loop: &ActiveEventLoop) {
+        self.handle_event(Event::MemoryWarning, event_loop);
     }
 }

@@ -148,7 +148,5 @@ fn run_winit_thread(send_proxy: mpsc::Sender<EventLoopProxy<WinitThreadEvent>>) 
     };
 
     // Run the winit event loop
-    event_loop.run(move |event, window_target| { 
-        runtime.handle_event(event, window_target);
-    }).unwrap();
+    event_loop.run_app(&mut runtime).unwrap();
 }
