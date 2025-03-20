@@ -145,9 +145,10 @@ impl GlutinRuntime {
             Focused(_focused)                                               => vec![],
             ModifiersChanged(_state)                                        => vec![],
             TouchpadPressure { device_id: _, pressure: _, stage: _ }        => vec![],
-            TouchpadMagnify { device_id: _, delta: _, phase: _ }            => vec![],
-            TouchpadRotate { device_id: _, delta: _, phase: _ }             => vec![],
-            SmartMagnify { device_id: _ }                                   => vec![],
+            PinchGesture { .. }                                             => vec![],
+            PanGesture { .. }                                               => vec![],
+            DoubleTapGesture { .. }                                         => vec![],
+            RotationGesture { .. }                                          => vec![],
             AxisMotion { device_id: _, axis: _, value: _ }                  => vec![],
             Touch(_touch)                                                   => vec![],
             Ime(_)                                                          => vec![],
@@ -354,7 +355,7 @@ impl GlutinRuntime {
                     .unwrap();
                 let window = window.unwrap();
 
-                let raw_window_handle           = Some(window.raw_window_handle());
+                let raw_window_handle           = Some(window.raw_window_handle().unwrap());
                 let gl_display                  = gl_config.display();
                 let context_attributes          = ContextAttributesBuilder::new().build(raw_window_handle);
                 let fallback_context_attributes = ContextAttributesBuilder::new().with_context_api(ContextApi::Gles(None)).build(raw_window_handle);
@@ -372,8 +373,8 @@ impl GlutinRuntime {
                 };
 
                 // Finalize the window (might be unsafe under operating systems like Android, but adding this to the window itself requires considerable extra state...)
-                let window_builder = winit::window::WindowBuilder::new();
-                glutin_winit::finalize_window(window_target, window_builder, &gl_config)
+                let window_attributes = winit::window::Window::default_attributes();
+                glutin_winit::finalize_window(window_target, window_attributes, &gl_config)
                     .unwrap();
 
                 // Store the window context in a new glutin window
