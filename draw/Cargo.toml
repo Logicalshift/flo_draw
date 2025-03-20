@@ -34,7 +34,7 @@ futures             = "0.3"
 
 glutin              = { optional = true, version = "0.32.0" }
 glutin-winit        = { optional = true, version = "0.5.0" }
-raw-window-handle   = { optional = true, version = "0.5" }
+raw-window-handle   = { optional = true, version = "0.6" }
 gl                  = { optional = true, version = "0.14" }
 
 winit               = { optional = true, version = "0.30", features = [ "rwh_05" ] }
