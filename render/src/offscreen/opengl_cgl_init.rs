@@ -115,7 +115,7 @@ pub fn opengl_initialize_offscreen_rendering() -> Result<impl OffscreenRenderCon
 ///
 /// This version is the Metal version for Mac OS X
 ///
-#[cfg(not(feature="osx-metal"))]
+#[cfg(all(not(feature="osx-metal"), not(feature="render-wgpu")))]
 pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     opengl_initialize_offscreen_rendering()
 }
