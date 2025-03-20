@@ -310,7 +310,7 @@ impl WinitRuntime {
     ///
     /// Handles one of our user events from the WinitThreadEvent enum
     ///
-    fn handle_thread_event(&mut self, event: WinitThreadEvent, window_target: &EventLoopWindowTarget<WinitThreadEvent>) {
+    fn handle_thread_event(&mut self, event: WinitThreadEvent, window_target: &ActiveEventLoop) {
         use WinitThreadEvent::*;
 
         match event {
@@ -324,12 +324,12 @@ impl WinitRuntime {
                 let fullscreen          = if fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
 
                 // Create a window
-                let window_builder      = winit::window::WindowBuilder::new()
+                let window_attributes   = Window::default_attributes()
                     .with_title(title)
                     .with_inner_size(winit::dpi::LogicalSize::new(size_x as f64, size_y as _))
                     .with_fullscreen(fullscreen)
                     .with_decorations(decorations);
-                let window              = window_builder.build(window_target).expect("New window");
+                let window              = window_target.create_window(window_attributes).expect("New window");
 
                 // Build a new Winit window
                 let window              = Arc::new(window);
