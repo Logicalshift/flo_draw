@@ -420,24 +420,22 @@ mod test {
         let blend2 = InterceptBlend::linear_fade(1.0, 4.0);
         let nested = blend1.nest(blend2.clone());
 
-        // Should create a fade with limit
-        match &nested {
-            InterceptBlend::LinearFade { a, b } => {
-                // The initial section should combine the two blends, then the next section should be solid, as blend1 is saturated
-                let blend_at_one    = a*1.0 + b;
-                let blend_at_three  = a*3.0 + b;
+        // The initial section should combine the two blends, then the next section should be solid, as blend1 is saturated
+        let blend_at_one    = blend_factor(&nested, 1.0);
+        let blend_at_three  = blend_factor(&nested, 3.0);
 
-                // Calculate the expected values by adding the blends
-                let expected_at_one     = blend_factor(&blend1, 1.0) + blend_factor(&blend2, 1.0);
-                let expected_at_three   = blend_factor(&blend1, 3.0) + blend_factor(&blend2, 3.0);
+        // Calculate the expected values by adding the blends
+        let expected_at_one     = blend_factor(&blend1, 1.0) + blend_factor(&blend2, 1.0);
+        let expected_at_three   = blend_factor(&blend1, 3.0) + blend_factor(&blend2, 3.0);
 
-                // Check the values
-                assert!((blend_at_three-expected_at_three).abs() < 1e-6, "f(1.0) = {:?} f(3.0) = {:?} (!= {:?})", blend_at_one, blend_at_three, expected_at_three);
-                assert!((blend_at_one-expected_at_one).abs() < 1e-6,     "f(1.0) = {:?} (!= {:?}) f(3.0) = {:?}", blend_at_one, blend_at_three, expected_at_one);
-            }
+        // Check the values
+        assert!((blend_at_three-expected_at_three).abs() < 1e-6, "f(1.0) = {:?} f(3.0) = {:?} (!= {:?})", blend_at_one, blend_at_three, expected_at_three);
+        assert!((blend_at_one-expected_at_one).abs() < 1e-6,     "f(1.0) = {:?} (!= {:?}) f(3.0) = {:?}", blend_at_one, blend_at_three, expected_at_one);
 
-            _ => assert!(false, "{:?}", nested)
-        }
+        assert!(blend_at_one <= 1.0 , "{} > 1.0", blend_at_one);
+        assert!(blend_at_three <= 1.0, "{} > 1.0", blend_at_three);
+        assert!(blend_at_one >= 0.0);
+        assert!(blend_at_three >= 0.0);
     }
 
     #[test]
@@ -466,6 +464,11 @@ mod test {
                 assert!((next_at_three-expected_at_three).abs() < 1e-6,  "f'(3.0) = {:?} (!= {:?})", next_at_three, expected_at_three);
                 assert!((blend_at_three-expected_at_three).abs() < 1e-6, "f(1.0) = {:?} f(3.0) = {:?} (!= {:?})", blend_at_one, blend_at_three, expected_at_three);
                 assert!((blend_at_one-expected_at_one).abs() < 1e-6,     "f(1.0) = {:?} (!= {:?}) f(3.0) = {:?}", blend_at_one, blend_at_three, expected_at_one);
+
+                assert!(blend_at_one <= 1.0);
+                assert!(blend_at_three <= 1.0);
+                assert!(blend_at_one >= 0.0);
+                assert!(blend_at_three >= 0.0);
             }
 
             _ => assert!(false, "{:?}", nested)
