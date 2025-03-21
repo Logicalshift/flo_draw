@@ -15,7 +15,10 @@ pub enum InterceptBlend {
     LinearFade { a: f64, b: f64 },
 
     /// Specifies a linear fade that changes to a different blend after a certain point
-    LinearFadeWithLimit { a: f64, b: f64, limit: f64, next: Box<InterceptBlend> }
+    LinearFadeWithLimit { a: f64, b: f64, limit: f64, next: Box<InterceptBlend> },
+
+    /// A solid region followed by another blend
+    SolidWithLimit { limit: f64, next: Box<InterceptBlend> },
 }
 
 ///
@@ -36,15 +39,22 @@ fn range_for_line(a: f64, b: f64) -> Range<f64> {
 /// Given two linear fades, creates a 'split' blend (at the point that one fade reaches 0 or 1)
 ///
 fn split(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
+    // The slope of the new fade is calculated by adding the coefficients
+    let a3 = a1 + a2;
+    let b3 = b1 + b2;
+
+    // Compute the ranges for the various distances
     let range1 = range_for_line(a1, b1);
     let range2 = range_for_line(a2, b2);
+    let range3 = range_for_line(a3, b3);
 
-    // End points are either 0 or 1
-    let end1 = a1*range1.end + b1;
-    let end2 = a2*range2.end + b2;
+    // Start and end points are either 0 or 1
+    let start3  = a3*range3.start + b3;
+    let end1    = a1*range1.end + b1;
+    let end2    = a2*range2.end + b2;
 
     // We assume that we'll be getting ranges after the start of both regions
-    if range2.end == range1.end {
+    let blend = if range2.end == range1.end {
         // Rare: both end at the same point
         InterceptBlend::LinearFade { a: a1+a2, b: b1+b2 }
     } else if range2.end > range1.end {
@@ -71,6 +81,13 @@ fn split(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
             // a2, b2 blends to 1 before a1, b1 completes, is saturated after this point
             InterceptBlend::LinearFade { a: a1+a2, b: b1+b2 }
         }
+    };
+
+    // If the start of the range is saturated, the blend starts with a solid region
+    if start3 > 0.5 {
+        InterceptBlend::SolidWithLimit { limit: range3.start, next: Box::new(blend) }
+    } else {
+        blend
     }
 }
 
@@ -97,7 +114,8 @@ impl InterceptBlend {
         match self {
             InterceptBlend::Solid                                       => InterceptBlend::Solid,
             InterceptBlend::LinearFade { a, b }                         => InterceptBlend::LinearFade { a: a*factor, b: b*factor },
-            InterceptBlend::LinearFadeWithLimit { a, b, limit, next }   => InterceptBlend::LinearFadeWithLimit { a: a*factor, b: b*factor, limit: *limit, next: Box::new(next.multiply_fade(factor)) }
+            InterceptBlend::LinearFadeWithLimit { a, b, limit, next }   => InterceptBlend::LinearFadeWithLimit { a: a*factor, b: b*factor, limit: *limit, next: Box::new(next.multiply_fade(factor)) },
+            InterceptBlend::SolidWithLimit { limit, next }              => InterceptBlend::SolidWithLimit { limit: *limit, next: Box::new(next.multiply_fade(factor)) },
         }
     }
 
@@ -114,6 +132,9 @@ impl InterceptBlend {
                     InterceptBlend::LinearFadeWithLimit { a: a2, b: b2, limit, next }   => {
                         blend.clone() // TODO
                     }
+                    InterceptBlend::SolidWithLimit { limit, next }   => {
+                        blend.clone() // TODO
+                    }
                 }
             },
 
@@ -122,7 +143,11 @@ impl InterceptBlend {
                     InterceptBlend::Solid   => InterceptBlend::Solid,
                     _                       => blend.clone() // TODO
                 }
-            }
+            },
+
+            InterceptBlend::SolidWithLimit { limit, next }   => {
+                blend.clone() // TODO
+            },
         }
     }
 
@@ -150,6 +175,13 @@ impl InterceptBlend {
 
                 start..finish
             }
+
+            InterceptBlend::SolidWithLimit { limit, next } => {
+                let start   = *limit;
+                let finish  = next.range().end;
+
+                start..finish
+            }
         }
     }
 
@@ -163,11 +195,12 @@ impl InterceptBlend {
         // Start the blends for the program
         loop {
             match blend {
-                InterceptBlend::Solid => {
+                InterceptBlend::Solid                 | 
+                InterceptBlend::SolidWithLimit { .. } => {
                     break;
                 },
 
-                InterceptBlend::LinearFade { a, b } |
+                InterceptBlend::LinearFade { a, b }              |
                 InterceptBlend::LinearFadeWithLimit { a, b, .. } => {
                     // For a 'limit' fade, we assume the limit is not hit
                     // Convert to a range to use on the program stack
@@ -402,11 +435,18 @@ mod test {
 
     fn blend_factor(blend: &InterceptBlend, x_pos: f64) -> f64 {
         match blend {
-            InterceptBlend::Solid => 1.0,
-            InterceptBlend::LinearFade { a, b } => a*x_pos + b,
+            InterceptBlend::Solid                                     => 1.0,
+            InterceptBlend::LinearFade { a, b }                       => a*x_pos + b,
             InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
                 if x_pos < *limit {
                     a*x_pos + b
+                } else {
+                    blend_factor(&**next, x_pos)
+                }
+            },
+            InterceptBlend::SolidWithLimit { limit, next } => {
+                if x_pos < *limit {
+                    1.0
                 } else {
                     blend_factor(&**next, x_pos)
                 }
@@ -444,34 +484,21 @@ mod test {
         let blend2 = InterceptBlend::linear_fade(4.0, 1.0);
         let nested = blend1.nest(blend2.clone());
 
-        // Should create a fade with limit
-        match &nested {
-            InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
-                // The limit should be at the 3.0 point where the first blend peters out
-                // TODO: there's a section where the blend is greater than saturation that we need to take account of
-                assert!(*limit == 3.0, "{:?}", nested);
+        // The initial section should combine the two blends, then the next section should be just blend2
+        let blend_at_one    = blend_factor(&nested, 1.0);
+        let blend_at_three  = blend_factor(&nested, 3.0);
 
-                // The initial section should combine the two blends, then the next section should be just blend2
-                let blend_at_one    = a*1.0 + b;
-                let blend_at_three  = a*3.0 + b;
-                let next_at_three   = blend_factor(&**next, 3.0);
+        // Calculate the expected values by adding the blends
+        let expected_at_one     = (blend_factor(&blend1, 1.0) + blend_factor(&blend2, 1.0)).min(1.0);
+        let expected_at_three   = (blend_factor(&blend1, 3.0) + blend_factor(&blend2, 3.0)).min(1.0);
 
-                // Calculate the expected values by adding the blends
-                let expected_at_one     = blend_factor(&blend1, 1.0) + blend_factor(&blend2, 1.0);
-                let expected_at_three   = blend_factor(&blend1, 3.0) + blend_factor(&blend2, 3.0);
+        // Check the values
+        assert!((blend_at_three-expected_at_three).abs() < 1e-6, "f(1.0) = {:?} f(3.0) = {:?} (!= {:?})", blend_at_one, blend_at_three, expected_at_three);
+        assert!((blend_at_one-expected_at_one).abs() < 1e-6,     "f(1.0) = {:?} (!= {:?}) f(3.0) = {:?}", blend_at_one, blend_at_three, expected_at_one);
 
-                // Check the values
-                assert!((next_at_three-expected_at_three).abs() < 1e-6,  "f'(3.0) = {:?} (!= {:?})", next_at_three, expected_at_three);
-                assert!((blend_at_three-expected_at_three).abs() < 1e-6, "f(1.0) = {:?} f(3.0) = {:?} (!= {:?})", blend_at_one, blend_at_three, expected_at_three);
-                assert!((blend_at_one-expected_at_one).abs() < 1e-6,     "f(1.0) = {:?} (!= {:?}) f(3.0) = {:?}", blend_at_one, blend_at_three, expected_at_one);
-
-                assert!(blend_at_one <= 1.0);
-                assert!(blend_at_three <= 1.0);
-                assert!(blend_at_one >= 0.0);
-                assert!(blend_at_three >= 0.0);
-            }
-
-            _ => assert!(false, "{:?}", nested)
-        }
+        assert!(blend_at_one <= 1.0);
+        assert!(blend_at_three <= 1.0);
+        assert!(blend_at_one >= 0.0);
+        assert!(blend_at_three >= 0.0);
     }
 }

@@ -126,6 +126,7 @@ impl<'a> ScanlineShardIntercept<'a> {
     pub fn is_opaque(&self) -> bool {
         match self.blend {
             InterceptBlend::Solid                       => self.descriptor.is_opaque && self.opacity >= 1.0,
+            InterceptBlend::SolidWithLimit { .. }       => self.descriptor.is_opaque && self.opacity >= 1.0,
             InterceptBlend::LinearFade { .. }           => false,
             InterceptBlend::LinearFadeWithLimit { .. }  => false,
         }
@@ -173,7 +174,15 @@ fn clear_finished_intercepts(blend: &InterceptBlend, xpos: f64) -> InterceptBlen
             } else {
                 blend.clone()
             }
-        }
+        },
+
+        InterceptBlend::SolidWithLimit { limit, next } => {
+            if *limit <= xpos + 1e-6 {
+                clear_finished_intercepts(&**next, xpos)
+            } else {
+                blend.clone()
+            }
+        },
     }
 }
 
