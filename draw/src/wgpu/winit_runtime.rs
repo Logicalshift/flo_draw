@@ -10,8 +10,9 @@ use flo_stream::*;
 use flo_binding::*;
 
 use wgpu;
-use winit::event::{DeviceId, Event, WindowEvent, ElementState};
-use winit::event_loop::{EventLoopWindowTarget};
+use winit::application::{ApplicationHandler};
+use winit::event::{DeviceId, Event, WindowEvent, DeviceEvent, ElementState};
+use winit::event_loop::{ActiveEventLoop};
 use winit::window::{Window, WindowId, Fullscreen};
 use winit::keyboard::{PhysicalKey, NativeKeyCode};
 use futures::task;
@@ -97,7 +98,7 @@ impl WinitRuntime {
     ///
     /// Handles an event from the rest of the process and updates the state
     ///
-    pub fn handle_event(&mut self, event: Event<WinitThreadEvent>, window_target: &EventLoopWindowTarget<WinitThreadEvent>) {
+    pub fn handle_event(&mut self, event: Event<WinitThreadEvent>, window_target: &ActiveEventLoop) {
         use Event::*;
 
         match event {
@@ -161,9 +162,10 @@ impl WinitRuntime {
             Focused(_focused)                                               => vec![],
             ModifiersChanged(_state)                                        => vec![],
             TouchpadPressure { .. }                                         => vec![],
-            TouchpadMagnify { .. }                                          => vec![],
-            TouchpadRotate { .. }                                           => vec![],
-            SmartMagnify { .. }                                             => vec![],
+            PinchGesture { .. }                                             => vec![],
+            PanGesture { .. }                                               => vec![],
+            DoubleTapGesture { .. }                                         => vec![],
+            RotationGesture { .. }                                          => vec![],
             AxisMotion { device_id: _, axis: _, value: _ }                  => vec![],
             Touch(_touch)                                                   => vec![],
             ThemeChanged(_theme)                                            => vec![],
@@ -309,7 +311,7 @@ impl WinitRuntime {
     ///
     /// Handles one of our user events from the WinitThreadEvent enum
     ///
-    fn handle_thread_event(&mut self, event: WinitThreadEvent, window_target: &EventLoopWindowTarget<WinitThreadEvent>) {
+    fn handle_thread_event(&mut self, event: WinitThreadEvent, window_target: &ActiveEventLoop) {
         use WinitThreadEvent::*;
 
         match event {
@@ -323,12 +325,12 @@ impl WinitRuntime {
                 let fullscreen          = if fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
 
                 // Create a window
-                let window_builder      = winit::window::WindowBuilder::new()
+                let window_attributes   = Window::default_attributes()
                     .with_title(title)
                     .with_inner_size(winit::dpi::LogicalSize::new(size_x as f64, size_y as _))
                     .with_fullscreen(fullscreen)
                     .with_decorations(decorations);
-                let window              = window_builder.build(window_target).expect("New window");
+                let window              = window_target.create_window(window_attributes).expect("New window");
 
                 // Build a new Winit window
                 let window              = Arc::new(window);
@@ -452,5 +454,39 @@ impl task::ArcWake for WinitFutureWaker {
             // Send a wake request to winit
             winit_thread().send_event(WinitThreadEvent::WakeFuture(future_id));
         }
+    }
+}
+
+impl ApplicationHandler<WinitThreadEvent> for WinitRuntime {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        self.handle_event(Event::Resumed, event_loop);
+    }
+
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WindowId, event: WindowEvent) {
+        self.handle_event(Event::WindowEvent { window_id: window_id, event: event }, event_loop);
+    }
+
+    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: WinitThreadEvent) {
+        self.handle_event(Event::UserEvent(event), event_loop);
+    }
+
+    fn device_event(&mut self, event_loop: &ActiveEventLoop, device_id: DeviceId, event: DeviceEvent) {
+        self.handle_event(Event::DeviceEvent { device_id: device_id, event: event }, event_loop);
+    }
+
+    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        self.handle_event(Event::AboutToWait, event_loop);
+    }
+
+    fn suspended(&mut self, event_loop: &ActiveEventLoop) {
+        self.handle_event(Event::Suspended, event_loop)
+    }
+
+    fn exiting(&mut self, event_loop: &ActiveEventLoop) {
+        self.handle_event(Event::LoopExiting, event_loop)
+    }
+
+    fn memory_warning(&mut self, event_loop: &ActiveEventLoop) {
+        self.handle_event(Event::MemoryWarning, event_loop);
     }
 }

@@ -16,7 +16,7 @@ fn main() {
 fn main() {
     use flo_render::*;
 
-    use winit::window;
+    use winit::window::{Window};
     use winit::event::{Event, WindowEvent};
     use winit::event_loop::{EventLoop};
 
@@ -67,7 +67,7 @@ fn main() {
 
     // Set up an event loop and a window that reports to it
     let event_loop  = EventLoop::new().unwrap();
-    let window      = window::Window::new(&event_loop).unwrap();
+    let window      = event_loop.create_window(Window::default_attributes()).unwrap();
 
     // Bits of wgpu are async so we need an async blocker here
     executor::block_on(async move {
