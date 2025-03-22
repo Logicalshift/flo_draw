@@ -589,4 +589,118 @@ mod test {
         assert!(blend_at_one >= 0.0);
         assert!(blend_at_three >= 0.0);
     }
+
+    #[test]
+    fn high_frequency_thin_vertical_line_0point5() {
+        use smallvec::*;
+
+        // Create a blend that's the equivalent of a <1 px line in the center of a pixel
+        let blend               = InterceptBlend::linear_fade(2.25, 2.25).nest(InterceptBlend::linear_fade(2.75, 2.75));
+        let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
+        let mut program_stack   = vec![];
+
+        blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
+
+        assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
+        assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
+        assert!(match &program_stack[0] { 
+            PixelProgramPlan::Merge(amount) => (amount-0.5).abs() < 1e-5,
+            _ => false
+        }, "{:?}[0] != Merge(0.5)", program_stack);
+    }
+
+    #[test]
+    fn high_frequency_thin_vertical_line_0point5_2() {
+        use smallvec::*;
+
+        // Create a blend that's the equivalent of a <1 px line in the center of a pixel
+        let blend               = InterceptBlend::linear_fade(2.0, 2.0).nest(InterceptBlend::linear_fade(2.5, 2.5));
+        let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
+        let mut program_stack   = vec![];
+
+        blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
+
+        assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
+        assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
+        assert!(match &program_stack[0] { 
+            PixelProgramPlan::Merge(amount) => (amount-0.5).abs() < 1e-5,
+            _ => false
+        }, "{:?}[0] != Merge(0.5)", program_stack);
+    }
+
+    #[test]
+    fn high_frequency_thin_vertical_line_0point5_2b() {
+        use smallvec::*;
+
+        // Create a blend that's the equivalent of a <1 px line in the center of a pixel
+        let blend               = InterceptBlend::linear_fade(2.0, 2.0+1e-6).nest(InterceptBlend::linear_fade(2.5-1e-6, 2.5));
+        let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
+        let mut program_stack   = vec![];
+
+        blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
+
+        assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
+        assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
+        assert!(match &program_stack[0] { 
+            PixelProgramPlan::Merge(amount) => (amount-0.5).abs() < 1e-5,
+            _ => false
+        }, "{:?}[0] != Merge(0.5)", program_stack);
+    }
+
+    #[test]
+    fn high_frequency_thin_vertical_line_0point5_3() {
+        use smallvec::*;
+
+        // Create a blend that's the equivalent of a <1 px line in the center of a pixel
+        let blend               = InterceptBlend::linear_fade(2.5, 2.5).nest(InterceptBlend::linear_fade(3.0, 3.0));
+        let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
+        let mut program_stack   = vec![];
+
+        blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
+
+        assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
+        assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
+        assert!(match &program_stack[0] { 
+            PixelProgramPlan::Merge(amount) => (amount-0.5).abs() < 1e-5,
+            _ => false
+        }, "{:?}[0] != Merge(0.5)", program_stack);
+    }
+
+    #[test]
+    fn high_frequency_thin_vertical_line_0point5_4() {
+        use smallvec::*;
+
+        // Create a blend that's the equivalent of a <1 px line in the center of a pixel
+        let blend               = InterceptBlend::linear_fade(2.0, 2.0).nest(InterceptBlend::linear_fade(2.25, 2.25)).nest(InterceptBlend::linear_fade(2.75, 2.75)).nest(InterceptBlend::linear_fade(3.0, 3.0));
+        let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
+        let mut program_stack   = vec![];
+
+        blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
+
+        assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
+        assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
+        assert!(match &program_stack[0] { 
+            PixelProgramPlan::Merge(amount) => (amount-0.5).abs() < 1e-5,
+            _ => false
+        }, "{:?}[0] != Merge(0.5)", program_stack);
+    }
+
+    #[test]
+    fn high_frequency_thin_vertical_line_0point25() {
+        use smallvec::*;
+
+        // Create a blend that's the equivalent of a <1 px line in the center of a pixel
+        let blend               = InterceptBlend::linear_fade(2.375, 2.375).nest(InterceptBlend::linear_fade(2.625, 2.625));
+        let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
+        let mut program_stack   = vec![];
+
+        blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
+
+        assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
+        assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
+        assert!(match &program_stack[0] { 
+            PixelProgramPlan::Merge(amount) => (amount-0.25).abs() < 1e-5,
+            _ => false
+        }, "{:?}[0] != Merge(0.25)", program_stack);
+    }
 }
