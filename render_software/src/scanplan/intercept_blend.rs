@@ -36,9 +36,14 @@ fn range_for_line(a: f64, b: f64) -> Range<f64> {
 }
 
 ///
-/// Given two linear fades, creates a 'split' blend (at the point that one fade reaches 0 or 1)
+/// 'Applies' one slope to another
 ///
-fn split(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
+/// Fades affect the region from which they go from alpha=0 to alpha=1
+///
+/// Slopes that move in the same direction will be added together, stopping when they are saturated at alpha=1 or alpha=0.
+/// Slopes that move in opposite directions will either fade in then out or the other way around. 
+///
+fn apply(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
     // The slope of the new fade is calculated by adding the coefficients
     let a3 = a1 + a2;
     let b3 = b1 + b2;
@@ -46,48 +51,59 @@ fn split(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
     // Compute the ranges for the various distances
     let range1 = range_for_line(a1, b1);
     let range2 = range_for_line(a2, b2);
-    let range3 = range_for_line(a3, b3);
 
-    // Start and end points are either 0 or 1
-    let start3  = a3*range3.start + b3;
-    let end1    = a1*range1.end + b1;
-    let end2    = a2*range2.end + b2;
-
-    // We assume that we'll be getting ranges after the start of both regions
-    let blend = if range2.end == range1.end {
-        // Rare: both end at the same point
-        InterceptBlend::LinearFade { a: a1+a2, b: b1+b2 }
-    } else if range2.end > range1.end {
-        // a1, b1 ends first
-        if end1 < 0.5 {
-            // a1, b1 blends to 0 before a2, b2 completes (after that point, we just follow a2, b2)
-            InterceptBlend::LinearFadeWithLimit { 
-                a: a1+a2, b: b1+b2, limit: range1.end, 
-                next: Box::new(InterceptBlend::LinearFade { a: a2, b: b2 }) 
+    if range1.end == range2.end {
+        InterceptBlend::LinearFade { a: a3, b: b3 }
+    } else if range1.end < range2.end {
+        // Range2 carries on for longer than range1
+        if range2.start > range1.start {
+            // Range2 starts after range1
+            InterceptBlend::LinearFadeWithLimit {
+                a: a1, b: b1,
+                limit: range2.start,
+                next: Box::new(InterceptBlend::LinearFadeWithLimit { 
+                    a: a3, b: b3, 
+                    limit: range1.end, 
+                    next: Box::new(InterceptBlend::LinearFade {
+                        a: a2, b: b2
+                    })
+                })
             }
         } else {
-            // a1, b1 blends to 1 before a2, b2 completes, is saturated after this point
-            InterceptBlend::LinearFade { a: a1+a2, b: b1+b2 }
+            // Range1 starts after range2
+            InterceptBlend::LinearFadeWithLimit {
+                a: a3, b: b3,
+                limit: range1.end,
+                next: Box::new(InterceptBlend::LinearFade {
+                    a: a2, b: b2
+                })
+            }
         }
     } else {
-        // a2, b2 ends first
-        if end2 < 0.5 {
-            // a2, b2 blends to 0 before a1, b1 completes (after that point, we just follow a1, b1)
-            InterceptBlend::LinearFadeWithLimit { 
-                a: a1+a2, b: b1+b2, limit: range2.end, 
-                next: Box::new(InterceptBlend::LinearFade { a: a1, b: b1 }) 
+        // Range1 carries on for longer than range2
+        if range1.start > range2.start {
+            // Range1 starts after range2
+            InterceptBlend::LinearFadeWithLimit {
+                a: a2, b: b2,
+                limit: range1.start,
+                next: Box::new(InterceptBlend::LinearFadeWithLimit { 
+                    a: a3, b: b3, 
+                    limit: range1.end, 
+                    next: Box::new(InterceptBlend::LinearFade {
+                        a: a1, b: b1
+                    })
+                })
             }
         } else {
-            // a2, b2 blends to 1 before a1, b1 completes, is saturated after this point
-            InterceptBlend::LinearFade { a: a1+a2, b: b1+b2 }
+            // Range2 starts after range1
+            InterceptBlend::LinearFadeWithLimit {
+                a: a3, b: b3,
+                limit: range2.end,
+                next: Box::new(InterceptBlend::LinearFade {
+                    a: a1, b: b1
+                })
+            }
         }
-    };
-
-    // If the start of the range is saturated, the blend starts with a solid region
-    if start3 > 0.5 && false {
-        InterceptBlend::SolidWithLimit { limit: range3.start, next: Box::new(blend) }
-    } else {
-        blend
     }
 }
 
@@ -132,7 +148,7 @@ impl InterceptBlend {
             InterceptBlend::LinearFade { a, b }                                 => {
                 match &blend {
                     InterceptBlend::Solid                                       => InterceptBlend::Solid,
-                    InterceptBlend::LinearFade { a: a2, b: b2 }                 => split(*a, *b, *a2, *b2),
+                    InterceptBlend::LinearFade { a: a2, b: b2 }                 => apply(*a, *b, *a2, *b2),
                     InterceptBlend::LinearFadeWithLimit { a: a2, b: b2, limit, next }   => {
                         blend.clone() // TODO
                     }
