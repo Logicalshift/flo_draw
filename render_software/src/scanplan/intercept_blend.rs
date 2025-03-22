@@ -98,7 +98,11 @@ impl InterceptBlend {
     #[inline]
     pub fn linear_fade(zero_x: f64, one_x: f64) -> InterceptBlend {
         if zero_x == one_x {
-            InterceptBlend::Solid
+            // For vertical lines, treat them as very slightly slanted (which saves us having to special case them)
+            let a = 1.0/1e-6;
+            let b = 1.0-a*one_x;
+
+            InterceptBlend::LinearFade { a, b }
         } else {
             let a = 1.0/(one_x-zero_x);
             let b = 1.0-a*one_x;
