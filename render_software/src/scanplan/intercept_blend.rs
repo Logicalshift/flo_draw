@@ -303,11 +303,12 @@ impl InterceptBlend {
             }
 
             InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
-                let x1              = x_range.start.floor();
-                let x2              = x_range.end.floor();
+                let x1 = x_range.start.floor();
+                let x2 = x_range.end.ceil();
 
-                if *limit < x1+1.0 {
-                    // todo! Treat as a single pixel with high frequency
+                if *limit < x1+1.0 && x2 <= x1+1.0 {
+                    // Treat as a single pixel with high frequency
+                    // TODO
                 } else {
                     // Treat as a 'normal' linear blend
                     Self::render_linear_fade(*a, *b, program_stack, shape_descriptor, opacity, x_range);
