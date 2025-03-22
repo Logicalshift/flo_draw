@@ -308,7 +308,49 @@ impl InterceptBlend {
 
                 if *limit < x1+1.0 && x2 <= x1+1.0 {
                     // Treat as a single pixel with high frequency
-                    // TODO
+                    let mut blend           = blend;
+                    let mut total_coverage  = 0.0;
+                    let mut last_pos        = x1;
+                    let mut last_alpha      = a*x1 + b;
+
+                    loop {
+                        match blend {
+                            InterceptBlend::LinearFade { a, b } => {
+                                // Add the coverage until the end of the pixel
+                                let pos         = x1+1.0;
+                                let alpha       = a*pos + b;
+
+                                let coverage    = alpha_coverage(last_alpha, alpha) * (pos-last_pos);
+                                total_coverage += coverage;
+
+                                break;
+                            }
+
+                            InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
+                                // Compute the coverage between positions
+                                let pos     = limit.min(x1+1.0);
+                                let alpha   = a*pos + b;
+
+                                let coverage = alpha_coverage(last_alpha, alpha) * (pos-last_pos);
+                                total_coverage += coverage;
+
+                                // Stop if this moves beyond the end of the limit
+                                if *limit > x1 + 1.0 {
+                                    break;
+                                }
+
+                                // Add the coverage of the next region
+                                last_pos    = pos;
+                                last_alpha  = alpha;
+                                blend       = &**next;
+                            }
+
+                            _ => { break; /* Not expecting the other values */ }
+                        }
+                    }
+
+                    program_stack.push(PixelProgramPlan::Merge(total_coverage as _));
+                    num_blends += 1;
                 } else {
                     // Treat as a 'normal' linear blend
                     Self::render_linear_fade(*a, *b, program_stack, shape_descriptor, opacity, x_range);
