@@ -590,6 +590,17 @@ mod test {
         assert!(blend_at_three >= 0.0);
     }
 
+    fn check_blend_order(blend: &InterceptBlend, last_limit: f64, root_blend: &InterceptBlend) {
+        match blend {
+            InterceptBlend::LinearFadeWithLimit { limit, next, .. } => {
+                assert!(*limit > last_limit, "{:?} should be greated than {:?} in blend {:?}", limit, last_limit, root_blend);
+                check_blend_order(&**next, *limit, root_blend);
+            }
+
+            _ => { }
+        }
+    }
+
     #[test]
     fn high_frequency_thin_vertical_line_0point5() {
         use smallvec::*;
@@ -607,6 +618,8 @@ mod test {
             PixelProgramPlan::Merge(amount) => (amount-0.5).abs() < 1e-5,
             _ => false
         }, "{:?}[0] != Merge(0.5)", program_stack);
+
+        check_blend_order(&blend, 0.0, &blend);
     }
 
     #[test]
@@ -620,6 +633,8 @@ mod test {
 
         blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
 
+        check_blend_order(&blend, 0.0, &blend);
+
         assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
         assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
         assert!(match &program_stack[0] { 
@@ -632,12 +647,14 @@ mod test {
     fn high_frequency_thin_vertical_line_0point5_2b() {
         use smallvec::*;
 
-        // Create a blend that's the equivalent of a <1 px line in the center of a pixel
+        // Create a blend that's the equivalent of a <1 px line in the center of a pixel (this uses nearly but not quite vertical lines)
         let blend               = InterceptBlend::linear_fade(2.0, 2.0+1e-6).nest(InterceptBlend::linear_fade(2.5-1e-6, 2.5));
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
         blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
+
+        check_blend_order(&blend, 0.0, &blend);
 
         assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
         assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
@@ -658,6 +675,8 @@ mod test {
 
         blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
 
+        check_blend_order(&blend, 0.0, &blend);
+
         assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
         assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
         assert!(match &program_stack[0] { 
@@ -677,6 +696,8 @@ mod test {
 
         blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
 
+        check_blend_order(&blend, 0.0, &blend);
+
         assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
         assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
         assert!(match &program_stack[0] { 
@@ -695,6 +716,8 @@ mod test {
         let mut program_stack   = vec![];
 
         blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
+
+        check_blend_order(&blend, 0.0, &blend);
 
         assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
         assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
