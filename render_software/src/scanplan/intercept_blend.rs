@@ -84,7 +84,7 @@ fn split(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
     };
 
     // If the start of the range is saturated, the blend starts with a solid region
-    if start3 > 0.5 {
+    if start3 > 0.5 && false {
         InterceptBlend::SolidWithLimit { limit: range3.start, next: Box::new(blend) }
     } else {
         blend
