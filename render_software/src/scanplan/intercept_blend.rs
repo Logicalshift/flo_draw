@@ -261,6 +261,31 @@ impl InterceptBlend {
     }
 
     ///
+    /// Adds a linear fade blend to a pixel program stack
+    ///
+    #[inline]
+    fn render_linear_fade(a: f64, b: f64, program_stack: &mut Vec<PixelProgramPlan>, shape_descriptor: &ShapeDescriptor, opacity: f32, x_range: &Range<f64>) {
+        // For a 'limit' fade, we assume the limit is not hit
+        // Convert to a range to use on the program stack
+        let x1              = x_range.start.floor();
+        let x2              = x_range.end.floor();
+        let initial_fade    = alpha_coverage(a*x1+b, a*(x1+1.0)+b);
+        let final_fade      = alpha_coverage(a*(x2-1.0)+b, a*x2+b);
+
+        // TODO: remove this
+        #[cfg(debug_assertions)]
+        {
+            if initial_fade != final_fade {
+                let range = range_for_line(a, b);
+                debug_assert!(range.start <= x_range.end+1.0, "{:?} {:?} {:?}", range, x_range, (initial_fade, final_fade));
+                debug_assert!(range.end >= x_range.start-1.0, "{:?} {:?} {:?}", range, x_range, (initial_fade, final_fade));
+            }
+        }
+
+        program_stack.push(PixelProgramPlan::LinearMerge(initial_fade as _, final_fade as _));
+    }
+
+    ///
     /// Adds this blend to a pixel program stack
     ///
     pub fn render(&self, program_stack: &mut Vec<PixelProgramPlan>, shape_descriptor: &ShapeDescriptor, opacity: f32, x_range: &Range<f64>) {
@@ -275,27 +300,23 @@ impl InterceptBlend {
                     break;
                 },
 
-                InterceptBlend::LinearFade { a, b }              |
-                InterceptBlend::LinearFadeWithLimit { a, b, .. } => {
-                    // For a 'limit' fade, we assume the limit is not hit
-                    // Convert to a range to use on the program stack
+                InterceptBlend::LinearFade { a, b } => {
+                    Self::render_linear_fade(*a, *b, program_stack, shape_descriptor, opacity, x_range);
+                    num_blends += 1;
+                    break;
+                }
+
+                InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
                     let x1              = x_range.start.floor();
                     let x2              = x_range.end.floor();
-                    let initial_fade    = alpha_coverage(a*x1+b, a*(x1+1.0)+b);
-                    let final_fade      = alpha_coverage(a*(x2-1.0)+b, a*x2+b);
 
-                    // TODO: remove this
-                    #[cfg(debug_assertions)]
-                    {
-                        if initial_fade != final_fade {
-                            let range = range_for_line(*a, *b);
-                            debug_assert!(range.start <= x_range.end+1.0, "{:?} {:?} {:?}", range, x_range, (initial_fade, final_fade));
-                            debug_assert!(range.end >= x_range.start-1.0, "{:?} {:?} {:?}", range, x_range, (initial_fade, final_fade));
-                        }
+                    if *limit < x1+1.0 {
+                        // todo! Treat as a single pixel with high frequency
+                    } else {
+                        // Treat as a 'normal' linear blend
+                        Self::render_linear_fade(*a, *b, program_stack, shape_descriptor, opacity, x_range);
+                        num_blends += 1;
                     }
-
-                    program_stack.push(PixelProgramPlan::LinearMerge(initial_fade as _, final_fade as _));
-                    num_blends += 1;
                     break;
                 },
             }
