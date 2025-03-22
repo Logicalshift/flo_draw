@@ -57,7 +57,7 @@ impl ShardSubPixel {
         let new_blend = match (&self.blend, intercept.blend()) {
             (InterceptBlend::Solid, InterceptBlend::Solid) => InterceptBlend::Solid,
             (_, _) => {
-                intercept.blend().multiply_fade(their_opacity_ratio).nest(self.blend.multiply_fade(our_opacity_ratio))
+                self.blend.multiply_fade(our_opacity_ratio).nest(intercept.blend().multiply_fade(their_opacity_ratio))
             },
         };
 
