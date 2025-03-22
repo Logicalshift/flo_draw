@@ -161,10 +161,62 @@ impl InterceptBlend {
             InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
                 match blend {
                     InterceptBlend::Solid   => InterceptBlend::Solid,
-                    InterceptBlend::LinearFade { a: a2, b: b2} => {
-                        blend.clone() // TODO
+                    InterceptBlend::LinearFade { a: a2, b: b2 } => {
+                        // Don't want to merge any more after the end of range2
+                        let range2 = range_for_line(a2, b2);
+
+                        // Split this section of the line
+                        let split = apply(*a, *b, a2, b2);
+
+                        match split {
+                            InterceptBlend::Solid                       => InterceptBlend::Solid,
+                            InterceptBlend::LinearFade { a: a3, b: b3 } => {
+                                if *limit < range2.end {
+                                    // The new blend continues beyond the limit, so apply it to the remainder
+                                    InterceptBlend::LinearFadeWithLimit { a: a3, b: b3, limit: *limit, next: Box::new(next.nest(blend)) }
+                                } else {
+                                    // New blend ends before the limit, so the remainder stays the same
+                                    InterceptBlend::LinearFadeWithLimit { a: a3, b: b3, limit: *limit, next: next.clone() }
+                                }
+                            },
+
+                            InterceptBlend::LinearFadeWithLimit { a: a3, b: b3, limit: limit3, next: next3 } => {
+                                // We've split up the initial linear fade into multiple sections. What we do here is take everything from the split
+                                // fade up to the original limit, then do another nest with the 'next' section.
+                                let next = if *limit < range2.end {
+                                    // Following the section we've split up still overlaps the new fade
+                                    next.nest(blend)
+                                } else {
+                                    // The fade does not continue after the limit, so we can keep the next parts the same
+                                    (**next).clone()
+                                };
+
+                                // Recursively merge the split values and the following values
+                                fn merge(blend: InterceptBlend, max_limit: f64, after_max_limit: InterceptBlend) -> InterceptBlend {
+                                    match blend {
+                                        InterceptBlend::LinearFade { a, b } => {
+                                            InterceptBlend::LinearFadeWithLimit { a: a, b: b, limit: max_limit, next: Box::new(after_max_limit) }
+                                        }
+
+                                        InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
+                                            if limit > max_limit {
+                                                InterceptBlend::LinearFadeWithLimit { a: a, b: b, limit: max_limit, next: Box::new(after_max_limit) }
+                                            } else {
+                                                InterceptBlend::LinearFadeWithLimit { a: a, b: b, limit: limit, next: Box::new(merge(*next, max_limit, after_max_limit))}   
+                                            }
+                                        }
+
+                                        _ => todo!("Should not be reachable"), // ... because this should all be linear fades at this point
+                                    }
+                                }
+
+                                merge(Self::LinearFadeWithLimit { a: a3, b: b3, limit: limit3, next: next3 }, *limit, next)
+                            }
+
+                            _ => todo!()
+                        }
                     }
-                    _                       => todo!() // TODO
+                    _                       => blend.clone(),    // TODO! This can happen with subpixel rendering
                 }
             },
 
