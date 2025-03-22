@@ -293,33 +293,27 @@ impl InterceptBlend {
         let mut num_blends  = 0;
 
         // Start the blends for the program
-        loop {
-            match blend {
-                InterceptBlend::Solid                 | 
-                InterceptBlend::SolidWithLimit { .. } => {
-                    break;
-                },
+        match blend {
+            InterceptBlend::Solid                 | 
+            InterceptBlend::SolidWithLimit { .. } => { },
 
-                InterceptBlend::LinearFade { a, b } => {
+            InterceptBlend::LinearFade { a, b } => {
+                Self::render_linear_fade(*a, *b, program_stack, shape_descriptor, opacity, x_range);
+                num_blends += 1;
+            }
+
+            InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
+                let x1              = x_range.start.floor();
+                let x2              = x_range.end.floor();
+
+                if *limit < x1+1.0 {
+                    // todo! Treat as a single pixel with high frequency
+                } else {
+                    // Treat as a 'normal' linear blend
                     Self::render_linear_fade(*a, *b, program_stack, shape_descriptor, opacity, x_range);
                     num_blends += 1;
-                    break;
                 }
-
-                InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
-                    let x1              = x_range.start.floor();
-                    let x2              = x_range.end.floor();
-
-                    if *limit < x1+1.0 {
-                        // todo! Treat as a single pixel with high frequency
-                    } else {
-                        // Treat as a 'normal' linear blend
-                        Self::render_linear_fade(*a, *b, program_stack, shape_descriptor, opacity, x_range);
-                        num_blends += 1;
-                    }
-                    break;
-                },
-            }
+            },
         }
 
         // Apply opacity if needed
