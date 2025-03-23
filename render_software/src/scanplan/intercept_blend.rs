@@ -648,13 +648,12 @@ mod test {
         use smallvec::*;
 
         // Create a blend that's the equivalent of a <1 px line in the center of a pixel (this uses nearly but not quite vertical lines)
-        let blend               = InterceptBlend::linear_fade(2.0, 2.0+1e-6).nest(InterceptBlend::linear_fade(2.5-1e-6, 2.5));
+        // (Note that 'fade in' and 'fade out' involve lines sloping in different directions)
+        let blend               = InterceptBlend::linear_fade(2.0, 2.0+1e-6).nest(InterceptBlend::linear_fade(2.5+1e-6, 2.5));
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
         blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
-
-        check_blend_order(&blend, 0.0, &blend);
 
         assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
         assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
@@ -662,6 +661,8 @@ mod test {
             PixelProgramPlan::Merge(amount) => (amount-0.5).abs() < 1e-5,
             _ => false
         }, "{:?}[0] != Merge(0.5)", program_stack);
+
+        check_blend_order(&blend, 0.0, &blend);
     }
 
     #[test]
@@ -689,14 +690,39 @@ mod test {
     fn high_frequency_thin_vertical_line_0point5_4() {
         use smallvec::*;
 
-        // Create a blend that's the equivalent of a <1 px line in the center of a pixel
-        let blend               = InterceptBlend::linear_fade(2.0, 2.0).nest(InterceptBlend::linear_fade(2.25, 2.25)).nest(InterceptBlend::linear_fade(2.75, 2.75)).nest(InterceptBlend::linear_fade(3.0, 3.0));
+        // Create a blend that's from two vertical lines crossing one pixel (with a total coverage of 50%)
+        let blend               = InterceptBlend::linear_fade(2.0, 2.0)
+            .nest(InterceptBlend::linear_fade(2.25, 2.25))
+            .nest(InterceptBlend::linear_fade(2.75, 2.75))
+            .nest(InterceptBlend::linear_fade(3.0, 3.0));
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
         blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
 
         check_blend_order(&blend, 0.0, &blend);
+
+        assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
+        assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
+        assert!(match &program_stack[0] { 
+            PixelProgramPlan::Merge(amount) => (amount-0.5).abs() < 1e-5,
+            _ => false
+        }, "{:?}[0] != Merge(0.5)", program_stack);
+    }
+
+    #[test]
+    fn high_frequency_thin_vertical_line_0point5_4b() {
+        use smallvec::*;
+
+        // Create a blend that's from two vertical lines crossing one pixel (with a total coverage of 50%)
+        let blend               = InterceptBlend::linear_fade(2.0, 2.0+1e-6)
+            .nest(InterceptBlend::linear_fade(2.25+1e-6, 2.25))
+            .nest(InterceptBlend::linear_fade(2.75, 2.75+1e-6))
+            .nest(InterceptBlend::linear_fade(3.0+1e-6, 3.0));
+        let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
+        let mut program_stack   = vec![];
+
+        blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
 
         assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
         assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
@@ -717,7 +743,27 @@ mod test {
 
         blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
 
+        assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
+        assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
+        assert!(match &program_stack[0] { 
+            PixelProgramPlan::Merge(amount) => (amount-0.25).abs() < 1e-5,
+            _ => false
+        }, "{:?}[0] != Merge(0.25)", program_stack);
+
         check_blend_order(&blend, 0.0, &blend);
+    }
+
+
+    #[test]
+    fn high_frequency_thin_vertical_line_0point25b() {
+        use smallvec::*;
+
+        // Create a blend that's the equivalent of a <1 px line in the center of a pixel
+        let blend               = InterceptBlend::linear_fade(2.375, 2.375+1e-6).nest(InterceptBlend::linear_fade(2.625+1e-6, 2.625));
+        let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
+        let mut program_stack   = vec![];
+
+        blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
 
         assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
         assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
