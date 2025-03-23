@@ -56,7 +56,16 @@ fn apply(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
         InterceptBlend::LinearFade { a: a3, b: b3 }
     } else if range1.end < range2.end {
         // Range2 carries on for longer than range1
-        if range2.start > range1.start {
+        if range2.start > range1.end {
+            // Ranges don't overlap
+            InterceptBlend::LinearFadeWithLimit {
+                a: a1, b: b1,
+                limit: range2.start,
+                next: Box::new(InterceptBlend::LinearFade { 
+                    a: a2, b: b2, 
+                })
+            }
+        } else if range2.start > range1.start {
             // Range2 starts after range1
             InterceptBlend::LinearFadeWithLimit {
                 a: a1, b: b1,
@@ -81,7 +90,16 @@ fn apply(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
         }
     } else {
         // Range1 carries on for longer than range2
-        if range1.start > range2.start {
+        if range1.start > range2.end {
+            // Ranges don't overlap
+            InterceptBlend::LinearFadeWithLimit {
+                a: a2, b: b2,
+                limit: range1.start,
+                next: Box::new(InterceptBlend::LinearFade { 
+                    a: a1, b: b1, 
+                })
+            }
+        } else if range1.start > range2.start {
             // Range1 starts after range2
             InterceptBlend::LinearFadeWithLimit {
                 a: a2, b: b2,
@@ -762,7 +780,11 @@ mod test {
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
+        println!("{:?}", blend);
+
         blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
+
+        check_blend_order(&blend, 0.0, &blend);
 
         assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
         assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
@@ -770,8 +792,6 @@ mod test {
             PixelProgramPlan::Merge(amount) => (amount-0.25).abs() < 1e-5,
             _ => false
         }, "{:?}[0] != Merge(0.25)", program_stack);
-
-        check_blend_order(&blend, 0.0, &blend);
     }
 
 
@@ -783,6 +803,8 @@ mod test {
         let blend               = InterceptBlend::linear_fade(2.375, 2.375+1e-6).nest(InterceptBlend::linear_fade(2.625+1e-6, 2.625));
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
+
+        println!("{:?}", blend);
 
         blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
 
