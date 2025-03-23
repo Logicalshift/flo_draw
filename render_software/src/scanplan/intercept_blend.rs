@@ -602,6 +602,27 @@ mod test {
     }
 
     #[test]
+    fn low_frequency_thin_vertical_line_0point5() {
+        use smallvec::*;
+
+        // Half pixel filled, half clear
+        let blend               = InterceptBlend::linear_fade(2.5, 2.5+1e-6);
+        let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
+        let mut program_stack   = vec![];
+
+        blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
+
+        assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
+        assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
+        assert!(match &program_stack[0] { 
+            PixelProgramPlan::LinearMerge(amount1, amount2) => (amount1-0.5).abs() < 1e-5 && (amount2-0.5).abs() < 1e-5,
+            _ => false
+        }, "{:?}[0] != LinearMerge(0.5, 0.5)", program_stack);
+
+        check_blend_order(&blend, 0.0, &blend);
+    }
+
+    #[test]
     fn high_frequency_thin_vertical_line_0point5() {
         use smallvec::*;
 
