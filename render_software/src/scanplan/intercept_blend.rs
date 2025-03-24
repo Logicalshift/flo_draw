@@ -722,9 +722,9 @@ mod test {
         assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
         assert!(program_stack[1] == PixelProgramPlan::StartBlend, "{:?}[1] != StartBlend", program_stack[1]);
         assert!(match &program_stack[0] { 
-            PixelProgramPlan::Merge(amount) => (amount-0.5).abs() < 1e-5,
+            PixelProgramPlan::LinearMerge(amount1, amount2) => (amount1-0.5).abs() < 1e-5 && (amount2-0.5).abs() < 1e-5,
             _ => false
-        }, "{:?}[0] != Merge(0.5)", program_stack);
+        }, "{:?}[0] != LinearMerge(0.5, 0.5)", program_stack);
     }
 
     #[test]
