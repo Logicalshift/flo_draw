@@ -329,13 +329,13 @@ impl InterceptBlend {
                     let mut blend           = blend;
                     let mut total_coverage  = 0.0;
                     let mut last_pos        = x1;
-                    let mut last_alpha      = a*x1 + b;
 
                     loop {
                         match blend {
                             InterceptBlend::LinearFade { a, b } => {
                                 // Add the coverage until the end of the pixel
                                 let pos         = x1+1.0;
+                                let last_alpha  = a*last_pos + b;
                                 let alpha       = a*pos + b;
 
                                 let coverage    = alpha_coverage(last_alpha, alpha) * (pos-last_pos);
@@ -346,8 +346,9 @@ impl InterceptBlend {
 
                             InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
                                 // Compute the coverage between positions
-                                let pos     = limit.min(x1+1.0);
-                                let alpha   = a*pos + b;
+                                let pos         = limit.min(x1+1.0);
+                                let last_alpha  = a*last_pos + b;
+                                let alpha       = a*pos + b;
 
                                 let coverage = alpha_coverage(last_alpha, alpha) * (pos-last_pos);
                                 total_coverage += coverage;
@@ -359,7 +360,6 @@ impl InterceptBlend {
 
                                 // Add the coverage of the next region
                                 last_pos    = pos;
-                                last_alpha  = alpha;
                                 blend       = &**next;
                             }
 
@@ -649,6 +649,7 @@ mod test {
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
+        println!("{:?}", blend);
         blend.render(&mut program_stack, &shape_descriptor, 1.0, &(2.0..3.0));
 
         assert!(program_stack.len() == 2, "{:?}.len() != 2", program_stack);
