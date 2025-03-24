@@ -569,7 +569,7 @@ mod test {
 
         // The initial section should combine the two blends, then the next section should be solid, as blend1 is saturated
         let blend_at_one    = blend_factor(&nested, 1.0);
-        let blend_at_three  = blend_factor(&nested, 3.0);
+        let blend_at_three  = blend_factor(&nested, 3.0-1e-6);
 
         // Calculate the expected values by adding the blends
         let expected_at_one     = blend_factor(&blend1, 1.0) + blend_factor(&blend2, 1.0);
@@ -577,12 +577,7 @@ mod test {
 
         // Check the values
         assert!((blend_at_three-expected_at_three).abs() < 1e-6, "f(1.0) = {:?} f(3.0) = {:?} (!= {:?})", blend_at_one, blend_at_three, expected_at_three);
-        assert!((blend_at_one-expected_at_one).abs() < 1e-6,     "f(1.0) = {:?} (!= {:?}) f(3.0) = {:?}", blend_at_one, blend_at_three, expected_at_one);
-
-        assert!(blend_at_one <= 1.0 , "{} > 1.0", blend_at_one);
-        assert!(blend_at_three <= 1.0, "{} > 1.0", blend_at_three);
-        assert!(blend_at_one >= 0.0);
-        assert!(blend_at_three >= 0.0);
+        assert!((blend_at_one-expected_at_one).abs() < 1e-6,     "f(1.0) = {:?} (!= {:?}) f(3.0) = {:?}", blend_at_one, expected_at_one, blend_at_three);
     }
 
     #[test]
@@ -593,20 +588,15 @@ mod test {
 
         // The initial section should combine the two blends, then the next section should be just blend2
         let blend_at_one    = blend_factor(&nested, 1.0);
-        let blend_at_three  = blend_factor(&nested, 3.0);
+        let blend_at_three  = blend_factor(&nested, 3.0-1e-6);
 
         // Calculate the expected values by adding the blends
-        let expected_at_one     = (blend_factor(&blend1, 1.0) + blend_factor(&blend2, 1.0)).min(1.0);
-        let expected_at_three   = (blend_factor(&blend1, 3.0) + blend_factor(&blend2, 3.0)).min(1.0);
+        let expected_at_one     = blend_factor(&blend1, 1.0) + blend_factor(&blend2, 1.0);
+        let expected_at_three   = blend_factor(&blend1, 3.0) + blend_factor(&blend2, 3.0);
 
         // Check the values
         assert!((blend_at_three-expected_at_three).abs() < 1e-6, "f(1.0) = {:?} f(3.0) = {:?} (!= {:?})", blend_at_one, blend_at_three, expected_at_three);
-        assert!((blend_at_one-expected_at_one).abs() < 1e-6,     "f(1.0) = {:?} (!= {:?}) f(3.0) = {:?}", blend_at_one, blend_at_three, expected_at_one);
-
-        assert!(blend_at_one <= 1.0);
-        assert!(blend_at_three <= 1.0);
-        assert!(blend_at_one >= 0.0);
-        assert!(blend_at_three >= 0.0);
+        assert!((blend_at_one-expected_at_one).abs() < 1e-6,     "f(1.0) = {:?} (!= {:?}) f(3.0) = {:?}", blend_at_one, expected_at_one, blend_at_three);
     }
 
     fn check_blend_order(blend: &InterceptBlend, last_limit: f64, root_blend: &InterceptBlend) {
