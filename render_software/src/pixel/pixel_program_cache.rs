@@ -18,7 +18,7 @@ pub struct PixelSize(pub f64);
 ///
 /// (This is essentially a fragment shader that runs on the CPU)
 ///
-pub type PixelProgramFn<'a, TPixel> = Box<dyn 'a + Send + Sync + Fn(&PixelProgramRenderCache<TPixel>, &mut [TPixel], Range<i32>, &ScanlineTransform, f64) -> ()>;
+pub type RunPixelProgramFn<'a, TPixel> = Box<dyn 'a + Send + Sync + Fn(&PixelProgramRenderCache<TPixel>, &mut [TPixel], Range<i32>, &ScanlineTransform, f64) -> ()>;
 
 ///
 /// Function that binds a pixel program to a particular set of canvas properties
@@ -30,7 +30,7 @@ pub type PixelProgramFn<'a, TPixel> = Box<dyn 'a + Send + Sync + Fn(&PixelProgra
 ///
 // TODO: passing in the data here is necessary for the lifetime, but this would be much simpler if it were possible to specify that
 // the function was borrowed for the lifetime of the PixelProgramFn (so the data can be entirely elided)
-type PixelRenderBindFn<TPixel> = Box<dyn Send + Sync + Fn(PixelSize) -> PixelProgramFn<'static, TPixel>>;
+type PixelRenderBindFn<TPixel> = Box<dyn Send + Sync + Fn(PixelSize) -> RunPixelProgramFn<'static, TPixel>>;
 
 ///
 /// Function that creates a pixel program function by binding some per-scene data into it
@@ -68,7 +68,7 @@ pub struct PixelProgramDataCache<TPixel: Send> {
 ///
 pub struct PixelProgramRenderCache<'a, TPixel: Send> {
     /// Functions that call a pixel program with its associated program data
-    program_data: Vec<PixelProgramFn<'a, TPixel>>,
+    program_data: Vec<RunPixelProgramFn<'a, TPixel>>,
 }
 
 ///
