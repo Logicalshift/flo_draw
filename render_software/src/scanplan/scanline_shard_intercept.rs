@@ -474,10 +474,10 @@ mod test {
         assert!(intercepts.len() == 1, "Should be one intercept {:?}", intercepts);
 
         let nested = intercepts.get(0).unwrap();
-        assert!(if let InterceptBlend::LinearFade { .. } = &nested.blend { true } else { false }, "Not nested: {:?}", intercepts);
+        assert!(if let InterceptBlend::LinearFadeWithLimit { .. } = &nested.blend { true } else { false }, "Not nested: {:?}", intercepts);
 
         let range = nested.blend.range();
-        assert!(range.start == 100.0, "{:?}", range);
+        assert!(range.start == 110.0, "{:?}", range);
         assert!(range.end == 170.0, "{:?}", range);
     }
 }
