@@ -3,8 +3,6 @@ use super::intercept_blend::*;
 
 use crate::edgeplan::*;
 
-use std::ops::{Range};
-
 ///
 /// Describes the location of a shard intercept
 ///

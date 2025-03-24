@@ -3,8 +3,6 @@ use crate::edgeplan::*;
 use flo_canvas as canvas;
 use flo_canvas::curves::bezier::vectorize::*;
 
-use smallvec::*;
-
 use std::sync::*;
 
 ///
@@ -105,7 +103,7 @@ where
         }
     }
 
-    fn apexes(&self, output: &mut Vec<f64>) {
+    fn apexes(&self, _output: &mut Vec<f64>) {
         // Contours have no apexes
     }
 }

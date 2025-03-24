@@ -1,4 +1,3 @@
-use super::intercept_blend::*;
 use super::scanline_shard_intercept::*;
 use super::scanline_transform::*;
 use super::scanline_plan::*;
@@ -6,7 +5,6 @@ use super::scan_planner::*;
 use super::shard_subpixel::*;
 
 use crate::edgeplan::*;
-use crate::pixel::*;
 
 use std::marker::{PhantomData};
 use std::ops::{Range};
