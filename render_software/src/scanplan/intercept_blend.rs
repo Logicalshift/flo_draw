@@ -127,13 +127,14 @@ fn apply(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
 
 impl InterceptBlend {
     ///
-    /// Creates a linear fade that has an alpha of 0 at zero_x and 1 at one_x
+    /// Creates a linear fade that has an alpha of 0 at zero_x and 1 at one_x. The is_inside value determines whether or not the
+    /// left-hand side of the fade is inside or outside
     ///
     #[inline]
-    pub fn linear_fade(zero_x: f64, one_x: f64) -> InterceptBlend {
+    pub fn linear_fade(zero_x: f64, one_x: f64, is_inside: bool) -> InterceptBlend {
         if zero_x == one_x {
             // For vertical lines, treat them as very slightly slanted (which saves us having to special case them)
-            let a = 1.0/1e-6;
+            let a = if is_inside { -1.0/1e-6 } else { 1.0/1e-6 };
             let b = 1.0-a*one_x;
 
             InterceptBlend::LinearFade { a, b }
@@ -497,27 +498,27 @@ mod test {
 
     #[test]
     fn linear_fade() {
-        let (a, b) = match InterceptBlend::linear_fade(2.0, 3.0) { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
+        let (a, b) = match InterceptBlend::linear_fade(2.0, 3.0, false) { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
         assert!(2.0*a + b == 0.0);
         assert!(3.0*a + b == 1.0);
 
-        let (a, b) = match InterceptBlend::linear_fade(3.0, 2.0) { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
+        let (a, b) = match InterceptBlend::linear_fade(3.0, 2.0, true) { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
         assert!(3.0*a + b == 0.0);
         assert!(2.0*a + b == 1.0);
 
-        let (a, b) = match InterceptBlend::linear_fade(40.0, 900.0) { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
+        let (a, b) = match InterceptBlend::linear_fade(40.0, 900.0, false) { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
         assert!(((40.0*a + b)-0.0).abs() <= 0.00001);
         assert!(((900.0*a + b)-1.0).abs() <= 0.00001);
     }
 
     #[test]
     fn linear_fade_range() {
-        let range = InterceptBlend::linear_fade(2.0, 3.0).range();
+        let range = InterceptBlend::linear_fade(2.0, 3.0, false).range();
 
         assert!(range.start == 2.0, "{:?}", range);
         assert!(range.end == 3.0, "{:?}", range);
 
-        let range = InterceptBlend::linear_fade(3.0, 2.0).range();
+        let range = InterceptBlend::linear_fade(3.0, 2.0, false).range();
 
         assert!(range.start == 2.0, "{:?}", range);
         assert!(range.end == 3.0, "{:?}", range);
@@ -525,7 +526,7 @@ mod test {
 
     #[test]
     fn linear_fade_multiply() {
-        let (a, b) = match InterceptBlend::linear_fade(2.0, 3.0).multiply_fade(0.5) 
+        let (a, b) = match InterceptBlend::linear_fade(2.0, 3.0, false).multiply_fade(0.5) 
             { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
         assert!(2.0*a + b == 0.0);
         assert!(3.0*a + b == 0.5);
@@ -533,7 +534,7 @@ mod test {
 
     #[test]
     fn linear_fade_multiply_simple_nest() {
-        let (a, b) = match InterceptBlend::linear_fade(2.0, 3.0).multiply_fade(0.5).nest(InterceptBlend::linear_fade(2.0, 3.0).multiply_fade(0.5))
+        let (a, b) = match InterceptBlend::linear_fade(2.0, 3.0, false).multiply_fade(0.5).nest(InterceptBlend::linear_fade(2.0, 3.0, false).multiply_fade(0.5))
             { InterceptBlend::LinearFade { a, b } => (a, b), _ => panic!() };
         assert!(2.0*a + b == 0.0);
         assert!(3.0*a + b == 1.0);
@@ -562,8 +563,8 @@ mod test {
 
     #[test]
     fn split_fading_in_same_origin() {
-        let blend1 = InterceptBlend::linear_fade(1.0, 3.0);
-        let blend2 = InterceptBlend::linear_fade(1.0, 4.0);
+        let blend1 = InterceptBlend::linear_fade(1.0, 3.0, false);
+        let blend2 = InterceptBlend::linear_fade(1.0, 4.0, false);
         let nested = blend1.nest(blend2.clone());
 
         // The initial section should combine the two blends, then the next section should be solid, as blend1 is saturated
@@ -586,8 +587,8 @@ mod test {
 
     #[test]
     fn split_fading_out_same_origin() {
-        let blend1 = InterceptBlend::linear_fade(3.0, 1.0);
-        let blend2 = InterceptBlend::linear_fade(4.0, 1.0);
+        let blend1 = InterceptBlend::linear_fade(3.0, 1.0, true);
+        let blend2 = InterceptBlend::linear_fade(4.0, 1.0, true);
         let nested = blend1.nest(blend2.clone());
 
         // The initial section should combine the two blends, then the next section should be just blend2
@@ -624,7 +625,7 @@ mod test {
         use smallvec::*;
 
         // Half pixel filled, half clear
-        let blend               = InterceptBlend::linear_fade(2.5, 2.5+1e-6);
+        let blend               = InterceptBlend::linear_fade(2.5, 2.5+1e-6, false);
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
@@ -645,7 +646,7 @@ mod test {
         use smallvec::*;
 
         // Create a blend that's the equivalent of a <1 px line in the center of a pixel
-        let blend               = InterceptBlend::linear_fade(2.25, 2.25).nest(InterceptBlend::linear_fade(2.75, 2.75));
+        let blend               = InterceptBlend::linear_fade(2.25, 2.25, false).nest(InterceptBlend::linear_fade(2.75, 2.75, true));
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
@@ -667,7 +668,7 @@ mod test {
         use smallvec::*;
 
         // Create a blend that's the equivalent of a <1 px line in the center of a pixel
-        let blend               = InterceptBlend::linear_fade(2.0, 2.0).nest(InterceptBlend::linear_fade(2.5, 2.5));
+        let blend               = InterceptBlend::linear_fade(2.0, 2.0, false).nest(InterceptBlend::linear_fade(2.5, 2.5, true));
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
@@ -689,7 +690,7 @@ mod test {
 
         // Create a blend that's the equivalent of a <1 px line in the center of a pixel (this uses nearly but not quite vertical lines)
         // (Note that 'fade in' and 'fade out' involve lines sloping in different directions)
-        let blend               = InterceptBlend::linear_fade(2.0, 2.0+1e-6).nest(InterceptBlend::linear_fade(2.5+1e-6, 2.5));
+        let blend               = InterceptBlend::linear_fade(2.0, 2.0+1e-6, false).nest(InterceptBlend::linear_fade(2.5+1e-6, 2.5, true));
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
@@ -710,7 +711,7 @@ mod test {
         use smallvec::*;
 
         // Create a blend that's the equivalent of a <1 px line in the center of a pixel
-        let blend               = InterceptBlend::linear_fade(2.5, 2.5).nest(InterceptBlend::linear_fade(3.0, 3.0));
+        let blend               = InterceptBlend::linear_fade(2.5, 2.5, false).nest(InterceptBlend::linear_fade(3.0, 3.0, true));
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
@@ -731,10 +732,10 @@ mod test {
         use smallvec::*;
 
         // Create a blend that's from two vertical lines crossing one pixel (with a total coverage of 50%)
-        let blend               = InterceptBlend::linear_fade(2.0, 2.0)
-            .nest(InterceptBlend::linear_fade(2.25, 2.25))
-            .nest(InterceptBlend::linear_fade(2.75, 2.75))
-            .nest(InterceptBlend::linear_fade(3.0, 3.0));
+        let blend               = InterceptBlend::linear_fade(2.0, 2.0, false)
+            .nest(InterceptBlend::linear_fade(2.25, 2.25, true))
+            .nest(InterceptBlend::linear_fade(2.75, 2.75, false))
+            .nest(InterceptBlend::linear_fade(3.0, 3.0, true));
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
@@ -755,10 +756,10 @@ mod test {
         use smallvec::*;
 
         // Create a blend that's from two vertical lines crossing one pixel (with a total coverage of 50%)
-        let blend               = InterceptBlend::linear_fade(2.0, 2.0+1e-6)
-            .nest(InterceptBlend::linear_fade(2.25+1e-6, 2.25))
-            .nest(InterceptBlend::linear_fade(2.75, 2.75+1e-6))
-            .nest(InterceptBlend::linear_fade(3.0+1e-6, 3.0));
+        let blend               = InterceptBlend::linear_fade(2.0, 2.0+1e-6, true)
+            .nest(InterceptBlend::linear_fade(2.25+1e-6, 2.25, false))
+            .nest(InterceptBlend::linear_fade(2.75, 2.75+1e-6, true))
+            .nest(InterceptBlend::linear_fade(3.0+1e-6, 3.0, false));
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
@@ -777,7 +778,7 @@ mod test {
         use smallvec::*;
 
         // Create a blend that's the equivalent of a <1 px line in the center of a pixel
-        let blend               = InterceptBlend::linear_fade(2.375, 2.375).nest(InterceptBlend::linear_fade(2.625, 2.625));
+        let blend               = InterceptBlend::linear_fade(2.375, 2.375, false).nest(InterceptBlend::linear_fade(2.625, 2.625, true));
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
@@ -801,7 +802,7 @@ mod test {
         use smallvec::*;
 
         // Create a blend that's the equivalent of a <1 px line in the center of a pixel
-        let blend               = InterceptBlend::linear_fade(2.375, 2.375+1e-6).nest(InterceptBlend::linear_fade(2.625+1e-6, 2.625));
+        let blend               = InterceptBlend::linear_fade(2.375, 2.375+1e-6, false).nest(InterceptBlend::linear_fade(2.625+1e-6, 2.625, true));
         let shape_descriptor    = ShapeDescriptor { programs: smallvec![], is_opaque: true, z_index: 0 };
         let mut program_stack   = vec![];
 
