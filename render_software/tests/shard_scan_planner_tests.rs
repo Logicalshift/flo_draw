@@ -530,8 +530,8 @@ fn vertical_partial_overlap() {
     assert!(pixels[11].alpha_component() == 1.0, "mid pixel wrong: {:?}", pixels[11]);
 
     // The edge pixels should both be filled to 50% as they have a 50% vertical overlap
-    assert!(pixels[10].alpha_component() == 0.25, "initial pixel wrong: {:?}", pixels[10]);
-    assert!(pixels[20].alpha_component() == 0.75, "final pixel wrong: {:?}", pixels[20]);
+    assert!((pixels[10].alpha_component()-0.25).abs() < 1e-6, "initial pixel wrong: {:?}", pixels[10]);
+    assert!((pixels[20].alpha_component()-0.75).abs() < 1e-6, "final pixel wrong: {:?}", pixels[20]);
 }
 
 #[test]
