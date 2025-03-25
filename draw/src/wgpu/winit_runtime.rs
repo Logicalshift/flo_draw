@@ -179,7 +179,7 @@ impl WinitRuntime {
                     // Signal the 'finished' event when the redraw events are all clear
                     self.pending_yields.push(redraw_finished);
                 } else {
-                    // self.request_redraw(window_id); 
+                    self.request_redraw(window_id); 
                 }
 
                 vec![]
