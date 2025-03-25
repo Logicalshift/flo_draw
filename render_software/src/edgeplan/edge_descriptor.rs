@@ -80,6 +80,16 @@ pub trait EdgeDescriptor : Send + Sync {
     fn apexes(&self, output: &mut Vec<f64>);
 
     ///
+    /// The number of samples to take when processing a section of this edge that has high detail
+    ///
+    /// The apexes are used to determine where an edge has detail that's finer than a single pixel in the
+    /// vertical axis. To render these sections more accurately, one approach is to super-sample the region.
+    /// When we do this for this edge, we'll use the specified number of samples. Note that it's important
+    /// that all edges making up a single shape use the same number of samples.
+    ///
+    fn detail_samples(&self) -> usize { 5 }
+
+    ///
     /// For debugging, an optional description of this edge
     ///
     fn description(&self) -> String { "no description".to_string() }

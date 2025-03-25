@@ -301,6 +301,8 @@ fn multisampling_missing_one_quarter() {
             // We create a bunch of apexes between 10.0 and 11.0 (so we force a multisample there)
             output.extend(vec![10.0, 10.1, 10.4, 10.7, 10.9, 11.0, 11.1])
         }
+
+        fn detail_samples(&self) -> usize { 8 }
     }
 
     // Create an edge plan with this shape in it
@@ -413,6 +415,8 @@ fn multisampling_missing_one_half() {
             // We create a bunch of apexes between 10.0 and 11.0 (so we force a multisample there)
             output.extend(vec![10.0, 10.1, 10.4, 10.7, 10.9, 11.0, 11.1])
         }
+
+        fn detail_samples(&self) -> usize { 8 }
     }
 
     // Create an edge plan with this shape in it
