@@ -959,7 +959,7 @@ impl<'surface> WgpuRenderer<'surface> {
             let (x1, x2)        = if x1 > x2 { (x2, x1) } else { (x1, x2) };
             let (y1, y2)        = if y1 > y2 { (y2, y1) } else { (y1, y2) };
 
-            let bytes_per_pixel = texture.descriptor.format.block_size(None).unwrap() as u64;
+            let bytes_per_pixel = texture.descriptor.format.block_copy_size(None).unwrap() as u64;
 
             let line_offset     = (y1 as u64) * (texture.descriptor.size.width as u64) * bytes_per_pixel;
             let pixel_offset    = (x1 as u64) * bytes_per_pixel;
@@ -981,7 +981,7 @@ impl<'surface> WgpuRenderer<'surface> {
     ///
     fn write_texture_data_1d(&mut self, TextureId(texture_id): TextureId, x1: usize, x2: usize, data: Arc<Vec<u8>>, state: &mut RendererState) {
         if let Some(Some(texture)) = self.textures.get(texture_id) {
-            let bytes_per_pixel = texture.descriptor.format.block_size(None).unwrap() as u64;
+            let bytes_per_pixel = texture.descriptor.format.block_copy_size(None).unwrap() as u64;
             let layout          = wgpu::TexelCopyBufferLayout {
                 offset:         (x1 as u64) * bytes_per_pixel,
                 bytes_per_row:  Some(((texture.descriptor.size.width as u64) * bytes_per_pixel) as u32),
