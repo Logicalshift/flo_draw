@@ -1,8 +1,6 @@
 use flo_render_software::edges::*;
 use flo_render_software::edgeplan::*;
 
-use smallvec::*;
-
 use std::sync::*;
 
 #[test]
