@@ -277,7 +277,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
     ///
     /// Adds or removes from the active shapes after an intercept
     ///
-    pub fn start_intercept(&mut self, intercept: &ShardInterceptLocation, transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
+    pub fn start_intercept(&mut self, intercept: &ShardInterceptLocation, _transform: &ScanlineTransform, descriptor: Option<&'a ShapeDescriptor>) {
         if let Some(descriptor) = descriptor {
             let (z_index, is_opaque) = (descriptor.z_index, descriptor.is_opaque && intercept.opacity >= 1.0);
 

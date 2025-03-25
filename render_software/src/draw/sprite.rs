@@ -112,7 +112,6 @@ where
             let prepared_layer = PreparedLayer {
                 edges:              Arc::new(layer),
                 bounds:             bounds,
-                transform:          transform,
                 inverse_transform:  inverse_transform,
             };
 
@@ -125,7 +124,6 @@ where
             PreparedLayer {
                 edges:              Arc::new(EdgePlan::new()),
                 bounds:             ((0.0, 0.0), (0.0, 0.0)),
-                transform:          canvas::Transform2D::identity(),
                 inverse_transform:  canvas::Transform2D::identity(),
             }
         }

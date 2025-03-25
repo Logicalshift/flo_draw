@@ -15,9 +15,6 @@ pub struct PreparedLayer {
     /// The bounding box of the edge plan, calculated as it was prepared
     pub (super) bounds: ((f64, f64), (f64, f64)),
 
-    /// The transform to map sprite coordinates to render coordinates (render coordinates are used by the edge plan)
-    pub (super) transform: canvas::Transform2D,
-
     /// Transform to map render coordinates to sprite coordinates (the coordinates used by the original render)
     ///
     /// Note that we store the sprite in render coordinate as things like the flattening edges assume that the coordinates
