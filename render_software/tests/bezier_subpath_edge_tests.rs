@@ -11,8 +11,6 @@ use flo_render_software::curves::bezier::path::*;
 
 use flo_render_software::canvas::*;
 
-use smallvec::*;
-
 #[cfg(feature = "render_term")]
 fn render_path(path: &BezierSubpath, y_pos: f64) {
     // Get the range of x and y coordinates in this path

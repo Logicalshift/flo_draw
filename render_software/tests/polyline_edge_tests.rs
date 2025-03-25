@@ -2,8 +2,6 @@ use flo_render_software::edgeplan::*;
 use flo_render_software::edges::*;
 use flo_render_software::canvas::*;
 
-use smallvec::*;
-
 #[test]
 fn triangle_intercepts() {
     let mut triangle = Polyline::new(vec![

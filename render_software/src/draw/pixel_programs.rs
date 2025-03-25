@@ -1,5 +1,4 @@
 use crate::edgeplan::*;
-use crate::filters::*;
 use crate::pixel::*;
 use crate::pixel_programs::*;
 use crate::scanplan::*;

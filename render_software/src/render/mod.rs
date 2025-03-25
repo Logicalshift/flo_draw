@@ -22,7 +22,6 @@ pub use frame_size::*;
 pub use edgeplan_region_renderer::*;
 pub use u8_frame_renderer::*;
 pub use u16_linear_frame_renderer::*;
-pub use edge_plan::*;
 pub use rgba_frame::*;
 pub use render_frame::*;
 pub use image_render::*;

@@ -2,7 +2,6 @@ use super::pixel_filter_trait::*;
 use crate::pixel::*;
 
 use std::sync::*;
-use std::marker::{PhantomData};
 
 ///
 /// The mask filter multiplies the output pixels by the contents of a mask texture

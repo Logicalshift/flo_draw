@@ -22,7 +22,7 @@ pub struct FilteredScanlineFrameProgram<TEdgeDescriptor, TPixel, TPlanner> {
     edge: PhantomData<TEdgeDescriptor>,
 
     /// The pixel planner
-    planner: TPlanner,
+    planner: PhantomData<TPlanner>,
 }
 
 ///
@@ -90,7 +90,7 @@ where
         Self {
             pixel:      PhantomData,
             edge:       PhantomData,
-            planner:    TPlanner::default(),
+            planner:    PhantomData,
         }
     }
 }

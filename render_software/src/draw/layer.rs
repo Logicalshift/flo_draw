@@ -129,14 +129,6 @@ where
     }
 
     ///
-    /// Retrieves the active layer
-    ///
-    #[inline]
-    pub (crate) fn current_layer(&mut self) -> &mut Layer {
-        self.layers.get_mut(self.current_layer.0).unwrap()
-    }
-
-    ///
     /// Selects or creates a layer with the given ID
     ///
     #[inline]

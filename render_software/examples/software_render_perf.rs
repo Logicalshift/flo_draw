@@ -18,8 +18,6 @@ use flo_render_software::scanplan::*;
 use flo_canvas::curves::arc::*;
 use flo_canvas::curves::geo::*;
 
-use smallvec::*;
-
 use std::time::{Instant, Duration};
 use std::vec;
 

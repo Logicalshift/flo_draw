@@ -168,10 +168,10 @@ impl InterceptBlend {
                 match &blend {
                     InterceptBlend::Solid                                       => InterceptBlend::Solid,
                     InterceptBlend::LinearFade { a: a2, b: b2 }                 => apply(*a, *b, *a2, *b2),
-                    InterceptBlend::LinearFadeWithLimit { a: a2, b: b2, limit, next }   => {
-                        todo!()
+                    InterceptBlend::LinearFadeWithLimit { .. }   => {
+                        todo!("Not expected with the current implementation of the renderer")
                     }
-                    InterceptBlend::SolidWithLimit { limit, next }   => {
+                    InterceptBlend::SolidWithLimit { .. }   => {
                         todo!()
                     }
                 }
@@ -232,14 +232,16 @@ impl InterceptBlend {
                                 merge(Self::LinearFadeWithLimit { a: a3, b: b3, limit: limit3, next: next3 }, *limit, next)
                             }
 
-                            _ => todo!()
+                            _ => todo!("Not expected from split()")
                         }
-                    }
-                    _                       => blend.clone(),    // TODO! This can happen with subpixel rendering
+                    },
+
+                    InterceptBlend::LinearFadeWithLimit { .. }  => blend.clone(),    // TODO! This can happen with subpixel rendering
+                    _                                           => blend.clone(),
                 }
             },
 
-            InterceptBlend::SolidWithLimit { limit, next }   => {
+            InterceptBlend::SolidWithLimit { .. }   => {
                 blend.clone() // TODO
             },
         }
@@ -283,7 +285,7 @@ impl InterceptBlend {
     /// Adds a linear fade blend to a pixel program stack
     ///
     #[inline]
-    fn render_linear_fade(a: f64, b: f64, program_stack: &mut Vec<PixelProgramPlan>, shape_descriptor: &ShapeDescriptor, opacity: f32, x_range: &Range<f64>) {
+    fn render_linear_fade(a: f64, b: f64, program_stack: &mut Vec<PixelProgramPlan>, x_range: &Range<f64>) {
         // For a 'limit' fade, we assume the limit is not hit
         // Convert to a range to use on the program stack
         let x1              = x_range.start.floor();
@@ -317,7 +319,7 @@ impl InterceptBlend {
             InterceptBlend::SolidWithLimit { .. } => { },
 
             InterceptBlend::LinearFade { a, b } => {
-                Self::render_linear_fade(*a, *b, program_stack, shape_descriptor, opacity, x_range);
+                Self::render_linear_fade(*a, *b, program_stack, x_range);
                 num_blends += 1;
             }
 
@@ -372,7 +374,7 @@ impl InterceptBlend {
                     num_blends += 1;
                 } else {
                     // Treat as a 'normal' linear blend
-                    Self::render_linear_fade(*a, *b, program_stack, shape_descriptor, opacity, x_range);
+                    Self::render_linear_fade(*a, *b, program_stack, x_range);
                     num_blends += 1;
                 }
             },

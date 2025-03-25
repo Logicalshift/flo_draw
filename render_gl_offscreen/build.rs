@@ -14,7 +14,7 @@ fn main() {
 
     bindgen::Builder::default()
         .header("tiny_gbm.h")
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Failed to generate bindings for gbm")
         .write_to_file(out)

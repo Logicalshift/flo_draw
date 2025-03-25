@@ -4,7 +4,6 @@ use flo_render_software::pixel::*;
 use flo_render_software::scanplan::*;
 
 use flo_render_software::curves::geo::*;
-use flo_render_software::curves::bezier::*;
 use flo_render_software::curves::bezier::path::*;
 
 fn strip_y_coordinates(with_coordinates: Vec<(f64, ScanlinePlan)>) -> Vec<ScanlinePlan> {
