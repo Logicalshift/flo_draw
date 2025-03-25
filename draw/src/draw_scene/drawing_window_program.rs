@@ -26,10 +26,6 @@ enum DrawingOrEvent {
 
 impl SceneMessage for DrawingOrEvent { }
 
-static FILTER_DRAWING_WINDOW_REQUEST: Lazy<FilterHandle> = Lazy::new(|| FilterHandle::for_filter(|drawing_window_requests| {
-    drawing_window_requests.ready_chunks(100)
-        .map(|requests| DrawingOrEvent::Drawing(requests))
-}));
 static FILTER_DRAWING_EVENT_REQUEST: Lazy<FilterHandle> = Lazy::new(|| FilterHandle::for_filter(|drawing_event_requests| {
     drawing_event_requests.ready_chunks(100)
         .map(|requests| DrawingOrEvent::Event(requests))
