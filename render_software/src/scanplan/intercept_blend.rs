@@ -237,7 +237,7 @@ impl InterceptBlend {
                         }
                     },
 
-                    InterceptBlend::LinearFadeWithLimit { .. }  => blend.clone(),    // TODO! This can happen with subpixel rendering
+                    InterceptBlend::LinearFadeWithLimit { .. }  => self.clone(),    // TODO! This can happen with subpixel rendering
                     _                                           => blend.clone(),
                 }
             },
