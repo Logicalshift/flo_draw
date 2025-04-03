@@ -169,7 +169,8 @@ impl InterceptBlend {
                     InterceptBlend::Solid                                       => InterceptBlend::Solid,
                     InterceptBlend::LinearFade { a: a2, b: b2 }                 => apply(*a, *b, *a2, *b2),
                     InterceptBlend::LinearFadeWithLimit { .. }   => {
-                        todo!("Not expected with the current implementation of the renderer")
+                        // TODO: is this inefficient? I think the result is the same, but we're doing a nested call and re-checking the blends
+                        blend.nest(self.clone())
                     }
                     InterceptBlend::SolidWithLimit { .. }   => {
                         todo!()
