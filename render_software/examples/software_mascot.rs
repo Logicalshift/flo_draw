@@ -1,4 +1,5 @@
 use flo_render_software::draw::*;
+use flo_render_software::edgeplan::*;
 use flo_render_software::pixel::*;
 use flo_render_software::render::*;
 use flo_render_software::scanplan::*;
@@ -6,6 +7,28 @@ use flo_render_software::scanplan::*;
 use flo_render_software::canvas::*;
 
 use std::time::{Instant};
+use std::ops::{Range};
+
+// Temporary scan planner used to write out/indicate lines that have errors on them
+struct TestScanPlanner<TEdge: EdgeDescriptor>(ShardScanPlanner<TEdge>);
+
+impl<TEdge: EdgeDescriptor> ScanPlanner for TestScanPlanner<TEdge> {
+    type Edge = TEdge;
+
+    fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
+        self.0.plan_scanlines(edge_plan, transform, y_positions, x_range, scanlines);
+        let pixel_zero = transform.source_x_to_pixels(-1.0);
+
+        for (idx, y) in y_positions.iter().enumerate() {
+            let pixel_y = transform.source_x_to_pixels(*y);
+
+            if pixel_y.round() == 523.0 + pixel_zero {
+                println!("{:?}", scanlines[idx].1);
+                //scanlines[idx].1 = ScanlinePlan::from_ordered_stacks(vec![]);
+            }
+        }
+    }
+}
 
 ///
 /// Draws FlowBetween's mascot as vector graphics in a window
@@ -97,7 +120,7 @@ pub fn main() {
     // TODO: issue around line 522/521 and ~648
     let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
 
-    let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
+    let renderer = CanvasDrawingRegionRenderer::new(TestScanPlanner(ShardScanPlanner::default()), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
     term_renderer.render(renderer, &canvas_drawing);
 }
 
