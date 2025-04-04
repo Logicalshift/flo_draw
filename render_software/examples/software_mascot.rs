@@ -20,10 +20,27 @@ impl<TEdge: EdgeDescriptor> ScanPlanner for TestScanPlanner<TEdge> {
         let pixel_zero = transform.source_x_to_pixels(-1.0);
 
         for (idx, y) in y_positions.iter().enumerate() {
-            let pixel_y = transform.source_x_to_pixels(*y);
+            let half_pixel  = transform.pixel_range_to_x(&(0..1));
+            let half_pixel  = (half_pixel.end - half_pixel.start)/2.0;
+            let pixel_y     = transform.source_x_to_pixels(*y);
 
             if pixel_y.round() == 523.0 + pixel_zero {
+                let scan_positions_start = y_positions.iter()
+                    .map(|y| y - half_pixel)
+                    .collect::<Vec<_>>();
+                let scan_positions_end = y_positions.iter()
+                    .map(|y| y + half_pixel)
+                    .collect::<Vec<_>>();
+                let mut edge_plan_output = vec![vec![]];
+
+                edge_plan.shards_on_scanlines(&scan_positions_start[idx..=idx], &scan_positions_end[idx..=idx], &mut edge_plan_output);
+                edge_plan_output[0].iter_mut().for_each(|plan| {
+                    plan.lower_x = transform.source_x_to_pixels(plan.lower_x);
+                    plan.upper_x = transform.source_x_to_pixels(plan.upper_x);
+                });
+
                 println!("{:?}", scanlines[idx].1);
+                println!("\n--\n{:?}", edge_plan_output);
                 //scanlines[idx].1 = ScanlinePlan::from_ordered_stacks(vec![]);
             }
         }
