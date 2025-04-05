@@ -800,3 +800,157 @@ fn diagonal_full_overlap_thirds() {
     assert!((pixels[11 + 10*3].alpha_component()-1.0/3.0 + 1.0/6.0).abs() > 0.01, "2nd pixel wrong: {:?}", pixels[11 + 10*3]);
     assert!((pixels[12 + 10*3].alpha_component()-2.0/3.0 + 1.0/6.0).abs() > 0.01, "3rd pixel wrong: {:?}", pixels[12 + 10*3]);
 }
+
+#[test]
+fn mascot_overlap_1() {
+    use EdgeInterceptDirection::*;
+    use std::marker::{PhantomData};
+
+    let shape_30 = ShapeId::new();
+    let shape_32 = ShapeId::new();
+    let shape_33 = ShapeId::new();
+    let shape_40 = ShapeId::new();
+    let shape_41 = ShapeId::new();
+    let shape_42 = ShapeId::new();
+    let shape_45 = ShapeId::new();
+    let shape_46 = ShapeId::new();
+    let shape_6  = ShapeId::new();
+    let shape_7  = ShapeId::new();
+    let shape_8  = ShapeId::new();
+    let shape_82 = ShapeId::new();
+    let shape_84 = ShapeId::new();
+    let shape_85 = ShapeId::new();
+    let shape_9  = ShapeId::new();
+
+    // Intercepts generated on a buggy line of the mascot: 
+    let mut line = vec![
+        EdgePlanShardIntercept { shape: shape_6, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 765.3033951375251, upper_x: 765.7683154221675 }, 
+        EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 767.9979111829201, upper_x: 768.4539666459026 }, 
+        EdgePlanShardIntercept { shape: shape_9, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 779.5544235427485, upper_x: 780.7832353297503 }, 
+        EdgePlanShardIntercept { shape: shape_32, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 780.8798839396921, upper_x: 781.0859958330215 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 0, opacity: 0.2, direction: DirectionOut, lower_x: 780.93761056703, upper_x: 781.1508244550096 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 1, opacity: 0.2, direction: DirectionOut, lower_x: 781.1508244550096, upper_x: 781.2848906373272 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 2, opacity: 0.2, direction: DirectionOut, lower_x: 781.2848906373272, upper_x: 781.4189568196448 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 3, opacity: 0.2, direction: DirectionOut, lower_x: 781.4189568196448, upper_x: 781.5530230019624 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 4, opacity: 0.2, direction: DirectionOut, lower_x: 781.5530230019624, upper_x: 781.68708918428 }, 
+        EdgePlanShardIntercept { shape: shape_9, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 781.7902503268215, upper_x: 782.519597020637 }, 
+        EdgePlanShardIntercept { shape: shape_32, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 782.3033725321177, upper_x: 782.4465850920039 }, 
+        EdgePlanShardIntercept { shape: shape_30, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 784.1796286174309, upper_x: 784.2406076744488 }, 
+        EdgePlanShardIntercept { shape: shape_30, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 785.4600398875916, upper_x: 785.6494780028966 }, 
+        EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 787.0389421020911, upper_x: 788.3031263781124 }, 
+        EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 787.8585972734393, upper_x: 788.3934758391607 }, 
+        EdgePlanShardIntercept { shape: shape_82, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 801.3308536579293, upper_x: 806.3814958129763 }, 
+        EdgePlanShardIntercept { shape: shape_82, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 809.0694747735645, upper_x: 813.1703201992559 }, 
+        EdgePlanShardIntercept { shape: shape_82, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 820.2930387003066, upper_x: 821.1989873442365 }, 
+        EdgePlanShardIntercept { shape: shape_46, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 826.0532154362425, upper_x: 826.258162688012 }, 
+        EdgePlanShardIntercept { shape: shape_82, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 826.4949208393637, upper_x: 826.6984340176065 }, 
+        EdgePlanShardIntercept { shape: shape_45, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 826.7655162258618, upper_x: 826.9694323826011 }, 
+        EdgePlanShardIntercept { shape: shape_46, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 827.4677568082102, upper_x: 827.6841606427461 }, 
+        EdgePlanShardIntercept { shape: shape_46, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 831.5971756805701, upper_x: 832.7903968522486 }, 
+        EdgePlanShardIntercept { shape: shape_45, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 832.6751128156309, upper_x: 833.8564158619092 }, 
+        EdgePlanShardIntercept { shape: shape_46, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 833.7471337956051, upper_x: 834.9221129830797 }, 
+        EdgePlanShardIntercept { shape: shape_9, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 836.9013794606966, upper_x: 838.6489462505663 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 4, opacity: 0.2, direction: DirectionIn, lower_x: 838.3265426404643, upper_x: 838.6709165413115 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 3, opacity: 0.2, direction: DirectionIn, lower_x: 838.6709165413115, upper_x: 839.0152904421587 }, 
+        EdgePlanShardIntercept { shape: shape_40, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 838.8389809185827, upper_x: 841.2541861179935 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 3, opacity: 0.2, direction: DirectionOut, lower_x: 839.382528005128, upper_x: 839.8390361366361 }, 
+        EdgePlanShardIntercept { shape: shape_9, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 839.729647531427, upper_x: 841.8337625392224 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 4, opacity: 0.2, direction: DirectionOut, lower_x: 839.8390361366361, upper_x: 840.2955442681442 }, 
+        EdgePlanShardIntercept { shape: shape_40, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 842.5581227022893, upper_x: 847.004039111515 }, 
+        EdgePlanShardIntercept { shape: shape_33, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 845.8474748152967, upper_x: 846.1301067062961 }, 
+        EdgePlanShardIntercept { shape: shape_33, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 847.2566060598185, upper_x: 847.6262179386674 }, 
+        EdgePlanShardIntercept { shape: shape_42, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 848.4784519846113, upper_x: 848.8126106106153 }, 
+        EdgePlanShardIntercept { shape: shape_41, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 849.2139621097125, upper_x: 849.5482792126645 }, 
+        EdgePlanShardIntercept { shape: shape_42, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 849.9579981293143, upper_x: 850.2916863955047 }, 
+        EdgePlanShardIntercept { shape: shape_42, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 852.7220576877279, upper_x: 855.8537500074726 }, 
+        EdgePlanShardIntercept { shape: shape_41, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 855.3411505568523, upper_x: 856.5991429475507 }, 
+        EdgePlanShardIntercept { shape: shape_42, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 856.8588690819761, upper_x: 857.3879731488084 }, 
+
+        // shape ID 7, leaving
+        // shape ID 84 entering and leaving. Leaving over the range 7 is also leaving
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 4, opacity: 0.2, direction: DirectionOut, lower_x: 873.4954896128149, upper_x: 875.351305398116 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 3, opacity: 0.2, direction: DirectionOut, lower_x: 875.351305398116, upper_x: 877.2071211834171 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 2, opacity: 0.2, direction: DirectionOut, lower_x: 877.2071211834171, upper_x: 879.0629369687181 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 1, opacity: 0.2, direction: DirectionOut, lower_x: 879.0629369687181, upper_x: 880.9187527540191 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 0, opacity: 0.2, direction: DirectionOut, lower_x: 880.9187527540191, upper_x: 882.7745685393201 }, 
+
+        EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 890.2342628345167, upper_x: 950.664530995679 }, 
+
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 0, opacity: 0.2, direction: DirectionIn, lower_x: 934.7975876314968, upper_x: 936.7211308083723 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 1, opacity: 0.2, direction: DirectionIn, lower_x: 936.7211308083723, upper_x: 938.6446739852477 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 2, opacity: 0.2, direction: DirectionIn, lower_x: 938.6446739852477, upper_x: 940.5682171621232 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 3, opacity: 0.2, direction: DirectionIn, lower_x: 940.5682171621232, upper_x: 942.4917603389988 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 4, opacity: 0.2, direction: DirectionIn, lower_x: 942.4917603389988, upper_x: 943.7324676399937 }, 
+
+        EdgePlanShardIntercept { shape: shape_6, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 957.5308017979881, upper_x: 964.4857268298156 }, 
+        EdgePlanShardIntercept { shape: shape_6, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 965.9112278061066, upper_x: 967.3696528245313 }, 
+        EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 970.1717494863619, upper_x: 971.5543645770853 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 4, opacity: 0.2, direction: DirectionOut, lower_x: 971.5577150541607, upper_x: 971.7589968385139 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 3, opacity: 0.2, direction: DirectionOut, lower_x: 971.7589968385139, upper_x: 971.9602786228669 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 2, opacity: 0.2, direction: DirectionOut, lower_x: 971.9602786228669, upper_x: 972.1615604072201 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 1, opacity: 0.2, direction: DirectionOut, lower_x: 972.1615604072201, upper_x: 972.3628421915732 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 0, opacity: 0.2, direction: DirectionOut, lower_x: 972.3628421915732, upper_x: 972.5641239759265 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 4, opacity: 0.2, direction: DirectionIn, lower_x: 978.7533153677159, upper_x: 978.9882630644446 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 3, opacity: 0.2, direction: DirectionIn, lower_x: 978.9882630644446, upper_x: 979.2232107611732 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 3, opacity: 0.2, direction: DirectionOut, lower_x: 979.6991255817346, upper_x: 980.0090610255155 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 4, opacity: 0.2, direction: DirectionOut, lower_x: 980.0090610255155, upper_x: 981.2658244242796 }, 
+        EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 997.8705197754994, upper_x: 1000.3474362988769 }, 
+        EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 1022.5121649252748, upper_x: 1029.4146221661326 }, 
+        EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 1059.523419950211, upper_x: 1064.8686919750394 }, 
+        EdgePlanShardIntercept { shape: shape_6, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 1071.8805084370576, upper_x: 1076.0563120857364 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 0, opacity: 0.2, direction: DirectionIn, lower_x: 1080.2147750436866, upper_x: 1080.8268758816614 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 1, opacity: 0.2, direction: DirectionIn, lower_x: 1080.8268758816614, upper_x: 1081.438976719636 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 2, opacity: 0.2, direction: DirectionIn, lower_x: 1081.438976719636, upper_x: 1082.0510775576106 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 3, opacity: 0.2, direction: DirectionIn, lower_x: 1082.0510775576106, upper_x: 1082.6631783955852 }, 
+        EdgePlanShardIntercept { shape: shape_84, subpixel: 4, opacity: 0.2, direction: DirectionIn, lower_x: 1082.6631783955852, upper_x: 1083.2340099468188 }, 
+        EdgePlanShardIntercept { shape: shape_6, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 1149.4414002188796, upper_x: 1150.0988271738133 }, 
+        EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 1152.378127251653, upper_x: 1153.0322008482835 }, 
+        EdgePlanShardIntercept { shape: shape_85, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 1152.5831944093711, upper_x: 1153.2292318041793 }, 
+        EdgePlanShardIntercept { shape: shape_9, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 1158.6432542641273, upper_x: 1159.2911353036145 }, 
+        EdgePlanShardIntercept { shape: shape_85, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 1159.4306293774132, upper_x: 1159.964002755355 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 0, opacity: 0.2, direction: DirectionIn, lower_x: 1159.5309280635392, upper_x: 1159.6624861099415 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 1, opacity: 0.2, direction: DirectionIn, lower_x: 1159.6624861099415, upper_x: 1159.7940441563435 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 2, opacity: 0.2, direction: DirectionIn, lower_x: 1159.7940441563435, upper_x: 1159.9256022027453 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 3, opacity: 0.2, direction: DirectionIn, lower_x: 1159.9256022027453, upper_x: 1160.0571602491475 }, 
+        EdgePlanShardIntercept { shape: shape_8, subpixel: 4, opacity: 0.2, direction: DirectionIn, lower_x: 1160.0571602491475, upper_x: 1160.1887182955495 }, 
+        EdgePlanShardIntercept { shape: shape_9, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 1160.2935620941294, upper_x: 1160.9372844676623 }, 
+        EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 1166.515630217301, upper_x: 1167.154682924812 }, 
+        EdgePlanShardIntercept { shape: shape_6, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 1169.411723321737, upper_x: 1169.9168882890344 }
+    ];
+
+    // ScanlineTransform { offset: 1.7777777777777777, scale: 540.0, scale_recip: 0.0018518518518518517, width_pixels: 1920 }
+    let transform = ScanlineTransform::for_region(&(-1.7777777777777777..1.7777777777777777), 1920);
+    println!("{:?}", transform);
+
+    // Adjust the line for the transform
+    line.iter_mut().for_each(|intercept| {
+        intercept.lower_x = transform.fractional_pixel_x_to_source_x(intercept.lower_x);
+        intercept.upper_x = transform.fractional_pixel_x_to_source_x(intercept.upper_x);
+    });
+
+    // Fake edge plan, for the edges
+    let edge_plan = EdgePlan::<Box<dyn EdgeDescriptor>>::new()
+        .with_shape_description(shape_30, ShapeDescriptor { programs: smallvec![PixelProgramDataId(30)], is_opaque: true, z_index: 30 })
+        .with_shape_description(shape_32, ShapeDescriptor { programs: smallvec![PixelProgramDataId(32)], is_opaque: true, z_index: 32 })
+        .with_shape_description(shape_33, ShapeDescriptor { programs: smallvec![PixelProgramDataId(33)], is_opaque: true, z_index: 33 })
+        .with_shape_description(shape_40, ShapeDescriptor { programs: smallvec![PixelProgramDataId(40)], is_opaque: true, z_index: 40 })
+        .with_shape_description(shape_41, ShapeDescriptor { programs: smallvec![PixelProgramDataId(41)], is_opaque: true, z_index: 41 })
+        .with_shape_description(shape_42, ShapeDescriptor { programs: smallvec![PixelProgramDataId(42)], is_opaque: true, z_index: 42 })
+        .with_shape_description(shape_45, ShapeDescriptor { programs: smallvec![PixelProgramDataId(45)], is_opaque: true, z_index: 45 })
+        .with_shape_description(shape_46, ShapeDescriptor { programs: smallvec![PixelProgramDataId(46)], is_opaque: true, z_index: 46 })
+        .with_shape_description(shape_6, ShapeDescriptor { programs: smallvec![PixelProgramDataId(6)], is_opaque: true, z_index: 6 })
+        .with_shape_description(shape_7, ShapeDescriptor { programs: smallvec![PixelProgramDataId(7)], is_opaque: true, z_index: 7 })
+        .with_shape_description(shape_8, ShapeDescriptor { programs: smallvec![PixelProgramDataId(8)], is_opaque: true, z_index: 8 })
+        .with_shape_description(shape_82, ShapeDescriptor { programs: smallvec![PixelProgramDataId(82)], is_opaque: true, z_index: 82 })
+        .with_shape_description(shape_84, ShapeDescriptor { programs: smallvec![PixelProgramDataId(84)], is_opaque: true, z_index: 84 })
+        .with_shape_description(shape_85, ShapeDescriptor { programs: smallvec![PixelProgramDataId(85)], is_opaque: false, z_index: 85 })
+        .with_shape_description(shape_9, ShapeDescriptor { programs: smallvec![PixelProgramDataId(9)], is_opaque: true, z_index: 9 });
+
+
+    // Run the scan planner with this line
+    let scan_planner    = ShardScanPlanner::default();
+    let mut scanlines   = vec![(0.0, ScanlinePlan::default())];
+    scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], -1.777777777..1.77777777, &mut scanlines);
+
+    assert!(false, "{:?}", scanlines);
+}
