@@ -36,6 +36,12 @@ where
         scanlines
     }
 
+    ///
+    /// Plans out a scanline using some pre-calculated intercepts. Edge plan is only used to retrieve the shape descriptors and z-indexes with this function,
+    /// so this can be used in cases where the intercepts are calculated some other way
+    ///
+    /// (Main use of this is for the tests, which use this to check the algorithm against known sets of intercepts)
+    ///
     #[inline]
     pub fn plan_from_edge_intercepts(&self, edge_plan: &EdgePlan<TEdge>, ordered_intercepts: Vec<Vec<EdgePlanShardIntercept>>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
         'next_line: for y_idx in 0..y_positions.len() {
