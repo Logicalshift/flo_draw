@@ -72,7 +72,14 @@ impl ShardSubPixel {
     ///
     #[inline]
     pub fn is_opaque(&self) -> bool {
-        self.opacity >= 1.0 && self.shape_descriptor.is_opaque
+        if self.opacity >= 1.0 && self.shape_descriptor.is_opaque {
+            match self.blend {
+                InterceptBlend::Solid   => true,
+                _                       => false
+            }
+        } else {
+            false
+        }
     }
 
     ///
