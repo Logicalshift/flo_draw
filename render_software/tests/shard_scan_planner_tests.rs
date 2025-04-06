@@ -958,7 +958,7 @@ fn mascot_overlap_1() {
     // The bug is that some of the parts of the plan aren't blended properly
     let mut not_blended = vec![];
     for stack in scanlines[0].1.spans() {
-        let mut blend_depth = 0;
+        let mut blend_depth = if stack.programs().next() == Some(PixelProgramPlan::StartBlend) { 1 } else { 0 };
 
         // Programs after the first one must be blended (all the programs are opaque)
         for program in stack.programs().skip(1) {
