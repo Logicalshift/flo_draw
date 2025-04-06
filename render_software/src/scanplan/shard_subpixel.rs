@@ -15,6 +15,7 @@ use std::ops::{Range};
 /// Places where subpixels are required are determined by querying the `EdgeDescriptor::apexes()` (they're regions
 /// where the curve changes direction over the course of a single pixel)
 ///
+#[derive(Debug)]
 pub struct ShardSubPixel {
     shape_id:           ShapeId,
     shape_descriptor:   ShapeDescriptor,
