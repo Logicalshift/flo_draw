@@ -146,7 +146,7 @@ where
                             }
                             continue;
                         } else if let Some(subpixel) = subpixel.take() {
-                            // Blend in the subpixel first
+                            // We've gathered some data about a subpixel: render this ahead of the following intercept
                             subpixel.render(&mut program_stack, &x_range);
                             if subpixel.is_opaque() {
                                 is_opaque = true;
@@ -164,7 +164,7 @@ where
                     }
 
                     if let Some(subpixel) = subpixel.take() {
-                        // Blend in the subpixel first
+                        // The last intercept formed a subpixel: render this before finishing up
                         subpixel.render(&mut program_stack, &x_range);
                         if subpixel.is_opaque() {
                             is_opaque = true;
