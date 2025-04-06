@@ -63,8 +63,16 @@ impl ShardSubPixel {
         };
 
         // Overall opacity of the current shard is increased by the newly added shard
-        self.blend  = new_blend;
-        self.opacity += intercept.opacity() as f64;
+        self.blend   = new_blend;
+        self.opacity = (self.opacity + intercept.opacity() as f64).min(1.0);
+    }
+
+    ///
+    /// True if this subpixel should be considered opaque
+    ///
+    #[inline]
+    pub fn is_opaque(&self) -> bool {
+        self.opacity >= 1.0 && self.shape_descriptor.is_opaque
     }
 
     ///
