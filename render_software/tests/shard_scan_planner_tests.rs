@@ -894,6 +894,7 @@ fn mascot_overlap_1() {
         EdgePlanShardIntercept { shape: shape_84, subpixel: 3, opacity: 0.2, direction: DirectionIn, lower_x: 978.9882630644446, upper_x: 979.2232107611732 }, 
         EdgePlanShardIntercept { shape: shape_84, subpixel: 3, opacity: 0.2, direction: DirectionOut, lower_x: 979.6991255817346, upper_x: 980.0090610255155 }, 
         EdgePlanShardIntercept { shape: shape_84, subpixel: 4, opacity: 0.2, direction: DirectionOut, lower_x: 980.0090610255155, upper_x: 981.2658244242796 }, 
+
         EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 997.8705197754994, upper_x: 1000.3474362988769 }, 
         EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 1022.5121649252748, upper_x: 1029.4146221661326 }, 
         EdgePlanShardIntercept { shape: shape_7, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 1059.523419950211, upper_x: 1064.8686919750394 }, 
@@ -927,6 +928,8 @@ fn mascot_overlap_1() {
         intercept.lower_x = transform.fractional_pixel_x_to_source_x(intercept.lower_x);
         intercept.upper_x = transform.fractional_pixel_x_to_source_x(intercept.upper_x);
     });
+
+    line.sort_by(|a, b| a.lower_x.total_cmp(&b.lower_x));
 
     // Fake edge plan, for the edges
     let edge_plan = EdgePlan::<Box<dyn EdgeDescriptor>>::new()
