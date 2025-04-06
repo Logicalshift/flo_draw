@@ -132,6 +132,11 @@ where
                                     if active_subpixel.shape_id() != intercept.shape_id() {
                                         // Render the subpixel and start a new one
                                         active_subpixel.render(&mut program_stack, &x_range);
+                                        if active_subpixel.is_opaque() {
+                                            subpixel  = None;
+                                            is_opaque = true;
+                                            break;
+                                        }
                                         subpixel = None;
                                     } else {
                                         // Combine with the existing subpixel
@@ -143,6 +148,10 @@ where
                         } else if let Some(subpixel) = subpixel.take() {
                             // Blend in the subpixel first
                             subpixel.render(&mut program_stack, &x_range);
+                            if subpixel.is_opaque() {
+                                is_opaque = true;
+                                break;
+                            }
                         }
 
                         // Start the blends for the program
@@ -157,6 +166,9 @@ where
                     if let Some(subpixel) = subpixel.take() {
                         // Blend in the subpixel first
                         subpixel.render(&mut program_stack, &x_range);
+                        if subpixel.is_opaque() {
+                            is_opaque = true;
+                        }
                     }
 
                     if !program_stack.is_empty() {
