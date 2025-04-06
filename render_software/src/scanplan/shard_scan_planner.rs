@@ -128,13 +128,14 @@ where
                                     continue;
                                 }
 
-                                Some(subpixel) => {
-                                    if subpixel.shape_id() != intercept.shape_id() {
+                                Some(active_subpixel) => {
+                                    if active_subpixel.shape_id() != intercept.shape_id() {
                                         // Render the subpixel and start a new one
-                                        subpixel.render(&mut program_stack, &x_range)
+                                        active_subpixel.render(&mut program_stack, &x_range);
+                                        subpixel = None;
                                     } else {
                                         // Combine with the existing subpixel
-                                        subpixel.combine(intercept);
+                                        active_subpixel.combine(intercept);
                                     }
                                 }
                             }

@@ -324,7 +324,7 @@ impl InterceptBlend {
                 num_blends += 1;
             }
 
-            InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
+            InterceptBlend::LinearFadeWithLimit { a, b, limit, .. } => {
                 let x1 = x_range.start.floor();
                 let x2 = x_range.end.ceil();
 
