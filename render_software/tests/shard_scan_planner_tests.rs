@@ -943,7 +943,7 @@ fn mascot_overlap_1() {
         .with_shape_description(shape_8, ShapeDescriptor { programs: smallvec![PixelProgramDataId(8)], is_opaque: true, z_index: 8 })
         .with_shape_description(shape_82, ShapeDescriptor { programs: smallvec![PixelProgramDataId(82)], is_opaque: true, z_index: 82 })
         .with_shape_description(shape_84, ShapeDescriptor { programs: smallvec![PixelProgramDataId(84)], is_opaque: true, z_index: 84 })
-        .with_shape_description(shape_85, ShapeDescriptor { programs: smallvec![PixelProgramDataId(85)], is_opaque: false, z_index: 85 })
+        .with_shape_description(shape_85, ShapeDescriptor { programs: smallvec![PixelProgramDataId(85)], is_opaque: true, z_index: 85 })
         .with_shape_description(shape_9, ShapeDescriptor { programs: smallvec![PixelProgramDataId(9)], is_opaque: true, z_index: 9 });
 
 
@@ -952,5 +952,30 @@ fn mascot_overlap_1() {
     let mut scanlines   = vec![(0.0, ScanlinePlan::default())];
     scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], -1.777777777..1.77777777, &mut scanlines);
 
-    assert!(false, "{:?}", scanlines);
+    // The bug is that some of the parts of the plan aren't blended properly
+    let mut not_blended = vec![];
+    for stack in scanlines[0].1.spans() {
+        let mut blend_depth = 0;
+
+        // Programs after the first one must be blended (all the programs are opaque)
+        for program in stack.programs().skip(1) {
+            match program {
+                PixelProgramPlan::Run(_) => {
+                    if blend_depth == 0 {
+                        not_blended.push(stack.clone());
+                        break;
+                    }
+                },
+                PixelProgramPlan::StartBlend                => { blend_depth += 1 },
+                PixelProgramPlan::Merge(_)                  => { blend_depth -= 1; },
+                PixelProgramPlan::LinearMerge(_, _)         => { blend_depth -= 1; },
+                PixelProgramPlan::SourceOver(_)             => { blend_depth -= 1; },
+                PixelProgramPlan::LinearSourceOver(_, _)    => { blend_depth -= 1; },
+                PixelProgramPlan::Blend(_, _)               => { blend_depth -= 1; },
+                PixelProgramPlan::LinearBlend(_, _, _)      => { blend_depth -= 1; },
+            }
+        }
+    }
+
+    assert!(not_blended.len() == 0, "{:?}", not_blended);
 }
