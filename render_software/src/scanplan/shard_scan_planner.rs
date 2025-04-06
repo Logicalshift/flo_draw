@@ -44,6 +44,11 @@ where
     ///
     #[inline]
     pub fn plan_from_edge_intercepts(&self, edge_plan: &EdgePlan<TEdge>, ordered_intercepts: Vec<Vec<EdgePlanShardIntercept>>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
+        // TODO: we can do away with the need for this by making the edge plan a trait
+
+        // Map the x-range from the source coordinates to pixel coordinates
+        let x_range = transform.source_x_to_pixels(x_range.start)..transform.source_x_to_pixels(x_range.end);
+
         'next_line: for y_idx in 0..y_positions.len() {
             // Fetch/clear the scanline that we'll be building
             let (scanline_pos, scanline) = &mut scanlines[y_idx];
@@ -378,9 +383,6 @@ where
         let scan_positions_end = y_positions.iter()
             .map(|y| y + half_pixel)
             .collect::<Vec<_>>();
-
-        // Map the x-range from the source coordinates to pixel coordinates
-        let x_range = transform.source_x_to_pixels(x_range.start)..transform.source_x_to_pixels(x_range.end);
 
         // Ask the edge plan to compute the intercepts on the current scanline
         let mut ordered_intercepts = vec![vec![]; y_positions.len()];
