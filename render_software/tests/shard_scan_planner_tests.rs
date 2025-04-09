@@ -1019,7 +1019,41 @@ fn mascot_overlap_2() {
     let mut scanlines   = vec![(0.0, ScanlinePlan::default())];
     scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], -1.777777777..1.77777777, &mut scanlines);
 
-    // TODO: the problem is that we leave the shape but don't use a blend to re-enter it, so test for that
-    assert!(false, "{:?}", scanlines);
+    // Scanlines have the pattern (<fade in> <solid>? <fade out>)*
+    let mut is_inside = false;
 
+    println!("{:?}\n", scanlines);
+
+    for span in scanlines[0].1.spans() {
+        // Determine the type of span (we should either get 'run program' or 'start blend', 'run program', 'blend')
+        let stack = span.programs().collect::<Vec<_>>();
+
+        if stack.len() == 1 {
+            // These are always solid colour, so they should be entirely inside
+            // (This isn't quite generic as it is possible line up pixels so there's no fade-in, and it also doesn't detect 'outside' sections that have no fade-out)
+            if !is_inside {
+                assert!(false, "Not inside: {:?}", span);
+            }
+        } else if stack.len() == 3 {
+            match &stack[2] {
+                PixelProgramPlan::LinearMerge(start, end) => {
+                    if start == end {
+                        is_inside = !is_inside;
+                    } else if start > end && is_inside {
+                        is_inside = false;
+                    } else if end > start && !is_inside {
+                        is_inside = true;
+                    } else {
+                        assert!(false, "Bad transition: {:?}", span);
+                    }
+                }
+
+                _ => {
+                    assert!(false, "Was expecting a linear merge: {:?}", span);
+                }
+            }
+        } else {
+            assert!(false, "Unrecognised pattern: {:?}", span);
+        }
+    }
 }
