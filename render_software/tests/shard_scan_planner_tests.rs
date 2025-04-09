@@ -982,3 +982,44 @@ fn mascot_overlap_1() {
 
     assert!(not_blended.len() == 0, "{:?}", not_blended);
 }
+
+#[test]
+fn mascot_overlap_2() {
+    use EdgeInterceptDirection::*;
+
+    // This is part of the 'a' in flo_draw, at the bottom. It has a sub-pixel section where we leave and re-enter the shape
+    let shape_4 = ShapeId::new();
+
+    let mut line = vec![
+        EdgePlanShardIntercept { shape: shape_4, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 1063.078677014998, upper_x: 1064.5835215856746 }, 
+        EdgePlanShardIntercept { shape: shape_4, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 1070.2271540589118, upper_x: 1076.3368258404419 }, 
+        EdgePlanShardIntercept { shape: shape_4, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 1076.6978848686067, upper_x: 1084.980465089404 }, 
+        EdgePlanShardIntercept { shape: shape_4, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 1089.962199989849, upper_x: 1092.3441304858898 }, 
+        EdgePlanShardIntercept { shape: shape_4, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 1105.1390114453413, upper_x: 1105.2075053427857 }, 
+        EdgePlanShardIntercept { shape: shape_4, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 1108.3607482910156, upper_x: 1108.3607482910156 }, 
+    ];
+
+    // ScanlineTransform { offset: 1.7777777777777777, scale: 540.0, scale_recip: 0.0018518518518518517, width_pixels: 1920 }
+    let transform = ScanlineTransform::for_region(&(-1.7777777777777777..1.7777777777777777), 1920);
+
+    // Adjust the line for the transform
+    line.iter_mut().for_each(|intercept| {
+        intercept.lower_x = transform.fractional_pixel_x_to_source_x(intercept.lower_x);
+        intercept.upper_x = transform.fractional_pixel_x_to_source_x(intercept.upper_x);
+    });
+
+    line.sort_by(|a, b| a.lower_x.total_cmp(&b.lower_x));
+
+    // Fake edge plan, for the edges
+    let edge_plan = EdgePlan::<Box<dyn EdgeDescriptor>>::new()
+        .with_shape_description(shape_4, ShapeDescriptor { programs: smallvec![PixelProgramDataId(4)], is_opaque: true, z_index: 4 });
+
+    // Plan out these lines
+    let scan_planner    = ShardScanPlanner::default();
+    let mut scanlines   = vec![(0.0, ScanlinePlan::default())];
+    scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], -1.777777777..1.77777777, &mut scanlines);
+
+    // TODO: the problem is that we leave the shape but don't use a blend to re-enter it, so test for that
+    assert!(false, "{:?}", scanlines);
+
+}

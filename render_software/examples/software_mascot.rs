@@ -16,7 +16,7 @@ impl<TEdge: EdgeDescriptor> ScanPlanner for TestScanPlanner<TEdge> {
     type Edge = TEdge;
 
     fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
-        self.0.plan_scanlines(edge_plan, transform, y_positions, x_range, scanlines);
+        self.0.plan_scanlines(edge_plan, transform, y_positions, x_range.clone(), scanlines);
         let pixel_zero = transform.source_x_to_pixels(-1.0);
 
         for (idx, y) in y_positions.iter().enumerate() {
@@ -24,7 +24,7 @@ impl<TEdge: EdgeDescriptor> ScanPlanner for TestScanPlanner<TEdge> {
             let half_pixel  = (half_pixel.end - half_pixel.start)/2.0;
             let pixel_y     = transform.source_x_to_pixels(*y);
 
-            if pixel_y.round() == 523.0 + pixel_zero {
+            if pixel_y.round() == 843.0 + pixel_zero {
                 let scan_positions_start = y_positions.iter()
                     .map(|y| y - half_pixel)
                     .collect::<Vec<_>>();
