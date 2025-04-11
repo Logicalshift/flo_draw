@@ -804,7 +804,6 @@ fn diagonal_full_overlap_thirds() {
 #[test]
 fn mascot_overlap_1() {
     use EdgeInterceptDirection::*;
-    use std::marker::{PhantomData};
 
     let shape_30 = ShapeId::new();
     let shape_32 = ShapeId::new();
@@ -1020,7 +1019,7 @@ fn mascot_overlap_2() {
     scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], -1.777777777..1.77777777, &mut scanlines);
 
     // Scanlines have the pattern (<fade in> <solid>? <fade out>)*
-    let mut is_inside = false;
+    let mut is_inside = Some(false);
 
     println!("{:?}\n", scanlines);
 
@@ -1031,18 +1030,18 @@ fn mascot_overlap_2() {
         if stack.len() == 1 {
             // These are always solid colour, so they should be entirely inside
             // (This isn't quite generic as it is possible line up pixels so there's no fade-in, and it also doesn't detect 'outside' sections that have no fade-out)
-            if !is_inside {
+            if is_inside == Some(false) {
                 assert!(false, "Not inside: {:?}", span);
             }
         } else if stack.len() == 3 {
             match &stack[2] {
                 PixelProgramPlan::LinearMerge(start, end) => {
                     if start == end {
-                        is_inside = !is_inside;
-                    } else if start > end && is_inside {
-                        is_inside = false;
-                    } else if end > start && !is_inside {
-                        is_inside = true;
+                        is_inside = None;
+                    } else if start > end && is_inside != Some(false)  {
+                        is_inside = Some(false);
+                    } else if end > start && is_inside != Some(true) {
+                        is_inside = Some(true);
                     } else {
                         assert!(false, "Bad transition: {:?}", span);
                     }
