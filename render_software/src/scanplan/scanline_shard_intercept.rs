@@ -303,15 +303,15 @@ impl<'a> ScanlineShardInterceptState<'a> {
                     
                     if !was_inside && is_inside {
                         // Need to merge with the existing blend
-                        self.active_shapes[existing_idx].blend = match &self.active_shapes[existing_idx].blend {
+                        self.active_shapes[existing_idx].blend = match clear_finished_intercepts(&self.active_shapes[existing_idx].blend, intercept.lower_x) {
                             InterceptBlend::Solid   => InterceptBlend::linear_fade(intercept.lower_x, intercept.upper_x, false),
-                            other                   => clear_finished_intercepts(other, intercept.lower_x).nest(InterceptBlend::linear_fade(intercept.lower_x, intercept.upper_x, false)),
+                            other                   => other.nest(InterceptBlend::linear_fade(intercept.lower_x, intercept.upper_x, false)),
                         };
                     } else if !is_inside {
                         // Change the shape to fade out
-                        self.active_shapes[existing_idx].blend = match &self.active_shapes[existing_idx].blend {
+                        self.active_shapes[existing_idx].blend = match clear_finished_intercepts(&self.active_shapes[existing_idx].blend, intercept.lower_x) {
                             InterceptBlend::Solid   => InterceptBlend::linear_fade(intercept.upper_x, intercept.lower_x, true),
-                            other                   => clear_finished_intercepts(other, intercept.lower_x).nest(InterceptBlend::linear_fade(intercept.upper_x, intercept.lower_x, true)),
+                            other                   => other.nest(InterceptBlend::linear_fade(intercept.upper_x, intercept.lower_x, true)),
                         };
 
                         // If the shape matches the current z-floor, update it
