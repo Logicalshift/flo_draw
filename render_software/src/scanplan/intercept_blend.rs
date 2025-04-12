@@ -378,25 +378,26 @@ impl InterceptBlend {
                             }
 
                             InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
-                                debug_assert!(*limit > last_pos, "{} <= {} (moving backwards at x={}!)", limit, last_pos, x1);
+                                if *limit > last_pos {  // TODO: we should be 'clearing' these before we reach here so this never happens
+                                    // Compute the coverage between positions
+                                    let pos         = limit.min(x1+1.0);
+                                    let last_alpha  = a*last_pos + b;
+                                    let alpha       = a*pos + b;
 
-                                // Compute the coverage between positions
-                                let pos         = limit.min(x1+1.0);
-                                let last_alpha  = a*last_pos + b;
-                                let alpha       = a*pos + b;
+                                    let coverage = alpha_coverage(last_alpha, alpha) * (pos-last_pos);
+                                    total_coverage += coverage;
+                                    debug_assert!(alpha_coverage(last_alpha, alpha) <= 1.0, "{} > 1.0", alpha_coverage(last_alpha, alpha));
 
-                                let coverage = alpha_coverage(last_alpha, alpha) * (pos-last_pos);
-                                total_coverage += coverage;
-                                debug_assert!(alpha_coverage(last_alpha, alpha) <= 1.0, "{} > 1.0", alpha_coverage(last_alpha, alpha));
+                                    // Stop if this moves beyond the end of the limit
+                                    if *limit > x1 + 1.0 {
+                                        break;
+                                    }
 
-                                // Stop if this moves beyond the end of the limit
-                                if *limit > x1 + 1.0 {
-                                    break;
+                                    last_pos = pos;
                                 }
 
                                 // Add the coverage of the next region
-                                last_pos    = pos;
-                                blend       = &**next;
+                                blend = &**next;
                             }
 
                             _ => { break; /* Not expecting the other values */ }
