@@ -353,8 +353,8 @@ impl InterceptBlend {
                                 let alpha       = a*pos + b;
 
                                 let coverage    = alpha_coverage(last_alpha, alpha) * (pos-last_pos);
-                                debug_assert!(alpha_coverage(last_alpha, alpha) <= 1.0, "{} > 1.0", alpha_coverage(last_alpha, alpha));
                                 total_coverage += coverage;
+                                debug_assert!(alpha_coverage(last_alpha, alpha) <= 1.0, "{} > 1.0", alpha_coverage(last_alpha, alpha));
 
                                 break;
                             }
@@ -368,8 +368,8 @@ impl InterceptBlend {
                                 let alpha       = a*pos + b;
 
                                 let coverage = alpha_coverage(last_alpha, alpha) * (pos-last_pos);
-                                debug_assert!(alpha_coverage(last_alpha, alpha) <= 1.0, "{} > 1.0", alpha_coverage(last_alpha, alpha));
                                 total_coverage += coverage;
+                                debug_assert!(alpha_coverage(last_alpha, alpha) <= 1.0, "{} > 1.0", alpha_coverage(last_alpha, alpha));
 
                                 // Stop if this moves beyond the end of the limit
                                 if *limit > x1 + 1.0 {
