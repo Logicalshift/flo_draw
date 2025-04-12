@@ -232,7 +232,7 @@ impl InterceptBlend {
 
                     InterceptBlend::LinearFadeWithLimit { a: a2, b: b2, limit: limit2, next: next2 }  => {
                         // We have a linear section up to the lower of the two limits: this forms the LHS of the new section
-                        let new_limit   = limit.max(limit2);
+                        let new_limit   = limit.min(limit2);
 
                         let new_lhs1    = InterceptBlend::LinearFade { a: *a, b: *b };
                         let new_lhs2    = InterceptBlend::LinearFade { a: a2, b: b2 };
@@ -813,9 +813,26 @@ mod test {
     }
 
     #[test]
-    fn nest_linear_fades_with_limit() {
+    fn nest_linear_fades_with_limit_1() {
         let first   = InterceptBlend::LinearFadeWithLimit { a: 0.1, b: 0.0, limit: 3.0, next: Box::new(InterceptBlend::LinearFade { a: (-0.7/-3.0), b: -0.4 }) };
         let second  = InterceptBlend::LinearFadeWithLimit { a: 0.25, b: 0.0, limit: 1.0, next: Box::new(InterceptBlend::LinearFade { a: 0.75/19.0, b: 0.25-(0.75/19.0) }) };
+        let nested  = first.nest(second.clone());
+
+        let test_points     = [ 0.0, 0.1, 0.9, 1.0, 1.5, 2.9, 3.0, 3.1, 4.0, 5.0 ];
+        let our_values      = test_points.iter().map(|val| blend_factor(&nested, *val)).collect::<Vec<_>>();
+        let their_values    = test_points.iter().map(|val| blend_factor(&first, *val) + blend_factor(&second, *val)).collect::<Vec<_>>();
+
+        println!("{:?}\n\nActual: {:?}\n\nExpected: {:?}", nested, our_values, their_values);
+
+        for (actual, expected) in our_values.iter().zip(their_values.iter()) {
+            assert!((actual-expected).abs() < 0.01, "{} != {}", actual, expected);
+        }
+    }
+
+    #[test]
+    fn nest_linear_fades_with_limit_2() {
+        let first   = InterceptBlend::LinearFadeWithLimit { a: 0.25, b: 0.0, limit: 1.0, next: Box::new(InterceptBlend::LinearFade { a: 0.75/19.0, b: 0.25-(0.75/19.0) }) };
+        let second  = InterceptBlend::LinearFadeWithLimit { a: 0.1, b: 0.0, limit: 3.0, next: Box::new(InterceptBlend::LinearFade { a: (-0.7/-3.0), b: -0.4 }) };
         let nested  = first.nest(second.clone());
 
         let test_points     = [ 0.0, 0.1, 0.9, 1.0, 1.5, 2.9, 3.0, 3.1, 4.0, 5.0 ];
