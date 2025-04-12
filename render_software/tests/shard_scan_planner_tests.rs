@@ -1056,3 +1056,73 @@ fn mascot_overlap_2() {
         }
     }
 }
+
+#[test]
+fn mascot_overlap_3() {
+    // This is the 'd' in flow_draw, the subpixel rendering is managing to produce a Merge value with an alpha > 1.0, which it should not do
+    use EdgeInterceptDirection::*;
+
+    let shape_2 = ShapeId::new();
+    let mut line = vec![
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 4, opacity: 0.2, direction: DirectionIn, lower_x: 933.4253889831882, upper_x: 933.5527222932184 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 3, opacity: 0.2, direction: DirectionIn, lower_x: 933.5527222932184, upper_x: 933.6800556032484 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 2, opacity: 0.2, direction: DirectionIn, lower_x: 933.6800556032484, upper_x: 933.8073889132785 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 1, opacity: 0.2, direction: DirectionIn, lower_x: 933.8073889132785, upper_x: 933.9347222233085 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 0, opacity: 0.2, direction: DirectionIn, lower_x: 933.9347222233085, upper_x: 934.0620555333386 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 4, opacity: 0.2, direction: DirectionOut, lower_x: 937.9418584835831, upper_x: 938.1355806938817 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 3, opacity: 0.2, direction: DirectionOut, lower_x: 938.1355806938817, upper_x: 938.3293029041804 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 2, opacity: 0.2, direction: DirectionOut, lower_x: 938.3293029041804, upper_x: 938.523025114479 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 1, opacity: 0.2, direction: DirectionOut, lower_x: 938.523025114479, upper_x: 938.7167473247777 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 0, opacity: 0.2, direction: DirectionOut, lower_x: 938.7167473247777, upper_x: 938.9104695350761 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 0, opacity: 0.2, direction: DirectionIn, lower_x: 977.9303049666144, upper_x: 978.0917954017176 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 1, opacity: 0.2, direction: DirectionIn, lower_x: 978.0917954017176, upper_x: 978.2532858368209 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 2, opacity: 0.2, direction: DirectionIn, lower_x: 978.2532858368209, upper_x: 978.4147762719241 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 3, opacity: 0.2, direction: DirectionIn, lower_x: 978.4147762719241, upper_x: 978.5762667070275 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 4, opacity: 0.2, direction: DirectionIn, lower_x: 978.5762667070275, upper_x: 978.7377571421307 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 0, opacity: 0.2, direction: DirectionOut, lower_x: 981.0087545818169, upper_x: 981.1833129569459 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 1, opacity: 0.2, direction: DirectionOut, lower_x: 981.1833129569459, upper_x: 981.357871332075 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 2, opacity: 0.2, direction: DirectionOut, lower_x: 981.357871332075, upper_x: 981.5324297072042 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 3, opacity: 0.2, direction: DirectionOut, lower_x: 981.5324297072042, upper_x: 981.7069880823332 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 0, opacity: 0.2, direction: DirectionIn, lower_x: 981.8484471738338, upper_x: 981.8484471738338 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 1, opacity: 0.2, direction: DirectionIn, lower_x: 981.8484471738338, upper_x: 981.8484471738338 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 2, opacity: 0.2, direction: DirectionIn, lower_x: 981.8484471738338, upper_x: 981.8484471738338 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 3, opacity: 0.2, direction: DirectionIn, lower_x: 981.8484471738338, upper_x: 981.8484471738338 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 0, opacity: 0.2, direction: DirectionOut, lower_x: 985.8884614706039, upper_x: 985.8884614706039 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 1, opacity: 0.2, direction: DirectionOut, lower_x: 985.8884614706039, upper_x: 985.8884614706039 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 2, opacity: 0.2, direction: DirectionOut, lower_x: 985.8884614706039, upper_x: 985.8884614706039 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 3, opacity: 0.2, direction: DirectionOut, lower_x: 985.8884614706039, upper_x: 985.8884614706039 }, 
+        EdgePlanShardIntercept { shape: shape_2, subpixel: 4, opacity: 0.2, direction: DirectionOut, lower_x: 985.8884614706039, upper_x: 985.8884614706039 },
+    ];
+
+    // ScanlineTransform { offset: 1.7777777777777777, scale: 540.0, scale_recip: 0.0018518518518518517, width_pixels: 1920 }
+    let transform = ScanlineTransform::for_region(&(-1.7777777777777777..1.7777777777777777), 1920);
+
+    // Adjust the line for the transform
+    line.iter_mut().for_each(|intercept| {
+        intercept.lower_x = transform.fractional_pixel_x_to_source_x(intercept.lower_x);
+        intercept.upper_x = transform.fractional_pixel_x_to_source_x(intercept.upper_x);
+    });
+
+    line.sort_by(|a, b| a.lower_x.total_cmp(&b.lower_x));
+
+    // Fake edge plan, for the edges
+    let edge_plan = EdgePlan::<Box<dyn EdgeDescriptor>>::new()
+        .with_shape_description(shape_2, ShapeDescriptor { programs: smallvec![PixelProgramDataId(4)], is_opaque: true, z_index: 4 });
+
+    // Plan out these lines
+    let scan_planner    = ShardScanPlanner::default();
+    let mut scanlines   = vec![(0.0, ScanlinePlan::default())];
+    scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], -1.777777777..1.77777777, &mut scanlines);
+
+    // Any 'Merge' operations should be up to a maximum of 1.0
+    println!("{:?}\n", scanlines);
+
+    for span in scanlines[0].1.spans() {
+        for op in span.programs() {
+            match op {
+                PixelProgramPlan::Merge(alpha)  => assert!(alpha >= 0.0 && alpha <= 1.0, "Merge must use an alpha between 0 and 1 (got {})", alpha),
+                _                               => { }
+            }
+        }
+    }
+}

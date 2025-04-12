@@ -24,7 +24,7 @@ impl<TEdge: EdgeDescriptor> ScanPlanner for TestScanPlanner<TEdge> {
             let half_pixel  = (half_pixel.end - half_pixel.start)/2.0;
             let pixel_y     = transform.source_x_to_pixels(*y);
 
-            if pixel_y.round() == 843.0 + pixel_zero {
+            if pixel_y.round() == 782.0 + pixel_zero {
                 let scan_positions_start = y_positions.iter()
                     .map(|y| y - half_pixel)
                     .collect::<Vec<_>>();
@@ -41,7 +41,7 @@ impl<TEdge: EdgeDescriptor> ScanPlanner for TestScanPlanner<TEdge> {
 
                 println!("{:?}", scanlines[idx].1);
                 println!("\n--\n{:?}", edge_plan_output);
-                //scanlines[idx].1 = ScanlinePlan::from_ordered_stacks(vec![]);
+                scanlines[idx].1 = ScanlinePlan::from_ordered_stacks(vec![]);
             }
         }
     }
