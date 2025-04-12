@@ -155,9 +155,30 @@ impl InterceptBlend {
     }
 
     ///
-    /// Nests another fade blend inside this one
+    /// Nests another fade blend inside this one: this creates a new blend that's as if the new blend is drawn on top of this one, adding the values together.
+    ///
+    /// We assume that only points after the start of both blends will need to be generated.
     ///
     pub fn nest(&self, blend: InterceptBlend) -> InterceptBlend {
+        // Recursively merge the split values and the following values
+        fn merge(blend: InterceptBlend, max_limit: f64, after_max_limit: InterceptBlend) -> InterceptBlend {
+            match blend {
+                InterceptBlend::LinearFade { a, b } => {
+                    InterceptBlend::LinearFadeWithLimit { a: a, b: b, limit: max_limit, next: Box::new(after_max_limit) }
+                }
+
+                InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
+                    if limit > max_limit {
+                        InterceptBlend::LinearFadeWithLimit { a: a, b: b, limit: max_limit, next: Box::new(after_max_limit) }
+                    } else {
+                        InterceptBlend::LinearFadeWithLimit { a: a, b: b, limit: limit, next: Box::new(merge(*next, max_limit, after_max_limit))}   
+                    }
+                }
+
+                _ => todo!("Should not be reachable"), // ... because this should all be linear fades at this point
+            }
+        }
+
         match self {
             InterceptBlend::Solid                                               => InterceptBlend::Solid,
             InterceptBlend::LinearFade { a, b }                                 => {
@@ -204,31 +225,41 @@ impl InterceptBlend {
                                     (**next).clone()
                                 };
 
-                                // Recursively merge the split values and the following values
-                                fn merge(blend: InterceptBlend, max_limit: f64, after_max_limit: InterceptBlend) -> InterceptBlend {
-                                    match blend {
-                                        InterceptBlend::LinearFade { a, b } => {
-                                            InterceptBlend::LinearFadeWithLimit { a: a, b: b, limit: max_limit, next: Box::new(after_max_limit) }
-                                        }
-
-                                        InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
-                                            if limit > max_limit {
-                                                InterceptBlend::LinearFadeWithLimit { a: a, b: b, limit: max_limit, next: Box::new(after_max_limit) }
-                                            } else {
-                                                InterceptBlend::LinearFadeWithLimit { a: a, b: b, limit: limit, next: Box::new(merge(*next, max_limit, after_max_limit))}   
-                                            }
-                                        }
-
-                                        _ => todo!("Should not be reachable"), // ... because this should all be linear fades at this point
-                                    }
-                                }
-
                                 merge(Self::LinearFadeWithLimit { a: a3, b: b3, limit: limit3, next: next3 }, *limit, next)
                             }
                         }
                     },
 
-                    InterceptBlend::LinearFadeWithLimit { .. }  => self.clone(),    // TODO! This can happen with subpixel rendering
+                    InterceptBlend::LinearFadeWithLimit { a: a2, b: b2, limit: limit2, next: next2 }  => {
+                        // We have a linear section up to the lower of the two limits: this forms the LHS of the new section
+                        let new_limit   = limit.max(limit2);
+
+                        let new_lhs1    = InterceptBlend::LinearFade { a: *a, b: *b };
+                        let new_lhs2    = InterceptBlend::LinearFade { a: a2, b: b2 };
+                        let new_lhs     = new_lhs1.nest(new_lhs2);
+
+                        // If the limits are different, one RHS is split in two
+                        let new_rhs1 = if *limit > limit2 {
+                            // Split 'self' up at 'limit2'
+                            self.clone()
+                        } else {
+                            // 'self' is entirely consumed by the LHS
+                            (**next).clone()
+                        };
+                        let new_rhs2 = if limit2 > *limit {
+                            // Split 'blend' up at 'limit'
+                            InterceptBlend::LinearFadeWithLimit { a: a2, b: b2, limit: limit2, next: next2 }
+                        } else {
+                            // 'blend' is entirely consumed by the LHS
+                            *next2
+                        };
+
+                        // Combine the right-hand sides recursively
+                        let new_rhs = new_rhs1.nest(new_rhs2);
+
+                        // Merge the left and right-hand sides to generate the final result
+                        merge(new_lhs, new_limit, new_rhs)
+                    }
                 }
             },
         }
