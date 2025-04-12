@@ -812,4 +812,21 @@ mod test {
             _ => false
         }, "{:?}[0] != Merge(0.25)", program_stack);
     }
+
+    #[test]
+    fn nest_linear_fades_with_limit() {
+        let first   = InterceptBlend::LinearFadeWithLimit { a: 0.1, b: 0.0, limit: 3.0, next: Box::new(InterceptBlend::LinearFade { a: (-0.7/-3.0), b: -0.4 }) };
+        let second  = InterceptBlend::LinearFadeWithLimit { a: 0.25, b: 0.0, limit: 1.0, next: Box::new(InterceptBlend::LinearFade { a: 0.75/19.0, b: 0.25-(0.75/19.0) }) };
+        let nested  = first.nest(second.clone());
+
+        let test_points     = [ 0.0, 0.1, 0.9, 1.0, 1.5, 2.9, 3.0, 3.1, 4.0, 5.0 ];
+        let our_values      = test_points.iter().map(|val| blend_factor(&nested, *val)).collect::<Vec<_>>();
+        let their_values    = test_points.iter().map(|val| blend_factor(&first, *val) + blend_factor(&second, *val)).collect::<Vec<_>>();
+
+        println!("{:?}\n\nActual: {:?}\n\nExpected: {:?}", nested, our_values, their_values);
+
+        for (actual, expected) in our_values.iter().zip(their_values.iter()) {
+            assert!((actual-expected).abs() < 0.01, "{} != {}", actual, expected);
+        }
+    }
 }
