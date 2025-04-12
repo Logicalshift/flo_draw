@@ -339,7 +339,8 @@ impl InterceptBlend {
 
                 if *limit < x1+1.0 && x2 <= x1+1.0 {
                     // Treat as a single pixel with high frequency
-                    let mut blend           = blend;
+                    let initial_blend       = blend;
+                    let mut blend           = initial_blend;
                     let mut total_coverage  = 0.0;
                     let mut last_pos        = x1;
 
@@ -352,18 +353,22 @@ impl InterceptBlend {
                                 let alpha       = a*pos + b;
 
                                 let coverage    = alpha_coverage(last_alpha, alpha) * (pos-last_pos);
+                                debug_assert!(alpha_coverage(last_alpha, alpha) <= 1.0, "{} > 1.0", alpha_coverage(last_alpha, alpha));
                                 total_coverage += coverage;
 
                                 break;
                             }
 
                             InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
+                                debug_assert!(*limit > last_pos, "{} <= {} (moving backwards at x={}!)", limit, last_pos, x1);
+
                                 // Compute the coverage between positions
                                 let pos         = limit.min(x1+1.0);
                                 let last_alpha  = a*last_pos + b;
                                 let alpha       = a*pos + b;
 
                                 let coverage = alpha_coverage(last_alpha, alpha) * (pos-last_pos);
+                                debug_assert!(alpha_coverage(last_alpha, alpha) <= 1.0, "{} > 1.0", alpha_coverage(last_alpha, alpha));
                                 total_coverage += coverage;
 
                                 // Stop if this moves beyond the end of the limit
@@ -380,6 +385,7 @@ impl InterceptBlend {
                         }
                     }
 
+                    debug_assert!(total_coverage <= 1.0, "Produced too much alpha: {:?}", initial_blend);
                     program_stack.push(PixelProgramPlan::Merge(total_coverage as _));
                     num_blends += 1;
                 } else {
