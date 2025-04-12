@@ -189,9 +189,9 @@ fn subpixel_oblique_line() {
     assert!(spans.len() == 1, "Number of spans != 1 {:?}", plan);
 
     let programs = spans[0].programs().collect::<Box<[_]>>();
-    assert!(programs.len() == 5, "Programs: {:?}", programs);
-    assert!(programs.iter().filter(|prog| if let PixelProgramPlan::StartBlend = prog { true } else { false }).count() == 2, "Incorrect number of StartBlend instructions: {:?}",programs);
-    assert!(programs.iter().filter(|prog| if let PixelProgramPlan::LinearMerge(_, _) = prog { true } else { false }).count() == 2, "Incorrect number of LinearSourecOver instructions: {:?}",programs);
+    assert!(programs.len() == 3, "Programs: {:?}", programs);
+    assert!(programs.iter().filter(|prog| if let PixelProgramPlan::StartBlend = prog { true } else { false }).count() == 1, "Incorrect number of StartBlend instructions: {:?}",programs);
+    assert!(programs.iter().filter(|prog| if let PixelProgramPlan::LinearMerge(_, _) = prog { true } else { false }).count() == 1, "Incorrect number of LinearMerge instructions: {:?}",programs);
 }
 
 #[test]
@@ -217,9 +217,9 @@ fn subpixel_vertical_line() {
     assert!(spans.len() == 1, "Number of spans != 1 {:?}", plan);
 
     let programs = spans[0].programs().collect::<Box<[_]>>();
-    assert!(programs.len() == 5, "Programs: {:?}", programs);
-    assert!(programs.iter().filter(|prog| if let PixelProgramPlan::StartBlend = prog { true } else { false }).count() == 2, "Incorrect number of StartBlend instructions: {:?}",programs);
-    assert!(programs.iter().filter(|prog| if let PixelProgramPlan::LinearMerge(_, _) = prog { true } else { false }).count() == 2, "Incorrect number of LinearSourecOver instructions: {:?}",programs);
+    assert!(programs.len() == 3, "Programs: {:?}", programs);
+    assert!(programs.iter().filter(|prog| if let PixelProgramPlan::StartBlend = prog { true } else { false }).count() == 1, "Incorrect number of StartBlend instructions: {:?}",programs);
+    assert!(programs.iter().filter(|prog| if let PixelProgramPlan::LinearMerge(_, _) = prog { true } else { false }).count() == 1, "Incorrect number of LinearMerge instructions: {:?}",programs);
 }
 
 #[test]
