@@ -16,9 +16,6 @@ pub enum InterceptBlend {
 
     /// Specifies a linear fade that changes to a different blend after a certain point
     LinearFadeWithLimit { a: f64, b: f64, limit: f64, next: Box<InterceptBlend> },
-
-    /// A solid region followed by another blend
-    SolidWithLimit { limit: f64, next: Box<InterceptBlend> },
 }
 
 ///
@@ -154,7 +151,6 @@ impl InterceptBlend {
             InterceptBlend::Solid                                       => InterceptBlend::Solid,
             InterceptBlend::LinearFade { a, b }                         => InterceptBlend::LinearFade { a: a*factor, b: b*factor },
             InterceptBlend::LinearFadeWithLimit { a, b, limit, next }   => InterceptBlend::LinearFadeWithLimit { a: a*factor, b: b*factor, limit: *limit, next: Box::new(next.multiply_fade(factor)) },
-            InterceptBlend::SolidWithLimit { limit, next }              => InterceptBlend::SolidWithLimit { limit: *limit, next: Box::new(next.multiply_fade(factor)) },
         }
     }
 
@@ -171,9 +167,6 @@ impl InterceptBlend {
                     InterceptBlend::LinearFadeWithLimit { .. }   => {
                         // TODO: is this inefficient? I think the result is the same, but we're doing a nested call and re-checking the blends
                         blend.nest(self.clone())
-                    }
-                    InterceptBlend::SolidWithLimit { .. }   => {
-                        todo!()
                     }
                 }
             },
@@ -232,18 +225,11 @@ impl InterceptBlend {
 
                                 merge(Self::LinearFadeWithLimit { a: a3, b: b3, limit: limit3, next: next3 }, *limit, next)
                             }
-
-                            _ => todo!("Not expected from split()")
                         }
                     },
 
                     InterceptBlend::LinearFadeWithLimit { .. }  => self.clone(),    // TODO! This can happen with subpixel rendering
-                    _                                           => blend.clone(),
                 }
-            },
-
-            InterceptBlend::SolidWithLimit { .. }   => {
-                blend.clone() // TODO
             },
         }
     }
@@ -268,13 +254,6 @@ impl InterceptBlend {
 
             InterceptBlend::LinearFadeWithLimit { next, a, b, .. } => {
                 let start   = InterceptBlend::LinearFade { a: *a, b: *b }.range().start;
-                let finish  = next.range().end;
-
-                start..finish
-            }
-
-            InterceptBlend::SolidWithLimit { limit, next } => {
-                let start   = *limit;
                 let finish  = next.range().end;
 
                 start..finish
@@ -316,8 +295,7 @@ impl InterceptBlend {
 
         // Start the blends for the program
         match blend {
-            InterceptBlend::Solid                 | 
-            InterceptBlend::SolidWithLimit { .. } => { },
+            InterceptBlend::Solid => { }
 
             InterceptBlend::LinearFade { a, b } => {
                 Self::render_linear_fade(*a, *b, program_stack, x_range);
@@ -554,13 +532,6 @@ mod test {
                     blend_factor(&**next, x_pos)
                 }
             },
-            InterceptBlend::SolidWithLimit { limit, next } => {
-                if x_pos < *limit {
-                    1.0
-                } else {
-                    blend_factor(&**next, x_pos)
-                }
-            }
         }
     }
 
