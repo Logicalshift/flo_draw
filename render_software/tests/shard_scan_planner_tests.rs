@@ -1126,3 +1126,35 @@ fn mascot_overlap_3() {
         }
     }
 }
+
+#[test]
+fn mascot_overlap_4() {
+    // This is part of the letter 'G' from some text. The vertical component on the RHS is rendering as a transparent pixel
+    use EdgeInterceptDirection::*;
+
+    let shape_60266 = ShapeId::new();
+    let mut line = vec![
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 0, opacity: 0.2, direction: DirectionIn, lower_x: 129.61112460679263, upper_x: 129.64681141253638 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 1, opacity: 0.2, direction: DirectionIn, lower_x: 129.64681141253638, upper_x: 129.68249821828002 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 2, opacity: 0.2, direction: DirectionIn, lower_x: 129.68249821828002, upper_x: 129.71818502402374 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 3, opacity: 0.2, direction: DirectionIn, lower_x: 129.71818502402374, upper_x: 129.7538718297675 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 4, opacity: 0.2, direction: DirectionIn, lower_x: 129.7538718297675, upper_x: 129.78955863551113 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 0, opacity: 0.2, direction: DirectionOut, lower_x: 131.17175786865093, upper_x: 131.20364511375297 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 1, opacity: 0.2, direction: DirectionOut, lower_x: 131.20364511375297, upper_x: 131.23553235885487 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 2, opacity: 0.2, direction: DirectionOut, lower_x: 131.23553235885487, upper_x: 131.2674196039568 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 3, opacity: 0.2, direction: DirectionOut, lower_x: 131.2674196039568, upper_x: 131.3423555444864 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 4, opacity: 0.2, direction: DirectionOut, lower_x: 131.3423555444864, upper_x: 131.4638990672035 }, 
+
+        // (This should create the vertical line, from inspection here the intercepts look good so this should render a solid pixel)
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 0, opacity: 0.2, direction: DirectionIn, lower_x: 135.95221466044546, upper_x: 138.0159974098205 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 1, opacity: 0.2, direction: DirectionIn, lower_x: 138.0159974098205, upper_x: 138.0159974098205 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 2, opacity: 0.2, direction: DirectionIn, lower_x: 138.0159974098205, upper_x: 138.0159974098205 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 3, opacity: 0.2, direction: DirectionIn, lower_x: 138.0159974098205, upper_x: 138.0159974098205 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 4, opacity: 0.2, direction: DirectionIn, lower_x: 138.0159974098205, upper_x: 138.0159974098205 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 0, opacity: 0.2, direction: DirectionOut, lower_x: 139.4159817695617, upper_x: 139.4159817695617 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 1, opacity: 0.2, direction: DirectionOut, lower_x: 139.4159817695617, upper_x: 139.4159817695617 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 2, opacity: 0.2, direction: DirectionOut, lower_x: 139.4159817695617, upper_x: 139.4159817695617 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 3, opacity: 0.2, direction: DirectionOut, lower_x: 139.4159817695617, upper_x: 139.4159817695617 }, 
+        EdgePlanShardIntercept { shape: shape_60266, subpixel: 4, opacity: 0.2, direction: DirectionOut, lower_x: 139.4159817695617, upper_x: 139.4159817695617 }, 
+    ];
+}
