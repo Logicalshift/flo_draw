@@ -162,6 +162,24 @@ impl InterceptBlend {
     pub fn nest(&self, blend: InterceptBlend) -> InterceptBlend {
         // Recursively merge the split values and the following values
         fn merge(blend: InterceptBlend, max_limit: f64, after_max_limit: InterceptBlend) -> InterceptBlend {
+            // Ensure that everything 'after_max_limit' is actually after that point
+            let mut after_max_limit = after_max_limit;
+            loop {
+                match &after_max_limit {
+                    InterceptBlend::LinearFadeWithLimit { limit, next, .. } => {
+                        if *limit <= max_limit {
+                            // TODO: can just keep using 'next' here but it's a pain to reconstruct everything
+                            after_max_limit = (**next).clone();
+                        } else {
+                            break;
+                        }
+                    }
+
+                    _ => { break; }
+                }
+            }
+
+            // Copy anything from the orginal blend that's before the max limit
             match blend {
                 InterceptBlend::LinearFade { a, b } => {
                     InterceptBlend::LinearFadeWithLimit { a: a, b: b, limit: max_limit, next: Box::new(after_max_limit) }

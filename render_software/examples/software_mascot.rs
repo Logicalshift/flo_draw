@@ -41,7 +41,7 @@ impl<TEdge: EdgeDescriptor> ScanPlanner for TestScanPlanner<TEdge> {
 
                 println!("{:?}", scanlines[idx].1);
                 println!("\n--\n{:?}", edge_plan_output);
-                scanlines[idx].1 = ScanlinePlan::from_ordered_stacks(vec![]);
+                //scanlines[idx].1 = ScanlinePlan::from_ordered_stacks(vec![]);
             }
         }
     }
