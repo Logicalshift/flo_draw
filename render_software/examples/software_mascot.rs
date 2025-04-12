@@ -134,7 +134,6 @@ pub fn main() {
     println!("U32 fixed-point frame render time: {}.{}ms", avg_micros/1000, avg_micros%1000);
 
     // Render the mascot to the terminal
-    // TODO: issue around line 522/521 and ~648
     let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
 
     let renderer = CanvasDrawingRegionRenderer::new(TestScanPlanner(ShardScanPlanner::default()), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
