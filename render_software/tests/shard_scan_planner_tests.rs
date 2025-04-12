@@ -1157,4 +1157,30 @@ fn mascot_overlap_4() {
         EdgePlanShardIntercept { shape: shape_60266, subpixel: 3, opacity: 0.2, direction: DirectionOut, lower_x: 139.4159817695617, upper_x: 139.4159817695617 }, 
         EdgePlanShardIntercept { shape: shape_60266, subpixel: 4, opacity: 0.2, direction: DirectionOut, lower_x: 139.4159817695617, upper_x: 139.4159817695617 }, 
     ];
+
+
+    // ScanlineTransform { offset: 1.7777777777777777, scale: 540.0, scale_recip: 0.0018518518518518517, width_pixels: 1920 }
+    let transform = ScanlineTransform::for_region(&(-1.7777777777777777..1.7777777777777777), 1920);
+
+    // Adjust the line for the transform
+    line.iter_mut().for_each(|intercept| {
+        intercept.lower_x = transform.fractional_pixel_x_to_source_x(intercept.lower_x);
+        intercept.upper_x = transform.fractional_pixel_x_to_source_x(intercept.upper_x);
+    });
+
+    line.sort_by(|a, b| a.lower_x.total_cmp(&b.lower_x));
+
+    // Fake edge plan, for the edges
+    let edge_plan = EdgePlan::<Box<dyn EdgeDescriptor>>::new()
+        .with_shape_description(shape_60266, ShapeDescriptor { programs: smallvec![PixelProgramDataId(4)], is_opaque: true, z_index: 4 });
+
+    // Plan out these lines
+    let scan_planner    = ShardScanPlanner::default();
+    let mut scanlines   = vec![(0.0, ScanlinePlan::default())];
+    scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], -1.777777777..1.77777777, &mut scanlines);
+
+    // Any 'Merge' operations should be up to a maximum of 1.0
+    println!("{:?}\n", scanlines);
+
+    assert!(false);
 }
