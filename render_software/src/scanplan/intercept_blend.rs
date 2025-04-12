@@ -791,7 +791,6 @@ mod test {
         }, "{:?}[0] != Merge(0.25)", program_stack);
     }
 
-
     #[test]
     fn high_frequency_thin_vertical_line_0point25b() {
         use smallvec::*;
