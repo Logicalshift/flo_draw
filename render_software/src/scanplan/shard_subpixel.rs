@@ -1,7 +1,9 @@
-use crate::pixel::*;
-use crate::edgeplan::*;
+use super::alpha_coverage::*;
 use super::intercept_blend::*;
 use super::scanline_shard_intercept::*;
+
+use crate::pixel::*;
+use crate::edgeplan::*;
 
 use std::ops::{Range};
 
@@ -19,17 +21,18 @@ use std::ops::{Range};
 pub struct ShardSubPixel {
     shape_id:           ShapeId,
     shape_descriptor:   ShapeDescriptor,
-    blend:              InterceptBlend,
-    opacity:            f64,
+    blends:             Vec<(f32, InterceptBlend)>,
 }
 
 impl<'a, 'b> From<&'a ScanlineShardIntercept<'b>> for ShardSubPixel {
     #[inline]
     fn from(intercept: &'a ScanlineShardIntercept<'b>) -> Self {
+        let mut blends = Vec::with_capacity(8);
+        blends.push((intercept.opacity(), intercept.blend().clone()));
+
         ShardSubPixel {
             shape_id:           intercept.shape_id(),
-            blend:              intercept.blend().clone(),
-            opacity:            intercept.opacity() as f64,
+            blends:             blends,
             shape_descriptor:   intercept.shape_descriptor().clone(),
         }
     }
@@ -47,24 +50,9 @@ impl ShardSubPixel {
     ///
     /// Combines the effect of an intercept into this subpixel
     ///
+    #[inline]
     pub fn combine(&mut self, intercept: &ScanlineShardIntercept<'_>) {
-        // TODO: mixing f64 (from the blend) and f32 (from the intercept) here, want to make these consistent
-
-        // Combine the blends
-        let total_opacity       = self.opacity + (intercept.opacity() as f64);
-        let our_opacity_ratio   = self.opacity/total_opacity;
-        let their_opacity_ratio = 1.0 - our_opacity_ratio;
-
-        let new_blend = match (&self.blend, intercept.blend()) {
-            (InterceptBlend::Solid, InterceptBlend::Solid) => InterceptBlend::Solid,
-            (_, _) => {
-                self.blend.multiply_fade(our_opacity_ratio).nest(intercept.blend().multiply_fade(their_opacity_ratio))
-            },
-        };
-
-        // Overall opacity of the current shard is increased by the newly added shard
-        self.blend   = new_blend;
-        self.opacity = (self.opacity + intercept.opacity() as f64).min(1.0);
+        self.blends.push((intercept.opacity(), intercept.blend().clone()));
     }
 
     ///
@@ -72,14 +60,25 @@ impl ShardSubPixel {
     ///
     #[inline]
     pub fn is_opaque(&self) -> bool {
-        if self.opacity >= 1.0 && self.shape_descriptor.is_opaque {
-            match self.blend {
-                InterceptBlend::Solid   => true,
-                _                       => false
+        false
+
+        /* -- or we can do this, which actually calculates opacity. This is rarely true though so probably not worth the effort.
+        if self.shape_descriptor.is_opaque {
+            let mut total_opacity = 0.0;
+
+            for (opacity, blend) in self.blends.iter(){
+                if let InterceptBlend::Solid = blend {
+                    total_opacity += opacity
+                } else {
+                    return false;
+                }
             }
+
+            total_opacity >= 1.0
         } else {
             false
         }
+        */
     }
 
     ///
@@ -87,6 +86,36 @@ impl ShardSubPixel {
     ///
     #[inline]
     pub fn render(&self, program_stack: &mut Vec<PixelProgramPlan>, x_range: &Range<f64>) {
-        self.blend.render(program_stack, &self.shape_descriptor, self.opacity as f32, x_range);
+        // Region that we're rendering in
+        let x1 = x_range.start.floor();
+        let x2 = x_range.end.ceil();
+
+        // Calculate the alpha coverage at the start and end of the x range
+        if x2 <= x1 + 1.0 {
+            // Calculate the overall coverage of this pixel
+            let mut alpha_coverage = 0.0;
+            for (opacity, blend) in self.blends.iter() {
+                alpha_coverage += blend.pixel_coverage(x1) as f32 * *opacity;
+            }
+
+            program_stack.push(PixelProgramPlan::Merge(alpha_coverage));
+        } else {
+            // Create a linear blend using the start and end pixels
+            let x2 = x2-1.0;
+
+            let mut start_coverage  = 0.0;
+            let mut end_coverage    = 0.0;
+
+            for (opacity, blend) in self.blends.iter() {
+                start_coverage  += blend.pixel_coverage(x1) as f32 * *opacity;
+                end_coverage    += blend.pixel_coverage(x2) as f32 * *opacity;
+            }
+
+            program_stack.push(PixelProgramPlan::LinearMerge(start_coverage, end_coverage));
+        }
+
+        // Run the programs and apply the blend
+        program_stack.extend(self.shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
+        program_stack.push(PixelProgramPlan::StartBlend);
     }
 }
