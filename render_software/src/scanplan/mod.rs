@@ -12,6 +12,7 @@
 //! work involved, however.
 //!
 
+mod alpha_coverage;
 pub (crate) mod buffer_stack;
 mod intercept_blend;
 mod pixel_scan_planner;
