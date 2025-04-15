@@ -312,6 +312,76 @@ impl InterceptBlend {
     }
 
     ///
+    /// Returns the coverage of a particular pixel
+    ///
+    #[inline]
+    pub (crate) fn pixel_coverage(&self, x: f64) -> f64 {
+        let mut blend = self;
+
+        loop {
+            match blend {
+                InterceptBlend::Solid                                       => { break 1.0; },
+                InterceptBlend::LinearFade { a, b }                         => { break alpha_coverage(a*x+b, a*(x+1.0)+b); },
+                InterceptBlend::LinearFadeWithLimit { a, b, limit, next }   => {
+                    if *limit < x {
+                        // Starts after this pixel
+                        blend = &**next;
+                        continue;
+                    } else if *limit < x+1.0 {
+                        // High frequency case, there are multiple blends to add up
+                        let ratio               = *limit-x;
+                        let mut total_coverage  = (alpha_coverage(a*x+b, a* *limit+b)) * ratio;
+                        let mut last_x          = *limit;
+
+                        // Deal with the other parts covering this pixel
+                        blend = &**next;
+
+                        loop {
+                            match blend {
+                                InterceptBlend::Solid => {
+                                    // Remaining part is solid
+                                    total_coverage += (x+1.0)-last_x;
+                                    break;
+                                }
+
+                                InterceptBlend::LinearFade { a, b } => {
+                                    // Remaining part has a linear fade
+                                    let ratio       = (x+1.0)-last_x;
+                                    let coverage    = alpha_coverage(a*last_x+b, a*(x+1.0)+b);
+
+                                    total_coverage  += coverage * ratio;
+                                    break;
+                                }
+
+                                InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
+                                    // Blend in this section of the pixel
+                                    let pixel_limit = (*limit).max(x+1.0);
+                                    let ratio       = pixel_limit - last_x;
+                                    let coverage    = alpha_coverage(a*last_x+b, a*pixel_limit+b);
+
+                                    total_coverage += coverage * ratio;
+
+                                    if *limit >= x+1.0 {
+                                        break;
+                                    }
+
+                                    last_x  = pixel_limit;
+                                    blend   = &**next;
+                                }
+                            }
+                        }
+
+                        break total_coverage;
+                    } else {
+                        // Same as a linear fade
+                        break alpha_coverage(a*x+b, a*(x+1.0)+b);
+                    }
+                }
+            }
+        }
+    }
+
+    ///
     /// Adds a linear fade blend to a pixel program stack
     ///
     #[inline]
