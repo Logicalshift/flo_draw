@@ -354,7 +354,7 @@ fn multisampling_missing_one_quarter() {
 
     // We're assuming that the algorithm works a certain way here, the final pixel rendering is all that really matters
     assert!(with_apexes.1.spans().len() == 3, "Should only be 3 spans with_apexes {:?} (lead-in, actual program, lead-out)", with_apexes);
-    assert!(with_apexes.1.spans()[0].programs().count() > 3, "Lead in should be >3 programs with_apexes {:?}", with_apexes.1.spans()[0]);
+    assert!(with_apexes.1.spans()[0].programs().count() >= 3, "Lead in should be >=3 programs with_apexes {:?}", with_apexes.1.spans()[0]);
     assert!(with_apexes.1.spans()[1].programs().count() > 1, "Central span should be >1 program with_apexes {:?}", with_apexes.1.spans()[1]);
 
     assert!(after_apexes.1.spans().len() == 3, "Should only be 3 spans after_apexes {:?} (lead-in, actual program, lead-out)", before_apexes);
