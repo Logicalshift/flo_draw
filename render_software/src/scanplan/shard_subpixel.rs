@@ -98,7 +98,13 @@ impl ShardSubPixel {
                 alpha_coverage += blend.pixel_coverage(x1) as f32 * *opacity;
             }
 
-            program_stack.push(PixelProgramPlan::Merge(alpha_coverage));
+            if alpha_coverage < 1.0 {
+                program_stack.push(PixelProgramPlan::Merge(alpha_coverage));
+            } else {
+                // Filled pixel
+                program_stack.extend(self.shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
+                return;
+            }
         } else {
             // Create a linear blend using the start and end pixels
             let x2 = x2-1.0;
@@ -111,7 +117,13 @@ impl ShardSubPixel {
                 end_coverage    += blend.pixel_coverage(x2) as f32 * *opacity;
             }
 
-            program_stack.push(PixelProgramPlan::LinearMerge(start_coverage, end_coverage));
+            if start_coverage < 1.0 || end_coverage < 1.0 {
+                program_stack.push(PixelProgramPlan::LinearMerge(start_coverage, end_coverage));
+            } else {
+                // Filled pixel
+                program_stack.extend(self.shape_descriptor.programs.iter().map(|program| PixelProgramPlan::Run(*program)));
+                return;
+            }
         }
 
         // Run the programs and apply the blend
