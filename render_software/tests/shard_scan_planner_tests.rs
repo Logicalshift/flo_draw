@@ -1128,7 +1128,7 @@ fn mascot_overlap_3() {
 }
 
 #[test]
-fn mascot_overlap_4() {
+fn text_overlap_1() {
     // This is part of the letter 'G' from some text. The vertical component on the RHS is rendering as a transparent pixel
     use EdgeInterceptDirection::*;
 
@@ -1179,8 +1179,13 @@ fn mascot_overlap_4() {
     let mut scanlines   = vec![(0.0, ScanlinePlan::default())];
     scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], -1.777777777..1.77777777, &mut scanlines);
 
-    // Any 'Merge' operations should be up to a maximum of 1.0
-    println!("{:?}\n", scanlines);
+    // The pixel at x=138 should be solid (well, nearly solid)
+    let scanline    = &scanlines[0];
+    let pixel_138   = scanline.1.spans().iter().filter(|span| span.x_range().start == 138.0).next().unwrap();
+    let merge       = pixel_138.programs().filter(|program| match program { PixelProgramPlan::Merge(_) => true, _ => false }).next().unwrap();
 
-    assert!(false);
+    println!("{:?}", pixel_138);
+
+    assert!(match merge { PixelProgramPlan::Merge(alpha) => alpha, _ => 0.0 } > 0.8);
+    assert!(pixel_138.x_range().end == 139.0);
 }
