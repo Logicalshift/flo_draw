@@ -1189,3 +1189,51 @@ fn text_overlap_1() {
     assert!(match merge { PixelProgramPlan::Merge(alpha) => alpha, _ => 0.0 } > 0.8);
     assert!(pixel_138.x_range().end == 139.0);
 }
+
+
+#[test]
+fn text_overlap_2() {
+    // This is part of the letter 'v' from some text. There's a transparent pixel that should be filled in.
+    use EdgeInterceptDirection::*;
+
+    let shape_60025 = ShapeId::new();
+    let mut line = vec![
+        EdgePlanShardIntercept { shape: shape_60025, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 377.1167141429211, upper_x: 377.52441280526665 }, 
+        EdgePlanShardIntercept { shape: shape_60025, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 378.51477811386343, upper_x: 378.78129751095827 }, 
+        EdgePlanShardIntercept { shape: shape_60025, subpixel: 255, opacity: 1.0, direction: DirectionIn, lower_x: 378.8026919976596, upper_x: 379.07585480658975 }, 
+        EdgePlanShardIntercept { shape: shape_60025, subpixel: 255, opacity: 1.0, direction: DirectionOut, lower_x: 380.0275171511364, upper_x: 380.43520787016536 }, 
+    ];
+
+
+    // ScanlineTransform { offset: 1.7777777777777777, scale: 540.0, scale_recip: 0.0018518518518518517, width_pixels: 1920 }
+    let transform = ScanlineTransform::for_region(&(-1.7777777777777777..1.7777777777777777), 1920);
+
+    // Adjust the line for the transform
+    line.iter_mut().for_each(|intercept| {
+        intercept.lower_x = transform.fractional_pixel_x_to_source_x(intercept.lower_x);
+        intercept.upper_x = transform.fractional_pixel_x_to_source_x(intercept.upper_x);
+    });
+
+    line.sort_by(|a, b| a.lower_x.total_cmp(&b.lower_x));
+
+    // Fake edge plan, for the edges
+    let edge_plan = EdgePlan::<Box<dyn EdgeDescriptor>>::new()
+        .with_shape_description(shape_60025, ShapeDescriptor { programs: smallvec![PixelProgramDataId(4)], is_opaque: true, z_index: 4 });
+
+    // Plan out these lines
+    let scan_planner    = ShardScanPlanner::default();
+    let mut scanlines   = vec![(0.0, ScanlinePlan::default())];
+    scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], -1.777777777..1.77777777, &mut scanlines);
+
+    println!("{:?}", scanlines);
+
+    // The pixel at x=378 should be solid (well, nearly solid)
+    let scanline    = &scanlines[0];
+    let pixel_378   = scanline.1.spans().iter().filter(|span| span.x_range().start == 378.0).next().unwrap();
+    let merge       = pixel_378.programs().filter(|program| match program { PixelProgramPlan::Merge(_) => true, PixelProgramPlan::LinearMerge(_, _) => true, _ => false }).next().unwrap();
+
+    println!("{:?}", pixel_378);
+
+    assert!(match merge { PixelProgramPlan::Merge(alpha) => alpha, PixelProgramPlan::LinearMerge(a, b) => (a+b)/2.0, _ => 0.0 } > 0.8);
+    assert!(pixel_378.x_range().end == 139.0);
+}
