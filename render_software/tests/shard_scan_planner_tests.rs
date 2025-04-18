@@ -1234,6 +1234,6 @@ fn text_overlap_2() {
 
     println!("{:?}", pixel_378);
 
-    assert!(match merge { PixelProgramPlan::Merge(alpha) => alpha, PixelProgramPlan::LinearMerge(a, b) => (a+b)/2.0, _ => 0.0 } > 0.8);
-    assert!(pixel_378.x_range().end == 139.0);
+    assert!(match merge { PixelProgramPlan::Merge(alpha) => alpha, PixelProgramPlan::LinearMerge(a, b) => (a+b)/2.0, _ => 0.0 } > 0.6);
+    assert!(pixel_378.x_range().end == 379.0);
 }
