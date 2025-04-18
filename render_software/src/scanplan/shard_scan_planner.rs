@@ -113,8 +113,8 @@ where
                     let mut is_opaque   = false;
                     let mut subpixel    = None;
 
-                    // We re-use program_stack so we don't have to keep re-allocating a vec as we go
-                    program_stack.clear();
+                    // We re-use program_stack so we don't have to keep re-allocating a vec as we go - it's cleared by a call to drain(..) later on
+                    // program_stack.clear();
                     for shape in (0..stack_depth).rev() {
                         let intercept = active_shapes.get(shape).unwrap();
 
