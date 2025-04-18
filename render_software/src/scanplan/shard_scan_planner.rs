@@ -91,9 +91,6 @@ where
             let mut z_floor         = active_shapes.z_floor();
 
             loop {
-                // TODO: if there are multiple intercepts on the same pixel, we should process them all simultaneously (otherwise we will occasionally start a set of programs one pixel too late)
-                // TODO: also multiple intercepts can make a pixel darker than processing just one
-
                 // Generate a stack for the current intercept
                 let next_x                      = current_intercept.x_pos();
                 let mut maybe_next_intercept    = scanline_intercepts.next();
@@ -103,9 +100,9 @@ where
                 let stack_depth = active_shapes.len();
 
                 // We use the z-index of the current shape to determine if it's in front of or behind the current line
-                let shape_id                        = current_intercept.shape();
-                let z_index                         = edge_plan.shape_z_index(shape_id);
-                let shape_descriptor                = edge_plan.shape_descriptor(shape_id);
+                let mut shape_id            = current_intercept.shape();
+                let z_index                 = edge_plan.shape_z_index(shape_id);
+                let mut shape_descriptor    = edge_plan.shape_descriptor(shape_id);
 
                 if z_index >= z_floor && next_x != last_x {
                     // Create a program stack between the ranges: all the programs until the first opaque layer
@@ -185,12 +182,32 @@ where
                     last_x = next_x;
                 }
 
-                // Update the state from the current intercept
-                match &current_intercept {
-                    ShardIntercept::Start(intercept)    => active_shapes.start_intercept(intercept, transform, shape_descriptor),
-                    ShardIntercept::Finish(intercept)   => active_shapes.finish_intercept(intercept, shape_descriptor),
+                // Update the state from the current intercept (and any other intercepts that lie on the same pixel)
+                loop {
+                    match &current_intercept {
+                        ShardIntercept::Start(intercept)    => active_shapes.start_intercept(intercept, transform, shape_descriptor),
+                        ShardIntercept::Finish(intercept)   => active_shapes.finish_intercept(intercept, shape_descriptor),
+                    }
+
+                    if let Some(next_intercept) = maybe_next_intercept {
+                        if next_intercept.x_pos() == next_x {
+                            // Also start this intercept
+                            current_intercept       = next_intercept;
+                            maybe_next_intercept    = scanline_intercepts.next();
+
+                            shape_id            = current_intercept.shape();
+                            shape_descriptor    = edge_plan.shape_descriptor(shape_id);
+                        } else {
+                            // Next intercept is on a different pixel
+                            break;
+                        }
+                    } else {
+                        // No next intercept
+                        break;
+                    }
                 }
 
+                // Next span will start after the end of this one
                 z_floor = active_shapes.z_floor();
 
                 // Stop when the next_x value gets to the end of the range
