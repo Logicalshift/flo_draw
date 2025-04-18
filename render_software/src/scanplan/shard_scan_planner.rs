@@ -95,8 +95,8 @@ where
                 // TODO: also multiple intercepts can make a pixel darker than processing just one
 
                 // Generate a stack for the current intercept
-                let next_x          = current_intercept.x_pos();
-                let next_intercept  = scanline_intercepts.next();
+                let next_x                      = current_intercept.x_pos();
+                let mut maybe_next_intercept    = scanline_intercepts.next();
 
                 // The end of the current range is the 'next_x' coordinate
                 let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
@@ -199,7 +199,7 @@ where
                 }
 
                 // Get ready to process the next intercept in the stack
-                current_intercept = if let Some(next_intercept) = next_intercept { next_intercept } else { break; };
+                current_intercept = if let Some(next_intercept) = maybe_next_intercept { next_intercept } else { break; };
             }
 
             // Populate the scanline
