@@ -1047,6 +1047,10 @@ fn mascot_overlap_2() {
                     }
                 }
 
+                PixelProgramPlan::Merge(_) => {
+                    is_inside = None;
+                }
+
                 _ => {
                     assert!(false, "Was expecting a linear merge: {:?}", span);
                 }
