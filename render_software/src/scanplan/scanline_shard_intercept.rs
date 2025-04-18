@@ -300,7 +300,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
                         };
                     } else if !is_inside {
                         // Change the shape to fade out
-                        self.active_shapes[existing_idx].blend = match clear_finished_intercepts(&self.active_shapes[existing_idx].blend, intercept.lower_x_floor) {
+                        self.active_shapes[existing_idx].blend = match clear_finished_intercepts(&self.active_shapes[existing_idx].blend, intercept.lower_x) {
                             InterceptBlend::Solid   => InterceptBlend::linear_fade(intercept.upper_x, intercept.lower_x, true),
                             other                   => other.nest(InterceptBlend::linear_fade(intercept.upper_x, intercept.lower_x, true)),
                         };
