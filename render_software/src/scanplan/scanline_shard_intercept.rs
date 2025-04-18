@@ -294,7 +294,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
                     
                     if !was_inside && is_inside {
                         // Need to merge with the existing blend
-                        self.active_shapes[existing_idx].blend = match clear_finished_intercepts(&self.active_shapes[existing_idx].blend, intercept.lower_x) {
+                        self.active_shapes[existing_idx].blend = match clear_finished_intercepts(&self.active_shapes[existing_idx].blend, intercept.lower_x_floor) {
                             InterceptBlend::Solid   => InterceptBlend::linear_fade(intercept.lower_x, intercept.upper_x, false),
                             other                   => other.nest(InterceptBlend::linear_fade(intercept.lower_x, intercept.upper_x, false)),
                         };
