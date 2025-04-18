@@ -55,10 +55,10 @@ impl ScanSpanStack {
     /// Creates a span stack with the specified set of programs, specified in reverse ordrer
     ///
     #[inline]
-    pub fn with_reversed_programs(x_range: Range<f64>, opaque: bool, programs_reversed: &Vec<PixelProgramPlan>) -> ScanSpanStack {
+    pub fn with_programs(x_range: Range<f64>, opaque: bool, programs: impl Iterator<Item=PixelProgramPlan>) -> ScanSpanStack {
         ScanSpanStack {
             x_range:    x_range,
-            plan:       programs_reversed.iter().rev().copied().collect(),
+            plan:       programs.collect(),
             opaque:     opaque,
         }
     }

@@ -175,7 +175,7 @@ where
 
                     if !program_stack.is_empty() {
                         // Create the stack for these programs
-                        let stack = ScanSpanStack::with_reversed_programs(x_range, is_opaque, &program_stack);
+                        let stack = ScanSpanStack::with_programs(x_range, is_opaque, program_stack.drain(..).rev());
 
                         // Add the stack to the scanplan
                         scanplan.push(stack);
