@@ -285,6 +285,26 @@ impl InterceptBlend {
     }
 
     ///
+    /// Cretes a break point in the blend (where it abruptly changes to 0)
+    ///
+    pub fn with_break(&self, x_pos: f64) -> InterceptBlend {
+        match self {
+            InterceptBlend::Solid               => InterceptBlend::Solid,
+            InterceptBlend::LinearFade { a, b } => InterceptBlend::LinearFadeWithLimit { a: *a, b: *b, limit: x_pos, next: Box::new(InterceptBlend::LinearFade { a: 0.0, b: 0.0 }) },
+
+            InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
+                if *limit == x_pos {
+                    InterceptBlend::LinearFadeWithLimit { a: *a, b: *b, limit: x_pos, next: Box::new(InterceptBlend::LinearFade { a: 0.0, b: 0.0 }) }
+                } else if *limit < x_pos {
+                    InterceptBlend::LinearFadeWithLimit { a: *a, b: *b, limit: *limit, next: Box::new(next.with_break(x_pos)) }
+                } else {
+                    InterceptBlend::LinearFadeWithLimit { a: *a, b: *b, limit: x_pos, next: Box::new(InterceptBlend::LinearFade { a: 0.0, b: 0.0 }) }
+                }
+            }
+        }
+    }
+
+    ///
     /// Returns the range where this fade moves between 0 and 1
     ///
     pub fn range(&self) -> Range<f64> {
