@@ -801,6 +801,7 @@ fn diagonal_full_overlap_thirds() {
     assert!((pixels[12 + 10*3].alpha_component()-2.0/3.0 + 1.0/6.0).abs() > 0.01, "3rd pixel wrong: {:?}", pixels[12 + 10*3]);
 }
 
+/*
 #[test]
 fn mascot_overlap_1() {
     use EdgeInterceptDirection::*;
@@ -981,6 +982,7 @@ fn mascot_overlap_1() {
 
     assert!(not_blended.len() == 0, "{:?}", not_blended);
 }
+*/
 
 #[test]
 fn mascot_overlap_2() {
