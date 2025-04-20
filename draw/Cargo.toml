@@ -43,7 +43,7 @@ wgpu-profiler       = { workspace = true, optional = true }
 
 [dev-dependencies]
 flo_curves          = "0.8"
-rand                = "0.8"
+rand                = "0.9"
 futures-timer       = "3.0"
 num-complex         = "0.4"
 rayon               = "1.5"
