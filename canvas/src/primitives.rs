@@ -14,7 +14,7 @@ use smallvec::*;
 
 #[cfg(feature = "image-loading")] use super::texture::*;
 #[cfg(feature = "image-loading")] use image;
-#[cfg(feature = "image-loading")] use image::io::Reader as ImageReader;
+#[cfg(feature = "image-loading")] use image::{ImageReader};
 #[cfg(feature = "image-loading")] use std::io;
 #[cfg(feature = "image-loading")] use std::sync::*;
 
