@@ -20,6 +20,7 @@ flo_canvas_events       = { path = "./canvas_events" }
 flo_render              = { path = "./render" }
 flo_render_canvas       = { path = "./render_canvas" }
 flo_render_gl_offscreen = { path = "./render_gl_offscreen" }
+flo_render_software     = { path = "./render_software" }
 flo_draw                = { path = "./draw" }
 
 flo_curves              = { git = "https://github.com/Logicalshift/flo_curves", branch = "v0.8" }

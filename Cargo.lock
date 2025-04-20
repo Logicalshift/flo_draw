@@ -888,6 +888,7 @@ dependencies = [
  "flo_curves",
  "flo_render",
  "flo_render_canvas",
+ "flo_render_software",
  "flo_scene",
  "flo_stream",
  "futures",

@@ -15,6 +15,7 @@ include             = [ "Cargo.toml", "src/**/*", "examples/**/*", "images/**/*"
 default             = [ "render-wgpu" ]
 render-opengl       = [ "gl", "glutin", "winit", "glutin-winit", "raw-window-handle", "flo_render/opengl" ]
 render-wgpu         = [ "winit", "wgpu", "flo_render/render-wgpu" ]
+render-software     = [ "winit", "flo_render_software" ]
 profile             = [ "flo_render/profile" ]
 wgpu-profiler       = [ "dep:wgpu-profiler", "flo_render/wgpu-profiler" ]
 
@@ -22,6 +23,7 @@ wgpu-profiler       = [ "dep:wgpu-profiler", "flo_render/wgpu-profiler" ]
 flo_canvas          = { version = "0.4", features = [ "outline-fonts", "image-loading", "scenery" ] }
 flo_canvas_events   = { version = "0.4" }
 flo_render          = { version = "0.4", features = [ "opengl" ] }
+flo_render_software = { version = "0.4", optional = true }
 flo_render_canvas   = "0.4"
 flo_stream          = "0.7"
 flo_binding         = "3.0"
