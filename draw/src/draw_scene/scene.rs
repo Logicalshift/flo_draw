@@ -27,6 +27,6 @@ pub fn flo_draw_scene_context() -> Arc<Scene> {
 /// Retrieves or creates a scene context for flo_draw
 ///
 #[cfg(all(not(feature="render-wgpu"), not(feature="render-opengl")))]
-pub fn flo_draw_scene_context() -> Arc<SceneContext> {
+pub fn flo_draw_scene_context() -> Arc<Scene> {
     panic!("No default renderer was specified when flo_draw was compiled (use `render-wgpu` or `render-opengl`)")
 }
