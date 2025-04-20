@@ -299,7 +299,7 @@ impl CanvasFontLineLayout {
         let ttf_font        = self.font.ttf_font();
         let mut shaper      = self.font.allsorts_font();
         let glyphs          = shaper.map_glyphs(&pending, tag::LATN, MatchingPresentation::NotRequired);
-        let shape           = shaper.shape(glyphs, tag::LATN, Some(tag::DFLT), &gsub::Features::Mask(gsub::FeatureMask::default()), true).ok()
+        let shape           = shaper.shape(glyphs, tag::LATN, Some(tag::DFLT), &gsub::Features::Mask(gsub::FeatureMask::default()), None, true).ok()
             .unwrap_or_else(|| vec![]);
 
         // The scale factor is used to convert between font units and screen units
