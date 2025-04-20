@@ -80,7 +80,7 @@ fn compile_metal() {
         "arm64"     => {
             bindgen::Builder::default()
                 .header("bindings/metal_vertex2d.h")
-                .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+                .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
                 .clang_args(vec![ "-arch", "arm64" ])
                 .generate()
             }
@@ -88,7 +88,7 @@ fn compile_metal() {
         _ => {
             bindgen::Builder::default()
                 .header("bindings/metal_vertex2d.h")
-                .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+                .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
                 .generate()
         }
     }.expect("Unable to generate bindings");
