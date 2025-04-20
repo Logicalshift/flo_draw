@@ -26,6 +26,12 @@ impl<'b> FontTableProvider for CanvasTableProvider<'b> {
         let table_data = self.0.raw_face().table(ttf_parser::Tag::from_bytes(&tag.to_be_bytes()));
         table_data.is_some()
     }
+
+    fn table_tags(&self) -> Option<Vec<u32>> {
+        Some(self.0.raw_face().table_records.into_iter()
+            .map(|record| record.tag.0)
+            .collect())
+    }
 }
 
 // Ouroborus doesn't work with #cfg(feature) so we have to duplicate the entire implementation in two modules
