@@ -219,7 +219,6 @@ mod canvas_font_face {
 
             allsorts::Font::new(table_provider)
                 .expect("unable to load font tables")
-                .expect("unable to find suitable cmap sub-table")
         }
     }
 }
