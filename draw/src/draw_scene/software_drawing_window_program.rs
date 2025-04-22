@@ -62,6 +62,11 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
                         }
                     }
 
+                    DrawingWindowRequest::Redraw => {
+                        // Trigger a redraw by sending an empty request
+                        drawing_sender.send(Arc::new(vec![])).await.ok();
+                    }
+
                     DrawingWindowRequest::SendEvents(channel_target) => {
                         let mut subscriber = event_publisher.subscribe();
 

@@ -51,6 +51,9 @@ pub enum DrawingWindowRequest {
     /// Carry out a drawing request
     Draw(DrawingRequest),
 
+    /// Cause the window to be redrawn
+    Redraw,
+
     /// Add a subprogram to the list to send events to
     SendEvents(SubProgramId),
 

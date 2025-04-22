@@ -118,17 +118,19 @@ where
 ///
 /// The return value is any extra events to synthesize as a result of the initial event
 ///
-fn handle_window_event<'a, SendFuture, SendRenderActionsFn>(state: &'a mut RendererState, event: DrawEvent, send_render_actions: &'a mut SendRenderActionsFn) -> impl 'a + Send + Future<Output=Vec<DrawEvent>> 
+fn handle_window_event<'a, SendFuture, SendRenderActionsFn>(state: &'a mut RendererState, event: DrawEvent, send_render_actions: &'a mut SendRenderActionsFn, send_drawing_actions: &'a mut Option<OutputSink<DrawingWindowRequest>>) -> impl 'a + Send + Future<Output=Vec<DrawEvent>> 
 where 
     SendRenderActionsFn:    Send + Fn(Vec<RenderAction>) -> SendFuture,
-    SendFuture:             Send + Future<Output=()> 
+    SendFuture:             Send + Future<Output=()>, 
 {
     async move {
         match event {
             DrawEvent::Redraw                   => { 
                 // Drawing nothing will regenerate the current contents of the renderer
                 let redraw = state.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
+
                 send_render_actions(redraw).await;
+                if let Some(send_drawing_actions) = send_drawing_actions { send_drawing_actions.send(DrawingWindowRequest::Redraw).await.ok(); }
 
                 let window_transform    = state.update_window_transform();
                 vec![DrawEvent::CanvasTransform(window_transform)]
@@ -142,6 +144,7 @@ where
                 let scale           = state.scale as f32;
 
                 state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale);
+                if let Some(send_drawing_actions) = send_drawing_actions { send_drawing_actions.send(DrawingWindowRequest::Redraw).await.ok(); }
 
                 vec![]
             }
@@ -155,6 +158,7 @@ where
                 let scale           = state.scale as f32;
 
                 state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale); 
+                if let Some(send_drawing_actions) = send_drawing_actions { send_drawing_actions.send(DrawingWindowRequest::Redraw).await.ok(); }
 
                 vec![]
             }
@@ -308,6 +312,8 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                         combined_list.push(drawing);
                                     }
 
+                                    DrawingWindowRequest::Redraw => { }
+
                                     DrawingWindowRequest::CloseWindow => {
                                         // Just stop running when there's a 'close' request
                                         closed = true;
@@ -350,6 +356,10 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                     DrawingWindowRequest::Draw(DrawingRequest::Draw(drawing)) => {
                                         // Send the drawing to the renderer
                                         combined_list.push(drawing);
+                                    }
+
+                                    DrawingWindowRequest::Redraw => {
+                                        drawing_target.send(DrawingWindowRequest::Redraw).await.ok();
                                     }
 
                                     DrawingWindowRequest::CloseWindow => {
@@ -452,7 +462,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                             }
 
                             // Handle the next message
-                            let context = &context;
+                            let context         = &context;
                             handle_window_event(&mut render_state, evt_message, &mut move |render_actions| {
                                 let render_target = context.send::<RenderWindowRequest>(render_target_program);
 
@@ -461,7 +471,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                         render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
                                     }
                                 }
-                            }).await;
+                            }, &mut drawing_target).await;
                         }
 
                         // The entity stops when the window is closed
