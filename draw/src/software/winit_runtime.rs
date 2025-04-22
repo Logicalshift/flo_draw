@@ -9,7 +9,6 @@ use super::winit_thread_event::*;
 use flo_stream::*;
 use flo_binding::*;
 
-use wgpu;
 use winit::application::{ApplicationHandler};
 use winit::event::{DeviceId, Event, WindowEvent, DeviceEvent, ElementState};
 use winit::event_loop::{ActiveEventLoop};
@@ -40,9 +39,6 @@ pub (super) struct WinitRuntime {
 
     /// Maps future IDs to running futures
     pub (super) futures: HashMap<u64, LocalBoxFuture<'static, ()>>,
-
-    /// Redraws that are pending for a particular window (the texture that's waiting to be displayed and the sender to be informed once the 'events cleared' event has arrived)
-    pub (super) pending_redraws: HashMap<WindowId, (wgpu::SurfaceTexture, oneshot::Sender<()>)>,
 
     /// Yield events waiting for an indication that all events have been processed
     pub (super) pending_yields: Vec<oneshot::Sender<()>>,
@@ -172,15 +168,7 @@ impl WinitRuntime {
             Occluded(_)                                                     => vec![],
 
             RedrawRequested                                                 => { 
-                if let Some((pending_surface, redraw_finished)) = self.pending_redraws.remove(&window_id) {
-                    // Present the surface
-                    pending_surface.present();
-
-                    // Signal the 'finished' event when the redraw events are all clear
-                    self.pending_yields.push(redraw_finished);
-                } else {
-                    self.request_redraw(window_id); 
-                }
+                self.request_redraw(window_id);
 
                 vec![]
             }
@@ -366,7 +354,6 @@ impl WinitRuntime {
 
             StopSendingToWindow(window_id) => {
                 self.window_events.remove(&window_id);
-                self.pending_redraws.remove(&window_id);
 
                 if self.window_events.len() == 0 && self.will_stop_when_no_windows {
                     self.will_exit = true;
@@ -379,20 +366,6 @@ impl WinitRuntime {
 
             WakeFuture(future_id) => {
                 self.poll_future(future_id);
-            },
-
-            PresentSurface(window_id, surface_texture, completed) => {
-                // Store this present event
-                self.pending_redraws.insert(window_id, (surface_texture, completed));
-
-                // Trigger a redraw on the window
-                if let Some(window_data) = self.window_events.get(&window_id) {
-                    // Queue up a redraw for this window
-                    window_data.window.request_redraw();
-                } else {
-                    // Window doesn't exist, so just cancel the pending redraw
-                    self.pending_redraws.remove(&window_id);
-                }
             },
 
             Yield(sender) => {
