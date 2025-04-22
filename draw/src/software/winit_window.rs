@@ -1,30 +1,25 @@
-use super::winit_thread::*;
-use super::winit_thread_event::*;
-
 use crate::events::*;
 use crate::window_properties::*;
 
+use flo_canvas::*;
 use flo_stream::*;
-use flo_render::*;
+use flo_render_software::*;
 use flo_binding::*;
 
-use wgpu;
+use softbuffer;
 use winit::dpi::{LogicalSize};
 use winit::window::{Window, Fullscreen};
 use futures::prelude::*;
-use futures::channel::oneshot;
 use futures::task::{Poll, Context};
 
 use std::pin::*;
 use std::sync::*;
 
+use std::num::{NonZeroU32};
 use std::fmt;
 
 #[cfg(feature="profile")]
 use std::time::{Duration, Instant};
-
-#[cfg(feature="wgpu-profiler")]
-use wgpu_profiler::{GpuProfiler};
 
 ///
 /// Manages the state of a Winit window
@@ -33,14 +28,11 @@ pub struct WinitWindow {
     /// The window that this is acting for
     window: Option<Arc<Window>>,
 
-    /// The device that this is acting for
-    device: Option<Arc<wgpu::Device>>,
+    /// THe softbuffer context for the window (or None if it's not set up yet)
+    context: Option<softbuffer::Context<Arc<Window>>>,
 
-    /// The WGPU instance used by this window
-    instance: Option<wgpu::Instance>,
-
-    /// The renderer for this window (or none if there isn't one yet)
-    renderer: Option<WgpuRenderer<'static>>
+    /// The softbuffer surface that we're rendering on
+    surface: Option<softbuffer::Surface<Arc<Window>, Arc<Window>>>,
 }
 
 impl WinitWindow {
@@ -50,9 +42,8 @@ impl WinitWindow {
     pub fn new(window: Arc<Window>) -> WinitWindow {
         WinitWindow {
             window:     Some(window),
-            device:     None,
-            instance:   None,
-            renderer:   None,
+            context:    None,
+            surface:    None,
         }
     }
 }
@@ -60,19 +51,16 @@ impl WinitWindow {
 ///
 /// Sends render actions to a window
 ///
-/// Render actions are sent via the stream in `render_actions`. When a new frame is presented, a `DrawEvent::NewFrame` is sent to the event publisher. Finally the window 
-/// properties are watched and used to update the window properties.
-///
-pub (super) async fn send_actions_to_window<RenderStream, EventPublisher>(window: WinitWindow, render_actions: RenderStream, events: EventPublisher, window_properties: WindowProperties)
+pub (super) async fn send_actions_to_window<DrawStream, EventPublisher>(window: WinitWindow, render_actions: DrawStream, events: EventPublisher, window_properties: WindowProperties)
 where
-    RenderStream:   Unpin + Stream<Item=Vec<RenderAction>>,
+    DrawStream:     Unpin + Stream<Item=Vec<Draw>>,
     EventPublisher: MessagePublisher<Message=DrawEvent>,
 {
     // Read events from the render actions list
     let mut window          = window;
     let mut events          = events;
     let window_actions      = WindowUpdateStream { 
-        render_stream:      render_actions, 
+        draw_stream:        render_actions, 
         title_stream:       follow(window_properties.title),
         size:               follow(window_properties.size),
         fullscreen:         follow(window_properties.fullscreen),
@@ -94,52 +82,30 @@ where
                     }
 
                     // Create the renderer if it doesn't already exist
-                    if let (Some(winit_window), None) = (&window.window, &window.renderer) {
-                        // Create a new WGPU instance, surface and adapter
-                        let winit_window    = winit_window.clone();
+                    if let (Some(winit_window), None) = (&window.window, &window.context) {
+                        // Create a new softbuffer context
+                        let winit_window        = winit_window.clone();
+                        let softbuffer_context  = softbuffer::Context::new(winit_window.clone()).unwrap();
+                        let softbuffer_surface  = softbuffer::Surface::new(&softbuffer_context, winit_window.clone()).unwrap();
 
-                        let backend         = wgpu::Backends::from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
-                        let instance        = wgpu::Instance::new(&wgpu::InstanceDescriptor { backends: backend, ..Default::default() });
-                        let surface         = instance.create_surface(winit_window).expect("wgpu surface");
-                        let adapter         = instance.request_adapter(&wgpu::RequestAdapterOptions {
-                            power_preference:       wgpu::PowerPreference::default(),
-                            force_fallback_adapter: false,
-                            compatible_surface:     Some(&surface),
-                        }).await.expect("Could not acquire an adapter for winit/wgpu");
-
-                        // Fetch the device and the queue
-                        let features        = wgpu::Features::empty();
-                        #[cfg(feature="wgpu-profiler")] let features = features | GpuProfiler::ALL_WGPU_TIMER_FEATURES;
-                        let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
-                            label:              None,
-                            required_features:  features,
-                            required_limits:    wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits()),
-                            ..Default::default()
-                        }, None).await.expect("Create WGPU device and queue");
-
-                        // Create the WGPU renderer
-                        let device          = Arc::new(device);
-                        let queue           = Arc::new(queue);
-                        let surface         = Arc::new(surface);
-                        let adapter         = Arc::new(adapter);
-                        let renderer        = WgpuRenderer::from_surface(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
-
-                        window.device       = Some(device);
-                        window.instance     = Some(instance);
-                        window.renderer     = Some(renderer);
+                        window.context = Some(softbuffer_context);
+                        window.surface = Some(softbuffer_surface);
 
                         // First frame has been displayed
                         send_new_frame = true;
                     }
 
-                    if let (Some(winit_window), Some(renderer)) = (&window.window, &mut window.renderer) {
+                    if let (Some(winit_window), Some(context), Some(surface)) = (&window.window, &mut window.context, &mut window.surface) {
                         // Set up to render at the current size
                         let size    = winit_window.inner_size();
                         let width   = size.width;
                         let height  = size.height;
 
-                        renderer.prepare_to_render(width, height);
+                        if width != 0 && height != 0 {
+                            surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap());
+                        }
 
+                        /* -- TODO: render the drawing
                         // Send the commands to the renderer
                         let maybe_next_frame = renderer.render_to_surface(next_action);
 
@@ -163,6 +129,7 @@ where
                             // Trigger the 'NewFrame' event when done
                             send_new_frame = true;
                         }
+                        */
                     }
                 }
 
@@ -220,7 +187,7 @@ where
 /// The list of update events that can occur to a window
 ///
 enum WindowUpdate {
-    Render(Vec<RenderAction>),
+    Render(Vec<Draw>),
     SetTitle(String),
     SetSize((u64, u64)),
     SetFullscreen(bool),
@@ -246,8 +213,8 @@ impl fmt::Debug for WindowUpdate {
 ///
 /// Stream that merges the streams from the window properties and the renderer into a single stream
 ///
-struct WindowUpdateStream<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> {
-    render_stream:      TRenderStream,
+struct WindowUpdateStream<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> {
+    draw_stream:        TDrawStream,
     title_stream:       TTitleStream,
     size:               TSizeStream,
     fullscreen:         TFullscreenStream,
@@ -255,9 +222,9 @@ struct WindowUpdateStream<TRenderStream, TTitleStream, TSizeStream, TFullscreenS
     mouse_pointer:      TMousePointerStream
 }
 
-impl<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> Stream for WindowUpdateStream<TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream>
+impl<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> Stream for WindowUpdateStream<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream>
 where
-    TRenderStream:          Unpin + Stream<Item=Vec<RenderAction>>,
+    TDrawStream:            Unpin + Stream<Item=Vec<Draw>>,
     TTitleStream:           Unpin + Stream<Item=String>,
     TSizeStream:            Unpin + Stream<Item=(u64, u64)>,
     TFullscreenStream:      Unpin + Stream<Item=bool>,
@@ -270,7 +237,7 @@ where
         // Poll each stream in turn to see if they have an item
 
         // Rendering instructions have priority
-        match self.render_stream.poll_next_unpin(context) {
+        match self.draw_stream.poll_next_unpin(context) {
             Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::Render(item))); }
             Poll::Ready(None)       => { return Poll::Ready(None); }
             Poll::Pending           => { }
