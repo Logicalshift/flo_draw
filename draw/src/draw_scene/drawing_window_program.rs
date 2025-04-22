@@ -118,18 +118,14 @@ where
 ///
 /// The return value is any extra events to synthesize as a result of the initial event
 ///
-fn handle_window_event<'a, SendFuture, SendRenderActionsFn>(state: &'a mut RendererState, event: DrawEvent, send_render_actions: &'a mut SendRenderActionsFn, send_drawing_actions: &'a mut Option<OutputSink<DrawingWindowRequest>>) -> impl 'a + Send + Future<Output=Vec<DrawEvent>> 
-where 
-    SendRenderActionsFn:    Send + Fn(Vec<RenderAction>) -> SendFuture,
-    SendFuture:             Send + Future<Output=()>, 
-{
+fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, send_render_actions: &'a mut Option<OutputSink<RenderWindowRequest>>, send_drawing_actions: &'a mut Option<OutputSink<DrawingWindowRequest>>) -> impl 'a + Send + Future<Output=Vec<DrawEvent>> {
     async move {
         match event {
             DrawEvent::Redraw                   => { 
                 // Drawing nothing will regenerate the current contents of the renderer
                 let redraw = state.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
 
-                send_render_actions(redraw).await;
+                if let Some(send_render_actions) = send_render_actions { send_render_actions.send(RenderWindowRequest::Render(RenderRequest::Render(redraw))).await.ok(); }
                 if let Some(send_drawing_actions) = send_drawing_actions { send_drawing_actions.send(DrawingWindowRequest::Redraw).await.ok(); }
 
                 let window_transform    = state.update_window_transform();
@@ -462,16 +458,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                             }
 
                             // Handle the next message
-                            let context         = &context;
-                            handle_window_event(&mut render_state, evt_message, &mut move |render_actions| {
-                                let render_target = context.send::<RenderWindowRequest>(render_target_program);
-
-                                async move {
-                                    if let Ok(mut render_target) = render_target {
-                                        render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
-                                    }
-                                }
-                            }, &mut drawing_target).await;
+                            handle_window_event(&mut render_state, evt_message, &mut render_target, &mut drawing_target).await;
                         }
 
                         // The entity stops when the window is closed
