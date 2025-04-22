@@ -932,6 +932,7 @@ dependencies = [
 name = "flo_draw"
 version = "0.4.0"
 dependencies = [
+ "bytemuck",
  "desync",
  "flo_binding",
  "flo_canvas",

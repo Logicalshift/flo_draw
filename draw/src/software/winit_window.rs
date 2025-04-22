@@ -3,10 +3,14 @@ use crate::window_properties::*;
 
 use flo_canvas::*;
 use flo_stream::*;
-use flo_render_software::*;
+use flo_render_software::draw::*;
+use flo_render_software::pixel::*;
+use flo_render_software::render::*;
+use flo_render_software::scanplan::*;
 use flo_binding::*;
 
 use softbuffer;
+use bytemuck;
 use winit::dpi::{LogicalSize};
 use winit::window::{Window, Fullscreen};
 use futures::prelude::*;
@@ -68,6 +72,7 @@ where
         mouse_pointer:      follow(window_properties.mouse_pointer)
     };
     let mut window_actions  = window_actions.ready_chunks(100);
+    let mut canvas_drawing  = CanvasDrawing::<F32LinearPixel, 4>::empty();
 
     while let Some(next_action_set) = window_actions.next().await {
         let mut send_new_frame = false;
@@ -80,6 +85,9 @@ where
                         events.publish(DrawEvent::NewFrame).await;
                         continue;
                     }
+
+                    // Render the actions to the CanvasDrawing
+                    canvas_drawing.draw(Arc::unwrap_or_clone(next_action).into_iter());
 
                     // Create the renderer if it doesn't already exist
                     if let (Some(winit_window), None) = (&window.window, &window.context) {
@@ -105,38 +113,21 @@ where
                             // Resize the surface before rendering
                             surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap());
 
-                            // TODO: actually render the region
-                            println!("-- Render: {:?}", next_action);
+                            // Render the region from the canvas drawing
+                            let mut buffer              = surface.buffer_mut().unwrap();
+                            let buffer_u32: &mut [u32]  = &mut *buffer;
+                            let buffer_u8: &mut [u8]    = bytemuck::cast_slice_mut(buffer_u32);
+                            let mut frame               = RgbaFrame::from_bytes(width as _, height as _, 2.2, buffer_u8).unwrap();
 
-                            // Trigger the 'NewFrame' event when done
-                            send_new_frame = true
+                            let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
+                            frame.render(renderer, &canvas_drawing);
+
+                            // Present the rendering
+                            buffer.present();
                         }
 
-                        /* -- TODO: render the drawing
-                        // Send the commands to the renderer
-                        let maybe_next_frame = renderer.render_to_surface(next_action);
-
-                        // Notify that a new frame has been drawn if show_frame_buffer is set
-                        if let Some(next_frame) = maybe_next_frame {
-                            #[cfg(feature="profile")]
-                            let start_time = Instant::now();
-
-                            // Request that the runtime present the next frame
-                            let (yield_send, yield_recv)    = oneshot::channel();
-                            let window_id                   = winit_window.id();
-
-                            winit_thread().send_event(WinitThreadEvent::PresentSurface(window_id, next_frame, yield_send));
-
-                            // Wait for the frame to be displayed (or cancelled) before processing any other events
-                            yield_recv.await.ok();
-
-                            #[cfg(feature="profile")]
-                            println!("WINIT: time to present frame {}µs", Instant::now().duration_since(start_time).as_micros());
-
-                            // Trigger the 'NewFrame' event when done
-                            send_new_frame = true;
-                        }
-                        */
+                        // Trigger the 'NewFrame' event when done
+                        send_new_frame = true;
                     }
                 }
 
