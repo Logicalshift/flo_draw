@@ -18,7 +18,7 @@ use std::fmt::*;
 ///
 pub enum WinitThreadEvent {
     /// Creates a window that will render the specified actions
-    CreateRenderWindow(BoxStream<'static, Vec<Draw>>, Publisher<DrawEvent>, WindowProperties),
+    CreateDrawingWindow(BoxStream<'static, Vec<Draw>>, Publisher<DrawEvent>, WindowProperties),
 
     /// Runs a future on the winit thread
     RunProcess(Box<dyn Send+FnOnce() -> LocalBoxFuture<'static, ()>>),
@@ -41,7 +41,7 @@ impl Debug for WinitThreadEvent {
         use self::WinitThreadEvent::*;
 
         match self {
-            CreateRenderWindow(_, _, _)     => write!(f, "CreateRenderWindow(...)"),
+            CreateDrawingWindow(_, _, _)    => write!(f, "CreateRenderWindow(...)"),
             RunProcess(_)                   => write!(f, "RunProcess(...)"),
             WakeFuture(id)                  => write!(f, "WakeFuture({})", id),
             Yield(_)                        => write!(f, "Yield(...)"),

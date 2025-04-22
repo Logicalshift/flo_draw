@@ -303,7 +303,7 @@ impl WinitRuntime {
         use WinitThreadEvent::*;
 
         match event {
-            CreateRenderWindow(actions, events, window_properties) => {
+            CreateDrawingWindow(actions, events, window_properties) => {
                 // Get the initial set of properties for the window
                 let title               = window_properties.title().get();
                 let (size_x, size_y)    = window_properties.size().get();
