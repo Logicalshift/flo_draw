@@ -12,13 +12,14 @@ use winit::window::{WindowId};
 
 use std::fmt;
 use std::fmt::*;
+use std::sync::*;
 
 ///
 /// Event that can be sent to a winit thread
 ///
 pub enum WinitThreadEvent {
     /// Creates a window that will render the specified actions
-    CreateDrawingWindow(BoxStream<'static, Vec<Draw>>, Publisher<DrawEvent>, WindowProperties),
+    CreateDrawingWindow(BoxStream<'static, Arc<Vec<Draw>>>, Publisher<DrawEvent>, WindowProperties),
 
     /// Runs a future on the winit thread
     RunProcess(Box<dyn Send+FnOnce() -> LocalBoxFuture<'static, ()>>),

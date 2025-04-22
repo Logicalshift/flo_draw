@@ -53,7 +53,7 @@ impl WinitWindow {
 ///
 pub (super) async fn send_actions_to_window<DrawStream, EventPublisher>(window: WinitWindow, render_actions: DrawStream, events: EventPublisher, window_properties: WindowProperties)
 where
-    DrawStream:     Unpin + Stream<Item=Vec<Draw>>,
+    DrawStream:     Unpin + Stream<Item=Arc<Vec<Draw>>>,
     EventPublisher: MessagePublisher<Message=DrawEvent>,
 {
     // Read events from the render actions list
@@ -187,7 +187,7 @@ where
 /// The list of update events that can occur to a window
 ///
 enum WindowUpdate {
-    Render(Vec<Draw>),
+    Render(Arc<Vec<Draw>>),
     SetTitle(String),
     SetSize((u64, u64)),
     SetFullscreen(bool),
@@ -224,7 +224,7 @@ struct WindowUpdateStream<TDrawStream, TTitleStream, TSizeStream, TFullscreenStr
 
 impl<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> Stream for WindowUpdateStream<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream>
 where
-    TDrawStream:            Unpin + Stream<Item=Vec<Draw>>,
+    TDrawStream:            Unpin + Stream<Item=Arc<Vec<Draw>>>,
     TTitleStream:           Unpin + Stream<Item=String>,
     TSizeStream:            Unpin + Stream<Item=(u64, u64)>,
     TFullscreenStream:      Unpin + Stream<Item=bool>,
