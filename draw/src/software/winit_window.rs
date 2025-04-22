@@ -49,9 +49,9 @@ impl WinitWindow {
 }
 
 ///
-/// Sends render actions to a window
+/// Sends drawing actions to a window
 ///
-pub (super) async fn send_actions_to_window<DrawStream, EventPublisher>(window: WinitWindow, render_actions: DrawStream, events: EventPublisher, window_properties: WindowProperties)
+pub (super) async fn send_actions_to_window<DrawStream, EventPublisher>(window: WinitWindow, drawing_actions: DrawStream, events: EventPublisher, window_properties: WindowProperties)
 where
     DrawStream:     Unpin + Stream<Item=Arc<Vec<Draw>>>,
     EventPublisher: MessagePublisher<Message=DrawEvent>,
@@ -60,7 +60,7 @@ where
     let mut window          = window;
     let mut events          = events;
     let window_actions      = WindowUpdateStream { 
-        draw_stream:        render_actions, 
+        draw_stream:        drawing_actions, 
         title_stream:       follow(window_properties.title),
         size:               follow(window_properties.size),
         fullscreen:         follow(window_properties.fullscreen),
@@ -74,7 +74,7 @@ where
 
         for next_action in next_action_set {
             match next_action {
-                WindowUpdate::Render(next_action)   => {
+                WindowUpdate::Draw(next_action) => {
                     // Do nothing if there are no actions
                     if next_action.len() == 0 {
                         events.publish(DrawEvent::NewFrame).await;
@@ -187,7 +187,7 @@ where
 /// The list of update events that can occur to a window
 ///
 enum WindowUpdate {
-    Render(Arc<Vec<Draw>>),
+    Draw(Arc<Vec<Draw>>),
     SetTitle(String),
     SetSize((u64, u64)),
     SetFullscreen(bool),
@@ -200,7 +200,7 @@ impl fmt::Debug for WindowUpdate {
         use self::WindowUpdate::*;
 
         match self {
-            Render(actions)             => write!(f, "Render({} actions)", actions.len()),
+            Draw(actions)               => write!(f, "Draw({} actions)", actions.len()),
             SetTitle(title)             => write!(f, "SetTitle({})", title),
             SetSize(sz)                 => write!(f, "SetSize({:?})", sz),
             SetFullscreen(val)          => write!(f, "SetFullscreen({:?})", val),
@@ -238,7 +238,7 @@ where
 
         // Rendering instructions have priority
         match self.draw_stream.poll_next_unpin(context) {
-            Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::Render(item))); }
+            Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::Draw(item))); }
             Poll::Ready(None)       => { return Poll::Ready(None); }
             Poll::Pending           => { }
         }

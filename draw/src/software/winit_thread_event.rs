@@ -42,7 +42,7 @@ impl Debug for WinitThreadEvent {
         use self::WinitThreadEvent::*;
 
         match self {
-            CreateDrawingWindow(_, _, _)    => write!(f, "CreateRenderWindow(...)"),
+            CreateDrawingWindow(_, _, _)    => write!(f, "CreateDrawingWindow(...)"),
             RunProcess(_)                   => write!(f, "RunProcess(...)"),
             WakeFuture(id)                  => write!(f, "WakeFuture({})", id),
             Yield(_)                        => write!(f, "Yield(...)"),
