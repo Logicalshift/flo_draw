@@ -102,7 +102,11 @@ where
                         let height  = size.height;
 
                         if width != 0 && height != 0 {
+                            // Resize the surface before rendering
                             surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap());
+
+                            // TODO: actually render the region
+                            println!("-- Render: {:?}", next_action);
                         }
 
                         /* -- TODO: render the drawing
