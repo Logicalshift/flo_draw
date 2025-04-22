@@ -80,12 +80,6 @@ where
         for next_action in next_action_set {
             match next_action {
                 WindowUpdate::Draw(next_action) => {
-                    // Do nothing if there are no actions
-                    if next_action.len() == 0 {
-                        events.publish(DrawEvent::NewFrame).await;
-                        continue;
-                    }
-
                     // Render the actions to the CanvasDrawing
                     canvas_drawing.draw(Arc::unwrap_or_clone(next_action).into_iter());
 
