@@ -107,6 +107,9 @@ where
 
                             // TODO: actually render the region
                             println!("-- Render: {:?}", next_action);
+
+                            // Trigger the 'NewFrame' event when done
+                            send_new_frame = true
                         }
 
                         /* -- TODO: render the drawing
