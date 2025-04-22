@@ -27,7 +27,7 @@ mod wgpu_render_window_program;
 mod wgpu_scene;
 
 #[cfg(feature="render-software")]
-mod software_render_window_program;
+mod software_drawing_window_program;
 #[cfg(feature="render-software")]
 mod software_scene;
 

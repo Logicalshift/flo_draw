@@ -5,7 +5,7 @@ use super::glutin_render_window_program::*;
 use super::wgpu_render_window_program::*;
 
 #[cfg(feature="render-software")]
-use super::software_render_window_program::*;
+use super::software_drawing_window_program::*;
 
 use flo_scene::*;
 
