@@ -204,6 +204,11 @@ impl BezierPathFactory for BezierSubpath {
                 continue;
             }
 
+            if cp1.0.is_nan() || cp1.1.is_nan() || cp2.0.is_nan() || cp2.1.is_nan() || end_point.0.is_nan() || end_point.1.is_nan() {
+                // One of the points is a NAN, so we ignore it
+                continue;
+            }
+
             // Fetch the w values, and calculate the derivative and bounding box
             let wx          = (last_point.x(), cp1.x(), cp2.x(), end_point.x());
             let wy          = (last_point.y(), cp1.y(), cp2.y(), end_point.y());
@@ -510,6 +515,9 @@ fn flatten_curve(curve: &SubpathCurve, min_length: f64, flatness: f64) -> Vec<Co
     while let Some(section) = to_process.pop() {
         let sp = section.start_point();
         let ep = section.end_point();
+
+        // If the curve doesn't converge for some reason (eg, NaNs show up), this will run forever
+        debug_assert!(to_process.len() < 40960, "To_process len = {:?} from {:?}", to_process.len(), curve);
 
         if section.flatness() < flatness || (sp.is_near_to(&ep, min_length) && sp.is_near_to(&section.point_at_pos(0.5), min_length)) {
             // Section is either very short or flat so can be added to the result
