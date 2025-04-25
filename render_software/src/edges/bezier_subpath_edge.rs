@@ -182,6 +182,8 @@ impl BezierPath for BezierSubpath {
     }
 }
 
+#[inline] fn zero_if_nan(val: f64) -> f64 { if val.is_nan() { 0.0 } else { val } }
+
 ///
 /// A bezier subpath can be used as the target of a bezier path factory
 ///
@@ -197,6 +199,9 @@ impl BezierPathFactory for BezierSubpath {
         let mut min_y       = f64::MAX;
         let mut max_x       = f64::MIN;
         let mut max_y       = f64::MIN;
+
+        // Remove any NaNs from the start point coordate (changing them to 0s): this ensures that paths will at least render if NaNs show up here
+        let start_point = Coord2(zero_if_nan(start_point.0), zero_if_nan(start_point.1));
 
         for (cp1, cp2, end_point) in points {
             if last_point.is_near_to(&end_point, MIN_DISTANCE) && control_polygon_length(&Curve::from_points(last_point, (cp1, cp2), end_point)) <= MIN_DISTANCE {
