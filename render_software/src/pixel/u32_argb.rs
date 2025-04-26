@@ -24,11 +24,11 @@ impl U32ArgbPremultipliedPixel {
     /// Creates a U32 Argb pixel from RGBA components
     ///
     #[inline]
-    pub fn from_rgba_components(components: [u8; 4]) -> Self {
-        let val = ((components[0] as u32) << 16)
-                | ((components[1] as u32) << 8)
-                | ((components[2] as u32) << 0)
-                | ((components[3] as u32) << 24);
+    pub fn from_rgba_components(r: u8, g: u8, b: u8, a: u8) -> Self {
+        let val = ((r as u32) << 16)
+                | ((g as u32) << 8)
+                | ((b as u32) << 0)
+                | ((a as u32) << 24);
 
         U32ArgbPremultipliedPixel(val)
     }

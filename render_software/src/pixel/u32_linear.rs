@@ -6,6 +6,7 @@ use super::to_linear_colorspace_trait::*;
 use super::u32_fixed_point::*;
 use super::u8_rgba::*;
 use super::u16_rgba::*;
+use super::U32ArgbPremultipliedPixel;
 
 use flo_canvas as canvas;
 
@@ -113,6 +114,37 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for U32LinearPixel {
                     gamma_lut.look_up(g as _), 
                     gamma_lut.look_up(b as _), 
                     (a >> 8) as u8]);
+            }
+        })
+    }
+}
+
+impl ToGammaColorSpace<U32ArgbPremultipliedPixel> for U32LinearPixel {
+    fn to_gamma_colorspace(input_pixels: &[U32LinearPixel], output_pixels: &mut [U32ArgbPremultipliedPixel], gamma: f64) {
+        thread_local! {
+            // The gamma-correction look-up table is generated once per thread, saves us doing the expensive 'powf()' operation
+            pub static GAMMA_LUT: RefCell<U8GammaLut> = RefCell::new(U8GammaLut::new(1.0/2.2));
+        }
+
+        GAMMA_LUT.with(move |gamma_lut| {
+            // This isn't re-entrant so only this function can use the gamma-correction table 
+            let mut gamma_lut = gamma_lut.borrow_mut();
+
+            // Update the LUT if needed (should be rare, we'll generally be working on converting a whole frame at once)
+            let gamma = 1.0/gamma;
+            if gamma != gamma_lut.gamma() { *gamma_lut = U8GammaLut::new(gamma) };
+
+            for idx in 0..(input_pixels.len().min(output_pixels.len())) {
+                // Convert the pixel to u8 format and apply gamma correction
+                let rgba    = input_pixels[idx].0;
+
+                // This produces SRGB format, where the values are pre-multiplied before gamma correction
+                let [r, g, b, a] = rgba.to_array();
+                output_pixels[idx] = U32ArgbPremultipliedPixel::from_rgba_components(
+                    gamma_lut.look_up(r as _), 
+                    gamma_lut.look_up(g as _), 
+                    gamma_lut.look_up(b as _), 
+                    (a >> 8) as u8);
             }
         })
     }
