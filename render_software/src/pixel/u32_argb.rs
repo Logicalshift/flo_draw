@@ -70,7 +70,7 @@ impl ToU32ArgbPremultipliedPixel for [u32] {
             let data    = self.as_ptr();
             let data    = data as *const U32ArgbPremultipliedPixel;
 
-            slice::from_raw_parts(data, len/4)
+            slice::from_raw_parts(data, len)
         }
     }
 
@@ -81,7 +81,7 @@ impl ToU32ArgbPremultipliedPixel for [u32] {
             let data    = self.as_mut_ptr();
             let data    = data as *mut U32ArgbPremultipliedPixel;
 
-            slice::from_raw_parts_mut(data, len/4)
+            slice::from_raw_parts_mut(data, len)
         }
     }
 }
