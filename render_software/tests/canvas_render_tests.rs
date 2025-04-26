@@ -22,7 +22,7 @@ pub fn render_simple_circle() {
 
     // Time some rendering (useful for profiling/optimisation)
     let mut frame   = vec![0u8; 1920*1080*4];
-    let mut rgba    = RgbaFrame::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
+    let mut rgba    = FrameU8Rgba::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
 
     let renderer = CanvasDrawingRegionRenderer::new(PixelScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
     rgba.render(renderer, &canvas_drawing);

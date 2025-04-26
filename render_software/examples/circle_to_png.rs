@@ -39,7 +39,7 @@ pub fn main() {
 
     // Render to a buffer as a perf test
     let mut frame       = vec![0u8; 1920*1080*4];
-    let mut rgba        = RgbaFrame::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
+    let mut rgba        = FrameU8Rgba::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
 
     let render_start = Instant::now();
     for _ in 0..10 {

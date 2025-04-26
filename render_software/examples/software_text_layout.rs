@@ -65,7 +65,7 @@ pub fn main() {
     // Time some rendering (useful for profiling/optimisation)
     let mut canvas_drawing  = CanvasDrawing::<F32LinearPixel, 4>::empty();
     let mut frame           = vec![0u8; 1920*1080*4];
-    let mut rgba            = RgbaFrame::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
+    let mut rgba            = FrameU8Rgba::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
 
     canvas_drawing.draw(drawing.iter().cloned());
 

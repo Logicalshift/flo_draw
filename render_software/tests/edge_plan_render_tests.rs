@@ -41,7 +41,7 @@ fn render_rectangle() {
 
     // Render with the basic scan planner
     let mut frame_data = vec![0u8; 400*300*4];
-    render_frame_with_planner(PixelScanPlanner::default(), program_runner, &edge_plan, &mut RgbaFrame::from_bytes(400, 300, 2.2, &mut frame_data).unwrap());
+    render_frame_with_planner(PixelScanPlanner::default(), program_runner, &edge_plan, &mut FrameU8Rgba::from_bytes(400, 300, 2.2, &mut frame_data).unwrap());
 
     // == Assertions: check that the rectangles appear where they should in the frame we just rendered
 

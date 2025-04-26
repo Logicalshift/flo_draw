@@ -31,7 +31,7 @@ pub fn main() {
 
     // Time how long it takes to draw the mascot to the canvas (full frames will often involve both of these steps)
     let mut frame   = vec![0u8; 1920*1080*4];
-    let mut rgba    = RgbaFrame::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
+    let mut rgba    = FrameU8Rgba::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
 
     for _ in 0..10 {
         let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);

@@ -9,14 +9,14 @@ use crate::pixel::*;
 ///
 /// A render target of a frame of u8 pixels with pre-multiplied alpha
 ///
-pub struct RgbaFrame<'a> {
+pub struct FrameU8Rgba<'a> {
     pub width:      usize,
     pub height:     usize,
     pub gamma:      f64,
     pub pixel_data: &'a mut [U8RgbaPremultipliedPixel],
 }
 
-impl<'a> RgbaFrame<'a> {
+impl<'a> FrameU8Rgba<'a> {
     ///
     /// Creates a RgbaFrame render target from a buffer of U8RgbaPremultipliedPixel pixels (returns an error if the buffer is not big enough)
     ///
@@ -25,7 +25,7 @@ impl<'a> RgbaFrame<'a> {
         if data.len() < width*height {
             Err(())
         } else {
-            Ok(RgbaFrame {
+            Ok(FrameU8Rgba {
                 width:      width,
                 height:     height,
                 gamma:      gamma,
@@ -43,7 +43,7 @@ impl<'a> RgbaFrame<'a> {
     }
 }
 
-impl<'a, TPixel> RenderTarget<TPixel> for RgbaFrame<'a> 
+impl<'a, TPixel> RenderTarget<TPixel> for FrameU8Rgba<'a> 
 where
     TPixel: 'static + Send + Copy + Default + AlphaBlend + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
 {

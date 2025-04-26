@@ -63,7 +63,7 @@ pub fn main() {
 
     // Display the render time (note that this doesn't count the time rendering the dynamic sprite so this will exclude a significant step)
     let mut frame   = vec![0u8; 1920*1080*4];
-    let mut rgba    = RgbaFrame::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
+    let mut rgba    = FrameU8Rgba::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
 
     for _ in 0..10 {
         let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
