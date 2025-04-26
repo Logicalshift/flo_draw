@@ -6,6 +6,7 @@ mod to_gamma_colorspace_trait;
 mod to_linear_colorspace_trait;
 mod u8_rgba;
 mod u16_rgba;
+mod u32_argb;
 mod f32_linear;
 mod f32_linear_texture_reader;
 mod u32_linear;
