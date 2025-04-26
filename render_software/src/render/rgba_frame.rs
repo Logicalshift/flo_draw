@@ -3,6 +3,7 @@ use super::renderer::*;
 use super::render_slice::*;
 use super::render_target_trait::*;
 use super::u8_frame_renderer::*;
+use super::u32_frame_renderer::*;
 
 use crate::pixel::*;
 
