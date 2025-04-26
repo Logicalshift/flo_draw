@@ -106,8 +106,11 @@ pub fn main() {
     println!("Canvas drawing time: {}.{}ms", avg_micros/1000, avg_micros%1000);
 
     // Time some rendering (useful for profiling/optimisation)
-    let mut frame   = vec![0u8; 1920*1080*4];
-    let mut rgba    = FrameU8Rgba::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
+    let mut frame       = vec![0u8; 1920*1080*4];
+    let mut rgba        = FrameU8Rgba::from_bytes(1920, 1080, 2.2, &mut frame).unwrap();
+
+    let mut frameu32    = vec![0u32; 1920*1080];
+    let mut u32argb     = FrameU32Argb::from_u32(1920, 1080, 2.2, &mut frameu32).unwrap();
 
     // Warm up before timing the rendering
     for _ in 0..10 {
@@ -123,6 +126,15 @@ pub fn main() {
     let render_time = Instant::now().duration_since(render_start);
     let avg_micros  = render_time.as_micros() / 100;
     println!("F32 frame render time: {}.{}ms", avg_micros/1000, avg_micros%1000);
+
+    let render_start = Instant::now();
+    for _ in 0..100 {
+        let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
+        u32argb.render(renderer, &canvas_drawing);
+    }
+    let render_time = Instant::now().duration_since(render_start);
+    let avg_micros  = render_time.as_micros() / 100;
+    println!("F32 -> U32ARGB frame render time: {}.{}ms", avg_micros/1000, avg_micros%1000);
 
     let render_start = Instant::now();
     for _ in 0..100 {
