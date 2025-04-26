@@ -25,6 +25,7 @@ pub use u32_fixed_point::*;
 pub use to_gamma_colorspace_trait::*;
 pub use to_linear_colorspace_trait::*;
 pub use u8_rgba::*;
+pub use u32_argb::*;
 pub use f32_linear::*;
 pub use u32_linear::*;
 pub use pixel_program::*;
