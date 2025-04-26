@@ -110,14 +110,13 @@ where
                             // Render the region from the canvas drawing
                             let mut buffer              = surface.buffer_mut().unwrap();
                             let buffer_u32: &mut [u32]  = &mut *buffer;
-                            let buffer_u8: &mut [u8]    = bytemuck::cast_slice_mut(buffer_u32);
-                            let mut frame               = FrameU8Rgba::from_bytes(width as _, height as _, 2.2, buffer_u8).unwrap();
+                            let mut frame               = FrameU32Argb::from_u32(width as _, height as _, 2.2, buffer_u32).unwrap();
 
                             let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
                             frame.render(renderer, &canvas_drawing);
 
                             // Present the rendering
-                            buffer.present();
+                            buffer.present().unwrap();
                         }
 
                         // Trigger the 'NewFrame' event when done
