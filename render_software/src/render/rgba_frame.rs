@@ -18,7 +18,7 @@ pub struct FrameU8Rgba<'a> {
 
 impl<'a> FrameU8Rgba<'a> {
     ///
-    /// Creates a RgbaFrame render target from a buffer of U8RgbaPremultipliedPixel pixels (returns an error if the buffer is not big enough)
+    /// Creates a FrameU8Rgba render target from a buffer of U8RgbaPremultipliedPixel pixels (returns an error if the buffer is not big enough)
     ///
     #[inline]
     pub fn from_pixels(width: usize, height: usize, gamma: f64, data: &'a mut [U8RgbaPremultipliedPixel]) -> Result<Self, ()> {
@@ -35,7 +35,7 @@ impl<'a> FrameU8Rgba<'a> {
     }
 
     ///
-    /// Creates a RgbaFrame render target from a buffer of u8 values (which will be rendered as R, G, B, A pixels)
+    /// Creates a FrameU8Rgba render target from a buffer of u8 values (which will be rendered as R, G, B, A pixels)
     ///
     #[inline]
     pub fn from_bytes(width: usize, height: usize, gamma: f64, data: &'a mut [u8]) -> Result<Self, ()> {
@@ -78,7 +78,7 @@ pub struct FrameU32Argb<'a> {
 
 impl<'a> FrameU32Argb<'a> {
     ///
-    /// Creates a RgbaFrame render target from a buffer of U32ArgbPremultipliedPixel pixels (returns an error if the buffer is not big enough)
+    /// Creates a FrameU32Argb render target from a buffer of U32ArgbPremultipliedPixel pixels (returns an error if the buffer is not big enough)
     ///
     #[inline]
     pub fn from_pixels(width: usize, height: usize, gamma: f64, data: &'a mut [U32ArgbPremultipliedPixel]) -> Result<Self, ()> {
@@ -95,7 +95,7 @@ impl<'a> FrameU32Argb<'a> {
     }
 
     ///
-    /// Creates a RgbaFrame render target from a buffer of u8 values (which will be rendered as R, G, B, A pixels)
+    /// Creates a FrameU32Argb render target from a buffer of u32 values (which will be rendered as ARGB pixels)
     ///
     #[inline]
     pub fn from_u32(width: usize, height: usize, gamma: f64, data: &'a mut [u32]) -> Result<Self, ()> {
