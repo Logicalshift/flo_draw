@@ -1,5 +1,4 @@
 use flo_render_software::draw::*;
-use flo_render_software::edgeplan::*;
 use flo_render_software::pixel::*;
 use flo_render_software::render::*;
 use flo_render_software::scanplan::*;
@@ -7,45 +6,6 @@ use flo_render_software::scanplan::*;
 use flo_render_software::canvas::*;
 
 use std::time::{Instant};
-use std::ops::{Range};
-
-// Temporary scan planner used to write out/indicate lines that have errors on them
-struct TestScanPlanner<TEdge: EdgeDescriptor>(ShardScanPlanner<TEdge>);
-
-impl<TEdge: EdgeDescriptor> ScanPlanner for TestScanPlanner<TEdge> {
-    type Edge = TEdge;
-
-    fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
-        self.0.plan_scanlines(edge_plan, transform, y_positions, x_range.clone(), scanlines);
-        let pixel_zero = transform.source_x_to_pixels(-1.0);
-
-        for (idx, y) in y_positions.iter().enumerate() {
-            let half_pixel  = transform.pixel_range_to_x(&(0..1));
-            let half_pixel  = (half_pixel.end - half_pixel.start)/2.0;
-            let pixel_y     = transform.source_x_to_pixels(*y);
-
-            if pixel_y.round() == 782.0 + pixel_zero {
-                let scan_positions_start = y_positions.iter()
-                    .map(|y| y - half_pixel)
-                    .collect::<Vec<_>>();
-                let scan_positions_end = y_positions.iter()
-                    .map(|y| y + half_pixel)
-                    .collect::<Vec<_>>();
-                let mut edge_plan_output = vec![vec![]];
-
-                edge_plan.shards_on_scanlines(&scan_positions_start[idx..=idx], &scan_positions_end[idx..=idx], &mut edge_plan_output);
-                edge_plan_output[0].iter_mut().for_each(|plan| {
-                    plan.lower_x = transform.source_x_to_pixels(plan.lower_x);
-                    plan.upper_x = transform.source_x_to_pixels(plan.upper_x);
-                });
-
-                println!("{:?}", scanlines[idx].1);
-                println!("\n--\n{:?}", edge_plan_output);
-                //scanlines[idx].1 = ScanlinePlan::from_ordered_stacks(vec![]);
-            }
-        }
-    }
-}
 
 ///
 /// Draws FlowBetween's mascot as vector graphics in a window
@@ -148,7 +108,7 @@ pub fn main() {
     // Render the mascot to the terminal
     let mut term_renderer = TerminalRenderTarget::new(1920, 1080);
 
-    let renderer = CanvasDrawingRegionRenderer::new(TestScanPlanner(ShardScanPlanner::default()), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
+    let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(1080.0)), 1080);
     term_renderer.render(renderer, &canvas_drawing);
 }
 
