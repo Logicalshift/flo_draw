@@ -123,10 +123,6 @@ where
                 let edge                        = edge_data.edge.transform(transform);
                 let detail_samples              = edge.detail_samples();
                 let ((_, min_y), (_, max_y))    = edge.bounding_box();
-                let mut apexes                  = Vec::with_capacity(4);
-                edge.apexes(&mut apexes);
-
-                apexes.sort_by(|a, b| a.total_cmp(b));
 
                 EdgeData {
                     edge:           edge,
@@ -143,8 +139,6 @@ where
                 let edge                        = edge_data.edge.transform(transform);
                 let detail_samples              = edge.detail_samples();
                 let ((_, min_y), (_, max_y))    = edge.bounding_box();
-                let mut apexes                  = Vec::with_capacity(4);
-                edge.apexes(&mut apexes);
 
                 EdgeData {
                     edge:           edge,
