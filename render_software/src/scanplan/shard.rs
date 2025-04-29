@@ -58,27 +58,98 @@ impl ShardIntercept {
 /// We don't find maxima for peaks or minima for troughs, so one artifact this will introduce is that the subpixel peak or trough of a shape will be cut off.
 ///
 fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<EdgeDescriptorIntercept>, shards: &mut Vec<ShardIntercept>) {
+    struct InterceptIterator<'a, TIterator> {
+        /// The shape that's being iterated over
+        current_shape:      Option<usize>,
+
+        /// True if current_intercept is at the start of a new shape
+        new_shape:          bool,
+
+        /// The first intercept for the current shape
+        first_intercept:    Option<(&'a EdgeDescriptorIntercept, bool)>,
+
+        /// The intercept last read from the iterator (next value to return)
+        current_intercept:  Option<(&'a EdgeDescriptorIntercept, bool)>,
+
+        /// Iterator of sorted intercepts without the 'loop' repetitions
+        sorted_intercepts:  TIterator,         
+    }
+
+    impl<'a, TIterator> InterceptIterator<'a, TIterator> 
+    where
+        TIterator: Iterator<Item=&'a (&'a EdgeDescriptorIntercept, bool)>
+    {
+        pub fn new(iterator: TIterator) -> Self {
+            let mut iterator        = iterator;
+            let current_intercept   = iterator.next();
+
+            InterceptIterator { 
+                current_shape:      current_intercept.map(|intercept| intercept.0.position.0),
+                new_shape:          false,
+                first_intercept:    current_intercept.copied(), 
+                current_intercept:  current_intercept.copied(), 
+                sorted_intercepts:  iterator 
+            }
+        }
+    }
+
+    impl<'a, TIterator> Iterator for InterceptIterator<'a, TIterator> 
+    where
+        TIterator: Iterator<Item=&'a (&'a EdgeDescriptorIntercept, bool)>
+    {
+        type Item = (&'a EdgeDescriptorIntercept, bool);
+
+        #[inline]
+        fn next(&mut self) -> Option<(&'a EdgeDescriptorIntercept, bool)> {
+            if self.new_shape {
+                // At the end of each shape, return the first intercept again (because they loop around on themselves)
+                self.new_shape          = false;
+
+                // 'current_intercept' is the first item in the new shape at this point
+                let result              = self.first_intercept;
+                self.first_intercept    = self.current_intercept;
+
+                result
+            } else {
+                // Fetch the next intercept and remove the current intercept
+                let current_intercept   = self.current_intercept;
+                let next_intercept      = if current_intercept.is_some() { self.sorted_intercepts.next() } else { None };
+
+                if let Some(next_intercept) = next_intercept {
+                    // Check if we've reached the end of the shape: we loop the intercept back on itself if true
+                    let EdgePosition(shape_id, _, _) = next_intercept.0.position;
+                    if self.current_shape != Some(shape_id) {
+                        self.new_shape      = true;
+                        self.current_shape  = Some(shape_id);
+                    }
+                } else {
+                    // We've reached the end of the shape regardless
+                    self.new_shape = true;
+                }
+
+                // Current intercept is always part of the current shape
+                self.current_intercept = next_intercept.copied();
+                current_intercept
+            }
+        }
+    }
+
     // Clear out any existing values from the result
     shards.clear();
 
     // Mix the previous and next lines and then sort them by edge position
-    let mut sorted_lines =
+    let sorted_lines =
         previous_line.iter().map(|intercept| (intercept, false))
             .chain(next_line.iter().map(|intercept| (intercept, true)))
             .sorted_by(|(a, _), (b, _)| a.position.cmp(&b.position))
             .collect::<Vec<_>>();
 
-    // The shape is a loop, so push the first element back on to the end
-    if let Some(first) = sorted_lines.get(0) {
-        sorted_lines.push(*first);
-    }
-
     // When sorted this way, this puts 'connected' intercepts next to each other, so we can create shards from any pair where the first is on the lower edge 
     // and the second is on the upper edge, then sort again by x position. The shape is a loop, and so the ordering is too
     let mut last_matched                = false;
-    let mut initial_subpath_intercept   = &sorted_lines[0];
+    let mut initial_subpath_intercept   = sorted_lines[0];
 
-    for ((first_intercept, first_is_next), second) in sorted_lines.iter().tuple_windows::<(_, _)>() {
+    for ((first_intercept, first_is_next), second) in InterceptIterator::new(sorted_lines.iter()).tuple_windows::<(_, _)>() {
         let (second_intercept, second_is_next) = if first_intercept.position.0 != second.0.position.0 {
             // Intercepts are on different, so instead of using the original 'second' path, use the initial one from the current subpath
             let result = initial_subpath_intercept;
@@ -118,7 +189,7 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
     }
 
     // For a closed shape, there should always be an even number of intercepts, even after this transformation
-    debug_assert!(shards.len()%2 == 0, "Previous line: {:?}\nNext line: {:?}\nSorted lines: {:?}\nShards found: {:?}", previous_line, next_line, sorted_lines, shards);
+    debug_assert!(shards.len()%2 == 0, "Previous line: {:?}\nNext line: {:?}\nSorted lines: {:?}\nShards found: {:?}", previous_line, next_line, InterceptIterator::new(sorted_lines.iter()).collect::<Vec<_>>(), shards);
 }
 
 ///
