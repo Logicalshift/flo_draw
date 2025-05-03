@@ -77,7 +77,7 @@ pub fn main() {
                 gc.fill_color(Color::Rgba(1.0, 1.0, 1.0, 1.0));
                 gc.stroke_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
                 gc.line_width(6.0);
-                gc.line_join(canvas::LineJoin::Bevel); // bevel & miter work, 'round' is broken
+                gc.line_join(canvas::LineJoin::Round); // bevel & miter work, 'round' is broken
 
                 // Render the distorted paths
                 for path_set in distorted_text_paths {
