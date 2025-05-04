@@ -51,6 +51,7 @@ enum PolylineValue {
 #[derive(Clone)]
 pub struct Polyline {
     value:          PolylineValue,
+    apexes:         Vec<f64>,
     bounding_box:   ((f64, f64), (f64, f64))
 }
 
@@ -113,7 +114,7 @@ impl Polyline {
     /// Creates a new polyline shape
     ///
     #[inline]
-    pub fn new(points: impl IntoIterator<Item=Coord2>) -> Self {
+    pub fn new(points: impl IntoIterator<Item=Coord2>, apexes: impl IntoIterator<Item=f64>) -> Self {
         let mut points = points.into_iter().collect::<Vec<_>>();
         debug_assert!(points.last() == points.get(0), "Polyline is not closed");
         if points.last() != points.get(0) {
@@ -122,6 +123,7 @@ impl Polyline {
 
         Polyline {
             value:          PolylineValue::Points(points),
+            apexes:         apexes.into_iter().collect(),
             bounding_box:   ((0.0, 0.0), (0.0, 0.0)),
         }
     }
@@ -197,7 +199,7 @@ impl Polyline {
     ///
     pub fn transform_unprepared(&self, transform: &canvas::Transform2D) -> Self {
         match &self.value {
-            PolylineValue::Empty => Self { value: PolylineValue::Empty, bounding_box: self.bounding_box },
+            PolylineValue::Empty => Self { value: PolylineValue::Empty, apexes: vec![], bounding_box: self.bounding_box },
 
             PolylineValue::Points(points) => {
                 let points = points.iter().map(|point| transform_coord(point, transform)).collect();
@@ -205,6 +207,7 @@ impl Polyline {
                 // We don't need to transform/recalculate the bounding box as this polyline is not already transformed
                 Self {
                     value:          PolylineValue::Points(points),
+                    apexes:         vec![], // TODO
                     bounding_box:   self.bounding_box,
                 }
             }
@@ -215,6 +218,7 @@ impl Polyline {
 
                 Self {
                     value:          PolylineValue::Points(points),
+                    apexes:         vec![], // TODO
                     bounding_box:   self.bounding_box,
                 }
             }
@@ -361,10 +365,10 @@ impl PolylineNonZeroEdge {
     /// Creates a new non-zero polyline edge
     ///
     #[inline]
-    pub fn new(shape_id: ShapeId, points: impl IntoIterator<Item=Coord2>) -> Self {
+    pub fn new(shape_id: ShapeId, points: impl IntoIterator<Item=Coord2>, apexes: impl IntoIterator<Item=f64>) -> Self {
         Self {
             shape_id: shape_id,
-            polyline: Polyline::new(points)
+            polyline: Polyline::new(points, apexes)
         }
     }
 
@@ -420,7 +424,7 @@ impl EdgeDescriptor for PolylineNonZeroEdge {
     }
 
     fn apexes(&self, output: &mut Vec<f64>) {
-        todo!("Polylines with low numbers of edges should be easy to calculate apexes, good idea to pre-cache if they are generated with a lot of edges from curves though")
+        output.extend(self.polyline.apexes.iter().copied());
     }
 }
 
@@ -429,10 +433,10 @@ impl PolylineEvenOddEdge {
     /// Creates a new non-zero polyline edge
     ///
     #[inline]
-    pub fn new(shape_id: ShapeId, points: impl IntoIterator<Item=Coord2>) -> Self {
+    pub fn new(shape_id: ShapeId, points: impl IntoIterator<Item=Coord2>, apexes: impl IntoIterator<Item=f64>) -> Self {
         Self {
             shape_id: shape_id,
-            polyline: Polyline::new(points)
+            polyline: Polyline::new(points, apexes)
         }
     }
 
@@ -504,7 +508,8 @@ impl EdgeDescriptor for PolylineEvenOddEdge {
         format!("Even-odd polyline {:?}: {}", self.shape_id, self.polyline.description())
     }
 
+    #[inline]
     fn apexes(&self, output: &mut Vec<f64>) {
-        todo!("Polylines with low numbers of edges should be easy to calculate apexes, good idea to pre-cache if they are generated with a lot of edges from curves though")
+        output.extend(self.polyline.apexes.iter().copied());
     }
 }
