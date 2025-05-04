@@ -129,7 +129,7 @@ impl Polyline {
     }
 
     ///
-    /// Performs the calculations required to 
+    /// Performs the calculations required to render this polyline
     ///
     pub fn prepare_to_render(&mut self) {
         match self.value.take() {
@@ -182,6 +182,43 @@ impl Polyline {
                 self.bounding_box   = (bounds_min, bounds_max);
             }
         }
+
+        // Recalculate the apexes if the list is empty (every shape should have one at the top and bottom at least)
+        if self.apexes.is_empty() {
+            self.recalculate_apexes();
+        }
+    }
+
+    ///
+    /// Recalculates the apexes in this polyline
+    ///
+    fn recalculate_apexes(&mut self) {
+        // Fetch the coordinates that make up this polyline
+        let coords = match &self.value {
+            PolylineValue::Empty                => { return; }
+            PolylineValue::Points(coords)       => coords,
+            PolylineValue::Lines { points, ..}  => points,
+        };
+
+        self.apexes.clear();
+
+        // Assuming the line is closed (points.last() == points[0]), look for anywhere where the direction changes in the y-axis
+        let lines       = coords.iter().tuple_windows::<(_, _)>();
+        let line_pairs  = lines.tuple_windows::<(_, _)>();
+
+        for (line1, line2) in line_pairs {
+            // The sign of the direction indicates which direction the line is moving in
+            let line1_direction = line1.0.y() - line1.1.y();
+            let line2_direction = line2.0.y() - line2.1.y();
+
+            let line1_direction = if line1_direction == 0.0 { 0.0 } else { line1_direction.signum() };
+            let line2_direction = if line2_direction == 0.0 { 0.0 } else { line1_direction.signum() };
+
+            // Apexes occur if the direction changes between the two lines
+            if line1_direction != line2_direction {
+                self.apexes.push(line1.1.y());
+            }
+        }
     }
 
     ///
@@ -207,7 +244,7 @@ impl Polyline {
                 // We don't need to transform/recalculate the bounding box as this polyline is not already transformed
                 Self {
                     value:          PolylineValue::Points(points),
-                    apexes:         vec![], // TODO
+                    apexes:         vec![],
                     bounding_box:   self.bounding_box,
                 }
             }
@@ -218,7 +255,7 @@ impl Polyline {
 
                 Self {
                     value:          PolylineValue::Points(points),
-                    apexes:         vec![], // TODO
+                    apexes:         vec![],
                     bounding_box:   self.bounding_box,
                 }
             }
