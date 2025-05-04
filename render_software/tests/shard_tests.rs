@@ -10,7 +10,7 @@ fn scan_triangle() {
         Coord2(200.0, 200.0),
         Coord2(300.0, 100.0),
         Coord2(100.0, 100.0),
-    ]).to_non_zero_edge(ShapeId::new());
+    ], vec![]).to_non_zero_edge(ShapeId::new());
     triangle.prepare_to_render();
 
     // Iterate across the triangle to get a series of shards
@@ -50,7 +50,7 @@ fn scan_concave() {
         Coord2(250.0, 200.0),
         Coord2(300.0, 100.0),
         Coord2(100.0, 100.0),
-    ]).to_non_zero_edge(ShapeId::new());
+    ], vec![]).to_non_zero_edge(ShapeId::new());
     concave_shape.prepare_to_render();
 
     // Iterate across the shape to get a series of shards
@@ -91,7 +91,7 @@ fn scan_disjointed() {
         Coord2(125.0, 50.0),
         Coord2(75.0, 0.0),
         Coord2(0.0, 0.0),
-    ]).to_non_zero_edge(ShapeId::new());
+    ], vec![]).to_non_zero_edge(ShapeId::new());
     concave_shape.prepare_to_render();
 
     // Get the shards for the conflicting region. 49 is one set of intersections, 51 is another

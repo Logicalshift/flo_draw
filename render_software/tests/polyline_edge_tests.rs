@@ -9,7 +9,7 @@ fn triangle_intercepts() {
         Coord2(200.0, 200.0),
         Coord2(300.0, 100.0),
         Coord2(100.0, 100.0),
-    ]);
+    ], vec![]);
     triangle.prepare_to_render();
 
     // Get the intercepts that exactly hit the lower line
@@ -30,7 +30,7 @@ fn horizontal_triangle_line() {
         Coord2(200.0, 200.0),
         Coord2(300.0, 100.0),
         Coord2(100.0, 100.0),
-    ]);
+    ], vec![]);
     triangle.prepare_to_render();
 
     // Get the intercepts that exactly hit the lower line
@@ -51,7 +51,7 @@ fn horizontal_triangle_line_reversed() {
         Coord2(200.0, 200.0),
         Coord2(100.0, 100.0),
         Coord2(300.0, 100.0),
-    ]);
+    ], vec![]);
     triangle.prepare_to_render();
 
     // Get the intercepts that exactly hit the lower line
@@ -72,7 +72,7 @@ fn double_horizontal_triangle_line() {
         Coord2(300.0, 100.0),
         Coord2(150.0, 100.0),
         Coord2(100.0, 100.0),
-    ]);
+    ], vec![]);
     triangle.prepare_to_render();
 
     // Get the intercepts that exactly hit the lower line
@@ -94,7 +94,7 @@ fn triple_horizontal_triangle_line() {
         Coord2(166.0, 100.0),
         Coord2(133.0, 100.0),
         Coord2(100.0, 100.0),
-    ]);
+    ], vec![]);
     triangle.prepare_to_render();
 
     // Get the intercepts that exactly hit the lower line
@@ -116,7 +116,7 @@ fn triple_horizontal_triangle_line_multiple() {
         Coord2(166.0, 100.0),
         Coord2(133.0, 100.0),
         Coord2(100.0, 100.0),
-    ]);
+    ], vec![]);
     triangle.prepare_to_render();
 
     // Get the intercepts that exactly hit the lower line
