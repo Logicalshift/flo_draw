@@ -1406,3 +1406,83 @@ fn lower_edges_5() {
 
     assert!(failed.is_empty(), "{}/{} tests did not render anything", failed.len(), failed.len() + succeeded.len());
 }
+
+#[test]
+fn lower_edges_6() {
+    // This letter 'z' has an issue drawing its last line: it shimmers in and out of existence as the pixel height changes
+    use Draw::*;
+    use PathOp::*;
+
+    let letter_z = vec![
+        Path(Move(506.984, 516.866)), 
+        Path(BezierCurve(((506.984, 516.638), (506.945, 516.416)), (506.867, 516.2))), 
+        Path(BezierCurve(((506.789, 515.984), (506.68402, 515.798)), (506.552, 515.642))), 
+        Path(Line(496.67, 502.502)), 
+        Path(Line(506.642, 502.502)), 
+        Path(Line(506.642, 500.0)), 
+        Path(Line(492.90802, 500.0)), 
+        Path(Line(492.90802, 501.332)), 
+        Path(BezierCurve(((492.90802, 501.488), (492.944, 501.671)), (493.01602, 501.881))), 
+        Path(BezierCurve(((493.088, 502.091), (493.196, 502.292)), (493.34003, 502.484))), 
+        Path(Line(503.276, 515.714)), 
+        Path(Line(493.466, 515.714)), 
+        Path(Line(493.466, 518.234)), 
+        Path(Line(506.984, 518.234)), 
+        Path(Line(506.984, 516.866)), 
+        Path(ClosePath)
+    ];
+
+    // Range
+    let z_top       = 500.0;
+    let z_bottom    = 518.234;
+
+    // Renders near the center of a 1000,1000 canvas
+    let mut instructions = vec![];
+
+    instructions.canvas_height(1000.0);
+    instructions.center_region(0.0, 0.0, 1000.0, 1000.0);
+    instructions.extend(letter_z);
+    instructions.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+    instructions.fill();
+
+    // This test uses the fixed 1080 pixel height window, but moves pixels around the top and the bottom
+    let transform   = ScanlineTransform::for_region(&(-1.0..1.0), 1080);
+
+    // Drawing is in the range 0-1000 but we'll have 1080 pixels
+    let z_top       = (z_top/1000.0)*1080.0;
+    let z_bottom    = (z_bottom/1000.0)*1080.0;
+
+    // Record the locations where we do and do not find a match against the 'z'
+    let mut succeeded   = vec![];
+    let mut failed      = vec![];
+
+    for offset in 0..100 {
+        // Search around the pixel boundary for the bottom/top of the z
+        let offset  = (offset as f64) / 100.0;
+        let offset  = -0.45 + (offset * 0.9);
+
+        let pos1    = z_top + offset;
+        let pos2    = z_bottom + offset;
+        let pos1    = -transform.fractional_pixel_x_to_source_x(pos1);
+        let pos2    = -transform.fractional_pixel_x_to_source_x(pos2);
+
+        // Plan at the positions
+        let plan1 = plan_layer_0_line_on_drawing(instructions.clone(), pos1);
+        let plan2 = plan_layer_0_line_on_drawing(instructions.clone(), pos2);
+
+        // Top or bottom of the z should hit both sides
+        if plan1.spans().len() > 0 {
+            succeeded.push(pos1);
+        } else {
+            failed.push(pos1);
+        }
+
+        if plan2.spans().len() > 0 {
+            succeeded.push(pos2);
+        } else {
+            failed.push(pos2);
+        }
+    }
+
+    assert!(failed.is_empty(), "{}/{} failed\n\nFailed={:?}", failed.len(), failed.len() + succeeded.len(), failed);
+}
