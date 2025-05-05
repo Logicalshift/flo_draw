@@ -1266,3 +1266,27 @@ fn lower_edges_1() {
         assert!(plan.spans().len() > 0);
     }
 }
+
+#[test]
+fn lower_edges_2() {
+    // Seeing thin rectangles and lower edges disappear from the rendering: test that thin rectangles always produce some intercepts
+    // (We use apexes for this)
+    for y_min in 0..10 {
+        let y_min = y_min as f32 / 10.0;
+        let y_min = -0.5 + y_min;
+
+        // We should capture intercepts at the bottom of a shape, even if they're less than a pixel long
+        // 0.80099994 is the lato underline width at 18.0 pts, which is causing an issue
+        let mut instructions = vec![];
+        instructions.clear();
+        instructions.canvas_height(1080.0);
+        instructions.rect(-100.0, y_min, 100.0, y_min + 0.80099994);
+        instructions.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+        instructions.fill();
+
+        let plan = plan_layer_0_line_on_drawing(instructions, 0.0);
+
+        println!("{:?}", plan);
+        assert!(plan.spans().len() > 0);
+    }
+}
