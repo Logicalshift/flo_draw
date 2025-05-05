@@ -1,5 +1,6 @@
 use flo_draw::*;
 use flo_draw::canvas::*;
+use flo_draw::binding::*;
 
 use std::sync::*;
 
@@ -13,7 +14,9 @@ pub fn main() {
         let lato_bold   = CanvasFontFace::from_slice(include_bytes!("Lato-Bold.ttf"));
 
         // Create a window
-        let canvas      = create_drawing_window("Text layout example");
+        let mut properties = WindowProperties::from(&"Text layout example");
+        properties.size = BindRef::from(bind((1043, 1043)));
+        let canvas      = create_drawing_window(properties);
 
         // Various text layout demonstrations
         canvas.draw(|gc| {
