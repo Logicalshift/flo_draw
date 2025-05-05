@@ -87,16 +87,40 @@ where
             use rayon::prelude::*;
 
             // Prepare all of the edges that have not been prepared before
-            self.edges.par_iter_mut()
+            let edges           = &mut self.edges;
+            let shape_apexes    = &mut self.shape_apexes;
+
+            let new_apexes = edges.par_iter_mut()
                 .skip(self.max_prepared)
-                .for_each(|edge| {
+                .map(|edge| {
                     // Prepare the edge to render
                     edge.edge.prepare_to_render();
 
                     // The bounding_box() call should have accurate data at this point, so update the edge bounds
                     let ((_, min_y), (_, max_y)) = edge.edge.bounding_box();
                     edge.y_bounds = min_y..max_y;
-                });
+
+                    // Append the apexes for this shape to the edge, which should also be available at this point)
+                    let shape_id = edge.edge.shape();
+                    let mut apexes = Vec::with_capacity(4);
+                    edge.edge.apexes(&mut apexes);
+
+                    (shape_id, apexes)
+                })
+                .collect::<Vec<_>>();
+
+            for (shape_id, apexes) in new_apexes {
+                // TODO: we can improve efficiency a bit by deferring the sort until later and only sorting each shape's set of apexes once (we need to sort each shape only once though and it's not clear if it's worth adding something like a hashset vs sometimes sorting multiple times)
+                if let Some(existing_apexes) = shape_apexes.get_mut(shape_id.0) {
+                    existing_apexes.extend(apexes);
+                    existing_apexes.sort_by(|a, b| a.total_cmp(b));
+                } else {
+                    let mut apexes = apexes;
+                    apexes.sort_by(|a, b| a.total_cmp(b));
+
+                    shape_apexes.insert(shape_id.0, apexes);
+                }
+            }
 
             // Update the 'max_prepared' value so that we won't prepare edges again
             self.max_prepared = self.edges.len();
@@ -233,18 +257,6 @@ where
     #[inline]
     pub fn add_edge(&mut self, new_edge: TEdge) {
         let shape_id = new_edge.shape();
-
-        // Append the apexes for this shape to the edge
-        if let Some(apexes) = self.shape_apexes.get_mut(shape_id.0) {
-            new_edge.apexes(apexes);
-            apexes.sort_by(|a, b| a.total_cmp(b));
-        } else {
-            let mut apexes = Vec::with_capacity(4);
-            new_edge.apexes(&mut apexes);
-            apexes.sort_by(|a, b| a.total_cmp(b));
-
-            self.shape_apexes.insert(shape_id.0, apexes);
-        }
 
         // The y-bounds are calculated later on when we prepare to render
         let detail_samples = new_edge.detail_samples();
