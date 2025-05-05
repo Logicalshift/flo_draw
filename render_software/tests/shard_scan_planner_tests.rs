@@ -15,9 +15,16 @@ use std::sync::*;
 /// Generates a plan for layer 0 of a drawing at a particular y-position (coordinates are in the -1 to 1 range for a canvas drawing)
 ///
 fn plan_layer_0_line_on_drawing(instructions: impl IntoIterator<Item=Draw>, y_pos: f64) -> ScanlinePlan {
+    plan_layer_0_line_on_drawing_with_height(instructions, y_pos, 1080.0)
+}
+
+///
+/// Generates a plan for layer 0 of a drawing at a particular y-position (coordinates are in the -1 to 1 range for a canvas drawing)
+///
+fn plan_layer_0_line_on_drawing_with_height(instructions: impl IntoIterator<Item=Draw>, y_pos: f64, pixel_height: f64) -> ScanlinePlan {
     // Draw to the canvas
     let mut drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
-    drawing.set_pixel_height(1080.0);
+    drawing.set_pixel_height(pixel_height);
     drawing.draw(instructions);
 
     // We'll try to generate the plan for layer 0
@@ -29,7 +36,7 @@ fn plan_layer_0_line_on_drawing(instructions: impl IntoIterator<Item=Draw>, y_po
     // Request a particular line be scanned (we use a square 1080x1080 region for this)
     let y_positions     = [y_pos];
     let mut scanlines   = [(0.0, ScanlinePlan::default())];
-    let transform       = ScanlineTransform::for_region(&(-1.0..1.0), 1080);
+    let transform       = ScanlineTransform::for_region(&(-1.0..1.0), pixel_height as _);
 
     planner.plan_scanlines(edges, &transform, &y_positions, -1.0..1.0, &mut scanlines);
 
@@ -1481,6 +1488,84 @@ fn lower_edges_6() {
             succeeded.push(pos2);
         } else {
             failed.push(pos2);
+        }
+    }
+
+    assert!(failed.is_empty(), "{}/{} failed\n\nFailed={:?}", failed.len(), failed.len() + succeeded.len(), failed);
+}
+
+#[test]
+fn lower_edges_7() {
+    // This letter 'z' has an issue drawing its last line: it shimmers in and out of existence as the pixel height changes
+    use Draw::*;
+    use PathOp::*;
+
+    let letter_z = vec![
+        Path(Move(506.984, 516.866)), 
+        Path(BezierCurve(((506.984, 516.638), (506.945, 516.416)), (506.867, 516.2))), 
+        Path(BezierCurve(((506.789, 515.984), (506.68402, 515.798)), (506.552, 515.642))), 
+        Path(Line(496.67, 502.502)), 
+        Path(Line(506.642, 502.502)), 
+        Path(Line(506.642, 500.0)), 
+        Path(Line(492.90802, 500.0)), 
+        Path(Line(492.90802, 501.332)), 
+        Path(BezierCurve(((492.90802, 501.488), (492.944, 501.671)), (493.01602, 501.881))), 
+        Path(BezierCurve(((493.088, 502.091), (493.196, 502.292)), (493.34003, 502.484))), 
+        Path(Line(503.276, 515.714)), 
+        Path(Line(493.466, 515.714)), 
+        Path(Line(493.466, 518.234)), 
+        Path(Line(506.984, 518.234)), 
+        Path(Line(506.984, 516.866)), 
+        Path(ClosePath)
+    ];
+
+    // Range
+    let z_top       = 500.0;
+    let z_bottom    = 518.234;
+
+    // Renders near the center of a 1000,1000 canvas
+    let mut instructions = vec![];
+
+    instructions.canvas_height(1000.0);
+    instructions.center_region(0.0, 0.0, 1000.0, 1000.0);
+    instructions.extend(letter_z);
+    instructions.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+    instructions.fill();
+
+    // Record the locations where we do and do not find a match against the 'z'
+    let mut succeeded   = vec![];
+    let mut failed      = vec![];
+
+    for offset in 0..100 {
+        // This test modifies the height of the region that we're rendering
+        let offset      = offset as f64;
+        let offset      = offset - 50.0;
+        let height      = 1080.0 + offset;
+        let transform   = ScanlineTransform::for_region(&(-1.0..1.0), height as _);
+
+        // Drawing is in the range 0-1000 but we'll have 1080 pixels
+        let z_top       = (z_top/1000.0)*height;
+        let z_bottom    = (z_bottom/1000.0)*height;
+
+        // Search at the boundary of the lower part of the z, on around an actual pixel boundary
+        let pos1    = -transform.fractional_pixel_x_to_source_x((z_top+0.5).floor());
+        let pos2    = -transform.fractional_pixel_x_to_source_x((z_bottom-0.5).floor());
+
+        // Plan at the positions
+        let plan1 = plan_layer_0_line_on_drawing_with_height(instructions.clone(), pos1, height);
+        let plan2 = plan_layer_0_line_on_drawing_with_height(instructions.clone(), pos2, height);
+
+        // Top or bottom of the z should hit both sides
+        if plan1.spans().len() > 0 {
+            succeeded.push(height);
+        } else {
+            failed.push(height);
+        }
+
+        if plan2.spans().len() > 0 {
+            succeeded.push(height);
+        } else {
+            failed.push(height);
         }
     }
 
