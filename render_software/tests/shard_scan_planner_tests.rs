@@ -1243,3 +1243,26 @@ fn text_overlap_2() {
     assert!(match merge { PixelProgramPlan::Merge(alpha) => alpha, PixelProgramPlan::LinearMerge(a, b) => (a+b)/2.0, _ => 0.0 } > 0.6);
     assert!(pixel_378.x_range().end == 379.0);
 }
+
+#[test]
+fn lower_edges_1() {
+    // Seeing thin rectangles and lower edges disappear from the rendering: test that thin rectangles always produce some intercepts
+    // (We use apexes for this)
+    for y_min in 0..10 {
+        let y_min = y_min as f32 / 10.0;
+        let y_min = -0.5 + y_min;
+
+        // We should capture intercepts at the bottom of a shape, even if they're less than a pixel long
+        let mut instructions = vec![];
+        instructions.clear();
+        instructions.canvas_height(1080.0);
+        instructions.rect(-100.0, y_min, 100.0, y_min + 0.1);
+        instructions.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+        instructions.fill();
+
+        let plan = plan_layer_0_line_on_drawing(instructions, 0.0);
+
+        println!("{:?}", plan);
+        assert!(plan.spans().len() > 0);
+    }
+}
