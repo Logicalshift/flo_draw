@@ -90,16 +90,20 @@ where
             let edges           = &mut self.edges;
             let shape_apexes    = &mut self.shape_apexes;
 
-            let new_apexes = edges.par_iter_mut()
+            edges.par_iter_mut()
                 .skip(self.max_prepared)
-                .map(|edge| {
+                .for_each(|edge| {
                     // Prepare the edge to render
                     edge.edge.prepare_to_render();
 
                     // The bounding_box() call should have accurate data at this point, so update the edge bounds
                     let ((_, min_y), (_, max_y)) = edge.edge.bounding_box();
                     edge.y_bounds = min_y..max_y;
+                });
 
+            let new_apexes = edges.par_iter()
+                .skip(self.max_prepared)
+                .map(|edge| {
                     // Append the apexes for this shape to the edge, which should also be available at this point)
                     let shape_id = edge.edge.shape();
                     let mut apexes = Vec::with_capacity(4);
