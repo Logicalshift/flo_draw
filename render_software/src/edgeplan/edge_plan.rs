@@ -440,6 +440,7 @@ where
                                     if *apex_pos < y_range.end {
                                         // Apex included in this line (skip overlapping apexes)
                                         if *apex_pos > last_apex {
+                                            line_apexes.push((last_apex + apex_pos) * 0.5);
                                             line_apexes.push(*apex_pos);
                                             last_apex = *apex_pos;
                                         }
@@ -453,6 +454,7 @@ where
                                 }
                             }
 
+                            /*
                             // Instead of using the apexes as the intercept points, use fixed-width subpixels
                             let mut line_apexes = vec![y_range.start];
                             let num_samples     = edge.detail_samples as f64;
@@ -461,6 +463,7 @@ where
                                 let p = (p as f64)/num_samples;
                                 line_apexes.push(y_range.start + (y_range.end-y_range.start)*p);
                             }
+                            */
 
                             line_apexes.push(y_range.end);
 
