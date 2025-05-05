@@ -99,7 +99,7 @@ fn render_path(path: &BezierSubpath, y_pos: f64) {
 }
 
 #[cfg(not(feature = "render_term"))]
-fn render_path(_path: impl BezierPath<Point=Coord2>, _y_pos: f64) {
+fn render_path(_path: &impl BezierPath<Point=Coord2>, _y_pos: f64) {
     // Nothing to do
 }
 
