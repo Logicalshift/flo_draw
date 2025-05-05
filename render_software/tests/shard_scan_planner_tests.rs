@@ -1248,8 +1248,11 @@ fn text_overlap_2() {
 fn lower_edges_1() {
     // Seeing thin rectangles and lower edges disappear from the rendering: test that thin rectangles always produce some intercepts
     // (We use apexes for this)
-    for y_min in 0..10 {
-        let y_min = y_min as f32 / 10.0;
+    let mut succeeded   = vec![];
+    let mut failed      = vec![];
+
+    for y_min in 0..100 {
+        let y_min = y_min as f32 / 100.0;
         let y_min = -0.5 + y_min;
 
         // We should capture intercepts at the bottom of a shape, even if they're less than a pixel long
@@ -1262,9 +1265,14 @@ fn lower_edges_1() {
 
         let plan = plan_layer_0_line_on_drawing(instructions, 0.0);
 
-        println!("{:?}", plan);
-        assert!(plan.spans().len() > 0, "Failed at y={:?}", y_min);
+        if plan.spans().len() > 0 {
+            succeeded.push(y_min);
+        } else {
+            failed.push(y_min);
+        }
     }
+
+    assert!(failed.is_empty(), "{}/{} tests did not render anything", failed.len(), failed.len() + succeeded.len());
 }
 
 #[test]
@@ -1324,13 +1332,16 @@ fn lower_edges_3() {
 
 #[test]
 fn lower_edges_4() {
-    // Thinner line, so we capture only part of it for some values of y
+    // Thinner line, so we capture only part of it for some values of y (this extends 0.75 either side of the 0 line)
     let width = 1.5;
 
     // Seeing thin rectangles and lower edges disappear from the rendering: test that thin rectangles always produce some intercepts
     // (We use apexes for this)
-    for y_min in 0..10 {
-        let y_min = y_min as f32 / 10.0;
+    let mut succeeded   = vec![];
+    let mut failed      = vec![];
+
+    for y_min in 0..100 {
+        let y_min = y_min as f32 / 100.0;
         let y_min = -0.5 + y_min;
 
         // We should capture intercepts at the bottom of a shape, even if they're less than a pixel long
@@ -1346,21 +1357,31 @@ fn lower_edges_4() {
 
         let plan = plan_layer_0_line_on_drawing(instructions, 0.0);
 
-        println!("{:?}", plan);
-        assert!(plan.spans().len() > 0, "Failed at y={:?}", y_min);
+        if plan.spans().len() > 0 {
+            succeeded.push(y_min);
+        } else {
+            failed.push(y_min);
+        }
     }
+
+    assert!(failed.is_empty(), "{}/{} tests did not render anything\n\n{:?}\nvs\n{:?}", failed.len(), failed.len() + succeeded.len(), failed, succeeded);
 }
 
 #[test]
 fn lower_edges_5() {
-    // 0.80099994 is the lato underline width at 18.0 pts, which is causing an issue
+    // 0.80099994 is the lato underline width at 18.0 pts, which is causing an issue (this extends 0.4 either side of the 0 line)
     let width = 0.80099994;
 
     // Seeing thin rectangles and lower edges disappear from the rendering: test that thin rectangles always produce some intercepts
     // (We use apexes for this)
-    for y_min in 0..10 {
-        let y_min = y_min as f32 / 10.0;
-        let y_min = -0.5 + y_min;
+    let mut succeeded   = vec![];
+    let mut failed      = vec![];
+
+    for y_min in 0..100 {
+        // The edge does not lie across the pixel for most of its locations, but we render everything from -0.5 to 0.5.
+        // The line is within the pixel we're rendering from -0.4 onwards
+        let y_min = y_min as f32 / 100.0;
+        let y_min = -0.4 + y_min * 0.8;
 
         // We should capture intercepts at the bottom of a shape, even if they're less than a pixel long
         let mut instructions = vec![];
@@ -1375,7 +1396,12 @@ fn lower_edges_5() {
 
         let plan = plan_layer_0_line_on_drawing(instructions, 0.0);
 
-        println!("{:?}", plan);
-        assert!(plan.spans().len() > 0, "Failed at y={:?}", y_min);
+        if plan.spans().len() > 0 {
+            succeeded.push(y_min);
+        } else {
+            failed.push(y_min);
+        }
     }
+
+    assert!(failed.is_empty(), "{}/{} tests did not render anything", failed.len(), failed.len() + succeeded.len());
 }
