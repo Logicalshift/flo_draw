@@ -200,7 +200,10 @@ where
     pub fn prepare_to_render(&mut self) {
         if self.max_prepared != self.edges.len() {
             // Prepare all of the edges that have not been prepared before
-            self.edges.iter_mut()
+            let edges           = &mut self.edges;
+            let shape_apexes    = &mut self.shape_apexes;
+
+            edges.iter_mut()
                 .skip(self.max_prepared)
                 .for_each(|edge| {
                     // Prepare the edge to render
@@ -210,6 +213,31 @@ where
                     let ((_, min_y), (_, max_y)) = edge.edge.bounding_box();
                     edge.y_bounds = min_y..max_y;
                 });
+
+            let new_apexes = edges.iter()
+                .skip(self.max_prepared)
+                .map(|edge| {
+                    // Append the apexes for this shape to the edge, which should also be available at this point)
+                    let shape_id = edge.edge.shape();
+                    let mut apexes = Vec::with_capacity(4);
+                    edge.edge.apexes(&mut apexes);
+
+                    (shape_id, apexes)
+                })
+                .collect::<Vec<_>>();
+
+            for (shape_id, apexes) in new_apexes {
+                // TODO: we can improve efficiency a bit by deferring the sort until later and only sorting each shape's set of apexes once (we need to sort each shape only once though and it's not clear if it's worth adding something like a hashset vs sometimes sorting multiple times)
+                if let Some(existing_apexes) = shape_apexes.get_mut(shape_id.0) {
+                    existing_apexes.extend(apexes);
+                    existing_apexes.sort_by(|a, b| a.total_cmp(b));
+                } else {
+                    let mut apexes = apexes;
+                    apexes.sort_by(|a, b| a.total_cmp(b));
+
+                    shape_apexes.insert(shape_id.0, apexes);
+                }
+            }
 
             // Update the 'max_prepared' value so that we won't prepare edges again
             self.max_prepared = self.edges.len();
