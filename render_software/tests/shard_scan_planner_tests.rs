@@ -1689,7 +1689,6 @@ fn lower_edges_9() {
 
     // Range
     let z_top       = 500.5;
-    let z_bottom    = 518.234;
 
     // Renders near the center of a 1000,1000 canvas
     let mut instructions = vec![];
@@ -1711,11 +1710,9 @@ fn lower_edges_9() {
 
     // Drawing is in the range 0-1000 but we'll have 1080 pixels
     let z_top       = (z_top/1000.0)*height;
-    let z_bottom    = (z_bottom/1000.0)*height;
 
     // Search at the boundary of the lower part of the z, on around an actual pixel boundary
     let pos1    = -transform.fractional_pixel_x_to_source_x((z_top+0.5).floor());
-    let pos2    = -transform.fractional_pixel_x_to_source_x((z_bottom+0.5).floor());
 
     // Plan at the positions
     let plan1 = plan_layer_0_line_on_drawing_with_height(instructions.clone(), pos1, height);
