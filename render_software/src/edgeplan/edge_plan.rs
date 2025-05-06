@@ -463,6 +463,7 @@ where
                 }
             } else {
                 // Fill the intercepts for this shape (optimistically: we can't use the results we calculate here with an apex, so we assume only a few lines will be affected)
+                // (We compute the intercepts for multiple lines here, then look for apexes later on)
                 shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
 
                 // Iterate through the apexes. We assume the y positions will be in ascending order (as will the apexes), so we'll get apexes relating to each y position as we go
@@ -475,7 +476,7 @@ where
                 for ((shards, output_line), y_range) in intercepts.iter().zip(output.iter_mut()).zip(y_ranges) {
                     // Find if any of the apexes lie within this y-range
                     if let Some(apex_pos) = next_apex {
-                        if *apex_pos < y_range.end {
+                        if *apex_pos <= y_range.end {
                             // Find the apexes that apply to this line
                             let mut line_apexes = vec![y_range.start];
                             let mut last_apex   = y_range.start;
