@@ -288,8 +288,6 @@ where
     ///
     #[inline]
     pub fn add_edge(&mut self, new_edge: TEdge) {
-        let shape_id = new_edge.shape();
-
         // The y-bounds are calculated later on when we prepare to render
         let detail_samples = new_edge.detail_samples();
         self.edges.push(EdgeData {
