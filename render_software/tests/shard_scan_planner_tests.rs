@@ -1726,3 +1726,94 @@ fn lower_edges_9() {
 
     assert!(failed.is_empty(), "{}/{} failed\n\nFailed={:?}", failed.len(), failed.len() + succeeded.len(), failed);
 }
+
+#[test]
+fn letter_h() {
+    use Draw::*;
+    use PathOp::*;
+
+    // Fails at height=1001, 989 (failure is at 8px from bottom, line 486)
+
+    // The letter h misses some pixels at certain sizes
+    let letter_h = vec![
+        Path(Move(497.858, 507.902)),
+        Path(BezierCurve(((498.248, 508.316), (498.68, 508.646)), (499.154, 508.892))),
+        Path(BezierCurve(((499.628, 509.138), (500.174, 509.261)), (500.792, 509.261))),
+        Path(BezierCurve(((501.29, 509.261), (501.7295, 509.1785)), (502.1105, 509.0135))),
+        Path(BezierCurve(((502.4915, 508.8485), (502.8095, 508.6145)), (503.06448, 508.3115))),
+        Path(BezierCurve(((503.3195, 508.0085), (503.513, 507.644)), (503.645, 507.218))),
+        Path(BezierCurve(((503.777, 506.792), (503.843, 506.321)), (503.843, 505.805))),
+        Path(Line(503.843, 500.0)),
+        Path(Line(502.232, 500.0)),
+        Path(Line(502.232, 505.805)),
+        Path(BezierCurve(((502.232, 506.495), (502.0745, 507.0305)), (501.7595, 507.4115))),
+        Path(BezierCurve(((501.4445, 507.7925), (500.966, 507.983)), (500.324, 507.983))),
+        Path(BezierCurve(((499.85, 507.983), (499.4075, 507.869)), (498.9965, 507.641))),
+        Path(BezierCurve(((498.5855, 507.413), (498.206, 507.104)), (497.858, 506.714))),
+        Path(Line(497.858, 500.0)),
+        Path(Line(496.247, 500.0)),
+        Path(Line(496.247, 513.257)),
+        Path(Line(497.858, 513.257)),
+        Path(Line(497.858, 507.902)),
+        Path(ClosePath)
+    ];
+
+    // Drawing instructions add the height
+    let mut instructions = vec![];
+
+    instructions.canvas_height(1000.0);
+    instructions.center_region(0.0, 0.0, 1000.0, 1000.0);
+    instructions.extend(letter_h);
+    instructions.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+    instructions.fill();
+
+    // Line in the canvas that produces error
+    let pixel_line  = 486.0;
+    let height      = 989;
+    let transform   = ScanlineTransform::for_region(&(-1.0..1.0), height as _);
+    let canvas_pos  = transform.fractional_pixel_x_to_source_x(pixel_line);
+
+    let plan = plan_layer_0_line_on_drawing_with_height(instructions.clone(), canvas_pos, height as _);
+
+    assert!(false, "{:?}", plan.spans());
+}
+
+#[test]
+fn letter_o() {
+    use Draw::*;
+    use PathOp::*;
+
+    // The letter o is missing some antialiasing at certain sizes
+    let letter_o = vec![
+        Path(Move(500.009, 509.261)),
+        Path(BezierCurve(((500.675, 509.261), (501.275, 509.15)), (501.809, 508.928))),
+        Path(BezierCurve(((502.34302, 508.706), (502.799, 508.391)), (503.177, 507.983))),
+        Path(BezierCurve(((503.555, 507.575), (503.8445, 507.0815)), (504.0455, 506.5025))),
+        Path(BezierCurve(((504.2465, 505.9235), (504.34702, 505.277)), (504.34702, 504.563))),
+        Path(BezierCurve(((504.34702, 503.843), (504.2465, 503.195)), (504.0455, 502.619))),
+        Path(BezierCurve(((503.8445, 502.043), (503.555, 501.551)), (503.177, 501.143))),
+        Path(BezierCurve(((502.799, 500.735), (502.34302, 500.4215)), (501.809, 500.2025))),
+        Path(BezierCurve(((501.275, 499.9835), (500.675, 499.874)), (500.009, 499.874))),
+        Path(BezierCurve(((499.337, 499.874), (498.7325, 499.9835)), (498.1955, 500.2025))),
+        Path(BezierCurve(((497.6585, 500.4215), (497.201, 500.735)), (496.823, 501.143))),
+        Path(BezierCurve(((496.445, 501.551), (496.15552, 502.043)), (495.9545, 502.619))),
+        Path(BezierCurve(((495.7535, 503.195), (495.653, 503.843)), (495.653, 504.563))),
+        Path(BezierCurve(((495.653, 505.277), (495.7535, 505.9235)), (495.9545, 506.5025))),
+        Path(BezierCurve(((496.15552, 507.0815), (496.445, 507.575)), (496.823, 507.983))),
+        Path(BezierCurve(((497.201, 508.391), (497.6585, 508.706)), (498.1955, 508.928))),
+        Path(BezierCurve(((498.7325, 509.15), (499.337, 509.261)), (500.009, 509.261))),
+        Path(ClosePath),
+        Path(Move(500.009, 501.125)),
+        Path(BezierCurve(((500.909, 501.125), (501.581, 501.4265)), (502.025, 502.0295))),
+        Path(BezierCurve(((502.469, 502.6325), (502.691, 503.474)), (502.691, 504.554))),
+        Path(BezierCurve(((502.691, 505.64), (502.469, 506.486)), (502.025, 507.092))),
+        Path(BezierCurve(((501.581, 507.698), (500.909, 508.001)), (500.009, 508.001))),
+        Path(BezierCurve(((499.553, 508.001), (499.15552, 507.923)), (498.8165, 507.767))),
+        Path(BezierCurve(((498.4775, 507.611), (498.1955, 507.386)), (497.9705, 507.092))),
+        Path(BezierCurve(((497.7455, 506.798), (497.5775, 506.4365)), (497.4665, 506.0075))),
+        Path(BezierCurve(((497.3555, 505.5785), (497.3, 505.094)), (497.3, 504.554))),
+        Path(BezierCurve(((497.3, 503.474), (497.5235, 502.6325)), (497.9705, 502.0295))),
+        Path(BezierCurve(((498.4175, 501.4265), (499.09702, 501.125)), (500.009, 501.125))),
+        Path(ClosePath)
+    ];
+}
