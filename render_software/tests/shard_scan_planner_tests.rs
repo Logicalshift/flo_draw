@@ -1775,7 +1775,15 @@ fn letter_h() {
 
     let plan = plan_layer_0_line_on_drawing_with_height(instructions.clone(), canvas_pos, height as _);
 
-    assert!(false, "{:?}", plan.spans());
+    // Should generate plans that don't have completely transparent sections
+    assert!(!plan.spans().iter()
+        .any(|span| span.programs()
+            .any(|plan| {
+                match plan {
+                    PixelProgramPlan::LinearMerge(a, b) => a == 0.0 && b == 0.0,
+                    _ => false,
+                }
+            })), "{:?}", plan.spans());
 }
 
 #[test]
