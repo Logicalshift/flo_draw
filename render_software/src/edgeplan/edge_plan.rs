@@ -482,7 +482,7 @@ where
                             let mut last_apex   = y_range.start;
                             loop {
                                 if let Some(apex_pos) = next_apex {
-                                    if *apex_pos < y_range.end {
+                                    if *apex_pos <= y_range.end {
                                         // Apex included in this line (skip overlapping apexes)
                                         if *apex_pos > last_apex {
                                             line_apexes.push((last_apex + apex_pos) * 0.5);
