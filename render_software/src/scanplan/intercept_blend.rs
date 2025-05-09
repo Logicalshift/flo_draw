@@ -442,7 +442,7 @@ impl InterceptBlend {
                 num_blends += 1;
             }
 
-            InterceptBlend::LinearFadeWithLimit { a, b, limit, .. } => {
+            InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
                 let x1 = x_range.start.floor();
                 let x2 = x_range.end.ceil();
 
@@ -498,6 +498,10 @@ impl InterceptBlend {
                     debug_assert!(total_coverage <= 1.0, "Produced too much alpha: {:?}", initial_blend);
                     program_stack.push(PixelProgramPlan::Merge(total_coverage as _));
                     num_blends += 1;
+                } else if x1 >= *limit {
+                    // Rare: the rendering is in the 'next' range. This shouldn't happen very often as we should trim the blend before rendering
+                    // it in most cases
+                    next.render(program_stack, shape_descriptor, opacity, x_range);
                 } else {
                     // Treat as a 'normal' linear blend
                     Self::render_linear_fade(*a, *b, program_stack, x_range);
