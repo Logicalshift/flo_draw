@@ -161,8 +161,6 @@ impl InterceptBlend {
     /// We assume that only points after the start of both blends will need to be generated.
     ///
     pub fn nest(&self, blend: InterceptBlend) -> InterceptBlend {
-        return blend;
-
         // Recursively merge the split values and the following values
         fn merge(blend: InterceptBlend, max_limit: f64, after_max_limit: InterceptBlend) -> InterceptBlend {
             // Ensure that everything 'after_max_limit' is actually after that point
