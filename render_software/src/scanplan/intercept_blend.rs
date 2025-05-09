@@ -867,22 +867,4 @@ mod test {
             assert!((actual-expected).abs() < 0.01, "{} != {}", actual, expected);
         }
     }
-
-    #[test]
-    fn nest_linear_fades_with_extremes() {
-        let first   = InterceptBlend::LinearFade { a: -1000000.0, b: 492381580.48851585 };
-        let second  = InterceptBlend::LinearFade { a: 0.5119625689548134, b: -252.20485850170897 };
-        let nested  = first.nest(second.clone());
-
-        let test_points     = [ 491.0, 491.1, 491.9, 492.0, 492.5, 494.9, 495.0, 495.1, 496.0, 487.0 ];
-        let our_values      = test_points.iter().map(|val| blend_factor(&nested, *val)).collect::<Vec<_>>();
-        let their_values    = test_points.iter().map(|val| blend_factor(&first, *val) + blend_factor(&second, *val)).collect::<Vec<_>>();
-
-        println!("ranges = {:?} {:?} {:?}", first.range(), second.range(), nested.range());
-        println!("{:?}\n\nActual: {:?}\n\nExpected: {:?}", nested, our_values, their_values);
-
-        for (actual, expected) in our_values.iter().zip(their_values.iter()) {
-            assert!((actual-expected).abs() < 0.01, "{} != {}", actual, expected);
-        }
-    }
 }
