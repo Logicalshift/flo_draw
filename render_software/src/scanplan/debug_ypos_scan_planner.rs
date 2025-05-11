@@ -41,8 +41,9 @@ where
         self.planner.plan_scanlines(edge_plan, transform, y_positions, x_range.clone(), scanlines);
 
         // Create the debug plan
-        let debug_range = x_range.start..(x_range.start + transform.source_x_to_pixels(1.0));
-        let debug_plan  = ScanlinePlan::from_ordered_stacks(vec![ScanSpanStack::with_first_span(ScanSpan::opaque(debug_range, self.debug_ypos_program))]);
+        let debug_range     = x_range.start..(x_range.start + transform.source_x_to_pixels(1.0));
+        let mut debug_plan  = ScanlinePlan::default();
+        debug_plan.push_next_range(debug_range, true, [PixelProgramPlan::Run(self.debug_ypos_program)]);
 
         // Combine with the debug program
         for (_ypos, scanline) in scanlines.iter_mut() {
@@ -52,7 +53,8 @@ where
             // Merge the foreground on top of the background
             scanline.merge(&foreground, |src, dst, is_opaque| {
                 if is_opaque {
-                    *src = dst.clone();
+                    src.clear();
+                    src.extend(dst.iter().copied());
                 } else {
                     src.extend(dst.clone());
                 }
