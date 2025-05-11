@@ -1,8 +1,6 @@
 use super::scanspan::*;
 use crate::pixel::*;
 
-use smallvec::*;
-
 use std::ops::{Range};
 
 // An observation is that we don't have to build up the stacks here, we can just run all the spans from back to front to build up
@@ -19,8 +17,13 @@ use std::ops::{Range};
 ///
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScanSpanStack {
+    /// The range of coorindates that these programs should be run over
     pub (crate) x_range:    Range<f64>,
-    pub (crate) plan:       SmallVec<[PixelProgramPlan; 4]>,
+
+    /// The indexes into the program list that these programs should be run for
+    pub (crate) plan:       Range<usize>,
+
+    /// True if these programs do not blend with the background
     pub (crate) opaque:     bool,
 }
 
@@ -35,42 +38,14 @@ pub struct ScanSpanStack {
 ///
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScanlinePlan {
+    /// Defines which sets of programs are run for which x-range
     spans: Vec<ScanSpanStack>,
+
+    /// The list of programs within this scanline plan
+    programs: Vec<PixelProgramPlan>,
 }
 
 impl ScanSpanStack {
-    ///
-    /// Creates a new stack containing a single span
-    ///
-    #[inline]
-    pub fn with_first_span(span: ScanSpan) -> ScanSpanStack {
-        ScanSpanStack { 
-            x_range:    span.x_range,
-            plan:       smallvec![PixelProgramPlan::Run(span.program)],
-            opaque:     span.opaque,
-        }
-    }
-
-    ///
-    /// Creates a span stack with the specified set of programs, specified in reverse ordrer
-    ///
-    #[inline]
-    pub fn with_programs(x_range: Range<f64>, opaque: bool, programs: impl Iterator<Item=PixelProgramPlan>) -> ScanSpanStack {
-        ScanSpanStack {
-            x_range:    x_range,
-            plan:       programs.collect(),
-            opaque:     opaque,
-        }
-    }
-
-    ///
-    /// Adds a new a span to this stack (it will cover the same range as the stack)
-    ///
-    #[inline]
-    pub fn push(&mut self, span: ScanSpan) {
-        self.plan.push(PixelProgramPlan::Run(span.program))
-    }
-
     ///
     /// Splits this stack at an x position (which should be within the range of this span)
     ///
@@ -102,8 +77,8 @@ impl ScanSpanStack {
     /// Returns an iterator for the IDs of the programs that should be run over this range
     ///
     #[inline]
-    pub fn programs<'a>(&'a self) -> impl 'a + Iterator<Item=PixelProgramPlan> {
-        self.plan.iter().copied()
+    pub fn programs<'a>(&'a self, scanline_plan: &'a ScanlinePlan) -> impl 'a + Iterator<Item=PixelProgramPlan> {
+        scanline_plan.programs[self.plan.clone()].iter().copied()
     }
 
     ///
@@ -117,12 +92,28 @@ impl ScanSpanStack {
 impl Default for ScanlinePlan {
     fn default() -> Self {
         ScanlinePlan {
-            spans: vec![]
+            spans:      vec![],
+            programs:   vec![],
         }
     }
 }
 
 impl ScanlinePlan {
+    ///
+    /// Adds a new set of programs to this plan, which must follow the previous range
+    ///
+    pub fn push_next_range(&mut self, x_range: Range<f64>, is_opaque: bool, programs: impl IntoIterator<Item=PixelProgramPlan>) {
+        debug_assert!(self.spans.is_empty() || self.spans.last().unwrap().x_range.end < x_range.start);
+
+        // Add the programs to the programs list
+        let start_program_idx = self.programs.len();
+        self.programs.extend(programs);
+        let end_program_idx = self.programs.len();
+
+        // Add add a description of this range
+        self.spans.push(ScanSpanStack { x_range: x_range, plan: start_program_idx..end_program_idx, opaque: is_opaque });
+    }
+
     ///
     /// Asserts that a list of stacks is in the correct order and non-overlapping, so that we know that the plan is safe to use without
     /// bounds checking
@@ -138,204 +129,6 @@ impl ScanlinePlan {
                 assert!(next_stack.x_range.start != next_stack.x_range.end, "0-length span");
 
                 last_x = next_stack.x_range.end;
-            }
-        }
-    }
-
-    ///
-    /// Creates a scanline plan from a set of ScanSpanStacks which are non-overlapping and ordered from left-to-right
-    ///
-    #[inline]
-    pub fn from_ordered_stacks(stacks: Vec<ScanSpanStack>) -> ScanlinePlan {
-        Self::check_spans_ordering(&stacks);
-
-        unsafe { Self::from_ordered_stacks_prechecked(stacks) }
-    }
-
-    ///
-    /// Replaces a scanline plan with a set of ScanSpanStacks that are expected to be in order and non-overlapping
-    ///
-    /// This is marked as 'unsafe' because we later depend on these stacks to be non-overlapping for safety reasons. Call
-    /// `from_ordered_stacks` instead to create a plan with checking.
-    ///
-    #[inline]
-    pub unsafe fn from_ordered_stacks_prechecked(stacks: Vec<ScanSpanStack>) -> ScanlinePlan {
-        ScanlinePlan {
-            spans: stacks
-        }
-    }
-
-    ///
-    /// Creates a scanline plan from a set of ScanSpanStacks which are non-overlapping and ordered from left-to-right
-    ///
-    #[inline]
-    pub fn fill_from_ordered_stacks(&mut self, stacks: Vec<ScanSpanStack>) {
-        Self::check_spans_ordering(&stacks);
-
-        unsafe { self.fill_from_ordered_stacks_prechecked(stacks) }
-    }
-
-    ///
-    /// Replaces a scanline plan with a set of ScanSpanStacks that are expected to be in order and non-overlapping
-    ///
-    /// This is marked as 'unsafe' because we later depend on these stacks to be non-overlapping for safety reasons. Call
-    /// `from_ordered_stacks` instead to create a plan with checking.
-    ///
-    #[inline]
-    pub unsafe fn fill_from_ordered_stacks_prechecked(&mut self, stacks: Vec<ScanSpanStack>) {
-        self.spans = stacks;
-    }
-
-    ///
-    /// Adds a new span to this plan
-    ///
-    pub fn add_span(&mut self, span: ScanSpan) {
-        // Binary search for where this span begins
-        let x_pos   = span.x_range.start;
-        let mut min = 0;
-        let max     = self.spans.len();
-
-        /* -- TODO, test is this worth it? (as we just insert into the vec later on)
-        while max > min+4 {
-            // Calculate mid-point
-            let mid     = (min + max) >> 1;
-            let mid_pos = self.spans[mid].x_range.end;
-
-            if mid_pos <= x_pos {
-                min = mid + 1;
-            } else {
-                max = mid;
-            }
-        }
-        */
-
-        // Linear search for small ranges
-        while min < max {
-            let min_pos = self.spans[min].x_range.end;
-            if min_pos > x_pos {
-                break;
-            }
-
-            min += 1;
-        }
-
-        // The position that's >= the start of the span
-        let mut pos = min;
-
-        // Try to split the span at pos (the current span might start after the start of the position)
-        if pos < self.spans.len() {
-            match self.spans[pos].split(span.x_range.start) {
-                Ok(rhs) => {
-                    // Add the RHS into the spans to be merged by the remainder of the algorithm
-                    self.spans.insert(pos+1, rhs);
-                    pos += 1;
-                }
-
-                Err(()) => { }
-            }
-        }
-
-        // Add the span to the stacks by repeatedly splitting it
-        if span.opaque {
-            // Span is opaque: replace existing stacks with it, combine/delete them rather than split them
-            let span = span;
-
-            if pos >= self.spans.len() {
-                // This span is after the end of the current stack
-                self.spans.push(ScanSpanStack::with_first_span(span));
-            } else if span.x_range.end < self.spans[pos].x_range.start {
-                // The span is in between any existing span
-                self.spans.insert(pos, ScanSpanStack::with_first_span(span));
-            } else if span.x_range.end == self.spans[pos].x_range.end {
-                // The span exactly replaces the current span
-                self.spans[pos] = ScanSpanStack::with_first_span(span);
-            } else if span.x_range.end < self.spans[pos].x_range.end {
-                // The span overlaps the start of the current span (can't overlap the middle due to the split operation above)
-                self.spans[pos].x_range.start = span.x_range.end;
-                self.spans.insert(pos, ScanSpanStack::with_first_span(span));
-            } else {
-                // The span overlaps the existing span, and maybe the spans in front of it
-                let x_range = span.x_range.clone();
-                self.spans[pos] = ScanSpanStack::with_first_span(span);
-                pos += 1;
-
-                loop {
-                    if pos >= self.spans.len() { break; }
-                    if self.spans[pos].x_range.start >= x_range.end { break; }
-
-                    if self.spans[pos].x_range.end > x_range.end {
-                        self.spans[pos].x_range.start = x_range.end;
-                        break;
-                    }
-
-                    self.spans.remove(pos);
-                }
-            }
-        } else {
-            // Span is transparent: add to existing stacks
-            let mut span = span;
-
-            loop {
-                if pos >= self.spans.len() {
-                    // This span is after the end of the current stack
-                    self.spans.push(ScanSpanStack::with_first_span(span));
-                    break;
-                }
-
-                if self.spans[pos].x_range.start > span.x_range.start {
-                    // Scanline is before this range: split it at the start of the range if possible
-                    match span.split(self.spans[pos].x_range.start) {
-                        Ok((lhs, rhs)) => {
-                            // LHS needs to be added as a new span
-                            self.spans.insert(pos, ScanSpanStack::with_first_span(lhs));
-
-                            // Remaining span is the RHS
-                            span = rhs;
-
-                            // Move the position back to the original span (we now know that it overlaps this range)
-                            pos += 1;
-                        }
-
-                        Err(span) => {
-                            // Span just fits before the current position
-                            self.spans.insert(pos, ScanSpanStack::with_first_span(span));
-                            break;
-                        }
-                    }
-                }
-
-                // Scanline overlaps this range: split it at the end of the current range if possible
-                match span.split(self.spans[pos].x_range.end) {
-                    Ok((lhs, rhs)) => {
-                        // Remaining part of the new span on the rhs
-                        self.spans[pos].push(lhs);
-                        span = rhs;
-
-                        // New position is after the current span
-                        pos += 1;
-                    }
-
-                    Err(span) => {
-                        // Span either entirely overlaps the range, or partially overlaps it at the start
-                        match self.spans[pos].split(span.x_range.end) {
-                            Ok(rhs) => {
-                                // Span overlaps the start of the range
-                                self.spans[pos].push(span);
-
-                                // The RHS is the parts of the span
-                                self.spans.insert(pos+1, rhs);
-                            }
-
-                            Err(()) => {
-                                // Add the current span to the
-                                self.spans[pos].push(span);
-                            }
-                        }
-
-                        // Span is entirely consumed
-                        break;
-                    }
-                }
             }
         }
     }
@@ -395,24 +188,20 @@ impl ScanlinePlan {
     /// The merged stack is opaque if either stack is opaque. The function is called with the set of pixel programs that are being merged into, the set
     /// from the new program, and whether or not the set in the new program are opaque.
     ///
-    pub fn merge(&mut self, merge_with: &ScanlinePlan, merge_stacks: impl Fn(&mut SmallVec<[PixelProgramPlan; 4]>, &SmallVec<[PixelProgramPlan; 4]>, bool)) {
-        // Used to refer to the 'merge_with' side of the plan. We need to modify the x_range for the algorithm so we can't use a direct reference: this uses a reference to the interal plan Vec so we don't clone all of that too
-        struct ScanSpanStackRef<'a> {
-            x_range:    Range<f64>,
-            plan:       &'a SmallVec<[PixelProgramPlan; 4]>,
-            opaque:     bool,
-        }
-
+    pub fn merge(&mut self, merge_with: &ScanlinePlan, merge_stacks: impl Fn(&mut Vec<PixelProgramPlan>, &[PixelProgramPlan], bool)) {
         // Allocate space for the merged spans
-        let mut new_spans = Vec::<ScanSpanStack>::with_capacity(self.spans.len());
+        let mut new_spans       = Vec::<ScanSpanStack>::with_capacity(self.spans.len());
+        let mut new_programs    = Vec::with_capacity(self.programs.len());
 
         {
             // Iterate on the current and merged spans, and look for overlaps
             let mut our_span_iter       = self.spans.drain(..);
-            let mut merge_span_iter     = merge_with.spans.iter().map(|span| ScanSpanStackRef { x_range: span.x_range.clone(), plan: &span.plan, opaque: span.opaque });
+            let mut merge_span_iter     = merge_with.spans.iter().cloned();
 
             let mut maybe_our_span      = our_span_iter.next();
             let mut maybe_merge_span    = merge_span_iter.next();
+
+            let mut scratch_space       = Vec::with_capacity(64);
 
             // We iterate both from left to right, and deal with overlaps
             while let (Some(our_span), Some(merge_span)) = (&mut maybe_our_span, &mut maybe_merge_span) {
@@ -425,7 +214,7 @@ impl ScanlinePlan {
                     // merge_span is before our_span
                     new_spans.push(ScanSpanStack { x_range: merge_span.x_range.clone(), plan: merge_span.plan.clone(), opaque: merge_span.opaque });
 
-                    maybe_merge_span = merge_span_iter.next()
+                    maybe_merge_span = merge_span_iter.next();
                 } else {
                     // The two spans should overlap
                     if merge_span.x_range.start < our_span.x_range.start {
@@ -445,8 +234,8 @@ impl ScanlinePlan {
                     }
 
                     // Create the merged set of programs
-                    let mut merged_program = our_span.plan.clone();
-                    merge_stacks(&mut merged_program, &merge_span.plan, merge_span.opaque);
+                    scratch_space.extend(self.programs[our_span.plan.clone()].iter().copied());
+                    merge_stacks(&mut scratch_space, &merge_with.programs[merge_span.plan.clone()], merge_span.opaque);
 
                     // Create the merged plan
                     let start   = our_span.x_range.start.max(merge_span.x_range.start);
@@ -454,9 +243,11 @@ impl ScanlinePlan {
 
                     new_spans.push(ScanSpanStack {
                         x_range:    start..end,
-                        plan:       merged_program,
+                        plan:       new_programs.len()..(new_programs.len() + scratch_space.len()),
                         opaque:     our_span.opaque || merge_span.opaque,
                     });
+
+                    new_programs.extend(scratch_space.drain(..));
 
                     // Continue with the remaining part of the plan
                     if end >= our_span.x_range.end {
@@ -479,18 +270,33 @@ impl ScanlinePlan {
 
             // Push any remaining spans
             while let Some(our_span) = maybe_our_span {
-                new_spans.push(our_span);
+                let plan = our_span.plan.clone();
+                new_spans.push(ScanSpanStack {
+                    x_range:    our_span.x_range,
+                    opaque:     our_span.opaque,
+                    plan:       (new_programs.len())..(new_programs.len() + our_span.plan.len()),
+                });
+                new_programs.extend(self.programs[plan].iter().copied());
+
                 maybe_our_span = our_span_iter.next();
             } 
 
             while let Some(merge_span) = maybe_merge_span {
-                new_spans.push(ScanSpanStack { x_range: merge_span.x_range, plan: merge_span.plan.clone(), opaque: merge_span.opaque });
+                let plan = merge_span.plan.clone();
+                new_spans.push(ScanSpanStack { 
+                    x_range:    merge_span.x_range, 
+                    opaque:     merge_span.opaque,
+                    plan:       (new_programs.len())..(new_programs.len() + merge_span.plan.len()), 
+                });
+                new_programs.extend(self.programs[plan].iter().copied());
+
                 maybe_merge_span = merge_span_iter.next();
             }
         }
 
         // Replace the contents of this object with the new spans
-        self.spans = new_spans;
+        self.spans      = new_spans;
+        self.programs   = new_programs;
 
         // Combine any adjacent spans that use the same program
         self.combine_adjacent_spans();
@@ -533,10 +339,10 @@ impl ScanlinePlan {
         use std::iter;
 
         self.iter_as_stacks()
-            .flat_map(|span| {
+            .flat_map(move |span| {
                 let range           = span.x_range();
                 let opaque          = span.is_opaque();
-                let mut programs    = span.programs().filter_map(|program| match program {
+                let mut programs    = span.programs(self).filter_map(|program| match program {
                     PixelProgramPlan::Run(program)              => Some(program),
                     PixelProgramPlan::StartBlend                => None,
                     PixelProgramPlan::Merge(_)                  => None,
@@ -559,7 +365,7 @@ impl ScanlinePlan {
     /// Clips this scanline plan to the specified range, such that x=new_zero_point on the original range is x=0 on the result
     ///
     #[inline]
-    pub fn clip(&self, source_x_range: Range<f64>, new_zero_point: f64) -> ScanlinePlan {
+    pub fn clip(self, source_x_range: Range<f64>, new_zero_point: f64) -> ScanlinePlan {
         let mut new_spans = Vec::with_capacity(self.spans.len());
 
         // Create the new spans by clipping the old spans
@@ -581,7 +387,8 @@ impl ScanlinePlan {
         }
 
         ScanlinePlan {
-            spans: new_spans,
+            spans:      new_spans,
+            programs:   self.programs
         }
     }
 }
