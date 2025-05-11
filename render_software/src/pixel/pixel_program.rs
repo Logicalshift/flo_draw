@@ -165,6 +165,8 @@ pub struct PixelProgramId(pub usize);
 ///
 #[derive(Clone, Copy, PartialEq, PartialOrd, Debug)]
 pub enum PixelProgramPlan {
+    // Note: for performance reasons do not use anything that implements `Drop` in this data structure 
+
     /// Run the pixel program on the current scanline data, with no further processing
     Run(PixelProgramDataId),
 
