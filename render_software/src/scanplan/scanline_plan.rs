@@ -396,13 +396,20 @@ impl ScanlinePlan {
     /// from the new program, and whether or not the set in the new program are opaque.
     ///
     pub fn merge(&mut self, merge_with: &ScanlinePlan, merge_stacks: impl Fn(&mut SmallVec<[PixelProgramPlan; 4]>, &SmallVec<[PixelProgramPlan; 4]>, bool)) {
+        // Used to refer to the 'merge_with' side of the plan. We need to modify the x_range for the algorithm so we can't use a direct reference: this uses a reference to the interal plan Vec so we don't clone all of that too
+        struct ScanSpanStackRef<'a> {
+            x_range:    Range<f64>,
+            plan:       &'a SmallVec<[PixelProgramPlan; 4]>,
+            opaque:     bool,
+        }
+
         // Allocate space for the merged spans
         let mut new_spans = Vec::<ScanSpanStack>::with_capacity(self.spans.len());
 
         {
             // Iterate on the current and merged spans, and look for overlaps
             let mut our_span_iter       = self.spans.drain(..);
-            let mut merge_span_iter     = merge_with.spans.iter().cloned();
+            let mut merge_span_iter     = merge_with.spans.iter().map(|span| ScanSpanStackRef { x_range: span.x_range.clone(), plan: &span.plan, opaque: span.opaque });
 
             let mut maybe_our_span      = our_span_iter.next();
             let mut maybe_merge_span    = merge_span_iter.next();
@@ -416,7 +423,7 @@ impl ScanlinePlan {
                     maybe_our_span = our_span_iter.next();
                 } else if merge_span.x_range.end <= our_span.x_range.start {
                     // merge_span is before our_span
-                    new_spans.push(maybe_merge_span.take().unwrap());
+                    new_spans.push(ScanSpanStack { x_range: merge_span.x_range.clone(), plan: merge_span.plan.clone(), opaque: merge_span.opaque });
 
                     maybe_merge_span = merge_span_iter.next()
                 } else {
@@ -477,7 +484,7 @@ impl ScanlinePlan {
             } 
 
             while let Some(merge_span) = maybe_merge_span {
-                new_spans.push(merge_span);
+                new_spans.push(ScanSpanStack { x_range: merge_span.x_range, plan: merge_span.plan.clone(), opaque: merge_span.opaque });
                 maybe_merge_span = merge_span_iter.next();
             }
         }
