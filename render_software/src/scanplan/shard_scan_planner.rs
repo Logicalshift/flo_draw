@@ -88,7 +88,6 @@ where
             // Read intercepts until we reach the x_range end, and generate the program stacks for the scanline plan
             let mut last_x          = x_range.start;
             let mut program_stack   = vec![];
-            let mut scanplan        = vec![];
             let mut z_floor         = active_shapes.z_floor();
 
             loop {
@@ -173,10 +172,7 @@ where
 
                     if !program_stack.is_empty() {
                         // Create the stack for these programs
-                        let stack = ScanSpanStack::with_programs(x_range, is_opaque, program_stack.drain(..).rev());
-
-                        // Add the stack to the scanplan
-                        scanplan.push(stack);
+                        scanline.push_next_range(x_range, is_opaque, program_stack.drain(..).rev());
                     }
 
                     // Next span will start after the end of this one
@@ -218,17 +214,6 @@ where
 
                 // Get ready to process the next intercept in the stack
                 current_intercept = if let Some(next_intercept) = maybe_next_intercept { next_intercept } else { break; };
-            }
-
-            // Populate the scanline
-            #[cfg(debug_assertions)]
-            {
-                scanline.fill_from_ordered_stacks(scanplan);
-            }
-
-            #[cfg(not(debug_assertions))]
-            {
-                unsafe { scanline.fill_from_ordered_stacks_prechecked(scanplan); }
             }
         }
     }
