@@ -104,6 +104,7 @@ impl ScanlinePlan {
     ///
     #[inline]
     pub fn push_next_range(&mut self, x_range: Range<f64>, is_opaque: bool, programs: impl IntoIterator<Item=PixelProgramPlan>) {
+        // This is pretty core to performance, so we only verify that the ranges are in the correct order in debug builds
         debug_assert!(self.spans.is_empty() || self.spans.last().unwrap().x_range.end < x_range.start);
 
         // Add the programs to the programs list
@@ -190,6 +191,9 @@ impl ScanlinePlan {
     /// from the new program, and whether or not the set in the new program are opaque.
     ///
     pub fn merge(&mut self, merge_with: &ScanlinePlan, merge_stacks: impl Fn(&mut Vec<PixelProgramPlan>, &[PixelProgramPlan], bool)) {
+        // TODO: note that we can have issues with performance if we allocate a lot of vecs while rendering: consider re-using the scratch space here.
+        // TODO: also consider making a way to do the merge in-place rather than copying the programs out and back in again
+
         // Allocate space for the merged spans
         let mut new_spans       = Vec::<ScanSpanStack>::with_capacity(self.spans.len());
         let mut new_programs    = Vec::with_capacity(self.programs.len());
@@ -234,7 +238,7 @@ impl ScanlinePlan {
                         });
                     }
 
-                    // Create the merged set of programs
+                    // Create the merged set of programs. Scratch space is empty because it's drained later on.
                     scratch_space.extend(self.programs[our_span.plan.clone()].iter().copied());
                     merge_stacks(&mut scratch_space, &merge_with.programs[merge_span.plan.clone()], merge_span.opaque);
 
