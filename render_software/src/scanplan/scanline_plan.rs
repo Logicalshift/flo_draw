@@ -105,7 +105,7 @@ impl ScanlinePlan {
     #[inline]
     pub fn push_next_range(&mut self, x_range: Range<f64>, is_opaque: bool, programs: impl IntoIterator<Item=PixelProgramPlan>) {
         // This is pretty core to performance, so we only verify that the ranges are in the correct order in debug builds
-        debug_assert!(self.spans.is_empty() || self.spans.last().unwrap().x_range.end < x_range.start);
+        debug_assert!(self.spans.is_empty() || self.spans.last().unwrap().x_range.end <= x_range.start, "Out of order spans: {:?} < {:?}", x_range, self.spans.last().unwrap().x_range);
 
         // Add the programs to the programs list
         let start_program_idx = self.programs.len();
