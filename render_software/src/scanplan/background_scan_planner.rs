@@ -41,7 +41,8 @@ where
         self.planner.plan_scanlines(edge_plan, transform, y_positions, x_range.clone(), scanlines);
 
         // Create the background plan
-        let background_plan = ScanlinePlan::from_ordered_stacks(vec![ScanSpanStack::with_first_span(ScanSpan::opaque(x_range, self.background))]);
+        let mut background_plan = ScanlinePlan::default();
+        background_plan.push_next_range(x_range, true, [PixelProgramPlan::Run(self.background)]);
 
         // Combine with the background program
         for (_ypos, scanline) in scanlines.iter_mut() {
@@ -54,7 +55,8 @@ where
             // Merge the foreground on top of the background
             scanline.merge(&foreground, |src, dst, is_opaque| {
                 if is_opaque {
-                    *src = dst.clone();
+                    src.clear();
+                    src.extend(dst.iter().copied());
                 } else {
                     src.extend(dst.clone());
                 }
