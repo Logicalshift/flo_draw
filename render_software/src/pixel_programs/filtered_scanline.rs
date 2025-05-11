@@ -210,10 +210,11 @@ where
             });
 
         // Clip the plan against the x-region that's being rendered (so we don't render any more pixels than we actually need)
+        // TODO: performance - if we can avoid cloning the scanline here we can avoid extra allocations/frees (as well as the cost of copying its values)
         let x_start             = pixel_range.start as f64 - before_x as f64;
         let x_end               = pixel_range.end as f64 + after_x as f64;
         let x_range             = x_start..x_end;
-        let render_scanlines    = render_scanlines.map(|scanline| scanline.clip(x_range.clone(), x_start));
+        let render_scanlines    = render_scanlines.map(|scanline| (*scanline).clone().clip(x_range.clone(), x_start));
 
         // Render the scanlines into their own buffers
         let rendered_scanlines = (-(before_y as i64)..=(after_y as i64)).zip(render_scanlines)
