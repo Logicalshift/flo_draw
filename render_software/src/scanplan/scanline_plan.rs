@@ -313,6 +313,7 @@ impl ScanlinePlan {
     #[inline]
     pub fn clear(&mut self) {
         self.spans.clear();
+        self.programs.clear();
     }
 
     ///
