@@ -97,7 +97,12 @@ where
 
         // We need to plan scanlines for each layer, then merge them. The initial plan is just to fill the entire range with the background colour
         let mut scanlines       = y_positions.iter().copied()
-            .map(|ypos| (ypos, ScanlinePlan::from_ordered_stacks(vec![ScanSpanStack::with_first_span(ScanSpan::opaque(0.0..(region.width as f64), source.background))])))
+            .map(|ypos| {
+                let mut background_plan = ScanlinePlan::default();
+                background_plan.push_next_range(0.0..(region.width as f64), true, [PixelProgramPlan::Run(source.background)]);
+
+                (ypos, background_plan)
+            })
             .collect::<Vec<_>>();
         let mut layer_scanlines = vec![(0.0, ScanlinePlan::default()); y_positions.len()];
 
@@ -116,10 +121,10 @@ where
                         .for_each(|((_, scanline), (_, layer_scanline))| {
                             scanline.merge(&layer_scanline, |src, dst, is_opaque| {
                                 if is_opaque {
-                                    *src = dst.clone();
-                                } else {
-                                    src.extend(dst.clone());
+                                    src.clear();
                                 }
+
+                                src.extend(dst);
                             })
                         })
                 } else if layer.alpha > 0.0 && layer.blend_mode == AlphaOperation::SourceOver {
@@ -131,7 +136,7 @@ where
                         .for_each(|((_, scanline), (_, layer_scanline))| {
                             scanline.merge(&layer_scanline, |src, dst, _is_opaque| {
                                 src.push(PixelProgramPlan::StartBlend);
-                                src.extend(dst.clone());
+                                src.extend(dst);
                                 src.push(PixelProgramPlan::SourceOver(alpha));
                             })
                         })
@@ -145,7 +150,7 @@ where
                         .for_each(|((_, scanline), (_, layer_scanline))| {
                             scanline.merge(&layer_scanline, |src, dst, _is_opaque| {
                                 src.push(PixelProgramPlan::StartBlend);
-                                src.extend(dst.clone());
+                                src.extend(dst);
                                 src.push(PixelProgramPlan::Blend(blend_mode, alpha));
                             })
                         })
