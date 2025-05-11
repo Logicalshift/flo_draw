@@ -102,6 +102,7 @@ impl ScanlinePlan {
     ///
     /// Adds a new set of programs to this plan, which must follow the previous range
     ///
+    #[inline]
     pub fn push_next_range(&mut self, x_range: Range<f64>, is_opaque: bool, programs: impl IntoIterator<Item=PixelProgramPlan>) {
         debug_assert!(self.spans.is_empty() || self.spans.last().unwrap().x_range.end < x_range.start);
 
