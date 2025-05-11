@@ -274,9 +274,8 @@ mod test {
         let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 0.0]); 10];
 
         // Render a source-over linear blend to the target (note that the programs are reversed)
-        let plan    = ScanlinePlan::from_ordered_stacks(vec![
-                ScanSpanStack::with_programs(0.0..10.0, false, vec![PixelProgramPlan::LinearSourceOver(0.0, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend].into_iter().rev())
-            ]);
+        let mut plan = ScanlinePlan::default();
+        plan.push_next_range(0.0..10.0, false, vec![PixelProgramPlan::LinearSourceOver(0.0, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend].into_iter().rev());
         let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity(1920) };
 
         renderer.render(&region, &plan, &mut target);
@@ -297,9 +296,9 @@ mod test {
         let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 0.0]); 10];
 
         // Render a source-over linear blend to the target (note that the programs are reversed)
-        let plan    = ScanlinePlan::from_ordered_stacks(vec![
-                ScanSpanStack::with_programs(0.0..1.0, false, vec![PixelProgramPlan::LinearSourceOver(0.0, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend].into_iter().rev())
-            ]);
+        let mut plan = ScanlinePlan::default();
+        plan.push_next_range(0.0..1.0, false, vec![PixelProgramPlan::LinearSourceOver(0.0, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend].into_iter().rev());
+
         let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity(1920) };
 
         renderer.render(&region, &plan, &mut target);
@@ -320,9 +319,8 @@ mod test {
         let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 0.0]); 10];
 
         // Render a source-over linear blend to the target (note that the programs are reversed)
-        let plan    = ScanlinePlan::from_ordered_stacks(vec![
-                ScanSpanStack::with_programs(0.0..10.0, false, vec![PixelProgramPlan::LinearSourceOver(0.5, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend].into_iter().rev())
-            ]);
+        let mut plan = ScanlinePlan::default();
+        plan.push_next_range(0.0..10.0, false, vec![PixelProgramPlan::LinearSourceOver(0.5, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend].into_iter().rev());
         let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity(1920) };
 
         renderer.render(&region, &plan, &mut target);
@@ -343,9 +341,8 @@ mod test {
         let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 0.0]); 10];
 
         // Render a source-over linear blend to the target (note that the programs are reversed)
-        let plan    = ScanlinePlan::from_ordered_stacks(vec![
-                ScanSpanStack::with_programs(0.0..10.0, false, vec![PixelProgramPlan::LinearSourceOver(0.0, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend].into_iter().rev())
-            ]);
+        let mut plan = ScanlinePlan::default();
+        plan.push_next_range(0.0..10.0, false, vec![PixelProgramPlan::LinearSourceOver(0.0, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend].into_iter().rev());
         let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity(1920) };
 
         renderer.render(&region, &plan, &mut target);
@@ -366,9 +363,8 @@ mod test {
         let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 0.0]); 10];
 
         // Render a source-over linear blend to the target (note that the programs are reversed)
-        let plan    = ScanlinePlan::from_ordered_stacks(vec![
-                ScanSpanStack::with_programs(0.0..10.0, false, vec![PixelProgramPlan::LinearSourceOver(0.0, 0.5), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend].into_iter().rev())
-            ]);
+        let mut plan = ScanlinePlan::default();
+        plan.push_next_range(0.0..10.0, false, vec![PixelProgramPlan::LinearSourceOver(0.0, 0.5), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend].into_iter().rev());
         let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity(1920) };
 
         renderer.render(&region, &plan, &mut target);
@@ -389,9 +385,8 @@ mod test {
         let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 1.0]); 10];
 
         // Render a source-over linear blend to the target (note that the programs are reversed)
-        let plan    = ScanlinePlan::from_ordered_stacks(vec![
-                ScanSpanStack::with_programs(0.0..10.0, false, vec![PixelProgramPlan::LinearSourceOver(0.5, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend].into_iter().rev())
-            ]);
+        let mut plan = ScanlinePlan::default();
+        plan.push_next_range(0.0..10.0, false, vec![PixelProgramPlan::LinearSourceOver(0.5, 1.0), PixelProgramPlan::Run(PixelProgramDataId(0)), PixelProgramPlan::StartBlend].into_iter().rev());
         let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity(1920) };
 
         renderer.render(&region, &plan, &mut target);
@@ -422,22 +417,21 @@ mod test {
         let mut target  = vec![F32LinearPixel::from_components([0.0, 0.0, 0.0, 1.0]); 10];
 
         // Render a source-over linear blend to the target (note that the programs are reversed)
-        let plan    = ScanlinePlan::from_ordered_stacks(vec![
-                ScanSpanStack::with_programs(0.0..4.0, false, vec![
-                    PixelProgramPlan::Run(PixelProgramDataId(0))].into_iter()),
-                ScanSpanStack::with_programs(4.0..5.0, false, vec![
-                    PixelProgramPlan::LinearMerge(0.38484883, 0.38484883), 
-                    PixelProgramPlan::Run(PixelProgramDataId(1)), 
-                    PixelProgramPlan::StartBlend,
-                    PixelProgramPlan::Run(PixelProgramDataId(0))].into_iter().rev()),
-                ScanSpanStack::with_programs(5.0..6.0, false, vec![
-                    PixelProgramPlan::LinearMerge(0.38484883, 0.38484883), 
-                    PixelProgramPlan::Run(PixelProgramDataId(1)), 
-                    PixelProgramPlan::StartBlend,
-                    PixelProgramPlan::Run(PixelProgramDataId(0))].into_iter().rev()),
-                ScanSpanStack::with_programs(6.0..10.0, false, vec![
-                    PixelProgramPlan::Run(PixelProgramDataId(0))].into_iter().rev()),
-            ]);
+        let mut plan = ScanlinePlan::default();
+        plan.push_next_range(0.0..4.0, false, vec![
+            PixelProgramPlan::Run(PixelProgramDataId(0))].into_iter());
+        plan.push_next_range(4.0..5.0, false, vec![
+            PixelProgramPlan::LinearMerge(0.38484883, 0.38484883), 
+            PixelProgramPlan::Run(PixelProgramDataId(1)), 
+            PixelProgramPlan::StartBlend,
+            PixelProgramPlan::Run(PixelProgramDataId(0))].into_iter().rev());
+        plan.push_next_range(5.0..6.0, false, vec![
+            PixelProgramPlan::LinearMerge(0.38484883, 0.38484883), 
+            PixelProgramPlan::Run(PixelProgramDataId(1)), 
+            PixelProgramPlan::StartBlend,
+            PixelProgramPlan::Run(PixelProgramDataId(0))].into_iter().rev());
+        plan.push_next_range(6.0..10.0, false, vec![
+            PixelProgramPlan::Run(PixelProgramDataId(0))].into_iter().rev());
         let region  = ScanlineRenderRegion { y_pos: 0.0, transform: ScanlineTransform::identity(1920) };
 
         renderer.render(&region, &plan, &mut target);
