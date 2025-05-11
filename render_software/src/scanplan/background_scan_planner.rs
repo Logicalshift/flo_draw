@@ -56,10 +56,9 @@ where
             scanline.merge(&foreground, |src, dst, is_opaque| {
                 if is_opaque {
                     src.clear();
-                    src.extend(dst.iter().copied());
-                } else {
-                    src.extend(dst.clone());
                 }
+
+                src.extend(dst);
             });
         }
     }
