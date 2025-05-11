@@ -84,7 +84,7 @@ where
         for span in spans.iter() {
             // Read the span and start iterating through the program IDs
             let x_range             = span.x_range.clone();
-            let mut remaining_steps = span.plan.iter();
+            let mut remaining_steps = source.programs(span).iter();
             let mut current_step    = remaining_steps.next().unwrap();
 
             loop {
