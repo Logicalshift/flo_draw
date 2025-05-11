@@ -317,6 +317,14 @@ impl ScanlinePlan {
     }
 
     ///
+    /// Returns the programs that should be run to run a particular stack
+    ///
+    #[inline]
+    pub fn programs(&self, stack: &ScanSpanStack) -> &[PixelProgramPlan] {
+        &self.programs[stack.plan.clone()]
+    }
+
+    ///
     /// Returns the spans in this plan
     ///
     #[inline]
