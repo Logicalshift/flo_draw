@@ -42,7 +42,6 @@ where
     ///
     /// (Main use of this is for the tests, which use this to check the algorithm against known sets of intercepts)
     ///
-    #[inline]
     pub fn plan_from_edge_intercepts(&self, edge_plan: &EdgePlan<TEdge>, ordered_intercepts: Vec<Vec<EdgePlanShardIntercept>>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
         // TODO: we can do away with the need for this by making the edge plan a trait
 
