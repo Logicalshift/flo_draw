@@ -212,12 +212,23 @@ impl ScanlinePlan {
             while let (Some(our_span), Some(merge_span)) = (&mut maybe_our_span, &mut maybe_merge_span) {
                 if our_span.x_range.end <= merge_span.x_range.start {
                     // our_span is before the merge span
-                    new_spans.push(maybe_our_span.take().unwrap());
+                    new_spans.push(ScanSpanStack {
+                        x_range:    our_span.x_range.clone(),
+                        plan:       (new_programs.len())..(new_programs.len() + our_span.plan.len()),
+                        opaque:     our_span.opaque,
+                    });
+
+                    new_programs.extend(self.programs[our_span.plan.clone()].iter().copied());
 
                     maybe_our_span = our_span_iter.next();
                 } else if merge_span.x_range.end <= our_span.x_range.start {
                     // merge_span is before our_span
-                    new_spans.push(ScanSpanStack { x_range: merge_span.x_range.clone(), plan: merge_span.plan.clone(), opaque: merge_span.opaque });
+                    new_spans.push(ScanSpanStack { 
+                        x_range:    merge_span.x_range.clone(), 
+                        plan:       (new_programs.len())..(new_programs.len() + merge_span.plan.len()), 
+                        opaque:     merge_span.opaque });
+
+                    new_programs.extend(merge_with.programs[merge_span.plan.clone()].iter().copied());
 
                     maybe_merge_span = merge_span_iter.next();
                 } else {
@@ -226,16 +237,20 @@ impl ScanlinePlan {
                         // Draw just merge_plan up to our_plan.start
                         new_spans.push(ScanSpanStack {
                             x_range:    merge_span.x_range.start..our_span.x_range.start,
-                            plan:       merge_span.plan.clone(),
+                            plan:       (new_programs.len())..(new_programs.len() + merge_span.plan.len()),
                             opaque:     merge_span.opaque,
                         });
+
+                        new_programs.extend(merge_with.programs[merge_span.plan.clone()].iter().copied());
                     } else if our_span.x_range.start < merge_span.x_range.start {
                         // Draw just our_plan up to our_plan.start
                         new_spans.push(ScanSpanStack {
                             x_range:    our_span.x_range.start..merge_span.x_range.start,
-                            plan:       our_span.plan.clone(),
+                            plan:       (new_programs.len())..(new_programs.len() + our_span.plan.len()),
                             opaque:     our_span.opaque,
                         });
+
+                        new_programs.extend(self.programs[our_span.plan.clone()].iter().copied());
                     }
 
                     // Create the merged set of programs. Scratch space is initially empty because it's drained later on.
