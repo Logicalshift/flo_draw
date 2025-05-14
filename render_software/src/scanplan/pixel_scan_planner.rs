@@ -98,7 +98,7 @@ where
 
             // Read intercepts until we reach the x_range end, and generate the program stacks for the scanline plan
             let mut last_x          = x_range.start;
-            let mut program_stack   = vec![];
+            let mut program_stack   = Vec::with_capacity(32);
             let mut z_floor         = active_shapes.z_floor();
 
             loop {
