@@ -196,7 +196,7 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
 /// Fills the output with a list of shard intercepts for a set positions
 ///
 /// The start_y_positions, end_y_positions and output slices should be the same length. Each entry in the output slice will be cleared and
-/// updated to contain the intercepts fro the corresponding start/end region.
+/// updated to contain the intercepts for the corresponding start/end region.
 ///
 pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, start_y_positions: &'a [f64], end_y_positions: &'a [f64], output: &mut [Vec<ShardIntercept>]) {
     // TODO: some edges can have multiple closed shapes (eg: closed lines, for example). This algorithm won't work with those because it assumes a single closed shape
