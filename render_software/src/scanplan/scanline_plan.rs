@@ -92,8 +92,8 @@ impl ScanSpanStack {
 impl Default for ScanlinePlan {
     fn default() -> Self {
         ScanlinePlan {
-            spans:      vec![],
-            programs:   vec![],
+            spans:      Vec::with_capacity(32),
+            programs:   Vec::with_capacity(32),
         }
     }
 }
