@@ -43,8 +43,11 @@ where
     /// (Main use of this is for the tests, which use this to check the algorithm against known sets of intercepts)
     ///
     pub fn plan_from_edge_intercepts(&self, edge_plan: &EdgePlan<TEdge>, ordered_intercepts: Vec<Vec<EdgePlanShardIntercept>>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
-        // TODO: we can do away with the need for this by making the edge plan a trait
-        let mut scanline_intercepts_scratch_space = Vec::with_capacity(16);
+        // TODO: we can do away with the need for this function by making the edge plan a trait
+
+        // Allocate scratch space
+        let mut scanline_intercepts_scratch_space   = Vec::with_capacity(16);
+        let mut program_stack                       = Vec::with_capacity(16);
 
         // Map the x-range from the source coordinates to pixel coordinates
         let x_range = transform.source_x_to_pixels(x_range.start)..transform.source_x_to_pixels(x_range.end);
@@ -87,7 +90,6 @@ where
 
             // Read intercepts until we reach the x_range end, and generate the program stacks for the scanline plan
             let mut last_x          = x_range.start;
-            let mut program_stack   = vec![];
             let mut z_floor         = active_shapes.z_floor();
 
             loop {
