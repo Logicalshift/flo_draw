@@ -238,7 +238,7 @@ impl ScanlinePlan {
                         });
                     }
 
-                    // Create the merged set of programs. Scratch space is empty because it's drained later on.
+                    // Create the merged set of programs. Scratch space is initially empty because it's drained later on.
                     scratch_space.extend(self.programs[our_span.plan.clone()].iter().copied());
                     merge_stacks(&mut scratch_space, &merge_with.programs[merge_span.plan.clone()], merge_span.opaque);
 
@@ -293,7 +293,7 @@ impl ScanlinePlan {
                     opaque:     merge_span.opaque,
                     plan:       (new_programs.len())..(new_programs.len() + merge_span.plan.len()), 
                 });
-                new_programs.extend(self.programs[plan].iter().copied());
+                new_programs.extend(merge_with.programs[plan].iter().copied());
 
                 maybe_merge_span = merge_span_iter.next();
             }
