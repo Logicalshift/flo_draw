@@ -202,14 +202,14 @@ pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, st
     // TODO: some edges can have multiple closed shapes (eg: closed lines, for example). This algorithm won't work with those because it assumes a single closed shape
 
     // Read the positions of the start intercepts for each y-position
-    let mut start_intercepts = vec![vec![]; start_y_positions.len()];
+    let mut start_intercepts = vec![Vec::with_capacity(8); start_y_positions.len()];
     edge.intercepts(start_y_positions, &mut start_intercepts);
 
     start_intercepts.iter_mut()
         .for_each(|intercept_line| intercept_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos)));
 
     // Read the end intercepts (TODO: can maybe speed this up and only read the last one as very often end_y_positions[x] = start_y_positions[x+1])
-    let mut end_intercepts = vec![vec![]; end_y_positions.len()];
+    let mut end_intercepts = vec![Vec::with_capacity(8); end_y_positions.len()];
     edge.intercepts(end_y_positions, &mut end_intercepts);
 
     // TODO: can avoid sorting things that we already fetched with the start intercepts
