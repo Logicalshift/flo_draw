@@ -93,7 +93,7 @@ pub fn triangle_45_degrees() {
     assert!(!spans[2].is_opaque(), "Third span should not be opaque {:?}", plan);
 
     // Alpha values should switch sides
-    let first_stack = spans[0].programs().collect::<Vec<_>>();
+    let first_stack = spans[0].programs(&plan).collect::<Vec<_>>();
     assert!(first_stack.len() == 3);
     if let PixelProgramPlan::LinearMerge(alpha1, alpha2) = first_stack[2] {
         assert!(alpha1 < alpha2, "First span is not fading up {:?}", plan);
@@ -101,7 +101,7 @@ pub fn triangle_45_degrees() {
         assert!(false, "First span is not blending {:?}", plan);
     }
 
-    let last_stack = spans[2].programs().collect::<Vec<_>>();
+    let last_stack = spans[2].programs(&plan).collect::<Vec<_>>();
     assert!(last_stack.len() == 3);
     if let PixelProgramPlan::LinearMerge(alpha1, alpha2) = last_stack[2] {
         assert!(alpha1 > alpha2, "Last span is not fading down {:?}", plan);
@@ -147,7 +147,7 @@ pub fn tall_triangle() {
         assert!(!spans[2].is_opaque(), "Third span should not be opaque {:?}", plan);
 
         // Alpha values should switch sides
-        let first_stack = spans[0].programs().collect::<Vec<_>>();
+        let first_stack = spans[0].programs(&plan).collect::<Vec<_>>();
         assert!(first_stack.len() == 3);
         if let PixelProgramPlan::LinearMerge(alpha1, alpha2) = first_stack[2] {
             assert!(spans[0].x_range().end - spans[0].x_range().start >= 1.0, "First range uses less than a pixel {:?}, y={:?}, pix_y={:?}", plan, y, pix_y);
@@ -157,7 +157,7 @@ pub fn tall_triangle() {
             assert!(false, "First span is not blending {:?}", plan);
         }
 
-        let last_stack = spans[2].programs().collect::<Vec<_>>();
+        let last_stack = spans[2].programs(&plan).collect::<Vec<_>>();
         assert!(last_stack.len() == 3);
         if let PixelProgramPlan::LinearMerge(alpha1, alpha2) = last_stack[2] {
             assert!(alpha1 >= alpha2, "Last span is not fading down {:?}", plan);
@@ -195,7 +195,7 @@ fn subpixel_oblique_line() {
     // Should be one span with two blending instructions
     assert!(spans.len() == 1, "Number of spans != 1 {:?}", plan);
 
-    let programs = spans[0].programs().collect::<Box<[_]>>();
+    let programs = spans[0].programs(&plan).collect::<Box<[_]>>();
     assert!(programs.len() == 3, "Programs: {:?}", programs);
     assert!(programs.iter().filter(|prog| if let PixelProgramPlan::StartBlend = prog { true } else { false }).count() == 1, "Incorrect number of StartBlend instructions: {:?}",programs);
     assert!(programs.iter().filter(|prog| if let PixelProgramPlan::LinearMerge(_, _) = prog { true } else { false }).count() == 1, "Incorrect number of LinearMerge instructions: {:?}",programs);
@@ -223,7 +223,7 @@ fn subpixel_vertical_line() {
     // Should be one span with two blending instructions
     assert!(spans.len() == 1, "Number of spans != 1 {:?}", plan);
 
-    let programs = spans[0].programs().collect::<Box<[_]>>();
+    let programs = spans[0].programs(&plan).collect::<Box<[_]>>();
     assert!(programs.len() == 3, "Programs: {:?}", programs);
     assert!(programs.iter().filter(|prog| if let PixelProgramPlan::StartBlend = prog { true } else { false }).count() == 1, "Incorrect number of StartBlend instructions: {:?}",programs);
     assert!(programs.iter().filter(|prog| if let PixelProgramPlan::LinearMerge(_, _) = prog { true } else { false }).count() == 1, "Incorrect number of LinearMerge instructions: {:?}",programs);
@@ -357,17 +357,17 @@ fn multisampling_missing_one_quarter() {
     assert!(after_apexes.0 == 11.5, "after_apexes wrong y pos{:?}", after_apexes);
 
     assert!(before_apexes.1.spans().len() == 3, "Should only be 3 spans before_apexes {:?} (lead-in, actual program, lead-out)", before_apexes);
-    assert!(before_apexes.1.spans()[0].programs().count() == 3, "Lead in should be 3 programs before_apexes {:?}", before_apexes.1.spans()[0]);
-    assert!(before_apexes.1.spans()[1].programs().count() == 1, "Central span should be one program before_apexes {:?}", before_apexes.1.spans()[1]);
+    assert!(before_apexes.1.spans()[0].programs(&before_apexes.1).count() == 3, "Lead in should be 3 programs before_apexes {:?}", before_apexes.1.spans()[0]);
+    assert!(before_apexes.1.spans()[1].programs(&before_apexes.1).count() == 1, "Central span should be one program before_apexes {:?}", before_apexes.1.spans()[1]);
 
     // We're assuming that the algorithm works a certain way here, the final pixel rendering is all that really matters
     assert!(with_apexes.1.spans().len() == 3, "Should only be 3 spans with_apexes {:?} (lead-in, actual program, lead-out)", with_apexes);
-    assert!(with_apexes.1.spans()[0].programs().count() >= 3, "Lead in should be >=3 programs with_apexes {:?}", with_apexes.1.spans()[0]);
-    assert!(with_apexes.1.spans()[1].programs().count() > 1, "Central span should be >1 program with_apexes {:?}", with_apexes.1.spans()[1]);
+    assert!(with_apexes.1.spans()[0].programs(&with_apexes.1).count() >= 3, "Lead in should be >=3 programs with_apexes {:?}", with_apexes.1.spans()[0]);
+    assert!(with_apexes.1.spans()[1].programs(&with_apexes.1).count() > 1, "Central span should be >1 program with_apexes {:?}", with_apexes.1.spans()[1]);
 
     assert!(after_apexes.1.spans().len() == 3, "Should only be 3 spans after_apexes {:?} (lead-in, actual program, lead-out)", before_apexes);
-    assert!(after_apexes.1.spans()[0].programs().count() == 3, "Lead in should be 3 programs after_apexes {:?}", after_apexes.1.spans()[0]);
-    assert!(after_apexes.1.spans()[1].programs().count() == 1, "Central span should be one program after_apexes {:?}", after_apexes.1.spans()[1]);
+    assert!(after_apexes.1.spans()[0].programs(&after_apexes.1).count() == 3, "Lead in should be 3 programs after_apexes {:?}", after_apexes.1.spans()[0]);
+    assert!(after_apexes.1.spans()[1].programs(&after_apexes.1).count() == 1, "Central span should be one program after_apexes {:?}", after_apexes.1.spans()[1]);
 }
 
 #[test]
@@ -1035,7 +1035,7 @@ fn mascot_overlap_2() {
 
     for span in scanlines[0].1.spans() {
         // Determine the type of span (we should either get 'run program' or 'start blend', 'run program', 'blend')
-        let stack = span.programs().collect::<Vec<_>>();
+        let stack = span.programs(&scanlines[0].1).collect::<Vec<_>>();
 
         if stack.len() == 1 {
             // These are always solid colour, so they should be entirely inside
@@ -1066,7 +1066,7 @@ fn mascot_overlap_2() {
                 }
             }
         } else {
-            assert!(false, "Unrecognised pattern: {:?}", span);
+            assert!(false, "Unrecognised pattern: {:?} {:?}", span, stack);
         }
     }
 }
@@ -1132,7 +1132,7 @@ fn mascot_overlap_3() {
     println!("{:?}\n", scanlines);
 
     for span in scanlines[0].1.spans() {
-        for op in span.programs() {
+        for op in span.programs(&scanlines[0].1) {
             match op {
                 PixelProgramPlan::Merge(alpha)  => assert!(alpha >= 0.0 && alpha <= 1.0, "Merge must use an alpha between 0 and 1 (got {})", alpha),
                 _                               => { }
@@ -1196,7 +1196,7 @@ fn text_overlap_1() {
     // The pixel at x=138 should be solid (well, nearly solid)
     let scanline    = &scanlines[0];
     let pixel_138   = scanline.1.spans().iter().filter(|span| span.x_range().start == 138.0).next().unwrap();
-    let merge       = pixel_138.programs().filter(|program| match program { PixelProgramPlan::Merge(_) => true, _ => false }).next().unwrap();
+    let merge       = pixel_138.programs(&scanline.1).filter(|program| match program { PixelProgramPlan::Merge(_) => true, _ => false }).next().unwrap();
 
     println!("{:?}", pixel_138);
 
@@ -1244,7 +1244,7 @@ fn text_overlap_2() {
     // The pixel at x=378 should be solid (well, nearly solid)
     let scanline    = &scanlines[0];
     let pixel_378   = scanline.1.spans().iter().filter(|span| span.x_range().start == 378.0).next().unwrap();
-    let merge       = pixel_378.programs().filter(|program| match program { PixelProgramPlan::Merge(_) => true, PixelProgramPlan::LinearMerge(_, _) => true, _ => false }).next().unwrap();
+    let merge       = pixel_378.programs(&scanline.1).filter(|program| match program { PixelProgramPlan::Merge(_) => true, PixelProgramPlan::LinearMerge(_, _) => true, _ => false }).next().unwrap();
 
     println!("{:?}", pixel_378);
 
@@ -1777,7 +1777,7 @@ fn letter_h() {
 
     // Should generate plans that don't have completely transparent sections
     assert!(!plan.spans().iter()
-        .any(|span| span.programs()
+        .any(|span| span.programs(&plan)
             .any(|plan| {
                 match plan {
                     PixelProgramPlan::LinearMerge(a, b) => a == 0.0 && b == 0.0,
