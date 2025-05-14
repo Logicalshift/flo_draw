@@ -149,7 +149,7 @@ impl ScanlinePlan {
                 continue;
             }
 
-            if last_span.plan != this_span.plan {
+            if last_span.plan.len() != this_span.plan.len() || self.programs[last_span.plan.clone()] != self.programs[this_span.plan.clone()] {
                 // Different programs
                 continue;
             }
@@ -165,7 +165,7 @@ impl ScanlinePlan {
                 let last_span = &self.spans[offset_idx-1];
                 let this_span = &self.spans[copy_from_idx];
 
-                if last_span.x_range.end != this_span.x_range.start || last_span.plan != this_span.plan {
+                if last_span.x_range.end != this_span.x_range.start || (last_span.plan.len() != this_span.plan.len() || self.programs[last_span.plan.clone()] != self.programs[this_span.plan.clone()]) {
                     // Not adjacent, or not matching: copy the definition and update the offset index
                     self.spans[offset_idx] = this_span.clone();
                     offset_idx += 1;
