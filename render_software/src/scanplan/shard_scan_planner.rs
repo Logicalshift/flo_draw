@@ -44,6 +44,7 @@ where
     ///
     pub fn plan_from_edge_intercepts(&self, edge_plan: &EdgePlan<TEdge>, ordered_intercepts: Vec<Vec<EdgePlanShardIntercept>>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
         // TODO: we can do away with the need for this by making the edge plan a trait
+        let mut scanline_intercepts_scratch_space = Vec::with_capacity(16);
 
         // Map the x-range from the source coordinates to pixel coordinates
         let x_range = transform.source_x_to_pixels(x_range.start)..transform.source_x_to_pixels(x_range.end);
@@ -57,7 +58,7 @@ where
 
             // Iterate over the intercepts on this line
             let scanline_intercepts     = &ordered_intercepts[y_idx];
-            let mut scanline_intercepts = ShardInterceptIterator::from_intercepts(scanline_intercepts.into_iter(), transform);
+            let mut scanline_intercepts = ShardInterceptIterator::from_intercepts(scanline_intercepts.into_iter(), transform, &mut scanline_intercepts_scratch_space);
 
             // Each shard has two intercepts: the lower is where we start fading into or out of the shape, and the upper is where we finish, either ending up fully inside
             // or outside the shape.
@@ -246,7 +247,7 @@ where
     next_shard: Option<ShardInterceptLocation>,
 
     /// The shards that have been started: a stack, with the first to end at the top
-    started_shards: Vec<ShardInterceptLocation>,
+    started_shards: &'a mut Vec<ShardInterceptLocation>,
 
     /// The transform being used for the current scanline
     transform: &'a ScanlineTransform,
@@ -260,11 +261,13 @@ where
     /// Creates a new shard intercept iterator
     ///
     #[inline]
-    pub fn from_intercepts(intercepts: TShardIterator, transform: &'a ScanlineTransform) -> Self {
+    pub fn from_intercepts(intercepts: TShardIterator, transform: &'a ScanlineTransform, scratch_space: &'a mut Vec<ShardInterceptLocation>) -> Self {
+        scratch_space.clear();
+
         Self {
             remaining_shards:   Some(intercepts),
             next_shard:         None,
-            started_shards:     vec![],
+            started_shards:     scratch_space,
             transform:          transform,
         }
     }
