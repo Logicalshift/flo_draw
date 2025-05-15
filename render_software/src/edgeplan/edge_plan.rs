@@ -427,7 +427,7 @@ where
     ///
     /// As for `intercepts_on_scanlines`, except the intercepts will be returned as 'shards' which indicates where they cross two y positions
     ///
-    /// This produces shards that map between each y position, so the output is one less scanline than the number of y positions
+    /// Each shard is generated for neighboring y positions, so the list of output lines is one shorter than the input list of y positions.
     ///
     pub fn shards_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [Vec<EdgePlanShardIntercept>]) {
         // Determine the range that is covered by the y-positions
@@ -454,7 +454,7 @@ where
             // Usually there are no apexes in a region, so we don't bother trying to track them
             if apexes.is_empty() {
                 // Fill the intercepts for this shape
-                shard_intercepts_from_edge(&edge.edge, &y_positions[0..(y_positions.len()-1)], &y_positions[1..y_positions.len()], &mut intercepts);
+                shard_intercepts_from_edge(&edge.edge, &y_positions, &mut intercepts);
 
                 for (shards, output_line) in intercepts.iter().zip(output.iter_mut()) {
                     fill_output_line_from_shards(shape, shards, 255, 1.0, output_line);
@@ -462,7 +462,7 @@ where
             } else {
                 // Fill the intercepts for this shape (optimistically: we can't use the results we calculate here with an apex, so we assume only a few lines will be affected)
                 // (We compute the intercepts for multiple lines here, then look for apexes later on)
-                shard_intercepts_from_edge(&edge.edge, &y_positions[0..(y_positions.len()-1)], &y_positions[1..y_positions.len()], &mut intercepts);
+                shard_intercepts_from_edge(&edge.edge, &y_positions, &mut intercepts);
 
                 // Iterate through the apexes. We assume the y positions will be in ascending order (as will the apexes), so we'll get apexes relating to each y position as we go
                 let mut apex_iter = apexes.iter();
@@ -505,7 +505,7 @@ where
                             let sub_pixel_y_starts          = &line_apexes[0..(line_apexes.len()-1)];
                             let sub_pixel_y_ends            = &line_apexes[1..line_apexes.len()];
 
-                            shard_intercepts_from_edge(&edge.edge, sub_pixel_y_starts, sub_pixel_y_ends, &mut sub_pixel_intercepts);
+                            shard_intercepts_from_edge(&edge.edge, &line_apexes, &mut sub_pixel_intercepts);
 
                             // Generate sub-pixel shards from these results
                             let sub_pixel_ranges            = sub_pixel_y_starts.iter().zip(sub_pixel_y_ends).map(|(y1, y2)| y1..y2);

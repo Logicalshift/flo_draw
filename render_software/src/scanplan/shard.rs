@@ -195,30 +195,20 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
 ///
 /// Fills the output with a list of shard intercepts for a set positions
 ///
-/// The start_y_positions, end_y_positions and output slices should be the same length. Each entry in the output slice will be cleared and
-/// updated to contain the intercepts for the corresponding start/end region.
+/// Shards are found using neighboring entries in the y positions table. This means that the output will be one shorter than the y_positions
 ///
-pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, start_y_positions: &'a [f64], end_y_positions: &'a [f64], output: &mut [Vec<ShardIntercept>]) {
+pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, y_positions: &'a [f64], output: &mut [Vec<ShardIntercept>]) {
     // TODO: some edges can have multiple closed shapes (eg: closed lines, for example). This algorithm won't work with those because it assumes a single closed shape
 
     // Read the positions of the start intercepts for each y-position
-    let mut start_intercepts = vec![Vec::with_capacity(8); start_y_positions.len()];
-    edge.intercepts(start_y_positions, &mut start_intercepts);
+    let mut intercepts = vec![Vec::with_capacity(8); y_positions.len()];
+    edge.intercepts(y_positions, &mut intercepts);
 
-    start_intercepts.iter_mut()
-        .for_each(|intercept_line| intercept_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos)));
-
-    // Read the end intercepts (TODO: can maybe speed this up and only read the last one as very often end_y_positions[x] = start_y_positions[x+1])
-    // TODO: if we just take a list of y-positions instead of 'start' and 'end' positions, we can match them up to make start/end lists
-    let mut end_intercepts = vec![Vec::with_capacity(8); end_y_positions.len()];
-    edge.intercepts(end_y_positions, &mut end_intercepts);
-
-    // TODO: can avoid sorting things that we already fetched with the start intercepts
-    end_intercepts.iter_mut()
+    intercepts.iter_mut()
         .for_each(|intercept_line| intercept_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos)));
 
     // Generate the shart intercepts
-    for ((previous_line, next_line), intercepts) in start_intercepts.into_iter().zip(end_intercepts.into_iter()).zip(output.iter_mut()) {
+    for ((previous_line, next_line), intercepts) in intercepts.iter().tuple_windows().zip(output.iter_mut()) {
         // We now need to match the crossing points for the two lines, which we do by pairing up each point with the nearest of the same crossing type form the
 
         // Every matching pair forms a shard in that direction. Very often this is very simple: both the next and previous line have the same number of intercepts,
