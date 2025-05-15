@@ -11,6 +11,8 @@ use flo_canvas as canvas;
 use flo_sparse_array::*;
 use flo_canvas::curves::geo::*;
 
+use itertools::*;
+
 use std::ops::{Range};
 use std::sync::*;
 
@@ -425,16 +427,14 @@ where
     ///
     /// As for `intercepts_on_scanlines`, except the intercepts will be returned as 'shards' which indicates where they cross two y positions
     ///
-    pub fn shards_on_scanlines<'a>(&'a self, start_y_positions: &[f64], end_y_positions: &[f64], output: &mut [Vec<EdgePlanShardIntercept>]) {
+    /// This produces shards that map between each y position, so the output is one less scanline than the number of y positions
+    ///
+    pub fn shards_on_scanlines<'a>(&'a self, y_positions: &[f64], output: &mut [Vec<EdgePlanShardIntercept>]) {
         // Determine the range that is covered by the y-positions
         let mut y_min = f64::MAX;
         let mut y_max = f64::MIN;
 
-        start_y_positions.iter().for_each(|pos| {
-            y_min = y_min.min(*pos);
-            y_max = y_max.max(*pos);
-        });
-        end_y_positions.iter().for_each(|pos| {
+        y_positions.iter().for_each(|pos| {
             y_min = y_min.min(*pos);
             y_max = y_max.max(*pos);
         });
@@ -454,7 +454,7 @@ where
             // Usually there are no apexes in a region, so we don't bother trying to track them
             if apexes.is_empty() {
                 // Fill the intercepts for this shape
-                shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
+                shard_intercepts_from_edge(&edge.edge, &y_positions[0..(y_positions.len()-1)], &y_positions[1..y_positions.len()], &mut intercepts);
 
                 for (shards, output_line) in intercepts.iter().zip(output.iter_mut()) {
                     fill_output_line_from_shards(shape, shards, 255, 1.0, output_line);
@@ -462,13 +462,13 @@ where
             } else {
                 // Fill the intercepts for this shape (optimistically: we can't use the results we calculate here with an apex, so we assume only a few lines will be affected)
                 // (We compute the intercepts for multiple lines here, then look for apexes later on)
-                shard_intercepts_from_edge(&edge.edge, start_y_positions, end_y_positions, &mut intercepts);
+                shard_intercepts_from_edge(&edge.edge, &y_positions[0..(y_positions.len()-1)], &y_positions[1..y_positions.len()], &mut intercepts);
 
                 // Iterate through the apexes. We assume the y positions will be in ascending order (as will the apexes), so we'll get apexes relating to each y position as we go
                 let mut apex_iter = apexes.iter();
                 let mut next_apex = apex_iter.next();
 
-                let y_ranges      = start_y_positions.iter().zip(end_y_positions).map(|(y1, y2)| (*y1)..(*y2));
+                let y_ranges      = y_positions.iter().tuple_windows().map(|(y1, y2)| (*y1)..(*y2));
 
                 // Generate the intercepts for each line
                 for ((shards, output_line), y_range) in intercepts.iter().zip(output.iter_mut()).zip(y_ranges) {
