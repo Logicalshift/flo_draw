@@ -82,20 +82,20 @@ where
         for next_action in next_action_set {
             match next_action {
                 WindowUpdate::Draw(next_action) => {
+                    // Create the renderer if it doesn't already exist
+                    if let (Some(winit_window), None) = (&window.window, &window.context) {
+                        // Create a new softbuffer context
+                        let winit_window        = winit_window.clone();
+                        let softbuffer_context  = softbuffer::Context::new(winit_window.clone()).unwrap();
+                        let softbuffer_surface  = softbuffer::Surface::new(&softbuffer_context, winit_window.clone()).unwrap();
+
+                        window.context = Some(softbuffer_context);
+                        window.surface = Some(softbuffer_surface);
+                    }
+
                     window = canvas_drawing.future_desync(move |canvas_drawing| async move {
                         // Render the actions to the CanvasDrawing
                         canvas_drawing.draw(Arc::unwrap_or_clone(next_action).into_iter());
-
-                        // Create the renderer if it doesn't already exist
-                        if let (Some(winit_window), None) = (&window.window, &window.context) {
-                            // Create a new softbuffer context
-                            let winit_window        = winit_window.clone();
-                            let softbuffer_context  = softbuffer::Context::new(winit_window.clone()).unwrap();
-                            let softbuffer_surface  = softbuffer::Surface::new(&softbuffer_context, winit_window.clone()).unwrap();
-
-                            window.context = Some(softbuffer_context);
-                            window.surface = Some(softbuffer_surface);
-                        }
 
                         if let (Some(winit_window), Some(context), Some(surface)) = (&window.window, &mut window.context, &mut window.surface) {
                             // Set up to render at the current size
