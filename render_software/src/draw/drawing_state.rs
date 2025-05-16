@@ -304,8 +304,8 @@ impl DrawingState {
             Brush::OpaqueSolidColor(_) |
             Brush::TransparentSolidColor(_)                         => { }
 
-            Brush::TransparentTexture(_, _, fill_transform)         => { *fill_transform = transform * *fill_transform; }
-            Brush::TransparentLinearTexture(_, _, fill_transform)   => { *fill_transform = transform * *fill_transform; }
+            Brush::TransparentTexture(_, _, fill_transform)         |
+            Brush::TransparentLinearTexture(_, _, fill_transform)   |
             Brush::TransparentMipMapTexture(_, _, fill_transform)   => { *fill_transform = transform * *fill_transform; }
 
             Brush::LinearGradient(_, _, _, gradient_transform)      => { *gradient_transform = transform * *gradient_transform; }
