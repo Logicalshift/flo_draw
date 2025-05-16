@@ -440,8 +440,8 @@ where
         });
 
         // Process every edge description in this range
-        let mut intercepts  = vec![Vec::with_capacity(4); output.len()];
-        let mut apexes      = Vec::with_capacity(8);
+        let mut intercepts  = vec![Vec::with_capacity(16); output.len()];
+        let mut apexes      = Vec::with_capacity(16);
 
         for edge_idx in self.edge_space.data_in_region(y_min..(y_max+1e-6)) {
             // Process the shards from this edge
