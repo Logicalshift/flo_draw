@@ -168,6 +168,20 @@ where
             // We only send one of these per batch, in case multiple frames are displayed during one batch of events for any reason (this reduces the
             // amount that the rendering can get behind)
             events.publish(DrawEvent::NewFrame).await;
+
+            // Yield control to ensure that other events have a chance to be processed
+            let mut yielded = false;
+            future::poll_fn(move |context| {
+                use futures::task::{Poll};
+
+                if !yielded {
+                    yielded = true;
+                    context.waker().clone().wake();
+                    Poll::Pending
+                } else {
+                    Poll::Ready(())
+                }
+            }).await;
         }
     }
 
