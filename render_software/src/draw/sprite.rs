@@ -534,11 +534,11 @@ impl DrawingState {
             (Translate(x, y), SpriteTransform::ScaleTransform { translate, scale }) => { translate.0 += x as f64 * scale.0; translate.1 += y as f64 * scale.0; }
             (Scale(x, y), SpriteTransform::ScaleTransform { scale, .. })            => { scale.0 *= x as f64; scale.1 *= y as f64; }
 
-            (Rotate(theta), sprite_transform)                                       => { *sprite_transform = SpriteTransform::Matrix(sprite_transform.matrix() * canvas::Transform2D::rotate_degrees(theta)); }
-            (Transform2D(matrix), sprite_transform)                                 => { *sprite_transform = SpriteTransform::Matrix(sprite_transform.matrix() * matrix); }
+            (Rotate(theta), sprite_transform)                                       => { *sprite_transform = SpriteTransform::Matrix(canvas::Transform2D::rotate_degrees(theta) * sprite_transform.matrix()); }
+            (Transform2D(matrix), sprite_transform)                                 => { *sprite_transform = SpriteTransform::Matrix(matrix * sprite_transform.matrix()); }
         
-            (Translate(x, y), SpriteTransform::Matrix(t))                           => { *t = *t * canvas::Transform2D::translate(x, y); }
-            (Scale(x, y), SpriteTransform::Matrix(t))                               => { *t = *t * canvas::Transform2D::scale(x, y); }
+            (Translate(x, y), SpriteTransform::Matrix(t))                           => { *t = canvas::Transform2D::translate(x, y) * *t; }
+            (Scale(x, y), SpriteTransform::Matrix(t))                               => { *t = canvas::Transform2D::scale(x, y) * *t; }
         }
     }
 }
