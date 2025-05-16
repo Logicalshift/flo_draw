@@ -249,8 +249,8 @@ impl U16LinearTexture {
     #[inline]
     pub fn pixel_index(&self, x: i64, y: i64) -> usize {
         // The texture is treated as repeating infinitely
-        let x   = if x >= 0 { x%self.width } else { (x%self.width) + self.width };
-        let y   = if y >= 0 { y%self.height } else { (y%self.height) + self.height };
+        let x = x.rem_euclid(self.width);
+        let y = y.rem_euclid(self.height);
 
         // Calculate the index where this pixel is
         let idx = (x + y*self.width) * 4;
