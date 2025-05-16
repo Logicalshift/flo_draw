@@ -15,6 +15,7 @@ use winit::dpi::{LogicalSize};
 use winit::window::{Window, Fullscreen};
 use futures::prelude::*;
 use futures::task::{Poll, Context};
+use ::desync::*;
 
 use std::pin::*;
 use std::sync::*;
@@ -72,7 +73,8 @@ where
         mouse_pointer:      follow(window_properties.mouse_pointer)
     };
     let mut window_actions  = window_actions.ready_chunks(100);
-    let mut canvas_drawing  = CanvasDrawing::<F32LinearPixel, 4>::empty();
+    let canvas_drawing      = CanvasDrawing::<F32LinearPixel, 4>::empty();
+    let canvas_drawing      = Desync::new(canvas_drawing);
 
     while let Some(next_action_set) = window_actions.next().await {
         let mut send_new_frame = false;
@@ -80,48 +82,49 @@ where
         for next_action in next_action_set {
             match next_action {
                 WindowUpdate::Draw(next_action) => {
-                    // Render the actions to the CanvasDrawing
-                    canvas_drawing.draw(Arc::unwrap_or_clone(next_action).into_iter());
+                    window = canvas_drawing.future_desync(move |canvas_drawing| async move {
+                        // Render the actions to the CanvasDrawing
+                        canvas_drawing.draw(Arc::unwrap_or_clone(next_action).into_iter());
 
-                    // Create the renderer if it doesn't already exist
-                    if let (Some(winit_window), None) = (&window.window, &window.context) {
-                        // Create a new softbuffer context
-                        let winit_window        = winit_window.clone();
-                        let softbuffer_context  = softbuffer::Context::new(winit_window.clone()).unwrap();
-                        let softbuffer_surface  = softbuffer::Surface::new(&softbuffer_context, winit_window.clone()).unwrap();
+                        // Create the renderer if it doesn't already exist
+                        if let (Some(winit_window), None) = (&window.window, &window.context) {
+                            // Create a new softbuffer context
+                            let winit_window        = winit_window.clone();
+                            let softbuffer_context  = softbuffer::Context::new(winit_window.clone()).unwrap();
+                            let softbuffer_surface  = softbuffer::Surface::new(&softbuffer_context, winit_window.clone()).unwrap();
 
-                        window.context = Some(softbuffer_context);
-                        window.surface = Some(softbuffer_surface);
-
-                        // First frame has been displayed
-                        send_new_frame = true;
-                    }
-
-                    if let (Some(winit_window), Some(context), Some(surface)) = (&window.window, &mut window.context, &mut window.surface) {
-                        // Set up to render at the current size
-                        let size    = winit_window.inner_size();
-                        let width   = size.width;
-                        let height  = size.height;
-
-                        if width != 0 && height != 0 {
-                            // Resize the surface before rendering
-                            surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap());
-
-                            // Render the region from the canvas drawing
-                            let mut buffer              = surface.buffer_mut().unwrap();
-                            let buffer_u32: &mut [u32]  = &mut *buffer;
-                            let mut frame               = FrameU32Argb::from_u32(width as _, height as _, 2.2, buffer_u32).unwrap();
-
-                            let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
-                            frame.render(renderer, &canvas_drawing);
-
-                            // Present the rendering
-                            buffer.present().unwrap();
+                            window.context = Some(softbuffer_context);
+                            window.surface = Some(softbuffer_surface);
                         }
 
-                        // Trigger the 'NewFrame' event when done
-                        send_new_frame = true;
-                    }
+                        if let (Some(winit_window), Some(context), Some(surface)) = (&window.window, &mut window.context, &mut window.surface) {
+                            // Set up to render at the current size
+                            let size    = winit_window.inner_size();
+                            let width   = size.width;
+                            let height  = size.height;
+
+                            if width != 0 && height != 0 {
+                                // Resize the surface before rendering
+                                surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap());
+
+                                // Render the region from the canvas drawing
+                                let mut buffer              = surface.buffer_mut().unwrap();
+                                let buffer_u32: &mut [u32]  = &mut *buffer;
+                                let mut frame               = FrameU32Argb::from_u32(width as _, height as _, 2.2, buffer_u32).unwrap();
+
+                                let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
+                                frame.render(renderer, &canvas_drawing);
+
+                                // Present the rendering
+                                buffer.present().unwrap();
+                            }
+                        }
+
+                        window
+                    }.boxed()).await.unwrap();
+
+                    // Trigger the 'NewFrame' event when done
+                    send_new_frame = true;
                 }
 
                 WindowUpdate::SetTitle(new_title)   => {
@@ -172,8 +175,6 @@ where
             // Yield control to ensure that other events have a chance to be processed
             let mut yielded = false;
             future::poll_fn(move |context| {
-                use futures::task::{Poll};
-
                 if !yielded {
                     yielded = true;
                     context.waker().clone().wake();
