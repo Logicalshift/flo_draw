@@ -502,13 +502,11 @@ where
 
                             // Compute sub-pixel shards for each pair of apexes
                             let mut sub_pixel_intercepts    = vec![Vec::with_capacity(8); line_apexes.len()-1];
-                            let sub_pixel_y_starts          = &line_apexes[0..(line_apexes.len()-1)];
-                            let sub_pixel_y_ends            = &line_apexes[1..line_apexes.len()];
 
                             shard_intercepts_from_edge(&edge.edge, &line_apexes, &mut sub_pixel_intercepts);
 
                             // Generate sub-pixel shards from these results
-                            let sub_pixel_ranges            = sub_pixel_y_starts.iter().zip(sub_pixel_y_ends).map(|(y1, y2)| y1..y2);
+                            let sub_pixel_ranges            = line_apexes.iter().tuple_windows().map(|(y1, y2)| *y1..*y2);
                             let row_height                  = y_range.end - y_range.start;
 
                             for (subpixel_idx, (sub_pixel_shards, sp_range)) in sub_pixel_intercepts.into_iter().zip(sub_pixel_ranges).enumerate() {
