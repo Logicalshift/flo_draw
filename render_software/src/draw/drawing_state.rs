@@ -349,3 +349,123 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use flo_canvas::*;
+
+    use super::*;
+
+    fn texture_transform(state: &DrawingState) -> Transform2D {
+        match state.next_fill_brush {
+            Brush::TransparentTexture(_, _, fill_transform)         |
+            Brush::TransparentLinearTexture(_, _, fill_transform)   |
+            Brush::TransparentMipMapTexture(_, _, fill_transform)   => fill_transform.clone(),
+
+            _ => panic!("not a texture brush")
+        }
+    }
+
+    #[test]
+    fn texture_positioning_1() {
+        // Checking that we create the right transform for positioning the texture
+        let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
+
+        // Set up a basic texture and a canvas height
+        drawing.current_state.canvas_height(1000.0);
+        drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.fill_texture(TextureId(0), 0.0, 0.0, 1000.0, 1000.0);
+
+        // Point 0,0 on the canvas should be 0,0 on the texture
+        let (x,y)       = drawing.current_state.transform.transform_point(0.0, 0.0);
+        let (tx, ty)    = texture_transform(&drawing.current_state).transform_point(x, y);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+
+        // Point 1000,1000 on the canvas should be 100,200 on the texture
+        let (x,y)       = drawing.current_state.transform.transform_point(1000.0, 1000.0);
+        let (tx, ty)    = texture_transform(&drawing.current_state).transform_point(x, y);
+
+        assert!((tx - 100.0).abs() < 0.01, "Expected 100,200, got {} {}", tx, ty);
+        assert!((ty - 200.0).abs() < 0.01, "Expected 100,200, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_positioning_2() {
+        let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
+
+        // Set up a basic texture and a canvas height
+        drawing.current_state.canvas_height(1000.0);
+        drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.fill_texture(TextureId(0), 100.0, 100.0, 800.0, 800.0);
+
+        // Point 100,100 on the canvas should be 0,0 on the texture
+        let (x,y)       = drawing.current_state.transform.transform_point(100.0, 100.0);
+        let (tx, ty)    = texture_transform(&drawing.current_state).transform_point(x, y);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+
+        // Point 800,800 on the canvas should be 100,200 on the texture
+        let (x,y)       = drawing.current_state.transform.transform_point(800.0, 800.0);
+        let (tx, ty)    = texture_transform(&drawing.current_state).transform_point(x, y);
+
+        assert!((tx - 100.0).abs() < 0.01, "Expected 100,200, got {} {}", tx, ty);
+        assert!((ty - 200.0).abs() < 0.01, "Expected 100,200, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_rotation_origin_same_1() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
+
+        // Set up a basic texture and a canvas height
+        drawing.current_state.canvas_height(1000.0);
+        drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.fill_texture(TextureId(0), 0.0, 0.0, 1000.0, 1000.0);
+
+        // Rotate it
+        drawing.current_state.fill_transform(Transform2D::rotate_degrees(45.0));
+
+        // Point 0,0 on the canvas should still be 0,0 on the texture after rotation (we rotate about the 0,0 point on the texture)
+        let (x,y)       = drawing.current_state.transform.transform_point(0.0, 0.0);
+        let (tx, ty)    = texture_transform(&drawing.current_state).transform_point(x, y);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_rotation_origin_same_2() {
+        // The texture should transform around its origin point (this time, the origin is at a different point on the canvas)
+        let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
+
+        // Set up a basic texture and a canvas height
+        drawing.current_state.canvas_height(1000.0);
+        drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.fill_texture(TextureId(0), 200.0, 200.0, 800.0, 800.0);
+
+        // Rotate it
+        drawing.current_state.fill_transform(Transform2D::rotate_degrees(45.0));
+
+        // Point 0,0 on the canvas should still be 0,0 on the texture after rotation (we rotate about the 0,0 point on the texture)
+        let (x,y)       = drawing.current_state.transform.transform_point(200.0, 200.0);
+        let (tx, ty)    = texture_transform(&drawing.current_state).transform_point(x, y);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+    }
+}
