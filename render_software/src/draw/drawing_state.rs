@@ -422,6 +422,68 @@ mod test {
     }
 
     #[test]
+    fn texture_scale_origin_same_1() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
+
+        // Set up a basic texture and a canvas height
+        drawing.current_state.canvas_height(1000.0);
+        drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.fill_texture(TextureId(0), 0.0, 0.0, 1000.0, 1000.0);
+
+        // Rotate it
+        drawing.current_state.fill_transform(Transform2D::scale(2.0, 2.0));
+
+        // Top corner of the texture should be 50, 100
+        let (x,y)       = drawing.current_state.transform.transform_point(1000.0, 1000.0);
+        let (tx, ty)    = texture_transform(&drawing.current_state).transform_point(x, y);
+
+        assert!((tx - 50.0).abs() < 0.01, "Expected 50,100, got {} {}", tx, ty);
+        assert!((ty - 100.0).abs() < 0.01, "Expected 50,100, got {} {}", tx, ty);
+
+        // Bottom corner of the texture should stay at 0,0
+        let (x,y)       = drawing.current_state.transform.transform_point(0.0, 0.0);
+        let (tx, ty)    = texture_transform(&drawing.current_state).transform_point(x, y);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_scale_origin_same_2() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
+
+        // Set up a basic texture and a canvas height
+        drawing.current_state.canvas_height(1000.0);
+        drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.fill_texture(TextureId(0), 200.0, 200.0, 800.0, 800.0);
+
+        // Rotate it
+        drawing.current_state.fill_transform(Transform2D::scale(2.0, 2.0));
+
+        // Top corner of the texture should be 50, 100
+        let (x,y)       = drawing.current_state.transform.transform_point(800.0, 800.0);
+        let (tx, ty)    = texture_transform(&drawing.current_state).transform_point(x, y);
+
+        assert!((tx - 50.0).abs() < 0.01, "Expected 50,100, got {} {}", tx, ty);
+        assert!((ty - 100.0).abs() < 0.01, "Expected 50,100, got {} {}", tx, ty);
+
+        // Bottom corner of the texture should stay at 0,0
+        let (x,y)       = drawing.current_state.transform.transform_point(200.0, 200.0);
+        let (tx, ty)    = texture_transform(&drawing.current_state).transform_point(x, y);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+    }
+
+    #[test]
     fn texture_rotation_origin_same_1() {
         // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
@@ -492,7 +554,6 @@ mod test {
         assert!((tx - 50.0).abs() < 0.01, "Expected 50, 100, got {} {}", tx, ty);
         assert!((ty - 100.0).abs() < 0.01, "Expected 50, 100, got {} {}", tx, ty);
     }
-
 
     #[test]
     fn texture_translation_rotation_1() {
