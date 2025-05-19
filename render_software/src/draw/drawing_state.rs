@@ -24,6 +24,18 @@ pub enum SpriteTransform {
 }
 
 ///
+/// Describes how a texture should be transformed to render it on screen
+///
+#[derive(Clone, Copy, Debug)]
+pub struct TextureTransform {
+    /// The custom transform to apply: maps coordinates in canvas space to texture coordinates (with an origin at 0,0)
+    pub (crate) transform: canvas::Transform2D,
+
+    /// The offset to apply to move the texture to its final position after the transform
+    pub (crate) offset: (f32, f32),
+}
+
+///
 /// A brush represents what will be used to fill in the next region 
 ///
 #[derive(Clone)]
@@ -35,16 +47,16 @@ pub enum Brush {
     TransparentSolidColor(canvas::Color),
 
     /// A transformed texture, known to have transparent pixels in it
-    TransparentTexture(f64, Arc<RgbaTexture>, canvas::Transform2D),
+    TransparentTexture(f64, Arc<RgbaTexture>, TextureTransform),
 
     /// A transformed texture, known to have transparent pixels in it
-    TransparentLinearTexture(f64, Arc<U16LinearTexture>, canvas::Transform2D),
+    TransparentLinearTexture(f64, Arc<U16LinearTexture>, TextureTransform),
 
     /// A transformed texture that will be rendered using mip-maps
-    TransparentMipMapTexture(f64, Arc<MipMap<Arc<U16LinearTexture>>>, canvas::Transform2D),
+    TransparentMipMapTexture(f64, Arc<MipMap<Arc<U16LinearTexture>>>, TextureTransform),
 
     /// A linear gradient
-    LinearGradient(f64, canvas::NamespaceId, canvas::GradientId, canvas::Transform2D),
+    LinearGradient(f64, canvas::NamespaceId, canvas::GradientId, TextureTransform),
 }
 
 #[derive(Clone)]
@@ -308,9 +320,9 @@ impl DrawingState {
 
             Brush::TransparentTexture(_, _, fill_transform)         |
             Brush::TransparentLinearTexture(_, _, fill_transform)   |
-            Brush::TransparentMipMapTexture(_, _, fill_transform)   => { *fill_transform = transform * *fill_transform; }
+            Brush::TransparentMipMapTexture(_, _, fill_transform)   => { fill_transform.transform = fill_transform.transform * transform; }
 
-            Brush::LinearGradient(_, _, _, gradient_transform)      => { *gradient_transform = transform * *gradient_transform; }
+            Brush::LinearGradient(_, _, _, gradient_transform)      => { gradient_transform.transform = gradient_transform.transform * transform; }
         }
     }
 }
@@ -350,6 +362,13 @@ where
     }
 }
 
+impl<'a> Into<canvas::Transform2D> for &'a TextureTransform {
+    #[inline]
+    fn into(self) -> canvas::Transform2D {
+        self.transform * canvas::Transform2D::translate(self.offset.0, self.offset.1)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use flo_canvas::*;
@@ -360,7 +379,7 @@ mod test {
         match state.next_fill_brush {
             Brush::TransparentTexture(_, _, fill_transform)         |
             Brush::TransparentLinearTexture(_, _, fill_transform)   |
-            Brush::TransparentMipMapTexture(_, _, fill_transform)   => fill_transform.clone(),
+            Brush::TransparentMipMapTexture(_, _, fill_transform)   => fill_transform.transform * canvas::Transform2D::translate(fill_transform.offset.0, fill_transform.offset.1),
 
             _ => panic!("not a texture brush")
         }
@@ -633,12 +652,12 @@ mod test {
         let transform = canvas::Transform2D::scale(w, h) * transform;
 
         // Apply custom transformations
-        let transform2 = canvas::Transform2D::translate(-300.0, -300.0).invert().unwrap();
+        let transform2 = transform * canvas::Transform2D::translate(-300.0, -300.0).invert().unwrap();
         let transform2 = transform2 * canvas::Transform2D::rotate_degrees(45.0).invert().unwrap();
         let transform2 = transform2 * canvas::Transform2D::scale(1.0/3.0, 1.0/3.0).invert().unwrap();
 
         // Apply the custom transform to the mapping
-        let transform = transform * transform2;
+        let transform = transform2;
 
         // Transform the result to the final position
         let transform = transform * canvas::Transform2D::translate(-x1, -y1);

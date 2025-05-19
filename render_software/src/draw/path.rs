@@ -206,7 +206,7 @@ where
             }
 
             (_, TransparentTexture(alpha, texture, transform)) => {
-                let texture_data    = TextureData::with_texture_alpha(Arc::clone(texture), transform, *alpha);
+                let texture_data    = TextureData::with_texture_alpha(Arc::clone(texture), &transform.into(), *alpha);
                 let brush_data      = program_cache.program_cache.store_program_data(&program_cache.bilinear_texture, data_cache, texture_data);
 
                 ShapeDescriptor {
@@ -217,7 +217,7 @@ where
             }
 
             (_, TransparentLinearTexture(alpha, texture, transform)) => {
-                let texture_data    = TextureData::with_texture_alpha(Arc::clone(texture), transform, *alpha);
+                let texture_data    = TextureData::with_texture_alpha(Arc::clone(texture), &transform.into(), *alpha);
                 let brush_data      = program_cache.program_cache.store_program_data(&program_cache.bilinear_u16_texture, data_cache, texture_data);
 
                 ShapeDescriptor {
@@ -228,7 +228,7 @@ where
             }
 
             (_, TransparentMipMapTexture(alpha, texture, transform)) => {
-                let texture_data    = TextureData::with_texture_alpha(Arc::clone(texture), transform, *alpha);
+                let texture_data    = TextureData::with_texture_alpha(Arc::clone(texture), &transform.into(), *alpha);
                 let brush_data      = program_cache.program_cache.store_program_data(&program_cache.mipmap_texture, data_cache, texture_data);
 
                 ShapeDescriptor {
@@ -239,7 +239,7 @@ where
             }
 
             (AlphaOperation::SourceOver, LinearGradient(alpha, namespace_id, gradient_id, transform)) => {
-                let gradient_data   = self.gradient_data(*alpha, *namespace_id, *gradient_id, transform);
+                let gradient_data   = self.gradient_data(*alpha, *namespace_id, *gradient_id, &transform.into());
                 let program_cache   = &self.program_cache;
                 let data_cache      = &mut self.program_data_cache;
                 let brush_data      = program_cache.program_cache.store_program_data(&program_cache.linear_gradient, data_cache, gradient_data);
@@ -252,7 +252,7 @@ where
             }
 
             (_, LinearGradient(alpha, namespace_id, gradient_id, transform)) => {
-                let gradient_data   = self.gradient_data(*alpha, *namespace_id, *gradient_id, transform);
+                let gradient_data   = self.gradient_data(*alpha, *namespace_id, *gradient_id, &transform.into());
                 let program_cache   = &self.program_cache;
                 let data_cache      = &mut self.program_data_cache;
                 let brush_data      = program_cache.program_cache.store_program_data(&program_cache.linear_gradient, data_cache, gradient_data);

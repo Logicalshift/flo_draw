@@ -223,9 +223,9 @@ where
                     let w = rgba_texture.width() as f32;
                     let h = rgba_texture.height() as f32;
 
-                    let transform = canvas::Transform2D::translate(-x1, -y1);
-                    let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
+                    let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1));
                     let transform = canvas::Transform2D::scale(w, h) * transform;
+                    let transform = TextureTransform { transform: transform, offset: (-x1, -y1) };
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
@@ -237,9 +237,9 @@ where
                     let w = linear_texture.width() as f32;
                     let h = linear_texture.height() as f32;
 
-                    let transform = canvas::Transform2D::translate(-x1, -y1);
-                    let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
+                    let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1));
                     let transform = canvas::Transform2D::scale(w, h) * transform;
+                    let transform = TextureTransform { transform: transform, offset: (-x1, -y1) };
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
@@ -251,9 +251,9 @@ where
                     let w = mipmap.mip_level(0).width() as f32;
                     let h = mipmap.mip_level(0).height() as f32;
 
-                    let transform = canvas::Transform2D::translate(-x1, -y1);
-                    let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
+                    let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1));
                     let transform = canvas::Transform2D::scale(w, h) * transform;
+                    let transform = TextureTransform { transform: transform, offset: (-x1, -y1) };
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
@@ -276,9 +276,9 @@ where
                     let w = dynamic_texture.width() as f32;
                     let h = dynamic_texture.height() as f32;
 
-                    let transform = canvas::Transform2D::translate(-x1, -y1);
-                    let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
+                    let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1));
                     let transform = canvas::Transform2D::scale(w, h) * transform;
+                    let transform = TextureTransform { transform: transform, offset: (-x1, -y1) };
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
