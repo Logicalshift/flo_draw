@@ -583,4 +583,71 @@ mod test {
         assert!((rx - tx).abs() < 0.01, "Expected {}, {}, got {} {}", tx, ty, rx, ry);
         assert!((ry - ty).abs() < 0.01, "Expected {}, {}, got {} {}", tx, ty, rx, ry);
     }
+
+    #[test]
+    fn transform_test_1() {
+        let w = 100.0;
+        let h = 200.0;
+        let x1 = 200.0;
+        let y1 = 200.0;
+        let x2 = 800.0;
+        let y2 = 800.0;
+
+        let transform = canvas::Transform2D::identity();
+
+        // Transform so that the texture coordinates map from (0,0) to (x2-x1, y2-y1)
+        let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
+        let transform = canvas::Transform2D::scale(w, h) * transform;
+
+        // Apply custom transformations
+        let transform2 = canvas::Transform2D::translate(-300.0, -300.0).invert().unwrap();
+        let transform2 = transform2 * canvas::Transform2D::rotate_degrees(45.0).invert().unwrap();
+        let transform2 = transform2 * canvas::Transform2D::scale(1.0/3.0, 1.0/3.0).invert().unwrap();
+
+        // Apply the custom transform to the mapping
+        let transform = transform * transform2;
+
+        // Transform the result to the final position
+        let transform = transform * canvas::Transform2D::translate(-x1, -y1);
+
+        // Center point of the texture should map to the 200, 200 coordinate we passed in
+        let (tx1, ty1) = transform.transform_point(200.0, 200.0);
+
+        assert!((tx1 - 50.0).abs() < 0.01, "Expected 50, 100, got {} {}", tx1, ty1);
+        assert!((ty1 - 100.0).abs() < 0.01, "Expected 50, 100, got {} {}", tx1, ty1);
+    }
+
+    #[test]
+    fn transform_test_2() {
+        let w = 100.0;
+        let h = 200.0;
+        let x1 = 200.0;
+        let y1 = 800.0;
+        let x2 = 800.0;
+        let y2 = 200.0;
+
+        let transform = canvas::Transform2D::identity();
+
+        // Transform so that the texture coordinates map from (0,0) to (x2-x1, y2-y1)
+        let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1)) * transform;
+        let transform = canvas::Transform2D::scale(w, h) * transform;
+
+        // Apply custom transformations
+        let transform2 = canvas::Transform2D::translate(-300.0, -300.0).invert().unwrap();
+        let transform2 = transform2 * canvas::Transform2D::rotate_degrees(45.0).invert().unwrap();
+        let transform2 = transform2 * canvas::Transform2D::scale(1.0/3.0, 1.0/3.0).invert().unwrap();
+
+        // Apply the custom transform to the mapping
+        let transform = transform * transform2;
+
+        // Transform the result to the final position
+        let transform = transform * canvas::Transform2D::translate(-x1, -y1);
+
+        // Center point of the texture should map to the 200, 800 coordinate we passed in
+        let (tx1, ty1) = transform.transform_point(200.0, 800.0);
+        let (tx1, ty1) = (tx1.rem_euclid(100.0), ty1.rem_euclid(200.0));
+
+        assert!((tx1 - 50.0).abs() < 0.01, "Expected 50, 100, got {} {}", tx1, ty1);
+        assert!((ty1 - 100.0).abs() < 0.01, "Expected 50, 100, got {} {}", tx1, ty1);
+    }
 }
