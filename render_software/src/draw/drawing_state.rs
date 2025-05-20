@@ -648,6 +648,30 @@ mod test {
     }
 
     #[test]
+    fn texture_translation_5() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
+
+        // Set up a basic texture and a canvas height
+        drawing.current_state.canvas_height(1000.0);
+        drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.fill_texture(TextureId(0), 0.0, 0.0, 1000.0, 1000.0);
+
+        // Translate it: translations should use the coordinates we set up in `fill_texture`
+        drawing.current_state.fill_transform(Transform2D::translate(500.0, 500.0));
+
+        // Point 0,0 on the canvas should be 50, 100 (ie, the midpoint) of the texture
+        let (x,y)       = drawing.current_state.transform.transform_point(0.0, 0.0);
+        let (tx, ty)    = texture_transform(&drawing.current_state).transform_point(x, y);
+
+        assert!((tx - -50.0).abs() < 0.01, "Expected -50, -100, got {} {}", tx, ty);
+        assert!((ty - -100.0).abs() < 0.01, "Expected -50, -100, got {} {}", tx, ty);
+    }
+
+    #[test]
     fn texture_translation_rotation_1() {
         // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
