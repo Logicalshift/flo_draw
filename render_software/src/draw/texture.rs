@@ -204,8 +204,9 @@ where
         let data_cache      = &mut self.program_data_cache;
 
         // Transform the coordinates to screen coordinates
-        let (x1, y1) = current_state.transform.transform_point(x1, y1);
-        let (x2, y2) = current_state.transform.transform_point(x2, y2);
+        //let (x1, y1) = current_state.transform.transform_point(x1, y1);
+        //let (x2, y2) = current_state.transform.transform_point(x2, y2);
+        let canvas_transform = current_state.transform.invert().unwrap_or_else(|| canvas::Transform2D::identity());
 
         if let Some(texture) = textures.get_mut(&(self.current_namespace, texture_id)) {
             // Texture exists
@@ -225,7 +226,7 @@ where
 
                     let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1));
                     let transform = canvas::Transform2D::scale(w, h) * transform;
-                    let transform = TextureTransform { transform: transform, offset: (-x1, -y1) };
+                    let transform = TextureTransform { canvas_transform: canvas_transform, transform: transform, offset: (-x1, -y1) };
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
@@ -239,7 +240,7 @@ where
 
                     let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1));
                     let transform = canvas::Transform2D::scale(w, h) * transform;
-                    let transform = TextureTransform { transform: transform, offset: (-x1, -y1) };
+                    let transform = TextureTransform { canvas_transform: canvas_transform, transform: transform, offset: (-x1, -y1) };
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
@@ -253,7 +254,7 @@ where
 
                     let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1));
                     let transform = canvas::Transform2D::scale(w, h) * transform;
-                    let transform = TextureTransform { transform: transform, offset: (-x1, -y1) };
+                    let transform = TextureTransform { canvas_transform: canvas_transform, transform: transform, offset: (-x1, -y1) };
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);
@@ -278,7 +279,7 @@ where
 
                     let transform = canvas::Transform2D::scale(1.0/(x2-x1), 1.0/(y2-y1));
                     let transform = canvas::Transform2D::scale(w, h) * transform;
-                    let transform = TextureTransform { transform: transform, offset: (-x1, -y1) };
+                    let transform = TextureTransform { canvas_transform: canvas_transform, transform: transform, offset: (-x1, -y1) };
 
                     // Set as the brush state
                     DrawingState::release_program(&mut current_state.fill_program, data_cache);

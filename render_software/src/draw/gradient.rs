@@ -198,7 +198,7 @@ where
             let c       = 0.0;
 
             let transform = canvas::Transform2D([[a, b, c], [a, b, c], [0.0, 0.0, 1.0]]);
-            let transform = TextureTransform { transform: transform, offset: (-x1, -y1) };
+            let transform = TextureTransform { canvas_transform: canvas::Transform2D::identity(), transform: transform, offset: (-x1, -y1) };
 
             // Release the current fill program
             DrawingState::release_program(&mut current_state.fill_program, program_data_cache);

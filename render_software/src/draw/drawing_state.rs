@@ -31,6 +31,9 @@ pub struct TextureTransform {
     /// The custom transform to apply: maps coordinates in canvas space to texture coordinates (with an origin at 0,0)
     pub (crate) transform: canvas::Transform2D,
 
+    /// The canvas transformation when this transform was set up
+    pub (crate) canvas_transform: canvas::Transform2D,
+
     /// The offset to apply to move the texture to its final position after the transform
     pub (crate) offset: (f32, f32),
 }
@@ -365,7 +368,7 @@ where
 impl<'a> Into<canvas::Transform2D> for &'a TextureTransform {
     #[inline]
     fn into(self) -> canvas::Transform2D {
-        self.transform * canvas::Transform2D::translate(self.offset.0, self.offset.1)
+        (self.transform * canvas::Transform2D::translate(self.offset.0, self.offset.1)) * self.canvas_transform
     }
 }
 
@@ -379,7 +382,7 @@ mod test {
         match state.next_fill_brush {
             Brush::TransparentTexture(_, _, fill_transform)         |
             Brush::TransparentLinearTexture(_, _, fill_transform)   |
-            Brush::TransparentMipMapTexture(_, _, fill_transform)   => fill_transform.transform * canvas::Transform2D::translate(fill_transform.offset.0, fill_transform.offset.1),
+            Brush::TransparentMipMapTexture(_, _, fill_transform)   => (&fill_transform).into(),
 
             _ => panic!("not a texture brush")
         }
