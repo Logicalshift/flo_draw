@@ -176,3 +176,61 @@ impl CanvasRenderer {
         });
     }
 }
+
+#[cfg(test)]
+mod test {
+    use flo_canvas::*;
+
+    use super::*;
+    use std::sync::*;
+
+    fn texture_transform(state: &CanvasRenderer) -> Transform2D {
+        state.core.sync(|core| {
+            let layer = core.layer(state.current_layer);
+            match layer.state.fill_color {
+                FillState::Texture(_, _, matrix, _, _) => {
+                    let t = &matrix.0;
+
+                    Transform2D([
+                        [t[0][0], t[0][1], t[0][3]],
+                        [t[1][0], t[1][1], t[1][3]],
+                        [t[2][0], t[2][1], t[2][3]],
+                    ])
+                }
+
+                _ => panic!("not a texture brush")
+            }
+        })
+    }
+
+    #[test]
+    fn texture_positioning_1() {
+        // Checking that we create the right transform for positioning the texture
+        let mut drawing = CanvasRenderer::new();
+
+        // Set up a basic texture and a canvas height
+        drawing.tes_canvas_height(1000.0);
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.tes_fill_texture(drawing.current_namespace, TextureId(0), (0.0, 0.0), (1000.0, 1000.0));
+
+        // Point 0,0 on the canvas should be 0,0 on the texture
+        //let canvas_transform = drawing.active_transform;
+        let canvas_transform = Transform2D::identity();
+
+        let (x,y)       = canvas_transform.transform_point(0.0, 0.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+
+        // Point 1000,1000 on the canvas should be 100,200 on the texture
+        let (x,y)       = canvas_transform.transform_point(1000.0, 1000.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+
+        assert!((tx - 1.0).abs() < 0.01, "Expected 100,200, got {} {}", tx, ty);
+        assert!((ty - 1.0).abs() < 0.01, "Expected 100,200, got {} {}", tx, ty);
+    }
+}
