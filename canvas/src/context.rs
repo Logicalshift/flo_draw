@@ -84,7 +84,8 @@ pub trait GraphicsContext {
     /// Sets the texture to use for the next fill() operation
     ///
     /// The coordinates here specify the lower-left and upper-left position on the canvas where the texture will appear.
-    /// Note that `fill_transform()` can be used to further rotate or scale the texture.
+    /// Note that `fill_transform()` can be used to further rotate or scale the texture. Transformations will occur around
+    /// the point (x1, y1)
     fn fill_texture(&mut self, texture_id: TextureId, x1: f32, y1: f32, x2: f32, y2: f32) {
         self.draw(Draw::FillTexture(texture_id, (x1, y1), (x2, y2)));
     }
@@ -94,7 +95,8 @@ pub trait GraphicsContext {
         self.draw(Draw::FillGradient(gradient_id, (x1, y1), (x2, y2)));
     }
 
-    /// Applies a transformation to the fill texture or gradient
+    /// Applies a transformation to the fill texture or gradient. This will transform around the point
+    /// (x1, y1) specified in `fill_texture()`
     fn fill_transform(&mut self, transform: Transform2D)    { self.draw(Draw::FillTransform(transform)); }
 
     /// Sets the colour to use for the next stroke() operation
