@@ -163,6 +163,7 @@ pub enum Draw {
     FillColor(Color),
 
     /// Sets the fill to be a texture (coordinates are the lower-left and upper-right coordinates where the image should appear). This will reset any existing fill transform.
+    /// The first set of coordinates also serves as the origin for any transformations applied to the texture with `FillTransform`
     FillTexture(TextureId, (f32, f32), (f32, f32)),
 
     /// Sets the fill to be a gradient (coordinates are the start and end of the gradient). This will reset any existing fill transform.
