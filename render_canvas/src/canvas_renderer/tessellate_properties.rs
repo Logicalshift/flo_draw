@@ -222,6 +222,7 @@ mod test {
 
         let (x,y)       = canvas_transform.transform_point(0.0, 0.0);
         let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
 
         assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
         assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
@@ -229,8 +230,344 @@ mod test {
         // Point 1000,1000 on the canvas should be 100,200 on the texture
         let (x,y)       = canvas_transform.transform_point(1000.0, 1000.0);
         let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
 
-        assert!((tx - 1.0).abs() < 0.01, "Expected 100,200, got {} {}", tx, ty);
-        assert!((ty - 1.0).abs() < 0.01, "Expected 100,200, got {} {}", tx, ty);
+        assert!((tx - 100.0).abs() < 0.01, "Expected 100,200, got {} {}", tx, ty);
+        assert!((ty - 200.0).abs() < 0.01, "Expected 100,200, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_positioning_2() {
+        let mut drawing = CanvasRenderer::new();
+
+        // Set up a basic texture and a canvas height
+        drawing.tes_canvas_height(1000.0);
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.tes_fill_texture(drawing.current_namespace, TextureId(0), (100.0, 100.0), (800.0, 800.0));
+
+        // Point 100,100 on the canvas should be 0,0 on the texture
+        //let canvas_transform = drawing.active_transform;
+        let canvas_transform = Transform2D::identity();
+
+        let (x,y)       = canvas_transform.transform_point(100.0, 100.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+
+        // Point 800,800 on the canvas should be 100,200 on the texture
+        let (x,y)       = canvas_transform.transform_point(800.0, 800.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - 100.0).abs() < 0.01, "Expected 100,200, got {} {}", tx, ty);
+        assert!((ty - 200.0).abs() < 0.01, "Expected 100,200, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_scale_origin_same_1() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasRenderer::new();
+
+        // Set up a basic texture and a canvas height
+        drawing.tes_canvas_height(1000.0);
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.tes_fill_texture(drawing.current_namespace, TextureId(0), (0.0, 0.0), (1000.0, 1000.0));
+
+        // Rotate it
+        drawing.tes_fill_transform(Transform2D::scale(2.0, 2.0));
+
+        // Top corner of the texture should be 50, 100
+        //let canvas_transform = drawing.active_transform;
+        let canvas_transform = Transform2D::identity();
+
+        let (x,y)       = canvas_transform.transform_point(1000.0, 1000.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - 50.0).abs() < 0.01, "Expected 50,100, got {} {}", tx, ty);
+        assert!((ty - 100.0).abs() < 0.01, "Expected 50,100, got {} {}", tx, ty);
+
+        // Bottom corner of the texture should stay at 0,0
+        let (x,y)       = canvas_transform.transform_point(0.0, 0.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_scale_origin_same_2() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasRenderer::new();
+
+        // Set up a basic texture and a canvas height
+        drawing.tes_canvas_height(1000.0);
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.tes_fill_texture(drawing.current_namespace, TextureId(0), (200.0, 200.0), (800.0, 800.0));
+
+        // Rotate it
+        drawing.tes_fill_transform(Transform2D::scale(2.0, 2.0));
+
+        // Top corner of the texture should be 50, 100
+        //let canvas_transform = drawing.active_transform;
+        let canvas_transform = Transform2D::identity();
+
+        let (x,y)       = canvas_transform.transform_point(800.0, 800.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - 50.0).abs() < 0.01, "Expected 50,100, got {} {}", tx, ty);
+        assert!((ty - 100.0).abs() < 0.01, "Expected 50,100, got {} {}", tx, ty);
+
+        // Bottom corner of the texture should stay at 0,0
+        let (x,y)       = canvas_transform.transform_point(200.0, 200.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_rotation_origin_same_1() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasRenderer::new();
+
+        // Set up a basic texture and a canvas height
+        drawing.tes_canvas_height(1000.0);
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.tes_fill_texture(drawing.current_namespace, TextureId(0), (0.0, 0.0), (1000.0, 1000.0));
+
+        // Rotate it
+        drawing.tes_fill_transform(Transform2D::rotate_degrees(45.0));
+
+        // Point 0,0 on the canvas should still be 0,0 on the texture after rotation (we rotate about the 0,0 point on the texture)
+        //let canvas_transform = drawing.active_transform;
+        let canvas_transform = Transform2D::identity();
+
+        let (x,y)       = canvas_transform.transform_point(0.0, 0.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_rotation_origin_same_2() {
+        // The texture should transform around its origin point (this time, the origin is at a different point on the canvas)
+        let mut drawing = CanvasRenderer::new();
+
+        // Set up a basic texture and a canvas height
+        drawing.tes_canvas_height(1000.0);
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.tes_fill_texture(drawing.current_namespace, TextureId(0), (200.0, 200.0), (800.0, 800.0));
+
+        // Rotate it
+        drawing.tes_fill_transform(Transform2D::rotate_degrees(45.0));
+
+        // Point 0,0 on the canvas should still be 0,0 on the texture after rotation (we rotate about the 0,0 point on the texture)
+        //let canvas_transform = drawing.active_transform;
+        let canvas_transform = Transform2D::identity();
+
+        let (x,y)       = canvas_transform.transform_point(200.0, 200.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0,0, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_translation_1() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasRenderer::new();
+
+        // Set up a basic texture and a canvas height
+        drawing.tes_canvas_height(1000.0);
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.tes_fill_texture(drawing.current_namespace, TextureId(0), (0.0, 0.0), (1000.0, 1000.0));
+
+        // Translate it: translations should use the coordinates we set up in `fill_texture`
+        drawing.tes_fill_transform(Transform2D::translate(-500.0, -500.0));
+
+        // Point 0,0 on the canvas should be 50, 100 (ie, the midpoint) of the texture
+        //let canvas_transform = drawing.active_transform;
+        let canvas_transform = Transform2D::identity();
+
+        let (x,y)       = canvas_transform.transform_point(0.0, 0.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - 50.0).abs() < 0.01, "Expected 50, 100, got {} {}", tx, ty);
+        assert!((ty - 100.0).abs() < 0.01, "Expected 50, 100, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_translation_2() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasRenderer::new();
+
+        // Set up a basic texture and a canvas height
+        drawing.tes_canvas_height(1000.0);
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.tes_fill_texture(drawing.current_namespace, TextureId(0), (0.0, 0.0), (1000.0, 1000.0));
+
+        // Translate it: translations should use the coordinates we set up in `fill_texture`
+        drawing.tes_fill_transform(Transform2D::translate(-1000.0, -1000.0));
+
+        // Point 0,0 on the canvas should be 50, 100 (ie, the midpoint) of the texture
+        //let canvas_transform = drawing.active_transform;
+        let canvas_transform = Transform2D::identity();
+
+        let (x,y)       = canvas_transform.transform_point(0.0, 0.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - 100.0).abs() < 0.01, "Expected 100, 200, got {} {}", tx, ty);
+        assert!((ty - 200.0).abs() < 0.01, "Expected 100, 200, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_translation_3() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasRenderer::new();
+
+        // Set up a basic texture and a canvas height
+        drawing.tes_canvas_height(1000.0);
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.tes_fill_texture(drawing.current_namespace, TextureId(0), (0.0, 0.0), (1000.0, 1000.0));
+
+        // Translate it: translations should use the coordinates we set up in `fill_texture`
+        drawing.tes_fill_transform(Transform2D::translate(-500.0, -500.0));
+        drawing.tes_fill_transform(Transform2D::translate(500.0, 500.0));
+
+        // Point 0,0 on the canvas should be 50, 100 (ie, the midpoint) of the texture
+        //let canvas_transform = drawing.active_transform;
+        let canvas_transform = Transform2D::identity();
+
+        let (x,y)       = canvas_transform.transform_point(0.0, 0.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - 0.0).abs() < 0.01, "Expected 0, 0, got {} {}", tx, ty);
+        assert!((ty - 0.0).abs() < 0.01, "Expected 0, 0, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_translation_4() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasRenderer::new();
+
+        // Set up a basic texture and a canvas height
+        drawing.tes_canvas_height(1000.0);
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.tes_fill_texture(drawing.current_namespace, TextureId(0), (200.0, 200.0), (800.0, 800.0));
+
+        // Translate it: translations should use the coordinates we set up in `fill_texture`
+        drawing.tes_fill_transform(Transform2D::translate(-300.0, -300.0));
+
+        // Point 0,0 on the canvas should be 50, 100 (ie, the midpoint) of the texture
+        //let canvas_transform = drawing.active_transform;
+        let canvas_transform = Transform2D::identity();
+
+        let (x,y)       = canvas_transform.transform_point(200.0, 200.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - 50.0).abs() < 0.01, "Expected 50, 100, got {} {}", tx, ty);
+        assert!((ty - 100.0).abs() < 0.01, "Expected 50, 100, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_translation_5() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasRenderer::new();
+
+        // Set up a basic texture and a canvas height
+        drawing.tes_canvas_height(1000.0);
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.tes_fill_texture(drawing.current_namespace, TextureId(0), (0.0, 0.0), (1000.0, 1000.0));
+
+        // Translate it: translations should use the coordinates we set up in `fill_texture`
+        drawing.tes_fill_transform(Transform2D::translate(500.0, 500.0));
+
+        // Point 0,0 on the canvas should be 50, 100 (ie, the midpoint) of the texture
+        //let canvas_transform = drawing.active_transform;
+        let canvas_transform = Transform2D::identity();
+
+        let (x,y)       = canvas_transform.transform_point(0.0, 0.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        assert!((tx - -50.0).abs() < 0.01, "Expected -50, -100, got {} {}", tx, ty);
+        assert!((ty - -100.0).abs() < 0.01, "Expected -50, -100, got {} {}", tx, ty);
+    }
+
+    #[test]
+    fn texture_translation_rotation_1() {
+        // The texture should transform around its origin point (defined by the first two parameters to fill_texture)
+        let mut drawing = CanvasRenderer::new();
+
+        // Set up a basic texture and a canvas height
+        drawing.tes_canvas_height(1000.0);
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
+        drawing.tes_texture(drawing.current_namespace, TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
+
+        // Set the texture as the fill texture to set up the initial transformation
+        drawing.tes_fill_texture(drawing.current_namespace, TextureId(0), (0.0, 0.0), (1000.0, 1000.0));
+
+        // Translate it
+        drawing.tes_fill_transform(Transform2D::translate(-500.0, -500.0));
+
+        // Point 0,0 on the canvas should be 50, 100 (ie, the midpoint) of the texture
+        //let canvas_transform = drawing.active_transform;
+        let canvas_transform = Transform2D::identity();
+
+        let (x,y)       = canvas_transform.transform_point(0.0, 0.0);
+        let (tx, ty)    = texture_transform(&drawing).transform_point(x, y);
+        let (tx, ty)    = (tx*100.0, ty*200.0);
+
+        // Should rotate around the new 0,0 point (we use the calculated value in case there's an issue with translation)
+        drawing.tes_fill_transform(Transform2D::rotate_degrees(45.0));
+
+        let (rx, ry)    = texture_transform(&drawing).transform_point(x, y);
+        let (rx, ry)    = (rx*100.0, ry*200.0);
+
+        assert!((rx - tx).abs() < 0.01, "Expected {}, {}, got {} {}", tx, ty, rx, ry);
+        assert!((ry - ty).abs() < 0.01, "Expected {}, {}, got {} {}", tx, ty, rx, ry);
     }
 }
