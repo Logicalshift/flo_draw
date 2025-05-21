@@ -1,3 +1,4 @@
+use crate::matrix::*;
 use crate::fill_state::*;
 use crate::render_entity::*;
 use crate::renderer_worker::*;
@@ -5,6 +6,7 @@ use crate::renderer_worker::*;
 use super::canvas_renderer::*;
 use super::tessellate_build_path::*;
 
+use flo_render::Matrix;
 use flo_stream::*;
 use flo_canvas as canvas;
 use flo_render as render;
@@ -50,10 +52,17 @@ impl CanvasRenderer {
                             layer.render_order.push(RenderEntity::SetFlatColor);
                         }
 
-                        FillState::Texture(render_texture, _canvas_texture, matrix, repeat, alpha) => {
+                        FillState::Texture(render_texture, _canvas_texture, matrix, (x1, y1), repeat, alpha) => {
                             // Increase the usage count for this texture
                             core.used_textures.get_mut(&render_texture)
                                 .map(|usage_count| *usage_count += 1);
+
+                            let matrix = matrix.multiply(Matrix([
+                                [1.0, 0.0, 0.0, -x1],
+                                [0.0, 1.0, 0.0, -y1],
+                                [0.0, 0.0, 1.0, 0.0],
+                                [0.0, 0.0, 0.0, 1.0]
+                            ]));
 
                             // Add to the layer
                             core.layer(layer_id).render_order.push(RenderEntity::SetFillTexture(render_texture, matrix, repeat, alpha));

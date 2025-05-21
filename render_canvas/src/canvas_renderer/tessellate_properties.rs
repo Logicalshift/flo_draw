@@ -179,16 +179,25 @@ impl CanvasRenderer {
 
 #[cfg(test)]
 mod test {
-    use flo_canvas::*;
-
     use super::*;
+
+    use flo_canvas::*;
+    use flo_render::{Matrix};
+
     use std::sync::*;
 
     fn texture_transform(state: &CanvasRenderer) -> Transform2D {
         state.core.sync(|core| {
             let layer = core.layer(state.current_layer);
             match layer.state.fill_color {
-                FillState::Texture(_, _, matrix, _, _) => {
+                FillState::Texture(_, _, matrix, (x1, y1), _, _) => {
+                    let matrix = matrix.multiply(Matrix([
+                        [1.0, 0.0, 0.0, -x1],
+                        [0.0, 1.0, 0.0, -y1],
+                        [0.0, 0.0, 1.0, 0.0],
+                        [0.0, 0.0, 0.0, 1.0]
+                    ]));
+
                     let t = &matrix.0;
 
                     Transform2D([
