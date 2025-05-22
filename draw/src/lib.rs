@@ -83,6 +83,13 @@ pub mod wgpu;
 #[cfg(all(feature="render-wgpu"))]
 pub use self::wgpu::{with_2d_graphics};
 
+/// The 'software' module provides a winit-based software implementation of a renderer
+#[cfg(feature="render-software")]
+pub mod software;
+
+#[cfg(all(feature="render-software", not(any(feature="render-wgpu", feature="render-opengl"))))]
+pub use self::software::{with_2d_graphics};
+
 /// The 'Scene' API provides a framework for building more complex software out of message-passing components
 pub mod draw_scene;
 

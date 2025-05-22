@@ -166,10 +166,10 @@ pub enum Draw {
     /// The first set of coordinates also serves as the origin for any transformations applied to the texture with `FillTransform`
     FillTexture(TextureId, (f32, f32), (f32, f32)),
 
-    /// Sets the fill to be a gradient (coordinates are the start and end of the gradient)
+    /// Sets the fill to be a gradient (coordinates are the start and end of the gradient). This will reset any existing fill transform.
     FillGradient(GradientId, (f32, f32), (f32, f32)),
 
-    /// For a gradient or texture fill, apply a transformation matrix
+    /// For a gradient or texture fill, apply a transformation matrix to the existing transform
     FillTransform(Transform2D),
 
     /// Set the line color
@@ -299,4 +299,49 @@ pub enum Draw {
 
     /// Chooses a different namespace for the resource IDs (layers, sprites, textures, fonts, gradients)
     Namespace(NamespaceId),
+}
+
+// (TODO: would be nice to just make these the same type: serialization makes it awkward though, flo_curves shouldn't really depend on serde)
+use flo_curves::bezier::path as curves;
+
+impl From<curves::LineCap> for LineCap {
+    fn from(cap: curves::LineCap) -> LineCap {
+        match cap {
+            curves::LineCap::Butt   => LineCap::Butt,
+            curves::LineCap::Round  => LineCap::Round,
+            curves::LineCap::Square => LineCap::Square,
+        }
+    }
+}
+
+impl Into<curves::LineCap> for LineCap {
+    fn into(self) -> curves::LineCap {
+        match self {
+            LineCap::Butt   => curves::LineCap::Butt,
+            LineCap::Round  => curves::LineCap::Round,
+            LineCap::Square => curves::LineCap::Square,
+        }
+    }
+}
+
+impl From<curves::LineJoin> for LineJoin {
+    #[inline]
+    fn from(cap: curves::LineJoin) -> LineJoin {
+        match cap {
+            curves::LineJoin::Miter => LineJoin::Miter,
+            curves::LineJoin::Round => LineJoin::Round,
+            curves::LineJoin::Bevel => LineJoin::Bevel,
+        }
+    }
+}
+
+impl Into<curves::LineJoin> for LineJoin {
+    #[inline]
+    fn into(self) -> curves::LineJoin {
+        match self {
+            LineJoin::Miter => curves::LineJoin::Miter,
+            LineJoin::Round => curves::LineJoin::Round,
+            LineJoin::Bevel => curves::LineJoin::Bevel,
+        }
+    }
 }

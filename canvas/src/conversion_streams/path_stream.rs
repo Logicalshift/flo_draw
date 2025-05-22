@@ -285,8 +285,14 @@ BezierPath::Point:  Send+Coordinate2D {
                 }
 
                 Draw::LineWidth(new_line_width)                                 => {
+                    let scale = if let Some(Transform2D(transform)) = &current_transform {
+                        (transform[0][0]*transform[0][0] + transform[1][0]*transform[1][0]).sqrt()
+                    } else {
+                        1.0
+                    };
+
                     line_width_pixels   = None;
-                    line_width          = Some(new_line_width);
+                    line_width          = Some(new_line_width * scale);
                 }
 
                 Draw::LineWidthPixels(new_line_width)                           => {

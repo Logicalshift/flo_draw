@@ -26,6 +26,11 @@ mod wgpu_render_window_program;
 #[cfg(feature="render-wgpu")]
 mod wgpu_scene;
 
+#[cfg(feature="render-software")]
+mod software_drawing_window_program;
+#[cfg(feature="render-software")]
+mod software_scene;
+
 pub use self::render_window_program::*;
 pub use self::drawing_window_program::*;
 pub use self::scene::*;

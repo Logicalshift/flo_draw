@@ -26,10 +26,6 @@ enum DrawingOrEvent {
 
 impl SceneMessage for DrawingOrEvent { }
 
-static FILTER_DRAWING_WINDOW_REQUEST: Lazy<FilterHandle> = Lazy::new(|| FilterHandle::for_filter(|drawing_window_requests| {
-    drawing_window_requests.ready_chunks(100)
-        .map(|requests| DrawingOrEvent::Drawing(requests))
-}));
 static FILTER_DRAWING_EVENT_REQUEST: Lazy<FilterHandle> = Lazy::new(|| FilterHandle::for_filter(|drawing_event_requests| {
     drawing_event_requests.ready_chunks(100)
         .map(|requests| DrawingOrEvent::Event(requests))
@@ -122,17 +118,15 @@ where
 ///
 /// The return value is any extra events to synthesize as a result of the initial event
 ///
-fn handle_window_event<'a, SendFuture, SendRenderActionsFn>(state: &'a mut RendererState, event: DrawEvent, send_render_actions: &'a mut SendRenderActionsFn) -> impl 'a + Send + Future<Output=Vec<DrawEvent>> 
-where 
-    SendRenderActionsFn:    Send + Fn(Vec<RenderAction>) -> SendFuture,
-    SendFuture:             Send + Future<Output=()> 
-{
+fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, send_render_actions: &'a mut Option<OutputSink<RenderWindowRequest>>, send_drawing_actions: &'a mut Option<OutputSink<DrawingWindowRequest>>) -> impl 'a + Send + Future<Output=Vec<DrawEvent>> {
     async move {
         match event {
             DrawEvent::Redraw                   => { 
                 // Drawing nothing will regenerate the current contents of the renderer
                 let redraw = state.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
-                send_render_actions(redraw).await;
+
+                if let Some(send_render_actions) = send_render_actions { send_render_actions.send(RenderWindowRequest::Render(RenderRequest::Render(redraw))).await.ok(); }
+                if let Some(send_drawing_actions) = send_drawing_actions { send_drawing_actions.send(DrawingWindowRequest::Redraw).await.ok(); }
 
                 let window_transform    = state.update_window_transform();
                 vec![DrawEvent::CanvasTransform(window_transform)]
@@ -146,6 +140,7 @@ where
                 let scale           = state.scale as f32;
 
                 state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale);
+                if let Some(send_drawing_actions) = send_drawing_actions { send_drawing_actions.send(DrawingWindowRequest::Redraw).await.ok(); }
 
                 vec![]
             }
@@ -159,6 +154,7 @@ where
                 let scale           = state.scale as f32;
 
                 state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale); 
+                if let Some(send_drawing_actions) = send_drawing_actions { send_drawing_actions.send(DrawingWindowRequest::Redraw).await.ok(); }
 
                 vec![]
             }
@@ -193,7 +189,7 @@ impl RendererState {
     ///
     /// Performs a drawing action and passes it on to the render target
     ///
-    async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: &mut Pin<&mut (impl 'static + Sink<RenderWindowRequest>)>) {
+    async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: &mut OutputSink<RenderWindowRequest>) {
         let render_actions = self.renderer.draw(draw_actions.cloned()).collect::<Vec<_>>().await;
         render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
     }
@@ -236,11 +232,36 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                 height:             1.0,
             };
 
-            // Request the events from the render target
+            // Request the events from the render or drawing target
+            // (The subprogram that we receive can be a render target, a drawing target or neither)
             let render_target   = context.send::<RenderWindowRequest>(render_target_program);
             let render_target   = if let Ok(render_target) = render_target { render_target } else { send_stop.send(()).ok(); return; };
-            pin_mut!(render_target);
-            render_target.send(RenderWindowRequest::SendEvents(program_id)).await.ok();
+
+            let (mut render_target, mut drawing_target) = if !render_target.is_attached() {
+                // Try connecting to the program as a drawing target too
+                let drawing_target = context.send::<DrawingWindowRequest>(render_target_program);
+                let drawing_target = if let Ok(drawing_target) = drawing_target { drawing_target } else { send_stop.send(()).ok(); return; };
+
+                if !drawing_target.is_attached() {
+                    // Couldn't attach to the program using either drawing or render requests
+                    // TODO: it *is* possible the program is waiting to start: this is kind of a limitation of flo_scene 0.2 that we can't
+                    // tell the difference between 'program doesn't exist' and 'program exists but doesn't accept these messages'
+                    send_stop.send(()).ok(); 
+                    return;
+                }
+
+                (None, Some(drawing_target))
+            } else {
+                (Some(render_target), None)
+            };
+
+            if let Some(render_target) = &mut render_target {
+                render_target.send(RenderWindowRequest::SendEvents(program_id)).await.ok();
+            }
+
+            if let Some(drawing_target) = &mut drawing_target {
+                drawing_target.send(DrawingWindowRequest::SendEvents(program_id)).await.ok();
+            }
 
             // Wait for the ingress stream to be sent over
             let request_ingress_stream = recv_drawing_input.await;
@@ -257,56 +278,114 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
             let mut closed                      = false;
 
             // Pause the drawing using a start frame event
-            render_state.draw(vec![Draw::StartFrame].iter(), &mut render_target).await;
+            if let Some(render_target) = &mut render_target {
+                render_state.draw(vec![Draw::StartFrame].iter(), render_target).await;
+            }
+
+            if let Some(drawing_target) = &mut drawing_target {
+                drawing_target.send(DrawingRequest::Draw(Arc::new(vec![Draw::StartFrame])).into()).await.ok();
+            }
 
             // Run the main event loop
             let mut messages = messages;
             while let Some(message) = messages.next().await {
                 match message {
                     DrawingOrEvent::Drawing(drawing_list) => {
-                        // Perform all the actions in a single frame
-                        let mut combined_list   = vec![Arc::new(vec![Draw::StartFrame])];
+                        if let Some(render_target) = &mut render_target {
+                            // Perform all the actions in a single frame
+                            let mut combined_list   = vec![Arc::new(vec![Draw::StartFrame])];
 
-                        // If we've rendered something and 'NewFrame' hasn't yet been generated, add an extra 'StartFrame' to suspend rendering until the last frame is finished
-                        if waiting_for_new_frame.is_some() && !drawing_since_last_frame {
-                            drawing_since_last_frame = true;
-                            combined_list.push(Arc::new(vec![Draw::StartFrame]));
-                        }
-
-                        for draw_msg in drawing_list {
-                            match draw_msg {
-                                DrawingWindowRequest::Draw(DrawingRequest::Draw(drawing)) => {
-                                    // Send the drawing to the renderer
-                                    combined_list.push(drawing);
-                                }
-
-                                DrawingWindowRequest::CloseWindow => {
-                                    // Just stop running when there's a 'close' request
-                                    closed = true;
-                                }
-
-                                DrawingWindowRequest::SendEvents(target_program) => {
-                                    if let Ok(target) = context.send::<DrawEvent>(target_program) {
-                                        subscribers.push(target);
-                                    }
-                                }
-
-                                DrawingWindowRequest::SetTitle(title)                   => { render_target.send(RenderWindowRequest::SetTitle(title)).await.ok(); },
-                                DrawingWindowRequest::SetFullScreen(fullscreen)         => { render_target.send(RenderWindowRequest::SetFullScreen(fullscreen)).await.ok(); },
-                                DrawingWindowRequest::SetHasDecorations(decorations)    => { render_target.send(RenderWindowRequest::SetHasDecorations(decorations)).await.ok(); },
-                                DrawingWindowRequest::SetMousePointer(mouse_pointer)    => { render_target.send(RenderWindowRequest::SetMousePointer(mouse_pointer)).await.ok(); },
+                            // If we've rendered something and 'NewFrame' hasn't yet been generated, add an extra 'StartFrame' to suspend rendering until the last frame is finished
+                            if waiting_for_new_frame.is_some() && !drawing_since_last_frame {
+                                drawing_since_last_frame = true;
+                                combined_list.push(Arc::new(vec![Draw::StartFrame]));
                             }
+
+                            for draw_msg in drawing_list {
+                                match draw_msg {
+                                    DrawingWindowRequest::Draw(DrawingRequest::Draw(drawing)) => {
+                                        // Send the drawing to the renderer
+                                        combined_list.push(drawing);
+                                    }
+
+                                    DrawingWindowRequest::Redraw => { }
+
+                                    DrawingWindowRequest::CloseWindow => {
+                                        // Just stop running when there's a 'close' request
+                                        closed = true;
+                                    }
+
+                                    DrawingWindowRequest::SendEvents(target_program) => {
+                                        if let Ok(target) = context.send::<DrawEvent>(target_program) {
+                                            subscribers.push(target);
+                                        }
+                                    }
+
+                                    DrawingWindowRequest::SetTitle(title)                   => { render_target.send(RenderWindowRequest::SetTitle(title)).await.ok(); },
+                                    DrawingWindowRequest::SetFullScreen(fullscreen)         => { render_target.send(RenderWindowRequest::SetFullScreen(fullscreen)).await.ok(); },
+                                    DrawingWindowRequest::SetHasDecorations(decorations)    => { render_target.send(RenderWindowRequest::SetHasDecorations(decorations)).await.ok(); },
+                                    DrawingWindowRequest::SetMousePointer(mouse_pointer)    => { render_target.send(RenderWindowRequest::SetMousePointer(mouse_pointer)).await.ok(); },
+                                }
+                            }
+
+                            // Commit the frame. We'll add backpressure to new drawing events by not accepting them.
+                            waiting_for_new_frame = Some(ingress_blocker.block());
+
+                            combined_list.push(Arc::new(vec![Draw::ShowFrame]));
+                            render_state.draw(combined_list.iter()
+                                .flat_map(|item| item.iter()), render_target).await;
+
+                            // Update the window transform according to the drawing actions we processed
+                            render_state.update_window_transform();
+                        } else if let Some(drawing_target) = &mut drawing_target {
+                            // Perform all the actions in a single frame
+                            let mut combined_list   = vec![Arc::new(vec![Draw::StartFrame])];
+
+                            // If we've rendered something and 'NewFrame' hasn't yet been generated, add an extra 'StartFrame' to suspend rendering until the last frame is finished
+                            if waiting_for_new_frame.is_some() && !drawing_since_last_frame {
+                                drawing_since_last_frame = true;
+                                combined_list.push(Arc::new(vec![Draw::StartFrame]));
+                            }
+
+                            for draw_msg in drawing_list {
+                                match draw_msg {
+                                    DrawingWindowRequest::Draw(DrawingRequest::Draw(drawing)) => {
+                                        // Send the drawing to the renderer
+                                        combined_list.push(drawing);
+                                    }
+
+                                    DrawingWindowRequest::Redraw => {
+                                        drawing_target.send(DrawingWindowRequest::Redraw).await.ok();
+                                    }
+
+                                    DrawingWindowRequest::CloseWindow => {
+                                        // Just stop running when there's a 'close' request
+                                        closed = true;
+                                    }
+
+                                    DrawingWindowRequest::SendEvents(target_program) => {
+                                        if let Ok(target) = context.send::<DrawEvent>(target_program) {
+                                            subscribers.push(target);
+                                        }
+                                    }
+
+                                    DrawingWindowRequest::SetTitle(title)                   => { drawing_target.send(DrawingWindowRequest::SetTitle(title)).await.ok(); },
+                                    DrawingWindowRequest::SetFullScreen(fullscreen)         => { drawing_target.send(DrawingWindowRequest::SetFullScreen(fullscreen)).await.ok(); },
+                                    DrawingWindowRequest::SetHasDecorations(decorations)    => { drawing_target.send(DrawingWindowRequest::SetHasDecorations(decorations)).await.ok(); },
+                                    DrawingWindowRequest::SetMousePointer(mouse_pointer)    => { drawing_target.send(DrawingWindowRequest::SetMousePointer(mouse_pointer)).await.ok(); },
+                                }
+                            }
+
+                            // Commit the frame. We'll add backpressure to new drawing events by not accepting them.
+                            waiting_for_new_frame = Some(ingress_blocker.block());
+
+                            combined_list.push(Arc::new(vec![Draw::ShowFrame]));
+                            drawing_target.send(DrawingRequest::Draw(Arc::new(
+                                combined_list.into_iter()
+                                    .flat_map(|item| Arc::unwrap_or_clone(item).into_iter())
+                                    .collect::<Vec<_>>()
+                                )).into()).await.ok();
                         }
-
-                        // Commit the frame. We'll add backpressure to new drawing events by not accepting them.
-                        waiting_for_new_frame = Some(ingress_blocker.block());
-
-                        combined_list.push(Arc::new(vec![Draw::ShowFrame]));
-                        render_state.draw(combined_list.iter()
-                            .flat_map(|item| item.iter()), &mut render_target).await;
-
-                        // Update the window transform according to the drawing actions we processed
-                        render_state.update_window_transform();
                     }
 
                     DrawingOrEvent::Event(event_list) => {
@@ -337,7 +416,11 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                         ready_to_render = true;
 
                                         // Show the frame from the initial 'StartFrame' request
-                                        render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
+                                        if let Some(render_target) = &mut render_target {
+                                            render_state.draw(vec![Draw::ShowFrame].iter(), render_target).await;
+                                        } else if let Some(drawing_target) = &mut drawing_target {
+                                            drawing_target.send(DrawingRequest::Draw(Arc::new(vec![Draw::ShowFrame])).into()).await.ok();
+                                        }
                                     }
                                 },
 
@@ -353,7 +436,11 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                     if drawing_since_last_frame {
                                         // Finalize any drawing that occurred while we were waiting for the new frame to display
                                         waiting_for_new_frame = Some(ingress_blocker.block());
-                                        render_state.draw(vec![Draw::ShowFrame].iter(), &mut render_target).await;
+                                        if let Some(render_target) = &mut render_target {
+                                            render_state.draw(vec![Draw::ShowFrame].iter(), render_target).await;
+                                        } else if let Some(drawing_target) = &mut drawing_target {
+                                            drawing_target.send(DrawingRequest::Draw(Arc::new(vec![Draw::ShowFrame])).into()).await.ok();
+                                        }
                                         drawing_since_last_frame = false;
                                     }
                                 }
@@ -371,16 +458,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                             }
 
                             // Handle the next message
-                            let context = &context;
-                            handle_window_event(&mut render_state, evt_message, &mut move |render_actions| {
-                                let render_target = context.send::<RenderWindowRequest>(render_target_program);
-
-                                async move {
-                                    if let Ok(mut render_target) = render_target {
-                                        render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
-                                    }
-                                }
-                            }).await;
+                            handle_window_event(&mut render_state, evt_message, &mut render_target, &mut drawing_target).await;
                         }
 
                         // The entity stops when the window is closed
@@ -392,7 +470,11 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
             }
 
             // Shut down
-            render_target.send(RenderWindowRequest::CloseWindow).await.ok();
+            if let Some(render_target) = &mut render_target {
+                render_target.send(RenderWindowRequest::CloseWindow).await.ok();
+            } else if let Some(drawing_target) = &mut drawing_target {
+                drawing_target.send(DrawingWindowRequest::CloseWindow).await.ok();
+            }
 
             use std::mem;
 

@@ -27,7 +27,8 @@ enum LayoutAction {
 ///
 /// Performs layout of text along a line. The `outline_fonts` feature must be enabled to use this data type.
 ///
-/// This includes optional drawing operations in between glyphs to allow for 
+/// This includes optional drawing operations in between glyphs to allow for adding markup to the generated text (for example,
+/// this is a way to generate underlines or strikeout when laying out some text)
 ///
 #[derive(Clone)]
 pub struct CanvasFontLineLayout {

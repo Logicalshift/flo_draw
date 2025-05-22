@@ -4,6 +4,9 @@ use super::glutin_scene::*;
 #[cfg(feature="render-wgpu")]
 use super::wgpu_scene::*;
 
+#[cfg(feature="render-software")]
+use super::software_scene::*;
+
 use flo_scene::*;
 use std::sync::*;
 
@@ -23,10 +26,19 @@ pub fn flo_draw_scene_context() -> Arc<Scene> {
     flo_draw_wgpu_scene()
 }
 
+
 ///
 /// Retrieves or creates a scene context for flo_draw
 ///
-#[cfg(all(not(feature="render-wgpu"), not(feature="render-opengl")))]
+#[cfg(all(feature="render-software", not(any(feature="render-wgpu", feature="render-opengl"))))]
 pub fn flo_draw_scene_context() -> Arc<Scene> {
-    panic!("No default renderer was specified when flo_draw was compiled (use `render-wgpu` or `render-opengl`)")
+    flo_draw_software_scene()
+}
+
+///
+/// Retrieves or creates a scene context for flo_draw
+///
+#[cfg(all(not(feature="render-wgpu"), not(feature="render-opengl"), not(feature="render-software")))]
+pub fn flo_draw_scene_context() -> Arc<Scene> {
+    panic!("No default renderer was specified when flo_draw was compiled (use `render-wgpu`, `render-opengl` or `render-software`)")
 }

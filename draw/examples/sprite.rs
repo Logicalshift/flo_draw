@@ -12,7 +12,7 @@ pub fn main() {
         // Sprites are a way to rapidly repeat a set of drawing instructions
         canvas.draw(|gc| {
             // Clear the canvas and set up the coordinates
-            gc.clear_canvas(Color::Rgba(0.0, 2.0, 0.0, 1.0));
+            gc.clear_canvas(Color::Rgba(0.0, 1.0, 0.0, 1.0));
             gc.canvas_height(1000.0);
             gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
@@ -35,6 +35,14 @@ pub fn main() {
             gc.draw_sprite(SpriteId(0));
 
             gc.sprite_transform(SpriteTransform::Identity);
+            gc.sprite_transform(SpriteTransform::Scale(0.5, 0.5));
+            gc.draw_sprite(SpriteId(0));
+
+            gc.sprite_transform(SpriteTransform::Identity);
+            gc.sprite_transform(SpriteTransform::Rotate(30.0));
+            gc.draw_sprite(SpriteId(0));
+
+            gc.sprite_transform(SpriteTransform::Identity);
             gc.sprite_transform(SpriteTransform::Translate(100.0, 100.0));
             gc.draw_sprite(SpriteId(0));
 
@@ -43,7 +51,7 @@ pub fn main() {
             gc.draw_sprite(SpriteId(0));
 
             gc.sprite_transform(SpriteTransform::Identity);
-            gc.sprite_transform(SpriteTransform::Translate(300.0, 100.0));
+            gc.sprite_transform(SpriteTransform::Transform2D(Transform2D::translate(300.0, 100.0)));
             gc.draw_sprite(SpriteId(0));
         });
     });

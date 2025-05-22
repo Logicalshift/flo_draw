@@ -1,0 +1,415 @@
+use super::scanline_shard_intercept::*;
+use super::scanline_transform::*;
+use super::scanline_plan::*;
+use super::scan_planner::*;
+use super::shard_subpixel::*;
+
+use crate::edgeplan::*;
+
+use std::marker::{PhantomData};
+use std::ops::{Range};
+use std::sync::*;
+
+///
+/// The shard scan planner uses edge 'shards' to partially cover pixels, acheiving a fairly fast anti-aliasing effect
+///
+pub struct ShardScanPlanner<TEdge> {
+    edge: PhantomData<Mutex<TEdge>>
+}
+
+impl<TEdge> ShardScanPlanner<TEdge>
+where
+    TEdge: EdgeDescriptor,
+{
+    ///
+    /// Plans out a scanline using the ShardScanPlanner (this scan planner does not perform any anti-aliasing)
+    ///
+    #[inline]
+    pub fn plan(edge_plan: &EdgePlan<TEdge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>) -> Vec<(f64, ScanlinePlan)> {
+        // Create a planner and the result vec
+        let planner         = Self::default();
+        let mut scanlines   = vec![(0.0, ScanlinePlan::default()); y_positions.len()];
+
+        // Fill with scanlines
+        planner.plan_scanlines(edge_plan, transform, y_positions, x_range, &mut scanlines);
+
+        scanlines
+    }
+
+    ///
+    /// Plans out a scanline using some pre-calculated intercepts. Edge plan is only used to retrieve the shape descriptors and z-indexes with this function,
+    /// so this can be used in cases where the intercepts are calculated some other way
+    ///
+    /// (Main use of this is for the tests, which use this to check the algorithm against known sets of intercepts)
+    ///
+    pub fn plan_from_edge_intercepts(&self, edge_plan: &EdgePlan<TEdge>, ordered_intercepts: Vec<Vec<EdgePlanShardIntercept>>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
+        // TODO: we can do away with the need for this function by making the edge plan a trait
+
+        // Allocate scratch space
+        let mut scanline_intercepts_scratch_space   = Vec::with_capacity(16);
+        let mut program_stack                       = Vec::with_capacity(16);
+
+        // Map the x-range from the source coordinates to pixel coordinates
+        let x_range = transform.source_x_to_pixels(x_range.start)..transform.source_x_to_pixels(x_range.end);
+        let x_range = x_range.start.floor()..x_range.end.floor();
+
+        'next_line: for y_idx in 0..y_positions.len() {
+            // Fetch/clear the scanline that we'll be building
+            let (scanline_pos, scanline) = &mut scanlines[y_idx];
+            scanline.clear();
+            *scanline_pos = y_positions[y_idx];
+
+            // Iterate over the intercepts on this line
+            let scanline_intercepts     = &ordered_intercepts[y_idx];
+            let mut scanline_intercepts = ShardInterceptIterator::from_intercepts(scanline_intercepts.into_iter(), transform, &mut scanline_intercepts_scratch_space);
+
+            // Each shard has two intercepts: the lower is where we start fading into or out of the shape, and the upper is where we finish, either ending up fully inside
+            // or outside the shape.
+
+            // Initial program/position comes from the earliest intercept position
+            let mut current_intercept = if let Some(intercept) = scanline_intercepts.next() { intercept } else { continue; };
+
+            // Trace programs but don't generate fragments until we get an intercept
+            let mut active_shapes = ScanlineShardInterceptState::new();
+
+            while current_intercept.x_pos() < x_range.start {
+                // Add or remove this intercept's programs to the active list
+                let shape_descriptor = edge_plan.shape_descriptor(current_intercept.shape());
+
+                match &current_intercept {
+                    ShardIntercept::Start(intercept)    => active_shapes.start_intercept(intercept, transform, shape_descriptor),
+                    ShardIntercept::Finish(intercept)   => active_shapes.finish_intercept(intercept, shape_descriptor),
+                }
+
+                // Move to the next intercept (or stop if no intercepts actually fall within the x-range)
+                current_intercept = if let Some(intercept) = scanline_intercepts.next() { intercept } else { continue 'next_line; };
+            }
+
+            // Update all of the existing shapes to have a start position at the left-hand side of the screen
+            active_shapes.clip_start_x(x_range.start as _);
+
+            // Read intercepts until we reach the x_range end, and generate the program stacks for the scanline plan
+            let mut last_x          = x_range.start;
+            let mut z_floor         = active_shapes.z_floor();
+
+            loop {
+                // Generate a stack for the current intercept
+                let next_x                      = current_intercept.x_pos();
+                let mut maybe_next_intercept    = scanline_intercepts.next();
+
+                // The end of the current range is the 'next_x' coordinate
+                let next_x      = if next_x > x_range.end { x_range.end } else { next_x };
+                let stack_depth = active_shapes.len();
+
+                // We use the z-index of the current shape to determine if it's in front of or behind the current line
+                let mut shape_id            = current_intercept.shape();
+                let z_index                 = edge_plan.shape_z_index(shape_id);
+                let mut shape_descriptor    = edge_plan.shape_descriptor(shape_id);
+
+                if z_index >= z_floor && next_x != last_x {
+                    // Create a program stack between the ranges: all the programs until the first opaque layer
+                    let x_range         = last_x..next_x;
+                    let mut is_opaque   = false;
+                    let mut subpixel    = None;
+
+                    // We re-use program_stack so we don't have to keep re-allocating a vec as we go - it's cleared by a call to drain(..) later on
+                    // program_stack.clear();
+                    for shape in (0..stack_depth).rev() {
+                        let intercept = active_shapes.get(shape).unwrap();
+
+                        if intercept.subpixel() != 255 {
+                            // Combine subpixels into a single intercept (they're grouped by the ordering, and we defer
+                            // rendering until we receive a different shape or a shape without subpixels)
+                            match &mut subpixel {
+                                None => {
+                                    // Start a new subpixel
+                                    subpixel = Some(ShardSubPixel::from(intercept));
+
+                                    // Continue iterating
+                                    continue;
+                                }
+
+                                Some(active_subpixel) => {
+                                    if active_subpixel.shape_id() != intercept.shape_id() {
+                                        // Render the subpixel and start a new one
+                                        active_subpixel.render(&mut program_stack, &x_range);
+                                        if active_subpixel.is_opaque() {
+                                            subpixel  = None;
+                                            is_opaque = true;
+                                            break;
+                                        }
+                                        subpixel = None;
+                                    } else {
+                                        // Combine with the existing subpixel
+                                        active_subpixel.combine(intercept);
+                                    }
+                                }
+                            }
+                            continue;
+                        } else if let Some(subpixel) = subpixel.take() {
+                            // We've gathered some data about a subpixel: render this ahead of the following intercept
+                            subpixel.render(&mut program_stack, &x_range);
+                            if subpixel.is_opaque() {
+                                is_opaque = true;
+                                break;
+                            }
+                        }
+
+                        // Start the blends for the program
+                        intercept.blend().render(&mut program_stack, intercept.shape_descriptor(), intercept.opacity(), &x_range);
+
+                        if intercept.is_opaque() {
+                            is_opaque = true;
+                            break;
+                        }
+                    }
+
+                    if let Some(subpixel) = subpixel.take() {
+                        // The last intercept formed a subpixel: render this before finishing up
+                        subpixel.render(&mut program_stack, &x_range);
+                        if subpixel.is_opaque() {
+                            is_opaque = true;
+                        }
+                    }
+
+                    if !program_stack.is_empty() {
+                        // Create the stack for these programs
+                        scanline.push_next_range(x_range, is_opaque, program_stack.drain(..).rev());
+                    }
+
+                    // Next span will start after the end of this one
+                    last_x = next_x;
+                }
+
+                // Update the state from the current intercept (and any other intercepts that lie on the same pixel)
+                loop {
+                    match &current_intercept {
+                        ShardIntercept::Start(intercept)    => active_shapes.start_intercept(intercept, transform, shape_descriptor),
+                        ShardIntercept::Finish(intercept)   => active_shapes.finish_intercept(intercept, shape_descriptor),
+                    }
+
+                    if let Some(next_intercept) = maybe_next_intercept {
+                        if next_intercept.x_pos() == next_x {
+                            // Also start this intercept
+                            current_intercept       = next_intercept;
+                            maybe_next_intercept    = scanline_intercepts.next();
+
+                            shape_id            = current_intercept.shape();
+                            shape_descriptor    = edge_plan.shape_descriptor(shape_id);
+                        } else {
+                            // Next intercept is on a different pixel
+                            break;
+                        }
+                    } else {
+                        // No next intercept
+                        break;
+                    }
+                }
+
+                // Next span will start after the end of this one
+                z_floor = active_shapes.z_floor();
+
+                // Stop when the next_x value gets to the end of the range
+                if next_x >= x_range.end {
+                    break;
+                }
+
+                // Get ready to process the next intercept in the stack
+                current_intercept = if let Some(next_intercept) = maybe_next_intercept { next_intercept } else { break; };
+            }
+        }
+    }
+}
+
+///
+/// Represents an intercept against a shard. Every shard produces two intercepts: one where they start to fade in or out, and one where
+/// they finish fading in or out.
+///
+#[derive(Clone, Copy, Debug)]
+enum ShardIntercept {
+    /// Start fading in the effects of an intercept
+    Start(ShardInterceptLocation),
+
+    /// Finish fading in the effects of an intercept
+    Finish(ShardInterceptLocation),
+}
+
+///
+/// The shard intercept iterator takes a list of EdgePlanShardIntercepts from left to right, and turns them into 
+/// ordered `ShardIntercepts` at each point where an action is needed.
+///
+struct ShardInterceptIterator<'a, TShardIterator>
+where
+    TShardIterator: Iterator<Item=&'a EdgePlanShardIntercept>,
+{
+    /// The shards that remain in the iterator, set to None once the iterator is completed
+    remaining_shards: Option<TShardIterator>,
+
+    /// The next shard to start
+    next_shard: Option<ShardInterceptLocation>,
+
+    /// The shards that have been started: a stack, with the first to end at the top
+    started_shards: &'a mut Vec<ShardInterceptLocation>,
+
+    /// The transform being used for the current scanline
+    transform: &'a ScanlineTransform,
+}
+
+impl<'a, TShardIterator> ShardInterceptIterator<'a, TShardIterator> 
+where
+    TShardIterator: Iterator<Item=&'a EdgePlanShardIntercept>,
+{
+    ///
+    /// Creates a new shard intercept iterator
+    ///
+    #[inline]
+    pub fn from_intercepts(intercepts: TShardIterator, transform: &'a ScanlineTransform, scratch_space: &'a mut Vec<ShardInterceptLocation>) -> Self {
+        scratch_space.clear();
+
+        Self {
+            remaining_shards:   Some(intercepts),
+            next_shard:         None,
+            started_shards:     scratch_space,
+            transform:          transform,
+        }
+    }
+}
+
+impl<'a, TShardIterator> Iterator for ShardInterceptIterator<'a, TShardIterator> 
+where
+    TShardIterator: Iterator<Item=&'a EdgePlanShardIntercept>,
+{
+    type Item = ShardIntercept;
+
+    #[inline]
+    fn next(&mut self) -> Option<ShardIntercept> {
+        // Retrieve/fill in the next shard
+        let next_shard = if let Some(next_shard) = self.next_shard.take() { 
+            Some(next_shard) 
+        } else if let Some(remaining) = self.remaining_shards.as_mut() {
+            let result = remaining.next().map(|intercept| ShardInterceptLocation::from(intercept, self.transform));
+
+            if result.is_none() {
+                self.remaining_shards = None;
+            }
+
+            result
+        } else {
+            None
+        };
+
+        if let Some(next_shard) = next_shard {
+            // If there's a shard finishing before the next shard, return that one
+            if let Some(started) = self.started_shards.pop() {
+                if started.upper_x_ceil <= next_shard.lower_x {
+                    // This shard is finishing before this new one starts
+                    self.next_shard = Some(next_shard);
+
+                    return Some(ShardIntercept::Finish(started));
+                } else {
+                    // Leave to process for later
+                    self.started_shards.push(started);
+                }
+            }
+
+            // Starting this shard: add to the list of started shards. The top of the list needs to be the shard that ends next
+            let mut found_place = false;
+            let next_upper_x    = next_shard.upper_x_ceil;
+
+            for idx in (0..self.started_shards.len()).rev() {
+                if self.started_shards[idx].upper_x_ceil > next_upper_x {
+                    self.started_shards.insert(idx+1, next_shard);
+
+                    found_place = true;
+                    break;
+                }
+            }
+
+            if !found_place {
+                self.started_shards.insert(0, next_shard);
+            }
+
+            // Result is that this shard is starting
+            Some(ShardIntercept::Start(next_shard))
+        } else if let Some(started) = self.started_shards.pop() {
+            // Finish this shard
+            Some(ShardIntercept::Finish(started))
+        } else {
+            // No more shards remain
+            None
+        }
+    }
+}
+
+impl ShardIntercept {
+    ///
+    /// Returns the intercept this is for
+    ///
+    #[inline]
+    pub fn intercept(&self) -> &ShardInterceptLocation {
+        match self {
+            ShardIntercept::Start(intercept)    => intercept,
+            ShardIntercept::Finish(intercept)   => intercept,
+        }
+    }
+
+    ///
+    /// Returns the shape ID that this intercept is against
+    ///
+    #[inline]
+    pub fn shape(&self) -> ShapeId {
+        self.intercept().shape
+    }
+
+    ///
+    /// Returns the x position of this intercept
+    ///
+    #[inline]
+    pub fn x_pos(&self) -> f64 {
+        match self {
+            ShardIntercept::Start(intercept)    => intercept.lower_x_floor,
+            ShardIntercept::Finish(intercept)   => intercept.upper_x_ceil,
+        }
+    }
+}
+
+impl<TEdge> Default for ShardScanPlanner<TEdge>
+where
+    TEdge: EdgeDescriptor,
+{
+    #[inline]
+    fn default() -> Self {
+        ShardScanPlanner { edge: PhantomData }
+    }
+}
+
+impl<TEdge> ScanPlanner for ShardScanPlanner<TEdge>
+where
+    TEdge: EdgeDescriptor,
+{
+    type Edge = TEdge;
+
+    fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
+        // Must be enough scanlines supplied for filling the scanline array
+        if scanlines.len() < y_positions.len() {
+            panic!("The number of scanline suppled ({}) is less than the number of y positions to fill them ({})", scanlines.len(), y_positions.len());
+        }
+
+        // y-positions should be offset by half a pixel (shards are taken from a previous and a next line)
+        let half_pixel = transform.pixel_range_to_x(&(0..1));
+        let half_pixel = (half_pixel.end - half_pixel.start)/2.0;
+
+        let scan_positions_start = y_positions.iter()
+            .map(|y| y - half_pixel)
+            .collect::<Vec<_>>();
+        let scan_positions_end = y_positions.iter()
+            .map(|y| y + half_pixel)
+            .collect::<Vec<_>>();
+
+        // Ask the edge plan to compute the intercepts on the current scanline
+        let mut ordered_intercepts = vec![vec![]; y_positions.len()];
+        edge_plan.shards_on_scanlines(&scan_positions_start, &scan_positions_end, &mut ordered_intercepts);
+
+        self.plan_from_edge_intercepts(edge_plan, ordered_intercepts, transform, y_positions, x_range, scanlines);
+    }
+}

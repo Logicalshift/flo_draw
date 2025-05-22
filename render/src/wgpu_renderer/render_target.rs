@@ -20,7 +20,6 @@ pub enum RenderTarget {
     Multisampled {
         texture:            Arc<wgpu::Texture>,
         texture_descriptor: wgpu::TextureDescriptor<'static>,
-        resolved:           Option<Arc<wgpu::Texture>>,
         width:              u32,
         height:             u32,
     },
@@ -78,11 +77,10 @@ impl RenderTarget {
             MultisampledTexture             |
             MonochromeMultisampledTexture   => {
                 RenderTarget::Multisampled {
-                    texture:        Arc::new(texture),
+                    texture:            Arc::new(texture),
                     texture_descriptor: descriptor,
-                    resolved:       None,
-                    width:          width,
-                    height:         height,
+                    width:              width,
+                    height:             height,
                 }
             },
         }
