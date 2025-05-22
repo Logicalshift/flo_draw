@@ -28,3 +28,5 @@ pub trait OffscreenDrawingTarget : GraphicsContext {
     ///
     fn realize(self) -> Vec<u8>;
 }
+
+// TODO: can we make the OffscreenRenderTarget Send? This would let us wrap the target in a Desync and buffer up stuff sent to the GraphicsContext implementation (which is not very good for the hardware renderer at the moment)
