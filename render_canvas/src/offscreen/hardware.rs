@@ -1,0 +1,91 @@
+use super::offscreen_trait::*;
+use crate::canvas_renderer::*;
+
+use flo_canvas::*;
+use flo_render::*;
+
+use futures::prelude::*;
+
+///
+/// A hardware drawing context uses a flo_render context to render drawing instructions (these are hardware accellerated by a GPU)
+///
+pub struct HardwareDrawingContext<TRenderContext> 
+where 
+    TRenderContext: OffscreenRenderContext,
+{
+    render_context: TRenderContext
+}
+
+pub struct HardwareDrawingTarget<TRenderTarget>
+where 
+    TRenderTarget: OffscreenRenderTarget,
+{
+    renderer:       CanvasRenderer,
+    render_target:  TRenderTarget,
+}
+
+impl<TRenderContext> From<TRenderContext> for HardwareDrawingContext<TRenderContext>
+where 
+    TRenderContext: OffscreenRenderContext,
+{
+    ///
+    /// Creates a hardware drawing context from a render context
+    ///
+    #[inline]
+    fn from(ctxt: TRenderContext) -> Self {
+        HardwareDrawingContext { 
+            render_context: ctxt,
+        }
+    }
+}
+
+impl<TRenderContext> OffscreenDrawingContext for HardwareDrawingContext<TRenderContext>
+where 
+    TRenderContext: OffscreenRenderContext,
+{
+    type DrawingTarget = HardwareDrawingTarget<TRenderContext::RenderTarget>;
+
+    #[inline]
+    fn create_drawing_target(&mut self, width: usize, height: usize) -> Self::DrawingTarget {
+        HardwareDrawingTarget {
+            renderer:       CanvasRenderer::new(),
+            render_target:  self.render_context.create_render_target(width, height),
+        }
+    }
+}
+
+impl<TRenderTarget> OffscreenDrawingTarget for HardwareDrawingTarget<TRenderTarget>
+where 
+    TRenderTarget: OffscreenRenderTarget,
+{
+    async fn draw_actions(&mut self, actions: impl IntoIterator<Item=flo_canvas::Draw>) {
+        // Collect the actions
+        let actions     = actions.into_iter().collect::<Vec<_>>();
+        let rendering   = self.renderer.draw(actions.into_iter());
+        let rendering   = rendering.collect::<Vec<_>>().await;
+
+        // Send them to the renderer
+        self.render_target.render(rendering);
+    }
+
+    fn realize(self) -> Vec<u8> {
+        self.render_target.realize()
+    }
+}
+
+impl<TRenderTarget> GraphicsContext for HardwareDrawingTarget<TRenderTarget>
+where 
+    TRenderTarget: OffscreenRenderTarget,
+{
+    fn draw(&mut self, d: Draw) {
+        // TODO: would probably be better to use a desync than a block_on here, but many of the renderers are not Send
+        // Executor::block_on fails in async contexts
+        // Also would be better to have a way to buffer up the drawing commands
+        use futures::executor;
+        use std::iter;
+
+        executor::block_on(async {
+            self.draw_actions(iter::once(d)).await;
+        })
+    }
+}

@@ -21,7 +21,7 @@ pub trait OffscreenDrawingTarget : GraphicsContext {
     ///
     /// Sends render actions to this offscreen render target
     ///
-    fn draw(&mut self, actions: impl IntoIterator<Item=Draw>);
+    fn draw_actions(&mut self, actions: impl IntoIterator<Item=Draw>) -> impl std::future::Future<Output = ()>;
 
     ///
     /// Consumes this render target and returns the realized pixels as a byte array
