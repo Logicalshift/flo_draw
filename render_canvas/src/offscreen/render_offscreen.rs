@@ -1,4 +1,4 @@
-use super::canvas_renderer::*;
+use crate::canvas_renderer::*;
 
 use flo_canvas::*;
 use flo_render::*;
