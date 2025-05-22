@@ -998,6 +998,7 @@ dependencies = [
  "desync",
  "flo_canvas",
  "flo_render",
+ "flo_render_software",
  "flo_stream",
  "futures",
  "lyon",
