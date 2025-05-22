@@ -72,20 +72,3 @@ where
         self.render_target.realize()
     }
 }
-
-impl<TRenderTarget> GraphicsContext for HardwareDrawingTarget<TRenderTarget>
-where 
-    TRenderTarget: OffscreenRenderTarget,
-{
-    fn draw(&mut self, d: Draw) {
-        // TODO: would probably be better to use a desync than a block_on here, but many of the renderers are not Send
-        // Executor::block_on fails in async contexts
-        // Also would be better to have a way to buffer up the drawing commands
-        use futures::executor;
-        use std::iter;
-
-        executor::block_on(async {
-            self.draw_actions(iter::once(d)).await;
-        })
-    }
-}

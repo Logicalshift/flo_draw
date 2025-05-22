@@ -17,7 +17,7 @@ pub trait OffscreenDrawingContext {
 ///
 /// An offscreen drawing target is used to send drawing commands and generate a buffer 
 ///
-pub trait OffscreenDrawingTarget : GraphicsContext {
+pub trait OffscreenDrawingTarget {
     ///
     /// Sends render actions to this offscreen render target
     ///
