@@ -28,11 +28,6 @@ struct WgpuOffscreenRenderTarget {
 ///
 /// Performs on-startup initialisation steps for offscreen rendering using the WGPU implementation
 ///
-/// Only required if not using a toolkit renderer (eg, in an HTTP renderer or command-line tool). Will likely replace
-/// the bindings for any GUI toolkit, so this is not appropriate for desktop-type apps.
-///
-/// This version is the Metal version for Mac OS X
-///
 pub async fn wgpu_initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
     // Create a new WGPU instance and adapter
     let instance    = wgpu::Instance::new(&wgpu::InstanceDescriptor { backends: wgpu::Backends::all(), ..Default::default() });
@@ -62,9 +57,6 @@ pub async fn wgpu_initialize_offscreen_rendering() -> Result<impl OffscreenRende
 
 ///
 /// Performs on-startup initialisation steps for offscreen rendering
-///
-/// Only required if not using a toolkit renderer (eg, in an HTTP renderer or command-line tool). Will likely replace
-/// the bindings for any GUI toolkit, so this is not appropriate for desktop-type apps.
 ///
 /// This version is the WGPU version
 ///
