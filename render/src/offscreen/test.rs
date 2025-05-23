@@ -27,6 +27,7 @@ mod test {
         let context         = initialize_offscreen_rendering();
         let mut context     = match context {
             Ok(context)     => context,
+            Err(RenderInitError::CannotOpenGraphicsDevice)      |
             Err(RenderInitError::CannotCreateGraphicsDevice)    => { println!("Test not run: graphics device unavailable"); return; }
             Err(other)      => { panic!("Unexpected error: {:?}", other); }
         };
@@ -72,6 +73,7 @@ mod test {
         let context         = initialize_offscreen_rendering();
         let mut context     = match context {
             Ok(context)     => context,
+            Err(RenderInitError::CannotOpenGraphicsDevice)      |
             Err(RenderInitError::CannotCreateGraphicsDevice)    => { println!("Test not run: graphics device unavailable"); return; }
             Err(other)      => { panic!("Unexpected error: {:?}", other); }
         };
@@ -117,6 +119,7 @@ mod test {
         let context         = initialize_offscreen_rendering();
         let mut context     = match context {
             Ok(context)     => context,
+            Err(RenderInitError::CannotOpenGraphicsDevice)      |
             Err(RenderInitError::CannotCreateGraphicsDevice)    => { println!("Test not run: graphics device unavailable"); return; }
             Err(other)      => { panic!("Unexpected error: {:?}", other); }
         };
@@ -173,6 +176,7 @@ mod test {
         let context         = initialize_offscreen_rendering();
         let mut context     = match context {
             Ok(context)     => context,
+            Err(RenderInitError::CannotOpenGraphicsDevice)      |
             Err(RenderInitError::CannotCreateGraphicsDevice)    => { println!("Test not run: graphics device unavailable"); return; }
             Err(other)      => { panic!("Unexpected error: {:?}", other); }
         };
@@ -230,6 +234,7 @@ mod test {
         let context         = initialize_offscreen_rendering();
         let mut context     = match context {
             Ok(context)     => context,
+            Err(RenderInitError::CannotOpenGraphicsDevice)      |
             Err(RenderInitError::CannotCreateGraphicsDevice)    => { println!("Test not run: graphics device unavailable"); return; }
             Err(other)      => { panic!("Unexpected error: {:?}", other); }
         };
