@@ -70,7 +70,7 @@ impl OffscreenDrawingTarget for SoftwareDrawingTarget {
         let mut rgba    = FrameU8Rgba::from_bytes(self.width, self.height, self.gamma, &mut frame).unwrap();
 
         // Render the canvas to the buffer
-        let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(self.canvas.program_runner(1080.0)), 1080);
+        let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(self.canvas.program_runner(self.height as _)), self.height);
         rgba.render(renderer, &self.canvas);
 
         frame
