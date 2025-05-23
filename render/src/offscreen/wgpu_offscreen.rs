@@ -55,22 +55,6 @@ pub async fn wgpu_initialize_offscreen_rendering() -> Result<impl OffscreenRende
     })
 }
 
-///
-/// Performs on-startup initialisation steps for offscreen rendering
-///
-/// This version is the WGPU version
-///
-#[cfg(feature="render-wgpu")]
-pub fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
-    use once_cell::sync::{Lazy};
-    use ::desync::*;
-    use futures::prelude::*;
-
-    static WGPU_BACKGROUND: Lazy<Desync<()>> = Lazy::new(|| Desync::new(()));
-
-    WGPU_BACKGROUND.future_desync(|_| async { wgpu_initialize_offscreen_rendering().await }.boxed()).sync().unwrap()
-}
-
 impl OffscreenRenderContext for WgpuOffscreenRenderContext {
     type RenderTarget = WgpuOffscreenRenderTarget;
 

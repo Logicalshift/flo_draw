@@ -67,7 +67,7 @@ pub fn section_badge<TDrawFn: FnOnce(&mut Vec<Draw>) -> ()>(filename: &str, back
         let canvas_stream   = drawing_with_laid_out_text(canvas_stream);
         let canvas_stream   = drawing_with_text_as_paths(canvas_stream);
 
-        render_canvas_offscreen(&mut context, BADGE_SIZE, BADGE_SIZE, 1.0, canvas_stream).await
+        render_canvas_offscreen(&mut context, BADGE_SIZE, BADGE_SIZE, canvas_stream).await
     });
 
     // Save to a png file

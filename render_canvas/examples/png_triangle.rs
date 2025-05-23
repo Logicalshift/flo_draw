@@ -35,7 +35,7 @@ pub fn main() {
         drawing.fill();
 
         // Render an image to bytes
-        let image           = render_canvas_offscreen(&mut context, 1024, 768, 1.0, stream::iter(drawing)).await;
+        let image           = render_canvas_offscreen(&mut context, 1024, 768, stream::iter(drawing)).await;
 
         // Save to a png file
         let path            = path::Path::new(r"triangle.png");

@@ -46,8 +46,13 @@ where
 
     #[inline]
     fn create_drawing_target(&mut self, width: usize, height: usize) -> Self::DrawingTarget {
+        let mut renderer = CanvasRenderer::new();
+
+        // Prepare to render
+        renderer.set_viewport(0.0..(width as f32), 0.0..(height as f32), width as f32, height as f32, 1.0);
+
         HardwareDrawingTarget {
-            renderer:       CanvasRenderer::new(),
+            renderer:      renderer,
             render_target:  self.render_context.create_render_target(width, height),
         }
     }
