@@ -1,8 +1,25 @@
-#[cfg(all(test, any(feature = "opengl", feature = "osx-metal")))]
+#[cfg(all(test, any(feature = "opengl", feature = "osx-metal", feature="render-wgpu")))]
 mod test {
     use crate::action::*;
     use crate::buffer::*;
     use crate::offscreen::*;
+
+    #[cfg(feature="render-wgpu")]
+    fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+        use futures::executor;
+
+        executor::block_on(wgpu_initialize_offscreen_rendering())
+    }
+
+    #[cfg(all(not(feature="render-wgpu"), feature="osx-metal"))]
+    fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+        metal_initialize_offscreen_rendering()
+    }
+
+    #[cfg(all(not(feature="render-wgpu"), not(feature="osx-metal"), feature="opengl"))]
+    fn initialize_offscreen_rendering() -> Result<impl OffscreenRenderContext, RenderInitError> {
+        opengl_initialize_offscreen_rendering()
+    }
 
     #[test]
     fn clear_offscreen() {
