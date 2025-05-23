@@ -19,7 +19,6 @@ where
     pixel:              PhantomData<Mutex<TPixel>>,
 }
 
-
 impl<TPixel, TRegionRenderer> U8FrameRenderer<TPixel, TRegionRenderer>
 where
     TPixel:             Sized + Send + Clone + Default + ToGammaColorSpace<U8RgbaPremultipliedPixel>,
