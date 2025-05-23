@@ -85,6 +85,16 @@ pub fn initialize_offscreen_rendering() -> Result<impl OffscreenDrawingContext, 
         }
     }
 
+    // Software renderer acts as a general fallback
+    #[cfg(feature="render-software")]
+    {
+        use super::software::*;
+
+        let software_rendering = SoftwareDrawingContext::default();
+        return Ok(BoxedDrawingContext::new(software_rendering));
+    }
+
+    #[cfg(not(feature="render-software"))]
     // Return the error
     if false {
         // This never happens, but we want to specify the return tupe if there are no rendering engines defined at all
