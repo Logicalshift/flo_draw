@@ -1,7 +1,6 @@
 use super::offscreen_trait::*;
 use crate::canvas_renderer::*;
 
-use flo_canvas::*;
 use flo_render::*;
 
 use futures::prelude::*;
@@ -58,7 +57,7 @@ impl<TRenderTarget> OffscreenDrawingTarget for HardwareDrawingTarget<TRenderTarg
 where 
     TRenderTarget: OffscreenRenderTarget,
 {
-    async fn draw_actions(&mut self, actions: impl IntoIterator<Item=flo_canvas::Draw>) {
+    async fn draw_actions(&mut self, actions: impl 'static + IntoIterator<Item=flo_canvas::Draw>) {
         // Collect the actions
         let actions     = actions.into_iter().collect::<Vec<_>>();
         let rendering   = self.renderer.draw(actions.into_iter());
