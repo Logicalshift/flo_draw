@@ -394,7 +394,7 @@ mod test {
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
 
         // Set up a basic texture and a canvas height
-        drawing.current_state.canvas_height(1000.0);
+        drawing.current_state.canvas_height(1000.0, &canvas::Transform2D::scale(1.0, -1.0));
         drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
         drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
 
@@ -421,7 +421,7 @@ mod test {
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
 
         // Set up a basic texture and a canvas height
-        drawing.current_state.canvas_height(1000.0);
+        drawing.current_state.canvas_height(1000.0, &canvas::Transform2D::scale(1.0, -1.0));
         drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
         drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
 
@@ -449,7 +449,7 @@ mod test {
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
 
         // Set up a basic texture and a canvas height
-        drawing.current_state.canvas_height(1000.0);
+        drawing.current_state.canvas_height(1000.0, &canvas::Transform2D::scale(1.0, -1.0));
         drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
         drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
 
@@ -480,7 +480,7 @@ mod test {
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
 
         // Set up a basic texture and a canvas height
-        drawing.current_state.canvas_height(1000.0);
+        drawing.current_state.canvas_height(1000.0, &canvas::Transform2D::scale(1.0, -1.0));
         drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
         drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
 
@@ -511,7 +511,7 @@ mod test {
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
 
         // Set up a basic texture and a canvas height
-        drawing.current_state.canvas_height(1000.0);
+        drawing.current_state.canvas_height(1000.0, &canvas::Transform2D::scale(1.0, -1.0));
         drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
         drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
 
@@ -535,7 +535,7 @@ mod test {
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
 
         // Set up a basic texture and a canvas height
-        drawing.current_state.canvas_height(1000.0);
+        drawing.current_state.canvas_height(1000.0, &canvas::Transform2D::scale(1.0, -1.0));
         drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
         drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
 
@@ -559,7 +559,7 @@ mod test {
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
 
         // Set up a basic texture and a canvas height
-        drawing.current_state.canvas_height(1000.0);
+        drawing.current_state.canvas_height(1000.0, &canvas::Transform2D::scale(1.0, -1.0));
         drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
         drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
 
@@ -583,7 +583,7 @@ mod test {
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
 
         // Set up a basic texture and a canvas height
-        drawing.current_state.canvas_height(1000.0);
+        drawing.current_state.canvas_height(1000.0, &canvas::Transform2D::scale(1.0, -1.0));
         drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
         drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
 
@@ -607,7 +607,7 @@ mod test {
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
 
         // Set up a basic texture and a canvas height
-        drawing.current_state.canvas_height(1000.0);
+        drawing.current_state.canvas_height(1000.0, &canvas::Transform2D::scale(1.0, -1.0));
         drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
         drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
 
@@ -632,7 +632,7 @@ mod test {
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
 
         // Set up a basic texture and a canvas height
-        drawing.current_state.canvas_height(1000.0);
+        drawing.current_state.canvas_height(1000.0, &canvas::Transform2D::scale(1.0, -1.0));
         drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
         drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
 
@@ -656,7 +656,7 @@ mod test {
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
 
         // Set up a basic texture and a canvas height
-        drawing.current_state.canvas_height(1000.0);
+        drawing.current_state.canvas_height(1000.0, &canvas::Transform2D::scale(1.0, -1.0));
         drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
         drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
 
@@ -680,7 +680,7 @@ mod test {
         let mut drawing = CanvasDrawing::<U32LinearPixel, 4>::empty();
 
         // Set up a basic texture and a canvas height
-        drawing.current_state.canvas_height(1000.0);
+        drawing.current_state.canvas_height(1000.0, &canvas::Transform2D::scale(1.0, -1.0));
         drawing.texture(TextureId(0), TextureOp::Create(TextureSize(100, 200), TextureFormat::Rgba));
         drawing.texture(TextureId(0), TextureOp::SetBytes(TexturePosition(0, 0), TextureSize(0, 0), Arc::new(vec![])));
 

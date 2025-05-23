@@ -29,6 +29,9 @@ where
     /// The height in pixels of the target (used for things like line_width_pixels)
     pub (super) height_pixels:      f64,
 
+    /// The base transform applied before any others to this drawing
+    pub (super) base_transform:     canvas::Transform2D,
+
     /// The program data ID for the program used to render the background
     pub (super) background:         PixelProgramDataId,
 
@@ -96,6 +99,7 @@ where
         CanvasDrawing {
             gamma:              2.2,
             height_pixels:      1080.0,
+            base_transform:     canvas::Transform2D::scale(1.0, -1.0),
             background:         background,
             current_namespace:  canvas::NamespaceId::default(),
             current_layer:      LayerHandle(0),
@@ -120,6 +124,13 @@ where
     ///
     pub fn set_pixel_height(&mut self, pixel_height: f64) {
         self.height_pixels = pixel_height;
+    }
+
+    ///
+    /// Sets the base transformation for this canvas (eg, to flip the image over)
+    ///
+    pub fn set_base_transform(&mut self, transform: canvas::Transform2D) {
+        self.base_transform = transform;
     }
 
     ///
@@ -163,8 +174,8 @@ where
                 WindingRule(winding_rule)                           => { self.current_state.winding_rule(winding_rule); },
                 BlendMode(blend_mode)                               => { self.current_state.blend_mode(blend_mode, &mut self.program_data_cache); },
 
-                IdentityTransform                                   => { self.current_state.identity_transform(); },
-                CanvasHeight(height)                                => { self.current_state.canvas_height(height); },
+                IdentityTransform                                   => { self.current_state.identity_transform(&self.base_transform); },
+                CanvasHeight(height)                                => { self.current_state.canvas_height(height, &self.base_transform); },
                 CenterRegion((x1, y1), (x2, y2))                    => { self.current_state.center_region((x1, y1), (x2, y2)); },
                 MultiplyTransform(transform)                        => { self.current_state.multiply_transform(transform); },
 

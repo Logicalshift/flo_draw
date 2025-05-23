@@ -1,5 +1,6 @@
 use super::offscreen_trait::*;
 
+use flo_canvas::*;
 use flo_render_software::draw::*;
 use flo_render_software::pixel::*;
 use flo_render_software::render::*;
@@ -53,6 +54,7 @@ impl OffscreenDrawingContext for SoftwareDrawingContext {
         let gamma       = self.gamma;
         let mut canvas  = CanvasDrawing::empty();
         canvas.set_pixel_height((height as f64) / self.scale);
+        canvas.set_base_transform(Transform2D::identity());
 
         SoftwareDrawingTarget { canvas, width, height, gamma }
     }

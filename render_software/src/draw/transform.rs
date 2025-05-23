@@ -7,8 +7,8 @@ impl DrawingState {
     /// Resets the transform set in this state
     ///
     #[inline]
-    pub (crate) fn identity_transform(&mut self) {
-        self.transform = canvas::Transform2D::scale(1.0, -1.0);
+    pub (crate) fn identity_transform(&mut self, base_transform: &canvas::Transform2D) {
+        self.transform = *base_transform;
     }
 
     ///
@@ -23,17 +23,17 @@ impl DrawingState {
     /// Sets the transform so that the y ranges goes from -(height/2) to (height/2)
     ///
     #[inline]
-    pub (crate) fn canvas_height(&mut self, height: f32) {
+    pub (crate) fn canvas_height(&mut self, height: f32, base_transform: &canvas::Transform2D) {
         // Default transform gives -1, 1 as the height of the window, so the overall height is 2
         let window_height   = 2.0;
 
         // Work out the scale to use for this widget
         let height          = f32::max(0.0000001, height);
         let scale           = window_height / height;
-        let scale           = canvas::Transform2D::scale(scale, -scale);
+        let scale           = canvas::Transform2D::scale(scale, scale);
 
         // (0, 0) is already the center of the window
-        let transform       = scale;
+        let transform       = *base_transform * scale;
 
         // Set as the active transform
         self.transform      = transform;
