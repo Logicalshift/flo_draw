@@ -62,8 +62,7 @@ pub use flo_render_canvas as render_canvas;
 pub use flo_binding as binding;
 pub use flo_scene as scene;
 
-pub use flo_render::{initialize_offscreen_rendering};
-pub use flo_render_canvas::{render_canvas_offscreen};
+pub use flo_render_canvas::{initialize_offscreen_rendering, render_canvas_offscreen};
 
 mod render_window;
 mod drawing_window;
