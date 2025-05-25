@@ -68,8 +68,8 @@ pub struct RenderStream<'a> {
     /// Set to true if the layer buffer is clear after rendering the current layer
     layer_buffer_is_clear: bool,
 
-    /// The current layer ID that we're processing
-    layer_id: usize,
+    /// The current layer handle that we're processing
+    layer_handle: Option<LayerHandle>,
 
     /// The total number of layers in the core
     layer_count: usize,
@@ -136,7 +136,11 @@ impl<'a> RenderStream<'a> {
     /// If rendering is suspended at the point that the processing future completes then the initial and final actions will not be taken
     ///
     pub fn new<ProcessFuture>(core: Arc<Desync<RenderCore>>, processing_future: ProcessFuture, viewport_transform: canvas::Transform2D, viewport_size: render::Size2D, background_vertex_buffer: render::VertexBufferId, initial_actions: Vec<render::RenderAction>, final_actions: Vec<render::RenderAction>) -> RenderStream<'a>
-    where   ProcessFuture: 'a+Send+Future<Output=()> {
+    where
+        ProcessFuture: 'a+Send+Future<Output=()>
+    {
+        let first_layer_handle = core.sync(|core| core.layers[&core.first_layer]);
+
         RenderStream {
             core:                       core,
             frame_suspended:            false,
@@ -149,7 +153,7 @@ impl<'a> RenderStream<'a> {
             viewport_size:              viewport_size,
             layer_buffer_is_clear:      true,
             invalid_bounds:             LayerBounds::default(),
-            layer_id:                   0,
+            layer_handle:               Some(first_layer_handle),
             layer_count:                0,
             render_index:               0,
         }
@@ -1252,25 +1256,22 @@ impl<'a> Stream for RenderStream<'a> {
         }
 
         // We've generated all the vertex buffers: generate the instructions to render them
-        let mut layer_id        = self.layer_id;
-        let viewport_transform  = self.viewport_transform;
+        let mut maybe_layer_handle  = self.layer_handle;
+        let viewport_transform      = self.viewport_transform;
 
-        let result              = if layer_id >= self.layer_count {
-            // Stop if we've processed all the layers
-            None
-        } else {
+        let result              = if let Some(layer_handle) = maybe_layer_handle {
             let core                        = &self.core;
             let mut layer_buffer_is_clear   = self.layer_buffer_is_clear;
             let mut invalid_bounds          = self.invalid_bounds;
             let viewport_size               = self.viewport_size;
 
-            let result                  = core.sync(|core| {
+            let (result, next_layer_handle) = core.sync(|core| {
                 // Send any pending vertex buffers, then render the layer
-                let layer_handle            = core.layers[layer_id];
                 let send_vertex_buffers     = core.send_vertex_buffers(layer_handle);
                 let mut render_state        = RenderStreamState::new(viewport_size);
                 render_state.is_clear       = Some(layer_buffer_is_clear);
                 render_state.invalid_bounds = invalid_bounds;
+                let next_layer_handle       = core.layer(layer_handle).following_layer;
 
                 let mut render_layer        = VecDeque::new();
 
@@ -1282,7 +1283,7 @@ impl<'a> Stream for RenderStream<'a> {
                 layer_buffer_is_clear   = render_state.is_clear.unwrap_or(false);
                 invalid_bounds          = render_state.invalid_bounds;
 
-                Some(render_layer)
+                (Some(render_layer), next_layer_handle)
             });
 
             // Store the new 'is clear' setting
@@ -1290,13 +1291,16 @@ impl<'a> Stream for RenderStream<'a> {
             self.invalid_bounds         = invalid_bounds;
 
             // Advance the layer ID
-            layer_id += 1;
+            maybe_layer_handle = next_layer_handle;
 
             result
+        } else {
+            // Stop if we've processed all the layers
+            None
         };
 
         // Update the layer ID to continue iterating
-        self.layer_id       = layer_id;
+        self.layer_handle = maybe_layer_handle;
 
         // Add the result to the pending queue
         if let Some(result) = result {

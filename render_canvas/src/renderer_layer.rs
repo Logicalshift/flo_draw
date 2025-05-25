@@ -1,5 +1,6 @@
 use super::layer_state::*;
 use super::layer_bounds::*;
+use super::layer_handle::*;
 use super::render_entity::*;
 
 use flo_canvas as canvas;
@@ -30,7 +31,10 @@ pub struct Layer {
     pub alpha: f64,
 
     /// The stored states for this layer
-    pub stored_states: Vec<LayerState>
+    pub stored_states: Vec<LayerState>,
+
+    /// The layer that should be rendered on top of this one (None if there are no following layers)
+    pub following_layer: Option<LayerHandle>,
 }
 
 impl Layer {

@@ -5,6 +5,7 @@ use super::layer_handle::*;
 use super::render_entity::*;
 use super::render_texture::*;
 use super::renderer_layer::*;
+use super::canvas_renderer::*;
 use super::render_gradient::*;
 use super::renderer_worker::*;
 use super::stroke_settings::*;
@@ -22,6 +23,17 @@ use std::sync::*;
 use std::collections::{HashMap, HashSet};
 
 ///
+/// The layers are ordered into a linked list, where each layer
+///
+pub struct LayerListItem {
+    /// The handle of this layer
+    handle: LayerHandle,
+
+    // The index of the 
+    next_layer: usize,
+}
+
+///
 /// Parts of the renderer that are shared with the workers
 ///
 pub struct RenderCore {
@@ -31,8 +43,14 @@ pub struct RenderCore {
     /// One-time setup actions that are waiting to be rendered
     pub setup_actions: Vec<render::RenderAction>,
 
-    /// The definition for the layers
-    pub layers: Vec<LayerHandle>,
+    /// The definition for the layers (maps namespace local ID and layer ID to the LayerHandle specifying the definition)
+    pub layers: HashMap<(usize, canvas::LayerId), LayerHandle>,
+
+    /// The lowest layer in the canvas
+    pub first_layer: (usize, canvas::LayerId),
+
+    /// The actual layer definitions (indexed by LayerHandle)
+    pub layer_definitions: Vec<Layer>,
 
     /// The background colour to clear to when rendering the canvas
     pub background_color: render::Rgba8,
@@ -66,9 +84,6 @@ pub struct RenderCore {
 
     /// The alpha value to use for each texture, next time it's used
     pub texture_alpha: HashMap<(usize, canvas::TextureId), f32>,
-
-    /// The actual layer definitions
-    pub layer_definitions: Vec<Layer>,
 
     /// Available layer handles
     pub free_layers: Vec<LayerHandle>,
@@ -170,7 +185,7 @@ impl RenderCore {
             .collect::<HashSet<_>>();
 
         // Remove any texture that's selected as the fill state from the unused list (these still count as 'used')
-        for layer_handle in self.layers.iter() {
+        for layer_handle in self.layers.values() {
             let state = &self.layer_readonly(*layer_handle).state;
             match &state.fill_color {
                 FillState::Texture(texture_id, _, _, _, _, _)       => { unused_textures.remove(texture_id); }
@@ -420,6 +435,72 @@ impl RenderCore {
     }
 
     ///
+    /// Finds the layer handle that should precede a new layer with the specified ID
+    ///
+    pub fn previous_layer_handle(&self, namespace_id: usize, layer_id: canvas::LayerId) -> LayerHandle {
+        let mut found_layer         = None;
+        let mut closest_layer_id    = 0;
+
+        for ((existing_namespace, existing_layer), layer_handle) in self.layers.iter() {
+            // Looking for the highest layer ID in the same namespace that's less than this one
+            if *existing_namespace == namespace_id {
+                if existing_layer.0 < layer_id.0 && closest_layer_id < existing_layer.0 {
+                    found_layer         = Some(*layer_handle);
+                    closest_layer_id    = existing_layer.0;
+                }
+            }
+        }
+
+        if let Some(found_layer) = found_layer {
+            found_layer
+        } else {
+            // If no layer is found, then there are no layers in this namespace. New namespaces are always added to the end of the layer list
+            self.last_layer()
+        }
+    }
+
+    ///
+    /// Finds the topmost layer
+    ///
+    pub fn last_layer(&self) -> LayerHandle {
+        // Start at the lowest layer (assume that it exists, which it always should when we get here)
+        let mut layer_handle = *self.layers.get(&self.first_layer).unwrap();
+
+        // Follow the linked-list of layers until we reach the top
+        while let Some(following_layer) = self.layer_definitions[layer_handle.0 as usize].following_layer {
+            layer_handle = following_layer;
+        }
+
+        // Final handle we got is the answer here
+        layer_handle
+    }
+
+    ///
+    /// Retrieves the handle for a layer with the specified namespace/layer ID (creating it if necessary)
+    ///
+    pub fn handle_for_layer(&mut self, namespace_id: usize, layer_id: canvas::LayerId) -> LayerHandle {
+        if let Some(layer_handle) = self.layers.get(&(namespace_id, layer_id)) {
+            *layer_handle
+        } else {
+            // Create a new layer
+            let new_layer = CanvasRenderer::create_default_layer();
+            let new_layer = self.allocate_layer_handle(new_layer);
+
+            // Add to the layers that we know about
+            self.layers.insert((namespace_id, layer_id), new_layer);
+
+            // Insert in the proper place in the layer ordering
+            let previous_layer = self.previous_layer_handle(namespace_id, layer_id);
+
+            self.layer_definitions[new_layer.0 as usize].following_layer        = self.layer_definitions[previous_layer.0 as usize].following_layer;
+            self.layer_definitions[previous_layer.0 as usize].following_layer   = Some(new_layer);
+
+            // Handle is the layer we just generated
+            new_layer
+        }
+    }
+
+    ///
     /// Returns a render texture for a canvas texture
     ///
     pub fn texture_for_rendering(&mut self, namespace_id: usize, texture_id: canvas::TextureId) -> Option<render::TextureId> {
@@ -529,7 +610,8 @@ impl RenderCore {
             commit_before_rendering:    false,
             commit_after_rendering:     false,
             blend_mode:                 canvas::BlendMode::SourceOver,
-            alpha:                      1.0
+            alpha:                      1.0,
+            following_layer:            self.layer_definitions[layer_idx as usize].following_layer,
         };
 
         mem::swap(&mut old_layer, &mut self.layer_definitions[layer_idx as usize]);

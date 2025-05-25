@@ -57,12 +57,12 @@ impl CanvasRenderer {
         self.namespace_stack.push(self.current_namespace);
 
         self.core.sync(|core| {
-            let all_layers = core.layers.iter().cloned()
+            let all_layers = core.layers.values().cloned()
                 .chain(core.sprites.iter().map(|(_, layer_id)| *layer_id))
                 .collect::<Vec<_>>();
 
-            for layer_id in all_layers {
-                core.layer(layer_id).push_state();
+            for layer_handle in all_layers {
+                core.layer(layer_handle).push_state();
             }
         })
     }
@@ -79,12 +79,12 @@ impl CanvasRenderer {
         self.core.sync(|core| {
             core.layer(self.current_layer).update_transform(&self.active_transform);
 
-            let all_layers = core.layers.iter().cloned()
+            let all_layers = core.layers.values().cloned()
                 .chain(core.sprites.iter().map(|(_, layer_id)| *layer_id))
                 .collect::<Vec<_>>();
 
-            for layer_id in all_layers {
-                let layer = core.layer(layer_id);
+            for layer_handle in all_layers {
+                let layer = core.layer(layer_handle);
 
                 if layer.state.is_sprite {
                     // Sprites update their transformation matrix immediately when their state is popped (if it's different)

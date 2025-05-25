@@ -21,7 +21,7 @@ impl CanvasRenderer {
     ///
     /// Creates a new layer with the default properties
     ///
-    pub (super) fn create_default_layer() -> Layer {
+    pub (crate) fn create_default_layer() -> Layer {
         Layer {
             render_order:               vec![RenderEntity::SetTransform(canvas::Transform2D::identity())],
             state:                      LayerState {
@@ -42,7 +42,8 @@ impl CanvasRenderer {
             commit_before_rendering:    false,
             commit_after_rendering:     false,
             blend_mode:                 canvas::BlendMode::SourceOver,
-            alpha:                      1.0
+            alpha:                      1.0,
+            following_layer:            None,
         }
     }
 
@@ -68,7 +69,7 @@ impl CanvasRenderer {
             // Release the existing layers
             let old_layers = mem::take(&mut core.layers);
 
-            for layer_id in old_layers {
+            for ((_, _), layer_id) in old_layers {
                 let layer = core.release_layer_handle(layer_id);
                 core.free_layer_entities(layer);
             }
@@ -87,7 +88,7 @@ impl CanvasRenderer {
             // Create a new default layer
             let layer0 = Self::create_default_layer();
             let layer0 = core.allocate_layer_handle(layer0);
-            core.layers.push(layer0);
+            core.layers.insert((canvas::NamespaceId::default().local_id(), canvas::LayerId(0)), layer0);
 
             self.current_layer      = layer0;
             self.current_sprite     = None;
@@ -102,19 +103,15 @@ impl CanvasRenderer {
     /// Layer 0 is selected initially. Layers are drawn in order starting from 0.
     /// Layer IDs don't have to be sequential.
     ///
-    pub (super) fn tes_layer(&mut self, canvas::LayerId(layer_id): canvas::LayerId) {
-        let layer_id    = layer_id as usize;
-        let core        = Arc::clone(&self.core);
+    pub (super) fn tes_layer(&mut self, layer_id: canvas::LayerId) {
+        let namespace_id    = self.current_namespace;
+        let core            = Arc::clone(&self.core);
 
         // Generate layers 
         core.sync(|core| {
-            while core.layers.len() <= layer_id  {
-                let new_layer = Self::create_default_layer();
-                let new_layer = core.allocate_layer_handle(new_layer);
-                core.layers.push(new_layer);
-            }
+            let layer_handle = core.handle_for_layer(namespace_id, layer_id);
 
-            self.current_layer  = core.layers[layer_id];
+            self.current_layer  = layer_handle;
             self.current_sprite = None;
         });
     }
@@ -122,14 +119,13 @@ impl CanvasRenderer {
     ///
     /// Sets how a particular layer is blended with the underlying layer
     ///
-    pub (super) fn tes_layer_blend(&mut self, canvas::LayerId(layer_id): canvas::LayerId, blend_mode: canvas::BlendMode) {
-        self.core.sync(move |core| {
-            let layer_id = layer_id as usize;
+    pub (super) fn tes_layer_blend(&mut self, layer_id: canvas::LayerId, blend_mode: canvas::BlendMode) {
+        let namespace_id = self.current_namespace;
 
-            if layer_id < core.layers.len() {
+        self.core.sync(move |core| {
+            if let Some(layer_handle) = core.layers.get(&(namespace_id, layer_id)) {
                 // Fetch the layer
-                let layer_handle    = core.layers[layer_id];
-                let layer           = core.layer(layer_handle);
+                let layer           = core.layer(*layer_handle);
 
                 // Update the blend mode and set the layer's 'commit' mode
                 layer.blend_mode    = blend_mode;
@@ -145,14 +141,13 @@ impl CanvasRenderer {
     ///
     /// Sets the alpha blend mode for a particular layer
     ///
-    pub (super) fn tes_layer_alpha(&mut self, canvas::LayerId(layer_id): canvas::LayerId, layer_alpha: f32) {
-        self.core.sync(move |core| {
-            let layer_id = layer_id as usize;
+    pub (super) fn tes_layer_alpha(&mut self, layer_id: canvas::LayerId, layer_alpha: f32) {
+        let namespace_id = self.current_namespace;
 
-            if layer_id < core.layers.len() {
+        self.core.sync(move |core| {
+            if let Some(layer_handle) = core.layers.get(&(namespace_id, layer_id)) {
                 // Fetch the layer
-                let layer_handle    = core.layers[layer_id];
-                let layer           = core.layer(layer_handle);
+                let layer           = core.layer(*layer_handle);
 
                 let layer_alpha     = f32::max(0.0, f32::min(1.0, layer_alpha));
 
@@ -205,7 +200,7 @@ impl CanvasRenderer {
         *path_state = PathState::default();
 
         self.core.sync(|core| {
-            let handles = core.layers.clone();
+            let handles = core.layers.values().copied().collect::<Vec<_>>();
 
             for handle in handles.into_iter() {
                 // Sprite layers are left alone
@@ -228,20 +223,14 @@ impl CanvasRenderer {
     ///
     /// Swaps two layers (changing their render order)
     ///
-    pub (super) fn tes_swap_layers(&mut self, canvas::LayerId(layer1): canvas::LayerId, canvas::LayerId(layer2): canvas::LayerId) {
+    pub (super) fn tes_swap_layers(&mut self, layer1: canvas::LayerId, layer2: canvas::LayerId) {
+        let namespace_id = self.current_namespace;
+
         if layer1 != layer2 {
             self.core.sync(move |core| {
-                // Create layers if they don't already exist so we can swap with arbitrary layers
-                let max_layer_id = u64::max(layer1, layer2) as usize;
-                while core.layers.len() <= max_layer_id  {
-                    let new_layer = Self::create_default_layer();
-                    let new_layer = core.allocate_layer_handle(new_layer);
-                    core.layers.push(new_layer);
-                }
-
                 // Swap the two layers in the core
-                let LayerHandle(handle1) = core.layers[layer1 as usize];
-                let LayerHandle(handle2) = core.layers[layer2 as usize];
+                let LayerHandle(handle1) = core.handle_for_layer(namespace_id, layer1);
+                let LayerHandle(handle2) = core.handle_for_layer(namespace_id, layer2);
 
                 if handle1 != handle2 {
                     core.layer_definitions.swap(handle1 as usize, handle2 as usize);
