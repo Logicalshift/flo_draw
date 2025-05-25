@@ -1259,7 +1259,7 @@ impl<'a> Stream for RenderStream<'a> {
         let mut maybe_layer_handle  = self.layer_handle;
         let viewport_transform      = self.viewport_transform;
 
-        let result              = if let Some(layer_handle) = maybe_layer_handle {
+        let result = if let Some(layer_handle) = maybe_layer_handle {
             let core                        = &self.core;
             let mut layer_buffer_is_clear   = self.layer_buffer_is_clear;
             let mut invalid_bounds          = self.invalid_bounds;
