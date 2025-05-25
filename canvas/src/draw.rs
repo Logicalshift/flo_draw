@@ -233,8 +233,10 @@ pub enum Draw {
     ClearCanvas(Color),
 
     /// Selects a particular layer for drawing
-    /// Layer 0 is selected initially. Layers are drawn in order starting from 0.
-    /// Layer IDs don't have to be sequential.
+    ///
+    /// Layers can be arranged into any ordering, but have a relatively straightforward default ordering: selecting a layer that
+    /// does not exist will create it after the nearest layer that has a lower ID. Layers can belong to namespaces, which don't have
+    /// an inherent ordering like this: in this case, the first layer selected as part of a different namespace
     Layer(LayerId),
 
     /// Sets how a particular layer is blended with the underlying layer
@@ -249,8 +251,11 @@ pub enum Draw {
     /// Clears all of the layers
     ClearAllLayers,
 
-    /// Exchanges the ordering of two layers
+    /// Exchanges the content of two layers
     SwapLayers(LayerId, LayerId),
+
+    /// Re-orders a layer: places the specified layer ID so that it's drawn before the current layer
+    PlaceLayerBefore(NamespaceId, LayerId),
 
     /// Selects a particular sprite for drawing
     ///
@@ -298,6 +303,9 @@ pub enum Draw {
     Gradient(GradientId, GradientOp),
 
     /// Chooses a different namespace for the resource IDs (layers, sprites, textures, fonts, gradients)
+    ///
+    /// This affects the namespace used by the next resource to be selected, and does not change the namespace of the
+    /// currently selected resource.
     Namespace(NamespaceId),
 }
 

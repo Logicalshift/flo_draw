@@ -399,6 +399,7 @@ enum DecoderState {
     NewLayerBlend(DecodeLayerId, String),       // 'NB' (id, mode)
     NewLayerAlpha(DecodeLayerId, String),       // 'Nt' (id, alpha)
     SwapLayers(Option<LayerId>, String),        // 'NX' (layer1, layer2)
+    PlaceLayerBefore(Option<NamespaceId>, String), // 'NO' (namespace_id, layer_id)
 
     NewSprite(String),                          // 'Ns' (id)
     SpriteDraw(String),                         // 'sD' (id)
@@ -531,12 +532,13 @@ impl CanvasDecoder {
             TransformCenter(param)          => Self::decode_transform_center(next_chr, param)?,
             TransformMultiply(param)        => Self::decode_transform_multiply(next_chr, param)?,
 
-            NewLayerU32(param)              => Self::decode_new_layer_u32(next_chr, param)?,
-            NewLayerBlendU32(param)         => Self::decode_new_layer_blend_u32(next_chr, param)?,
-            NewLayer(param)                 => Self::decode_new_layer(next_chr, param)?,
-            NewLayerBlend(layer, blend)     => Self::decode_new_layer_blend(next_chr, layer, blend)?,
-            NewLayerAlpha(layer, alpha)     => Self::decode_new_layer_alpha(next_chr, layer, alpha)?,
-            SwapLayers(layer1, param)       => Self::decode_swap_layers(next_chr, layer1, param)?,
+            NewLayerU32(param)                  => Self::decode_new_layer_u32(next_chr, param)?,
+            NewLayerBlendU32(param)             => Self::decode_new_layer_blend_u32(next_chr, param)?,
+            NewLayer(param)                     => Self::decode_new_layer(next_chr, param)?,
+            NewLayerBlend(layer, blend)         => Self::decode_new_layer_blend(next_chr, layer, blend)?,
+            NewLayerAlpha(layer, alpha)         => Self::decode_new_layer_alpha(next_chr, layer, alpha)?,
+            SwapLayers(layer1, param)           => Self::decode_swap_layers(next_chr, layer1, param)?,
+            PlaceLayerBefore(namespace, param)  => Self::decode_place_layer_before(next_chr, namespace, param)?,
 
             NewSprite(param)                    => Self::decode_new_sprite(next_chr, param)?,
             SpriteDraw(param)                   => Self::decode_sprite_draw(next_chr, param)?,
@@ -636,6 +638,7 @@ impl CanvasDecoder {
             'L'     => Ok((DecoderState::NewLayer(String::new()), None)),
             'B'     => Ok((DecoderState::NewLayerBlend(PartialResult::MatchMore(String::new()), String::new()), None)),
             't'     => Ok((DecoderState::NewLayerAlpha(PartialResult::MatchMore(String::new()), String::new()), None)),
+            'O'     => Ok((DecoderState::PlaceLayerBefore(None, String::new()), None)),
             'X'     => Ok((DecoderState::SwapLayers(None, String::new()), None)),
             's'     => Ok((DecoderState::NewSprite(String::new()), None)),
             'N'     => Ok((DecoderState::NewNamespace(String::new()), None)),
@@ -1085,6 +1088,35 @@ impl CanvasDecoder {
             (None, PartialResult::FullMatch(layer_id))          => Ok((DecoderState::SwapLayers(Some(layer_id), String::new()), None)),
             (Some(layer1), PartialResult::FullMatch(layer2))    => Ok((DecoderState::None, Some(Draw::SwapLayers(layer1, layer2)))),
             (layer1, PartialResult::MatchMore(param))           => Ok((DecoderState::SwapLayers(layer1, param), None))
+        }
+    }
+
+    #[inline] fn decode_place_layer_before(next_chr: char, namespace: Option<NamespaceId>, param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if namespace.is_none() {
+            // Decode the namespace first
+            let mut param = param;
+
+            if param.len() < 21 {
+                param.push(next_chr);
+                Ok((DecoderState::PlaceLayerBefore(None, param), None))
+            } else {
+                param.push(next_chr);
+
+                let mut param   = param.chars();
+                let id_a        = Self::decode_u64(&mut param)?;
+                let id_b        = Self::decode_u64(&mut param)?;
+
+                let global_id   = Uuid::from_u64_pair(id_a, id_b);
+                let namespace   = NamespaceId::with_id(global_id);
+
+                Ok((DecoderState::PlaceLayerBefore(Some(namespace), String::new()), None))
+            }
+        } else {
+            // Decode the layer ID
+            match Self::decode_layer_id(next_chr, param)? {
+                PartialResult::MatchMore(param)     => Ok((DecoderState::PlaceLayerBefore(namespace, param), None)),
+                PartialResult::FullMatch(layer_id)  => Ok((DecoderState::None, Some(Draw::PlaceLayerBefore(namespace.unwrap(), layer_id))))
+            }
         }
     }
 
@@ -2330,6 +2362,11 @@ mod test {
     }
 
     #[test]
+    fn decode_place_layer_before() {
+        check_round_trip_single(Draw::PlaceLayerBefore(NamespaceId::new(), LayerId(3)));
+    }
+
+    #[test]
     fn decode_sprite() {
         check_round_trip_single(Draw::Sprite(SpriteId(0)));
         check_round_trip_single(Draw::Sprite(SpriteId(10)));
@@ -2578,6 +2615,7 @@ mod test {
             Draw::ClearLayer,
             Draw::ClearAllLayers,
             Draw::SwapLayers(LayerId(1), LayerId(2)),
+            Draw::PlaceLayerBefore(NamespaceId::new(), LayerId(3)),
             Draw::Path(PathOp::NewPath),
             Draw::Sprite(SpriteId(1000)),
             Draw::ClearSprite,
@@ -2649,6 +2687,7 @@ mod test {
             Draw::ClearLayer,
             Draw::ClearAllLayers,
             Draw::SwapLayers(LayerId(1), LayerId(2)),
+            Draw::PlaceLayerBefore(NamespaceId::new(), LayerId(3)),
             Draw::Path(PathOp::NewPath),
             Draw::Sprite(SpriteId(1000)),
             Draw::ClearSprite,
