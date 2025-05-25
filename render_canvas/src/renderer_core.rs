@@ -23,17 +23,6 @@ use std::sync::*;
 use std::collections::{HashMap, HashSet};
 
 ///
-/// The layers are ordered into a linked list, where each layer
-///
-pub struct LayerListItem {
-    /// The handle of this layer
-    handle: LayerHandle,
-
-    // The index of the 
-    next_layer: usize,
-}
-
-///
 /// Parts of the renderer that are shared with the workers
 ///
 pub struct RenderCore {
