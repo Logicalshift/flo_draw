@@ -177,10 +177,11 @@ impl CanvasRenderer {
                 layer.state.is_sprite   = true;
             }
 
-            // Retain the modification count from the old layer
+            // Retain some properties from the old layer
             layer.state.modification_count  = old_layer.state.modification_count + 1;
             layer.state.base_scale_factor   = old_layer.state.base_scale_factor;
             layer.state.scale_factor        = old_layer.state.scale_factor;
+            layer.following_layer           = old_layer.following_layer;
 
             // Swap into the layer list to replace the old one
             mem::swap(core.layer(self.current_layer), &mut layer);
@@ -209,12 +210,19 @@ impl CanvasRenderer {
                 }
 
                 // Create a new layer
-                let mut layer   = Self::create_default_layer();
+                let mut layer = Self::create_default_layer();
+                let old_layer = core.layer(handle);
+
+                // Retain some properties from the old layer
+                layer.state.modification_count  = old_layer.state.modification_count + 1;
+                layer.state.base_scale_factor   = old_layer.state.base_scale_factor;
+                layer.state.scale_factor        = old_layer.state.scale_factor;
+                layer.following_layer           = old_layer.following_layer;
 
                 // Swap into the layer list to replace the old one
                 mem::swap(core.layer(handle), &mut layer);
 
-                // Free the data for the current layer
+                // Free the data for the old layer
                 core.free_layer_entities(layer);
             }
         });
