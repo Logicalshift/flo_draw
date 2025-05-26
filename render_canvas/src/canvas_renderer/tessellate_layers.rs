@@ -250,7 +250,68 @@ impl CanvasRenderer {
     ///
     /// Changes the render order such that the specified layer is drawn before the current layer
     ///
-    pub (super) fn tes_place_layer_before(&mut self, namespace: canvas::NamespaceId, layer: canvas::LayerId) {
-        todo!()
+    pub (super) fn tes_place_layer_before(&mut self, namespace: canvas::NamespaceId, moving_layer_id: canvas::LayerId) {
+        let current_layer_handle    = self.current_layer;
+
+        self.core.sync(|core| {
+            let moving_layer_handle = core.handle_for_layer(namespace.local_id(), moving_layer_id);
+
+            if moving_layer_handle == current_layer_handle {
+                // Can't move a layer before itself
+                return;
+            }
+
+            // Find the handle of the layer before the requested layer
+            let mut before_moving_layer = None;
+            let mut testing_layer       = core.layers.get(&core.first_layer).copied();
+
+            while let Some(layer_handle) = testing_layer {
+                let layer = &core.layer_definitions[layer_handle.0 as usize];
+
+                // If the following layer is the layer that's moving
+                if layer.following_layer == Some(moving_layer_handle) {
+                    before_moving_layer = Some(layer_handle);
+                }
+
+                testing_layer = layer.following_layer;
+            }
+
+            // Remove the 'moving' layer from the list
+            let after_moving_layer = core.layer_definitions[moving_layer_handle.0 as usize].following_layer;
+
+            if let Some(before_moving_layer) = before_moving_layer {
+                // Remove the 'moving' layer from the list
+                core.layer_definitions[before_moving_layer.0 as usize].following_layer = after_moving_layer;
+            } else {
+                // The layer being moved is the first layer: we need 'first_layer' to be a layer handle for this to work
+                todo!()
+            }
+
+            // The current layer will follow the layer that we're moving
+            core.layer_definitions[moving_layer_handle.0 as usize].following_layer = Some(current_layer_handle);
+
+            // Find the layer before the active layer
+            let mut before_active_layer = None;
+            let mut testing_layer       = core.layers.get(&core.first_layer).copied();
+
+            while let Some(layer_handle) = testing_layer {
+                let layer = &core.layer_definitions[layer_handle.0 as usize];
+
+                // If the following layer is the layer that's moving
+                if layer.following_layer == Some(current_layer_handle) {
+                    before_active_layer = Some(layer_handle);
+                }
+
+                testing_layer = layer.following_layer;
+            }
+
+            if let Some(before_active_layer) = before_active_layer {
+                // Add the moved layer before the active layer
+                core.layer_definitions[before_active_layer.0 as usize].following_layer = Some(moving_layer_handle);
+            } else {
+                // Moving layer becomes the first layer in the list
+                todo!()
+            }
+        });
     }
 }
