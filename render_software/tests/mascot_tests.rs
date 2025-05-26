@@ -41,7 +41,7 @@ where
     canvas.draw(gc);
 
     // Want the mascot edges from layer 0
-    let mascot_layer = canvas.edges_for_layer(LayerId(0)).unwrap();
+    let mascot_layer = canvas.edges_for_layer(NamespaceId::default(), LayerId(0)).unwrap();
 
     // Transform coordinates to 256x256
     let mascot_transform    = Transform2D::translate(-1.0, 1.0) * Transform2D::scale(128.0, -128.0);

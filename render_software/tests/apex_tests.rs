@@ -34,7 +34,7 @@ fn edges_layer_0(instructions: impl 'static + Send + Sync + Iterator<Item=Draw>)
     drawing.draw(instructions);
 
     // We'll try to generate the plan for layer 0
-    let edges = drawing.edges_for_layer(LayerId(0)).expect("Expected layer 0 to be generated").clone();
+    let edges = drawing.edges_for_layer(NamespaceId::default(), LayerId(0)).expect("Expected layer 0 to be generated").clone();
 
     edges
 }

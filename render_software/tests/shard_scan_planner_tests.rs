@@ -28,7 +28,7 @@ fn plan_layer_0_line_on_drawing_with_height(instructions: impl IntoIterator<Item
     drawing.draw(instructions);
 
     // We'll try to generate the plan for layer 0
-    let edges = drawing.edges_for_layer(LayerId(0)).expect("Expected layer 0 to be generated");
+    let edges = drawing.edges_for_layer(NamespaceId::default(), LayerId(0)).expect("Expected layer 0 to be generated");
 
     // Create the planner
     let planner = ShardScanPlanner::default();

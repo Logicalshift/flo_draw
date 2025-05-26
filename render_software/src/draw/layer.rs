@@ -142,13 +142,26 @@ where
     }
 
     ///
-    /// Retrieves the layer with the specified ID
+    /// Retrieves the layer with the specified ID (if it has been created)
     ///
     #[inline]
-    pub (crate) fn layer_with_id(&mut self, layer_id: canvas::LayerId) -> Option<&mut Layer> {
-        if let Some(handle) = self.handle_for_layer.get(&(self.current_namespace, layer_id)) {
+    pub (crate) fn layer_with_id(&mut self, namespace_id: usize, layer_id: canvas::LayerId) -> Option<&mut Layer> {
+        if let Some(handle) = self.handle_for_layer.get(&(namespace_id, layer_id)) {
             let handle = *handle;
             self.layers.get_mut(handle.0 as usize)
+        } else {
+            None
+        }
+    }
+
+    ///
+    /// Retrieves the layer with the specified ID(if it has been created)
+    ///
+    #[inline]
+    pub (crate) fn layer_with_id_readonly(&self, namespace_id: usize, layer_id: canvas::LayerId) -> Option<&Layer> {
+        if let Some(handle) = self.handle_for_layer.get(&(namespace_id, layer_id)) {
+            let handle = *handle;
+            self.layers.get(handle.0 as usize)
         } else {
             None
         }
@@ -256,7 +269,7 @@ where
             Lighten             => { todo!() },
         };
 
-        if let Some(layer) = self.layer_with_id(layer_id) {
+        if let Some(layer) = self.layer_with_id(self.current_namespace, layer_id) {
             layer.blend_mode = operation;
         }
     }
@@ -268,7 +281,7 @@ where
     pub (crate) fn layer_alpha(&mut self, layer_id: canvas::LayerId, alpha: f64) {
         self.ensure_layer(layer_id);
 
-        if let Some(layer) = self.layer_with_id(layer_id) {
+        if let Some(layer) = self.layer_with_id(self.current_namespace, layer_id) {
             layer.alpha = alpha;
         }
     }

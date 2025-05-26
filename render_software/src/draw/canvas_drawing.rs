@@ -301,12 +301,10 @@ where
     ///
     /// This can be used for manual rendering or other types of post-processing beyond the capabilities of `CanvasDrawingRegionRenderer`
     ///
-    pub fn edges_for_layer<'a>(&'a self, layer_id: canvas::LayerId) -> Option<&'a EdgePlan<Arc<dyn EdgeDescriptor>>> {
+    pub fn edges_for_layer<'a>(&'a self, namespace_id: canvas::NamespaceId, layer_id: canvas::LayerId) -> Option<&'a EdgePlan<Arc<dyn EdgeDescriptor>>> {
         // Map the layer to a layer handle, if it exists
-        let layer_handle = self.ordered_layers.get(layer_id.0 as usize).copied()?;
+        let layer = self.layer_with_id_readonly(namespace_id.local_id(), layer_id);
 
-        // Retrieve the edges for the layer with this handle
-        self.layers.get(layer_handle.0 as _)
-            .map(|layer| &layer.edges)
+        layer.map(|layer| &layer.edges)
     }
 }
