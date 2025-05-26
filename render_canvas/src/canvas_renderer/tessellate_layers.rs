@@ -262,6 +262,11 @@ impl CanvasRenderer {
                 return;
             }
 
+            if core.layer_definitions[current_layer_handle.0 as usize].state.is_sprite || core.layer_definitions[moving_layer_handle.0 as usize].state.is_sprite {
+                // Can't use sprites as layers
+                return;
+            }
+
             // Find the handle of the layer before the requested layer
             let mut before_moving_layer = None;
             let mut testing_layer       = Some(core.first_layer);
