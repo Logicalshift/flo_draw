@@ -189,7 +189,7 @@ where
         if let Some(layer) = self.layer(self.current_layer) { layer.last_transform = transform; }
 
         // Pick this layer
-        self.current_layer = self.ordered_layers[layer_id.0 as usize];
+        self.current_layer = *self.handle_for_layer.get(&(self.current_namespace, layer_id)).unwrap();
 
         // Update the transform of the layer we're entering
         if let Some(layer) = self.layer(self.current_layer) { layer.last_transform = transform; }
