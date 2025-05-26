@@ -47,6 +47,9 @@ where
     /// Maps layer handles to layers
     pub (super) layers:             SparseArray<Layer>,
 
+    /// Maps layer IDs to handles
+    pub (super) handle_for_layer:   HashMap<(usize, canvas::LayerId), LayerHandle>,
+
     /// The layers to render in order
     pub (super) ordered_layers:     Vec<LayerHandle>,
 
@@ -96,6 +99,9 @@ where
         // Default background colour is solid white
         let background          = program_cache.program_cache.store_program_data(&program_cache.solid_color, &mut data_cache, SolidColorData(TPixel::white()));
 
+        let mut handle_for_layer = HashMap::new();
+        handle_for_layer.insert((canvas::NamespaceId::default().local_id(), canvas::LayerId(0)), LayerHandle(0));
+
         CanvasDrawing {
             gamma:              2.2,
             height_pixels:      1080.0,
@@ -105,6 +111,7 @@ where
             current_layer:      LayerHandle(0),
             current_state:      DrawingState::default(),
             layers:             layers,
+            handle_for_layer:   handle_for_layer,
             prepared_layers:    SparseArray::empty(),
             ordered_layers:     vec![LayerHandle(0)],
             sprites:            HashMap::new(),
@@ -271,12 +278,15 @@ where
         // Reset the state of the canvas
         self.current_layer      = LayerHandle(0);
         self.layers             = layers;
+        self.handle_for_layer   = HashMap::new();
         self.current_state      = DrawingState::default();
         self.sprites            = HashMap::new();
         self.ordered_layers     = vec![LayerHandle(0)];
         self.current_namespace  = canvas::NamespaceId::default();
         self.next_layer_handle  = LayerHandle(1);
         self.textures           = HashMap::new();
+
+        self.handle_for_layer.insert((canvas::NamespaceId::default().local_id(), canvas::LayerId(0)), LayerHandle(0));
 
         // Free the old program data
         self.program_data_cache.free_all_data();
