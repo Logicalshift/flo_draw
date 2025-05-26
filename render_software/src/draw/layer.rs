@@ -108,6 +108,10 @@ where
             }
         }
 
+        // Add to the handle map
+        self.handle_for_layer.insert((namespace, layer_id), new_layer_handle);
+
+        // Add to the layer order
         if let Some(previous_layer_handle) = previous_layer_handle {
             // Figure out where to add in the ordered layer list
             let previous_layer_idx = self.ordered_layers.iter().position(|handle| *handle == previous_layer_handle);
