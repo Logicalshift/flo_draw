@@ -17,8 +17,8 @@ use std::sync::*;
 ///
 #[derive(Clone)]
 pub (crate) struct DynamicSprite {
-    /// The namespace that the sprite is in
-    namespace_id: canvas::NamespaceId,
+    /// The local ID of the namespace that the sprite is in
+    namespace_id: usize,
 
     /// The ID of the sprite that this represents
     sprite_id: canvas::SpriteId,

@@ -36,7 +36,7 @@ where
     pub (super) background:         PixelProgramDataId,
 
     /// The namespace for the current set of IDs
-    pub (super) current_namespace:  canvas::NamespaceId,
+    pub (super) current_namespace:  usize,
 
     /// The layer that we're currently writing to
     pub (super) current_layer:      LayerHandle,
@@ -57,7 +57,7 @@ where
     pub (super) prepared_layers:    SparseArray<PreparedLayer>,
 
     /// The layer handles that map from sprite IDs
-    pub (super) sprites:            HashMap<(canvas::NamespaceId, canvas::SpriteId), LayerHandle>,
+    pub (super) sprites:            HashMap<(usize, canvas::SpriteId), LayerHandle>,
 
     /// The next layer handle to allocate
     pub (super) next_layer_handle:  LayerHandle,
@@ -71,11 +71,11 @@ where
     /// States that have been pushed by PushState
     pub (super) state_stack:        Vec<DrawingState>,
 
-    /// The textures in this drawing
-    pub (super) textures:           HashMap<(canvas::NamespaceId, canvas::TextureId), Texture>,
+    /// The textures in this drawing (usize is the namespace local ID)
+    pub (super) textures:           HashMap<(usize, canvas::TextureId), Texture>,
 
-    /// The gradients in this drawing
-    pub (super) gradients:          HashMap<(canvas::NamespaceId, canvas::GradientId), Gradient<TPixel>>,
+    /// The gradients in this drawing (usize is the namespace local ID)
+    pub (super) gradients:          HashMap<(usize, canvas::GradientId), Gradient<TPixel>>,
 }
 
 impl<TPixel, const N: usize> CanvasDrawing<TPixel, N> 
@@ -107,7 +107,7 @@ where
             height_pixels:      1080.0,
             base_transform:     canvas::Transform2D::scale(1.0, -1.0),
             background:         background,
-            current_namespace:  canvas::NamespaceId::default(),
+            current_namespace:  canvas::NamespaceId::default().local_id(),
             current_layer:      LayerHandle(0),
             current_state:      DrawingState::default(),
             layers:             layers,
@@ -152,7 +152,7 @@ where
                 ShowFrame                                           => { /* For flow control outside of the renderer */ },
                 ResetFrame                                          => { /* For flow control outside of the renderer */ },
 
-                Namespace(namespace)                                => { self.current_namespace = namespace; },
+                Namespace(namespace)                                => { self.current_namespace = namespace.local_id(); },
 
                 ClearCanvas(color)                                  => { self.clear_canvas(TPixel::from_color(color, self.gamma)); },
                 Layer(layer_id)                                     => { self.select_layer(layer_id); },
@@ -282,7 +282,7 @@ where
         self.current_state      = DrawingState::default();
         self.sprites            = HashMap::new();
         self.ordered_layers     = vec![LayerHandle(0)];
-        self.current_namespace  = canvas::NamespaceId::default();
+        self.current_namespace  = canvas::NamespaceId::default().local_id();
         self.next_layer_handle  = LayerHandle(1);
         self.textures           = HashMap::new();
 

@@ -59,7 +59,7 @@ pub enum Brush {
     TransparentMipMapTexture(f64, Arc<MipMap<Arc<U16LinearTexture>>>, TextureTransform),
 
     /// A linear gradient
-    LinearGradient(f64, canvas::NamespaceId, canvas::GradientId, TextureTransform),
+    LinearGradient(f64, usize, canvas::GradientId, TextureTransform),
 }
 
 #[derive(Clone)]

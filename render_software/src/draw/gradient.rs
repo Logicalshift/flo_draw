@@ -82,7 +82,7 @@ where
     /// True if the specified gradient is opaque
     ///
     #[inline]
-    pub (super) fn gradient_is_opaque(&self, namespace_id: canvas::NamespaceId, gradient_id: canvas::GradientId) -> bool {
+    pub (super) fn gradient_is_opaque(&self, namespace_id: usize, gradient_id: canvas::GradientId) -> bool {
         if let Some(gradient) = self.gradients.get(&(namespace_id, gradient_id)) {
             gradient.is_opaque
         } else {
@@ -93,7 +93,7 @@ where
     ///
     /// Returns or generates the gradient data for a particular gradient
     ///
-    pub (super) fn gradient_data(&mut self, alpha: f64, namespace_id: canvas::NamespaceId, gradient_id: canvas::GradientId, transform: &canvas::Transform2D) -> GradientData<TPixel> {
+    pub (super) fn gradient_data(&mut self, alpha: f64, namespace_id: usize, gradient_id: canvas::GradientId, transform: &canvas::Transform2D) -> GradientData<TPixel> {
         let [[a, b, c], [d, e, f], [_, _, _]] = transform.0;
         let transform = [[a as f64, b as _, c as _], [d as _, e as _, f as _]];
 
