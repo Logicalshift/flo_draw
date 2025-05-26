@@ -229,7 +229,7 @@ impl CanvasRenderer {
     }
 
     ///
-    /// Swaps two layers (changing their render order)
+    /// Swaps two layers, exchanging their content
     ///
     pub (super) fn tes_swap_layers(&mut self, layer1: canvas::LayerId, layer2: canvas::LayerId) {
         let namespace_id = self.current_namespace;
@@ -245,5 +245,12 @@ impl CanvasRenderer {
                 }
             });
         }
+    }
+
+    ///
+    /// Changes the render order such that the specified layer is drawn before the current layer
+    ///
+    pub (super) fn tes_place_layer_before(&mut self, namespace: canvas::NamespaceId, layer: canvas::LayerId) {
+        todo!()
     }
 }

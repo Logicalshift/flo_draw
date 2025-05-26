@@ -327,7 +327,7 @@ impl CanvasRenderer {
                     ClearLayer                                  => self.tes_clear_layer(&mut path_state), 
                     ClearAllLayers                              => self.tes_clear_all_layers(&mut path_state),
                     SwapLayers(layer1, layer2)                  => self.tes_swap_layers(layer1, layer2),
-                    PlaceLayerBefore(namespace, layer)          => { todo!() }
+                    PlaceLayerBefore(namespace, layer)          => self.tes_place_layer_before(namespace, layer),
 
                     ClearSprite                                 => self.tes_clear_sprite(&mut path_state), 
                     Sprite(sprite_id)                           => self.tes_sprite(self.current_namespace, sprite_id), 
