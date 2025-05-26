@@ -84,7 +84,7 @@ impl CanvasRenderer {
             frame_starts:               0,
             setup_actions:              vec![],
             layers:                     HashMap::new(),
-            first_layer:                (canvas::NamespaceId::default().local_id(), canvas::LayerId(0)),
+            first_layer:                LayerHandle(0),
             free_layers:                vec![],
             layer_definitions:          vec![],
             background_color:           render::Rgba8([0, 0, 0, 0]),
@@ -112,6 +112,7 @@ impl CanvasRenderer {
         let initial_layer = core.sync(move |core| {
             let layer0 = core.allocate_layer_handle(initial_layer);
             core.layers.insert((canvas::NamespaceId::default().local_id(), canvas::LayerId(0)), layer0);
+            core.first_layer = layer0;
             layer0
         });
 
@@ -264,6 +265,7 @@ impl CanvasRenderer {
                 if core.layers.len() == 0 {
                     let layer0          = Self::create_default_layer();
                     let layer0          = core.allocate_layer_handle(layer0);
+                    core.first_layer    = layer0;
                     core.layers.insert((canvas::NamespaceId::default().local_id(), canvas::LayerId(0)), layer0);
                     self.current_layer  = layer0;
                     self.current_sprite = None;

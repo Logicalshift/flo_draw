@@ -89,6 +89,7 @@ impl CanvasRenderer {
             let layer0 = Self::create_default_layer();
             let layer0 = core.allocate_layer_handle(layer0);
             core.layers.insert((canvas::NamespaceId::default().local_id(), canvas::LayerId(0)), layer0);
+            core.first_layer = layer0;
 
             self.current_layer      = layer0;
             self.current_sprite     = None;
@@ -263,7 +264,7 @@ impl CanvasRenderer {
 
             // Find the handle of the layer before the requested layer
             let mut before_moving_layer = None;
-            let mut testing_layer       = core.layers.get(&core.first_layer).copied();
+            let mut testing_layer       = Some(core.first_layer);
 
             while let Some(layer_handle) = testing_layer {
                 let layer = &core.layer_definitions[layer_handle.0 as usize];
@@ -292,7 +293,7 @@ impl CanvasRenderer {
 
             // Find the layer before the active layer
             let mut before_active_layer = None;
-            let mut testing_layer       = core.layers.get(&core.first_layer).copied();
+            let mut testing_layer       = Some(core.first_layer);
 
             while let Some(layer_handle) = testing_layer {
                 let layer = &core.layer_definitions[layer_handle.0 as usize];

@@ -139,7 +139,7 @@ impl<'a> RenderStream<'a> {
     where
         ProcessFuture: 'a+Send+Future<Output=()>
     {
-        let first_layer_handle = core.sync(|core| core.layers[&core.first_layer]);
+        let first_layer_handle = core.sync(|core| core.first_layer);
 
         RenderStream {
             core:                       core,

@@ -36,7 +36,7 @@ pub struct RenderCore {
     pub layers: HashMap<(usize, canvas::LayerId), LayerHandle>,
 
     /// The lowest layer in the canvas
-    pub first_layer: (usize, canvas::LayerId),
+    pub first_layer: LayerHandle,
 
     /// The actual layer definitions (indexed by LayerHandle)
     pub layer_definitions: Vec<Layer>,
@@ -453,7 +453,7 @@ impl RenderCore {
     ///
     pub fn last_layer(&self) -> LayerHandle {
         // Start at the lowest layer (assume that it exists, which it always should when we get here)
-        let mut layer_handle = *self.layers.get(&self.first_layer).unwrap();
+        let mut layer_handle = self.first_layer;
 
         // Follow the linked-list of layers until we reach the top
         while let Some(following_layer) = self.layer_definitions[layer_handle.0 as usize].following_layer {
