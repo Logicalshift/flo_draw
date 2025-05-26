@@ -82,21 +82,52 @@ where
     ///
     /// Creates a new blank layer and returns the layer ID that it will have
     ///
-    #[inline]
-    pub (crate) fn create_new_layer(&mut self) -> canvas::LayerId {
+    pub (crate) fn create_new_layer(&mut self, namespace: usize, layer_id: canvas::LayerId) {
+        if self.handle_for_layer.contains_key(&(namespace, layer_id)) {
+            // Layer is already created
+            return;
+        }
+
         // Create a layer and a handle
         let new_layer           = Layer::default();
-        let new_layer_id        = canvas::LayerId(self.ordered_layers.len() as u64);
         let new_layer_handle    = self.next_layer_handle;
+
+        self.layers.insert(new_layer_handle.0, new_layer);
 
         // Advance the next layer handle
         self.next_layer_handle.0 += 1;
 
-        // Store the new layer
-        self.layers.insert(new_layer_handle.0, new_layer);
-        self.ordered_layers.push(new_layer_handle);
+        // The new layer has to appear after whichever layer is 'before' it (has a lower layer ID and the same namespace)
+        // If there's no other layers in the namespace, then the layer is ordered last
+        let mut previous_layer_handle   = None;
+        let mut closest_layer_id        = 0;
+        for ((test_namespace, test_layer_id), layer_handle) in self.handle_for_layer.iter() {
+            if *test_namespace == namespace && test_layer_id.0 <= layer_id.0 && test_layer_id.0 >= closest_layer_id {
+                previous_layer_handle   = Some(*layer_handle);
+                closest_layer_id        = test_layer_id.0;
+            }
+        }
 
-        new_layer_id
+        if let Some(previous_layer_handle) = previous_layer_handle {
+            // Figure out where to add in the ordered layer list
+            let previous_layer_idx = self.ordered_layers.iter().position(|handle| *handle == previous_layer_handle);
+            debug_assert!(previous_layer_idx.is_some());
+
+            if let Some(previous_layer_idx) = previous_layer_idx {
+                self.ordered_layers.insert(previous_layer_idx+1, new_layer_handle);
+            } else {
+                self.ordered_layers.push(new_layer_handle);
+            }
+        } else {
+            // If there's no previous layer handle, then create a new namespace
+            if layer_id != canvas::LayerId(0) {
+                // Ensure that layer 0 is created for this layer so that other layers order properly
+                self.create_new_layer(namespace, canvas::LayerId(0));
+            }
+
+            // This layer goes last (as at most layer 0 exists for the new namespace now)
+            self.ordered_layers.push(new_layer_handle)
+        }
     }
 
     ///
@@ -105,8 +136,8 @@ where
     #[inline]
     pub (crate) fn ensure_layer(&mut self, layer_id: canvas::LayerId) {
         // Add layers until we get to the current layer ID
-        while self.ordered_layers.len() <= layer_id.0 as usize {
-            self.create_new_layer();
+        if !self.handle_for_layer.contains_key(&(self.current_namespace, layer_id)) {
+            self.create_new_layer(self.current_namespace, layer_id)
         }
     }
 
@@ -115,9 +146,12 @@ where
     ///
     #[inline]
     pub (crate) fn layer_with_id(&mut self, layer_id: canvas::LayerId) -> Option<&mut Layer> {
-        self.ordered_layers.get(layer_id.0 as usize)
-            .copied()
-            .and_then(move |layer_handle| self.layers.get_mut(layer_handle.0))
+        if let Some(handle) = self.handle_for_layer.get(&(self.current_namespace, layer_id)) {
+            let handle = *handle;
+            self.layers.get_mut(handle.0 as usize)
+        } else {
+            None
+        }
     }
 
     ///
