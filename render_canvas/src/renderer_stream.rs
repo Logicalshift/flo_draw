@@ -1207,6 +1207,7 @@ impl<'a> Stream for RenderStream<'a> {
             } else {
                 // Finished processing the rendering: can send the actual rendering commands to the hardware layer
                 self.processing_future  = None;
+                self.layer_handle       = Some(self.core.sync(|core| core.first_layer));
                 self.layer_count        = self.core.sync(|core| core.layers.len());
                 self.render_index       = 0;
 
