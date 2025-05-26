@@ -285,7 +285,7 @@ impl CanvasRenderer {
                 core.layer_definitions[before_moving_layer.0 as usize].following_layer = after_moving_layer;
             } else {
                 // The layer being moved is the first layer: we need 'first_layer' to be a layer handle for this to work
-                todo!()
+                core.first_layer = after_moving_layer.expect("There should always be two layers when moving layers around, so we're expecting the first layer to be followed by a second one");
             }
 
             // The current layer will follow the layer that we're moving
@@ -311,7 +311,7 @@ impl CanvasRenderer {
                 core.layer_definitions[before_active_layer.0 as usize].following_layer = Some(moving_layer_handle);
             } else {
                 // Moving layer becomes the first layer in the list
-                todo!()
+                core.first_layer = moving_layer_handle;
             }
         });
     }
