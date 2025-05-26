@@ -6,6 +6,7 @@ use crate::sprite::*;
 use crate::texture::*;
 use crate::gradient::*;
 use crate::font_face::*;
+use crate::namespace::*;
 use crate::transform2d::*;
 
 use std::sync::*;
@@ -177,6 +178,11 @@ pub trait GraphicsContext {
     /// Exchanges the contents of two layers in the drawing
     fn swap_layers(&mut self, layer1: LayerId, layer2: LayerId) {
         self.draw(Draw::SwapLayers(layer1, layer2));
+    }
+
+    /// Changes the render order of the layers so that the specified layer is rendered underneath the current layer
+    fn place_layer_before(&mut self, namespace: NamespaceId, layer: LayerId) {
+        self.draw(Draw::PlaceLayerBefore(namespace, layer));
     }
 
 
