@@ -291,16 +291,20 @@ where
     ///
     #[inline]
     pub (crate) fn clear_all_layers(&mut self) {
+        let ordered_layers      = &mut self.ordered_layers;
         let layers              = &mut self.layers;
         let program_data_cache  = &mut self.program_data_cache;
 
-        layers.iter_mut()
-            .for_each(|(_, layer)| {
-                layer.clear();
+        ordered_layers.iter_mut()
+            .for_each(|layer_handle| {
+                let layer = layers.get_mut(layer_handle.0);
+                if let Some(layer) = layer {
+                    layer.clear();
 
-                // Release the layer's data
-                for data_id in layer.used_data.drain(..) {
-                    program_data_cache.release_program_data(data_id);
+                    // Release the layer's data
+                    for data_id in layer.used_data.drain(..) {
+                        program_data_cache.release_program_data(data_id);
+                    }
                 }
             });
     }
