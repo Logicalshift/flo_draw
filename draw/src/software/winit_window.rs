@@ -10,7 +10,6 @@ use flo_render_software::scanplan::*;
 use flo_binding::*;
 
 use softbuffer;
-use bytemuck;
 use winit::dpi::{LogicalSize};
 use winit::window::{Window, Fullscreen};
 use futures::prelude::*;

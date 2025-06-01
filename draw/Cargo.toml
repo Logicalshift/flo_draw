@@ -15,7 +15,7 @@ include             = [ "Cargo.toml", "src/**/*", "examples/**/*", "images/**/*"
 default             = [ "render-wgpu" ]
 render-opengl       = [ "gl", "glutin", "winit", "glutin-winit", "raw-window-handle", "flo_render/opengl" ]
 render-wgpu         = [ "winit", "wgpu", "flo_render/render-wgpu" ]
-render-software     = [ "winit", "flo_render_software", "softbuffer", "bytemuck", "flo_render_canvas/render-software" ]
+render-software     = [ "winit", "flo_render_software", "softbuffer", "flo_render_canvas/render-software" ]
 profile             = [ "flo_render/profile" ]
 wgpu-profiler       = [ "dep:wgpu-profiler", "flo_render/wgpu-profiler" ]
 
@@ -44,7 +44,6 @@ wgpu                = { optional = true, workspace = true }
 wgpu-profiler       = { workspace = true, optional = true }
 
 softbuffer          = { optional = true, version = "0.4" }
-bytemuck            = { optional = true, version = "1.22" }
 
 [dev-dependencies]
 flo_curves          = "0.8"
