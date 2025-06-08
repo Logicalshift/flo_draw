@@ -63,6 +63,7 @@ pub fn main() {
                         1 => "Alpha blend",
                         2 => "Mask",
                         3 => "Displacement map",
+                        4 => "Tint",
 
                         _ => "Unknown filter"
                     };
@@ -139,6 +140,11 @@ pub fn main() {
                             gc.filter_texture(TextureId(1), TextureFilter::DisplacementMap(TextureId(2), 8.0, 8.0));
                         }
 
+                        // Tint
+                        4 => {
+                            gc.filter_texture(TextureId(1), TextureFilter::Tint(Color::Rgba(0.2, 0.4, 1.0, 0.8)));
+                        }
+
                         _ => { }
                     }
 
@@ -168,7 +174,7 @@ pub fn main() {
                 }
 
                 // Move to the next filter
-                filter = (filter + 1) % 4;
+                filter = (filter + 1) % 5;
             }
         });
     });
