@@ -152,6 +152,11 @@ where
                 vec![filter]
             },
 
+            Tint(color) => {
+                let filter: Arc<dyn Send + Sync + PixelFilter<Pixel=TPixel>> = Arc::new(TintFilter::with_color(color, self.gamma));
+                vec![filter]
+            },
+
             Mask(mask_texture_id) => {
                 let filter: Arc<dyn Send + Sync + PixelFilter<Pixel=TPixel>> = Arc::new(self.sprite_mask_filter(mask_texture_id, width, height));
 

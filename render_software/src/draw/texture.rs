@@ -412,6 +412,7 @@ where
         match filter {
             GaussianBlur(radius)        => { self.texture_apply_filter(texture_id, HorizontalKernelFilter::with_gaussian_blur_radius(radius as _)); self.texture_apply_filter(texture_id, VerticalKernelFilter::with_gaussian_blur_radius(radius as _)); }
             AlphaBlend(alpha)           => { self.texture_apply_filter(texture_id, AlphaBlendFilter::with_alpha(alpha as _)); },
+            Tint(color)                 => { self.texture_apply_filter(texture_id, TintFilter::with_color(color, self.gamma)); },
 
             Mask(mask_texture_id) => {
                 let filter = self.texture_mask_filter(mask_texture_id, texture_id);

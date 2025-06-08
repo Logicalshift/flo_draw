@@ -1,33 +1,35 @@
 use super::pixel_filter_trait::*;
 use crate::pixel::*;
 
+use flo_canvas as canvas;
+
 use std::sync::*;
 
 ///
-/// The alpha blend filter
+/// The tint blend filter
 ///
-pub struct AlphaBlendFilter<TPixel, const N: usize> 
+pub struct TintFilter<TPixel, const N: usize> 
 where
     TPixel: Pixel<N>,
 {
-    alpha: TPixel::Component,
+    tint: TPixel,
 }
 
-impl<TPixel, const N: usize> AlphaBlendFilter<TPixel, N>
+impl<TPixel, const N: usize> TintFilter<TPixel, N>
 where
     TPixel: Pixel<N>,
 {
     ///
-    /// Creates an alpha blend filter that will adjust the alpha value of its target by the specified amount
+    /// Creates a tint filter that will adjust the colours of its target by the specified amount
     ///
-    pub fn with_alpha(alpha: f64) -> Self {
+    pub fn with_color(color: canvas::Color, gamma: f64) -> Self {
         Self {
-            alpha: TPixel::Component::with_value(alpha)
+            tint: TPixel::from_color(color, gamma)
         }
     }
 }
 
-impl<TPixel, const N: usize> PixelFilter for AlphaBlendFilter<TPixel, N>
+impl<TPixel, const N: usize> PixelFilter for TintFilter<TPixel, N>
 where
     TPixel: Pixel<N>,
 {
@@ -50,7 +52,7 @@ where
 
     fn filter_line(&self, _ypos: usize, input_lines: &[&[Self::Pixel]], output_line: &mut [Self::Pixel]) {
         for (input, output) in input_lines[0].iter().zip(output_line.iter_mut()) {
-            *output = *input * self.alpha;
+            *output = *input * self.tint;
         }
     }
 }
