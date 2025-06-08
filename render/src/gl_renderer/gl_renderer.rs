@@ -579,6 +579,7 @@ impl GlRenderer {
                 GaussianBlurVertical(_sigma, _step, _size)      => self.shader_programs.program(StandardShaderProgram::BlurTextureVertical),
                 AlphaBlend(_alpha)                              => self.shader_programs.program(StandardShaderProgram::FilterAlphaBlend),
                 Mask(_mask)                                     => self.shader_programs.program(StandardShaderProgram::FilterMask),
+                Tint(_tint)                                     => todo!(),
 
                 DisplacementMap(texture_id, _xr, _yr)           => if self.is_premultiplied(texture_id) {
                     self.shader_programs.program(StandardShaderProgram::FilterDisplacementMap(FilterSourceFormat::PremultipliedAlpha))
@@ -677,6 +678,8 @@ impl GlRenderer {
                             });
                     }
                 },
+
+                Tint(_) => { todo!() }
 
                 Mask(mask_texture) => {
                     let TextureId(mask_texture) = mask_texture;
