@@ -335,6 +335,7 @@ impl<'a> CanvasEncoding<String> for &'a TextureFilter {
             AlphaBlend(alpha)                   => ('A', *alpha).encode_canvas(append_to),
             Mask(texture)                       => ('M', texture).encode_canvas(append_to),
             DisplacementMap(texture, xr, yr)    => ('D', texture, *xr, *yr).encode_canvas(append_to),
+            Tint(color)                         => ('T', color).encode_canvas(append_to),
         }
     }
 }

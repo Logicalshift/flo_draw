@@ -1786,6 +1786,7 @@ impl CanvasDecoder {
             Some('A')   => Self::try_decode_texture_filter_alpha_blend(chars),
             Some('M')   => Self::try_decode_texture_filter_mask(chars),
             Some('D')   => Self::try_decode_texture_filter_displacement_map(chars),
+            Some('T')   => Self::try_decode_texture_filter_tint(chars),
             Some(other) => Err(DecoderError::InvalidCharacter(other)),
             None        => Ok(None)
          }
@@ -1842,6 +1843,30 @@ impl CanvasDecoder {
         let y_radius    = if let Some(y_radius) = y_radius { y_radius } else { return Ok(None); };
 
         Ok(Some(TextureFilter::DisplacementMap(texture_id, x_radius, y_radius)))
+    }
+
+    ///
+    /// Decodes the parameters for a gaussian blur texture filter
+    ///
+    fn try_decode_texture_filter_tint(chars: &mut Chars) -> Result<Option<TextureFilter>, DecoderError> {
+        let mut chars   = chars;
+        let col_type    = chars.next();
+        let col_type    = if let Some(col_type) = col_type { col_type } else { return Ok(None); };
+
+        let r           = Self::try_decode_f32(&mut chars)?;
+        let r           = if let Some(r) = r { r } else { return Ok(None); };
+        let g           = Self::try_decode_f32(&mut chars)?;
+        let g           = if let Some(g) = g { g } else { return Ok(None); };
+        let b           = Self::try_decode_f32(&mut chars)?;
+        let b           = if let Some(b) = b { b } else { return Ok(None); };
+        let a           = Self::try_decode_f32(&mut chars)?;
+        let a           = if let Some(a) = a { a } else { return Ok(None); };
+
+        if col_type != 'R' {
+            Err(DecoderError::UnknownColorType)?;
+        }
+
+        Ok(Some(TextureFilter::Tint(Color::Rgba(r, g, b, a))))
     }
 
     ///
@@ -2566,6 +2591,11 @@ mod test {
     }
 
     #[test]
+    fn decode_texture_filter_tint() {
+        check_round_trip_single(Draw::Texture(TextureId(49), TextureOp::Filter(TextureFilter::Tint(Color::Rgba(0.4, 0.2, 0.1, 0.05)))));
+    }
+
+    #[test]
     fn decode_move_sprite_from() {
         check_round_trip_single(Draw::MoveSpriteFrom(SpriteId(48)));
     }
@@ -2638,6 +2668,7 @@ mod test {
             Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::AlphaBlend(0.6))),
             Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::Mask(TextureId(48)))),
             Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::DisplacementMap(TextureId(48), 1.0, 2.0))),
+            Draw::Texture(TextureId(48), TextureOp::Filter(TextureFilter::Tint(Color::Rgba(1.0, 0.5, 0.25, 0.1)))),
 
             Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
             Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),
@@ -2709,6 +2740,7 @@ mod test {
             Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::AlphaBlend(0.6))),
             Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::Mask(TextureId(48)))),
             Draw::Texture(TextureId(47), TextureOp::Filter(TextureFilter::DisplacementMap(TextureId(48), 1.0, 2.0))),
+            Draw::Texture(TextureId(48), TextureOp::Filter(TextureFilter::Tint(Color::Rgba(1.0, 0.5, 0.25, 0.1)))),
 
             Draw::Gradient(GradientId(42), GradientOp::Create(Color::Rgba(0.1, 0.2, 0.3, 0.4))),
             Draw::Gradient(GradientId(44), GradientOp::AddStop(0.5, Color::Rgba(0.1, 0.2, 0.3, 0.4))),

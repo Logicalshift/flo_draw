@@ -1,3 +1,4 @@
+use crate::color::*;
 use crate::sprite::*;
 
 use std::sync::*;
@@ -61,6 +62,11 @@ pub enum TextureFilter {
     /// Use the red and green channels of a source texture as a displacement map. The two other parameters are the scale factors (maximum displacement in canvas units)
     ///
     DisplacementMap(TextureId, f32, f32),
+
+    ///
+    /// Multiply every pixel in the texture by the specified colour
+    ///
+    Tint(Color),
 }
 
 ///
