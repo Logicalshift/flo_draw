@@ -868,6 +868,7 @@ impl RenderCore {
         match request {
             AlphaBlend(_)                   => 0,
             Mask(_)                         => 0,
+            Tint(_)                         => 0,
 
             PixelBlur(radius)               => radius.ceil() as _,
             CanvasBlur(radius, transform)   => {
@@ -927,6 +928,7 @@ impl RenderCore {
             PixelBlur(radius)   => Self::filter_gaussian_blur(texture_id, *radius, *radius),
             AlphaBlend(alpha)   => vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::AlphaBlend(*alpha)])],
             Mask(texture)       => vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::Mask(*texture)])],
+            Tint(color)         => vec![render::RenderAction::FilterTexture(texture_id, vec![render::TextureFilter::Tint(*color)])],
 
             CanvasBlur(radius, transform) => {
                 let transform   = viewport_transform * *transform;

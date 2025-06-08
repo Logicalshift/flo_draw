@@ -35,6 +35,11 @@ pub enum TextureFilterRequest {
     /// pixels if no transform is supplied)
     ///
     DisplacementMap(render::TextureId, f32, f32, Option<canvas::Transform2D>),
+
+    ///
+    /// Tints the texture by multiplying the pixels by this colour value
+    ///
+    Tint(render::Rgba8),
 }
 
 impl TextureFilterRequest {
@@ -48,6 +53,7 @@ impl TextureFilterRequest {
             // The pixel blur does affect a texture in canvas units, so its radius is considered to be 0
             PixelBlur(_)                    => 0.0,
             AlphaBlend(_)                   => 0.0,
+            Tint(_)                         => 0.0,
             Mask(_)                         => 0.0,
 
             DisplacementMap(_, _x_r, _y_r, None)            => 0.0,
@@ -95,6 +101,7 @@ impl TextureFilterRequest {
             PixelBlur(_)                            => vec![],
             CanvasBlur(_, _)                        => vec![],
             AlphaBlend(_)                           => vec![],
+            Tint(_)                                 => vec![],
             Mask(texture_id)                        => vec![*texture_id],
             DisplacementMap(texture_id, _, _, _)    => vec![*texture_id],
         }

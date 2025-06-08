@@ -319,6 +319,7 @@ impl CanvasRenderer {
             AlphaBlend(alpha)                               => self.tes_texture_filter_alpha_blend(render_texture, alpha),
             Mask(mask_texture)                              => self.tes_texture_filter_mask(render_texture, namespace_id, mask_texture),
             DisplacementMap(displace_texture, x_r, y_r)     => self.tes_texture_filter_displacement_map(render_texture, namespace_id, displace_texture, x_r, y_r),
+            Tint(color)                                     => self.tes_texture_filter_tint(render_texture, color),
         }
     }
 
@@ -344,6 +345,15 @@ impl CanvasRenderer {
     fn tes_texture_filter_alpha_blend(&mut self, texture_id: render::TextureId, alpha: f32) {
         self.core.sync(|core| {
             core.layer_textures.push((texture_id, TextureRenderRequest::Filter(texture_id, TextureFilterRequest::AlphaBlend(alpha))));
+        });
+    }
+
+    ///
+    /// Applies the tint filter to a texture
+    ///
+    fn tes_texture_filter_tint(&mut self, texture_id: render::TextureId, color: canvas::Color) {
+        self.core.sync(|core| {
+            core.layer_textures.push((texture_id, TextureRenderRequest::Filter(texture_id, TextureFilterRequest::Tint(Self::render_color(color)))));
         });
     }
 

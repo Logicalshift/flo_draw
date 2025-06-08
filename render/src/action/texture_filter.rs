@@ -1,3 +1,4 @@
+use super::color::*;
 use super::identities::*;
 
 use std::f32;
@@ -40,6 +41,9 @@ pub enum TextureFilter {
 
     /// Performs a displacement map with the specified texture ID and scale factors (scale factors use the 0-1 coordinate scheme for the whole texture, so need to be transformed into that range)
     DisplacementMap(TextureId, f32, f32),
+
+    /// Adjusts the colours of a texture
+    Tint(Rgba8),
 }
 
 impl TextureFilter {
@@ -65,6 +69,7 @@ impl TextureFilter {
             AlphaBlend(_)                       => 0,
             Mask(_)                             => 0,
             DisplacementMap(_, _, _)            => 0,
+            Tint(_)                             => 0,
         }
     }
 
