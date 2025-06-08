@@ -109,6 +109,7 @@ impl CanvasRenderer {
                     AlphaBlend(alpha)                   => Some(TextureFilterRequest::AlphaBlend(alpha)),
                     Mask(texture)                       => Some(TextureFilterRequest::Mask(core.texture_for_rendering(namespace_id, texture)?)),
                     DisplacementMap(texture, xr, yr)    => Some(TextureFilterRequest::DisplacementMap(core.texture_for_rendering(namespace_id, texture)?, xr, yr, Some(self.active_transform))),
+                    Tint(color)                         => Some(TextureFilterRequest::Tint(Self::render_color(color))),
                 }
             }).collect::<Vec<_>>();
 
