@@ -37,6 +37,9 @@ pub (crate) struct Pipeline {
     /// Bind group layout for the alpha blend filter
     pub (crate) alpha_blend_layout: Arc<wgpu::BindGroupLayout>,
 
+    /// Bind group layout for the alpha blend filter
+    pub (crate) tint_layout: Arc<wgpu::BindGroupLayout>,
+
     /// Bind group layout for the fixed kernel size gaussian blur filter
     pub (crate) blur_fixed_layout: Arc<wgpu::BindGroupLayout>,
 
@@ -71,6 +74,8 @@ impl Pipeline {
 
         let alpha_blend_layout      = config.filter_alpha_blend_bind_group_layout();
         let alpha_blend_layout      = device.create_bind_group_layout(&alpha_blend_layout);
+        let tint_layout             = config.filter_tint_bind_group_layout();
+        let tint_layout             = device.create_bind_group_layout(&tint_layout);
         let blur_fixed_layout       = config.filter_fixed_blur_bind_group_layout();
         let blur_fixed_layout       = device.create_bind_group_layout(&blur_fixed_layout);
         let blur_texture_layout     = config.filter_texture_blur_bind_group_layout();
@@ -88,6 +93,7 @@ impl Pipeline {
             WgpuShader::Texture(..)                             => vec![&matrix_bind_layout, &clip_bind_layout, &texture_layout],
             WgpuShader::Simple(..)                              => vec![&matrix_bind_layout, &clip_bind_layout],
             WgpuShader::Filter(FilterShader::AlphaBlend(..))    => vec![&alpha_blend_layout],
+            WgpuShader::Filter(FilterShader::Tint(..))          => vec![&tint_layout],
             WgpuShader::Filter(FilterShader::BlurFixed(..))     => vec![&blur_fixed_layout],
             WgpuShader::Filter(FilterShader::BlurTexture(..))   => vec![&blur_texture_layout],
             WgpuShader::Filter(FilterShader::Mask(..))          => vec![&mask_layout],
@@ -113,6 +119,7 @@ impl Pipeline {
             texture_layout:             Arc::new(texture_layout),
             linear_gradient_layout:     Arc::new(linear_gradient_layout),
             alpha_blend_layout:         Arc::new(alpha_blend_layout),
+            tint_layout:                Arc::new(tint_layout),
             blur_fixed_layout:          Arc::new(blur_fixed_layout),
             blur_texture_layout:        Arc::new(blur_texture_layout),
             mask_layout:                Arc::new(mask_layout),

@@ -514,6 +514,43 @@ impl PipelineConfiguration {
     }
 
     ///
+    /// Returns the layout for the tint filter shader
+    ///
+    #[inline]
+    pub fn filter_tint_bind_group_layout<'a>(&'a self) -> wgpu::BindGroupLayoutDescriptor<'a> {
+        static TINT_LAYOUT: [wgpu::BindGroupLayoutEntry; 2]  = [
+            // Texture
+            wgpu::BindGroupLayoutEntry {
+                binding:            0,
+                visibility:         wgpu::ShaderStages::VERTEX_FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Texture {
+                    sample_type:    wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled:   false,
+                }
+            },
+
+            // Tint value Vec of 4
+            wgpu::BindGroupLayoutEntry {
+                binding:            1,
+                visibility:         wgpu::ShaderStages::FRAGMENT,
+                count:              None,
+                ty:                 wgpu::BindingType::Buffer {
+                    ty:                 wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size:   wgpu::BufferSize::new(16),
+                }
+            },
+        ];
+
+        wgpu::BindGroupLayoutDescriptor {
+            label:      Some("filter_tint_bind_group_layout"),
+            entries:    &TINT_LAYOUT,
+        }
+    }
+
+    ///
     /// Returns the layout for the fixed-sized blur filter shaders
     ///
     #[inline]

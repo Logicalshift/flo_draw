@@ -13,6 +13,7 @@ mod pipeline_configuration;
 
 mod blur_filter;
 mod mask_filter;
+mod tint_filter;
 mod reduce_filter;
 mod alpha_blend_filter;
 mod displacement_map_filter;

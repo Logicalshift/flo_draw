@@ -11,6 +11,7 @@ use super::pipeline_configuration::*;
 
 use super::blur_filter::*;
 use super::mask_filter::*;
+use super::tint_filter::*;
 use super::reduce_filter::*;
 use super::alpha_blend_filter::*;
 use super::displacement_map_filter::*;
@@ -1077,6 +1078,15 @@ impl<'surface> WgpuRenderer<'surface> {
                         if alpha_amount < 1.0 {
                             final_texture = alpha_blend(&*self.device, &mut state.encoder, &*alpha_blend_pipeline, &final_texture, alpha_amount);
                         }
+                    }
+
+                    TextureFilter::Tint(color) => {
+                        let mut tint_pipeline        = PipelineConfiguration::for_texture(&final_texture);
+                        tint_pipeline.blending_mode  = None;
+                        tint_pipeline.shader_module  = WgpuShader::Filter(FilterShader::Tint(FilterSourceFormat::from_texture(&final_texture)));
+                        let tint_pipeline            = self.pipeline_for_configuration(tint_pipeline);
+
+                        final_texture = tint(&*self.device, &mut state.encoder, &*tint_pipeline, &final_texture, color);
                     }
 
                     TextureFilter::GaussianBlurHorizontal29(sigma, step)            |

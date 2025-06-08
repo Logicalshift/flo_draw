@@ -123,6 +123,9 @@ pub enum FilterShader {
 
     /// Generate a version of a texture at 50% of the size of the original (used when generating mipmaps)
     Reduce,
+
+    /// Tints the colour of the texture by multiplying it
+    Tint(FilterSourceFormat),
 }
 
 ///
@@ -280,6 +283,22 @@ impl WgpuShaderLoader for WgpuShader {
                 // Load the shader
                 let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
                     label:  Some("WgpuShader::FilterAlphaBlend"),
+                    source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(base_module)),
+                });
+
+                match source_format {
+                    FilterSourceFormat::PremultipliedAlpha  => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_premultiply".to_string()),
+                    FilterSourceFormat::NotPremultiplied    => (Arc::new(shader_module), "filter_vertex_shader".to_string(), "filter_fragment_shader_not_premultiplied".to_string())
+                }
+            }
+
+            WgpuShader::Filter(FilterShader::Tint(source_format)) => {
+                // The base module contains the shader program in terms of the variant and post-procesing functions
+                let base_module = include_str!("../../shaders/filters/tint.wgsl");
+
+                // Load the shader
+                let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label:  Some("WgpuShader::FilterTint"),
                     source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(base_module)),
                 });
 
