@@ -31,10 +31,10 @@ pub (crate) fn tint(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, t
     ].to_buffer(device, wgpu::BufferUsages::VERTEX);
 
     let [r, g, b, a] = color.0;
-    let r = 255.0 / (r as f32);
-    let g = 255.0 / (g as f32);
-    let b = 255.0 / (b as f32);
-    let a = 255.0 / (a as f32);
+    let r = (r as f32) / 255.0;
+    let g = (g as f32) / 255.0;
+    let b = (b as f32) / 255.0;
+    let a = (a as f32) / 255.0;
     let color = vec![r, g, b, a].to_buffer(device, wgpu::BufferUsages::UNIFORM);
 
     // Create a target texture
