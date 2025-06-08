@@ -108,6 +108,9 @@ pub enum StandardShaderProgram {
 
     /// Performs a displacement map filter
     FilterDisplacementMap(FilterSourceFormat),
+
+    /// Changes the colours of a filtered texture by multiplying by a tint colour
+    FilterTint,
 }
 
 impl StandardShaderVariant {
@@ -197,6 +200,7 @@ impl StandardShaderProgram {
         let blur61                  = String::from_utf8(include_bytes!["../../shaders/filters/blur_61.glslf"].to_vec()).unwrap();
         let blur_texture            = String::from_utf8(include_bytes!["../../shaders/filters/blur_texture.glslf"].to_vec()).unwrap();
         let filter_alpha_blend      = String::from_utf8(include_bytes!["../../shaders/filters/alpha_blend.glslf"].to_vec()).unwrap();
+        let filter_tint             = String::from_utf8(include_bytes!["../../shaders/filters/tint.glslf"].to_vec()).unwrap();
         let filter_mask             = String::from_utf8(include_bytes!["../../shaders/filters/mask.glslf"].to_vec()).unwrap();
         let filter_displacement_map = String::from_utf8(include_bytes!["../../shaders/filters/displacement.glslf"].to_vec()).unwrap();
 
@@ -223,6 +227,7 @@ impl StandardShaderProgram {
                 BlurTextureHorizontal                       => { Self::load_shader(&filter_vertex, &vec![], &blur_texture, &vec![], &vec!["FILTER_HORIZ"]) }
                 BlurTextureVertical                         => { Self::load_shader(&filter_vertex, &vec![], &blur_texture, &vec![], &vec!["FILTER_VERT"]) }
                 FilterAlphaBlend                            => { Self::load_shader(&filter_vertex, &vec![], &filter_alpha_blend, &vec![], &vec![]) }
+                FilterTint                                  => { Self::load_shader(&filter_vertex, &vec![], &filter_tint, &vec![], &vec![]) }
                 FilterMask                                  => { Self::load_shader(&filter_vertex, &vec![], &filter_mask, &vec![], &vec![]) }
                 FilterDisplacementMap(source_format)        => { Self::load_shader(&filter_vertex, &vec![], &filter_displacement_map, &vec![], &source_format.defines()) }
             }

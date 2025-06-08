@@ -21,6 +21,9 @@ pub enum ShaderUniform {
     /// The alpha adjustment applied to the texture colour
     TextureAlpha,
 
+    /// The colour tint applied to the texture colour
+    TextureTint,
+
     /// The texture for a MSAA shader
     MsaaTexture,
 
