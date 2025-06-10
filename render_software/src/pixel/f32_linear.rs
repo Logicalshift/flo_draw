@@ -128,7 +128,7 @@ impl ToGammaColorSpace<U32ArgbPremultipliedPixel> for F32LinearPixel {
             .clone() };
         let gamma_lut = &*gamma_lut;
 
-        // Some values we use during the conversion
+        // Gamma table has 65536 values in it, so we convert the internal 0-1 values to 0-65535 values
         let f32x4_65535 = f32x4::splat(65535.0);
 
         for (input, output) in input_pixels.iter().zip(output_pixels.iter_mut()) {
