@@ -37,6 +37,37 @@ pub (crate) enum DrawResource {
     StateStack
 }
 
+impl DrawResource {
+    ///
+    /// Returns the namespace being used by a particular resource
+    ///
+    pub (crate) fn namespace(&self) -> NamespaceId {
+        use DrawResource::*;
+
+        match self {
+            Layer(namespace, _)     |
+            Sprite(namespace, _)    |
+            Texture(namespace, _)   |
+            Gradient(namespace, _)  |
+            Font(namespace, _)      |
+            FontSize(namespace, _)  => *namespace,
+
+            Frame                   |
+            Canvas                  |
+            CanvasTransform         |
+            StrokeLineWidth         |
+            StrokeLineCap           |
+            StrokeLineJoin          |
+            StrokeDash              |
+            StrokeColor             |
+            FillWindingRule         |
+            FillBlend               |
+            FillColor               |
+            StateStack              => NamespaceId::default(),
+        }
+    }
+}
+
 impl Draw {
     ///
     /// Returns true if the draw step uses the specified resource in addition to the active target resource
@@ -103,7 +134,7 @@ impl Draw {
     /// The active resource is the sprite or the layer that is currently selected for drawing
     ///
     #[inline]
-    pub (crate) fn source_resource(&self, active_resource: &DrawResource, active_namespace: &NameSpaceId) -> SmallVec<[DrawResource; 8]> {
+    pub (crate) fn source_resource(&self, active_resource: &DrawResource, active_namespace: &NamespaceId) -> SmallVec<[DrawResource; 8]> {
         use self::Draw::*;
 
         match self {
