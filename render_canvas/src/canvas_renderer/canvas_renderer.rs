@@ -583,8 +583,8 @@ mod test {
 
             // The point 500, 0 should be at the top-center of the viewport (height of 1000). Pixels are square
             let (x, y) = viewport_transform.transform_point(500.0, 0.0);
-            assert!((y-768.0).abs() < 0.01, "y = {}", y);
-            assert!((x-384.0).abs() < 0.01, "x = {}", x);
+            assert!((y-768.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((x-384.0).abs() < 0.01, "x = {}, y = {}", x, y);
         });
     }
 
@@ -607,8 +607,8 @@ mod test {
 
             // The point 500, 0 should be at the top-center of the viewport (height of 1000). Pixels are square
             let (x, y) = viewport_transform.transform_point(500.0, 0.0);
-            assert!((y-768.0).abs() < 0.01, "y = {}", y);
-            assert!((x-384.0).abs() < 0.01, "x = {}", x);
+            assert!((y-768.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((x-384.0).abs() < 0.01, "x = {}, y = {}", x, y);
         });
     }
 
