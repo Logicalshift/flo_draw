@@ -9,6 +9,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 /// The next local ID to assign (so every new namespace has a unique ID)
 static NEXT_LOCAL_ID: AtomicUsize = AtomicUsize::new(0);
 
+/// Maps UUIDs to local IDs
 static KNOWN_IDS: Lazy<Mutex<HashMap<Uuid, usize>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 ///

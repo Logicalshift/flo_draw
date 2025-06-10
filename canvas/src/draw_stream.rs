@@ -1,4 +1,5 @@
 use crate::draw::*;
+use crate::namespace::*;
 use crate::draw_resource::*;
 
 use ::desync::*;
@@ -20,6 +21,9 @@ pub (crate) struct DrawStreamCore {
 
     /// The resource that the stream is currently drawing to
     target_resource: DrawResource,
+
+    /// The namespace that future drawing instructions will write to
+    current_namespace: NamespaceId,
 
     /// The number of writers that this stream core has
     usage_count: usize,
@@ -50,7 +54,8 @@ impl DrawStreamCore {
         // No drawing instructions, and drawing to layer 0 by default
         DrawStreamCore {
             pending_drawing:    vec![],
-            target_resource:    DrawResource::Layer(LayerId(0)),
+            target_resource:    DrawResource::Layer(NamespaceId::default(), LayerId(0)),
+            current_namespace:  NamespaceId::default(),
             usage_count:        0,
             closed:             false,
             waiting_task:       None
@@ -193,6 +198,8 @@ impl DrawStreamCore {
     /// Removes all references that change the specified resource
     ///
     pub fn clear_resource(&mut self, resource: DrawResource) {
+        let namespace = resource.namespace();
+
         // The indexes that are unused
         let mut unused_indexes      = HashSet::new();
 
@@ -205,8 +212,8 @@ impl DrawStreamCore {
         // Analyse the pending drawing for any place the resource is targeted, and for any place it's used
         for (idx, (target_resource, draw)) in self.pending_drawing.iter().enumerate() {
             match draw {
-                Draw::Sprite(sprite_id) => { if resource == DrawResource::Sprite(*sprite_id)    { last_selection_idx = Some(idx); } },
-                Draw::Layer(layer_id)   => { if resource == DrawResource::Layer(*layer_id)      { last_selection_idx = Some(idx); } }
+                Draw::Sprite(sprite_id) => { if resource == DrawResource::Sprite(namespace, *sprite_id)    { last_selection_idx = Some(idx); } },
+                Draw::Layer(layer_id)   => { if resource == DrawResource::Layer(namespace, *layer_id)      { last_selection_idx = Some(idx); } }
 
                 _ => {}
             }
@@ -219,7 +226,7 @@ impl DrawStreamCore {
 
                 // Add to the maybe unused list
                 maybe_unused.push(idx);
-            } else if draw.uses_resource(&resource) {
+            } else if draw.uses_resource(&resource, &namespace) {
                 // If the resource is used, then these indexes and the last selection index should not be cleared
                 last_selection_idx.take().map(|idx| unused_indexes.remove(&idx));
                 maybe_unused = vec![];
@@ -318,8 +325,8 @@ impl DrawStreamCore {
                     } else {
                         // A self-reference is added to the indexes that form the declaration of the resource (except for layers and sprites)
                         match resource {
-                            DrawResource::Layer(_) | DrawResource::Sprite(_)    => { },
-                            _                                                   => { unused_resources.get_mut(&resource).map(|declaration_list| declaration_list.push(idx)); }
+                            DrawResource::Layer(_, _) | DrawResource::Sprite(_, _)  => { },
+                            _                                                       => { unused_resources.get_mut(&resource).map(|declaration_list| declaration_list.push(idx)); }
                         }
                     }
                 }
@@ -342,12 +349,17 @@ impl DrawStreamCore {
     ///
     fn clear_all_layers(&mut self) {
         let mut to_remove           = HashSet::new();
+        let mut last_namespace      = NamespaceId::default();
         let mut last_layer          = None;
 
         // Queue up any instruction that targets a layer for removal
         for (idx, (target_resource, draw)) in self.pending_drawing.iter().enumerate() {
-            if let DrawResource::Layer(_) = target_resource {
+            if let DrawResource::Layer(_, _) = target_resource {
                 to_remove.insert(idx);
+            }
+
+            if let Draw::Namespace(namespace_id) = draw {
+                last_namespace = *namespace_id;
             }
 
             if let Draw::Layer(target_layer) = draw {
@@ -367,7 +379,7 @@ impl DrawStreamCore {
 
         // Re-select the target layer if there is one
         if let Some(last_layer) = last_layer {
-            self.pending_drawing.push((DrawResource::Layer(last_layer), Draw::Layer(last_layer)));
+            self.pending_drawing.push((DrawResource::Layer(last_namespace, last_layer), Draw::Layer(last_layer)));
         }
     }
 
@@ -382,8 +394,8 @@ impl DrawStreamCore {
         for draw in drawing {
             // Process the drawing instruction
             match &draw {
-                Draw::Layer(layer_id)   => { self.target_resource = DrawResource::Layer(*layer_id); },
-                Draw::Sprite(sprite_id) => { self.target_resource = DrawResource::Sprite(*sprite_id); },
+                Draw::Layer(layer_id)   => { self.target_resource = DrawResource::Layer(self.current_namespace, *layer_id); },
+                Draw::Sprite(sprite_id) => { self.target_resource = DrawResource::Sprite(self.current_namespace, *sprite_id); },
 
                 Draw::ClearLayer        |
                 Draw::ClearSprite       => { 
@@ -391,15 +403,28 @@ impl DrawStreamCore {
                     drawing_cleared = true; 
                     
                     match self.target_resource {
-                        DrawResource::Layer(layer_id)   => self.pending_drawing.push((self.target_resource, Draw::Layer(layer_id))),
-                        DrawResource::Sprite(sprite_id) => self.pending_drawing.push((self.target_resource, Draw::Sprite(sprite_id))),
+                        DrawResource::Layer(namespace_id, layer_id) => {
+                            if namespace_id == self.current_namespace {
+                                self.pending_drawing.push((self.target_resource, Draw::Layer(layer_id)))
+                            } else {
+                                self.pending_drawing.extend([(self.target_resource, Draw::Namespace(namespace_id)), (self.target_resource, Draw::Layer(layer_id)), (self.target_resource, Draw::Namespace(self.current_namespace))])
+                            }
+                        },
+                        DrawResource::Sprite(namespace_id, sprite_id) => {
+                            if namespace_id == self.current_namespace {
+                                self.pending_drawing.push((self.target_resource, Draw::Sprite(sprite_id)))
+                            } else {
+                                self.pending_drawing.extend([(self.target_resource, Draw::Namespace(namespace_id)), (self.target_resource, Draw::Sprite(sprite_id)), (self.target_resource, Draw::Namespace(self.current_namespace))])
+                            }
+                        },
                         _                               => unimplemented!()
                     }
                 },
 
                 Draw::ClearCanvas(_)    => { 
                     self.pending_drawing.retain(|(tgt, _action)| tgt == &DrawResource::Frame);
-                    self.target_resource = DrawResource::Layer(LayerId(0));
+                    self.target_resource    = DrawResource::Layer(NamespaceId::default(), LayerId(0));
+                    self.current_namespace  = NamespaceId::default();
                 },
 
                 Draw::ClearAllLayers    => {

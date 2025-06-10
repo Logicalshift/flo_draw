@@ -34,7 +34,7 @@ pub (crate) enum DrawResource {
     FillBlend,
     FillColor,
 
-    StateStack
+    StateStack,
 }
 
 impl DrawResource {
@@ -134,7 +134,7 @@ impl Draw {
     /// The active resource is the sprite or the layer that is currently selected for drawing
     ///
     #[inline]
-    pub (crate) fn source_resource(&self, active_resource: &DrawResource, active_namespace: &NamespaceId) -> SmallVec<[DrawResource; 8]> {
+    pub (crate) fn source_resource(&self, active_resource: &DrawResource) -> SmallVec<[DrawResource; 8]> {
         use self::Draw::*;
 
         match self {
@@ -142,7 +142,7 @@ impl Draw {
             ClearCanvas(_)                          => smallvec![],
             ClearAllLayers                          => smallvec![],
             ClearSprite                             => smallvec![],
-            SwapLayers(layer1, layer2)              => smallvec![DrawResource::Layer(*active_namespace, *layer1), DrawResource::Layer(*active_namespace, *layer2)],
+            SwapLayers(layer1, layer2)              => smallvec![DrawResource::Layer(active_resource.namespace(), *layer1), DrawResource::Layer(active_resource.namespace(), *layer2)],
             PlaceLayerBefore(namespace, layer)      => smallvec![*active_resource, DrawResource::Layer(*namespace, *layer)],
 
             Texture(_, TextureOp::Create(_, _))     => smallvec![],
@@ -161,8 +161,8 @@ impl Draw {
             BlendMode(_)                            |
             FillColor(_)                            => smallvec![],
 
-            LayerBlend(layer_id, _)                 => smallvec![DrawResource::Layer(*active_namespace, *layer_id)],
-            LayerAlpha(layer_id, _)                 => smallvec![DrawResource::Layer(*active_namespace, *layer_id)],
+            LayerBlend(layer_id, _)                 => smallvec![DrawResource::Layer(active_resource.namespace(), *layer_id)],
+            LayerAlpha(layer_id, _)                 => smallvec![DrawResource::Layer(active_resource.namespace(), *layer_id)],
 
             // Dash pattern is defined by multiple steps
             DashLength(_)                           |
@@ -173,18 +173,18 @@ impl Draw {
             Stroke                                  => smallvec![*active_resource, DrawResource::CanvasTransform, DrawResource::StrokeLineWidth, DrawResource::StrokeLineCap, DrawResource::StrokeLineJoin, DrawResource::StrokeDash, DrawResource::StrokeColor, DrawResource::FillBlend],
 
             // Texture and font operations generally alter the existing resource so they have a dependency
-            Texture(texture_id, TextureOp::CreateDynamicSprite(sprite_id, _, _)) => smallvec![DrawResource::Texture(*active_namespace, *texture_id), DrawResource::Sprite(*active_namespace, *sprite_id), DrawResource::CanvasTransform],
+            Texture(texture_id, TextureOp::CreateDynamicSprite(sprite_id, _, _)) => smallvec![DrawResource::Texture(active_resource.namespace(), *texture_id), DrawResource::Sprite(active_resource.namespace(), *sprite_id), DrawResource::CanvasTransform],
 
-            Texture(texture_id, _)                  => smallvec![DrawResource::Texture(*active_namespace, *texture_id)],
+            Texture(texture_id, _)                  => smallvec![DrawResource::Texture(active_resource.namespace(), *texture_id)],
             Font(font_id, FontOp::LayoutText(_))    |
-            Font(font_id, FontOp::DrawGlyphs(_))    => smallvec![*active_resource, DrawResource::Font(*active_namespace, *font_id), DrawResource::FontSize(*active_namespace, *font_id), DrawResource::CanvasTransform, DrawResource::FillWindingRule, DrawResource::FillBlend, DrawResource::FillColor],
+            Font(font_id, FontOp::DrawGlyphs(_))    => smallvec![*active_resource, DrawResource::Font(active_resource.namespace(), *font_id), DrawResource::FontSize(active_resource.namespace(), *font_id), DrawResource::CanvasTransform, DrawResource::FillWindingRule, DrawResource::FillBlend, DrawResource::FillColor],
 
-            DrawSprite(sprite_id)                   => smallvec![DrawResource::CanvasTransform, DrawResource::Sprite(*active_namespace, *sprite_id)],
+            DrawSprite(sprite_id)                   => smallvec![DrawResource::CanvasTransform, DrawResource::Sprite(active_resource.namespace(), *sprite_id)],
 
             // DrawText and FillTexture use the corresponding resource
-            DrawText(font_id, _, _, _)              => smallvec![*active_resource, DrawResource::CanvasTransform, DrawResource::Font(*active_namespace, *font_id), DrawResource::FontSize(*active_namespace, *font_id)],
-            FillTexture(texture_id, _, _)           => smallvec![DrawResource::Texture(*active_namespace, *texture_id)],
-            FillGradient(gradient_id, _, _)         => smallvec![DrawResource::Gradient(*active_namespace, *gradient_id)],
+            DrawText(font_id, _, _, _)              => smallvec![*active_resource, DrawResource::CanvasTransform, DrawResource::Font(active_resource.namespace(), *font_id), DrawResource::FontSize(active_resource.namespace(), *font_id)],
+            FillTexture(texture_id, _, _)           => smallvec![DrawResource::Texture(active_resource.namespace(), *texture_id)],
+            FillGradient(gradient_id, _, _)         => smallvec![DrawResource::Gradient(active_resource.namespace(), *gradient_id)],
             FillTransform(_)                        => smallvec![DrawResource::FillColor],
 
             // Transforms use the 'canvas' resource (setting the height or the identity transform resets any previous transform)
@@ -194,7 +194,7 @@ impl Draw {
             CenterRegion(_, _)                      |
             MultiplyTransform(_)                    => smallvec![DrawResource::CanvasTransform],
 
-            Gradient(gradient_id, _)                => smallvec![DrawResource::Gradient(*active_namespace, *gradient_id)],
+            Gradient(gradient_id, _)                => smallvec![DrawResource::Gradient(active_resource.namespace(), *gradient_id)],
 
             PopState | PushState                    => smallvec![DrawResource::StateStack],
 
@@ -211,7 +211,7 @@ impl Draw {
     /// resource.
     ///
     #[inline]
-    pub (crate) fn target_resource(&self, active_resource: &DrawResource, active_namespace: &NamespaceId) -> DrawResource {
+    pub (crate) fn target_resource(&self, active_resource: &DrawResource) -> DrawResource {
         use self::Draw::*;
 
         match self {
@@ -225,7 +225,7 @@ impl Draw {
             CenterRegion(_, _)                  |
             MultiplyTransform(_)                => DrawResource::CanvasTransform,
 
-            Layer(layer_id)                     => DrawResource::Layer(*active_namespace, *layer_id),
+            Layer(layer_id)                     => DrawResource::Layer(active_resource.namespace(), *layer_id),
 
             LineWidth(_)                        |
             LineWidthPixels(_)                  => DrawResource::StrokeLineWidth,
@@ -243,14 +243,14 @@ impl Draw {
             FillTexture(_, _, _)                |
             FillTransform(_)                    => DrawResource::FillColor,
 
-            SwapLayers(layer1, _layer2)         => DrawResource::Layer(*active_namespace, *layer1),
-            LayerBlend(layer_id, _)             => DrawResource::Layer(*active_namespace, *layer_id),
-            LayerAlpha(layer_id, _)             => DrawResource::Layer(*active_namespace, *layer_id),
-            Font(font_id, FontOp::FontSize(_))  => DrawResource::FontSize(*active_namespace, *font_id),
-            Font(font_id, _)                    => DrawResource::Font(*active_namespace, *font_id),
-            Texture(texture_id, _)              => DrawResource::Texture(*active_namespace, *texture_id),
+            SwapLayers(layer1, _layer2)         => DrawResource::Layer(active_resource.namespace(), *layer1),
+            LayerBlend(layer_id, _)             => DrawResource::Layer(active_resource.namespace(), *layer_id),
+            LayerAlpha(layer_id, _)             => DrawResource::Layer(active_resource.namespace(), *layer_id),
+            Font(font_id, FontOp::FontSize(_))  => DrawResource::FontSize(active_resource.namespace(), *font_id),
+            Font(font_id, _)                    => DrawResource::Font(active_resource.namespace(), *font_id),
+            Texture(texture_id, _)              => DrawResource::Texture(active_resource.namespace(), *texture_id),
 
-            Gradient(gradient_id, _)            => DrawResource::Gradient(*active_namespace, *gradient_id),
+            Gradient(gradient_id, _)            => DrawResource::Gradient(active_resource.namespace(), *gradient_id),
 
             PopState | PushState                => DrawResource::StateStack,
 
