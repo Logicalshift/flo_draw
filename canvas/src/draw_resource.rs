@@ -91,6 +91,7 @@ impl Draw {
             MultiplyTransform(_)                    => resource == &DrawResource::CanvasTransform,
 
             SwapLayers(layer1, layer2)              => resource == &DrawResource::Layer(*namespace, *layer1) || resource == &DrawResource::Layer(*namespace, *layer2),
+            PlaceLayerBefore(resource_ns, layer)    => resource == &DrawResource::Layer(*resource_ns, *layer),
 
             _                                       => false
         }
@@ -111,6 +112,7 @@ impl Draw {
             ClearAllLayers                          => smallvec![],
             ClearSprite                             => smallvec![],
             SwapLayers(layer1, layer2)              => smallvec![DrawResource::Layer(*active_namespace, *layer1), DrawResource::Layer(*active_namespace, *layer2)],
+            PlaceLayerBefore(namespace, layer)      => smallvec![*active_resource, DrawResource::Layer(*namespace, *layer)],
 
             Texture(_, TextureOp::Create(_, _))     => smallvec![],
             Gradient(_, GradientOp::Create(_))      => smallvec![],
