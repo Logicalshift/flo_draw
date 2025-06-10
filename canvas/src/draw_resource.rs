@@ -15,6 +15,7 @@ pub (crate) enum DrawResource {
     Frame,
     Canvas,
     CanvasTransform,
+    Namespace,
 
     Layer(NamespaceId, LayerId),
     Sprite(NamespaceId, SpriteId),
@@ -52,6 +53,7 @@ impl DrawResource {
             Font(namespace, _)      |
             FontSize(namespace, _)  => *namespace,
 
+            Namespace               |
             Frame                   |
             Canvas                  |
             CanvasTransform         |
@@ -226,6 +228,7 @@ impl Draw {
             MultiplyTransform(_)                => DrawResource::CanvasTransform,
 
             Layer(layer_id)                     => DrawResource::Layer(active_resource.namespace(), *layer_id),
+            Namespace(_)                        => DrawResource::Namespace,
 
             LineWidth(_)                        |
             LineWidthPixels(_)                  => DrawResource::StrokeLineWidth,
@@ -272,6 +275,7 @@ impl Draw {
             CanvasHeight(_)                     |
             CenterRegion(_, _)                  |
             MultiplyTransform(_)                |
+            Namespace(_)                        |
 
             LineWidth(_)                        |
             LineWidthPixels(_)                  |
