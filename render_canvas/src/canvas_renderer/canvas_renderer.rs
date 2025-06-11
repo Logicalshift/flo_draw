@@ -637,6 +637,134 @@ mod test {
     }
 
     #[test]
+    pub fn inverse_window_transform_1() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform and invert it
+            let viewport_transform = renderer.get_window_transform();
+            let viewport_transform = viewport_transform.invert().unwrap();
+
+            // The point 0, 384 should be at the middle-left of the viewport
+            let (x, y) = viewport_transform.transform_point(0.0, 384.0);
+            assert!((x-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((y-500.0).abs() < 0.01, "x = {}, y = {}", x, y);
+
+            // The point 384, 768 should be at the top-center of the viewport. Pixels are square
+            let (x, y) = viewport_transform.transform_point(384.0, 768.0);
+            assert!((y-1000.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((x-500.0).abs() < 0.01, "x = {}, y = {}", x, y);
+        });
+    }
+
+    #[test]
+    pub fn inverse_window_transform_2() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform, invert it and flip it
+            let viewport_transform = renderer.get_window_transform();
+            let viewport_transform = viewport_transform.invert().unwrap();
+            let viewport_transform = Transform2D::scale(1.0, -1.0) * viewport_transform * Transform2D::translate(0.0, -768.0);
+
+            // The point 0, 384 should be at the middle-left of the viewport
+            let (x, y) = viewport_transform.transform_point(0.0, 384.0);
+            assert!((x-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((y-500.0).abs() < 0.01, "x = {}, y = {}", x, y);
+
+            // The point 384, 768 should be at the top-center of the viewport. Pixels are square
+            let (x, y) = viewport_transform.transform_point(384.0, 768.0);
+            assert!((y-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((x-500.0).abs() < 0.01, "x = {}, y = {}", x, y);
+        });
+    }
+
+    #[test]
+    pub fn inverse_window_transform_after_rotating() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::MultiplyTransform(Transform2D::rotate_degrees(90.0)), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let viewport_transform          = renderer.get_window_transform();
+            let viewport_transform_inverted = viewport_transform.invert().unwrap();
+            let viewport_transform          = Transform2D::scale(1.0, -1.0) * viewport_transform_inverted * Transform2D::translate(0.0, -768.0);
+
+            // The point 0, 384 should be at the middle-left of the viewport
+            let (x, y) = viewport_transform.transform_point(0.0, 384.0);
+            assert!((x-500.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((y-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
+
+            // The point 384, 768 should be at the top-center of the viewport. Pixels are square
+            let (x, y) = viewport_transform.transform_point(384.0, 768.0);
+            assert!((y-500.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((x-1000.0).abs() < 0.01, "x = {}, y = {}", x, y);
+        });
+    }
+
+    #[test]
+    pub fn inverse_window_transform_after_flipping_1() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::MultiplyTransform(Transform2D::scale(1.0, -1.0)), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let viewport_transform = renderer.get_window_transform();
+            let viewport_transform = viewport_transform.invert().unwrap();
+
+            // The point 0, 384 should be at the middle-left of the viewport
+            let (x, y) = viewport_transform.transform_point(0.0, 384.0);
+            assert!((x-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((y-500.0).abs() < 0.01, "x = {}, y = {}", x, y);
+
+            // The point 384, 768 should be at the top-center of the viewport. Pixels are square
+            let (x, y) = viewport_transform.transform_point(384.0, 768.0);
+            assert!((y-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((x-500.0).abs() < 0.01, "x = {}, y = {}", x, y);
+        });
+    }
+
+    #[test]
+    pub fn inverse_window_transform_after_flipping_2() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::MultiplyTransform(Transform2D::scale(1.0, -1.0)), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let viewport_transform = renderer.get_window_transform();
+            let viewport_transform = viewport_transform.invert().unwrap();
+            let viewport_transform = Transform2D::scale(1.0, -1.0) * viewport_transform * Transform2D::translate(0.0, -768.0);
+
+            // The point 0, 384 should be at the middle-left of the viewport
+            let (x, y) = viewport_transform.transform_point(0.0, 384.0);
+            assert!((x-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((y-500.0).abs() < 0.01, "x = {}, y = {}", x, y);
+
+            // The point 384, 768 should be at the top-center of the viewport. Pixels are square
+            let (x, y) = viewport_transform.transform_point(384.0, 768.0);
+            assert!((y-1000.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((x-500.0).abs() < 0.01, "x = {}, y = {}", x, y);
+        });
+    }
+
+    #[test]
     pub fn canvas_transform_after_setting_canvas_height() {
         let mut renderer = CanvasRenderer::new();
 
