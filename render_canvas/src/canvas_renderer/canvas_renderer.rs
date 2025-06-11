@@ -613,6 +613,30 @@ mod test {
     }
 
     #[test]
+    pub fn window_transform_after_flipping() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::MultiplyTransform(Transform2D::scale(1.0, -1.0)), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let viewport_transform = renderer.get_window_transform();
+
+            // The point 0, 500 should be at the middle-left of the viewport (height of 1000)
+            let (x, y) = viewport_transform.transform_point(0.0, 500.0);
+            assert!((x-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((y-384.0).abs() < 0.01, "x = {}, y = {}", x, y);
+
+            // The point 500, 0 should be at the top-center of the viewport (height of 1000). Pixels are square
+            let (x, y) = viewport_transform.transform_point(500.0, 0.0);
+            assert!((y-768.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((x-384.0).abs() < 0.01, "x = {}, y = {}", x, y);
+        });
+    }
+
+    #[test]
     pub fn canvas_transform_after_setting_canvas_height() {
         let mut renderer = CanvasRenderer::new();
 
@@ -644,6 +668,30 @@ mod test {
             // Set the canvas height
             renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(-1000.0), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Fetch the viewport transform
+            let viewport_transform = renderer.get_active_transform();
+
+            // The point 0, 500 should be at the middle-left of the viewport (height of 1000)
+            let (x, y) = viewport_transform.transform_point(0.0, 500.0);
+            assert!((x--1.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((y-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
+
+            // The point 500, 0 should be at the top-center of the viewport (height of 1000). Pixels are square
+            let (x, y) = viewport_transform.transform_point(500.0, 0.0);
+            assert!((y-1.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((x-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
+        });
+    }
+
+    #[test]
+    pub fn canvas_transform_after_flipping() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set the canvas height
+            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::MultiplyTransform(Transform2D::scale(1.0, -1.0)), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
             let viewport_transform = renderer.get_active_transform();
