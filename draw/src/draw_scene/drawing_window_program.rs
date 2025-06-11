@@ -1,6 +1,5 @@
 use futures::prelude::*;
 use futures::channel::oneshot;
-use futures::{pin_mut};
 use futures::task::{Poll, Context};
 
 use flo_scene::*;
@@ -178,8 +177,7 @@ impl RendererState {
         let window_transform    = self.renderer.get_window_transform().invert().unwrap();
 
         // Window coordinates are inverted compared to canvas coordinates
-        let window_transform    = Transform2D::scale(1.0, -1.0) * window_transform;
-        let window_transform    = window_transform * Transform2D::translate(0.0, -self.height as _);
+        let window_transform    = window_transform * Transform2D::scale(1.0, -1.0) * Transform2D::translate(0.0, -self.height as _);
 
         // Update the value of the transform in the state
         self.window_transform   = Some(window_transform);
