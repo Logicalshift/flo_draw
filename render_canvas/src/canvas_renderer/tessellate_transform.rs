@@ -19,9 +19,9 @@ impl CanvasRenderer {
         let window_height       = 2.0;
 
         // Work out the scale to use for this widget
-        let height              = f32::max(1.0, height);
-        let scale               = window_height / height;
-        let scale               = canvas::Transform2D::scale(scale, scale);
+        let adjusted_height     = f32::max(1.0, height.abs());
+        let scale               = window_height / adjusted_height;
+        let scale               = canvas::Transform2D::scale(scale, if height < 0.0 { -scale } else { scale });
 
         // (0, 0) is already the center of the window
         let transform           = scale;
