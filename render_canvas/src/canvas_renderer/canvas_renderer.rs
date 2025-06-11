@@ -673,7 +673,7 @@ mod test {
             // Fetch the viewport transform, invert it and flip it
             let viewport_transform = renderer.get_window_transform();
             let viewport_transform = viewport_transform.invert().unwrap();
-            let viewport_transform = Transform2D::scale(1.0, -1.0) * viewport_transform * Transform2D::translate(0.0, -768.0);
+            let viewport_transform = viewport_transform * Transform2D::scale(1.0, -1.0) * Transform2D::translate(0.0, -768.0);
 
             // The point 0, 384 should be at the middle-left of the viewport
             let (x, y) = viewport_transform.transform_point(0.0, 384.0);
@@ -699,17 +699,17 @@ mod test {
             // Fetch the viewport transform
             let viewport_transform          = renderer.get_window_transform();
             let viewport_transform_inverted = viewport_transform.invert().unwrap();
-            let viewport_transform          = Transform2D::scale(1.0, -1.0) * viewport_transform_inverted * Transform2D::translate(0.0, -768.0);
+            let viewport_transform          = viewport_transform_inverted * Transform2D::scale(1.0, -1.0) * Transform2D::translate(0.0, -768.0);
 
             // The point 0, 384 should be at the middle-left of the viewport
             let (x, y) = viewport_transform.transform_point(0.0, 384.0);
             assert!((x-500.0).abs() < 0.01, "x = {}, y = {}", x, y);
-            assert!((y-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((y-1000.0).abs() < 0.01, "x = {}, y = {}", x, y);
 
             // The point 384, 768 should be at the top-center of the viewport. Pixels are square
             let (x, y) = viewport_transform.transform_point(384.0, 768.0);
             assert!((y-500.0).abs() < 0.01, "x = {}, y = {}", x, y);
-            assert!((x-1000.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((x-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
         });
     }
 
@@ -750,7 +750,7 @@ mod test {
             // Fetch the viewport transform
             let viewport_transform = renderer.get_window_transform();
             let viewport_transform = viewport_transform.invert().unwrap();
-            let viewport_transform = Transform2D::scale(1.0, -1.0) * viewport_transform * Transform2D::translate(0.0, -768.0);
+            let viewport_transform = viewport_transform * Transform2D::scale(1.0, -1.0) * Transform2D::translate(0.0, -768.0);
 
             // The point 0, 384 should be at the middle-left of the viewport
             let (x, y) = viewport_transform.transform_point(0.0, 384.0);
