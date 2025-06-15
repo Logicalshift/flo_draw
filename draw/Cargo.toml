@@ -49,6 +49,7 @@ softbuffer          = { optional = true, version = "0.4" }
 objc2               = "0.5"
 objc2-foundation    = { version = "0.2", features = [ "block2", "dispatch", "NSObject" ] }
 objc2-app-kit       = { version = "0.2", features = [ "NSView" ] }
+objc2-quartz-core   = { version = "0.2", features = [ "CALayer", "CAMetalLayer" ] }
 
 [dev-dependencies]
 flo_curves          = "0.8"
