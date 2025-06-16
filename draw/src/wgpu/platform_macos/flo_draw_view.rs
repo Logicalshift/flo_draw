@@ -122,11 +122,13 @@ impl FloDrawView {
             let root_view: Option<Retained<NSView>> = unsafe { Id::retain(appkit.ns_view.cast()) };
             let root_view                           = root_view.expect("Window must have a root view");
 
-            // Size to fit
-            unsafe { self.setBounds(root_view.bounds()); }
-
             // Add as a subview of the root view
             unsafe { root_view.addSubview(self); }
+
+            // Size to fit
+            unsafe { self.setFrame(root_view.bounds()); }
+
+            self.reposition_metal_layer();
         } else {
             // We should be running on OS X here, so we should get an appkit window
             panic!("Was expecting an appkit window");
