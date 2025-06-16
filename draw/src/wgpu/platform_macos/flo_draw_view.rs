@@ -1,7 +1,7 @@
 use objc2::*;
 use objc2::rc::*;
 
-use objc2_app_kit::{NSColor, NSResponder, NSView};
+use objc2_app_kit::{NSAutoresizingMaskOptions, NSColor, NSResponder, NSView};
 use objc2_foundation::{NSObject, MainThreadMarker, NSSize};
 use objc2_quartz_core::{CALayer, CAMetalLayer, CATransaction};
 
@@ -78,10 +78,7 @@ impl FloDrawView {
         this.setWantsLayer(true);
 
         if let Some(layer) = unsafe { this.layer() } {
-            //let cg_color: Id<NSObject> = unsafe { msg_send_id![&*NSColor::blueColor(), CGColor] };
-            //unsafe { let _: () = msg_send![&*layer, setBackgroundColor: &*cg_color]; }
-
-            //layer.addSublayer(&*metal_layer);
+            layer.addSublayer(&*metal_layer);
         }
 
         this.reposition_metal_layer();
@@ -127,6 +124,10 @@ impl FloDrawView {
 
             // Size to fit
             unsafe { self.setFrame(root_view.bounds()); }
+
+            // Set the root view to resize its subviews
+            unsafe { root_view.setAutoresizesSubviews(true); }
+            unsafe { self.setAutoresizingMask(NSAutoresizingMaskOptions::NSViewWidthSizable.union(NSAutoresizingMaskOptions::NSViewHeightSizable)); }
 
             self.reposition_metal_layer();
         } else {
