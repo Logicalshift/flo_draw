@@ -140,7 +140,7 @@ impl FloDrawView {
     ///
     /// Creates a WGPU surface for this view
     ///
-    pub fn create_surface(&self, instance: &mut wgpu::Instance) -> wgpu::Surface {
+    pub fn create_surface<'a>(&self, instance: &wgpu::Instance) -> wgpu::Surface<'a> {
         let layer                           = self.metal_layer();
         let layer_ptr: *const CAMetalLayer  = Retained::as_ptr(&layer);
         let target                          = wgpu::SurfaceTargetUnsafe::CoreAnimationLayer(layer_ptr as *mut _);

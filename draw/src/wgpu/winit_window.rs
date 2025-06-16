@@ -102,10 +102,43 @@ where
 
                     // Create the subview
                     if let (Some(winit_window), None) = (&window.window, &window.draw_view) {
-                        let draw_view       = FloDrawView::new();
+                        // Create a rendering view for OS X
+                        let draw_view = FloDrawView::new();
 
+                        // Attach to the window
                         draw_view.attach_to(&winit_window);
-                        window.draw_view = Some(draw_view);
+
+                        // Initialise as the drawing surface
+                        let backend         = wgpu::Backends::from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
+                        let instance        = wgpu::Instance::new(&wgpu::InstanceDescriptor { backends: backend, ..Default::default() });
+                        let surface         = draw_view.create_surface(&instance);
+                        let adapter         = instance.request_adapter(&wgpu::RequestAdapterOptions {
+                            power_preference:       wgpu::PowerPreference::default(),
+                            force_fallback_adapter: false,
+                            compatible_surface:     Some(&surface),
+                        }).await.expect("Could not acquire an adapter for winit/wgpu");
+
+                        // Fetch the device and the queue
+                        let features        = wgpu::Features::empty();
+                        #[cfg(feature="wgpu-profiler")] let features = features | GpuProfiler::ALL_WGPU_TIMER_FEATURES;
+                        let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
+                            label:              None,
+                            required_features:  features,
+                            required_limits:    wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits()),
+                            ..Default::default()
+                        }, None).await.expect("Create WGPU device and queue");
+
+                        // Create the WGPU renderer
+                        let device          = Arc::new(device);
+                        let queue           = Arc::new(queue);
+                        let surface         = Arc::new(surface);
+                        let adapter         = Arc::new(adapter);
+                        let renderer        = WgpuRenderer::from_surface(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
+
+                        window.device       = Some(device);
+                        window.instance     = Some(instance);
+                        window.renderer     = Some(renderer);
+                        window.draw_view    = Some(draw_view);
                     }
 
                     // Create the renderer if it doesn't already exist
