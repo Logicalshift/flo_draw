@@ -1,9 +1,14 @@
 use objc2::*;
 use objc2::rc::*;
 
-use objc2_app_kit::{NSResponder, NSView};
+use objc2_app_kit::{NSColor, NSResponder, NSView};
 use objc2_foundation::{NSObject, MainThreadMarker, NSSize};
 use objc2_quartz_core::{CALayer, CAMetalLayer, CATransaction};
+
+use winit::window::{Window};
+use winit::raw_window_handle_05::{HasRawWindowHandle, RawWindowHandle};
+
+use std::sync::*;
 
 pub struct FloDrawViewVars {
     /// The layer that we should render on
@@ -73,7 +78,10 @@ impl FloDrawView {
         this.setWantsLayer(true);
 
         if let Some(layer) = unsafe { this.layer() } {
-            layer.addSublayer(&*metal_layer);
+            //let cg_color: Id<NSObject> = unsafe { msg_send_id![&*NSColor::blueColor(), CGColor] };
+            //unsafe { let _: () = msg_send![&*layer, setBackgroundColor: &*cg_color]; }
+
+            //layer.addSublayer(&*metal_layer);
         }
 
         this.reposition_metal_layer();
@@ -102,6 +110,26 @@ impl FloDrawView {
 
             // Set the bounds of the render layer
             render_layer.setBounds(parent_bounds);
+        }
+    }
+
+    ///
+    /// Sets this view as the main view of the specified window
+    ///
+    pub fn attach_to(&self, window: &Arc<Window>) {
+        if let RawWindowHandle::AppKit(appkit) = window.raw_window_handle() {
+            // Fetch the root view from the window
+            let root_view: Option<Retained<NSView>> = unsafe { Id::retain(appkit.ns_view.cast()) };
+            let root_view                           = root_view.expect("Window must have a root view");
+
+            // Size to fit
+            unsafe { self.setBounds(root_view.bounds()); }
+
+            // Add as a subview of the root view
+            unsafe { root_view.addSubview(self); }
+        } else {
+            // We should be running on OS X here, so we should get an appkit window
+            panic!("Was expecting an appkit window");
         }
     }
 }

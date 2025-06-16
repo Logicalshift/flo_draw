@@ -26,6 +26,9 @@ use std::time::{Duration, Instant};
 #[cfg(feature="wgpu-profiler")]
 use wgpu_profiler::{GpuProfiler};
 
+#[cfg(target_os="macos")]
+use super::platform_macos::*;
+
 ///
 /// Manages the state of a Winit window
 ///
@@ -97,6 +100,9 @@ where
                     if let (Some(winit_window), None) = (&window.window, &window.renderer) {
                         // Create a new WGPU instance, surface and adapter
                         let winit_window    = winit_window.clone();
+                        let draw_view       = FloDrawView::new();
+
+                        draw_view.attach_to(&winit_window);
 
                         /*
                         let backend         = wgpu::Backends::from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
