@@ -40,9 +40,9 @@ declare_class!(
         /// Resizes this view
         ///
         #[method(setFrameSize:)]
-        fn set_frame_size(&self, newSize: NSSize) {
+        fn set_frame_size(&self, new_size: NSSize) {
             // Perform the normal resizing request
-            unsafe { let _: () = msg_send![super(self), setFrameSize: newSize]; }
+            unsafe { let _: () = msg_send![super(self), setFrameSize: new_size]; }
 
             // Resize the rendering layer within this view
             // Disable the transaction so the resize doesn't do a silly animation
