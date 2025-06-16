@@ -1,9 +1,9 @@
 use objc2::*;
 use objc2::rc::*;
 
-use objc2_app_kit::{NSAutoresizingMaskOptions, NSColor, NSResponder, NSView};
+use objc2_app_kit::{NSAutoresizingMaskOptions, NSResponder, NSView};
 use objc2_foundation::{NSObject, MainThreadMarker, NSSize};
-use objc2_quartz_core::{CALayer, CAMetalLayer, CATransaction};
+use objc2_quartz_core::{CAMetalLayer, CATransaction};
 
 use winit::window::{Window};
 use winit::raw_window_handle_05::{HasRawWindowHandle, RawWindowHandle};
