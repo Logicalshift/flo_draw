@@ -210,7 +210,7 @@ impl<'surface> WgpuRenderer<'surface> {
                 format:                         actual_format,
                 width:                          width,
                 height:                         height,
-                present_mode:                   wgpu::PresentMode::AutoVsync,
+                present_mode:                   wgpu::PresentMode::Immediate,
                 alpha_mode:                     wgpu::CompositeAlphaMode::Auto,
                 view_formats:                   vec![actual_format],
                 desired_maximum_frame_latency:  2,
