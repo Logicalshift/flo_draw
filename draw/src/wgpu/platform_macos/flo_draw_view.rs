@@ -7,6 +7,7 @@ use objc2_quartz_core::{CALayer, CAMetalLayer, CATransaction};
 
 use winit::window::{Window};
 use winit::raw_window_handle_05::{HasRawWindowHandle, RawWindowHandle};
+use wgpu;
 
 use std::sync::*;
 
@@ -134,5 +135,16 @@ impl FloDrawView {
             // We should be running on OS X here, so we should get an appkit window
             panic!("Was expecting an appkit window");
         }
+    }
+
+    ///
+    /// Creates a WGPU surface for this view
+    ///
+    pub fn create_surface(&self, instance: &mut wgpu::Instance) -> wgpu::Surface {
+        let layer                           = self.metal_layer();
+        let layer_ptr: *const CAMetalLayer  = Retained::as_ptr(&layer);
+        let target                          = wgpu::SurfaceTargetUnsafe::CoreAnimationLayer(layer_ptr as *mut _);
+
+        unsafe { instance.create_surface_unsafe(target).unwrap() }
     }
 }
