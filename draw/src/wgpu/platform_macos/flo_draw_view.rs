@@ -62,7 +62,7 @@ impl FloDrawView {
         let metal_layer  = unsafe { CAMetalLayer::new() };
 
         let ivars = FloDrawViewVars {
-            metal_layer: metal_layer,
+            metal_layer: metal_layer.clone(),
         };
 
         // Allocate the view
@@ -72,6 +72,11 @@ impl FloDrawView {
         // Set up with a metal layer
         this.setWantsLayer(true);
 
+        if let Some(layer) = unsafe { this.layer() } {
+            layer.addSublayer(&*metal_layer);
+        }
+
+        this.reposition_metal_layer();
 
         this
     }
