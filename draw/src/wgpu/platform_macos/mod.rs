@@ -11,3 +11,4 @@
 mod flo_draw_view;
 
 pub use flo_draw_view::*;
+pub use objc2::rc::{Retained};
