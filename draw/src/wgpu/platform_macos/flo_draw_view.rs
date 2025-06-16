@@ -107,7 +107,7 @@ impl FloDrawView {
             let parent_bounds = layer.bounds();
 
             // Set the bounds of the render layer
-            render_layer.setBounds(parent_bounds);
+            render_layer.setFrame(parent_bounds);
         }
     }
 
