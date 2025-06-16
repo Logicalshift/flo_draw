@@ -98,6 +98,7 @@ where
                         // Create a new WGPU instance, surface and adapter
                         let winit_window    = winit_window.clone();
 
+                        /*
                         let backend         = wgpu::Backends::from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
                         let instance        = wgpu::Instance::new(&wgpu::InstanceDescriptor { backends: backend, ..Default::default() });
                         let surface         = instance.create_surface(winit_window).expect("wgpu surface");
@@ -127,6 +128,7 @@ where
                         window.device       = Some(device);
                         window.instance     = Some(instance);
                         window.renderer     = Some(renderer);
+                        */
 
                         // First frame has been displayed
                         send_new_frame = true;
