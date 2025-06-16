@@ -43,7 +43,10 @@ pub struct WinitWindow {
     instance: Option<wgpu::Instance>,
 
     /// The renderer for this window (or none if there isn't one yet)
-    renderer: Option<WgpuRenderer<'static>>
+    renderer: Option<WgpuRenderer<'static>>,
+
+    /// The drawing view, if it has been created
+    draw_view: Option<Retained<FloDrawView>>,
 }
 
 impl WinitWindow {
@@ -56,6 +59,7 @@ impl WinitWindow {
             device:     None,
             instance:   None,
             renderer:   None,
+            draw_view:  None,
         }
     }
 }
@@ -96,13 +100,18 @@ where
                         continue;
                     }
 
+                    // Create the subview
+                    if let (Some(winit_window), None) = (&window.window, &window.draw_view) {
+                        let draw_view       = FloDrawView::new();
+
+                        draw_view.attach_to(&winit_window);
+                        window.draw_view = Some(draw_view);
+                    }
+
                     // Create the renderer if it doesn't already exist
                     if let (Some(winit_window), None) = (&window.window, &window.renderer) {
                         // Create a new WGPU instance, surface and adapter
                         let winit_window    = winit_window.clone();
-                        let draw_view       = FloDrawView::new();
-
-                        draw_view.attach_to(&winit_window);
 
                         /*
                         let backend         = wgpu::Backends::from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
