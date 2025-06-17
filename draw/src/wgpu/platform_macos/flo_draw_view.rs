@@ -1,9 +1,10 @@
 use objc2::*;
 use objc2::rc::*;
+use objc2::runtime::{ProtocolObject};
 
 use objc2_app_kit::{NSAutoresizingMaskOptions, NSResponder, NSView};
-use objc2_foundation::{NSObject, MainThreadMarker, NSSize};
-use objc2_quartz_core::{CAMetalLayer, CATransaction};
+use objc2_foundation::{NSObject, MainThreadMarker, NSSize, NSNull, NSDictionary, NSString, ns_string, NSCopying};
+use objc2_quartz_core::{CAAction, CAMetalLayer, CATransaction};
 
 use winit::window::{Window};
 use winit::raw_window_handle_05::{HasRawWindowHandle, RawWindowHandle};
@@ -80,6 +81,20 @@ impl FloDrawView {
 
         if let Some(layer) = unsafe { this.layer() } {
             layer.addSublayer(&*metal_layer);
+            unsafe { 
+                let sublayers = ns_string!("sublayers").copy();
+                let contents  = ns_string!("content").copy();
+
+                layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
+                    &*Retained::cast(NSNull::null()), &*Retained::cast(sublayers.clone())))); 
+                layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
+                    &*Retained::cast(NSNull::null()), &*Retained::cast(contents.clone())))); 
+
+                metal_layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
+                    &*Retained::cast(NSNull::null()), &*Retained::cast(sublayers)))); 
+                metal_layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
+                    &*Retained::cast(NSNull::null()), &*Retained::cast(contents)))); 
+            }
         }
 
         this.reposition_metal_layer();
@@ -131,6 +146,37 @@ impl FloDrawView {
             unsafe { self.setAutoresizingMask(NSAutoresizingMaskOptions::NSViewWidthSizable.union(NSAutoresizingMaskOptions::NSViewHeightSizable)); }
 
             self.reposition_metal_layer();
+
+            if let Some(layer) = unsafe { root_view.layer() } {
+                unsafe { 
+                    let sublayers = ns_string!("sublayers").copy();
+                    let contents  = ns_string!("content").copy();
+
+                    layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
+                        &*Retained::cast(NSNull::null()), &*Retained::cast(sublayers.clone())))); 
+                    layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
+                        &*Retained::cast(NSNull::null()), &*Retained::cast(contents.clone())))); 
+                }
+            }
+
+            if let Some(layer) = unsafe { self.layer() } {
+                let metal_layer = self.metal_layer();
+
+                unsafe { 
+                    let sublayers = ns_string!("sublayers").copy();
+                    let contents  = ns_string!("content").copy();
+
+                    layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
+                        &*Retained::cast(NSNull::null()), &*Retained::cast(sublayers.clone())))); 
+                    layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
+                        &*Retained::cast(NSNull::null()), &*Retained::cast(contents.clone())))); 
+
+                    metal_layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
+                        &*Retained::cast(NSNull::null()), &*Retained::cast(sublayers)))); 
+                    metal_layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
+                        &*Retained::cast(NSNull::null()), &*Retained::cast(contents)))); 
+                }
+            }
         } else {
             // We should be running on OS X here, so we should get an appkit window
             panic!("Was expecting an appkit window");
