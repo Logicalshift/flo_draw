@@ -155,8 +155,7 @@ where
                     }
 
                     // Referencing the value in the lock makes borrowing the contents easier
-                    let mut window_lock_mtx = window_lock;
-                    let window_lock         = &mut *window_lock_mtx;
+                    let window_lock = &mut *window_lock;
 
                     // Create the renderer if it doesn't already exist
                     if let (Some(winit_window), None) = (&window_lock.window, &window_lock.renderer) {
@@ -214,12 +213,8 @@ where
                         // Send the commands to the renderer
                         let maybe_next_frame = renderer.render_to_surface(next_action);
 
-                        CATransaction::commit();
-
                         // Notify that a new frame has been drawn if show_frame_buffer is set
                         if let Some(next_frame) = maybe_next_frame {
-                            use std::mem;
-
                             #[cfg(feature="profile")]
                             let start_time = Instant::now();
 
@@ -231,6 +226,8 @@ where
                             // Trigger the 'NewFrame' event when done
                             send_new_frame = true;
                         }
+
+                        CATransaction::commit();
                     }
                 }
 
