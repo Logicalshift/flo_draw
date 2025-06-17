@@ -188,10 +188,16 @@ where
                         let width   = size.width;
                         let height  = size.height;
 
+                        CATransaction::begin();
+                        CATransaction::setAnimationDuration(0.0);
+                        CATransaction::setDisableActions(true);
+
                         renderer.prepare_to_render(width, height);
 
                         // Send the commands to the renderer
                         let maybe_next_frame = renderer.render_to_surface(next_action);
+
+                        CATransaction::commit();
 
                         // Notify that a new frame has been drawn if show_frame_buffer is set
                         if let Some(next_frame) = maybe_next_frame {
