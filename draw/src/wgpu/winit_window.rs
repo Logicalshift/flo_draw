@@ -223,15 +223,7 @@ where
                             #[cfg(feature="profile")]
                             let start_time = Instant::now();
 
-                            // Request that the runtime present the next frame
-                            let (yield_send, yield_recv)    = oneshot::channel();
-                            let window_id                   = winit_window.id();
-
-                            winit_thread().send_event(WinitThreadEvent::PresentSurface(window_id, next_frame, yield_send));
-
-                            // Wait for the frame to be displayed (or cancelled) before processing any other events
-                            mem::drop(window_lock_mtx);
-                            yield_recv.await.ok();
+                            next_frame.present();
 
                             #[cfg(feature="profile")]
                             println!("WINIT: time to present frame {}µs", Instant::now().duration_since(start_time).as_micros());
