@@ -69,6 +69,21 @@ impl WinitWindow {
     pub (super) fn window(&self) -> Option<Arc<Window>> {
         self.window.clone()
     }
+
+    ///
+    /// Immediately redraws the window
+    ///
+    pub (super) fn redraw_immediate(&mut self, width: u32, height: u32) {
+        if let Some(renderer) = &mut self.renderer {
+            // Render to the surface
+            renderer.prepare_to_render(width, height);
+            let maybe_next_frame = renderer.render_to_surface(vec![]);
+
+            if let Some(frame) = maybe_next_frame {
+                frame.present();
+            }
+        }
+    }
 }
 
 ///

@@ -57,6 +57,15 @@ declare_class!(
 
             self.reposition_metal_layer();
 
+            if let Some(window) = self.window() {
+                if let Ok(mut window) = window.try_lock() {
+                    window.redraw_immediate(new_size.width as _, new_size.height as _);
+                    println!("Redraw immediate");
+                } else {
+                    println!("Window locked");
+                }
+            }
+
             CATransaction::commit();
         }
     }
