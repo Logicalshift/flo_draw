@@ -1,7 +1,7 @@
 use crate::wgpu::winit_window::*;
 
 use objc2::*;
-use objc2::rc::*;
+use objc2::rc::{Id, Retained};
 use objc2::runtime::{ProtocolObject};
 
 use objc2_app_kit::{NSAutoresizingMaskOptions, NSResponder, NSView};
@@ -18,7 +18,7 @@ pub struct FloDrawViewVars {
     metal_layer: Retained<CAMetalLayer>,
 
     /// The winit window that is being rendered in this view
-    window: Option<Arc<Mutex<WinitWindow>>>,
+    window: Option<Weak<Mutex<WinitWindow>>>,
 }
 
 declare_class!(
@@ -37,7 +37,7 @@ declare_class!(
     }
 
     impl DeclaredClass for FloDrawView {
-        type Ivars = FloDrawViewVars;
+        type Ivars = Mutex<FloDrawViewVars>;
     }
 
     unsafe impl FloDrawView {
@@ -78,7 +78,7 @@ impl FloDrawView {
         };
 
         // Allocate the view
-        let this                    = main_thread_marker.alloc().set_ivars(ivars);
+        let this                    = main_thread_marker.alloc().set_ivars(Mutex::new(ivars));
         let this: Retained<Self>    = unsafe { msg_send_id![super(this), init] };
 
         // Set up with a metal layer
@@ -111,7 +111,14 @@ impl FloDrawView {
     /// Retrieves the metal layer for this FloDrawView
     ///
     fn metal_layer(&self) -> Retained<CAMetalLayer> {
-        self.ivars().metal_layer.clone()
+        self.ivars().lock().unwrap().metal_layer.clone()
+    }
+
+    ///
+    /// Retrieves the window that this view is attached to
+    ///
+    fn window(&self) -> Option<Arc<Mutex<WinitWindow>>> {
+        self.ivars().lock().unwrap().window.as_ref().and_then(|window| window.upgrade())
     }
 
     ///
@@ -134,8 +141,8 @@ impl FloDrawView {
     ///
     /// Sets this view as the main view of the specified window
     ///
-    pub fn attach_to(&mut self, window: &Arc<Mutex<WinitWindow>>) {
-        self.ivars_mut().window = Some(Arc::clone(window));
+    pub fn attach_to(&self, window: &Arc<Mutex<WinitWindow>>) {
+        self.ivars().lock().unwrap().window = Some(Arc::downgrade(window));
 
         let window = window.lock().unwrap();
 
