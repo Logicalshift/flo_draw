@@ -152,6 +152,9 @@ where
                         draw_view.attach_to(&window);
                         window_lock = window.lock().unwrap();
                         window_lock.draw_view   = Some(draw_view);
+
+                        // First frame has been displayed
+                        send_new_frame = true;
                     }
 
                     // Referencing the value in the lock makes borrowing the contents easier
