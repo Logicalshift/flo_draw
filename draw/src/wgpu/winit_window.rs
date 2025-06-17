@@ -46,6 +46,7 @@ pub struct WinitWindow {
     renderer: Option<WgpuRenderer<'static>>,
 
     /// The drawing view, if it has been created
+    #[cfg(target_os="macos")]
     draw_view: Option<Retained<FloDrawView>>,
 }
 
@@ -110,6 +111,7 @@ where
                     }
 
                     // Create the subview
+                    #[cfg(target_os="macos")]
                     if let (Some(_winit_window), None) = (&window_lock.window, &window_lock.draw_view) {
                         use std::mem;
 
