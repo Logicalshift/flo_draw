@@ -1,6 +1,3 @@
-use super::winit_thread::*;
-use super::winit_thread_event::*;
-
 use crate::events::*;
 use crate::window_properties::*;
 
@@ -12,7 +9,6 @@ use wgpu;
 use winit::dpi::{LogicalSize};
 use winit::window::{Window, Fullscreen};
 use futures::prelude::*;
-use futures::channel::oneshot;
 use futures::task::{Poll, Context};
 
 use std::pin::*;
