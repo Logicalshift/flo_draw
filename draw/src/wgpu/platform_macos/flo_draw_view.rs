@@ -48,7 +48,7 @@ declare_class!(
             // Disable the transaction so the resize doesn't do a silly animation
             CATransaction::begin();
             CATransaction::setAnimationDuration(0.0);
-            CATransaction::disableActions();
+            CATransaction::setDisableActions(true);
 
             self.reposition_metal_layer();
 
