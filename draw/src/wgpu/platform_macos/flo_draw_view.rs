@@ -16,9 +16,6 @@ use std::sync::*;
 pub struct FloDrawViewVars {
     /// The layer that we should render on
     metal_layer: Retained<CAMetalLayer>,
-
-    /// The winit window that is being rendered in this view
-    window: Option<Weak<Mutex<WinitWindow>>>,
 }
 
 declare_class!(
@@ -57,15 +54,6 @@ declare_class!(
 
             self.reposition_metal_layer();
 
-            if let Some(window) = self.window() {
-                if let Ok(mut window) = window.try_lock() {
-                    window.redraw_immediate(new_size.width as _, new_size.height as _);
-                    println!("Redraw immediate");
-                } else {
-                    println!("Window locked");
-                }
-            }
-
             CATransaction::commit();
         }
     }
@@ -83,7 +71,6 @@ impl FloDrawView {
 
         let ivars = FloDrawViewVars {
             metal_layer:    metal_layer.clone(),
-            window:         None,
         };
 
         // Allocate the view
@@ -124,13 +111,6 @@ impl FloDrawView {
     }
 
     ///
-    /// Retrieves the window that this view is attached to
-    ///
-    fn window(&self) -> Option<Arc<Mutex<WinitWindow>>> {
-        self.ivars().lock().unwrap().window.as_ref().and_then(|window| window.upgrade())
-    }
-
-    ///
     /// Repositions the metal layer within this view
     ///
     fn reposition_metal_layer(&self) {
@@ -151,8 +131,6 @@ impl FloDrawView {
     /// Sets this view as the main view of the specified window
     ///
     pub fn attach_to(&self, window: &Arc<Mutex<WinitWindow>>) {
-        self.ivars().lock().unwrap().window = Some(Arc::downgrade(window));
-
         let window = window.lock().unwrap();
 
         if let Some(RawWindowHandle::AppKit(appkit)) = window.window().map(|window| window.raw_window_handle()) {
