@@ -62,6 +62,13 @@ impl WinitWindow {
             draw_view:  None,
         }
     }
+
+    ///
+    /// Returns the underlying winit window object
+    ///
+    pub (super) fn window(&self) -> Option<Arc<Window>> {
+        self.window.clone()
+    }
 }
 
 ///
@@ -76,7 +83,7 @@ where
     EventPublisher: MessagePublisher<Message=DrawEvent>,
 {
     // Read events from the render actions list
-    let mut window          = window;
+    let mut window          = Arc::new(Mutex::new(window));
     let mut events          = events;
     let window_actions      = WindowUpdateStream { 
         render_stream:      render_actions, 
@@ -94,6 +101,8 @@ where
         for next_action in next_action_set {
             match next_action {
                 WindowUpdate::Render(next_action)   => {
+                    let mut window_lock = window.lock().unwrap();
+
                     // Do nothing if there are no actions
                     if next_action.len() == 0 {
                         events.publish(DrawEvent::NewFrame).await;
@@ -101,12 +110,11 @@ where
                     }
 
                     // Create the subview
-                    if let (Some(winit_window), None) = (&window.window, &window.draw_view) {
-                        // Create a rendering view for OS X
-                        let draw_view = FloDrawView::new();
+                    if let (Some(winit_window), None) = (&window_lock.window, &window_lock.draw_view) {
+                        use std::mem;
 
-                        // Attach to the window
-                        draw_view.attach_to(&winit_window);
+                        // Create a rendering view for OS X
+                        let mut draw_view = FloDrawView::new();
 
                         // Initialise as the drawing surface
                         let backend         = wgpu::Backends::from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
@@ -135,14 +143,22 @@ where
                         let adapter         = Arc::new(adapter);
                         let renderer        = WgpuRenderer::from_surface(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
 
-                        window.device       = Some(device);
-                        window.instance     = Some(instance);
-                        window.renderer     = Some(renderer);
-                        window.draw_view    = Some(draw_view);
+                        window_lock.device      = Some(device);
+                        window_lock.instance    = Some(instance);
+                        window_lock.renderer    = Some(renderer);
+
+                        // Attach to the window (need to release the lock while we do this)
+                        mem::drop(window_lock);
+                        draw_view.attach_to(&window);
+                        window_lock = window.lock().unwrap();
+                        window_lock.draw_view   = Some(draw_view);
                     }
 
+                    // Referencing the value in the lock makes borrowing the contents easier
+                    let window_lock = &mut *window_lock;
+
                     // Create the renderer if it doesn't already exist
-                    if let (Some(winit_window), None) = (&window.window, &window.renderer) {
+                    if let (Some(winit_window), None) = (&window_lock.window, &window_lock.renderer) {
                         // Create a new WGPU instance, surface and adapter
                         let winit_window    = winit_window.clone();
 
@@ -182,7 +198,7 @@ where
                         send_new_frame = true;
                     }
 
-                    if let (Some(winit_window), Some(renderer)) = (&window.window, &mut window.renderer) {
+                    if let (Some(winit_window), Some(renderer)) = (&window_lock.window, &mut window_lock.renderer) {
                         // Set up to render at the current size
                         let size    = winit_window.inner_size();
                         let width   = size.width;
@@ -223,38 +239,44 @@ where
                 }
 
                 WindowUpdate::SetTitle(new_title)   => {
-                    if let Some(winit_window) = &window.window {
+                    let window_lock = window.lock().unwrap();
+                    if let Some(winit_window) = &window_lock.window {
                         winit_window.set_title(&new_title);
                     }
                 }
 
                 WindowUpdate::SetSize((size_x, size_y)) => {
-                    if let Some(winit_window) = &window.window {
+                    let window_lock = window.lock().unwrap();
+                    if let Some(winit_window) = &window_lock.window {
                         let _ = winit_window.request_inner_size(LogicalSize::new(size_x as f64, size_y as _));
                     }
                 }
 
                 WindowUpdate::SetFullscreen(is_fullscreen) => {
+                    let window_lock = window.lock().unwrap();
                     let fullscreen = if is_fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
-                    if let Some(winit_window) = &window.window {
+                    if let Some(winit_window) = &window_lock.window {
                         winit_window.set_fullscreen(fullscreen);
                     }
                 }
 
                 WindowUpdate::SetHasDecorations(decorations) => {
-                    if let Some(winit_window) = &window.window {
+                    let window_lock = window.lock().unwrap();
+                    if let Some(winit_window) = &window_lock.window {
                         winit_window.set_decorations(decorations);
                     }
                 }
 
                 WindowUpdate::SetMousePointer(MousePointer::None) => {
-                    if let Some(winit_window) = &window.window {
+                    let window_lock = window.lock().unwrap();
+                    if let Some(winit_window) = &window_lock.window {
                         winit_window.set_cursor_visible(false);
                     }
                 }
 
                 WindowUpdate::SetMousePointer(MousePointer::SystemDefault) => {
-                    if let Some(winit_window) = &window.window {
+                    let window_lock = window.lock().unwrap();
+                    if let Some(winit_window) = &window_lock.window {
                         winit_window.set_cursor_visible(true);
                     }
                 }

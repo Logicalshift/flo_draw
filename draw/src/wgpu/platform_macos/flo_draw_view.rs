@@ -1,3 +1,5 @@
+use crate::wgpu::winit_window::*;
+
 use objc2::*;
 use objc2::rc::*;
 use objc2::runtime::{ProtocolObject};
@@ -6,7 +8,6 @@ use objc2_app_kit::{NSAutoresizingMaskOptions, NSResponder, NSView};
 use objc2_foundation::{NSObject, MainThreadMarker, NSSize, NSNull, NSDictionary, NSString, ns_string, NSCopying};
 use objc2_quartz_core::{CAAction, CAMetalLayer, CATransaction};
 
-use winit::window::{Window};
 use winit::raw_window_handle_05::{HasRawWindowHandle, RawWindowHandle};
 use wgpu;
 
@@ -15,6 +16,9 @@ use std::sync::*;
 pub struct FloDrawViewVars {
     /// The layer that we should render on
     metal_layer: Retained<CAMetalLayer>,
+
+    /// The winit window that is being rendered in this view
+    window: Option<Arc<Mutex<WinitWindow>>>,
 }
 
 declare_class!(
@@ -69,7 +73,8 @@ impl FloDrawView {
         let metal_layer  = unsafe { CAMetalLayer::new() };
 
         let ivars = FloDrawViewVars {
-            metal_layer: metal_layer.clone(),
+            metal_layer:    metal_layer.clone(),
+            window:         None,
         };
 
         // Allocate the view
@@ -129,8 +134,12 @@ impl FloDrawView {
     ///
     /// Sets this view as the main view of the specified window
     ///
-    pub fn attach_to(&self, window: &Arc<Window>) {
-        if let RawWindowHandle::AppKit(appkit) = window.raw_window_handle() {
+    pub fn attach_to(&mut self, window: &Arc<Mutex<WinitWindow>>) {
+        self.ivars_mut().window = Some(Arc::clone(window));
+
+        let window = window.lock().unwrap();
+
+        if let Some(RawWindowHandle::AppKit(appkit)) = window.window().map(|window| window.raw_window_handle()) {
             // Fetch the root view from the window
             let root_view: Option<Retained<NSView>> = unsafe { Id::retain(appkit.ns_view.cast()) };
             let root_view                           = root_view.expect("Window must have a root view");
