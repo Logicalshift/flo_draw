@@ -29,6 +29,14 @@ flo_scene               = { git = "https://github.com/Logicalshift/flo_scene", b
 flo_scene_guest         = { git = "https://github.com/Logicalshift/flo_scene", branch = "v0.2" }
 desync                  = { git = "https://github.com/Logicalshift/desync", branch = "v0.9" }
 
+#naga                    = { path = "../../src/wgpu/naga" }
+#wgpu                    = { path = "../../src/wgpu/wgpu" }
+#wgpu-core               = { path = "../../src/wgpu/wgpu-core" }
+#wgpu-hal                = { path = "../../src/wgpu/wgpu-hal"}
+#wgpu-info               = { path = "../../src/wgpu/wgpu-info"}
+#wgpu-macros             = { path = "../../src/wgpu/wgpu-macros"}
+#wgpu-types              = { path = "../../src/wgpu/wgpu-types"}
+
 # allsorts is very slow when built for debug, so packages using flo_draw should consider optimising it even in debug builds
 [profile.dev.package.allsorts]
 opt-level = 2
