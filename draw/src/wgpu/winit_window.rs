@@ -165,7 +165,6 @@ where
                         // Create a new WGPU instance, surface and adapter
                         let winit_window    = winit_window.clone();
 
-                        /*
                         let backend         = wgpu::Backends::from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
                         let instance        = wgpu::Instance::new(&wgpu::InstanceDescriptor { backends: backend, ..Default::default() });
                         let surface         = instance.create_surface(winit_window).expect("wgpu surface");
@@ -176,7 +175,7 @@ where
                         }).await.expect("Could not acquire an adapter for winit/wgpu");
 
                         // Fetch the device and the queue
-                        let features        = wgpu::Features::empty();
+                        let features = wgpu::Features::empty();
                         #[cfg(feature="wgpu-profiler")] let features = features | GpuProfiler::ALL_WGPU_TIMER_FEATURES;
                         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
                             label:              None,
@@ -186,16 +185,15 @@ where
                         }, None).await.expect("Create WGPU device and queue");
 
                         // Create the WGPU renderer
-                        let device          = Arc::new(device);
-                        let queue           = Arc::new(queue);
-                        let surface         = Arc::new(surface);
-                        let adapter         = Arc::new(adapter);
-                        let renderer        = WgpuRenderer::from_surface(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
+                        let device              = Arc::new(device);
+                        let queue               = Arc::new(queue);
+                        let surface             = Arc::new(surface);
+                        let adapter             = Arc::new(adapter);
+                        let renderer            = WgpuRenderer::from_surface(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
 
-                        window.device       = Some(device);
-                        window.instance     = Some(instance);
-                        window.renderer     = Some(renderer);
-                        */
+                        window_lock.device      = Some(device);
+                        window_lock.instance    = Some(instance);
+                        window_lock.renderer    = Some(renderer);
 
                         // First frame has been displayed
                         send_new_frame = true;
