@@ -98,7 +98,7 @@ where
     EventPublisher: MessagePublisher<Message=DrawEvent>,
 {
     // Read events from the render actions list
-    let mut window          = Arc::new(Mutex::new(window));
+    let window              = Arc::new(Mutex::new(window));
     let mut events          = events;
     let window_actions      = WindowUpdateStream { 
         render_stream:      render_actions, 
@@ -125,11 +125,11 @@ where
                     }
 
                     // Create the subview
-                    if let (Some(winit_window), None) = (&window_lock.window, &window_lock.draw_view) {
+                    if let (Some(_winit_window), None) = (&window_lock.window, &window_lock.draw_view) {
                         use std::mem;
 
                         // Create a rendering view for OS X
-                        let mut draw_view = FloDrawView::new();
+                        let draw_view = FloDrawView::new();
 
                         // Initialise as the drawing surface
                         let backend         = wgpu::Backends::from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
@@ -170,7 +170,8 @@ where
                     }
 
                     // Referencing the value in the lock makes borrowing the contents easier
-                    let window_lock = &mut *window_lock;
+                    let mut window_lock_mtx = window_lock;
+                    let window_lock         = &mut *window_lock_mtx;
 
                     // Create the renderer if it doesn't already exist
                     if let (Some(winit_window), None) = (&window_lock.window, &window_lock.renderer) {
@@ -232,6 +233,8 @@ where
 
                         // Notify that a new frame has been drawn if show_frame_buffer is set
                         if let Some(next_frame) = maybe_next_frame {
+                            use std::mem;
+
                             #[cfg(feature="profile")]
                             let start_time = Instant::now();
 
@@ -242,6 +245,7 @@ where
                             winit_thread().send_event(WinitThreadEvent::PresentSurface(window_id, next_frame, yield_send));
 
                             // Wait for the frame to be displayed (or cancelled) before processing any other events
+                            mem::drop(window_lock_mtx);
                             yield_recv.await.ok();
 
                             #[cfg(feature="profile")]
