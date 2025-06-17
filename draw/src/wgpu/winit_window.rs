@@ -208,7 +208,7 @@ where
                         CATransaction::setAnimationDuration(0.0);
                         CATransaction::setDisableActions(true);
 
-                        renderer.prepare_to_render(width, height);
+                        renderer.prepare_to_render(width, height);      // TODO: if we switch between presentation modes we could use immediate while resizing and AutoVsync in 'normal' circumstances
 
                         // Send the commands to the renderer
                         let maybe_next_frame = renderer.render_to_surface(next_action);
