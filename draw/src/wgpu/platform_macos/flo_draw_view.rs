@@ -4,7 +4,7 @@ use objc2::*;
 use objc2::rc::{Id, Retained};
 use objc2::runtime::{ProtocolObject};
 
-use objc2_app_kit::{NSAutoresizingMaskOptions, NSResponder, NSView};
+use objc2_app_kit::{NSAutoresizingMaskOptions, NSResponder, NSView, NSEvent};
 use objc2_foundation::{NSObject, MainThreadMarker, NSSize, NSNull, NSDictionary, NSString, ns_string, NSCopying};
 use objc2_quartz_core::{CAAction, CAMetalLayer, CATransaction};
 
@@ -55,6 +55,56 @@ declare_class!(
             self.reposition_metal_layer();
 
             CATransaction::commit();
+        }
+
+        #[method(mouseDown:)]
+        fn mouse_down(&self, event: &NSEvent) {
+        }
+
+        #[method(mouseUp:)]
+        fn mouse_up(&self, event: &NSEvent) {
+        }
+
+        #[method(rightMouseDown:)]
+        fn right_mouse_down(&self, event: &NSEvent) {
+        }
+
+        #[method(rightMouseUp:)]
+        fn right_mouse_up(&self, event: &NSEvent) {
+        }
+
+        #[method(otherMouseDown:)]
+        fn other_mouse_down(&self, event: &NSEvent) {
+        }
+
+        #[method(otherMouseUp:)]
+        fn other_mouse_up(&self, event: &NSEvent) {
+        }
+
+        #[method(mouseMoved:)]
+        fn mouse_moved(&self, event: &NSEvent) {
+            println!("Move: {:?}", unsafe { event.pressure() });
+        }
+
+        #[method(mouseDragged:)]
+        fn mouse_dragged(&self, event: &NSEvent) {
+            println!("Drag: {:?}", unsafe { event.pressure() });
+        }
+
+        #[method(rightMouseDragged:)]
+        fn right_mouse_dragged(&self, event: &NSEvent) {
+        }
+
+        #[method(otherMouseDragged:)]
+        fn other_mouse_dragged(&self, event: &NSEvent) {
+        }
+
+        #[method(mouseEntered:)]
+        fn mouse_entered(&self, _event: &NSEvent) {
+        }
+
+        #[method(mouseExited:)]
+        fn mouse_exited(&self, _event: &NSEvent) {
         }
     }
 );
