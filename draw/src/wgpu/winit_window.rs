@@ -56,6 +56,7 @@ impl WinitWindow {
             device:     None,
             instance:   None,
             renderer:   None,
+            #[cfg(target_os="macos")]
             draw_view:  None,
         }
     }
@@ -203,9 +204,12 @@ where
                         let width   = size.width;
                         let height  = size.height;
 
-                        CATransaction::begin();
-                        CATransaction::setAnimationDuration(0.0);
-                        CATransaction::setDisableActions(true);
+                        #[cfg(target_os="macos")]
+                        {
+                            CATransaction::begin();
+                            CATransaction::setAnimationDuration(0.0);
+                            CATransaction::setDisableActions(true);
+                        }
 
                         renderer.prepare_to_render(width, height);      // TODO: if we switch between presentation modes we could use immediate while resizing and AutoVsync in 'normal' circumstances
 
@@ -226,6 +230,7 @@ where
                             send_new_frame = true;
                         }
 
+                        #[cfg(target_os="macos")]
                         CATransaction::commit();
                     }
                 }
