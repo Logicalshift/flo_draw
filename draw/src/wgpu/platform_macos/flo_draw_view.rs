@@ -1,3 +1,4 @@
+use super::events::*;
 use crate::events::*;
 use crate::wgpu::winit_window::*;
 use crate::wgpu::winit_thread::*;
@@ -23,6 +24,9 @@ pub struct FloDrawViewVars {
 
     /// The winit window that is being rendered in this view
     window: Option<Weak<Mutex<WinitWindow>>>,
+
+    /// The buttons that are currently held down
+    buttons: Vec<Button>,
 }
 
 declare_class!(
@@ -66,44 +70,72 @@ declare_class!(
 
         #[method(mouseDown:)]
         fn mouse_down(&self, event: &NSEvent) {
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::ButtonDown, self.press_button(Button::Left), event));
         }
 
         #[method(mouseUp:)]
         fn mouse_up(&self, event: &NSEvent) {
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::ButtonDown, self.release_button(Button::Left), event));
         }
 
         #[method(rightMouseDown:)]
         fn right_mouse_down(&self, event: &NSEvent) {
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::ButtonDown, self.press_button(Button::Right), event));
         }
 
         #[method(rightMouseUp:)]
         fn right_mouse_up(&self, event: &NSEvent) {
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::ButtonDown, self.release_button(Button::Right), event));
         }
 
         #[method(otherMouseDown:)]
         fn other_mouse_down(&self, event: &NSEvent) {
+            let button = match unsafe { event.buttonNumber() } {
+                0 => Button::Left,
+                1 => Button::Right,
+                2 => Button::Middle,
+                other => Button::Other(other as _),
+            };
+
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::ButtonDown, self.press_button(button), event));
         }
 
         #[method(otherMouseUp:)]
         fn other_mouse_up(&self, event: &NSEvent) {
+            let button = match unsafe { event.buttonNumber() } {
+                0 => Button::Left,
+                1 => Button::Right,
+                2 => Button::Middle,
+                other => Button::Other(other as _),
+            };
+
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::ButtonDown, self.release_button(button), event));
         }
 
         #[method(mouseMoved:)]
         fn mouse_moved(&self, event: &NSEvent) {
-            println!("Move: {:?}", unsafe { event.pressure() });
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
         }
 
         #[method(mouseDragged:)]
         fn mouse_dragged(&self, event: &NSEvent) {
-            println!("Drag: {:?}", unsafe { event.pressure() });
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
         }
 
         #[method(rightMouseDragged:)]
         fn right_mouse_dragged(&self, event: &NSEvent) {
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
         }
 
         #[method(otherMouseDragged:)]
         fn other_mouse_dragged(&self, event: &NSEvent) {
+            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
         }
 
         #[method(mouseEntered:)]
@@ -129,6 +161,7 @@ impl FloDrawView {
         let ivars = FloDrawViewVars {
             metal_layer:    metal_layer.clone(),
             window:         None,
+            buttons:        vec![],
         };
 
         // Allocate the view
@@ -244,6 +277,41 @@ impl FloDrawView {
             // We should be running on OS X here, so we should get an appkit window
             panic!("Was expecting an appkit window");
         }
+    }
+
+    ///
+    /// Returns the current set of pressed buttons in this view
+    ///
+    #[inline]
+    fn buttons(&self) -> Vec<Button> {
+        let ivars = self.ivars().lock().unwrap();
+
+        ivars.buttons.clone()
+    }
+
+    ///
+    /// Sets a button as pressed (returning the updated button state)
+    ///
+    #[inline]
+    fn press_button(&self, pressed_button: Button) -> Vec<Button> {
+        let mut ivars = self.ivars().lock().unwrap();
+
+        ivars.buttons.retain(|existing_button| existing_button != &pressed_button);
+        ivars.buttons.push(pressed_button);
+
+        ivars.buttons.clone()
+    }
+
+    ///
+    /// Sets a button as released (returning the updated button state)
+    ///
+    #[inline]
+    fn release_button(&self, released_button: Button) -> Vec<Button> {
+        let mut ivars = self.ivars().lock().unwrap();
+
+        ivars.buttons.retain(|existing_button| existing_button != &released_button);
+
+        ivars.buttons.clone()
     }
 
     ///

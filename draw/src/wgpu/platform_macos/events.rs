@@ -4,7 +4,7 @@ use objc2_app_kit::{NSEvent};
 ///
 /// Converts an NSEvent from a pointer event to a DrawEvent::Pointer event, with the specified action
 ///
-pub fn draw_pointer_event_for_nsevent(action: PointerAction, event: &NSEvent) -> DrawEvent {
+pub fn draw_pointer_event_for_nsevent(action: PointerAction, buttons: Vec<Button>, event: &NSEvent) -> DrawEvent {
     // Pointer ID
     let pointer_id      = unsafe { event.pointingDeviceID() };
     let pointer_id      = PointerId(pointer_id as _);
@@ -19,7 +19,7 @@ pub fn draw_pointer_event_for_nsevent(action: PointerAction, event: &NSEvent) ->
     let pointer_state   = PointerState {
         location_in_window: (pos.x, pos.y),
         location_in_canvas: None,
-        buttons:            vec![], // TODO (probably need to track this independently)
+        buttons:            buttons,
         pressure:           Some(pressure as _),
         tilt:               Some((tilt.x, tilt.y)),
         rotation:           Some(rotation as _),
