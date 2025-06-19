@@ -16,6 +16,9 @@ use std::sync::*;
 pub struct FloDrawViewVars {
     /// The layer that we should render on
     metal_layer: Retained<CAMetalLayer>,
+
+    /// The winit window that is being rendered in this view
+    window: Option<Weak<Mutex<WinitWindow>>>,
 }
 
 declare_class!(
@@ -121,6 +124,7 @@ impl FloDrawView {
 
         let ivars = FloDrawViewVars {
             metal_layer:    metal_layer.clone(),
+            window:         None,
         };
 
         // Allocate the view
@@ -181,6 +185,8 @@ impl FloDrawView {
     /// Sets this view as the main view of the specified window
     ///
     pub fn attach_to(&self, window: &Arc<Mutex<WinitWindow>>) {
+        self.ivars().lock().unwrap().window = Some(Arc::downgrade(window));
+
         let window = window.lock().unwrap();
 
         if let Some(RawWindowHandle::AppKit(appkit)) = window.window().map(|window| window.raw_window_handle()) {
