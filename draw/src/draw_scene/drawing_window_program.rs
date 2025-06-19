@@ -387,6 +387,45 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                     }
 
                     DrawingOrEvent::Event(event_list) => {
+                        // Reprocess the event list: remove events that are superceded by other events
+                        let mut event_list = event_list;
+                        let resize_indexes = event_list.iter()
+                            .enumerate()
+                            .filter_map(|(idx, evt)| {
+                                if let DrawEvent::Resize(_, _) = evt {
+                                    Some(idx)
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect::<Vec<_>>();
+
+                        if resize_indexes.len() > 1 {
+                            // Remove all but the most recent resize event if there's more than one
+                            for idx in resize_indexes.into_iter().rev().skip(1) {
+                                event_list.remove(idx);
+                            }
+                        }
+
+                        let redraw_indexes = event_list.iter()
+                            .enumerate()
+                            .filter_map(|(idx, evt)| {
+                                if let DrawEvent::Redraw = evt {
+                                    Some(idx)
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect::<Vec<_>>();
+
+                        if redraw_indexes.len() > 1 {
+                            // Remove all but the most recent redraw event if there's more than one
+                            for idx in redraw_indexes.into_iter().rev().skip(1) {
+                                event_list.remove(idx);
+                            }
+                        }
+
+                        // Reprocess the drawing events, then send them to subscribers (and also process any we need to)
                         for evt_message in event_list.into_iter() {
                             let mut evt_message = evt_message;
 
