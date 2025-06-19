@@ -82,19 +82,19 @@ declare_class!(
         #[method(mouseUp:)]
         fn mouse_up(&self, event: &NSEvent) {
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
-            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonDown, self.release_button(Button::Left), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonUp, self.release_button(Button::Left), event));
         }
 
         #[method(rightMouseDown:)]
         fn right_mouse_down(&self, event: &NSEvent) {
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
-            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonDown, self.press_button(Button::Right), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonUp, self.press_button(Button::Right), event));
         }
 
         #[method(rightMouseUp:)]
         fn right_mouse_up(&self, event: &NSEvent) {
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
-            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonDown, self.release_button(Button::Right), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonUp, self.release_button(Button::Right), event));
         }
 
         #[method(otherMouseDown:)]
@@ -120,7 +120,7 @@ declare_class!(
             };
 
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
-            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonDown, self.release_button(button), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonUp, self.release_button(button), event));
         }
 
         #[method(mouseMoved:)]
