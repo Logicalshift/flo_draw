@@ -1,4 +1,6 @@
 use crate::wgpu::winit_window::*;
+use crate::wgpu::winit_thread::*;
+use crate::wgpu::winit_thread_event::*;
 
 use objc2::*;
 use objc2::rc::{Id, Retained};
@@ -8,6 +10,8 @@ use objc2_app_kit::{NSAutoresizingMaskOptions, NSResponder, NSView, NSEvent};
 use objc2_foundation::{NSObject, MainThreadMarker, NSSize, NSNull, NSDictionary, NSString, ns_string, NSCopying};
 use objc2_quartz_core::{CAAction, CAMetalLayer, CATransaction};
 
+use winit::event::{WindowEvent};
+use winit::window::{WindowId};
 use winit::raw_window_handle_05::{HasRawWindowHandle, RawWindowHandle};
 use wgpu;
 
@@ -251,5 +255,25 @@ impl FloDrawView {
         let target                          = wgpu::SurfaceTargetUnsafe::CoreAnimationLayer(layer_ptr as *mut _);
 
         unsafe { instance.create_surface_unsafe(target).unwrap() }
+    }
+
+    ///
+    /// Retrieves the window ID for the window that contains this view
+    ///
+    pub fn window_id(&self) -> Option<WindowId> {
+        // Fetch the window if it's available
+        let window  = self.ivars().lock().unwrap().window.as_ref().and_then(|window| window.upgrade())?;
+        let window  = window.lock().unwrap().window()?;
+
+        Some(window.id())
+    }
+
+    ///
+    /// Sends an event to the window that contains this view
+    ///
+    pub fn send_window_event(&self, event: WindowEvent) {
+        if let Some(window_id) = self.window_id() {
+            winit_thread().send_event(WinitThreadEvent::SendToWindow(window_id, event));
+        }
     }
 }
