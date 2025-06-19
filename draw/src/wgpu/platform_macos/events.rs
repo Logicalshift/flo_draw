@@ -1,10 +1,11 @@
 use flo_canvas_events::*;
-use objc2_app_kit::{NSEvent};
+use objc2_foundation::{CGPoint};
+use objc2_app_kit::{NSView, NSEvent};
 
 ///
 /// Converts an NSEvent from a pointer event to a DrawEvent::Pointer event, with the specified action
 ///
-pub fn draw_pointer_event_for_nsevent(action: PointerAction, buttons: Vec<Button>, event: &NSEvent) -> DrawEvent {
+pub fn draw_pointer_event_for_nsevent(view: &NSView, action: PointerAction, buttons: Vec<Button>, event: &NSEvent) -> DrawEvent {
     // Pointer ID
     let pointer_id      = unsafe { event.pointingDeviceID() };
     let pointer_id      = PointerId(pointer_id as _);
@@ -14,6 +15,11 @@ pub fn draw_pointer_event_for_nsevent(action: PointerAction, buttons: Vec<Button
     let pressure        = unsafe { event.pressure() };
     let tilt            = unsafe { event.tilt() };
     let rotation        = unsafe { event.rotation() };
+
+    // Convert to view coordinates
+    let scale_factor    = view.window().map(|window| window.backingScaleFactor()).unwrap_or(1.0);
+    let pos             = view.convertPoint_fromView(pos, None);
+    let pos             = CGPoint { x: pos.x*scale_factor, y: pos.y*scale_factor };
 
     // Convert to a pointer state
     let pointer_state   = PointerState {

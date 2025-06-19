@@ -68,28 +68,33 @@ declare_class!(
             CATransaction::commit();
         }
 
+        #[method(isFlipped)]
+        fn is_flipped(&self) -> bool {
+            true
+        }
+
         #[method(mouseDown:)]
         fn mouse_down(&self, event: &NSEvent) {
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::ButtonDown, self.press_button(Button::Left), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonDown, self.press_button(Button::Left), event));
         }
 
         #[method(mouseUp:)]
         fn mouse_up(&self, event: &NSEvent) {
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::ButtonDown, self.release_button(Button::Left), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonDown, self.release_button(Button::Left), event));
         }
 
         #[method(rightMouseDown:)]
         fn right_mouse_down(&self, event: &NSEvent) {
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::ButtonDown, self.press_button(Button::Right), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonDown, self.press_button(Button::Right), event));
         }
 
         #[method(rightMouseUp:)]
         fn right_mouse_up(&self, event: &NSEvent) {
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::ButtonDown, self.release_button(Button::Right), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonDown, self.release_button(Button::Right), event));
         }
 
         #[method(otherMouseDown:)]
@@ -101,8 +106,8 @@ declare_class!(
                 other => Button::Other(other as _),
             };
 
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::ButtonDown, self.press_button(button), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonDown, self.press_button(button), event));
         }
 
         #[method(otherMouseUp:)]
@@ -114,28 +119,28 @@ declare_class!(
                 other => Button::Other(other as _),
             };
 
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::ButtonDown, self.release_button(button), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonDown, self.release_button(button), event));
         }
 
         #[method(mouseMoved:)]
         fn mouse_moved(&self, event: &NSEvent) {
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
         }
 
         #[method(mouseDragged:)]
         fn mouse_dragged(&self, event: &NSEvent) {
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
         }
 
         #[method(rightMouseDragged:)]
         fn right_mouse_dragged(&self, event: &NSEvent) {
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
         }
 
         #[method(otherMouseDragged:)]
         fn other_mouse_dragged(&self, event: &NSEvent) {
-            self.send_window_event(draw_pointer_event_for_nsevent(PointerAction::Move, self.buttons(), event));
+            self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
         }
 
         #[method(mouseEntered:)]
