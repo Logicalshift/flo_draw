@@ -1,3 +1,4 @@
+use crate::events::*;
 use crate::wgpu::winit_window::*;
 use crate::wgpu::winit_thread::*;
 use crate::wgpu::winit_thread_event::*;
@@ -10,7 +11,6 @@ use objc2_app_kit::{NSAutoresizingMaskOptions, NSResponder, NSView, NSEvent};
 use objc2_foundation::{NSObject, MainThreadMarker, NSSize, NSNull, NSDictionary, NSString, ns_string, NSCopying};
 use objc2_quartz_core::{CAAction, CAMetalLayer, CATransaction};
 
-use winit::event::{WindowEvent};
 use winit::window::{WindowId};
 use winit::raw_window_handle_05::{HasRawWindowHandle, RawWindowHandle};
 use wgpu;
@@ -271,9 +271,9 @@ impl FloDrawView {
     ///
     /// Sends an event to the window that contains this view
     ///
-    pub fn send_window_event(&self, event: WindowEvent) {
+    pub fn send_window_event(&self, event: DrawEvent) {
         if let Some(window_id) = self.window_id() {
-            winit_thread().send_event(WinitThreadEvent::SendToWindow(window_id, event));
+            winit_thread().send_event(WinitThreadEvent::SendDrawEventToWindow(window_id, event));
         }
     }
 }

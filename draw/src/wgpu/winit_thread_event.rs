@@ -10,7 +10,6 @@ use futures::channel::oneshot;
 
 use wgpu;
 use winit::window::{WindowId};
-use winit::event::{WindowEvent};
 
 use std::fmt;
 use std::fmt::*;
@@ -41,7 +40,7 @@ pub enum WinitThreadEvent {
     StopWhenAllWindowsClosed,
 
     /// Sends an event to a window
-    SendToWindow(WindowId, WindowEvent)
+    SendDrawEventToWindow(WindowId, DrawEvent),
 }
 
 impl Debug for WinitThreadEvent {
@@ -49,14 +48,14 @@ impl Debug for WinitThreadEvent {
         use self::WinitThreadEvent::*;
 
         match self {
-            CreateRenderWindow(_, _, _)     => write!(f, "CreateRenderWindow(...)"),
-            RunProcess(_)                   => write!(f, "RunProcess(...)"),
-            WakeFuture(id)                  => write!(f, "WakeFuture({})", id),
-            PresentSurface(id, _, _)        => write!(f, "PresentSurface({:?}, ...)", id),
-            Yield(_)                        => write!(f, "Yield(...)"),
-            StopSendingToWindow(id)         => write!(f, "StopSendingToWindow({:?})", id),
-            StopWhenAllWindowsClosed        => write!(f, "StopWhenAllWindowsClosed"),
-            SendToWindow(window_id, event)  => write!(f, "SendToWindow({:?}, {:?})", window_id, event),
+            CreateRenderWindow(_, _, _)                 => write!(f, "CreateRenderWindow(...)"),
+            RunProcess(_)                               => write!(f, "RunProcess(...)"),
+            WakeFuture(id)                              => write!(f, "WakeFuture({})", id),
+            PresentSurface(id, _, _)                    => write!(f, "PresentSurface({:?}, ...)", id),
+            Yield(_)                                    => write!(f, "Yield(...)"),
+            StopSendingToWindow(id)                     => write!(f, "StopSendingToWindow({:?})", id),
+            StopWhenAllWindowsClosed                    => write!(f, "StopWhenAllWindowsClosed"),
+            SendDrawEventToWindow(window_id, event)     => write!(f, "SendDrawEventToWindow({:?}, {:?})", window_id, event),
         }
     }
 }
