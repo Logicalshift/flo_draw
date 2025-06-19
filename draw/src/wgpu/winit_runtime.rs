@@ -405,7 +405,11 @@ impl WinitRuntime {
                 if self.window_events.len() == 0 {
                     self.will_exit = true;
                 }
-            }
+            },
+
+            SendToWindow(window_id, event) => {
+                self.handle_window_event(window_id, event);
+            },
         }
     }
 

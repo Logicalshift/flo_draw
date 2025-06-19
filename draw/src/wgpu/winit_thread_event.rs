@@ -10,6 +10,7 @@ use futures::channel::oneshot;
 
 use wgpu;
 use winit::window::{WindowId};
+use winit::event::{WindowEvent};
 
 use std::fmt;
 use std::fmt::*;
@@ -38,6 +39,9 @@ pub enum WinitThreadEvent {
 
     /// Tells the UI thread to stop when there are no more windows open
     StopWhenAllWindowsClosed,
+
+    /// Sends an event to a window
+    SendToWindow(WindowId, WindowEvent)
 }
 
 impl Debug for WinitThreadEvent {
@@ -52,6 +56,7 @@ impl Debug for WinitThreadEvent {
             Yield(_)                        => write!(f, "Yield(...)"),
             StopSendingToWindow(id)         => write!(f, "StopSendingToWindow({:?})", id),
             StopWhenAllWindowsClosed        => write!(f, "StopWhenAllWindowsClosed"),
+            SendToWindow(window_id, event)  => write!(f, "SendToWindow({:?}, {:?})", window_id, event),
         }
     }
 }
