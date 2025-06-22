@@ -65,6 +65,10 @@ declare_class!(
 
             self.reposition_metal_layer();
 
+            // TODO: if we want to fully eliminate the 'glitching' that can occur here, we need to send the resize event now, then process events from the scene until it 
+            // becomes idle (or at least until the corresponding redraw request has gone through), before committing the transaction and returning to the main winit
+            // event loop.
+
             CATransaction::commit();
         }
 
