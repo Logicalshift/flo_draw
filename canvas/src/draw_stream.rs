@@ -12,6 +12,15 @@ use std::pin::*;
 use std::sync::*;
 use std::collections::{VecDeque, HashSet, HashMap};
 
+#[derive(Clone)]
+struct DrawStreamState {
+    /// The resource that the stream is currently drawing to
+    target_resource: DrawResource,
+
+    /// The namespace that future drawing instructions will write to
+    current_namespace: NamespaceId,
+}
+
 ///
 /// The draw stream core contains the shared data structures for a stream of drawing instructions
 ///
@@ -19,11 +28,11 @@ pub (crate) struct DrawStreamCore {
     /// The pending drawing instructions, and the resource that it affects
     pending_drawing: Vec<(DrawResource, Draw)>,
 
-    /// The resource that the stream is currently drawing to
-    target_resource: DrawResource,
+    /// The active state of the stream
+    current_state: DrawStreamState,
 
-    /// The namespace that future drawing instructions will write to
-    current_namespace: NamespaceId,
+    /// States that have been pushed by PushState
+    pushed_states: Vec<DrawStreamState>,
 
     /// The number of writers that this stream core has
     usage_count: usize,
@@ -52,10 +61,15 @@ impl DrawStreamCore {
     ///
     pub fn new() -> DrawStreamCore {
         // No drawing instructions, and drawing to layer 0 by default
-        DrawStreamCore {
-            pending_drawing:    vec![],
+        let initial_state = DrawStreamState {
             target_resource:    DrawResource::Layer(NamespaceId::default(), LayerId(0)),
             current_namespace:  NamespaceId::default(),
+        };
+
+        DrawStreamCore {
+            pending_drawing:    vec![],
+            current_state:      initial_state,
+            pushed_states:      vec![],
             usage_count:        0,
             closed:             false,
             waiting_task:       None
@@ -394,27 +408,27 @@ impl DrawStreamCore {
         for draw in drawing {
             // Process the drawing instruction
             match &draw {
-                Draw::Layer(layer_id)   => { self.target_resource = DrawResource::Layer(self.current_namespace, *layer_id); },
-                Draw::Sprite(sprite_id) => { self.target_resource = DrawResource::Sprite(self.current_namespace, *sprite_id); },
+                Draw::Layer(layer_id)   => { self.current_state.target_resource = DrawResource::Layer(self.current_state.current_namespace, *layer_id); },
+                Draw::Sprite(sprite_id) => { self.current_state.target_resource = DrawResource::Sprite(self.current_state.current_namespace, *sprite_id); },
 
                 Draw::ClearLayer        |
                 Draw::ClearSprite       => { 
-                    self.clear_resource(self.target_resource);
+                    self.clear_resource(self.current_state.target_resource);
                     drawing_cleared = true; 
                     
-                    match self.target_resource {
+                    match self.current_state.target_resource {
                         DrawResource::Layer(namespace_id, layer_id) => {
-                            if namespace_id == self.current_namespace {
-                                self.pending_drawing.push((self.target_resource, Draw::Layer(layer_id)))
+                            if namespace_id == self.current_state.current_namespace {
+                                self.pending_drawing.push((self.current_state.target_resource, Draw::Layer(layer_id)))
                             } else {
-                                self.pending_drawing.extend([(self.target_resource, Draw::Namespace(namespace_id)), (self.target_resource, Draw::Layer(layer_id)), (self.target_resource, Draw::Namespace(self.current_namespace))])
+                                self.pending_drawing.extend([(self.current_state.target_resource, Draw::Namespace(namespace_id)), (self.current_state.target_resource, Draw::Layer(layer_id)), (self.current_state.target_resource, Draw::Namespace(self.current_state.current_namespace))])
                             }
                         },
                         DrawResource::Sprite(namespace_id, sprite_id) => {
-                            if namespace_id == self.current_namespace {
-                                self.pending_drawing.push((self.target_resource, Draw::Sprite(sprite_id)))
+                            if namespace_id == self.current_state.current_namespace {
+                                self.pending_drawing.push((self.current_state.target_resource, Draw::Sprite(sprite_id)))
                             } else {
-                                self.pending_drawing.extend([(self.target_resource, Draw::Namespace(namespace_id)), (self.target_resource, Draw::Sprite(sprite_id)), (self.target_resource, Draw::Namespace(self.current_namespace))])
+                                self.pending_drawing.extend([(self.current_state.target_resource, Draw::Namespace(namespace_id)), (self.current_state.target_resource, Draw::Sprite(sprite_id)), (self.current_state.target_resource, Draw::Namespace(self.current_state.current_namespace))])
                             }
                         },
                         _                               => unimplemented!()
@@ -423,8 +437,8 @@ impl DrawStreamCore {
 
                 Draw::ClearCanvas(_)    => { 
                     self.pending_drawing.retain(|(tgt, _action)| tgt == &DrawResource::Frame);
-                    self.target_resource    = DrawResource::Layer(NamespaceId::default(), LayerId(0));
-                    self.current_namespace  = NamespaceId::default();
+                    self.current_state.target_resource    = DrawResource::Layer(NamespaceId::default(), LayerId(0));
+                    self.current_state.current_namespace  = NamespaceId::default();
                 },
 
                 Draw::ClearAllLayers    => {
@@ -443,7 +457,7 @@ impl DrawStreamCore {
             match &draw {
                 Draw::Restore => {
                     // Add the 'restore' operation in case we can't rewind anything
-                    let drawing_target = draw.target_resource(&self.target_resource);
+                    let drawing_target = draw.target_resource(&self.current_state.target_resource);
                     self.pending_drawing.push((drawing_target, draw));
 
                     // Rewind if the action is a 'restore' action
@@ -456,7 +470,7 @@ impl DrawStreamCore {
                     if let Some((_, Draw::Store)) = self.pending_drawing.last() {
                         self.pending_drawing.pop();
                     } else {
-                        let drawing_target = draw.target_resource(&self.target_resource);
+                        let drawing_target = draw.target_resource(&self.current_state.target_resource);
                         self.pending_drawing.push((drawing_target, draw));
                     }
                 }
@@ -469,7 +483,7 @@ impl DrawStreamCore {
 
                 _ => {
                     // Add everything else to the pending drawing
-                    let drawing_target = draw.target_resource(&self.target_resource);
+                    let drawing_target = draw.target_resource(&self.current_state.target_resource);
                     self.pending_drawing.push((drawing_target, draw));
                 }
             }
