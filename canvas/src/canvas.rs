@@ -226,6 +226,7 @@ mod test {
     use crate::font_face::*;
     use crate::primitives::*;
     use crate::transform2d::*;
+    use crate::namespace::*;
 
     use futures::prelude::*;
     use futures::executor;
@@ -584,6 +585,75 @@ mod test {
             assert!(stream.next().await == Some(Draw::Path(PathOp::Move(20.0, 20.0))));
             assert!(stream.next().await == Some(Draw::Stroke));
 
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::ClearLayer));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(10.0, 10.0))));
+            assert!(stream.next().await == Some(Draw::Fill));
+        });
+    }
+
+
+    #[test]
+    fn clear_layer_only_removes_commands_for_the_current_layer_with_namespaces() {
+        let canvas      = Canvas::new();
+        let namespace   = NamespaceId::new();
+
+        // Draw using a graphics context
+        canvas.draw(|gc| {
+            gc.new_path();
+            gc.move_to(20.0, 20.0);
+
+            gc.stroke();
+
+            gc.namespace(namespace);
+            gc.layer(LayerId(1));
+
+            gc.new_path();
+            gc.move_to(0.0, 0.0);
+            gc.line_to(10.0, 0.0);
+            gc.line_to(10.0, 10.0);
+            gc.line_to(0.0, 10.0);
+
+            gc.stroke();
+
+            gc.namespace(NamespaceId::default());
+            gc.layer(LayerId(1));
+            gc.new_path();
+            gc.move_to(0.0, 0.0);
+            gc.line_to(10.0, 0.0);
+            gc.line_to(10.0, 10.0);
+            gc.line_to(0.0, 10.0);
+            gc.stroke();
+
+            gc.clear_layer();
+
+            gc.new_path();
+            gc.move_to(10.0, 10.0);
+            gc.fill();
+        });
+
+        // Only the commands after clear_layer should be present
+        println!("{:?}", canvas.get_drawing());
+        let mut stream  = canvas.stream();
+
+        executor::block_on(async {
+            assert!(stream.next().await == Some(Draw::ResetFrame));
+            assert!(stream.next().await == Some(Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(20.0, 20.0))));
+            assert!(stream.next().await == Some(Draw::Stroke));
+
+            assert!(stream.next().await == Some(Draw::Namespace(namespace)));
+            assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Move(0.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 0.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(10.0, 10.0))));
+            assert!(stream.next().await == Some(Draw::Path(PathOp::Line(0.0, 10.0))));
+            assert!(stream.next().await == Some(Draw::Stroke));
+
+            assert!(stream.next().await == Some(Draw::Namespace(NamespaceId::default())));
             assert!(stream.next().await == Some(Draw::Layer(LayerId(1))));
             assert!(stream.next().await == Some(Draw::ClearLayer));
             assert!(stream.next().await == Some(Draw::Path(PathOp::NewPath)));
