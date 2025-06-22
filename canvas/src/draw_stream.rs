@@ -408,8 +408,9 @@ impl DrawStreamCore {
         for draw in drawing {
             // Process the drawing instruction
             match &draw {
-                Draw::Layer(layer_id)   => { self.current_state.target_resource = DrawResource::Layer(self.current_state.current_namespace, *layer_id); },
-                Draw::Sprite(sprite_id) => { self.current_state.target_resource = DrawResource::Sprite(self.current_state.current_namespace, *sprite_id); },
+                Draw::Namespace(namespace_id)   => { self.current_state.current_namespace = *namespace_id; }
+                Draw::Layer(layer_id)           => { self.current_state.target_resource = DrawResource::Layer(self.current_state.current_namespace, *layer_id); },
+                Draw::Sprite(sprite_id)         => { self.current_state.target_resource = DrawResource::Sprite(self.current_state.current_namespace, *sprite_id); },
 
                 Draw::ClearLayer        |
                 Draw::ClearSprite       => { 

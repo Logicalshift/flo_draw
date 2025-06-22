@@ -153,6 +153,8 @@ pub trait GraphicsContext {
     fn clear_canvas(&mut self, color: Color)                { self.draw(Draw::ClearCanvas(color)); }
 
 
+    /// Selects a namespace (layers, sprites, textures, etc are all identified by their ID and their namespace)
+    fn namespace(&mut self, namespace_id: NamespaceId)      { self.draw(Draw::Namespace(namespace_id)); }
 
     /// Selects a particular layer for drawing
     /// Layer 0 is selected initially. Layers are drawn in order starting from 0.
