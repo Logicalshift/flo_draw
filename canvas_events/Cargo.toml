@@ -11,5 +11,5 @@ categories          = [ "graphics", "rendering", "gui" ]
 [dependencies]
 flo_canvas          = { version = "0.4", features = [ "scenery" ] }
 flo_render          = "0.4"
-flo_scene           = "0.2"
+flo_scene           = "0.3"
 serde               = "1.0"

@@ -27,7 +27,7 @@ flo_render_software = { version = "0.4", optional = true }
 flo_render_canvas   = "0.4"
 flo_stream          = "0.7"
 flo_binding         = "3.0"
-flo_scene           = "0.2"
+flo_scene           = "0.3"
 desync              = "0.9"
 serde               = "1.0"
 
