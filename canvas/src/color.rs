@@ -6,7 +6,8 @@ use hsluv::*;
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub enum ColorFormat {
     Rgba,
-    Hsluv
+    Hsluv,
+    Cmyka
 }
 
 ///
@@ -15,7 +16,8 @@ pub enum ColorFormat {
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum Color {
     Rgba(f32, f32, f32, f32),
-    Hsluv(f32, f32, f32, f32)
+    Hsluv(f32, f32, f32, f32),
+    Cmyka(f32, f32, f32, f32, f32)
 }
 
 impl PartialEq for Color {
@@ -40,10 +42,14 @@ impl Color {
     pub fn to_rgba_components(&self) -> (f32, f32, f32, f32) {
         match self {
             &Color::Rgba(r, g, b, a) => (r, g, b, a),
-
+            
             &Color::Hsluv(h, s, l, a) => {
                 let (r, g, b) = hsluv_to_rgb((h as f64, s as f64, l as f64));
                 (r as f32, g as f32, b as f32, a)
+            }
+            &Color::Cmyka(c, m, y, k, a) => {
+                todo!("to_rgba_components");
+                (c, m, y, a)
             }
         }
     }
@@ -60,6 +66,24 @@ impl Color {
                 let s = if l <= 0.0 { 100.0 } else { s };
                 (h as f32, s as f32, l as f32, a)
             }
+            &Color::Cmyka(c, m, y, k, a) => {
+                todo!("to_hsluv_components");
+                (c, m, y, a)
+            }
+        }
+    }
+    
+    
+    ///
+    /// Returns this colour as CMYKA components
+    ///
+    pub fn to_cmyka_components(&self) -> (f32, f32, f32, f32, f32) {
+        match self {
+            &Color::Rgba(r, g, b, a) => { todo!("to_cmyka_components") }
+            &Color::Hsluv(h, s, l, a) => { todo!("to_cmyka_components") }
+            &Color::Cmyka(c, m, y, k, a) => {
+                (c, m, y, k, a)
+            }
         }
     }
 
@@ -70,6 +94,7 @@ impl Color {
         match self {
             Color::Hsluv(_, _, _, a)    => *a,
             Color::Rgba(_, _, _, a)     => *a,
+            Color::Cmyka(_, _, _, _, a)     => *a,
         }
     }
 
@@ -87,6 +112,11 @@ impl Color {
                 let s = if l <= 0.0 { 100.0 } else { s };
                 Color::Hsluv(h as f32, s as f32, l as f32, a)
             }
+            ColorFormat::Cmyka => match self {
+                &Color::Rgba(x, y, z, a) =>  Color::Cmyka(x, y, z, 0.0, a),
+                &Color::Hsluv(x, y, z, a) =>  Color::Cmyka(x, y, z, 0.0, a),
+                &Color::Cmyka(_, _, _, _, _) => self.clone()
+            }
         }
     }
 
@@ -96,7 +126,8 @@ impl Color {
     pub fn with_alpha(&self, new_alpha: f32) -> Color {
         match self {
             &Color::Rgba(r, g, b, _)    => Color::Rgba(r, g, b, new_alpha),
-            &Color::Hsluv(h, s, l, _)   => Color::Hsluv(h, s, l, new_alpha)
+            &Color::Hsluv(h, s, l, _)   => Color::Hsluv(h, s, l, new_alpha),
+            &Color::Cmyka(c, m, y, k, _) => Color::Cmyka(c, m, y, k, new_alpha)
         }
     }
 }
