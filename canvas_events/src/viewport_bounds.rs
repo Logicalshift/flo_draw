@@ -6,7 +6,7 @@
 /// canvas itself.
 ///
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum ViewPortBounds {
+pub enum ViewportBounds {
     ///
     /// Maps the canvas height to the bounds of the window, using square pixels
     ///
@@ -30,9 +30,9 @@ pub enum ViewPortBounds {
     FitExact((f32, f32), (f32, f32)),
 }
 
-impl Default for ViewPortBounds {
+impl Default for ViewportBounds {
     #[inline]
     fn default() -> Self {
-        ViewPortBounds::All
+        ViewportBounds::All
     }
 }
