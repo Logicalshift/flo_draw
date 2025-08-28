@@ -30,6 +30,7 @@ pub fn create_wgpu_render_window_program(scene: &Arc<Scene>, program_id: SubProg
         let has_decorations     = bind(true);
         let mouse_pointer       = bind(MousePointer::SystemDefault);
         let size                = bind(initial_size);
+        let viewport_bounds     = bind(ViewportBounds::default());
 
         let window_properties   = WindowProperties { 
             title:              BindRef::from(title.clone()), 
@@ -37,6 +38,7 @@ pub fn create_wgpu_render_window_program(scene: &Arc<Scene>, program_id: SubProg
             has_decorations:    BindRef::from(has_decorations.clone()), 
             mouse_pointer:      BindRef::from(mouse_pointer.clone()), 
             size:               BindRef::from(size.clone()),
+            viewport_bounds:    BindRef::from(viewport_bounds.clone()),
         };
         let mut event_publisher = Publisher::new(1000);
 
