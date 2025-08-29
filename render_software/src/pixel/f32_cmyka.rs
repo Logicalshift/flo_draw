@@ -28,6 +28,12 @@ impl F32CmykaPixel {
 	pub fn to_cmyk(&self) -> [f32; 4] {
 		self.0.to_array()
 	}
+	#[inline]
+	pub fn to_u8(&self) -> [u8; 5] {
+		let a = self.1;
+		let [c, m, y, k] = *self.0.div(a).as_array_ref();
+		[c, m, y, k, a].map(|f| (f * 255.0).round() as u8)
+	}
 }
 
 impl Default for F32CmykaPixel {
@@ -71,15 +77,16 @@ impl Pixel<5> for F32CmykaPixel {
 	}
 	
 	#[inline]
-	fn from_color(color: canvas::Color, gamma: f64) -> Self {
+	fn from_color(color: canvas::Color, _gamma: f64) -> Self {
 		let (c, m, y, k, a) = color.to_cmyka_components();
 		let cmyk = f32x4::new([c, m, y, k]);
-		F32CmykaPixel(cmyk, a)
+		F32CmykaPixel(cmyk * a, a)
 	}
 	
 	#[inline]
-	fn to_color(&self, gamma: f64) -> canvas::Color {
-		let [c, m, y, k, a] = self.to_components();
+	fn to_color(&self, _gamma: f64) -> canvas::Color {
+		let a = self.1;
+		let [c, m, y, k] = *self.0.div(a).as_array_ref();
 		canvas::Color::Cmyka(c, m, y, k, a)
 	}
 }

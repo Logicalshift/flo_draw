@@ -80,16 +80,13 @@ pub fn main() {
 	renderer.render(&frame_size, &canvas_drawing, pixel_data.as_mut_slice());
 	println!("wat {}", pixel_data.iter().flat_map(|c| c.to_cmyk()).reduce(f32::max).unwrap());
     
-    let file = File::create("test.tiff").unwrap();
+    let file = File::create("cmyk_software_gradient.tiff").unwrap();
     let mut tiff_enc = TiffEncoder::new_big(file).unwrap();
     let mut img_enc = tiff_enc.new_image::<tiff::encoder::colortype::CMYKA8>(width as u32, height as u32).unwrap();
-    // let es: &[u8] = &[2u8, 0u8];
-    // img_enc.encoder().write_tag(Tag::ExtraSamples, es)?;
-    // img_enc.resolution(ResolutionUnit::Inch, Rational { n: dpi as u32, d: 1 });
-	
-	let mul = 255.0 / 100.0;
+	let es: &[u8] = &[2u8];
+	img_enc.encoder().write_tag(tiff::tags::Tag::ExtraSamples, es).unwrap();
     
-	let pixel_data = pixel_data.iter().map(|p| p.to_components().map(|c| (c * 255.0).floor() as u8)).flatten().collect::<Vec<_>>();
+	let pixel_data = pixel_data.iter().map(|p| p.to_u8()).flatten().collect::<Vec<_>>();
     img_enc.write_data(&pixel_data).unwrap();
 	
 	// render_drawing(&mut renderer, canvas.iter().clone())

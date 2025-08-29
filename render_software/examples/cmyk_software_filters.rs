@@ -20,12 +20,12 @@ pub fn main() {
 	let mut canvas_drawing = CanvasDrawing::<F32CmykaPixel, 5>::empty();
 	canvas_drawing.draw(vec![Draw::ClearCanvas(Color::Cmyka(0.0, 0.0, 0.0, 0.0, 0.0))]);
 	
-	let alpha = 0.5;
+	let alpha = 0.7;
 	let spin = vec![
 		(0.0, Color::Cmyka(1.0, 0.0, 0.0, 0.0, alpha)),
 		(0.5, Color::Cmyka(0.0, 1.0, 0.0, 0.0, alpha)),
 		(1.0, Color::Cmyka(0.0, 0.0, 1.0, 0.0, alpha)),
-		(1.5, Color::Cmyka(0.0, 0.0, 0.0, 0.5, alpha)),
+		(1.5, Color::Cmyka(0.0, 0.0, 0.0, 1.0, alpha)),
 	];
 	
 	let mut sprite = vec![];
@@ -101,7 +101,7 @@ pub fn main() {
 	let es: &[u8] = &[2u8];
 	img_enc.encoder().write_tag(tiff::tags::Tag::ExtraSamples, es).unwrap();
 	
-	let pixel_data = pixel_data.iter().map(|p| p.to_components().map(|c| (c * 255.0).floor() as u8)).flatten().collect::<Vec<_>>();
+	let pixel_data = pixel_data.iter().map(|p| p.to_u8()).flatten().collect::<Vec<_>>();
     img_enc.write_data(&pixel_data).unwrap();
 	
 }
