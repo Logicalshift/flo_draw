@@ -59,7 +59,7 @@ mod term_render {
             // TODO: check termial capabilities (we can fall back to an ASCII-art representation)
 
             // Convert to base64
-            let base64 = general_purpose::STANDARD_NO_PAD.encode(&png_data);
+            let base64 = general_purpose::STANDARD.encode(&png_data);
 
             // Write out the iterm escape sequence
             print!("\x1b]1337;File=inline=1:{}\x07", base64);
