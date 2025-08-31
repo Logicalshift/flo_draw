@@ -235,6 +235,13 @@ impl CanvasRenderer {
             return;
         }
 
+        // If the canvas is flipped, then also flip the window coordinates
+        let (y1, y2) = if (y2-y1).signum() != (y.end-y.start.signum()) {
+            (y2, y1)
+        } else {
+            (y1, y2)
+        };
+
         // Scale so that the range fits within the window
         let width       = x2 - x1;
         let height      = y2 - y1;
