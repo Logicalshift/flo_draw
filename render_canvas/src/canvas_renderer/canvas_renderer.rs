@@ -327,8 +327,8 @@ impl CanvasRenderer {
         let bottom  = inverse_transform.transform_point(0.0, -1.0);
 
         // Use the 'center' style
-        let left_x  = middle.0 - width;
-        let right_x = middle.0 + width;
+        let left_x  = middle.0 - (width/2.0);
+        let right_x = middle.0 + (width/2.0);
 
         self.set_canvas_viewport_center(left_x..right_x, bottom.1..top.1);
     }
