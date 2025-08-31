@@ -259,6 +259,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                     DrawingWindowRequest::SetFullScreen(fullscreen)         => { render_target.send(RenderWindowRequest::SetFullScreen(fullscreen)).await.ok(); },
                                     DrawingWindowRequest::SetHasDecorations(decorations)    => { render_target.send(RenderWindowRequest::SetHasDecorations(decorations)).await.ok(); },
                                     DrawingWindowRequest::SetMousePointer(mouse_pointer)    => { render_target.send(RenderWindowRequest::SetMousePointer(mouse_pointer)).await.ok(); },
+                                    DrawingWindowRequest::SetViewportBounds(new_bounds)     => { todo!() }
                                 }
                             }
 
@@ -307,6 +308,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                     DrawingWindowRequest::SetFullScreen(fullscreen)         => { drawing_target.send(DrawingWindowRequest::SetFullScreen(fullscreen)).await.ok(); },
                                     DrawingWindowRequest::SetHasDecorations(decorations)    => { drawing_target.send(DrawingWindowRequest::SetHasDecorations(decorations)).await.ok(); },
                                     DrawingWindowRequest::SetMousePointer(mouse_pointer)    => { drawing_target.send(DrawingWindowRequest::SetMousePointer(mouse_pointer)).await.ok(); },
+                                    DrawingWindowRequest::SetViewportBounds(new_bounds)     => { drawing_target.send(DrawingWindowRequest::SetViewportBounds(new_bounds)).await.ok(); }
                                 }
                             }
 

@@ -1,4 +1,5 @@
 use super::render_request::*;
+use super::viewport_bounds::*;
 
 use flo_scene::*;
 use flo_canvas::scenery::*;
@@ -71,6 +72,9 @@ pub enum DrawingWindowRequest {
 
     /// Sets the mouse pointer to display for the window
     SetMousePointer(MousePointer),
+
+    /// Sets the viewport bounds of this window
+    SetViewportBounds(ViewportBounds),
 }
 
 ///

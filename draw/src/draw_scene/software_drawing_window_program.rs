@@ -108,6 +108,7 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
                     DrawingWindowRequest::SetFullScreen(new_fullscreen)      => { fullscreen.set(new_fullscreen); },
                     DrawingWindowRequest::SetHasDecorations(new_decorations) => { has_decorations.set(new_decorations); },
                     DrawingWindowRequest::SetMousePointer(new_mouse_pointer) => { mouse_pointer.set(new_mouse_pointer); },
+                    DrawingWindowRequest::SetViewportBounds(new_bounds)      => { todo!() }
                 }
             }
         }

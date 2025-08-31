@@ -6,6 +6,7 @@
 /// canvas itself.
 ///
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum ViewportBounds {
     ///
     /// Maps the canvas height to the bounds of the window, using square pixels
