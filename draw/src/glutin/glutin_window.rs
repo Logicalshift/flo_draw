@@ -202,6 +202,10 @@ where
             WindowUpdate::SetMousePointer(MousePointer::SystemDefault) => {
                 window.window.as_ref().map(|ctxt| ctxt.set_cursor_visible(true));
             }
+
+            WindowUpdate::SetViewportBounds(new_bounds) => {
+                // todo!()
+            }
         }
     }
 
@@ -220,7 +224,8 @@ enum WindowUpdate {
     SetSize((u64, u64)),
     SetFullscreen(bool),
     SetHasDecorations(bool),
-    SetMousePointer(MousePointer)
+    SetMousePointer(MousePointer),
+    SetViewportBounds(ViewportBounds),
 }
 
 ///
