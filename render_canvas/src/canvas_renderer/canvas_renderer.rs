@@ -313,8 +313,30 @@ impl CanvasRenderer {
     }
 
     ///
+    /// Sets the width of the canvas that must be visible. The height and the center
+    /// is taken from the transform in the canvas
+    ///
+    pub fn set_canvas_viewport_width(&mut self, width: f32) {
+        // Work out the canvas height and center in canvas coordinates
+        let active_transform        = self.get_active_transform();
+        let inverse_transform       = active_transform.invert();
+        let Some(inverse_transform) = inverse_transform else { return; };
+
+        let top     = inverse_transform.transform_point(0.0, 1.0);
+        let middle  = inverse_transform.transform_point(0.0, 0.0);
+        let bottom  = inverse_transform.transform_point(0.0, -1.0);
+
+        // Use the 'center' style
+        let left_x  = middle.0 - width;
+        let right_x = middle.0 + width;
+
+        self.set_canvas_viewport_center(left_x..right_x, bottom.1..top.1);
+    }
+
+    ///
     /// Retrieves the active transform for the canvas (which is fully up to date after rendering)
     ///
+    #[inline]
     pub fn get_active_transform(&self) -> canvas::Transform2D {
         self.active_transform
     }
