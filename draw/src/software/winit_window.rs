@@ -69,7 +69,8 @@ where
         size:               follow(window_properties.size),
         fullscreen:         follow(window_properties.fullscreen),
         has_decorations:    follow(window_properties.has_decorations),
-        mouse_pointer:      follow(window_properties.mouse_pointer)
+        mouse_pointer:      follow(window_properties.mouse_pointer),
+        viewport_bounds:    follow(window_properties.viewport_bounds),
     };
     let mut window_actions  = window_actions.ready_chunks(100);
     let canvas_drawing      = CanvasDrawing::<F32LinearPixel, 4>::empty();
@@ -197,7 +198,8 @@ enum WindowUpdate {
     SetSize((u64, u64)),
     SetFullscreen(bool),
     SetHasDecorations(bool),
-    SetMousePointer(MousePointer)
+    SetMousePointer(MousePointer),
+    SetViewportBounds(ViewportBounds),
 }
 
 impl fmt::Debug for WindowUpdate {
@@ -211,6 +213,7 @@ impl fmt::Debug for WindowUpdate {
             SetFullscreen(val)          => write!(f, "SetFullscreen({:?})", val),
             SetHasDecorations(val)      => write!(f, "SetHasDecorations({:?})", val),
             SetMousePointer(ptr)        => write!(f, "SetMousePointer({:?})", ptr),
+            SetViewportBounds(ptr)      => write!(f, "SetViewportBounds({:?})", ptr),
         }
     }
 }
@@ -218,13 +221,14 @@ impl fmt::Debug for WindowUpdate {
 ///
 /// Stream that merges the streams from the window properties and the renderer into a single stream
 ///
-struct WindowUpdateStream<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> {
+struct WindowUpdateStream<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream, TViewportBoundsStream> {
     draw_stream:        TDrawStream,
     title_stream:       TTitleStream,
     size:               TSizeStream,
     fullscreen:         TFullscreenStream,
     has_decorations:    TDecorationStream,
-    mouse_pointer:      TMousePointerStream
+    mouse_pointer:      TMousePointerStream,
+    viewport_bounds:    TViewportBoundsStream,
 }
 
 impl<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> Stream for WindowUpdateStream<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream>
@@ -234,7 +238,8 @@ where
     TSizeStream:            Unpin + Stream<Item=(u64, u64)>,
     TFullscreenStream:      Unpin + Stream<Item=bool>,
     TDecorationStream:      Unpin + Stream<Item=bool>,
-    TMousePointerStream:    Unpin + Stream<Item=MousePointer> 
+    TMousePointerStream:    Unpin + Stream<Item=MousePointer>,
+    TViewportBoundsStream:  Unpin + Stream<Item=ViewportBounds>,
 {
     type Item = WindowUpdate;
 
@@ -275,6 +280,12 @@ where
 
         match self.mouse_pointer.poll_next_unpin(context) {
             Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::SetMousePointer(item))); }
+            Poll::Ready(None)       => { return Poll::Ready(None); }
+            Poll::Pending           => { }
+        }
+
+        match self.viewport_bounds.poll_next_unpin(context) {
+            Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::SetViewportBounds(item))); }
             Poll::Ready(None)       => { return Poll::Ready(None); }
             Poll::Pending           => { }
         }

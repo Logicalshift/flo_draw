@@ -91,7 +91,8 @@ where
         size:               follow(window_properties.size),
         fullscreen:         follow(window_properties.fullscreen),
         has_decorations:    follow(window_properties.has_decorations),
-        mouse_pointer:      follow(window_properties.mouse_pointer)
+        mouse_pointer:      follow(window_properties.mouse_pointer),
+        viewport_bounds:    follow(window_properties.viewport_bounds),
     };
 
     while let Some(next_action) = window_actions.next().await {
@@ -225,17 +226,18 @@ enum WindowUpdate {
 ///
 /// Stream that merges the streams from the window properties and the renderer into a single stream
 ///
-struct WindowUpdateStream<TSuspendResumeStream, TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> {
+struct WindowUpdateStream<TSuspendResumeStream, TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream, TViewportBoundsStream> {
     suspend_resume:     TSuspendResumeStream,
     render_stream:      TRenderStream,
     title_stream:       TTitleStream,
     size:               TSizeStream,
     fullscreen:         TFullscreenStream,
     has_decorations:    TDecorationStream,
-    mouse_pointer:      TMousePointerStream
+    mouse_pointer:      TMousePointerStream,
+    viewport_bounds:    TViewportBoundsStream,
 }
 
-impl<TSuspendResumeStream, TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> Stream for WindowUpdateStream<TSuspendResumeStream, TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream>
+impl<TSuspendResumeStream, TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream, TViewportBoundsStream> Stream for WindowUpdateStream<TSuspendResumeStream, TRenderStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream, TViewportBoundsStream>
 where
     TSuspendResumeStream:   Unpin + Stream<Item=SuspendResume>,
     TRenderStream:          Unpin + Stream<Item=Vec<RenderAction>>,
@@ -243,7 +245,8 @@ where
     TSizeStream:            Unpin + Stream<Item=(u64, u64)>,
     TFullscreenStream:      Unpin + Stream<Item=bool>,
     TDecorationStream:      Unpin + Stream<Item=bool>,
-    TMousePointerStream:    Unpin + Stream<Item=MousePointer> 
+    TMousePointerStream:    Unpin + Stream<Item=MousePointer>,
+    TViewportBoundsStream:  Unpin + Stream<Item=ViewportBounds>,
 {
     type Item = WindowUpdate;
 
@@ -292,6 +295,12 @@ where
 
         match self.mouse_pointer.poll_next_unpin(context) {
             Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::SetMousePointer(item))); }
+            Poll::Ready(None)       => { return Poll::Ready(None); }
+            Poll::Pending           => { }
+        }
+
+        match self.viewport_bounds.poll_next_unpin(context) {
+            Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::SetViewportBounds(item))); }
             Poll::Ready(None)       => { return Poll::Ready(None); }
             Poll::Pending           => { }
         }
