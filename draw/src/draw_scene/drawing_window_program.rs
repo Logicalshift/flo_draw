@@ -124,14 +124,21 @@ impl RendererState {
     }
 
     ///
-    /// Performs a drawing action and passes it on to the render target
+    /// Updates the viewport bounds of the renderer to match the bounds set in the state
     ///
-    async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: &mut OutputSink<RenderWindowRequest>) {
+    fn update_viewport_bounds(&mut self) {
         match self.viewport_bounds {
             ViewportBounds::All                                 => { self.renderer.set_canvas_viewport_all(); }
             ViewportBounds::CenterRegion((x1, y1), (x2, y2))    => { self.renderer.set_canvas_viewport_center(x1..x2, y1..y2); }
             ViewportBounds::FitExact((x1, y1), (x2, y2))        => { self.renderer.set_canvas_viewport_exact(x1..x2, y1..y2); }
         }
+    }
+
+    ///
+    /// Performs a drawing action and passes it on to the render target
+    ///
+    async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: &mut OutputSink<RenderWindowRequest>) {
+        self.update_viewport_bounds();
 
         let render_actions = self.renderer.draw(draw_actions.cloned()).collect::<Vec<_>>().await;
         render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
