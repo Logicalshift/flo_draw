@@ -46,6 +46,9 @@ struct RendererState {
 
     /// The height of the canvas window
     height: f64,
+
+    /// The bounds to render in the viewport
+    viewport_bounds: ViewportBounds,
 }
 
 ///
@@ -164,6 +167,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                 scale:              1.0,
                 width:              1.0,
                 height:             1.0,
+                viewport_bounds:    ViewportBounds::All,
             };
 
             // Request the events from the render or drawing target
