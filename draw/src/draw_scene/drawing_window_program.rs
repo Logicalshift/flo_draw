@@ -1,6 +1,5 @@
 use futures::prelude::*;
 use futures::channel::oneshot;
-use futures::task::{Poll, Context};
 
 use flo_scene::*;
 use flo_canvas::*;
@@ -10,7 +9,6 @@ use flo_render_canvas::*;
 
 use once_cell::sync::{Lazy};
 
-use std::pin::*;
 use std::sync::*;
 
 ///
@@ -31,26 +29,6 @@ static FILTER_DRAWING_EVENT_REQUEST: Lazy<FilterHandle> = Lazy::new(|| FilterHan
 }));
 
 ///
-/// Stream that reads instructions from the drawing or event stream
-///
-/// Drawing stream may be suspended while we wait for new frames, and the event stream has priority at all other times
-///
-struct DrawingEventStream<TDrawStream, TEventStream>
-where
-    TDrawStream:    Unpin + Stream<Item=DrawingOrEvent>,
-    TEventStream:   Unpin + Stream<Item=DrawingOrEvent>,
-{
-    // If set to true, the stream will not attempt to poll the drawing stream
-    waiting_for_new_frame: bool,
-
-    /// The drawing stream, or None if it has been closed
-    draw_stream: Option<TDrawStream>,
-
-    /// The event stream, or None if it has been closed
-    event_stream: Option<TEventStream>,
-}
-
-///
 /// Structure used to store the current state of the canvas renderer
 ///
 struct RendererState {
@@ -68,48 +46,6 @@ struct RendererState {
 
     /// The height of the canvas window
     height: f64,
-}
-
-impl<TDrawStream, TEventStream> Stream for DrawingEventStream<TDrawStream, TEventStream>
-where
-    TDrawStream:    Unpin + Stream<Item=DrawingOrEvent>,
-    TEventStream:   Unpin + Stream<Item=DrawingOrEvent>,
-{
-    type Item = DrawingOrEvent;
-
-    fn poll_next(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        // First, see if the event stream has anything for us, and return the event from there if it exists
-        if let Some(event_stream) = &mut self.event_stream {
-            let event_poll_result = event_stream.poll_next_unpin(context);
-
-            match event_poll_result {
-                Poll::Ready(Some(event))    => { return Poll::Ready(Some(event)); }
-                Poll::Ready(None)           => { self.event_stream = None; }
-                Poll::Pending               => { }
-            }
-        }
-
-        // Check the draw stream if we're not waiting for a frame
-        if !self.waiting_for_new_frame {
-            if let Some(draw_stream) = &mut self.draw_stream {
-                let draw_poll_result = draw_stream.poll_next_unpin(context);
-
-                match draw_poll_result {
-                    Poll::Ready(Some(event))    => { return Poll::Ready(Some(event)); }
-                    Poll::Ready(None)           => { self.draw_stream = None; }
-                    Poll::Pending               => { }
-                }
-            }
-        }
-
-        // If both streams are done, indicate that we're finished
-        if self.draw_stream.is_none() && self.event_stream.is_none() {
-            return Poll::Ready(None);
-        }
-
-        // Waiting on one or both of the streams
-        Poll::Pending
-    }
 }
 
 ///
