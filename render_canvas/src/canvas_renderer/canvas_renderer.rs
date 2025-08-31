@@ -260,13 +260,15 @@ impl CanvasRenderer {
         let width       = x2 - x1;
         let height      = y2 - y1;
 
-        let scale_x     = 1.0/width;
-        let scale_y     = 1.0/height;
+        let scale_x     = 2.0/width;
+        let scale_y     = 2.0/height;
         let scale       = canvas::Transform2D::scale(scale_x, scale_y);
 
         // Translate so that x1, y1 appears at -1.0
         let translate_x = x1 - -1.0;
         let translate_y = y1 - -1.0;
+        let translate_x = translate_x * 2.0;
+        let translate_y = translate_y * 2.0;
         let translation = canvas::Transform2D::translate(translate_x, translate_y);
 
         // Store as the new viewport transform
