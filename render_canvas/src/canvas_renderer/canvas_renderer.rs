@@ -216,6 +216,20 @@ impl CanvasRenderer {
     }
 
     ///
+    /// Fits the canvas to the viewport using the 'all' style
+    ///
+    pub fn set_canvas_viewport_all(&mut self) {
+        let x               = (self.viewport_origin.0)..(self.viewport_origin.0 + self.viewport_size.0);
+        let y               = (self.viewport_origin.1)..(self.viewport_origin.1 + self.viewport_size.1);
+        let window_width    = self.window_size.0;
+        let window_height   = self.window_size.1;
+        let scale           = self.window_scale;
+
+        // Set_window_viewport does this scaling, so just call it with the regenerated parameters
+        self.set_window_viewport(x, y, window_width, window_height, scale);
+    }
+
+    ///
     /// Sets the portion of the canvas that will be displayed in the window
     ///
     /// The x and y range specifies the locations in canvas coordinates that map

@@ -55,19 +55,19 @@ where
 ///
 struct RendererState {
     /// The renderer for the canvas
-    renderer:       CanvasRenderer,
+    renderer: CanvasRenderer,
 
     /// The transformation from window coordinates to canvas coordinates
     window_transform: Option<Transform2D>,
 
     /// The scale factor of the canvas
-    scale:          f64,
+    scale: f64,
 
-    /// The width of the canvas
-    width:          f64,
+    /// The width of the canvas window
+    width: f64,
 
-    /// The height of the canvas
-    height:         f64,
+    /// The height of the canvas window
+    height: f64,
 }
 
 impl<TDrawStream, TEventStream> Stream for DrawingEventStream<TDrawStream, TEventStream>
