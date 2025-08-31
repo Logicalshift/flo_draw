@@ -330,7 +330,7 @@ impl CanvasRenderer {
         let left_x  = middle.0 - (width/2.0);
         let right_x = middle.0 + (width/2.0);
 
-        self.set_canvas_viewport_center(left_x..right_x, bottom.1..top.1);
+        self.set_canvas_viewport_center(left_x..right_x, (bottom.1.min(top.1))..(top.1.max(bottom.1)));
     }
 
     ///
