@@ -127,16 +127,16 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, send_
                 if let Some(send_render_actions) = send_render_actions { send_render_actions.send(RenderWindowRequest::Render(RenderRequest::Render(redraw))).await.ok(); }
                 if let Some(send_drawing_actions) = send_drawing_actions { send_drawing_actions.send(DrawingWindowRequest::Redraw).await.ok(); }
 
-                let window_transform    = state.update_window_transform();
+                let window_transform = state.update_window_transform();
                 vec![DrawEvent::CanvasTransform(window_transform)]
             },
 
             DrawEvent::Scale(new_scale)         => {
                 state.scale = new_scale;
 
-                let width           = state.width as f32;
-                let height          = state.height as f32;
-                let scale           = state.scale as f32;
+                let width   = state.width as f32;
+                let height  = state.height as f32;
+                let scale   = state.scale as f32;
 
                 state.renderer.set_window_viewport(0.0..width, 0.0..height, width, height, scale);
                 if let Some(send_drawing_actions) = send_drawing_actions { send_drawing_actions.send(DrawingWindowRequest::Redraw).await.ok(); }
@@ -145,12 +145,12 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, send_
             }
 
             DrawEvent::Resize(width, height)    => { 
-                state.width         = width;
-                state.height        = height;
+                state.width     = width;
+                state.height    = height;
 
-                let width           = state.width as f32;
-                let height          = state.height as f32;
-                let scale           = state.scale as f32;
+                let width       = state.width as f32;
+                let height      = state.height as f32;
+                let scale       = state.scale as f32;
 
                 state.renderer.set_window_viewport(0.0..width, 0.0..height, width, height, scale);
                 if let Some(send_drawing_actions) = send_drawing_actions { send_drawing_actions.send(DrawingWindowRequest::Redraw).await.ok(); }
