@@ -256,7 +256,7 @@ impl CanvasRenderer {
         let translation = canvas::Transform2D::translate(translate_x, translate_y);
 
         // Store as the new viewport transform
-        let viewport_transform          = translation * scale;
+        let viewport_transform          = scale * translation;
         let inverse_viewport_transform  = viewport_transform.invert().unwrap();
 
         self.viewport_transform         = viewport_transform;
