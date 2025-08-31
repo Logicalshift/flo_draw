@@ -48,7 +48,7 @@ impl FloWindowProperties for () {
     fn fullscreen(&self) -> BindRef<bool>                   { BindRef::from(bind(false)) }
     fn has_decorations(&self) -> BindRef<bool>              { BindRef::from(bind(true)) }
     fn mouse_pointer(&self) -> BindRef<MousePointer>        { BindRef::from(bind(MousePointer::SystemDefault)) }
-    fn viewport_bounds(&self) -> BindRef<ViewportBounds>    { BindRef::from(bind(ViewportBounds::default())) }
+    fn viewport_bounds(&self) -> BindRef<ViewportBounds>    { BindRef::from(bind(ViewportBounds::CenterRegion((300.0, 300.0), (600.0, 600.0)))) }
 }
 
 ///
@@ -60,7 +60,7 @@ impl<'a> FloWindowProperties for &'a str {
     fn fullscreen(&self) -> BindRef<bool>                   { BindRef::from(bind(false)) }
     fn has_decorations(&self) -> BindRef<bool>              { BindRef::from(bind(true)) }
     fn mouse_pointer(&self) -> BindRef<MousePointer>        { BindRef::from(bind(MousePointer::SystemDefault)) }
-    fn viewport_bounds(&self) -> BindRef<ViewportBounds>    { BindRef::from(bind(ViewportBounds::default())) }
+    fn viewport_bounds(&self) -> BindRef<ViewportBounds>    { BindRef::from(bind(ViewportBounds::CenterRegion((300.0, 300.0), (600.0, 600.0)))) }
 }
 
 ///
