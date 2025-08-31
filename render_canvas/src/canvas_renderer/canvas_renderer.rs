@@ -280,18 +280,18 @@ impl CanvasRenderer {
         if height_for_x >= (y.end - y.start).abs() {
             // Width matches exactly, height changes
             let y_range = if y.start < y.end {
-                (y_center-height_for_x)..(y_center+height_for_x)
+                (y_center-height_for_x*0.5)..(y_center+height_for_x*0.5)
             } else {
-                (y_center+height_for_x)..(y_center-height_for_x)
+                (y_center+height_for_x*0.5)..(y_center-height_for_x*0.5)
             };
 
             self.set_canvas_viewport_exact(x, y_range);
         } else {
             // Height matches exactly, width changes
             let x_range = if x.start < x.end {
-                (x_center-width_for_y)..(x_center+width_for_y)
+                (x_center-width_for_y*0.5)..(x_center+width_for_y*0.5)
             } else {
-                (x_center+width_for_y)..(y_center-width_for_y)
+                (x_center+width_for_y*0.5)..(x_center-width_for_y*0.5)
             };
 
             self.set_canvas_viewport_exact(x_range, y);
