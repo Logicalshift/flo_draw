@@ -106,6 +106,7 @@ pub fn create_wgpu_render_window_program(scene: &Arc<Scene>, program_id: SubProg
                     RenderWindowRequest::SetFullScreen(new_fullscreen)      => { fullscreen.set(new_fullscreen); },
                     RenderWindowRequest::SetHasDecorations(new_decorations) => { has_decorations.set(new_decorations); },
                     RenderWindowRequest::SetMousePointer(new_mouse_pointer) => { mouse_pointer.set(new_mouse_pointer); },
+                    RenderWindowRequest::SetViewportBounds(new_bounds)      => { viewport_bounds.set(new_bounds); }
                 }
             }
         }

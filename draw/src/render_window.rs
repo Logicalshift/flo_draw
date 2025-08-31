@@ -45,18 +45,21 @@ where
                 let fullscreen      = follow(window_properties.fullscreen);
                 let has_decorations = follow(window_properties.has_decorations);
                 let mouse_pointer   = follow(window_properties.mouse_pointer);
+                let viewport_bounds = follow(window_properties.viewport_bounds);
 
                 // Each one generates an event when it changes
                 let title           = title.map(|new_title| EventWindowRequest::SetTitle(new_title));
                 let fullscreen      = fullscreen.map(|fullscreen| EventWindowRequest::SetFullScreen(fullscreen));
                 let has_decorations = has_decorations.map(|has_decorations| EventWindowRequest::SetHasDecorations(has_decorations));
                 let mouse_pointer   = mouse_pointer.map(|mouse_pointer| EventWindowRequest::SetMousePointer(mouse_pointer));
+                let viewport_bounds = viewport_bounds.map(|viewport_bounds| EventWindowRequest::SetViewportBounds(viewport_bounds));
 
                 let mut requests    = stream::select_all(vec![
                     title.boxed(),
                     fullscreen.boxed(),
                     has_decorations.boxed(),
                     mouse_pointer.boxed(),
+                    viewport_bounds.boxed(),
                 ]);
 
                 // Pass the requests on to the underlying window

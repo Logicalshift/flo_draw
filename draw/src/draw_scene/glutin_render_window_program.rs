@@ -40,7 +40,7 @@ pub fn create_glutin_render_window_program(scene: &Arc<Scene>, program_id: SubPr
                 has_decorations:    BindRef::from(has_decorations.clone()), 
                 mouse_pointer:      BindRef::from(mouse_pointer.clone()), 
                 size:               BindRef::from(size.clone()),
-                viewport_bounds:    BindRef::from(viewport_bounds),
+                viewport_bounds:    BindRef::from(viewport_bounds.clone()),
             };
             let mut event_publisher = Publisher::new(1000);
 
@@ -113,6 +113,7 @@ pub fn create_glutin_render_window_program(scene: &Arc<Scene>, program_id: SubPr
                         RenderWindowRequest::SetFullScreen(new_fullscreen)      => { fullscreen.set(new_fullscreen); },
                         RenderWindowRequest::SetHasDecorations(new_decorations) => { has_decorations.set(new_decorations); },
                         RenderWindowRequest::SetMousePointer(new_mouse_pointer) => { mouse_pointer.set(new_mouse_pointer); },
+                        RenderWindowRequest::SetViewportBounds(new_bounds)      => { viewport_bounds.set(new_bounds); },
                     }
                 }
             }

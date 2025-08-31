@@ -40,8 +40,10 @@ pub enum EventWindowRequest {
 
     /// Sets the mouse pointer to display for the window
     SetMousePointer(MousePointer),
-}
 
+    /// Sets the viewport bounds of this window
+    SetViewportBounds(ViewportBounds),
+}
 
 ///
 /// Messages that can be sent to a flo_draw window that processes 2D graphics instructions
@@ -103,6 +105,9 @@ pub enum RenderWindowRequest {
 
     /// Sets the mouse pointer to display for the window
     SetMousePointer(MousePointer),
+
+    /// Sets the viewport bounds of this window
+    SetViewportBounds(ViewportBounds),
 }
 
 impl SceneMessage for EventWindowRequest { }
@@ -130,6 +135,7 @@ impl From<EventWindowRequest> for RenderWindowRequest {
             EventWindowRequest::SetFullScreen(fullscreen)       => RenderWindowRequest::SetFullScreen(fullscreen),
             EventWindowRequest::SetHasDecorations(decorations)  => RenderWindowRequest::SetHasDecorations(decorations),
             EventWindowRequest::SetMousePointer(mouse_pointer)  => RenderWindowRequest::SetMousePointer(mouse_pointer),
+            EventWindowRequest::SetViewportBounds(new_bounds)   => RenderWindowRequest::SetViewportBounds(new_bounds),
         }
     }
 }
@@ -143,6 +149,7 @@ impl From<EventWindowRequest> for DrawingWindowRequest {
             EventWindowRequest::SetFullScreen(fullscreen)       => DrawingWindowRequest::SetFullScreen(fullscreen),
             EventWindowRequest::SetHasDecorations(decorations)  => DrawingWindowRequest::SetHasDecorations(decorations),
             EventWindowRequest::SetMousePointer(mouse_pointer)  => DrawingWindowRequest::SetMousePointer(mouse_pointer),
+            EventWindowRequest::SetViewportBounds(new_bounds)   => DrawingWindowRequest::SetViewportBounds(new_bounds),
         }
     }
 }
