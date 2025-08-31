@@ -216,6 +216,52 @@ impl CanvasRenderer {
     }
 
     ///
+    /// Sets the portion of the canvas that will be displayed in the window
+    ///
+    /// The x and y range specifies the locations in canvas coordinates that map
+    /// to the x and y ranges in the current window. This can be used to change
+    /// which section of the canvas is being rendered at any time. Note that calls
+    /// to `canvas_height()` will change the region that's being rendered
+    ///
+    pub fn set_canvas_viewport(&mut self, x: Range<f32>, y: Range<f32>) {
+        let active_transform = self.get_active_transform();
+
+        let (x1, y1) = active_transform.transform_point(x.start, y.start);
+        let (x2, y2) = active_transform.transform_point(x.end, y.end);
+
+        println!("{:?} {:?}", (x1, y1), (x2, y2));
+
+        // Use the existing viewport width/height
+        let (width, height)             = self.viewport_size;
+        let (window_width, window_height)   = self.window_size;
+        let (x_start, y_start)          = self.viewport_origin;
+
+        // Create a scale to make the viewport have square pixels (the viewport is the shape of our render surface)
+        let viewport_ratio              = height / width;
+        let square_pixels               = canvas::Transform2D::scale(viewport_ratio, 1.0);
+
+        // Viewport is scaled and translated relative to the window size
+        let pixel_size                  = 2.0 / window_height;
+        let window_scale                = window_height / height;
+
+        // Want to move the center of the display to the center of the viewport
+        let window_mid_x                = window_width/2.0;
+        let window_mid_y                = window_height/2.0;
+        let viewport_mid_x              = x_start + (width / 2.0);
+        let viewport_mid_y              = y_start + (height / 2.0);
+        let translate_x                 = (window_mid_x-viewport_mid_x) * pixel_size;
+        let translate_y                 = (window_mid_y-viewport_mid_y) * pixel_size;
+
+        // Create a viewport transform such that the top of the window is at (0,1) and the bottom is at (0,-1)
+        let viewport_transform          = square_pixels * canvas::Transform2D::scale(window_scale, window_scale) * canvas::Transform2D::translate(translate_x, translate_y);
+        let inverse_viewport_transform  = viewport_transform.invert().unwrap();
+
+        // Store the size of the window
+        self.viewport_transform         = viewport_transform;
+        self.inverse_viewport_transform = inverse_viewport_transform;
+    }
+
+    ///
     /// Retrieves the active transform for the canvas (which is fully up to date after rendering)
     ///
     pub fn get_active_transform(&self) -> canvas::Transform2D {
