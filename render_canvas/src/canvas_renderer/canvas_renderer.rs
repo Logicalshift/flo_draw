@@ -267,8 +267,8 @@ impl CanvasRenderer {
         // Translate so that x1, y1 appears at -1.0
         let translate_x = x1 - -1.0;
         let translate_y = y1 - -1.0;
-        let translate_x = translate_x * 2.0;
-        let translate_y = translate_y * 2.0;
+        let translate_x = translate_x * scale_x*0.5;
+        let translate_y = translate_y * scale_y*0.5;
         let translation = canvas::Transform2D::translate(translate_x, translate_y);
 
         // Store as the new viewport transform
