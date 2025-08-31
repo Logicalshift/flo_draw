@@ -42,7 +42,7 @@ pub fn main() {
 
         // Configure it to a viewport of 768x768 (want 'square pixels' so the rendering isn't squashed later on)
         renderer.desync(|renderer| { 
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
         });
 
         // Use Desync to process the rendering instructions on the stream (returning a stream of vecs, which we flatten to a stream of single instructions)

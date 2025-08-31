@@ -138,7 +138,7 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, send_
                 let height          = state.height as f32;
                 let scale           = state.scale as f32;
 
-                state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale);
+                state.renderer.set_window_viewport(0.0..width, 0.0..height, width, height, scale);
                 if let Some(send_drawing_actions) = send_drawing_actions { send_drawing_actions.send(DrawingWindowRequest::Redraw).await.ok(); }
 
                 vec![]
@@ -152,7 +152,7 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, send_
                 let height          = state.height as f32;
                 let scale           = state.scale as f32;
 
-                state.renderer.set_viewport(0.0..width, 0.0..height, width, height, scale);
+                state.renderer.set_window_viewport(0.0..width, 0.0..height, width, height, scale);
                 if let Some(send_drawing_actions) = send_drawing_actions { send_drawing_actions.send(DrawingWindowRequest::Redraw).await.ok(); }
 
                 vec![]

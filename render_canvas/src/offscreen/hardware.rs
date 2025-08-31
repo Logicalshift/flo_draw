@@ -49,7 +49,7 @@ where
         let mut renderer = CanvasRenderer::new();
 
         // Prepare to render
-        renderer.set_viewport(0.0..(width as f32), 0.0..(height as f32), width as f32, height as f32, 1.0);
+        renderer.set_window_viewport(0.0..(width as f32), 0.0..(height as f32), width as f32, height as f32, 1.0);
 
         HardwareDrawingTarget {
             renderer:      renderer,

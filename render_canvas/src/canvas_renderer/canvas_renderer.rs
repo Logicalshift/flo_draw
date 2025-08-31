@@ -156,7 +156,7 @@ impl CanvasRenderer {
     /// The viewport and window coordinates are all in pixels. The scale used when generating transformations
     /// (so with a scale of 2, a CanvasHeight request of 1080 will act as a height 2160 in the viewport).
     ///
-    pub fn set_viewport(&mut self, x: Range<f32>, y: Range<f32>, window_width: f32, window_height: f32, scale: f32) {
+    pub fn set_window_viewport(&mut self, x: Range<f32>, y: Range<f32>, window_width: f32, window_height: f32, scale: f32) {
         // By default the x and y coordinates go from -1.0 to 1.0 and represent the viewport coordinates
 
         // Width and height of the viewport
@@ -521,7 +521,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..1024.0, 0.0..768.0, 1024.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..1024.0, 0.0..768.0, 1024.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -545,7 +545,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height, viewport is half the window
-            renderer.set_viewport(0.0..1024.0, 0.0..768.0, 2048.0, 1536.0, 1.0);
+            renderer.set_window_viewport(0.0..1024.0, 0.0..768.0, 2048.0, 1536.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -569,7 +569,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..1024.0, 0.0..768.0, 1024.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..1024.0, 0.0..768.0, 1024.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -593,7 +593,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -617,7 +617,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(-1000.0), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -641,7 +641,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(-1000.0), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -665,7 +665,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::MultiplyTransform(Transform2D::scale(1.0, -1.0)), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -689,7 +689,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform and invert it
@@ -714,7 +714,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform, invert it and flip it
@@ -740,7 +740,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::MultiplyTransform(Transform2D::rotate_degrees(90.0)), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -766,7 +766,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::MultiplyTransform(Transform2D::scale(1.0, -1.0)), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -791,7 +791,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::MultiplyTransform(Transform2D::scale(1.0, -1.0)), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -817,7 +817,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -841,7 +841,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(-1000.0), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -865,7 +865,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..768.0, 0.0..768.0, 768.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0), Draw::MultiplyTransform(Transform2D::scale(1.0, -1.0)), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -889,7 +889,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(0.0..1024.0, 0.0..768.0, 2048.0, 1536.0, 1.0);
+            renderer.set_window_viewport(0.0..1024.0, 0.0..768.0, 2048.0, 1536.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -913,7 +913,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(512.0..1536.0, 512.0..1280.0, 2048.0, 1536.0, 1.0);
+            renderer.set_window_viewport(512.0..1536.0, 512.0..1280.0, 2048.0, 1536.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -937,7 +937,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(512.0..1536.0, 512.0..1280.0, 2048.0, 1536.0, 1.0);
+            renderer.set_window_viewport(512.0..1536.0, 512.0..1280.0, 2048.0, 1536.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -961,7 +961,7 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_viewport(512.0..1536.0, 512.0..1280.0, 2048.0, 1536.0, 2.0);
+            renderer.set_window_viewport(512.0..1536.0, 512.0..1280.0, 2048.0, 1536.0, 2.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -983,7 +983,7 @@ mod test {
     pub fn viewport_transform_for_full_viewport_window() {
         let mut renderer = CanvasRenderer::new();
 
-        renderer.set_viewport(0.0..1024.0, 0.0..768.0, 1024.0, 768.0, 1.0);
+        renderer.set_window_viewport(0.0..1024.0, 0.0..768.0, 1024.0, 768.0, 1.0);
         let viewport_transform = renderer.viewport_transform;
 
         // Top-midpoint is the same
@@ -1003,7 +1003,7 @@ mod test {
 
         executor::block_on(async move {
             // Set up a 1:1 transform on the window and a small viewport
-            renderer.set_viewport(200.0..300.0, 400.0..450.0, 1024.0, 768.0, 1.0);
+            renderer.set_window_viewport(200.0..300.0, 400.0..450.0, 1024.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(768.0), Draw::CenterRegion((0.0, 0.0), (1024.0, 768.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
@@ -1032,7 +1032,7 @@ mod test {
 
         executor::block_on(async move {
             // Set up a 1:1 transform on the window and a small viewport
-            renderer.set_viewport(0.0..300.0, 0.0..450.0, 1024.0, 768.0, 1.0);
+            renderer.set_window_viewport(0.0..300.0, 0.0..450.0, 1024.0, 768.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(768.0), Draw::CenterRegion((0.0, 0.0), (1024.0, 768.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
