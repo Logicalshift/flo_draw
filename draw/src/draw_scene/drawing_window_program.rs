@@ -131,6 +131,7 @@ impl RendererState {
     fn update_viewport_bounds(&mut self) {
         match self.viewport_bounds {
             ViewportBounds::All                                 => { self.renderer.set_canvas_viewport_all(); }
+            ViewportBounds::Width(width)                        => { self.renderer.set_canvas_viewport_width(width); }
             ViewportBounds::CenterRegion((x1, y1), (x2, y2))    => { self.renderer.set_canvas_viewport_center(x1..x2, y1..y2); }
             ViewportBounds::FitExact((x1, y1), (x2, y2))        => { self.renderer.set_canvas_viewport_exact(x1..x2, y1..y2); }
         }

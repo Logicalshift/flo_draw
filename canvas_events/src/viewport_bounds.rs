@@ -14,6 +14,11 @@ pub enum ViewportBounds {
     All,
 
     ///
+    /// Ensures that the canvas height and this specified width are visible
+    ///
+    Width(f32),
+
+    ///
     /// Ensures that a region, specified as `(minx, miny), (maxx, maxy)`, is visible in the window
     ///
     /// This will scale either to the width or height of the region. Coordinates are in canvas coordinates
