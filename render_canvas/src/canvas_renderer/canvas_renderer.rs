@@ -146,7 +146,8 @@ impl CanvasRenderer {
     }
 
     ///
-    /// Sets the viewport used by this renderer
+    /// Sets the region of the window that this renderer will use, and resets it to use the currently set
+    /// canvas height (centering the canvas in the window)
     ///
     /// The window width and height is the overall size of the canvas (which can be considered to have 
     /// coordinates from 0,0 to window_width, window_height). The viewport, given by x and y here, is the
