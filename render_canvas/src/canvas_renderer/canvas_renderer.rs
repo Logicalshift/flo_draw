@@ -264,6 +264,41 @@ impl CanvasRenderer {
     }
 
     ///
+    /// Sets the canvas viewport to center a particular region, ensuring that
+    /// pixels are square.
+    ///
+    pub fn set_canvas_viewport_center(&mut self, x: Range<f32>, y: Range<f32>) {
+        // Use the ratio from the window to compute the x and y ranges to use if the other is used to center the canvas
+        let window_ratio    = self.window_size.1 / self.window_size.0;
+        let x_center        = (x.start + x.end) / 2.0;
+        let y_center        = (y.start + y.end) / 2.0;
+
+        let height_for_x    = (x.end - x.start).abs() * window_ratio;
+        let width_for_y     = (y.end - y.start).abs() / window_ratio;
+
+        // Choose the ratio that fits both axes into the window
+        if height_for_x >= (y.end - y.start).abs() {
+            // Width matches exactly, height changes
+            let y_range = if y.start < y.end {
+                (y_center-height_for_x)..(y_center+height_for_x)
+            } else {
+                (y_center+height_for_x)..(y_center-height_for_x)
+            };
+
+            self.set_canvas_viewport_exact(x, y_range);
+        } else {
+            // Height matches exactly, width changes
+            let x_range = if x.start < x.end {
+                (x_center-width_for_y)..(x_center+width_for_y)
+            } else {
+                (x_center+width_for_y)..(y_center-width_for_y)
+            };
+
+            self.set_canvas_viewport_exact(x_range, y);
+        }
+    }
+
+    ///
     /// Retrieves the active transform for the canvas (which is fully up to date after rendering)
     ///
     pub fn get_active_transform(&self) -> canvas::Transform2D {
