@@ -163,6 +163,10 @@ where
                         winit_window.set_cursor_visible(true);
                     }
                 }
+
+                WindowUpdate::SetViewportBounds(new_bounds) => {
+                    // todo!()
+                }
             }
         }
 
@@ -231,7 +235,7 @@ struct WindowUpdateStream<TDrawStream, TTitleStream, TSizeStream, TFullscreenStr
     viewport_bounds:    TViewportBoundsStream,
 }
 
-impl<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream> Stream for WindowUpdateStream<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream>
+impl<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream, TViewportBoundsStream> Stream for WindowUpdateStream<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream, TViewportBoundsStream>
 where
     TDrawStream:            Unpin + Stream<Item=Arc<Vec<Draw>>>,
     TTitleStream:           Unpin + Stream<Item=String>,
