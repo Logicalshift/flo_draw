@@ -1129,4 +1129,145 @@ mod test {
             assert!((y-(0.0)).abs() < 0.01);
         });
     }
+
+    #[test]
+    pub fn canvas_viewport_fit_all_1() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set up an 800x600 window
+            renderer.set_window_viewport(0.0..800.0, 0.0..600.0, 800.0, 600.0, 1.0);
+
+            // Draw to the canvas, setting up a 1024x768 rendering region (this has the same aspect ratio as our 800x600 window)
+            renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(768.0), Draw::CenterRegion((0.0, 0.0), (1024.0, 768.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // The active transform maps from canvas coordinates to a -1..1 range
+            let active_transform    = renderer.get_active_transform();
+
+            // The viewport transform performs a further mapping (to the window's coordinates, as a range of -1..1 in both axes)
+            let viewport_transform  = renderer.viewport_transform;
+
+            // 0,0 should map to -1, -1 through these two transforms
+            let (x1, y1) = active_transform.transform_point(0.0, 0.0);
+            let (x2, y2) = viewport_transform.transform_point(x1, y1);
+
+            assert!((x2--1.0).abs() < 0.01, "{:?} {:?} != (-1, -1)", (x1, y1), (x2, y2));
+            assert!((y2--1.0).abs() < 0.01, "{:?} {:?} != (-1, -1)", (x1, y1), (x2, y2));
+
+            // 1024, 768 should map to 1, 1 through these two transforms
+            let (x1, y1) = active_transform.transform_point(1024.0, 768.0);
+            let (x2, y2) = viewport_transform.transform_point(x1, y1);
+
+            assert!((x2-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
+            assert!((y2-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
+        });
+    }
+
+    #[test]
+    pub fn canvas_viewport_exact_1() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set up an 800x600 window
+            renderer.set_window_viewport(0.0..800.0, 0.0..600.0, 800.0, 600.0, 1.0);
+
+            // Draw to the canvas, setting up a 1024x768 rendering region (this has the same aspect ratio as our 800x600 window)
+            renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(768.0), Draw::CenterRegion((0.0, 0.0), (1024.0, 768.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Map the whole canvas to the window
+            renderer.set_canvas_viewport_exact(0.0..1024.0, 0.0..768.0);
+
+            // The active transform maps from canvas coordinates to a -1..1 range
+            let active_transform    = renderer.get_active_transform();
+
+            // The viewport transform performs a further mapping (to the window's coordinates, as a range of -1..1 in both axes)
+            let viewport_transform  = renderer.viewport_transform;
+
+            // 0,0 should map to -1, -1 through these two transforms
+            let (x1, y1) = active_transform.transform_point(0.0, 0.0);
+            let (x2, y2) = viewport_transform.transform_point(x1, y1);
+
+            assert!((x2--1.0).abs() < 0.01, "{:?} {:?} != (-1, -1)", (x1, y1), (x2, y2));
+            assert!((y2--1.0).abs() < 0.01, "{:?} {:?} != (-1, -1)", (x1, y1), (x2, y2));
+
+            // 1024, 768 should map to 1, 1 through these two transforms
+            let (x1, y1) = active_transform.transform_point(1024.0, 768.0);
+            let (x2, y2) = viewport_transform.transform_point(x1, y1);
+
+            assert!((x2-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
+            assert!((y2-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
+        });
+    }
+
+    #[test]
+    pub fn canvas_viewport_exact_2() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set up an 800x600 window
+            renderer.set_window_viewport(0.0..800.0, 0.0..600.0, 800.0, 600.0, 1.0);
+
+            // Draw to the canvas, setting up a 1024x768 rendering region (this has the same aspect ratio as our 800x600 window)
+            renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(768.0), Draw::CenterRegion((0.0, 0.0), (1024.0, 768.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Map the corner of the canvas to the window
+            renderer.set_canvas_viewport_exact(0.0..300.0, 0.0..400.0);
+
+            // The active transform maps from canvas coordinates to a -1..1 range
+            let active_transform    = renderer.get_active_transform();
+
+            // The viewport transform performs a further mapping (to the window's coordinates, as a range of -1..1 in both axes)
+            let viewport_transform  = renderer.viewport_transform;
+
+            // 0,0 should map to -1, -1 through these two transforms
+            let (x1, y1) = active_transform.transform_point(0.0, 0.0);
+            let (x2, y2) = viewport_transform.transform_point(x1, y1);
+
+            assert!((x2--1.0).abs() < 0.01, "{:?} {:?} != (-1, -1)", (x1, y1), (x2, y2));
+            assert!((y2--1.0).abs() < 0.01, "{:?} {:?} != (-1, -1)", (x1, y1), (x2, y2));
+
+            // 300, 400 should map to 1, 1 through these two transforms
+            let (x1, y1) = active_transform.transform_point(300.0, 400.0);
+            let (x2, y2) = viewport_transform.transform_point(x1, y1);
+
+            assert!((x2-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
+            assert!((y2-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
+        });
+    }
+
+    #[test]
+    pub fn canvas_viewport_exact_3() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set up an 800x600 window
+            renderer.set_window_viewport(0.0..800.0, 0.0..600.0, 800.0, 600.0, 1.0);
+
+            // Draw to the canvas, setting up a 1024x768 rendering region (this has the same aspect ratio as our 800x600 window)
+            renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(768.0), Draw::CenterRegion((0.0, 0.0), (1024.0, 768.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Map the corner of the canvas to the window
+            renderer.set_canvas_viewport_exact(100.0..300.0, 150.0..400.0);
+
+            // The active transform maps from canvas coordinates to a -1..1 range
+            let active_transform    = renderer.get_active_transform();
+
+            // The viewport transform performs a further mapping (to the window's coordinates, as a range of -1..1 in both axes)
+            let viewport_transform  = renderer.viewport_transform;
+
+            // 100,150 should map to -1, -1 through these two transforms
+            let (x1, y1) = active_transform.transform_point(100.0, 150.0);
+            let (x2, y2) = viewport_transform.transform_point(x1, y1);
+
+            assert!((x2--1.0).abs() < 0.01, "{:?} {:?} != (-1, -1)", (x1, y1), (x2, y2));
+            assert!((y2--1.0).abs() < 0.01, "{:?} {:?} != (-1, -1)", (x1, y1), (x2, y2));
+
+            // 300, 400 should map to 1, 1 through these two transforms
+            let (x1, y1) = active_transform.transform_point(300.0, 400.0);
+            let (x2, y2) = viewport_transform.transform_point(x1, y1);
+
+            assert!((x2-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
+            assert!((y2-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
+        });
+    }
 }
