@@ -267,15 +267,13 @@ impl CanvasRenderer {
         let scale_y     = 2.0/height;
         let scale       = canvas::Transform2D::scale(scale_x, scale_y);
 
-        // Translate so that x1, y1 appears at -1.0
-        let translate_x = x1 - -1.0;
-        let translate_y = y1 - -1.0;
-        let translate_x = translate_x * scale_x*0.5;
-        let translate_y = translate_y * scale_y*0.5;
+        // Translate so that x1, y1 appears at -1.0 after scaling
+        let translate_x = -1.0 - x1*scale_x;
+        let translate_y = -1.0 - y1*scale_y;
         let translation = canvas::Transform2D::translate(translate_x, translate_y);
 
         // Store as the new viewport transform
-        let viewport_transform          = scale * translation;
+        let viewport_transform          = translation * scale;
         let inverse_viewport_transform  = viewport_transform.invert().unwrap();
 
         self.viewport_transform         = viewport_transform;
