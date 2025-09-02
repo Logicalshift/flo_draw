@@ -1190,12 +1190,18 @@ mod test {
             let (x1, y1) = active_transform.transform_point(0.0, 0.0);
             let (x2, y2) = viewport_transform.transform_point(x1, y1);
 
+            // 1024, 768 should map to 1, 1 through these two transforms
+            let (x3, y3) = active_transform.transform_point(1024.0, 768.0);
+            let (x4, y4) = viewport_transform.transform_point(x3, y3);
+
+            let w = (x4-x2).abs();
+            let h = (y4-y2).abs();
+
+            assert!((w-2.0).abs() < 0.01, "{:?} != 2,2", (w, h));
+            assert!((h-2.0).abs() < 0.01, "{:?} != 2,2", (w, h));
+
             assert!((x2--1.0).abs() < 0.01, "{:?} {:?} != (-1, -1)", (x1, y1), (x2, y2));
             assert!((y2--1.0).abs() < 0.01, "{:?} {:?} != (-1, -1)", (x1, y1), (x2, y2));
-
-            // 1024, 768 should map to 1, 1 through these two transforms
-            let (x1, y1) = active_transform.transform_point(1024.0, 768.0);
-            let (x2, y2) = viewport_transform.transform_point(x1, y1);
 
             assert!((x2-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
             assert!((y2-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
@@ -1226,12 +1232,18 @@ mod test {
             let (x1, y1) = active_transform.transform_point(0.0, 0.0);
             let (x2, y2) = viewport_transform.transform_point(x1, y1);
 
+            // 300, 400 should map to 1, 1 through these two transforms
+            let (x3, y3) = active_transform.transform_point(300.0, 400.0);
+            let (x4, y4) = viewport_transform.transform_point(x3, y3);
+
+            let w = (x4-x2).abs();
+            let h = (y4-y2).abs();
+
+            assert!((w-2.0).abs() < 0.01, "{:?} != 2,2", (w, h));
+            assert!((h-2.0).abs() < 0.01, "{:?} != 2,2", (w, h));
+
             assert!((x2--1.0).abs() < 0.01, "{:?} {:?} != (-1, -1)", (x1, y1), (x2, y2));
             assert!((y2--1.0).abs() < 0.01, "{:?} {:?} != (-1, -1)", (x1, y1), (x2, y2));
-
-            // 300, 400 should map to 1, 1 through these two transforms
-            let (x1, y1) = active_transform.transform_point(300.0, 400.0);
-            let (x2, y2) = viewport_transform.transform_point(x1, y1);
 
             assert!((x2-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
             assert!((y2-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
