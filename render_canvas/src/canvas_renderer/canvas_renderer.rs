@@ -1289,4 +1289,47 @@ mod test {
             assert!((y4-1.0).abs() < 0.01, "{:?} {:?} != (1, 1)", (x1, y1), (x2, y2));
         });
     }
+
+    #[test]
+    pub fn canvas_viewport_exact_4() {
+        let mut renderer = CanvasRenderer::new();
+
+        executor::block_on(async move {
+            // Set up an 800x600 window
+            renderer.set_window_viewport(0.0..800.0, 0.0..600.0, 800.0, 600.0, 1.0);
+
+            // Draw to the canvas, setting up a 1024x768 rendering region (this has the same aspect ratio as our 800x600 window)
+            // We use a negative canvas height here, which should flip the viewport
+            renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(-768.0), Draw::CenterRegion((0.0, 0.0), (1024.0, 768.0))].into_iter()).collect::<Vec<_>>().await;
+
+            // Map the whole canvas to the window
+            renderer.set_canvas_viewport_exact(0.0..1024.0, 0.0..768.0);
+
+            // The active transform maps from canvas coordinates to a -1..1 range
+            let active_transform    = renderer.get_active_transform();
+
+            // The viewport transform performs a further mapping (to the window's coordinates, as a range of -1..1 in both axes)
+            let viewport_transform  = renderer.viewport_transform;
+
+            // 0,0 should map to -1, -1 through these two transforms
+            let (x1, y1) = active_transform.transform_point(0.0, 0.0);
+            let (x2, y2) = viewport_transform.transform_point(x1, y1);
+
+            // 1024, 768 should map to 1, 1 through these two transforms
+            let (x3, y3) = active_transform.transform_point(1024.0, 768.0);
+            let (x4, y4) = viewport_transform.transform_point(x3, y3);
+
+            let w = (x4-x2).abs();
+            let h = (y4-y2).abs();
+
+            assert!((w-2.0).abs() < 0.01, "{:?} != 2,2", (w, h));
+            assert!((h-2.0).abs() < 0.01, "{:?} != 2,2", (w, h));
+
+            assert!((x2--1.0).abs() < 0.01, "{:?} {:?} != (-1, 1)", (x1, y1), (x2, y2));
+            assert!((y2-1.0).abs() < 0.01, "{:?} {:?} != (-1, 1)", (x1, y1), (x2, y2));
+
+            assert!((x4-1.0).abs() < 0.01, "{:?} {:?} != (1, -1)", (x1, y1), (x2, y2));
+            assert!((y4--1.0).abs() < 0.01, "{:?} {:?} != (1, -1)", (x1, y1), (x2, y2));
+        });
+    }
 }
