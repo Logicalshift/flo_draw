@@ -15,6 +15,9 @@ use flo_draw::*;
 use flo_draw::canvas::*;
 use flo_binding::*;
 
+use futures::prelude::*;
+use futures::executor;
+
 use std::sync::*;
 
 pub fn main() {
@@ -108,5 +111,41 @@ pub fn main() {
 
             gc.draw_text_layout();
         });
+
+        // Run an event loop to change the layout whenever the user clicks the mouse
+        executor::block_on(async move {
+            let mut events = events;
+
+            // Bindings we cycle through
+            let bindings            = [ViewportBounds::Width(1024.0), ViewportBounds::All, ViewportBounds::CenterRegion((100.0, 100.0), (924.0, 668.0)), ViewportBounds::FitExact((0.0, 0.0), (1024.0, 768.0))];
+            let binding_text        = ["ViewportBounds::Width()", "ViewportBounds::All", "ViewportBounds::CenterRegion()", "ViewportBounds::FitExact()"];
+            let mut current_binding = 0;
+
+            // Monitor for events
+            while let Some(evt) = events.next().await {
+                match evt {
+                    DrawEvent::Pointer(PointerAction::ButtonUp, _, _) => {
+                        // User has clicked the mouse: update the binding we're using
+                        current_binding = (current_binding + 1) % bindings.len();
+                        viewport_bounds.set(bindings[current_binding]);
+
+                        canvas.draw(|gc| {
+                            gc.layer(LayerId(2));
+                            gc.clear_layer();
+
+                            gc.set_font_size(FontId(1), 48.0);
+                            gc.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+
+                            gc.begin_line_layout(512.0, 128.0, TextAlignment::Center);
+                            gc.layout_text(FontId(1), binding_text[current_binding].to_string());
+
+                            gc.draw_text_layout();
+                        });
+                    }
+
+                    _ => { }
+                }
+            }
+        })
     });
 }
