@@ -130,6 +130,8 @@ where
     // Use a channel to get the events out of the program
     let (send_events, recv_events)  = mpsc::channel(20);
     let event_relay_program         = SubProgramId::new();
+
+    // The event relay program receives draw events and relays them to recv_events
     scene_context.add_subprogram(event_relay_program,
         move |mut draw_events: InputStream<DrawEvent>, _| async move {
             let mut send_events = send_events;
