@@ -110,6 +110,25 @@ pub fn main() {
             gc.layout_text(FontId(1), "ViewportBounds::Width()".to_string());
 
             gc.draw_text_layout();
+
+            gc.layer(LayerId(3));
+            gc.clear_layer();
+
+            gc.set_font_size(FontId(1), 20.0);
+            gc.fill_color(Color::Rgba(0.4, 0.4, 0.4, 1.0));
+
+            gc.begin_line_layout(512.0, 100.0, TextAlignment::Center);
+            gc.layout_text(FontId(1), "Click to change viewport bounds binding".to_string());
+
+            gc.draw_text_layout();
+
+            gc.set_font_size(FontId(1), 14.0);
+            gc.fill_color(Color::Rgba(0.4, 0.4, 0.4, 1.0));
+
+            gc.begin_line_layout(512.0, 68.0, TextAlignment::Center);
+            gc.layout_text(FontId(1), "Resize window to see the effects of the viewport bounds setting".to_string());
+
+            gc.draw_text_layout();
         });
 
         // Run an event loop to change the layout whenever the user clicks the mouse
