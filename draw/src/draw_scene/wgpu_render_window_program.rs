@@ -37,7 +37,7 @@ pub fn create_wgpu_render_window_program(scene: &Arc<Scene>, program_id: SubProg
             fullscreen:         BindRef::from(fullscreen.clone()), 
             has_decorations:    BindRef::from(has_decorations.clone()), 
             mouse_pointer:      BindRef::from(mouse_pointer.clone()), 
-            size:               BindRef::from(size.clone()),
+            requested_size:     BindRef::from(size.clone()),
             viewport_bounds:    BindRef::from(viewport_bounds.clone()),
         };
         let mut event_publisher = Publisher::new(1000);

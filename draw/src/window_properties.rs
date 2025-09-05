@@ -14,9 +14,11 @@ pub trait FloWindowProperties {
     fn title(&self) -> BindRef<String>;
 
     ///
-    /// The initial size of the window
+    /// The requested size of the window (before user resizing)
     ///
-    fn size(&self) -> BindRef<(u64, u64)>;
+    /// The window will resize when this value changes, but won't bind to this value if the user resizes the widow.
+    ///
+    fn requested_size(&self) -> BindRef<(u64, u64)>;
 
     ///
     /// Set to true if the window should be fullscreen
@@ -44,7 +46,7 @@ pub trait FloWindowProperties {
 ///
 impl FloWindowProperties for () {
     fn title(&self) -> BindRef<String>                      { BindRef::from(bind("flo_draw".to_string())) }
-    fn size(&self) -> BindRef<(u64, u64)>                   { BindRef::from(bind((1024, 768))) }
+    fn requested_size(&self) -> BindRef<(u64, u64)>         { BindRef::from(bind((1024, 768))) }
     fn fullscreen(&self) -> BindRef<bool>                   { BindRef::from(bind(false)) }
     fn has_decorations(&self) -> BindRef<bool>              { BindRef::from(bind(true)) }
     fn mouse_pointer(&self) -> BindRef<MousePointer>        { BindRef::from(bind(MousePointer::SystemDefault)) }
@@ -56,7 +58,7 @@ impl FloWindowProperties for () {
 ///
 impl<'a> FloWindowProperties for &'a str {
     fn title(&self) -> BindRef<String>                      { BindRef::from(bind(self.to_string())) }
-    fn size(&self) -> BindRef<(u64, u64)>                   { BindRef::from(bind((1024, 768))) }
+    fn requested_size(&self) -> BindRef<(u64, u64)>         { BindRef::from(bind((1024, 768))) }
     fn fullscreen(&self) -> BindRef<bool>                   { BindRef::from(bind(false)) }
     fn has_decorations(&self) -> BindRef<bool>              { BindRef::from(bind(true)) }
     fn mouse_pointer(&self) -> BindRef<MousePointer>        { BindRef::from(bind(MousePointer::SystemDefault)) }
@@ -70,7 +72,7 @@ impl<'a> FloWindowProperties for &'a str {
 #[derive(Clone)]
 pub struct WindowProperties {
     pub title:              BindRef<String>,
-    pub size:               BindRef<(u64, u64)>,
+    pub requested_size:     BindRef<(u64, u64)>,
     pub fullscreen:         BindRef<bool>,
     pub has_decorations:    BindRef<bool>,
     pub mouse_pointer:      BindRef<MousePointer>,
@@ -84,7 +86,7 @@ impl WindowProperties {
     pub fn from<T: FloWindowProperties>(properties: &T) -> WindowProperties {
         WindowProperties {
             title:              properties.title(),
-            size:               properties.size(),
+            requested_size:     properties.requested_size(),
             fullscreen:         properties.fullscreen(),
             has_decorations:    properties.has_decorations(),
             mouse_pointer:      properties.mouse_pointer(),
@@ -95,7 +97,7 @@ impl WindowProperties {
 
 impl FloWindowProperties for WindowProperties {
     fn title(&self) -> BindRef<String>                      { self.title.clone() }
-    fn size(&self) -> BindRef<(u64, u64)>                   { self.size.clone() }
+    fn requested_size(&self) -> BindRef<(u64, u64)>         { self.requested_size.clone() }
     fn fullscreen(&self) -> BindRef<bool>                   { self.fullscreen.clone() }
     fn has_decorations(&self) -> BindRef<bool>              { self.has_decorations.clone() }
     fn mouse_pointer(&self) -> BindRef<MousePointer>        { self.mouse_pointer.clone() }

@@ -318,7 +318,7 @@ impl WinitRuntime {
             CreateRenderWindow(actions, events, window_properties) => {
                 // Get the initial set of properties for the window
                 let title               = window_properties.title().get();
-                let (size_x, size_y)    = window_properties.size().get();
+                let (size_x, size_y)    = window_properties.requested_size().get();
                 let fullscreen          = window_properties.fullscreen().get();
                 let decorations         = window_properties.has_decorations().get();
 

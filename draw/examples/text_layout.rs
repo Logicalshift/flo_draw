@@ -14,9 +14,9 @@ pub fn main() {
         let lato_bold   = CanvasFontFace::from_slice(include_bytes!("Lato-Bold.ttf"));
 
         // Create a window
-        let mut properties = WindowProperties::from(&"Text layout example");
-        properties.size = BindRef::from(bind((1043, 1043)));
-        let canvas      = create_drawing_window(properties);
+        let mut properties          = WindowProperties::from(&"Text layout example");
+        properties.requested_size   = BindRef::from(bind((1043, 1043)));
+        let canvas                  = create_drawing_window(properties);
 
         // Various text layout demonstrations
         canvas.draw(|gc| {
