@@ -17,8 +17,14 @@ pub fn main() {
         // Create the window properties with a computed binding that maps directly to the window size
         let window_properties   = WindowProperties::from(&"Canvas viewport");
         let actual_size         = window_properties.actual_size().unwrap();
+        let actual_scale        = window_properties.actual_scale().unwrap();
         let window_properties   = window_properties.with_viewport_bounds(
-            computed(move || ViewportBounds::FitExact((0.0, 0.0), actual_size.get())));
+            computed(move || {
+                let (w, h) = actual_size.get();
+                let scale  = actual_scale.get();
+
+                ViewportBounds::FitExact((0.0, 0.0), (w/scale, h/scale))
+            }));
 
         // Create a window with these properties
         let canvas = create_drawing_window(window_properties);
