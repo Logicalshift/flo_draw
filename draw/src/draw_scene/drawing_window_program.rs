@@ -47,6 +47,9 @@ struct RendererState {
     /// The height of the canvas window
     height: f64,
 
+    /// The active canvas transform
+    canvas_transform: Transform2D,
+
     /// The bounds to render in the viewport
     viewport_bounds: ViewportBounds,
 }
@@ -99,12 +102,17 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, send_
                 vec![]
             }
 
-            DrawEvent::NewFrame                 => { vec![] }
-            DrawEvent::Closed                   => { vec![] }
-            DrawEvent::CanvasTransform(_)       => { vec![] }
-            DrawEvent::Pointer(_, _, _)         => { vec![] }
-            DrawEvent::KeyDown(_, _)            => { vec![] }
-            DrawEvent::KeyUp(_, _)              => { vec![] }
+            DrawEvent::CanvasTransform(new_transform) => { 
+                state.canvas_transform = new_transform;
+
+                vec![]
+            }
+
+            DrawEvent::NewFrame         => { vec![] }
+            DrawEvent::Closed           => { vec![] }
+            DrawEvent::Pointer(_, _, _) => { vec![] }
+            DrawEvent::KeyDown(_, _)    => { vec![] }
+            DrawEvent::KeyUp(_, _)      => { vec![] }
         }
     }
 }
@@ -183,6 +191,7 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                 scale:              1.0,
                 width:              1.0,
                 height:             1.0,
+                canvas_transform:   Transform2D::identity(),
                 viewport_bounds:    ViewportBounds::All,
             };
 
@@ -270,7 +279,12 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                     }
 
                                     DrawingWindowRequest::SendEvents(target_program) => {
-                                        if let Ok(target) = context.send::<DrawEvent>(target_program) {
+                                        if let Ok(mut target) = context.send::<DrawEvent>(target_program) {
+                                            target.send(DrawEvent::Scale(render_state.scale)).await.ok();
+                                            target.send(DrawEvent::Resize(render_state.width, render_state.height)).await.ok();
+                                            target.send(DrawEvent::CanvasTransform(render_state.canvas_transform)).await.ok();
+                                            target.send(DrawEvent::NewFrame).await.ok();
+
                                             subscribers.push(target);
                                         }
                                     }
@@ -319,7 +333,12 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
                                     }
 
                                     DrawingWindowRequest::SendEvents(target_program) => {
-                                        if let Ok(target) = context.send::<DrawEvent>(target_program) {
+                                        if let Ok(mut target) = context.send::<DrawEvent>(target_program) {
+                                            target.send(DrawEvent::Scale(render_state.scale)).await.ok();
+                                            target.send(DrawEvent::Resize(render_state.width, render_state.height)).await.ok();
+                                            target.send(DrawEvent::CanvasTransform(render_state.canvas_transform)).await.ok();
+                                            target.send(DrawEvent::NewFrame).await.ok();
+
                                             subscribers.push(target);
                                         }
                                     }
