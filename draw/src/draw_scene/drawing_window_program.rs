@@ -149,10 +149,25 @@ impl RendererState {
     /// Performs a drawing action and passes it on to the render target
     ///
     async fn draw(&mut self, draw_actions: impl Send + Iterator<Item=&Draw>, render_target: &mut OutputSink<RenderWindowRequest>) {
+        let original_active_transform = self.renderer.get_active_transform();
+
         self.update_viewport_bounds();
 
         let render_actions = self.renderer.draw(draw_actions.cloned()).collect::<Vec<_>>().await;
-        render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
+
+        if original_active_transform == self.renderer.get_active_transform() {
+            // Viewport bounds has not changed
+            render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
+        } else {
+            // The viewport bounds depends on the coordinate transform after the rendering has completed, so if the rendering has changed the coorindate transform,
+            // update the bounds and render once more
+            // (TODO: would be cleaner to do this in one pass if possible)
+            self.update_viewport_bounds();
+            let more_render_actions = self.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
+
+            render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
+            render_target.send(RenderWindowRequest::Render(RenderRequest::Render(more_render_actions))).await.ok();
+        }
     }
 }
 
