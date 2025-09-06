@@ -29,17 +29,17 @@ pub fn create_wgpu_render_window_program(scene: &Arc<Scene>, program_id: SubProg
         let fullscreen          = bind(false);
         let has_decorations     = bind(true);
         let mouse_pointer       = bind(MousePointer::SystemDefault);
-        let size                = bind(initial_size);
+        let requested_size      = bind(initial_size);
         let viewport_bounds     = bind(ViewportBounds::default());
 
-        let window_properties   = WindowProperties { 
-            title:              BindRef::from(title.clone()), 
-            fullscreen:         BindRef::from(fullscreen.clone()), 
-            has_decorations:    BindRef::from(has_decorations.clone()), 
-            mouse_pointer:      BindRef::from(mouse_pointer.clone()), 
-            requested_size:     BindRef::from(size.clone()),
-            viewport_bounds:    BindRef::from(viewport_bounds.clone()),
-        };
+        let window_properties = WindowProperties::default()
+            .with_title(title.clone())
+            .with_fullscreen(fullscreen.clone())
+            .with_has_decorations(has_decorations.clone())
+            .with_mouse_pointer(mouse_pointer.clone())
+            .with_requested_size(requested_size.clone())
+            .with_viewport_bounds(viewport_bounds.clone());
+
         let mut event_publisher = Publisher::new(1000);
 
         // Create a stream for publishing render requests
