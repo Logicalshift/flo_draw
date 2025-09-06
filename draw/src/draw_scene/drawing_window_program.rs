@@ -155,7 +155,7 @@ impl RendererState {
 
         let render_actions = self.renderer.draw(draw_actions.cloned()).collect::<Vec<_>>().await;
 
-        if original_active_transform == self.renderer.get_active_transform() {
+        if original_active_transform == self.renderer.get_active_transform() && self.viewport_bounds != ViewportBounds::All {
             // Viewport bounds has not changed
             render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
         } else {
