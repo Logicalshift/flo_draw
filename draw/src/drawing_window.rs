@@ -136,7 +136,7 @@ where
     let window_properties = WindowProperties::from(&window_properties);
     scene_context.add_subprogram(event_relay_program,
         move |mut draw_events: InputStream<DrawEvent>, _| async move {
-            let mut send_events = send_events;
+            let mut maybe_send_events = Some(send_events);
             draw_events.allow_thread_stealing(true);
 
             while let Some(event) = draw_events.next().await {
@@ -160,10 +160,15 @@ where
                 }
 
                 // Send the event on to the listening stream
-                match send_events.send(event).await {
-                    Ok(())  => { },
-                    Err(_)  => { break; }
-                };
+                if let Some(send_events) = &mut maybe_send_events {
+                    match send_events.send(event).await {
+                        Ok(())  => { },
+                        Err(_)  => {
+                            // Stop trying to send events once there's an error
+                            maybe_send_events = None;
+                        }
+                    };
+                }
 
                 if is_closed {
                     break;
