@@ -55,10 +55,13 @@ pub trait FloWindowProperties {
     /// force a 1-1 pixel relationship:
     ///
     /// ```
-    /// # let window_properties = WindowProperties::from(());
+    /// # use flo_draw::*;
+    /// # use flo_binding::*;
+    /// # let mut window_properties = WindowProperties::default();
     /// let actual_size = window_properties.actual_size().unwrap();
     ///
-    /// window_properties.viewport_bounds = compute(move || ViewportBounds::FitExact((0.0, 0.0), actual_sized.get()));
+    /// window_properties = window_properties.with_viewport_bounds(computed(move || 
+    ///     ViewportBounds::FitExact((0.0, 0.0), actual_size.get())));
     /// ```
     ///
     fn actual_size(&self) -> Option<Binding<(f32, f32)>>;
