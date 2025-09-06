@@ -125,12 +125,11 @@ fn u64_to_f32(val: (u64, u64)) -> (f32, f32) {
     (val.0 as _, val.1 as _)
 }
 
-
 impl WindowProperties {
     ///
     /// Creates a clone of an object implementing the FloWindowProperties trait
     ///
-    pub fn from<T: FloWindowProperties>(properties: &T) -> WindowProperties {
+    pub fn from(properties: &impl FloWindowProperties) -> WindowProperties {
         WindowProperties {
             title:              properties.title(),
             requested_size:     properties.requested_size(),
@@ -142,6 +141,81 @@ impl WindowProperties {
             actual_size:        properties.actual_size().unwrap_or_else(|| bind(u64_to_f32(properties.requested_size().get()))),
             actual_scale:       properties.actual_scale().unwrap_or_else(|| bind(1.0)),
         }
+    }
+
+    ///
+    /// Creates window properties for a window with a title 
+    ///
+    pub fn new(title: impl Into<String>) -> Self {
+        let title: &str = &title.into();
+
+        Self::from(&title)
+    }
+
+    ///
+    /// Returns properties with a new title binding
+    ///
+    #[inline]
+    pub fn with_title(mut self, title: impl Into<BindRef<String>>) -> Self {
+        self.title = title.into();
+
+        self
+    }
+
+    ///
+    /// Returns properties with a new requested size binding
+    ///
+    #[inline]
+    pub fn with_requested_size(mut self, requested_size: impl Into<BindRef<(u64, u64)>>) -> Self {
+        self.requested_size = requested_size.into();
+
+        self
+    }
+
+    ///
+    /// Returns properties with a new 'is fullscreen' binding
+    ///
+    #[inline]
+    pub fn with_fullscreen(mut self, fullscreen: impl Into<BindRef<bool>>) -> Self {
+        self.fullscreen = fullscreen.into();
+
+        self
+    }
+
+    ///
+    /// Returns properties with a new 'has decorations' binding
+    ///
+    #[inline]
+    pub fn with_has_decorations(mut self, has_decorations: impl Into<BindRef<bool>>) -> Self {
+        self.has_decorations = has_decorations.into();
+
+        self
+    }
+
+    ///
+    /// Returns properties with a new mouse pointer binding
+    ///
+    #[inline]
+    pub fn with_mouse_pointer(mut self, mouse_pointer: impl Into<BindRef<MousePointer>>) -> Self {
+        self.mouse_pointer = mouse_pointer.into();
+
+        self
+    }
+
+    ///
+    /// Returns properties with a new viewport bounds binding
+    ///
+    #[inline]
+    pub fn with_viewport_bounds(mut self, viewport_bounds: impl Into<BindRef<ViewportBounds>>) -> Self {
+        self.viewport_bounds = viewport_bounds.into();
+
+        self
+    }
+}
+
+impl Default for WindowProperties {
+    fn default() -> Self {
+        WindowProperties::from(&())
     }
 }
 
