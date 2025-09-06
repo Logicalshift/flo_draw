@@ -20,10 +20,13 @@ pub fn main() {
         let actual_scale        = window_properties.actual_scale().unwrap();
         let window_properties   = window_properties.with_viewport_bounds(
             computed(move || {
+                // This keeps the size as 1024x768 pixels and centers it
                 let (w, h) = actual_size.get();
                 let scale  = actual_scale.get();
+                let (w, h) = (w/scale, h/scale);
+                let (x, y) = ((1024.0-w)/2.0, (768.0-h)/2.0);
 
-                ViewportBounds::FitExact((0.0, 0.0), (w/scale, h/scale))
+                ViewportBounds::FitExact((x, y), (x+w, y+h))
             }));
 
         // Create a window with these properties
