@@ -1,5 +1,6 @@
 use crate::events::*;
 use crate::render_window::*;
+use crate::window_properties;
 use crate::window_properties::*;
 use crate::draw_scene::*;
 
@@ -117,7 +118,7 @@ where
     DrawStream:  'static + Send + Unpin + Stream<Item=Vec<Draw>>,
     TProperties: 'a + FloWindowProperties,
 {
-    let properties              = WindowProperties::from(&window_properties);
+    let properties = WindowProperties::from(&window_properties);
 
     // Create a new render window entity
     let render_window_program   = SubProgramId::new();
@@ -131,7 +132,8 @@ where
     let (send_events, recv_events)  = mpsc::channel(20);
     let event_relay_program         = SubProgramId::new();
 
-    // The event relay program receives draw events and relays them to recv_events
+    // The event relay program receives draw events and relays them to recv_events, as well as dealing with updating the window properties
+    let window_properties = WindowProperties::from(&window_properties);
     scene_context.add_subprogram(event_relay_program,
         move |mut draw_events: InputStream<DrawEvent>, _| async move {
             let mut send_events = send_events;
@@ -140,6 +142,24 @@ where
             while let Some(event) = draw_events.next().await {
                 let is_closed = event == DrawEvent::Closed;
 
+                // Update the window properties based on the value that was passed in
+                match event {
+                    DrawEvent::Resize(width, height) => {
+                        if let Some(size_binding) = window_properties.actual_size() {
+                            size_binding.set((width as _, height as _))
+                        }
+                    }
+
+                    DrawEvent::Scale(scale) => {
+                        if let Some(scale_binding) = window_properties.actual_scale() {
+                            scale_binding.set(scale as _);
+                        }
+                    }
+
+                    _ => { }
+                }
+
+                // Send the event on to the listening stream
                 match send_events.send(event).await {
                     Ok(())  => { },
                     Err(_)  => { break; }
