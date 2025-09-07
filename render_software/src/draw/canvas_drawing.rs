@@ -307,4 +307,12 @@ where
 
         layer.map(|layer| &layer.edges)
     }
+
+    ///
+    /// Retrieves the 'active' transform that maps canvas coordinates to the
+    /// (-1, 1) range used for the 'source' coordinate scheme
+    ///
+    pub fn active_transform(&self) -> canvas::Transform2D {
+        self.current_state.transform
+    }
 }
