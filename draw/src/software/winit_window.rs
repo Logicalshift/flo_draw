@@ -66,7 +66,7 @@ where
     let window_actions      = WindowUpdateStream { 
         draw_stream:        drawing_actions, 
         title_stream:       follow(window_properties.title),
-        size:               follow(window_properties.size),
+        size:               follow(window_properties.requested_size),
         fullscreen:         follow(window_properties.fullscreen),
         has_decorations:    follow(window_properties.has_decorations),
         mouse_pointer:      follow(window_properties.mouse_pointer)
