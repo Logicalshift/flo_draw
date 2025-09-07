@@ -37,20 +37,20 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
             .with_requested_size(requested_size.clone())
             .with_viewport_bounds(viewport_bounds.clone());
 
-        let mut event_publisher     = Publisher::new(1000);
+        let mut event_publisher = Publisher::new(1000);
 
         // We create an initial subscriber so that the first thing to request events gets 
         // all of the events generated from the creation of the window. Without this, it's
         // possible the initial 'scale' and 'size' events might not be sent to the first
         // 'SendEvents' requestor
-        let mut initial_subscriber  = Some(event_publisher.subscribe());
+        let mut initial_subscriber = Some(event_publisher.subscribe());
 
         // Create a stream for publishing render requests
         let (drawing_sender, drawing_receiver) = mpsc::channel(5);
 
         // Create a window that subscribes to the publisher (we do this outside of the main 'async' loop so this has happened on return)
         // If the window is not created immediately, there may be a race condition if `StopWhenAllWindowsClosed` is sent 
-        let winit_thread    = winit_thread();
+        let winit_thread = winit_thread();
         winit_thread.send_event(WinitThreadEvent::CreateDrawingWindow(drawing_receiver.boxed(), event_publisher.republish(), window_properties.into()));
 
         async move {
