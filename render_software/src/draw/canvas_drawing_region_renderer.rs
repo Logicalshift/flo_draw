@@ -92,6 +92,36 @@ where
 
         result
     }
+
+    ///
+    /// Sets the viewport so that the corners are at the specified positions in canvas coordinates
+    /// (when rendering on a canvas with the specified width)
+    ///
+    pub fn viewport_fit_exact(&mut self, source: &CanvasDrawing<TPixel, N>, min: (f64, f64), max: (f64, f64), width: f64) {
+        // The active transform converts from canvas pixels to the -1, 1 range that we use for rendering
+        let transform = source.active_transform();
+
+        // In the horizontal axis, we're rendering from -ratio to ratio
+        let width       = width as f64;
+        let half_width  = width/2.0;
+        let ratio       = half_width / self.half_height;
+
+        // Convert the coordinates from the canvas coordinate system to the universal one
+        let (min_x, min_y) = transform.transform_point(min.0 as _, min.1 as _);
+        let (max_x, max_y) = transform.transform_point(max.0 as _, max.1 as _);
+
+        // Set up the translation so that -ratio,-1 is mapped to min_x, min_y
+        let translate_x = min_x - (-ratio as f32);
+        let translate_y = min_y - -1.0;
+
+        // Scale is the ratio between the width and the height (remember that this is the inverse scale)
+        let scale_x = (max_x-min_x)/2.0;
+        let scale_y = (max_y-max_y)/2.0;
+
+        // Store the results so they affect the next rendering
+        self.translation    = (translate_x as _, translate_y as _);
+        self.scale          = (scale_x as _, scale_y as _);
+    }
 }
 
 impl<TScanPlanner, TLineRenderer, TPixel, const N: usize> Renderer for CanvasDrawingRegionRenderer<TScanPlanner, TLineRenderer, TPixel, N>
