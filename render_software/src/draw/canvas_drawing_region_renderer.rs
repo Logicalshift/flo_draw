@@ -57,6 +57,10 @@ where
     ///
     /// Converts an x-range in pixels to canvas coordinates
     ///
+    /// We use a range of -1, 1 for the height regardless of the size of the render
+    /// target, but the width can vary depending on the aspect ratio of the render
+    /// target.
+    ///
     #[inline]
     fn convert_width(&self, width: usize) -> Range<f64> {
         let width       = width as f64;
