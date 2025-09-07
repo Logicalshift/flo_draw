@@ -240,7 +240,7 @@ impl WinitRuntime {
 
                 // TODO: for modifier keys, generate keydown/up using the modifier state
 
-                // Update the pointe state
+                // Update the pointer state
                 let button                          = button_from_winit(&button);
                 let action                          = match state {
                     ElementState::Pressed => {
