@@ -141,6 +141,13 @@ where
     }
 
     ///
+    /// Retrieves the base transform for this canvas
+    ///
+    pub fn base_transform(&self) -> canvas::Transform2D {
+        self.base_transform
+    }
+
+    ///
     /// Updates the state of this drawing with some drawing instructions
     ///
     pub fn draw(&mut self, drawing: impl IntoIterator<Item=canvas::Draw>) {

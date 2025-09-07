@@ -99,7 +99,7 @@ where
     ///
     pub fn viewport_fit_exact(&mut self, source: &CanvasDrawing<TPixel, N>, min: (f64, f64), max: (f64, f64), width: f64) {
         // The active transform converts from canvas pixels to the -1, 1 range that we use for rendering
-        let transform = source.active_transform();
+        let transform = source.active_transform() * source.base_transform();
 
         // In the horizontal axis, we're rendering from -ratio to ratio
         let width       = width as f64;
