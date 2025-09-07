@@ -115,14 +115,14 @@ where
         let (min_x, max_x) = (min_x.min(max_x), min_x.max(max_x));
         let (min_y, max_y) = (min_y.min(max_y), min_y.max(max_y));
 
-        // Set up the translation so that -ratio,-1 is mapped to min_x, min_y
-        let translate_x = min_x - (-ratio as f32);
-        let translate_y = min_y - -1.0;
-
         // Scale is the ratio between the width and the height (remember that this is the inverse scale)
         let scale_x = (max_x-min_x)/2.0;
         let scale_y = (max_y-min_y)/2.0;
         let scale_x = scale_x / (ratio as f32);
+
+        // Set up the translation so that -ratio,-1 is mapped to min_x, min_y
+        let translate_x = min_x/scale_x + (ratio as f32);
+        let translate_y = min_y/scale_y - -1.0;
 
         // Store the results so they affect the next rendering
         self.translation    = (translate_x as _, translate_y as _);
