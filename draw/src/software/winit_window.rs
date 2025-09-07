@@ -100,7 +100,7 @@ where
                         // Render the actions to the CanvasDrawing
                         canvas_drawing.draw(Arc::unwrap_or_clone(next_action).into_iter());
 
-                        if let (Some(winit_window), Some(context), Some(surface)) = (&window.window, &mut window.context, &mut window.surface) {
+                        if let (Some(winit_window), Some(context), Some(surface), viewport_bounds) = (&window.window, &mut window.context, &mut window.surface, window.viewport_bounds) {
                             // Set up to render at the current size
                             let size    = winit_window.inner_size();
                             let width   = size.width;
@@ -116,6 +116,14 @@ where
                                 let mut frame               = FrameU32Argb::from_u32(width as _, height as _, 2.2, buffer_u32).unwrap();
 
                                 let mut renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
+
+                                match viewport_bounds {
+                                    ViewportBounds::All                                 => { }
+                                    ViewportBounds::Width(requested_width)              => { renderer.viewport_fit_width(&canvas_drawing, width as _, requested_width as _); }
+                                    ViewportBounds::CenterRegion((x1, y1), (x2, y2))    => { renderer.viewport_fit_center(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
+                                    ViewportBounds::FitExact((x1, y1), (x2, y2))        => { renderer.viewport_fit_exact(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
+                                }
+
                                 frame.render(renderer, &canvas_drawing);
 
                                 // Present the rendering
