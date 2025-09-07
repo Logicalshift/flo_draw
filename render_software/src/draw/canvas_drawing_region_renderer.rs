@@ -98,6 +98,8 @@ where
     /// (when rendering on a canvas with the specified width)
     ///
     pub fn viewport_fit_exact(&mut self, source: &CanvasDrawing<TPixel, N>, min: (f64, f64), max: (f64, f64), width: f64) {
+        // TODO: this won't flip the coordinates if min > max
+
         // The active transform converts from canvas pixels to the -1, 1 range that we use for rendering
         let transform = source.active_transform();
 
@@ -120,6 +122,7 @@ where
         // Scale is the ratio between the width and the height (remember that this is the inverse scale)
         let scale_x = (max_x-min_x)/2.0;
         let scale_y = (max_y-min_y)/2.0;
+        let scale_x = scale_x / (ratio as f32);
 
         // Store the results so they affect the next rendering
         self.translation    = (translate_x as _, translate_y as _);
