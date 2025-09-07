@@ -112,7 +112,7 @@ where
 
         // Set up the translation so that -ratio,-1 is mapped to min_x, min_y
         let translate_x = min_x - (-ratio as f32);
-        let translate_y = min_y - -1.0;
+        let translate_y = min_y - 1.0;                  // TODO: assumes the base transform is flipped
 
         // Scale is the ratio between the width and the height (remember that this is the inverse scale)
         let scale_x = (max_x-min_x)/2.0;
