@@ -99,7 +99,7 @@ where
     ///
     pub fn viewport_fit_exact(&mut self, source: &CanvasDrawing<TPixel, N>, min: (f64, f64), max: (f64, f64), width: f64) {
         // The active transform converts from canvas pixels to the -1, 1 range that we use for rendering
-        let transform = source.active_transform() * source.base_transform();
+        let transform = source.active_transform();
 
         // In the horizontal axis, we're rendering from -ratio to ratio
         let width       = width as f64;
@@ -110,9 +110,12 @@ where
         let (min_x, min_y) = transform.transform_point(min.0 as _, min.1 as _);
         let (max_x, max_y) = transform.transform_point(max.0 as _, max.1 as _);
 
+        let (min_x, max_x) = (min_x.min(max_x), min_x.max(max_x));
+        let (min_y, max_y) = (min_y.min(max_y), min_y.max(max_y));
+
         // Set up the translation so that -ratio,-1 is mapped to min_x, min_y
         let translate_x = min_x - (-ratio as f32);
-        let translate_y = min_y - 1.0;                  // TODO: assumes the base transform is flipped
+        let translate_y = min_y - -1.0;
 
         // Scale is the ratio between the width and the height (remember that this is the inverse scale)
         let scale_x = (max_x-min_x)/2.0;
