@@ -54,8 +54,8 @@ where
         CanvasDrawingRegionRenderer { 
             half_height:        (height as f64)/2.0, 
             half_height_recip:  1.0/((height as f64)/2.0),
-            scale:              (0.5, 0.75),
-            translation:        (1.0, 1.0),
+            scale:              (1.0, 1.0),
+            translation:        (0.0, 0.0),
             scan_planner:       planner,
             line_renderer:      line_renderer,
             pixel:              PhantomData,
