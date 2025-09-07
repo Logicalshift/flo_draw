@@ -37,6 +37,9 @@ pub struct WinitWindow {
 
     /// The softbuffer surface that we're rendering on
     surface: Option<softbuffer::Surface<Arc<Window>, Arc<Window>>>,
+
+    /// The bounds of the canvas to render in the window
+    viewport_bounds: ViewportBounds,
 }
 
 impl WinitWindow {
@@ -45,9 +48,10 @@ impl WinitWindow {
     ///
     pub fn new(window: Arc<Window>) -> WinitWindow {
         WinitWindow {
-            window:     Some(window),
-            context:    None,
-            surface:    None,
+            window:          Some(window),
+            context:         None,
+            surface:         None,
+            viewport_bounds: ViewportBounds::All,
         }
     }
 }
@@ -125,6 +129,10 @@ where
                     // Trigger the 'NewFrame' event when done
                     send_new_frame = true;
                 }
+                
+                WindowUpdate::SetViewportBounds(new_bounds) => {
+                    window.viewport_bounds = new_bounds;
+                }
 
                 WindowUpdate::SetTitle(new_title)   => {
                     if let Some(winit_window) = &window.window {
@@ -197,7 +205,8 @@ enum WindowUpdate {
     SetSize((u64, u64)),
     SetFullscreen(bool),
     SetHasDecorations(bool),
-    SetMousePointer(MousePointer)
+    SetMousePointer(MousePointer),
+    SetViewportBounds(ViewportBounds),
 }
 
 impl fmt::Debug for WindowUpdate {
@@ -211,6 +220,7 @@ impl fmt::Debug for WindowUpdate {
             SetFullscreen(val)          => write!(f, "SetFullscreen({:?})", val),
             SetHasDecorations(val)      => write!(f, "SetHasDecorations({:?})", val),
             SetMousePointer(ptr)        => write!(f, "SetMousePointer({:?})", ptr),
+            SetViewportBounds(bounds)   => write!(f, "SetViewportBounds({:?})", bounds),
         }
     }
 }
