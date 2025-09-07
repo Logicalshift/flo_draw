@@ -97,7 +97,7 @@ where
     /// Sets the viewport so that the corners are at the specified positions in canvas coordinates
     /// (when rendering on a canvas with the specified width)
     ///
-    pub fn viewport_fit_exact(&mut self, source: &CanvasDrawing<TPixel, N>, min: (f64, f64), max: (f64, f64), width: f64) {
+    pub fn viewport_fit_exact(&mut self, source: &CanvasDrawing<TPixel, N>, width: f64, x: Range<f64>, y: Range<f64>) {
         // TODO: this won't flip the coordinates if min > max
 
         // The active transform converts from canvas pixels to the -1, 1 range that we use for rendering
@@ -109,8 +109,8 @@ where
         let ratio       = half_width / self.half_height;
 
         // Convert the coordinates from the canvas coordinate system to the universal one
-        let (min_x, min_y) = transform.transform_point(min.0 as _, min.1 as _);
-        let (max_x, max_y) = transform.transform_point(max.0 as _, max.1 as _);
+        let (min_x, min_y) = transform.transform_point(x.start as _, y.start as _);
+        let (max_x, max_y) = transform.transform_point(x.end as _, y.end as _);
 
         let (min_x, max_x) = (min_x.min(max_x), min_x.max(max_x));
         let (min_y, max_y) = (min_y.min(max_y), min_y.max(max_y));
@@ -127,6 +127,48 @@ where
         // Store the results so they affect the next rendering
         self.translation    = (translate_x as _, translate_y as _);
         self.scale          = (scale_x as _, scale_y as _);
+    }
+
+    ///
+    /// Fits the viewport to the 'all' view (that is, define the viewport by the canvas height and square pixels)
+    ///
+    pub fn viewport_fit_all(&mut self) {
+        self.translation = (0.0, 0.0);
+        self.scale       = (1.0, 1.0);
+    }
+
+    ///
+    /// Fits the viewport to center a region
+    ///
+    pub fn viewport_fit_center(&mut self, source: &CanvasDrawing<TPixel, N>, width: f64, x: Range<f64>, y: Range<f64>) {
+        // Use the ratio from the window to compute the x and y ranges to use if the other is used to center the canvas
+        let window_ratio    = self.half_height / (width /2.0);
+        let x_center        = (x.start + x.end) / 2.0;
+        let y_center        = (y.start + y.end) / 2.0;
+
+        let height_for_x    = (x.end - x.start).abs() * window_ratio;
+        let width_for_y     = (y.end - y.start).abs() / window_ratio;
+
+        // Choose the ratio that fits both axes into the window
+        if height_for_x >= (y.end - y.start).abs() {
+            // Width matches exactly, height changes
+            let y_range = if y.start < y.end {
+                (y_center-height_for_x*0.5)..(y_center+height_for_x*0.5)
+            } else {
+                (y_center+height_for_x*0.5)..(y_center-height_for_x*0.5)
+            };
+
+            self.viewport_fit_exact(source, width, x, y_range);
+        } else {
+            // Height matches exactly, width changes
+            let x_range = if x.start < x.end {
+                (x_center-width_for_y*0.5)..(x_center+width_for_y*0.5)
+            } else {
+                (x_center+width_for_y*0.5)..(x_center-width_for_y*0.5)
+            };
+
+            self.viewport_fit_exact(source, width, x_range, y);
+        }
     }
 }
 
