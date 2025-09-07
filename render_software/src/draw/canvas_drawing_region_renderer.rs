@@ -116,7 +116,7 @@ where
 
         // Scale is the ratio between the width and the height (remember that this is the inverse scale)
         let scale_x = (max_x-min_x)/2.0;
-        let scale_y = (max_y-max_y)/2.0;
+        let scale_y = (max_y-min_y)/2.0;
 
         // Store the results so they affect the next rendering
         self.translation    = (translate_x as _, translate_y as _);
