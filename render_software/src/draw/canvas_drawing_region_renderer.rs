@@ -25,8 +25,8 @@ where
     /// 1/half_height
     half_height_recip: f64,
 
-    /// The amount to scale the region by
-    scale: f64,
+    /// The inverse of the amount to scale the region by (0.5 = double size)
+    scale: (f64, f64),
 
     /// The translation to apply to the region
     translation: (f64, f64),
@@ -54,7 +54,7 @@ where
         CanvasDrawingRegionRenderer { 
             half_height:        (height as f64)/2.0, 
             half_height_recip:  1.0/((height as f64)/2.0),
-            scale:              0.5,
+            scale:              (0.5, 0.75),
             translation:        (1.0, 1.0),
             scan_planner:       planner,
             line_renderer:      line_renderer,
@@ -75,8 +75,8 @@ where
         let half_width  = width/2.0;
         let ratio       = half_width / self.half_height;
 
-        let left        = (-ratio + self.translation.0) * self.scale;
-        let right       = (ratio + self.translation.1) * self.scale;
+        let left        = (-ratio + self.translation.0) * self.scale.0;
+        let right       = (ratio + self.translation.0) * self.scale.0;
 
         left..right
     }
@@ -88,7 +88,7 @@ where
     fn convert_y_positions(&self, y_positions: &[f64]) -> Vec<f64> {
         let mut result = Vec::with_capacity(y_positions.len());
         result.extend(y_positions.iter()
-            .map(|ypos| (ypos * self.half_height_recip - 1.0 + self.translation.1) * self.scale));
+            .map(|ypos| (ypos * self.half_height_recip - 1.0 + self.translation.1) * self.scale.1));
 
         result
     }
