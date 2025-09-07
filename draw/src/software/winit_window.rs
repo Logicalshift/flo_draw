@@ -111,7 +111,8 @@ where
                                 let buffer_u32: &mut [u32]  = &mut *buffer;
                                 let mut frame               = FrameU32Argb::from_u32(width as _, height as _, 2.2, buffer_u32).unwrap();
 
-                                let renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
+                                let mut renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
+                                renderer.viewport_fit_exact(&canvas_drawing, (0.0, 0.0), (1024.0, 768.0), width as _);
                                 frame.render(renderer, &canvas_drawing);
 
                                 // Present the rendering
