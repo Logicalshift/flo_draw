@@ -170,6 +170,28 @@ where
             self.viewport_fit_exact(source, width, x_range, y);
         }
     }
+
+    ///
+    /// Fits the viewport so that a width of `requested_width` in canvas coordinates is visible
+    ///
+    /// `render_width` is the actual rendering width that the canvas will rendered to
+    ///
+    pub fn viewport_fit_width(&mut self, source: &CanvasDrawing<TPixel, N>, render_width: f64, requested_width: f64) {
+        // Work out the canvas height and center in canvas coordinates
+        let active_transform        = source.active_transform();
+        let inverse_transform       = active_transform.invert();
+        let Some(inverse_transform) = inverse_transform else { return; };
+
+        let top     = inverse_transform.transform_point(0.0, 1.0);
+        let middle  = inverse_transform.transform_point(0.0, 0.0);
+        let bottom  = inverse_transform.transform_point(0.0, -1.0);
+
+        // Use the 'center' style
+        let left_x  = middle.0 as f64 - (requested_width/2.0);
+        let right_x = middle.0 as f64 + (requested_width/2.0);
+
+        self.viewport_fit_center(source, render_width, left_x..right_x, (bottom.1.min(top.1) as f64)..(top.1.max(bottom.1) as f64));
+    }
 }
 
 impl<TScanPlanner, TLineRenderer, TPixel, const N: usize> Renderer for CanvasDrawingRegionRenderer<TScanPlanner, TLineRenderer, TPixel, N>
