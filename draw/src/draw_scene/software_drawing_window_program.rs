@@ -38,7 +38,13 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
             size:               BindRef::from(size.clone()),
             viewport_bounds:    BindRef::from(viewport_bounds.clone()),
         };
-        let mut event_publisher = Publisher::new(1000);
+        let mut event_publisher     = Publisher::new(1000);
+
+        // We create an initial subscriber so that the first thing to request events gets 
+        // all of the events generated from the creation of the window. Without this, it's
+        // possible the initial 'scale' and 'size' events might not be sent to the first
+        // 'SendEvents' requestor
+        let mut initial_subscriber  = Some(event_publisher.subscribe());
 
         // Create a stream for publishing render requests
         let (drawing_sender, drawing_receiver) = mpsc::channel(5);
@@ -70,7 +76,11 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
                     }
 
                     DrawingWindowRequest::SendEvents(channel_target) => {
-                        let mut subscriber = event_publisher.subscribe();
+                        let mut subscriber = if let Some(subscriber) = initial_subscriber.take() {
+                            subscriber
+                        } else {
+                            event_publisher.subscribe()
+                        };
 
                         context.send_message(SceneControl::start_program(SubProgramId::new(), move |_: InputStream<()>, context| {
                             async move {
