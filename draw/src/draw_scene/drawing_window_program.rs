@@ -172,7 +172,14 @@ impl RendererState {
 }
 
 ///
-/// Creates a drawing window that sends render requests to the specified target
+/// Creates a drawing window that sends render requests to the specified render target program
+///
+/// This program processes `DrawingOrEvent` requests, and sends requests to a target
+/// render program, which has the job of actually rendering the data to the window.
+/// The render program can accept one of two types of events:
+///
+///  * `RenderWindowRequest` if it can render GPU instructions
+///  * `DrawingWindowRequest` if it renders drawing requests directly
 ///
 pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramId, render_target_program: SubProgramId) -> Result<(), ConnectionError> {
     // Create an ingress program for the drawing window requests
