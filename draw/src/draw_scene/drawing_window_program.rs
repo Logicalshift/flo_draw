@@ -174,8 +174,10 @@ impl RendererState {
 ///
 /// Creates a drawing window that sends render requests to the specified render target program
 ///
-/// This program processes `DrawingOrEvent` requests, and sends requests to a target
-/// render program, which has the job of actually rendering the data to the window.
+/// This program processes `DrawingWindowRequest` and `DrawEventRequest` messages, and sends 
+/// requests to a target render program, which has the job of actually rendering the data to 
+/// the window.
+///
 /// The render program can accept one of two types of events:
 ///
 ///  * `RenderWindowRequest` if it can render GPU instructions
