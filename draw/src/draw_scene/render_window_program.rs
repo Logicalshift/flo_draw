@@ -42,10 +42,7 @@ pub fn create_render_window_sub_program(scene: &Arc<Scene>, drawing_program: Sub
 ///
 #[cfg(all(feature="render-software", not(any(feature="render-opengl", feature="render-wgpu"))))]
 pub fn create_render_window_sub_program(scene: &Arc<Scene>, drawing_program: SubProgramId, initial_size: (u64, u64)) -> Result<(), ConnectionError> {
-    let render_window_program = SubProgramId::new();
-
-    create_drawing_window_program(scene, drawing_program, render_window_program).unwrap();
-    create_software_draw_window_program(scene, render_window_program, initial_size)
+    create_software_draw_window_program(scene, drawing_program, initial_size)
 }
 
 ///
