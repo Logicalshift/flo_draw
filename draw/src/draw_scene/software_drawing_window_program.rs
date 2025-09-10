@@ -87,7 +87,10 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
 
                                 DrawingWindowRequest::Redraw => {
                                     // Trigger a redraw by sending an empty request
-                                    drawing_sender.send(Arc::new(vec![])).await.ok();
+                                    if drawing_sender.send(Arc::new(vec![])).await.is_err() {
+                                        // Stop when we can't send events any more
+                                        break;
+                                    }
                                 }
 
                                 DrawingWindowRequest::SendEvents(channel_target) => {
@@ -126,6 +129,35 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
                     }
 
                     DrawingOrEvent::Event(drawing_events) => {
+                        // Process the events
+                        let mut perform_redraw = false;
+                        let mut stop = false;
+
+                        for event in drawing_events.iter() {
+                            match event {
+                                DrawEvent::Redraw       |
+                                DrawEvent::Resize(_, _) |
+                                DrawEvent::Scale(_)     => {
+                                    perform_redraw = true;
+                                }
+
+                                DrawEvent::Closed => {
+                                    stop = true;
+                                }
+
+                                // Ignore other events
+                                _ => { }
+                            }
+                        }
+
+                        if perform_redraw {
+                            // Send an empty drawing request to force a redraw
+                            if drawing_sender.send(Arc::new(vec![])).await.is_err() {
+                                stop = true;
+                            }
+                        }
+
+
                         if event_subscribers.is_empty() {
                             // If there are no subscribers, buffer the event until there are some (up to 1000 events, presumably we're in a fairly stuck situation if we get more than that)
                             if initial_events.len() < 1000 {
@@ -152,6 +184,11 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
                             for finished_idx in finished.into_iter().rev() {
                                 event_subscribers.remove(finished_idx);
                             }
+                        }
+
+                        // Stop immediately if the window is closed
+                        if stop {
+                            break;
                         }
                     }
                 }
