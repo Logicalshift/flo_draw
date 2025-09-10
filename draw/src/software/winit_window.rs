@@ -76,12 +76,14 @@ where
         mouse_pointer:      follow(window_properties.mouse_pointer),
         viewport_bounds:    follow(window_properties.viewport_bounds),
     };
-    let mut window_actions  = window_actions.ready_chunks(100);
-    let canvas_drawing      = CanvasDrawing::<F32LinearPixel, 4>::empty();
-    let canvas_drawing      = Desync::new(canvas_drawing);
+    let mut window_actions      = window_actions.ready_chunks(100);
+    let canvas_drawing          = CanvasDrawing::<F32LinearPixel, 4>::empty();
+    let canvas_drawing          = Desync::new(canvas_drawing);
+    let mut active_transform    = Transform2D::identity();
 
     while let Some(next_action_set) = window_actions.next().await {
-        let mut send_new_frame = false;
+        let mut send_new_frame          = false;
+        let mut update_canvas_transform = false;
 
         for next_action in next_action_set {
             match next_action {
@@ -97,7 +99,9 @@ where
                         window.surface = Some(softbuffer_surface);
                     }
 
-                    window = canvas_drawing.future_desync(move |canvas_drawing| async move {
+                    let new_transform;
+
+                    (window, new_transform) = canvas_drawing.future_desync(move |canvas_drawing| async move {
                         // Render the actions to the CanvasDrawing
                         canvas_drawing.draw(Arc::unwrap_or_clone(next_action).into_iter());
 
@@ -133,11 +137,16 @@ where
                             }
                         }
 
-                        window
+                        (window, canvas_drawing.active_transform())
                     }.boxed()).await.unwrap();
 
-                    // Trigger the 'NewFrame' event when done
+                    // Trigger the 'NewFrame' event when we're done processing the events
                     send_new_frame = true;
+
+                    if active_transform != new_transform {
+                        active_transform        = new_transform;
+                        update_canvas_transform = true;
+                    }
                 }
                 
                 WindowUpdate::SetViewportBounds(new_bounds) => {
@@ -180,6 +189,28 @@ where
                         winit_window.set_cursor_visible(true);
                     }
                 }
+            }
+        }
+
+        // If the transform changed while we were rendering, update the transform between window coordinates and canvas coordinates
+        if update_canvas_transform {
+            if let Some(window) = &window.window {
+                // Get the size of the window
+                let size    = window.inner_size();
+                let width   = size.width;
+                let height  = size.height;
+
+                // We scale according to the height
+                // TODO: ... also the viewport bounds, which are currently not taken into consideration here
+                let scale   = (height as f32)/2.0;
+                let ratio   = (width as f32)/(height as f32);
+
+                // Transform goes between window coordinates and canvas coordinates
+                let transform = Transform2D::scale(scale, scale) * Transform2D::translate(ratio, 1.0);
+                let transform = transform * active_transform;
+
+                // Send as an event
+                events.publish(DrawEvent::CanvasTransform(transform)).await;
             }
         }
 
