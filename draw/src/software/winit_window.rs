@@ -84,6 +84,7 @@ where
     while let Some(next_action_set) = window_actions.next().await {
         let mut send_new_frame          = false;
         let mut update_canvas_transform = false;
+        let mut redraw_canvas           = false;
 
         for next_action in next_action_set {
             match next_action {
@@ -99,44 +100,13 @@ where
                         window.surface = Some(softbuffer_surface);
                     }
 
+                    // Queue up a render later on
+                    redraw_canvas = true;
+
+                    // Process the drawing instructions in the canvas (without doing the render step)
                     let new_transform;
-
                     (window, new_transform) = canvas_drawing.future_desync(move |canvas_drawing| async move {
-                        // Render the actions to the CanvasDrawing
                         canvas_drawing.draw(Arc::unwrap_or_clone(next_action).into_iter());
-
-                        if let (Some(winit_window), Some(context), Some(surface), viewport_bounds) = (&window.window, &mut window.context, &mut window.surface, window.viewport_bounds) {
-                            // Set up to render at the current size
-                            let size    = winit_window.inner_size();
-                            let width   = size.width;
-                            let height  = size.height;
-
-                            if width != 0 && height != 0 {
-                                // Resize the surface before rendering
-                                surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap());
-
-                                // Render the region from the canvas drawing
-                                let mut buffer              = surface.buffer_mut().unwrap();
-                                let buffer_u32: &mut [u32]  = &mut *buffer;
-                                let mut frame               = FrameU32Argb::from_u32(width as _, height as _, 2.2, buffer_u32).unwrap();
-
-                                let mut renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
-
-                                // Set the renderer scaling to match the requested viewport bounds
-                                match viewport_bounds {
-                                    ViewportBounds::All                                 => { }
-                                    ViewportBounds::Width(requested_width)              => { renderer.viewport_fit_width(&canvas_drawing, width as _, requested_width as _); }
-                                    ViewportBounds::CenterRegion((x1, y1), (x2, y2))    => { renderer.viewport_fit_center(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
-                                    ViewportBounds::FitExact((x1, y1), (x2, y2))        => { renderer.viewport_fit_exact(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
-                                }
-
-                                frame.render(renderer, &canvas_drawing);
-
-                                // Present the rendering
-                                buffer.present().unwrap();
-                            }
-                        }
-
                         (window, canvas_drawing.active_transform())
                     }.boxed()).await.unwrap();
 
@@ -190,6 +160,45 @@ where
                     }
                 }
             }
+        }
+
+        // If any drawing instructions were taken, then redraw the canvas
+        if redraw_canvas {
+            window = canvas_drawing.future_desync(move |canvas_drawing| async move {
+                if let (Some(winit_window), Some(context), Some(surface), viewport_bounds) = (&window.window, &mut window.context, &mut window.surface, window.viewport_bounds) {
+                    // Set up to render at the current size
+                    let size    = winit_window.inner_size();
+                    let width   = size.width;
+                    let height  = size.height;
+
+                    if width != 0 && height != 0 {
+                        // Resize the surface before rendering
+                        surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap());
+
+                        // Render the region from the canvas drawing
+                        let mut buffer              = surface.buffer_mut().unwrap();
+                        let buffer_u32: &mut [u32]  = &mut *buffer;
+                        let mut frame               = FrameU32Argb::from_u32(width as _, height as _, 2.2, buffer_u32).unwrap();
+
+                        let mut renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
+
+                        // Set the renderer scaling to match the requested viewport bounds
+                        match viewport_bounds {
+                            ViewportBounds::All                                 => { }
+                            ViewportBounds::Width(requested_width)              => { renderer.viewport_fit_width(&canvas_drawing, width as _, requested_width as _); }
+                            ViewportBounds::CenterRegion((x1, y1), (x2, y2))    => { renderer.viewport_fit_center(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
+                            ViewportBounds::FitExact((x1, y1), (x2, y2))        => { renderer.viewport_fit_exact(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
+                        }
+
+                        frame.render(renderer, &canvas_drawing);
+
+                        // Present the rendering
+                        buffer.present().unwrap();
+                    }
+                }
+
+                window
+            }.boxed()).await.unwrap();
         }
 
         // If the transform changed while we were rendering, update the transform between window coordinates and canvas coordinates
