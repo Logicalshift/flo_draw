@@ -8,6 +8,7 @@ use flo_scene::*;
 use flo_scene::programs::*;
 use flo_stream::*;
 use flo_binding::*;
+use flo_canvas as canvas;
 use flo_canvas::scenery::*;
 use flo_canvas_events::*;
 
@@ -44,6 +45,9 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
             .with_mouse_pointer(mouse_pointer.clone())
             .with_requested_size(requested_size.clone())
             .with_viewport_bounds(viewport_bounds.clone());
+
+        // The canvas transform is used to convert window coordinates to canvas coordinates
+        let mut canvas_transform = canvas::Transform2D::identity();
 
         // The event publisher is used to receive events from the window
         let mut event_publisher = Publisher::new(1000);
@@ -130,10 +134,11 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
 
                     DrawingOrEvent::Event(drawing_events) => {
                         // Process the events
-                        let mut perform_redraw = false;
-                        let mut stop = false;
+                        let mut perform_redraw  = false;
+                        let mut stop            = false;
+                        let mut drawing_events  = drawing_events;
 
-                        for event in drawing_events.iter() {
+                        for event in drawing_events.iter_mut() {
                             match event {
                                 DrawEvent::Redraw       |
                                 DrawEvent::Resize(_, _) |
@@ -143,6 +148,17 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
 
                                 DrawEvent::Closed => {
                                     stop = true;
+                                }
+
+                                DrawEvent::CanvasTransform(new_transform) => {
+                                    canvas_transform = *new_transform;
+                                }
+
+                                DrawEvent::Pointer(_, _, state) => {
+                                    // Update pointer events with an accurate location in canvas
+                                    let location_in_canvas = canvas_transform.transform_point(state.location_in_window.0 as _, state.location_in_window.1 as _);
+
+                                    state.location_in_canvas = Some((location_in_canvas.0 as _, location_in_canvas.1 as _));
                                 }
 
                                 // Ignore other events
