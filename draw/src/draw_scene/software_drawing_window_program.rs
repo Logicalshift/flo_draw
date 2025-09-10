@@ -3,7 +3,6 @@ use crate::window_properties::*;
 
 use futures::prelude::*;
 use futures::channel::mpsc;
-use once_cell::sync::{Lazy};
 
 use flo_scene::*;
 use flo_scene::programs::*;
@@ -15,14 +14,23 @@ use flo_canvas_events::*;
 use std::sync::*;
 
 ///
-/// Creates a drawing window in a scene with the specified entity ID
+/// Combines rendering and event messages into one enum
 ///
-/// The software renderer has no hardware layer, so it responds directly to `DrawingWindowRequest`
+#[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
+enum DrawingOrEvent {
+    Drawing(Vec<DrawingWindowRequest>),
+    Event(Vec<DrawEventRequest>),
+}
+
+///
+/// Creates a drawing window in a scene with the specified entity ID
 ///
 pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubProgramId, initial_size: (u64, u64)) -> Result<(), ConnectionError> {
     // Create the window in context
     scene.add_subprogram(program_id, move |drawing_window_requests, context| {
-        // Create the publisher to send the render actions to the stream
+        // Window properties are used to relay the various properties to the winit thread
+        // TODO: would make more sense just to directly relay these as messages
         let title               = bind("flo_draw".to_string());
         let fullscreen          = bind(false);
         let has_decorations     = bind(true);
@@ -37,13 +45,13 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
             .with_requested_size(requested_size.clone())
             .with_viewport_bounds(viewport_bounds.clone());
 
+        // The event publisher is used to receive events from the window
         let mut event_publisher = Publisher::new(1000);
+        let drawing_events      = event_publisher.subscribe();
 
-        // We create an initial subscriber so that the first thing to request events gets 
-        // all of the events generated from the creation of the window. Without this, it's
-        // possible the initial 'scale' and 'size' events might not be sent to the first
-        // 'SendEvents' requestor
-        let mut initial_subscriber = Some(event_publisher.subscribe());
+        // The event subscribers are the things that are subscribed to this program. We always create an initial subscriber because we assume something will start listening and we want to send all the events to that object
+        let mut event_subscribers   = vec![];
+        let mut initial_events      = vec![];
 
         // Create a stream for publishing render requests
         let (drawing_sender, drawing_receiver) = mpsc::channel(5);
@@ -53,71 +61,99 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
         let winit_thread = winit_thread();
         winit_thread.send_event(WinitThreadEvent::CreateDrawingWindow(drawing_receiver.boxed(), event_publisher.republish(), window_properties.into()));
 
+        // Map the requests to DrawingOrEvent objects
+        let drawing_window_requests = drawing_window_requests.ready_chunks(100).map(|requests| DrawingOrEvent::Drawing(requests));
+        let drawing_events          = drawing_events.ready_chunks(100).map(|requests| DrawingOrEvent::Event(requests));
+
+        let drawing_window_requests = stream::select(drawing_window_requests, drawing_events);
+
         async move {
             // Run the main event loop
             let mut drawing_window_requests = drawing_window_requests;
             let mut drawing_sender          = drawing_sender;
 
-            while let Some(request) = drawing_window_requests.next().await {
-                let request: DrawingWindowRequest = request;
+            while let Some(drawing_or_event) = drawing_window_requests.next().await {
+                match drawing_or_event {
+                    DrawingOrEvent::Drawing(drawing_requests) => {
+                        // Process the requests from the window
+                        for request in drawing_requests.into_iter() {
+                            match request {
+                                DrawingWindowRequest::Draw(DrawingRequest::Draw(drawing)) => {
+                                    if drawing_sender.send(drawing).await.is_err() {
+                                        // This entity is finished if the window finishes
+                                        break;
+                                    }
+                                }
 
-                match request {
-                    DrawingWindowRequest::Draw(DrawingRequest::Draw(drawing)) => {
-                        if drawing_sender.send(drawing).await.is_err() {
-                            // This entity is finished if the window finishes
-                            break;
+                                DrawingWindowRequest::Redraw => {
+                                    // Trigger a redraw by sending an empty request
+                                    drawing_sender.send(Arc::new(vec![])).await.ok();
+                                }
+
+                                DrawingWindowRequest::SendEvents(channel_target) => {
+                                    if let Ok(mut target) = context.send(channel_target) {
+                                        // Send the initial events if there are any (ie, any events that arrived before we had any subscribers)
+                                        for evt in initial_events.drain(..) {
+                                            target.send(evt).await.ok();
+                                        }
+
+                                        // Add to subscribers
+                                        event_subscribers.push(target);
+                                    }
+                                }
+
+                                DrawingWindowRequest::CloseWindow => {
+                                    // The window will close its publisher in response to the events stream being closed
+                                    drawing_sender.close().await.ok();
+
+                                    // Shut down the event publisher
+                                    use std::mem;
+                                    let when_closed = event_publisher.when_closed();
+                                    mem::drop(event_publisher);
+
+                                    // Finally, wait for the publisher to finish up, and stop this program
+                                    when_closed.await;
+                                    return;
+                                }
+
+                                DrawingWindowRequest::SetTitle(new_title)                => { title.set(new_title); },
+                                DrawingWindowRequest::SetFullScreen(new_fullscreen)      => { fullscreen.set(new_fullscreen); },
+                                DrawingWindowRequest::SetHasDecorations(new_decorations) => { has_decorations.set(new_decorations); },
+                                DrawingWindowRequest::SetMousePointer(new_mouse_pointer) => { mouse_pointer.set(new_mouse_pointer); },
+                                DrawingWindowRequest::SetViewportBounds(new_bounds)      => { viewport_bounds.set(new_bounds); }
+                            }
                         }
                     }
 
-                    DrawingWindowRequest::Redraw => {
-                        // Trigger a redraw by sending an empty request
-                        drawing_sender.send(Arc::new(vec![])).await.ok();
-                    }
-
-                    DrawingWindowRequest::SendEvents(channel_target) => {
-                        let mut subscriber = if let Some(subscriber) = initial_subscriber.take() {
-                            subscriber
+                    DrawingOrEvent::Event(drawing_events) => {
+                        if event_subscribers.is_empty() {
+                            // If there are no subscribers, buffer the event until there are some (up to 1000 events, presumably we're in a fairly stuck situation if we get more than that)
+                            if initial_events.len() < 1000 {
+                                // (If > 1000 events, we stop receiving to try to protect the rest of the program)
+                                initial_events.extend(drawing_events);
+                            }
                         } else {
-                            event_publisher.subscribe()
-                        };
+                            // Send the event to the subscribers
+                            let mut finished = vec![];
 
-                        context.send_message(SceneControl::start_program(SubProgramId::new(), move |_: InputStream<()>, context| {
-                            async move {
-                                let events_target = context.send(channel_target).ok();
+                            for idx in 0..event_subscribers.len() {
+                                let subscriber = &mut event_subscribers[idx];
 
-                                if let Some(mut events_target) = events_target {
-                                    // Pass on events to everything that's listening, until the channel starts generating errors
-                                    while let Some(event) = subscriber.next().await {
-                                        let result = events_target.send(event).await;
-
-                                        if result.is_err() {
-                                            break;
-                                        }
+                                // Send all the events to this subscriber
+                                for evt in drawing_events.iter() {
+                                    if subscriber.send(evt.clone()).await.is_err() {
+                                        // If the subscriber refuses an event, mark it as finished
+                                        finished.push(idx);
                                     }
                                 }
                             }
-                        }, 0)).await.ok();
+
+                            // Clear out any finished subscribers
+                            for finished_idx in finished.into_iter().rev() {
+                                event_subscribers.remove(finished_idx);
+                            }
+                        }
                     }
-
-                    DrawingWindowRequest::CloseWindow => {
-                        // The window will close its publisher in response to the events stream being closed
-                        drawing_sender.close().await.ok();
-
-                        // Shut down the event publisher
-                        use std::mem;
-                        let when_closed = event_publisher.when_closed();
-                        mem::drop(event_publisher);
-
-                        // Finally, wait for the publisher to finish up, and stop this program
-                        when_closed.await;
-                        return;
-                    }
-
-                    DrawingWindowRequest::SetTitle(new_title)                => { title.set(new_title); },
-                    DrawingWindowRequest::SetFullScreen(new_fullscreen)      => { fullscreen.set(new_fullscreen); },
-                    DrawingWindowRequest::SetHasDecorations(new_decorations) => { has_decorations.set(new_decorations); },
-                    DrawingWindowRequest::SetMousePointer(new_mouse_pointer) => { mouse_pointer.set(new_mouse_pointer); },
-                    DrawingWindowRequest::SetViewportBounds(new_bounds)      => { viewport_bounds.set(new_bounds); }
                 }
             }
         }
