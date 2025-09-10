@@ -205,14 +205,15 @@ where
         if update_canvas_transform {
             if let Some(window) = &window.window {
                 // Get the size of the window
-                let size    = window.inner_size();
-                let width   = size.width;
-                let height  = size.height;
+                let window_size     = window.inner_size();
+                let window_scale    = window.scale_factor();
+                let width           = (window_size.width as f32) / (window_scale as f32);
+                let height          = (window_size.height as f32) / (window_scale as f32);
 
                 // We scale according to the height
                 // TODO: ... also the viewport bounds, which are currently not taken into consideration here
-                let scale   = (height as f32)/2.0;
-                let ratio   = (width as f32)/(height as f32);
+                let scale = (height as f32)/2.0;
+                let ratio = (width as f32)/(height as f32);
 
                 // Transform goes between window coordinates and canvas coordinates
                 let transform = Transform2D::scale(scale, scale) * Transform2D::translate(ratio, 1.0);
