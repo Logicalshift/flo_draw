@@ -190,6 +190,11 @@ pub fn create_drawing_window_program(scene: &Arc<Scene>, program_id: SubProgramI
     let (send_drawing_input, recv_drawing_input)    = oneshot::channel();
     let (send_stop, recv_stop)                      = oneshot::channel::<()>();
 
+    // TODO: the ingress program is not really doing what it's supposed to here:
+    //      - nothing actually turns the flow of events on or off
+    //      - requests are read using 'ready_chunks' so they never block anyway
+    //      - requests are just merged into the main event stream
+    //      - if you connect direct to the drawing program this is entirely bypassed anyway
     scene.add_subprogram(drawing_window_ingress_program,
         move |drawing_ingress: InputStream<DrawingWindowRequest>, _context| {
             // The ingress program is just a dummy program whose input is used by the main program so we can block drawing window requests independently of event requests
