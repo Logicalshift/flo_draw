@@ -1,3 +1,4 @@
+use super::polyline_edge::*;
 use crate::edgeplan::*;
 
 use flo_canvas as canvas;
@@ -44,7 +45,17 @@ impl EdgeDescriptor for RectangleEdge {
     }
 
     fn transform(&self, transform: &canvas::Transform2D) -> Arc<dyn EdgeDescriptor> {
-        todo!()
+        // Convert to a polyline
+        let as_polyline = PolylineNonZeroEdge::new(self.shape_id, [
+                canvas::Coord2(self.x_bounds.start, self.y_bounds.start),
+                canvas::Coord2(self.x_bounds.start, self.y_bounds.end),
+                canvas::Coord2(self.x_bounds.end, self.y_bounds.end),
+                canvas::Coord2(self.x_bounds.end, self.y_bounds.start),
+                canvas::Coord2(self.x_bounds.start, self.y_bounds.start),
+            ], [self.y_bounds.start, self.y_bounds.end]);
+
+        // Apply the transformation to the polyline
+        as_polyline.transform(transform)
     }
 
     #[inline]
