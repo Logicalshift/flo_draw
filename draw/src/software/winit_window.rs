@@ -59,7 +59,7 @@ impl WinitWindow {
 ///
 /// Sends drawing actions to a window
 ///
-pub (super) async fn send_actions_to_window<DrawStream, EventPublisher>(window: WinitWindow, drawing_actions: DrawStream, events: EventPublisher, window_properties: WindowProperties)
+pub (super) async fn send_drawing_actions_to_window<DrawStream, EventPublisher>(window: WinitWindow, drawing_actions: DrawStream, events: EventPublisher, window_properties: WindowProperties)
 where
     DrawStream:     Unpin + Stream<Item=Arc<Vec<Draw>>>,
     EventPublisher: MessagePublisher<Message=DrawEvent>,

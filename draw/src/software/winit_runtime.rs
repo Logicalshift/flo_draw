@@ -345,7 +345,7 @@ impl WinitRuntime {
                     let window_events = initial_events;
 
                     // Process the actions for the window
-                    send_actions_to_window(window, actions, window_events, window_properties).await;
+                    send_drawing_actions_to_window(window, actions, window_events, window_properties).await;
 
                     // Stop processing events for the window once there are no more actions
                     winit_thread().send_event(WinitThreadEvent::StopSendingToWindow(window_id));
