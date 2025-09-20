@@ -165,7 +165,7 @@ where
         // If any drawing instructions were taken, then redraw the canvas
         if redraw_canvas {
             window = canvas_drawing.future_desync(move |canvas_drawing| async move {
-                if let (Some(winit_window), Some(context), Some(surface), viewport_bounds) = (&window.window, &mut window.context, &mut window.surface, window.viewport_bounds) {
+                if let (Some(winit_window), Some(surface), viewport_bounds) = (&window.window, &mut window.surface, window.viewport_bounds) {
                     // Set up to render at the current size
                     let size    = winit_window.inner_size();
                     let width   = size.width;
