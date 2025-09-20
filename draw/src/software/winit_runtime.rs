@@ -16,7 +16,6 @@ use winit::window::{Window, WindowId, Fullscreen};
 use winit::keyboard::{PhysicalKey, NativeKeyCode};
 use futures::task;
 use futures::prelude::*;
-use futures::channel::oneshot;
 use futures::future::{LocalBoxFuture};
 
 use std::sync::*;
@@ -39,9 +38,6 @@ pub (super) struct WinitRuntime {
 
     /// Maps future IDs to running futures
     pub (super) futures: HashMap<u64, LocalBoxFuture<'static, ()>>,
-
-    /// Yield events waiting for an indication that all events have been processed
-    pub (super) pending_yields: Vec<oneshot::Sender<()>>,
 
     /// Set to true if this runtime will stop when all the windows are closed
     pub (super) will_stop_when_no_windows: bool,
@@ -112,11 +108,6 @@ impl WinitRuntime {
                 // to make it exit more reliably (only partially successful).
                 if self.will_exit {
                     window_target.exit();
-                }
-
-                // Clear any pending yield requests
-                for yield_sender in self.pending_yields.drain(..) {
-                    yield_sender.send(()).ok();
                 }
             }
         }
@@ -383,10 +374,6 @@ impl WinitRuntime {
 
             WakeFuture(future_id) => {
                 self.poll_future(future_id);
-            },
-
-            Yield(sender) => {
-                self.pending_yields.push(sender);
             },
 
             StopWhenAllWindowsClosed => {
