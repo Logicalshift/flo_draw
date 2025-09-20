@@ -327,6 +327,40 @@ where
     }
 
     ///
+    /// Sets the current layer to draw before the specified layer
+    ///
+    pub (crate) fn place_layer_before(&mut self, namespace_id: canvas::NamespaceId, layer_id: canvas::LayerId) {
+        // Get the handles of the layer that we're moving and the one we're moving before
+        let moving_layer                = self.current_layer;
+        let Some(before_layer_handle)   = self.handle_for_layer.get(&(namespace_id.local_id(), layer_id)) else { return; };
+        let before_layer_handle         = *before_layer_handle;
+
+        // Can't move a layer before itself
+        if before_layer_handle == moving_layer {
+            return;
+        }
+
+        // Remove the layer that's being moved from the ordered layer list
+        let initial_len = self.ordered_layers.len();
+        self.ordered_layers.retain(|layer| layer != &moving_layer);
+
+        // If the layer we're moving is not in the list, then there's nothing to do
+        if initial_len == self.ordered_layers.len() {
+            return;
+        }
+
+        // Find the 'before' layer in the ordered layer list and add the moving layer before it
+        // We're assuming everything in handle_for_layer is also in ordered_layers (which should be true)
+        let before_idx = self.ordered_layers.iter().position(|layer| layer == &before_layer_handle);
+
+        if let Some(before_idx) = before_idx {
+            self.ordered_layers.insert(before_idx, moving_layer);
+        } else {
+            panic!("Layer is missing from the ordered layers list");
+        }
+    }
+
+    ///
     /// Stores the edges in the current layer in a cache
     ///
     #[inline]
