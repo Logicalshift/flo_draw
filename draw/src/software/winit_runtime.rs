@@ -26,8 +26,9 @@ use std::collections::{HashMap};
 static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 
 pub (super) struct WindowData {
-    window: Arc<Window>,
-    event_publisher: Publisher<DrawEvent>,
+    window:             Arc<Window>,
+    event_publisher:    Publisher<DrawEvent>,
+    update_publisher:   Publisher<WindowUpdate>,
 }
 
 ///
@@ -272,9 +273,20 @@ impl WinitRuntime {
             if draw_events.len() > 0 {
                 // Need to republish the window events so we can share with the process
                 let mut window_events = window_data.event_publisher.republish();
+                let mut more_updates  = window_data.update_publisher.republish();
 
                 self.run_process(async move {
                     for evt in draw_events {
+                        match &evt {
+                            DrawEvent::Resize(_, _) |
+                            DrawEvent::Scale(_)     => {
+                                // Need to pass on resize events to the window process so it can update the transform
+                                more_updates.publish(WindowUpdate::Resize).await;
+                            }
+
+                            _ => { }
+                        }
+
                         window_events.publish(evt).await;
                     }
                 });
@@ -327,15 +339,20 @@ impl WinitRuntime {
                 let scale               = window.scale_factor();
 
                 // Store the publisher for the events for this window
+                let mut window_updates  = Publisher::new(20);
+                let more_updates        = window_updates.subscribe();
+
                 let mut initial_events  = events.republish_weak();
                 let window_data         = WindowData {
                     window:             Arc::clone(&window),
                     event_publisher:    events,
+                    update_publisher:   window_updates,
                 };
                 let window              = WinitWindow::new(window);
                 self.window_events.insert(window_id, window_data);
 
                 let actions             = actions.map(|action| WindowUpdate::Draw(action));
+                let actions             = stream::select(actions, more_updates);
 
                 // Run the window as a process on this thread
                 self.run_process(async move { 

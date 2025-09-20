@@ -259,6 +259,7 @@ where
 ///
 /// The list of update events that can occur to a window
 ///
+#[derive(Clone)]
 pub (super) enum WindowUpdate {
     Draw(Arc<Vec<Draw>>),
     SetTitle(String),
