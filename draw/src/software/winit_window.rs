@@ -173,33 +173,35 @@ where
 
                     if width != 0 && height != 0 {
                         // Resize the surface before rendering
-                        surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap());
+                        if surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap()).is_ok() {
+                            // Render the region from the canvas drawing
+                            let mut buffer              = surface.buffer_mut().unwrap();
+                            let buffer_u32: &mut [u32]  = &mut *buffer;
+                            let mut frame               = FrameU32Argb::from_u32(width as _, height as _, 2.2, buffer_u32).unwrap();
 
-                        // Render the region from the canvas drawing
-                        let mut buffer              = surface.buffer_mut().unwrap();
-                        let buffer_u32: &mut [u32]  = &mut *buffer;
-                        let mut frame               = FrameU32Argb::from_u32(width as _, height as _, 2.2, buffer_u32).unwrap();
+                            let mut renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
 
-                        let mut renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
+                            // Set the renderer scaling to match the requested viewport bounds
+                            match viewport_bounds {
+                                ViewportBounds::All                                 => { }
+                                ViewportBounds::Width(requested_width)              => { renderer.viewport_fit_width(&canvas_drawing, width as _, requested_width as _); }
+                                ViewportBounds::CenterRegion((x1, y1), (x2, y2))    => { renderer.viewport_fit_center(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
+                                ViewportBounds::FitExact((x1, y1), (x2, y2))        => { renderer.viewport_fit_exact(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
+                            }
 
-                        // Set the renderer scaling to match the requested viewport bounds
-                        match viewport_bounds {
-                            ViewportBounds::All                                 => { }
-                            ViewportBounds::Width(requested_width)              => { renderer.viewport_fit_width(&canvas_drawing, width as _, requested_width as _); }
-                            ViewportBounds::CenterRegion((x1, y1), (x2, y2))    => { renderer.viewport_fit_center(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
-                            ViewportBounds::FitExact((x1, y1), (x2, y2))        => { renderer.viewport_fit_exact(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
+                            frame.render(renderer, &canvas_drawing);
+
+                            // Present the rendering
+                            buffer.present().unwrap();
                         }
-
-                        frame.render(renderer, &canvas_drawing);
-
-                        // Present the rendering
-                        buffer.present().unwrap();
                     }
                 }
 
                 window
             }.boxed()).await.unwrap();
         }
+
+        // TODO: follow_mouse showing some render glitching at certain points
 
         // If the transform changed while we were rendering, update the transform between window coordinates and canvas coordinates
         if update_canvas_transform {
