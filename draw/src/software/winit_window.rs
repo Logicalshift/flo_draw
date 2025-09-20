@@ -203,21 +203,24 @@ where
 
         // If the transform changed while we were rendering, update the transform between window coordinates and canvas coordinates
         if update_canvas_transform {
-            if let Some(window) = &window.window {
+            // The inverse transform transforms from the -1,1 regime to canvas coordinates
+            let inverse_transform = active_transform.invert();
+
+            if let (Some(window), Some(inverse_active_transform)) = (&window.window, inverse_transform) {
                 // Get the size of the window
                 let window_size     = window.inner_size();
-                let window_scale    = window.scale_factor();
+                let window_scale    = window.scale_factor() as f32;
                 let width           = (window_size.width as f32) / (window_scale as f32);
                 let height          = (window_size.height as f32) / (window_scale as f32);
 
                 // We scale according to the height
                 // TODO: ... also the viewport bounds, which are currently not taken into consideration here
-                let scale = (height as f32)/2.0;
+                let scale = 2.0/(height as f32);
                 let ratio = (width as f32)/(height as f32);
 
                 // Transform goes between window coordinates and canvas coordinates
-                let transform = Transform2D::scale(scale, scale) * Transform2D::translate(ratio, 1.0);
-                let transform = transform * active_transform;
+                let transform = Transform2D::translate(-ratio, -1.0) * Transform2D::scale(scale / window_scale, scale / window_scale);
+                let transform = inverse_active_transform * transform;
 
                 // Send as an event
                 events.publish(DrawEvent::CanvasTransform(transform)).await;
