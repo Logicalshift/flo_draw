@@ -61,7 +61,7 @@ impl WinitWindow {
 ///
 pub (super) async fn send_drawing_actions_to_window<DrawStream, EventPublisher>(window: WinitWindow, drawing_actions: DrawStream, events: EventPublisher, window_properties: WindowProperties)
 where
-    DrawStream:     Unpin + Stream<Item=Arc<Vec<Draw>>>,
+    DrawStream:     Unpin + Stream<Item=WindowUpdate>,
     EventPublisher: MessagePublisher<Message=DrawEvent>,
 {
     // Read events from the render actions list
@@ -159,6 +159,10 @@ where
                         winit_window.set_cursor_visible(true);
                     }
                 }
+
+                WindowUpdate::Resize => {
+                    update_canvas_transform = true;
+                }
             }
         }
 
@@ -255,7 +259,7 @@ where
 ///
 /// The list of update events that can occur to a window
 ///
-enum WindowUpdate {
+pub (super) enum WindowUpdate {
     Draw(Arc<Vec<Draw>>),
     SetTitle(String),
     SetSize((u64, u64)),
@@ -263,6 +267,7 @@ enum WindowUpdate {
     SetHasDecorations(bool),
     SetMousePointer(MousePointer),
     SetViewportBounds(ViewportBounds),
+    Resize,
 }
 
 impl fmt::Debug for WindowUpdate {
@@ -277,6 +282,7 @@ impl fmt::Debug for WindowUpdate {
             SetHasDecorations(val)      => write!(f, "SetHasDecorations({:?})", val),
             SetMousePointer(ptr)        => write!(f, "SetMousePointer({:?})", ptr),
             SetViewportBounds(bounds)   => write!(f, "SetViewportBounds({:?})", bounds),
+            Resize                      => write!(f, "Resize"),
         }
     }
 }
@@ -296,7 +302,7 @@ struct WindowUpdateStream<TDrawStream, TTitleStream, TSizeStream, TFullscreenStr
 
 impl<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream, TViewportBoundsStream> Stream for WindowUpdateStream<TDrawStream, TTitleStream, TSizeStream, TFullscreenStream, TDecorationStream, TMousePointerStream, TViewportBoundsStream>
 where
-    TDrawStream:            Unpin + Stream<Item=Arc<Vec<Draw>>>,
+    TDrawStream:            Unpin + Stream<Item=WindowUpdate>,
     TTitleStream:           Unpin + Stream<Item=String>,
     TSizeStream:            Unpin + Stream<Item=(u64, u64)>,
     TFullscreenStream:      Unpin + Stream<Item=bool>,
@@ -311,7 +317,7 @@ where
 
         // Rendering instructions have priority
         match self.draw_stream.poll_next_unpin(context) {
-            Poll::Ready(Some(item)) => { return Poll::Ready(Some(WindowUpdate::Draw(item))); }
+            Poll::Ready(Some(item)) => { return Poll::Ready(Some(item)); }
             Poll::Ready(None)       => { return Poll::Ready(None); }
             Poll::Pending           => { }
         }

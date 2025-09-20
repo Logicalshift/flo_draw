@@ -335,6 +335,8 @@ impl WinitRuntime {
                 let window              = WinitWindow::new(window);
                 self.window_events.insert(window_id, window_data);
 
+                let actions             = actions.map(|action| WindowUpdate::Draw(action));
+
                 // Run the window as a process on this thread
                 self.run_process(async move { 
                     // Send the initial events for this window (set the size and the DPI)
