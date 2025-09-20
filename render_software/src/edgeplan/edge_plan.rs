@@ -24,7 +24,6 @@ where
 {
     edge:           TEdge,
     y_bounds:       Range<f64>,
-    detail_samples: usize,
 }
 
 ///
@@ -149,13 +148,11 @@ where
             self.edges.par_iter().map(|edge_data| {
                 // Transform the edge. Transforming also prepares it so we can get the y-bounds
                 let edge                        = edge_data.edge.transform(transform);
-                let detail_samples              = edge.detail_samples();
                 let ((_, min_y), (_, max_y))    = edge.bounding_box();
 
                 EdgeData {
                     edge:           edge,
                     y_bounds:       min_y..max_y,
-                    detail_samples: detail_samples,
                 }
             }).collect::<Vec<_>>()
         };
@@ -165,13 +162,11 @@ where
             self.edges.iter().map(|edge_data| {
                 // Transform the edge. Transforming also prepares it so we can get the y-bounds
                 let edge                        = edge_data.edge.transform(transform);
-                let detail_samples              = edge.detail_samples();
                 let ((_, min_y), (_, max_y))    = edge.bounding_box();
 
                 EdgeData {
                     edge:           edge,
                     y_bounds:       min_y..max_y,
-                    detail_samples: detail_samples,
                 }
             }).collect::<Vec<_>>()
         };
@@ -289,11 +284,9 @@ where
     #[inline]
     pub fn add_edge(&mut self, new_edge: TEdge) {
         // The y-bounds are calculated later on when we prepare to render
-        let detail_samples = new_edge.detail_samples();
         self.edges.push(EdgeData {
             edge:           new_edge,
             y_bounds:       f64::MIN..f64::MAX,
-            detail_samples: detail_samples,
         });
     }
 
