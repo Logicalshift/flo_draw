@@ -6,9 +6,7 @@ use flo_render::*;
 
 use futures::future::{LocalBoxFuture};
 use futures::stream::{BoxStream};
-use futures::channel::oneshot;
 
-use wgpu;
 use winit::window::{WindowId};
 
 use std::fmt;
@@ -26,12 +24,6 @@ pub enum WinitThreadEvent {
 
     /// Polls the future with the specified ID
     WakeFuture(u64),
-
-    /// Presents a surface to the specified window and signals the sender when done (cancelling any previous request for that window)
-    PresentSurface(WindowId, wgpu::SurfaceTexture, oneshot::Sender<()>),
-
-    /// Resolves a yield request by sending an empty message (used to yield to process events)
-    Yield(oneshot::Sender<()>),
 
     /// Stop sending events for the specified window
     StopSendingToWindow(WindowId),
@@ -51,8 +43,6 @@ impl Debug for WinitThreadEvent {
             CreateRenderWindow(_, _, _)                 => write!(f, "CreateRenderWindow(...)"),
             RunProcess(_)                               => write!(f, "RunProcess(...)"),
             WakeFuture(id)                              => write!(f, "WakeFuture({})", id),
-            PresentSurface(id, _, _)                    => write!(f, "PresentSurface({:?}, ...)", id),
-            Yield(_)                                    => write!(f, "Yield(...)"),
             StopSendingToWindow(id)                     => write!(f, "StopSendingToWindow({:?})", id),
             StopWhenAllWindowsClosed                    => write!(f, "StopWhenAllWindowsClosed"),
             SendDrawEventToWindow(window_id, event)     => write!(f, "SendDrawEventToWindow({:?}, {:?})", window_id, event),

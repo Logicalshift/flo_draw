@@ -381,24 +381,6 @@ impl WinitRuntime {
                 self.poll_future(future_id);
             },
 
-            PresentSurface(window_id, surface_texture, completed) => {
-                // Store this present event
-                self.pending_redraws.insert(window_id, (surface_texture, completed));
-
-                // Trigger a redraw on the window
-                if let Some(window_data) = self.window_events.get(&window_id) {
-                    // Queue up a redraw for this window
-                    window_data.window.request_redraw();
-                } else {
-                    // Window doesn't exist, so just cancel the pending redraw
-                    self.pending_redraws.remove(&window_id);
-                }
-            },
-
-            Yield(sender) => {
-                self.pending_yields.push(sender);
-            },
-
             StopWhenAllWindowsClosed => {
                 self.will_stop_when_no_windows = true;
 
