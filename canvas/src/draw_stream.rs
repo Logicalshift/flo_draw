@@ -31,9 +31,6 @@ pub (crate) struct DrawStreamCore {
     /// The active state of the stream
     current_state: DrawStreamState,
 
-    /// States that have been pushed by PushState
-    pushed_states: Vec<DrawStreamState>,
-
     /// The number of writers that this stream core has
     usage_count: usize,
 
@@ -69,7 +66,6 @@ impl DrawStreamCore {
         DrawStreamCore {
             pending_drawing:    vec![],
             current_state:      initial_state,
-            pushed_states:      vec![],
             usage_count:        0,
             closed:             false,
             waiting_task:       None
