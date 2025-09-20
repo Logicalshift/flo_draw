@@ -285,6 +285,14 @@ where
     }
 
     fn apexes(&self, output: &mut Vec<f64>) {
-        todo!("Apexes for a clipping edge combine the original edge and the clipped edge")
+        // Use the apexes from all of the edges in the shape
+        for edge in self.shape_edges.iter() {
+            edge.apexes(output);
+        }
+
+        // Plus the apexes from the clipping path
+        for edge in self.region.region.iter() {
+            edge.apexes(output);
+        }
     }
 }
