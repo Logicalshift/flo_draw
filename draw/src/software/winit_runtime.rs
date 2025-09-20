@@ -26,7 +26,6 @@ use std::collections::{HashMap};
 static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 
 pub (super) struct WindowData {
-    window:             Arc<Window>,
     event_publisher:    Publisher<DrawEvent>,
     update_publisher:   WeakPublisher<WindowUpdate>,
 }
@@ -344,7 +343,6 @@ impl WinitRuntime {
 
                 let mut initial_events  = events.republish_weak();
                 let window_data         = WindowData {
-                    window:             Arc::clone(&window),
                     event_publisher:    events,
                     update_publisher:   window_updates.republish_weak(),
                 };

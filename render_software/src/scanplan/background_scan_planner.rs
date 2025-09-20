@@ -1,7 +1,6 @@
 use super::scan_planner::*;
 use super::scanline_transform::*;
 use super::scanline_plan::*;
-use super::scanspan::*;
 use crate::pixel::*;
 
 ///

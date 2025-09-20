@@ -1,6 +1,5 @@
 use crate::events::*;
 use crate::render_window::*;
-use crate::window_properties;
 use crate::window_properties::*;
 use crate::draw_scene::*;
 

@@ -1,4 +1,3 @@
-use crate::matrix::*;
 use crate::fill_state::*;
 use crate::render_entity::*;
 use crate::renderer_worker::*;

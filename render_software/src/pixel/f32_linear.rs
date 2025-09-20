@@ -12,7 +12,6 @@ use flo_canvas as canvas;
 use wide::*;
 use once_cell::sync::{Lazy};
 
-use std::cell::{RefCell};
 use std::collections::{HashMap};
 use std::ops::*;
 use std::sync::*;

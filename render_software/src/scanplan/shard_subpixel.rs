@@ -1,4 +1,3 @@
-use super::alpha_coverage::*;
 use super::intercept_blend::*;
 use super::scanline_shard_intercept::*;
 

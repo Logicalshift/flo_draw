@@ -5,7 +5,6 @@ use futures::prelude::*;
 use futures::channel::mpsc;
 
 use flo_scene::*;
-use flo_scene::programs::*;
 use flo_stream::*;
 use flo_binding::*;
 use flo_canvas as canvas;

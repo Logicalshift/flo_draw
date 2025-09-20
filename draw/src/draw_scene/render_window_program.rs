@@ -1,3 +1,4 @@
+#[cfg(any(feature="render-wgpu", feature="render-opengl"))]
 use crate::draw_scene::*;
 
 #[cfg(all(feature="render-opengl", not(feature="render-wgpu")))]
