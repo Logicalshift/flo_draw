@@ -90,6 +90,10 @@ pub fn initialize_offscreen_rendering() -> Result<impl OffscreenDrawingContext, 
     {
         use super::software::*;
 
+        // Error won't be generated for the software renderer at this point (this suppresses various warnings)
+        error = error;
+        let _error = error;
+
         let software_rendering = SoftwareDrawingContext::default();
         return Ok(BoxedDrawingContext::new(software_rendering));
     }
