@@ -362,13 +362,13 @@ impl CanvasRenderer {
     /// Retrieves a transformation that maps a point from canvas coordinates to window coordinates
     ///
     pub fn get_window_transform(&self) -> canvas::Transform2D {
-        let to_normalized_coordinates   = self.get_active_transform();
+        let to_normalized_coordinates   = self.viewport_transform * self.get_active_transform();
         let scale_x                     = self.window_size.0/2.0;
         let scale_y                     = self.window_size.1/2.0;
 
-        canvas::Transform2D::scale(scale_y, scale_y)
-            * canvas::Transform2D::translate(scale_x/scale_y, 1.0) 
-            * to_normalized_coordinates 
+        canvas::Transform2D::scale(scale_x, scale_y)
+            * canvas::Transform2D::translate(1.0, 1.0) 
+            * to_normalized_coordinates
     }
 
     ///
