@@ -1045,13 +1045,13 @@ mod test {
 
             // The point 0, 500 should be at the top-middle of the viewport (height of 1000)
             let (x, y) = window_transform.transform_point(0.0, 500.0);
-            assert!((x-(1024.0)).abs() < 0.01);
-            assert!((y-(1536.0)).abs() < 0.01);
+            assert!((x-(1024.0)).abs() < 0.01, "x={} != 1024.0 (y={})", x, y);
+            assert!((y-(1536.0)).abs() < 0.01, "y={} != 1546.0", y);
 
             // The point 500, 0 should be at the right of the viewport (height of 1000). Pixels are square
             let (x, y) = window_transform.transform_point(500.0, 0.0);
-            assert!((y-(768.0)).abs() < 0.01);
-            assert!((x-(1792.0)).abs() < 0.01);
+            assert!((y-(768.0)).abs() < 0.01, "y={} != 768.0 (x={})", y, x);
+            assert!((x-(1792.0)).abs() < 0.01, "x={} != 1792.0", x);
         });
     }
 
