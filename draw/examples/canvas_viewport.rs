@@ -162,6 +162,35 @@ pub fn main() {
                         });
                     }
 
+                    DrawEvent::Pointer(PointerAction::Move, _, state) => {
+                        let x = state.location_in_canvas.unwrap().0 as f32;
+                        let y = state.location_in_canvas.unwrap().1 as f32;
+
+                        canvas.draw(|gc| {
+                            gc.layer(LayerId(3));
+                            gc.clear_layer();
+
+                            gc.line_width(3.0);
+
+                            gc.new_path();
+                            gc.circle(x, y, 20.0);
+                            gc.stroke_color(Color::Rgba(0.0, 0.6, 0.1, 0.9));
+                            gc.stroke();
+
+                            gc.line_width(1.0);
+                            gc.new_path();
+                            gc.move_to(x, y-16.0);
+                            gc.line_to(x, y-4.0);
+                            gc.move_to(x, y+16.0);
+                            gc.line_to(x, y+4.0);
+                            gc.move_to(x-16.0, y);
+                            gc.line_to(x-4.0, y);
+                            gc.move_to(x+16.0, y);
+                            gc.line_to(x+4.0, y);
+                            gc.stroke();
+                        })
+                    }
+
                     _ => { }
                 }
             }
