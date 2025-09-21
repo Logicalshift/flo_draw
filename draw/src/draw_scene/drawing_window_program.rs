@@ -81,6 +81,7 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, send_
 
                 state.renderer.set_window_viewport(0.0..width, 0.0..height, width, height, scale);
                 state.update_viewport_bounds();
+                state.update_window_transform();
 
                 vec![]
             }
@@ -95,6 +96,7 @@ fn handle_window_event<'a>(state: &'a mut RendererState, event: DrawEvent, send_
 
                 state.renderer.set_window_viewport(0.0..width, 0.0..height, width, height, scale);
                 state.update_viewport_bounds();
+                state.update_window_transform();
 
                 vec![]
             }
@@ -149,6 +151,7 @@ impl RendererState {
         let original_active_transform = self.renderer.get_active_transform();
 
         self.update_viewport_bounds();
+        self.update_window_transform();
 
         let render_actions = self.renderer.draw(draw_actions.cloned()).collect::<Vec<_>>().await;
 
@@ -160,6 +163,7 @@ impl RendererState {
             // update the bounds and render once more
             // (TODO: would be cleaner to do this in one pass if possible)
             self.update_viewport_bounds();
+            self.update_window_transform();
             let more_render_actions = self.renderer.draw(vec![].into_iter()).collect::<Vec<_>>().await;
 
             render_target.send(RenderWindowRequest::Render(RenderRequest::Render(render_actions))).await.ok();
