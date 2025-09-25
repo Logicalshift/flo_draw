@@ -5,9 +5,10 @@ use crate::pixel::*;
 use crate::render::*;
 use crate::scanplan::*;
 
+use flo_canvas as canvas;
+
 use std::marker::{PhantomData};
 use std::ops::{Range};
-
 use std::sync::*;
 
 ///
@@ -94,8 +95,28 @@ where
     }
 
     ///
+    /// Returns the transform that maps between pixel coordinates in the rendering and canvas coordinates
+    ///
+    pub fn viewport_transform(&self, source: &CanvasDrawing<TPixel, N>, width: f64) -> canvas::Transform2D {
+        // Maps from a -1, 1 range to canvas pixels
+        let Some(transform) = source.active_transform().invert() else { return canvas::Transform2D::identity(); };
+
+        // Maps from a 0-height range to -1, 1
+        let ratio           = (width/2.0)/self.half_height;
+        let pixel_to_unit   = canvas::Transform2D::translate(-ratio as _, -1.0) * canvas::Transform2D::scale(self.half_height_recip as _, self.half_height_recip as _);
+
+        // TODO: scale/translate to the viewport
+
+        // Return the result
+        transform * pixel_to_unit
+    }
+
+    ///
     /// Sets the viewport so that the corners are at the specified positions in canvas coordinates
     /// (when rendering on a canvas with the specified width)
+    ///
+    /// `width` is the width of the window that this will be rendering in. `x` and `y` are the
+    /// ranges that should be rendered in this window.
     ///
     pub fn viewport_fit_exact(&mut self, source: &CanvasDrawing<TPixel, N>, width: f64, x: Range<f64>, y: Range<f64>) {
         // TODO: this won't flip the coordinates if min > max
