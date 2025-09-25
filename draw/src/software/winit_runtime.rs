@@ -26,7 +26,7 @@ static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 
 pub (super) struct WindowData {
     event_publisher:    Publisher<DrawEvent>,
-    update_publisher:   WeakPublisher<WindowUpdate>,
+    update_publisher:   Option<Publisher<WindowUpdate>>,
 }
 
 ///
@@ -124,6 +124,10 @@ impl WinitRuntime {
             // is closed before the main routine finishes, ie when 'will_stop_when_no_windows' is still false)
             if self.will_stop_when_no_windows && self.window_events.len() <= 1 {
                 self.will_exit = true;
+            }
+
+            if let Some(window_data) = self.window_events.get_mut(&window_id) {
+                window_data.update_publisher = None;
             }
         }
 
@@ -263,7 +267,7 @@ impl WinitRuntime {
             if draw_events.len() > 0 {
                 // Need to republish the window events so we can share with the process
                 let mut window_events = window_data.event_publisher.republish();
-                let mut more_updates  = window_data.update_publisher.republish();
+                let mut more_updates  = window_data.update_publisher.as_ref().map(|publisher| publisher.republish());
 
                 self.run_process(async move {
                     for evt in draw_events {
@@ -271,7 +275,9 @@ impl WinitRuntime {
                             DrawEvent::Resize(_, _) |
                             DrawEvent::Scale(_)     => {
                                 // Need to pass on resize events to the window process so it can update the transform
-                                more_updates.publish(WindowUpdate::Resize).await;
+                                if let Some(more_updates) = &mut more_updates {
+                                    more_updates.publish(WindowUpdate::Resize).await;
+                                }
                             }
 
                             _ => { }
@@ -335,7 +341,7 @@ impl WinitRuntime {
                 let mut initial_events  = events.republish_weak();
                 let window_data         = WindowData {
                     event_publisher:    events,
-                    update_publisher:   window_updates.republish_weak(),
+                    update_publisher:   Some(window_updates),
                 };
                 let window              = WinitWindow::new(window);
                 self.window_events.insert(window_id, window_data);
