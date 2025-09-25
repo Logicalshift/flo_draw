@@ -103,12 +103,15 @@ where
 
         // Maps from a 0-height range to -1, 1
         let ratio           = (width/2.0)/self.half_height;
-        let pixel_to_unit   = canvas::Transform2D::translate(-ratio as _, -1.0) * canvas::Transform2D::scale(self.half_height_recip as _, self.half_height_recip as _);
+        let pixel_to_unit   = canvas::Transform2D::translate(-ratio as _, -1.0) 
+            * canvas::Transform2D::scale(self.half_height_recip as _, self.half_height_recip as _);
 
-        // TODO: scale/translate to the viewport
+        // Scale/translate to the viewport
+        let viewport_transform = canvas::Transform2D::translate(self.translation.0 as _, self.translation.1 as _) 
+            * canvas::Transform2D::scale(self.scale.0 as _, self.scale.1 as _);
 
         // Return the result
-        transform * pixel_to_unit
+        transform * viewport_transform * pixel_to_unit
     }
 
     ///
