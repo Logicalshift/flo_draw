@@ -7,6 +7,7 @@ use flo_render_software::draw::*;
 use flo_render_software::pixel::*;
 use flo_render_software::render::*;
 use flo_render_software::scanplan::*;
+use flo_render_software::edgeplan::*;
 use flo_binding::*;
 
 use softbuffer;
@@ -120,7 +121,8 @@ where
                 }
                 
                 WindowUpdate::SetViewportBounds(new_bounds) => {
-                    window.viewport_bounds = new_bounds;
+                    window.viewport_bounds  = new_bounds;
+                    update_canvas_transform = true;
                 }
 
                 WindowUpdate::SetTitle(new_title)   => {
@@ -209,27 +211,36 @@ where
 
         // If the transform changed while we were rendering, update the transform between window coordinates and canvas coordinates
         if update_canvas_transform {
-            // The inverse transform transforms from the -1,1 regime to canvas coordinates
-            let inverse_transform = active_transform.invert();
+            let new_events;
+            (window, new_events) = canvas_drawing.future_desync(move |canvas_drawing| async move {
+                if let Some(winit_window) = &window.window {
+                    // Set up a renderer for the window
+                    let size    = winit_window.inner_size();
+                    let width   = size.width;
+                    let height  = size.height;
 
-            if let (Some(window), Some(inverse_active_transform)) = (&window.window, inverse_transform) {
-                // Get the size of the window
-                let window_size     = window.inner_size();
-                let window_scale    = window.scale_factor() as f32;
-                let width           = (window_size.width as f32) / (window_scale as f32);
-                let height          = (window_size.height as f32) / (window_scale as f32);
+                    let mut renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::<Arc<dyn EdgeDescriptor>>::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
 
-                // We scale according to the height
-                // TODO: ... also the viewport bounds, which are currently not taken into consideration here
-                let scale = 2.0/(height as f32);
-                let ratio = (width as f32)/(height as f32);
+                    // Set the renderer scaling to match the requested viewport bounds
+                    match window.viewport_bounds {
+                        ViewportBounds::All                                 => { }
+                        ViewportBounds::Width(requested_width)              => { renderer.viewport_fit_width(&canvas_drawing, width as _, requested_width as _); }
+                        ViewportBounds::CenterRegion((x1, y1), (x2, y2))    => { renderer.viewport_fit_center(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
+                        ViewportBounds::FitExact((x1, y1), (x2, y2))        => { renderer.viewport_fit_exact(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
+                    }
 
-                // Transform goes between window coordinates and canvas coordinates
-                let transform = Transform2D::translate(-ratio, -1.0) * Transform2D::scale(scale / window_scale, scale / window_scale);
-                let transform = inverse_active_transform * transform;
+                    // Query for the viewport bounds used by this renderer
+                    let transform = renderer.viewport_transform(canvas_drawing, width as _);
 
-                // Send as an event
-                events.publish(DrawEvent::CanvasTransform(transform)).await;
+                    // Send on as an event
+                    (window, Some(DrawEvent::CanvasTransform(transform)))
+                } else {
+                    (window, None)
+                }
+            }.boxed()).await.unwrap();
+
+            if let Some(new_events) = new_events {
+                events.publish(new_events).await;
             }
         }
 
