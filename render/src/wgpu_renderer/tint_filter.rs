@@ -76,6 +76,7 @@ pub (crate) fn tint(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, t
                 view:           &target_view,
                 resolve_target: None,
                 ops:            wgpu::Operations { load: wgpu::LoadOp::Clear(wgpu::Color { r: 0.0, g: 0.0, b: 0.0, a: 0.0 }), store: wgpu::StoreOp::Store },
+                depth_slice:    None,
             })
         ];
         let mut render_pass     = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

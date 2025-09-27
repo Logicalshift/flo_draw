@@ -100,6 +100,7 @@ impl RenderPassResources {
                     view:           &**target_view,
                     resolve_target: None,
                     ops:            wgpu::Operations { load: load_op, store: wgpu::StoreOp::Store },
+                    depth_slice:    None,
                 })
             ]
         } else {
