@@ -23,8 +23,8 @@ wide                = "0.7"
 flo_canvas          = "0.4"
 flo_sparse_array    = "0.1"
 itertools           = "0.12"
-png                 = { version = "0.17", optional = true }
-base64              = { version = "0.21", optional = true }
+png                 = { version = "0.18", optional = true }
+base64              = { version = "0.22", optional = true }
 rayon               = { version = "1.7", optional = true }
 
 [dev-dependencies]
