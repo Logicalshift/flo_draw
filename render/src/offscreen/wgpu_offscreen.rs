@@ -35,7 +35,7 @@ pub async fn wgpu_initialize_offscreen_rendering() -> Result<impl OffscreenRende
         power_preference:       wgpu::PowerPreference::default(),
         force_fallback_adapter: false,
         compatible_surface:     None,
-    }).await.ok_or(RenderInitError::CannotOpenGraphicsDevice)?;
+    }).await.map_err(|_| RenderInitError::CannotOpenGraphicsDevice)?;
 
     // Fetch the device and the queue
     let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
