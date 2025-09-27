@@ -130,7 +130,7 @@ impl OffscreenRenderTarget for WgpuOffscreenRenderTarget {
 
         // Poll until the buffer is ready
         while *ready.lock().unwrap() == false {
-            self.device.poll(wgpu::Maintain::Wait);
+            self.device.poll(wgpu::PollType::Wait);
         }
 
         // Prepare to write the buffer
