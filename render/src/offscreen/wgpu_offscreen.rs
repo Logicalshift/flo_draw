@@ -43,7 +43,7 @@ pub async fn wgpu_initialize_offscreen_rendering() -> Result<impl OffscreenRende
             required_features:  wgpu::Features::empty(),
             required_limits:    wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits()),
             ..Default::default()
-        }, None).await.map_err(|_request_device_error| {
+        }).await.map_err(|_request_device_error| {
             RenderInitError::CannotStartGraphicsDriver
         })?;
 

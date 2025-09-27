@@ -86,7 +86,7 @@ fn main() {
             required_features:  wgpu::Features::empty(),
             required_limits:    wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits()),
             ..Default::default()
-        }, None).await.unwrap();
+        }).await.unwrap();
 
         // Create the WGPU renderer
         let device          = Arc::new(device);
