@@ -11,8 +11,8 @@ members     = [
 ]
 
 [workspace.dependencies]
-wgpu            = "24"
-wgpu-profiler   = "0.22"
+wgpu            = "26"
+wgpu-profiler   = "0.24"
 
 [patch.crates-io]
 flo_canvas              = { path = "./canvas" }
