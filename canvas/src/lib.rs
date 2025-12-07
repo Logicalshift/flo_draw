@@ -55,6 +55,7 @@ mod font_face;
 mod primitives;
 mod transform2d;
 mod draw_stream;
+mod canvas_state;
 mod draw_resource;
 mod drawing_target;
 mod conversion_streams;
