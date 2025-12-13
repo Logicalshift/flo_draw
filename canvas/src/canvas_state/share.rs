@@ -1,4 +1,5 @@
 use std::sync::*;
+use std::ops::{Deref, DerefMut};
 
 ///
 /// Canvas brush that can be modified or shared
@@ -26,6 +27,17 @@ where
     #[inline]
     pub fn new(val: T) -> Self {
         Self(CanvasSharedValue::Modified(val))
+    }
+
+    ///
+    /// Returns a reference to the inner shared value
+    ///
+    pub fn get(&self) -> &T {
+        match &self.0 {
+            CanvasSharedValue::Empty            => unreachable!(),
+            CanvasSharedValue::Modified(val)    => val,
+            CanvasSharedValue::Shared(val)      => &**val,
+        }
     }
 
     ///
@@ -74,6 +86,31 @@ where
             }
         }
     }
+
+    ///
+    /// Returns an Arc<> reference to the current value in this shared object
+    ///
+    pub fn into_arc(&mut self) -> Arc<T> {
+        use std::mem;
+
+        match &self.0 {
+            CanvasSharedValue::Empty        => unreachable!(),
+
+            CanvasSharedValue::Shared(val)  => Arc::clone(val),
+            CanvasSharedValue::Modified(_)  => {
+                // Swap in the empty value
+                let mut val = CanvasSharedValue::Empty;
+                mem::swap(&mut val, &mut self.0);
+
+                // Change to a shared value
+                let CanvasSharedValue::Modified(val) = val else { unreachable!() };
+                self.0 = CanvasSharedValue::Shared(Arc::new(val));
+
+                let CanvasSharedValue::Shared(val) = &self.0 else { unreachable!() };
+                Arc::clone(val)
+            }
+        }
+    }
 }
 
 impl<T> Default for CanvasShared<T>
@@ -83,5 +120,27 @@ where
     #[inline]
     fn default() -> Self {
         Self(CanvasSharedValue::Modified(T::default()))
+    }
+}
+
+impl<T> Deref for CanvasShared<T> 
+where
+    T : Clone,
+{
+    type Target = T;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        self.get()
+    }
+}
+
+impl<T> DerefMut for CanvasShared<T> 
+where
+    T : Clone,
+{
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.get_mut()
     }
 }
