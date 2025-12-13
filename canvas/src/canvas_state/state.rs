@@ -8,6 +8,7 @@ use super::gradient::*;
 use super::drawing_target::*;
 
 use crate::draw::*;
+use crate::color::*;
 use crate::gradient::*;
 use crate::font_face::*;
 
@@ -19,11 +20,14 @@ use std::sync::*;
 ///
 #[derive(Clone)]
 pub struct CanvasState {
+    background:         Color,
+
     drawing_target:     DrawingTarget,
     current_brush:      CanvasShared<CanvasBrush>,
     state_stack:        Vec<Arc<CanvasBrush>>,
 
     layers_and_sprites: HashMap<DrawingTarget, Vec<CanvasEntity>>,
+    clear_count:        HashMap<DrawingTarget, usize>,
     textures:           HashMap<TextureId, CanvasShared<CanvasTexture>>,
     gradients:          HashMap<GradientId, CanvasShared<CanvasGradient>>,
     fonts:              HashMap<FontId, Arc<CanvasFontFace>>,
