@@ -8,6 +8,7 @@ use super::gradient::*;
 use super::drawing_target::*;
 
 use crate::draw::*;
+use crate::path::*;
 use crate::color::*;
 use crate::gradient::*;
 use crate::font_face::*;
@@ -68,7 +69,7 @@ impl CanvasState {
             Draw::StartFrame                            => self.start_frame(),
             Draw::ShowFrame                             => self.show_frame(),
             Draw::ResetFrame                            => self.reset_frame(),
-            Draw::Path(path_op)                         => todo!(),
+            Draw::Path(path_op)                         => self.path_op(path_op),
             Draw::Fill                                  => todo!(),
             Draw::Stroke                                => todo!(),
             Draw::LineWidth(_)                          => todo!(),
@@ -118,4 +119,5 @@ impl CanvasState {
     #[inline] fn start_frame(&mut self) { self.frame_count += 1; }
     #[inline] fn show_frame(&mut self) { self.frame_count -= 1; }
     #[inline] fn reset_frame(&mut self) { self.frame_count = 0; }
+    #[inline] fn path_op(&mut self, op: PathOp) { self.current_path.draw(op); }
 }

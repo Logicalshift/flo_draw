@@ -15,3 +15,17 @@ impl Default for CanvasPath {
         }
     }
 }
+
+impl CanvasPath {
+    ///
+    /// Adds an operation to this path
+    ///
+    #[inline]
+    pub fn draw(&mut self, op: PathOp) {
+        if op == PathOp::NewPath {
+            self.operations.clear();
+        } else {
+            self.operations.push(op);
+        }
+    }
+}
