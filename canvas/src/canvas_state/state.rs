@@ -70,8 +70,8 @@ impl CanvasState {
             Draw::ShowFrame                             => self.show_frame(),
             Draw::ResetFrame                            => self.reset_frame(),
             Draw::Path(path_op)                         => self.path_op(path_op),
-            Draw::Fill                                  => todo!(),
-            Draw::Stroke                                => todo!(),
+            Draw::Fill                                  => self.fill(),
+            Draw::Stroke                                => self.stroke(),
             Draw::LineWidth(_)                          => todo!(),
             Draw::LineWidthPixels(_)                    => todo!(),
             Draw::LineJoin(line_join)                   => todo!(),
@@ -120,4 +120,26 @@ impl CanvasState {
     #[inline] fn show_frame(&mut self) { self.frame_count -= 1; }
     #[inline] fn reset_frame(&mut self) { self.frame_count = 0; }
     #[inline] fn path_op(&mut self, op: PathOp) { self.current_path.draw(op); }
+
+    #[inline] fn fill(&mut self) {
+        let mut brush   = self.current_brush.shared();
+        let target      = (*brush).drawing_target();
+        let path        = self.current_path.clone();
+        let entity      = CanvasEntity::fill(brush.into_arc(), path);
+
+        self.layers_and_sprites.entry(target)
+            .or_insert_with(|| vec![])
+            .push(entity);
+    }
+
+    #[inline] fn stroke(&mut self) {
+        let mut brush   = self.current_brush.shared();
+        let target      = (*brush).drawing_target();
+        let path        = self.current_path.clone();
+        let entity      = CanvasEntity::stroke(brush.into_arc(), path);
+
+        self.layers_and_sprites.entry(target)
+            .or_insert_with(|| vec![])
+            .push(entity);
+    }
 }

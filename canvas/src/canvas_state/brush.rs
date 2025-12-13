@@ -82,3 +82,13 @@ impl Default for CanvasBrush {
         }
     }
 }
+
+impl CanvasBrush {
+    ///
+    /// Returns the drawing target of this brush
+    ///
+    #[inline]
+    pub fn drawing_target(&self) -> DrawingTarget {
+        self.target.clone()
+    }
+}
