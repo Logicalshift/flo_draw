@@ -55,3 +55,30 @@ pub struct CanvasBrush {
 
     font_size:          f32,
 }
+
+impl Default for CanvasBrush {
+    ///
+    /// Creates the default 
+    ///
+    fn default() -> Self {
+        CanvasBrush {
+            target:             DrawingTarget::Layer(LayerId(0)),
+            fill:               FillState::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
+            fill_transform:     Transform2D::identity(),
+            winding_rule:       WindingRule::NonZero,
+            stroke_color:       Color::Rgba(0.0, 0.0, 0.0, 1.0),
+            line_join:          LineJoin::Round,
+            line_cap:           LineCap::Butt,
+            line_width:         LineWidth::Width(1.0),
+            dash_pattern:       vec![],
+            dash_offset:        0.0,
+            blend_mode:         BlendMode::SourceOver,
+            canvas_height:      2.0,
+            center_region:      None,
+            multiply_transform: Transform2D::identity(),
+            clip_path:          None,
+            sprite_transform:   SpriteTransform::Identity,
+            font_size:          12.0,
+        }
+    }
+}

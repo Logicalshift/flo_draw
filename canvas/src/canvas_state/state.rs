@@ -22,7 +22,6 @@ use std::sync::*;
 pub struct CanvasState {
     background:         Color,
 
-    drawing_target:     DrawingTarget,
     current_brush:      CanvasShared<CanvasBrush>,
     state_stack:        Vec<Arc<CanvasBrush>>,
 
@@ -34,4 +33,24 @@ pub struct CanvasState {
 
     current_path:       CanvasPath,
     current_text:       Vec<CanvasTextLayout>,
+}
+
+impl Default for CanvasState {
+    ///
+    /// Creates a canvas in the default state
+    ///
+    fn default() -> Self {
+        CanvasState { 
+            background:         Color::Rgba(1.0, 1.0, 1.0, 1.0), 
+            current_brush:      CanvasShared::new(CanvasBrush::default()), 
+            state_stack:        vec![], 
+            layers_and_sprites: HashMap::new(), 
+            clear_count:        HashMap::new(), 
+            textures:           HashMap::new(), 
+            gradients:          HashMap::new(), 
+            fonts:              HashMap::new(), 
+            current_path:       CanvasPath::default(), 
+            current_text:       vec![],
+        }
+    }
 }

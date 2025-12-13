@@ -7,3 +7,11 @@ use crate::path::*;
 pub struct CanvasPath {
     operations: Vec<PathOp>,
 }
+
+impl Default for CanvasPath {
+    fn default() -> Self {
+        CanvasPath {
+            operations: vec![],
+        }
+    }
+}
