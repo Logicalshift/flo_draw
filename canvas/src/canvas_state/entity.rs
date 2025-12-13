@@ -20,12 +20,35 @@ pub enum CanvasEntity {
 
     StrokePath {
         brush:      Arc<CanvasBrush>,
-        texture:    Option<Arc<CanvasTexture>>,
-        gradient:   Option<Arc<CanvasGradient>>,
         path:       CanvasPath,
     },
 
     TextLayout {
         text:       Vec<CanvasTextLayout>,
+    }
+}
+
+impl CanvasEntity {
+    ///
+    /// Creates a filled path entity
+    ///
+    #[inline]
+    pub fn fill(brush: Arc<CanvasBrush>, path: CanvasPath) -> Self {
+        CanvasEntity::FillPath {
+            brush:      brush,
+            texture:    None,
+            gradient:   None,
+            path:       path
+        }
+    }
+    ///
+    /// Creates a stroke path entity
+    ///
+    #[inline]
+    pub fn stroke(brush: Arc<CanvasBrush>, path: CanvasPath) -> Self {
+        CanvasEntity::StrokePath {
+            brush:      brush,
+            path:       path
+        }
     }
 }
