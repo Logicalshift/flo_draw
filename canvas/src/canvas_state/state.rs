@@ -20,6 +20,7 @@ use std::sync::*;
 ///
 #[derive(Clone)]
 pub struct CanvasState {
+    keep_textures:      bool,
     background:         Color,
 
     current_brush:      CanvasShared<CanvasBrush>,
@@ -41,6 +42,7 @@ impl Default for CanvasState {
     ///
     fn default() -> Self {
         CanvasState { 
+            keep_textures:      true,
             background:         Color::Rgba(1.0, 1.0, 1.0, 1.0), 
             current_brush:      CanvasShared::new(CanvasBrush::default()), 
             state_stack:        vec![], 
