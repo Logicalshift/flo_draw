@@ -7,7 +7,7 @@ use super::gradient::*;
 use std::sync::*;
 
 ///
-/// An entity rendered on a canvas
+/// An entity rendered on a canvas, such as a layer or a sprite
 ///
 #[derive(Clone, Debug)]
 pub enum CanvasEntity {
