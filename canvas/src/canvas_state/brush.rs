@@ -30,30 +30,30 @@ pub enum LineWidth {
 ///
 #[derive(Clone, Debug)]
 pub struct CanvasBrush {
-    target:             DrawingTarget,
+    pub(super) target:             DrawingTarget,
 
-    fill:               FillState, 
-    fill_transform:     Transform2D,
-    winding_rule:       WindingRule,
+    pub(super) fill:               FillState, 
+    pub(super) fill_transform:     Transform2D,
+    pub(super) winding_rule:       WindingRule,
 
-    stroke_color:       Color,
-    line_join:          LineJoin,
-    line_cap:           LineCap,
-    line_width:         LineWidth,
-    dash_pattern:       Vec<f32>,
-    dash_offset:        f32,
+    pub(super) stroke_color:       Color,
+    pub(super) line_join:          LineJoin,
+    pub(super) line_cap:           LineCap,
+    pub(super) line_width:         LineWidth,
+    pub(super) dash_pattern:       Vec<f32>,
+    pub(super) dash_offset:        f32,
 
-    blend_mode:         BlendMode,
+    pub(super) blend_mode:         BlendMode,
 
-    canvas_height:      f32,
-    center_region:      Option<((f32, f32), (f32, f32))>,
-    multiply_transform: Transform2D,
+    pub(super) canvas_height:      f32,
+    pub(super) center_region:      Option<((f32, f32), (f32, f32))>,
+    pub(super) multiply_transform: Transform2D,
 
-    clip_path:          Option<CanvasPath>,
+    pub(super) clip_path:          Option<CanvasPath>,
 
-    sprite_transform:   SpriteTransform,
+    pub(super) sprite_transform:   SpriteTransform,
 
-    font_size:          f32,
+    pub(super) font_size:          f32,
 }
 
 impl Default for CanvasBrush {

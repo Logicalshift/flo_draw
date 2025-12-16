@@ -72,13 +72,13 @@ impl CanvasState {
             Draw::Path(path_op)                         => self.path_op(path_op),
             Draw::Fill                                  => self.fill(),
             Draw::Stroke                                => self.stroke(),
-            Draw::LineWidth(_)                          => todo!(),
-            Draw::LineWidthPixels(_)                    => todo!(),
-            Draw::LineJoin(line_join)                   => todo!(),
-            Draw::LineCap(line_cap)                     => todo!(),
-            Draw::NewDashPattern                        => todo!(),
-            Draw::DashLength(_)                         => todo!(),
-            Draw::DashOffset(_)                         => todo!(),
+            Draw::LineWidth(w)                          => self.line_width(w),
+            Draw::LineWidthPixels(w)                    => self.line_width_pixels(w),
+            Draw::LineJoin(line_join)                   => self.line_join(line_join),
+            Draw::LineCap(line_cap)                     => self.line_cap(line_cap),
+            Draw::NewDashPattern                        => self.new_dash_pattern(),
+            Draw::DashLength(length)                    => self.dash_length(length),
+            Draw::DashOffset(offset)                    => self.dash_offset(offset),
             Draw::FillColor(color)                      => todo!(),
             Draw::FillTexture(texture_id, _, _)         => todo!(),
             Draw::FillGradient(gradient_id, _, _)       => todo!(),
@@ -116,10 +116,18 @@ impl CanvasState {
         }
     }
 
-    #[inline] fn start_frame(&mut self) { self.frame_count += 1; }
-    #[inline] fn show_frame(&mut self) { self.frame_count -= 1; }
-    #[inline] fn reset_frame(&mut self) { self.frame_count = 0; }
+    #[inline] fn start_frame(&mut self)         { self.frame_count += 1; }
+    #[inline] fn show_frame(&mut self)          { self.frame_count -= 1; }
+    #[inline] fn reset_frame(&mut self)         { self.frame_count = 0; }
     #[inline] fn path_op(&mut self, op: PathOp) { self.current_path.draw(op); }
+
+    #[inline] fn line_width(&mut self, width: f32)          { self.current_brush.get_mut().line_width = LineWidth::Width(width); }
+    #[inline] fn line_width_pixels(&mut self, width: f32)   { self.current_brush.get_mut().line_width = LineWidth::Width(width); }
+    #[inline] fn line_join(&mut self, join: LineJoin)       { self.current_brush.get_mut().line_join = join; }
+    #[inline] fn line_cap(&mut self, cap: LineCap)          { self.current_brush.get_mut().line_cap = cap; }
+    #[inline] fn new_dash_pattern(&mut self)                { self.current_brush.get_mut().dash_pattern = vec![]; }
+    #[inline] fn dash_length(&mut self, len: f32)           { self.current_brush.get_mut().dash_pattern.push(len); }
+    #[inline] fn dash_offset(&mut self, offset: f32)        { self.current_brush.get_mut().dash_offset = offset; }
 
     #[inline] fn fill(&mut self) {
         let mut brush       = self.current_brush.shared();
