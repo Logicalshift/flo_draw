@@ -87,10 +87,10 @@ impl CanvasState {
             Draw::StrokeColor(color)                    => self.stroke_color(color),
             Draw::WindingRule(winding_rule)             => self.winding_rule(winding_rule),
             Draw::BlendMode(blend_mode)                 => self.blend_mode(blend_mode),
-            Draw::IdentityTransform                     => todo!(),
-            Draw::CanvasHeight(_)                       => todo!(),
-            Draw::CenterRegion(_, _)                    => todo!(),
-            Draw::MultiplyTransform(transform2_d)       => todo!(),
+            Draw::IdentityTransform                     => self.identity_transform(),
+            Draw::CanvasHeight(height)                  => self.canvas_height(height),
+            Draw::CenterRegion(min, max)                => self.center_region(min, max),
+            Draw::MultiplyTransform(transform)          => self.multiply_transform(transform),
             Draw::Unclip                                => todo!(),
             Draw::Clip                                  => todo!(),
             Draw::Store                                 => todo!(),
@@ -137,7 +137,11 @@ impl CanvasState {
     #[inline] fn fill_transform(&mut self, transform: Transform2D)                                      { self.current_brush.get_mut().fill_transform = self.current_brush.get_mut().fill_transform * transform; }
     #[inline] fn winding_rule(&mut self, winding_rule: WindingRule)                                     { self.current_brush.get_mut().winding_rule = winding_rule; }
 
-    #[inline] fn blend_mode(&mut self, blend_mode: BlendMode)   { self.current_brush.get_mut().blend_mode = blend_mode; }
+    #[inline] fn blend_mode(&mut self, blend_mode: BlendMode)               { self.current_brush.get_mut().blend_mode = blend_mode; }
+    #[inline] fn identity_transform(&mut self)                              { self.current_brush.get_mut().canvas_height = 2.0; self.current_brush.get_mut().center_region = None; self.current_brush.get_mut().multiply_transform = Transform2D::identity(); }
+    #[inline] fn canvas_height(&mut self, height: f32)                      { self.current_brush.get_mut().canvas_height = height; self.current_brush.get_mut().center_region = None; self.current_brush.get_mut().multiply_transform = Transform2D::identity(); }
+    #[inline] fn center_region(&mut self, min: (f32, f32), max: (f32, f32)) { self.current_brush.get_mut().center_region = Some((min, max)); }
+    #[inline] fn multiply_transform(&mut self, transform: Transform2D)      { self.current_brush.get_mut().multiply_transform = self.current_brush.get_mut().multiply_transform * transform; }
 
     #[inline] fn fill(&mut self) {
         let mut brush       = self.current_brush.shared();
