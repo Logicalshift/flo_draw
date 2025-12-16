@@ -122,10 +122,13 @@ impl CanvasState {
     #[inline] fn path_op(&mut self, op: PathOp) { self.current_path.draw(op); }
 
     #[inline] fn fill(&mut self) {
-        let mut brush   = self.current_brush.shared();
-        let target      = (*brush).drawing_target();
-        let path        = self.current_path.clone();
-        let entity      = CanvasEntity::fill(brush.into_arc(), path);
+        let mut brush       = self.current_brush.shared();
+        let target          = (*brush).drawing_target();
+        let path            = self.current_path.clone();
+        let fill_texture    = brush.fill_texture().and_then(|texture_id| self.textures.get_mut(&texture_id)).map(|texture| texture.into_arc());
+        let fill_gradient   = brush.fill_gradient().and_then(|gradient_id| self.gradients.get_mut(&gradient_id)).map(|gradient| gradient.into_arc());
+
+        let entity          = CanvasEntity::fill(brush.into_arc(), path, fill_texture, fill_gradient);
 
         self.layers_and_sprites.entry(target)
             .or_insert_with(|| vec![])

@@ -91,4 +91,24 @@ impl CanvasBrush {
     pub fn drawing_target(&self) -> DrawingTarget {
         self.target.clone()
     }
+
+    ///
+    /// Returns the ID of the currently set fill texture
+    ///
+    pub fn fill_texture(&self) -> Option<TextureId> {
+        match &self.fill {
+            FillState::Texture(id, _, _)    => Some(*id),
+            _                               => None,
+        }
+    }
+
+    ///
+    /// Returns the ID of the currently set fill texture
+    ///
+    pub fn fill_gradient(&self) -> Option<GradientId> {
+        match &self.fill {
+            FillState::Gradient(id, _, _)   => Some(*id),
+            _                               => None,
+        }
+    }
 }

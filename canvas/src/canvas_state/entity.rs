@@ -33,11 +33,11 @@ impl CanvasEntity {
     /// Creates a filled path entity
     ///
     #[inline]
-    pub fn fill(brush: Arc<CanvasBrush>, path: CanvasPath) -> Self {
+    pub fn fill(brush: Arc<CanvasBrush>, path: CanvasPath, texture: Option<Arc<CanvasTexture>>, gradient: Option<Arc<CanvasGradient>>) -> Self {
         CanvasEntity::FillPath {
             brush:      brush,
-            texture:    None,
-            gradient:   None,
+            texture:    texture,
+            gradient:   gradient,
             path:       path
         }
     }
