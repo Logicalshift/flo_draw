@@ -49,7 +49,7 @@ pub struct CanvasBrush {
     pub(super) center_region:      Option<((f32, f32), (f32, f32))>,
     pub(super) multiply_transform: Transform2D,
 
-    pub(super) clip_path:          Option<CanvasPath>,
+    pub(super) clip_path:          Vec<CanvasPath>,
 
     pub(super) sprite_transform:   SpriteTransform,
 
@@ -76,7 +76,7 @@ impl Default for CanvasBrush {
             canvas_height:      2.0,
             center_region:      None,
             multiply_transform: Transform2D::identity(),
-            clip_path:          None,
+            clip_path:          vec![],
             sprite_transform:   SpriteTransform::Identity,
             font_size:          12.0,
         }

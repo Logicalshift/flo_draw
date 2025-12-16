@@ -91,8 +91,8 @@ impl CanvasState {
             Draw::CanvasHeight(height)                  => self.canvas_height(height),
             Draw::CenterRegion(min, max)                => self.center_region(min, max),
             Draw::MultiplyTransform(transform)          => self.multiply_transform(transform),
-            Draw::Unclip                                => todo!(),
-            Draw::Clip                                  => todo!(),
+            Draw::Unclip                                => self.unclip(),
+            Draw::Clip                                  => self.clip(),
             Draw::Store                                 => todo!(),
             Draw::Restore                               => todo!(),
             Draw::FreeStoredBuffer                      => todo!(),
@@ -142,6 +142,9 @@ impl CanvasState {
     #[inline] fn canvas_height(&mut self, height: f32)                      { self.current_brush.get_mut().canvas_height = height; self.current_brush.get_mut().center_region = None; self.current_brush.get_mut().multiply_transform = Transform2D::identity(); }
     #[inline] fn center_region(&mut self, min: (f32, f32), max: (f32, f32)) { self.current_brush.get_mut().center_region = Some((min, max)); }
     #[inline] fn multiply_transform(&mut self, transform: Transform2D)      { self.current_brush.get_mut().multiply_transform = self.current_brush.get_mut().multiply_transform * transform; }
+
+    #[inline] fn unclip(&mut self)  { self.current_brush.get_mut().clip_path.clear(); }
+    #[inline] fn clip(&mut self)    { self.current_brush.get_mut().clip_path.push(self.current_path.clone()); }
 
     #[inline] fn fill(&mut self) {
         let mut brush       = self.current_brush.shared();
