@@ -12,6 +12,7 @@ use crate::path::*;
 use crate::color::*;
 use crate::gradient::*;
 use crate::font_face::*;
+use crate::transform2d::*;
 
 use std::collections::*;
 use std::sync::*;
@@ -79,13 +80,13 @@ impl CanvasState {
             Draw::NewDashPattern                        => self.new_dash_pattern(),
             Draw::DashLength(length)                    => self.dash_length(length),
             Draw::DashOffset(offset)                    => self.dash_offset(offset),
-            Draw::FillColor(color)                      => todo!(),
-            Draw::FillTexture(texture_id, _, _)         => todo!(),
-            Draw::FillGradient(gradient_id, _, _)       => todo!(),
-            Draw::FillTransform(transform2_d)           => todo!(),
-            Draw::StrokeColor(color)                    => todo!(),
-            Draw::WindingRule(winding_rule)             => todo!(),
-            Draw::BlendMode(blend_mode)                 => todo!(),
+            Draw::FillColor(color)                      => self.fill_color(color),
+            Draw::FillTexture(texture_id, min, max)     => self.fill_texture(texture_id, min, max),
+            Draw::FillGradient(gradient_id, min, max)   => self.fill_gradient(gradient_id, min, max),
+            Draw::FillTransform(transform)              => self.fill_transform(transform),
+            Draw::StrokeColor(color)                    => self.stroke_color(color),
+            Draw::WindingRule(winding_rule)             => self.winding_rule(winding_rule),
+            Draw::BlendMode(blend_mode)                 => self.blend_mode(blend_mode),
             Draw::IdentityTransform                     => todo!(),
             Draw::CanvasHeight(_)                       => todo!(),
             Draw::CenterRegion(_, _)                    => todo!(),
@@ -128,6 +129,15 @@ impl CanvasState {
     #[inline] fn new_dash_pattern(&mut self)                { self.current_brush.get_mut().dash_pattern = vec![]; }
     #[inline] fn dash_length(&mut self, len: f32)           { self.current_brush.get_mut().dash_pattern.push(len); }
     #[inline] fn dash_offset(&mut self, offset: f32)        { self.current_brush.get_mut().dash_offset = offset; }
+    #[inline] fn stroke_color(&mut self, color: Color)      { self.current_brush.get_mut().stroke_color = color; }
+
+    #[inline] fn fill_color(&mut self, color: Color)                                                    { self.current_brush.get_mut().fill = FillState::Color(color); }
+    #[inline] fn fill_texture(&mut self, texture_id: TextureId, min: (f32, f32), max: (f32, f32))       { self.current_brush.get_mut().fill = FillState::Texture(texture_id, min, max); self.current_brush.get_mut().fill_transform = Transform2D::identity(); }
+    #[inline] fn fill_gradient(&mut self, gradient_id: GradientId, min: (f32, f32), max: (f32, f32))    { self.current_brush.get_mut().fill = FillState::Gradient(gradient_id, min, max); self.current_brush.get_mut().fill_transform = Transform2D::identity(); }
+    #[inline] fn fill_transform(&mut self, transform: Transform2D)                                      { self.current_brush.get_mut().fill_transform = self.current_brush.get_mut().fill_transform * transform; }
+    #[inline] fn winding_rule(&mut self, winding_rule: WindingRule)                                     { self.current_brush.get_mut().winding_rule = winding_rule; }
+
+    #[inline] fn blend_mode(&mut self, blend_mode: BlendMode)   { self.current_brush.get_mut().blend_mode = blend_mode; }
 
     #[inline] fn fill(&mut self) {
         let mut brush       = self.current_brush.shared();
