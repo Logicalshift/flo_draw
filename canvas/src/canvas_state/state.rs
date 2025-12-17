@@ -98,7 +98,7 @@ impl CanvasState {
             Draw::FreeStoredBuffer                      => todo!(),
             Draw::PushState                             => self.push_state(),
             Draw::PopState                              => self.pop_state(),
-            Draw::ClearCanvas(color)                    => todo!(),
+            Draw::ClearCanvas(color)                    => self.clear_canvas(color),
             Draw::Layer(layer_id)                       => todo!(),
             Draw::LayerBlend(layer_id, blend_mode)      => todo!(),
             Draw::ClearLayer                            => todo!(),
@@ -172,5 +172,18 @@ impl CanvasState {
         self.layers_and_sprites.entry(target)
             .or_insert_with(|| vec![])
             .push(entity);
+    }
+
+    #[inline] fn clear_canvas(&mut self, new_background: Color) {
+        self.layers_and_sprites = HashMap::new();
+        self.background         = new_background;
+        self.state_stack        = vec![];
+        self.current_path       = CanvasPath::default();
+
+        let brush = self.current_brush.get_mut();
+
+        brush.target                = DrawingTarget::Layer(LayerId(0));
+        brush.fill                  = FillState::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+        brush.multiply_transform    = Transform2D::identity();
     }
 }
