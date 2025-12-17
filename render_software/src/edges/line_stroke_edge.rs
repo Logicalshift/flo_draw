@@ -365,7 +365,7 @@ impl EdgeDescriptor for FlattenedLineStrokeEdge {
                 self.bezier_path[0].intercepts(y_positions, output);
 
                 // Also add in the intercepts from the other paths
-                let mut tmp_output = vec![vec![]; y_positions.len()];
+                let mut tmp_output = vec![Vec::with_capacity(4); y_positions.len()];
 
                 for (subpath_idx, path) in self.bezier_path.iter().enumerate().skip(1) {
                     // Get the intercepts for this path
