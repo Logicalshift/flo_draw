@@ -17,6 +17,9 @@ use crate::transform2d::*;
 use std::collections::*;
 use std::sync::*;
 
+// TODO: in canvas_renderer, pushstate and popstate are per-layer
+// TODO: store/restore are supposed to clip against the current clipping path (but this is not actually happening in canvas_renderer)
+
 ///
 /// Contains the current state of a canvas (so its drawing instructions can be replicated or relayed)
 ///
@@ -29,7 +32,9 @@ pub struct CanvasState {
     current_brush:      CanvasShared<CanvasBrush>,
     state_stack:        Vec<Arc<CanvasBrush>>,
 
+    canvas_clear_count: usize,
     layers_and_sprites: HashMap<DrawingTarget, Vec<CanvasEntity>>,
+    stored_state:       HashMap<DrawingTarget, usize>,
     clear_count:        HashMap<DrawingTarget, usize>,
     textures:           HashMap<TextureId, CanvasShared<CanvasTexture>>,
     gradients:          HashMap<GradientId, CanvasShared<CanvasGradient>>,
@@ -50,7 +55,9 @@ impl Default for CanvasState {
             background:         Color::Rgba(1.0, 1.0, 1.0, 1.0), 
             current_brush:      CanvasShared::new(CanvasBrush::default()), 
             state_stack:        vec![], 
+            canvas_clear_count: 0,
             layers_and_sprites: HashMap::new(), 
+            stored_state:       HashMap::new(),
             clear_count:        HashMap::new(), 
             textures:           HashMap::new(), 
             gradients:          HashMap::new(), 
@@ -93,9 +100,9 @@ impl CanvasState {
             Draw::MultiplyTransform(transform)          => self.multiply_transform(transform),
             Draw::Unclip                                => self.unclip(),
             Draw::Clip                                  => self.clip(),
-            Draw::Store                                 => todo!(),
-            Draw::Restore                               => todo!(),
-            Draw::FreeStoredBuffer                      => todo!(),
+            Draw::Store                                 => self.store(),
+            Draw::Restore                               => self.restore(),
+            Draw::FreeStoredBuffer                      => self.free_stored_buffer(),
             Draw::PushState                             => self.push_state(),
             Draw::PopState                              => self.pop_state(),
             Draw::ClearCanvas(color)                    => self.clear_canvas(color),
@@ -174,8 +181,11 @@ impl CanvasState {
             .push(entity);
     }
 
-    #[inline] fn clear_canvas(&mut self, new_background: Color) {
+    fn clear_canvas(&mut self, new_background: Color) {
+        self.canvas_clear_count += 1;
         self.layers_and_sprites = HashMap::new();
+        self.stored_state       = HashMap::new();
+        self.clear_count        = HashMap::new();
         self.background         = new_background;
         self.state_stack        = vec![];
         self.current_path       = CanvasPath::default();
@@ -185,5 +195,27 @@ impl CanvasState {
         brush.target                = DrawingTarget::Layer(LayerId(0));
         brush.fill                  = FillState::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
         brush.multiply_transform    = Transform2D::identity();
+    }
+
+    #[inline] fn store(&mut self) {
+        let drawing_target      = self.current_brush.get().drawing_target();
+        let drawing_position    = self.layers_and_sprites.get(&drawing_target).map(|layer| layer.len()).unwrap_or(0);
+
+        self.stored_state.insert(drawing_target, drawing_position);
+    }
+
+    #[inline] fn restore(&mut self) {
+        let drawing_target = self.current_brush.get().drawing_target();
+
+        if let Some(drawing_position) = self.stored_state.get(&drawing_target).copied() {
+            if let Some(layer) = self.layers_and_sprites.get_mut(&drawing_target) {
+                layer.truncate(drawing_position);
+            }
+        }
+    }
+
+    #[inline] fn free_stored_buffer(&mut self) {
+        let drawing_target = self.current_brush.get().drawing_target();
+        self.stored_state.remove(&drawing_target);
     }
 }
