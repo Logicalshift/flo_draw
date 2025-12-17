@@ -88,6 +88,14 @@ where
     }
 
     ///
+    /// Creates a shared value from an Arc<T>
+    ///
+    #[inline]
+    pub fn from_arc(val: Arc<T>) -> Self {
+        Self(CanvasSharedValue::Shared(val))
+    }
+
+    ///
     /// Returns an Arc<> reference to the current value in this shared object
     ///
     pub fn into_arc(&mut self) -> Arc<T> {

@@ -96,8 +96,8 @@ impl CanvasState {
             Draw::Store                                 => todo!(),
             Draw::Restore                               => todo!(),
             Draw::FreeStoredBuffer                      => todo!(),
-            Draw::PushState                             => todo!(),
-            Draw::PopState                              => todo!(),
+            Draw::PushState                             => self.push_state(),
+            Draw::PopState                              => self.pop_state(),
             Draw::ClearCanvas(color)                    => todo!(),
             Draw::Layer(layer_id)                       => todo!(),
             Draw::LayerBlend(layer_id, blend_mode)      => todo!(),
@@ -143,8 +143,11 @@ impl CanvasState {
     #[inline] fn center_region(&mut self, min: (f32, f32), max: (f32, f32)) { self.current_brush.get_mut().center_region = Some((min, max)); }
     #[inline] fn multiply_transform(&mut self, transform: Transform2D)      { self.current_brush.get_mut().multiply_transform = self.current_brush.get_mut().multiply_transform * transform; }
 
-    #[inline] fn unclip(&mut self)  { self.current_brush.get_mut().clip_path.clear(); }
-    #[inline] fn clip(&mut self)    { self.current_brush.get_mut().clip_path.push(self.current_path.clone()); }
+    #[inline] fn unclip(&mut self)      { self.current_brush.get_mut().clip_path.clear(); }
+    #[inline] fn clip(&mut self)        { self.current_brush.get_mut().clip_path.push(self.current_path.clone()); }
+
+    #[inline] fn push_state(&mut self)  { self.state_stack.push(self.current_brush.into_arc()); }
+    #[inline] fn pop_state(&mut self)   { if let Some(state) = self.state_stack.pop() { self.current_brush = CanvasShared::from_arc(state); } }
 
     #[inline] fn fill(&mut self) {
         let mut brush       = self.current_brush.shared();
