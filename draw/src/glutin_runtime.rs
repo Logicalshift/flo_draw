@@ -1,8 +1,9 @@
-use super::events::*;
+use crate::events::*;
+use crate::window_properties::*;
+
 use super::glutin_window::*;
 use super::glutin_thread::*;
 use super::event_conversion::*;
-use super::window_properties::*;
 use super::glutin_thread_event::*;
 
 use flo_stream::*;
@@ -100,8 +101,8 @@ impl GlutinRuntime {
             WindowEvent { window_id, event }        => { self.handle_window_event(window_id, event); }
             DeviceEvent { device_id: _, event: _ }  => { }
             UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target); }
-            Suspended                               => { }
-            Resumed                                 => { }
+            Suspended                               => { self.request_suspended(); }
+            Resumed                                 => { self.request_resumed(); }
             
             AboutToWait                             => {
                 // Glutin doesn't always respond to ControlFlow::Exit requests, setting it after the other events have cleared is an attempt
@@ -265,6 +266,39 @@ impl GlutinRuntime {
                     }
                 });
             }
+        }
+    }
+
+    ///
+    /// Sends a redraw request to a window
+    ///
+    fn request_resumed(&mut self) {
+        self.suspended = false;
+
+        // Need to republish the window events so we can share with the process
+        let window_events = self.window_events.values().map(|(draw, suspend)| (draw.republish(), suspend.republish())).collect::<Vec<_>>();
+
+        for (mut draw_events, mut suspend_events) in window_events {
+            self.run_process(async move {
+                suspend_events.publish(SuspendResume::Resumed).await;
+                draw_events.publish(DrawEvent::Redraw).await;
+            });
+        }
+    }
+
+    ///
+    /// Sends a redraw request to a window
+    ///
+    fn request_suspended(&mut self) {
+        self.suspended = true;
+
+        // Need to republish the window events so we can share with the process
+        let window_events = self.window_events.values().map(|(_, suspend)| suspend.republish()).collect::<Vec<_>>();
+
+        for mut suspend_events in window_events {
+            self.run_process(async move {
+                suspend_events.publish(SuspendResume::Suspended).await;
+            });
         }
     }
 
