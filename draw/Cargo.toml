@@ -23,6 +23,8 @@ desync              = "0.7"
 glutin              = "0.32.0"
 lazy_static         = "1.2"
 futures             = "0.3"
+glutin-winit        = "0.5"
+raw-window-handle   = "0.6"
 gl                  = "0.14"
 
 [dev-dependencies]
