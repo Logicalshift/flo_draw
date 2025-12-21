@@ -179,8 +179,8 @@ impl GlutinRuntime {
 
                 // Generate the event for this keypress
                 match event.state {
-                    ElementState::Pressed   => vec![DrawEvent::KeyDown(scancode, Some(key))],
-                    ElementState::Released  => vec![DrawEvent::KeyUp(scancode, Some(key))]
+                    ElementState::Pressed   => vec![DrawEvent::KeyDown(scancode, key)],
+                    ElementState::Released  => vec![DrawEvent::KeyUp(scancode, key)]
                 }
             },
 

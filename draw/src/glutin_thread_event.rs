@@ -1,5 +1,5 @@
-use super::events::*;
-use super::window_properties::*;
+use crate::events::*;
+use crate::window_properties::*;
 
 use flo_stream::*;
 use flo_render::*;
@@ -7,7 +7,7 @@ use flo_render::*;
 use futures::future::{LocalBoxFuture};
 use futures::stream::{BoxStream};
 
-use glutin::window::{WindowId};
+use winit::window::{WindowId};
 
 ///
 /// Event that can be sent to a glutin thread
