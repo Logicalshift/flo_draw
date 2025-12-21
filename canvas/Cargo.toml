@@ -17,7 +17,7 @@ image-loading       = [ "image" ]
 
 [dependencies]
 flo_curves          = "0.6"
-flo_stream          = "0.6"
+flo_stream          = "0.7"
 
 futures             = "0.3"
 desync              = "0.7"
