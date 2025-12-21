@@ -8,10 +8,16 @@ use super::glutin_thread_event::*;
 use flo_stream::*;
 use flo_binding::*;
 
-use glutin::{GlRequest, Api};
-use glutin::event::{DeviceId, Event, WindowEvent, ElementState};
-use glutin::event_loop::{ControlFlow, EventLoopWindowTarget};
-use glutin::window::{WindowId, Fullscreen};
+use glutin::config::{ConfigTemplateBuilder, GlConfig};
+use glutin::context::{ContextApi, ContextAttributesBuilder, Version};
+use glutin::display::{GetGlDisplay, GlDisplay};
+use glutin_winit::{DisplayBuilder};
+use winit::event::{DeviceId, Event, WindowEvent, ElementState};
+use winit::event_loop::{ControlFlow, ActiveEventLoop};
+use winit::window::{WindowId, Fullscreen}; 
+use winit::keyboard::{PhysicalKey, NativeKeyCode};
+use raw_window_handle::{HasRawWindowHandle};
+
 use futures::task;
 use futures::prelude::*;
 use futures::future::{LocalBoxFuture};
@@ -27,7 +33,7 @@ static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 ///
 pub (super) struct GlutinRuntime {
     /// The event publishers for the windows being managed by the runtime
-    pub (super) window_events: HashMap<WindowId, Publisher<DrawEvent>>,
+    pub (super) window_events: HashMap<WindowId, (Publisher<DrawEvent>, Publisher<SuspendResume>)>,
 
     /// Maps future IDs to running futures
     pub (super) futures: HashMap<u64, LocalBoxFuture<'static, ()>>,
@@ -42,7 +48,10 @@ pub (super) struct GlutinRuntime {
     pub (super) pointer_state: HashMap<DeviceId, PointerState>,
 
     /// Set to true when we'll set the control flow to 'Exit' once the current set of events have finished processing
-    pub (super) will_exit: bool
+    pub (super) will_exit: bool,
+
+    /// Set to true if the runtime is suspended
+    pub (super) suspended: bool,
 }
 
 ///
@@ -83,12 +92,8 @@ impl GlutinRuntime {
     ///
     /// Handles an event from the rest of the process and updates the state
     ///
-    pub fn handle_event(&mut self, event: Event<'_, GlutinThreadEvent>, window_target: &EventLoopWindowTarget<GlutinThreadEvent>, control_flow: &mut ControlFlow) {
+    pub fn handle_event(&mut self, event: Event<GlutinThreadEvent>, window_target: &ActiveEventLoop) {
         use Event::*;
-
-        if *control_flow != ControlFlow::Exit {
-            *control_flow = ControlFlow::Wait;
-        }
 
         match event {
             NewEvents(_cause)                       => { }
@@ -97,17 +102,16 @@ impl GlutinRuntime {
             UserEvent(thread_event)                 => { self.handle_thread_event(thread_event, window_target); }
             Suspended                               => { }
             Resumed                                 => { }
-            RedrawRequested(window_id)              => { self.request_redraw(window_id); }
             
-            MainEventsCleared                       => {
+            AboutToWait                             => {
                 // Glutin doesn't always respond to ControlFlow::Exit requests, setting it after the other events have cleared is an attempt
                 // to make it exit more reliably (only partially successful).
                 if self.will_exit {
-                    *control_flow = ControlFlow::Exit;
+                    window_target.exit();
                 }
             }
-            RedrawEventsCleared                     => { }
-            LoopDestroyed                           => { }
+            MemoryWarning                           => { }
+            LoopExiting                             => { }
         }
     }
 
@@ -129,6 +133,7 @@ impl GlutinRuntime {
 
         // Generate draw_events for the window event
         let draw_events = match event {
+            ActivationTokenDone { .. }                                      => vec![],
             Resized(new_size)                                               => vec![DrawEvent::Resize(new_size.width as f64, new_size.height as f64)],
             Moved(_position)                                                => vec![],
             CloseRequested                                                  => vec![DrawEvent::Closed],
@@ -136,27 +141,46 @@ impl GlutinRuntime {
             DroppedFile(_path)                                              => vec![],
             HoveredFile(_path)                                              => vec![],
             HoveredFileCancelled                                            => vec![],
-            ReceivedCharacter(_c)                                           => vec![],
             Focused(_focused)                                               => vec![],
             ModifiersChanged(_state)                                        => vec![],
             TouchpadPressure { device_id: _, pressure: _, stage: _ }        => vec![],
+            PinchGesture { .. }                                             => vec![],
+            PanGesture { .. }                                               => vec![],
+            DoubleTapGesture { .. }                                         => vec![],
+            RotationGesture { .. }                                          => vec![],
             AxisMotion { device_id: _, axis: _, value: _ }                  => vec![],
             Touch(_touch)                                                   => vec![],
-            ScaleFactorChanged { scale_factor, new_inner_size }             => vec![DrawEvent::Scale(scale_factor), DrawEvent::Resize(new_inner_size.width as f64, new_inner_size.height as f64)],
+            Ime(_)                                                          => vec![],
+            Occluded(_)                                                     => vec![],
+            ScaleFactorChanged { scale_factor, inner_size_writer: _ }       => vec![DrawEvent::Scale(scale_factor)],
             ThemeChanged(_theme)                                            => vec![],
 
+            RedrawRequested                                                 => {
+                self.request_redraw(window_id);
+                vec![]
+            }
+
             // Keyboard events
-            KeyboardInput { device_id: _, input, is_synthetic: _, }         => {
+            KeyboardInput { device_id: _, event, is_synthetic: _, }         => {
                 // Convert the keycode
-                let key = input.virtual_keycode.map(|keycode| key_from_glutin(&keycode));
-                let key = if key == Some(Key::Unknown) { None } else { key };
+                let key = key_from_glutin(&event.physical_key);
 
                 // TODO: for modifier keys, generate keydown/up using the modifier state
 
+                let scancode = match event.physical_key {
+                    PhysicalKey::Code(_)                                    => 0,
+                    PhysicalKey::Unidentified(NativeKeyCode::Unidentified)  => 0,
+                    PhysicalKey::Unidentified(NativeKeyCode::Android(code)) => code as u64,
+                    PhysicalKey::Unidentified(NativeKeyCode::MacOS(code))   => code as u64,
+                    PhysicalKey::Unidentified(NativeKeyCode::Windows(code)) => code as u64,
+                    PhysicalKey::Unidentified(NativeKeyCode::Xkb(code))     => code as u64,
+
+                };
+
                 // Generate the event for this keypress
-                match input.state {
-                    ElementState::Pressed   => vec![DrawEvent::KeyDown(input.scancode as _, key)],
-                    ElementState::Released  => vec![DrawEvent::KeyUp(input.scancode as _, key)]
+                match event.state {
+                    ElementState::Pressed   => vec![DrawEvent::KeyDown(scancode, Some(key))],
+                    ElementState::Released  => vec![DrawEvent::KeyUp(scancode, Some(key))]
                 }
             },
 
@@ -233,7 +257,7 @@ impl GlutinRuntime {
             // Dispatch the draw events using a process
             if draw_events.len() > 0 {
                 // Need to republish the window events so we can share with the process
-                let mut window_events = window_events.republish();
+                let mut window_events = window_events.0.republish();
 
                 self.run_process(async move {
                     for evt in draw_events {
@@ -250,7 +274,7 @@ impl GlutinRuntime {
     fn request_redraw(&mut self, window_id: WindowId) {
         if let Some(window_events) = self.window_events.get_mut(&window_id) {
             // Need to republish the window events so we can share with the process
-            let mut window_events = window_events.republish();
+            let mut window_events = window_events.0.republish();
 
             self.run_process(async move {
                 window_events.publish(DrawEvent::Redraw).await;
@@ -261,7 +285,7 @@ impl GlutinRuntime {
     ///
     /// Handles one of our user events from the GlutinThreadEvent enum
     ///
-    fn handle_thread_event(&mut self, event: GlutinThreadEvent, window_target: &EventLoopWindowTarget<GlutinThreadEvent>) {
+    fn handle_thread_event(&mut self, event: GlutinThreadEvent, window_target: &ActiveEventLoop) {
         use GlutinThreadEvent::*;
 
         match event {
@@ -275,26 +299,70 @@ impl GlutinRuntime {
                 let fullscreen          = if fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
 
                 // Create a window
-                let window_builder      = glutin::window::WindowBuilder::new()
+                let window_attributes   = winit::window::Window::default_attributes()
                     .with_title(title)
-                    .with_inner_size(glutin::dpi::LogicalSize::new(size_x as f64, size_y as _))
+                    .with_inner_size(winit::dpi::LogicalSize::new(size_x as f64, size_y as _))
                     .with_fullscreen(fullscreen)
                     .with_decorations(decorations);
-                let windowed_context    = glutin::ContextBuilder::new()
-                    .with_gl(GlRequest::Specific(Api::OpenGl, (3, 3)))
-                    .with_vsync(false)
-                    .build_windowed(window_builder, &window_target)
+                let display_builder     = DisplayBuilder::new()
+                    .with_window_attributes(Some(window_attributes));
+                let template            = ConfigTemplateBuilder::new()
+                    .prefer_hardware_accelerated(Some(true))
+                    .with_alpha_size(8);
+
+                let (window, gl_config) = display_builder
+                    .build(window_target, template, |configs| configs.reduce(|a, b| {
+                        if a.num_samples() > b.num_samples() {
+                            a
+                        } else {
+                            b
+                        }
+                    }).unwrap())
+                    .unwrap();
+                let window = window.unwrap();
+
+                let raw_window_handle           = Some(window.raw_window_handle().unwrap());
+                let gl_display                  = gl_config.display();
+                let context_attributes          = ContextAttributesBuilder::new().build(raw_window_handle);
+                let fallback_context_attributes = ContextAttributesBuilder::new().with_context_api(ContextApi::Gles(None)).build(raw_window_handle);
+                let legacy_context_attributes   = ContextAttributesBuilder::new().with_context_api(ContextApi::OpenGl(Some(Version::new(3, 3)))).build(raw_window_handle);
+                let windowed_context            = unsafe {
+                    gl_display.create_context(&gl_config, &context_attributes).unwrap_or_else(|_| {
+                        gl_display.create_context(&gl_config, &fallback_context_attributes).unwrap_or_else(
+                            |_| {
+                                gl_display
+                                    .create_context(&gl_config, &legacy_context_attributes)
+                                    .expect("failed to create context")
+                            },
+                        )
+                    })
+                };
+
+                // Finalize the window (might be unsafe under operating systems like Android, but adding this to the window itself requires considerable extra state...)
+                let window_attributes = winit::window::Window::default_attributes();
+                glutin_winit::finalize_window(window_target, window_attributes, &gl_config)
                     .unwrap();
 
                 // Store the window context in a new glutin window
-                let window_id           = windowed_context.window().id();
-                let size                = windowed_context.window().inner_size();
-                let scale               = windowed_context.window().scale_factor();
-                let window              = GlutinWindow::new(windowed_context);
+                let mut suspend_resume          = Publisher::new(1);
+                let suspend_resume_subscriber   = suspend_resume.subscribe();
+
+                let window_id           = window.id();
+                let size                = window.inner_size();
+                let scale               = window.scale_factor();
+                let window              = GlutinWindow::new(windowed_context, gl_config, window);
+
+                // Immediately resume the window if we're not in a suspended state
+                if !self.suspended {
+                    let mut suspend_resume = suspend_resume.republish_weak();
+                    self.run_process(async move {
+                        suspend_resume.publish(SuspendResume::Resumed).await;
+                    })
+                }
 
                 // Store the publisher for the events for this window
                 let mut initial_events  = events.republish_weak();
-                self.window_events.insert(window_id, events);
+                self.window_events.insert(window_id, (events, suspend_resume));
 
                 // Run the window as a process on this thread
                 self.run_process(async move { 
@@ -306,7 +374,7 @@ impl GlutinRuntime {
                     let window_events = initial_events;
 
                     // Process the actions for the window
-                    send_actions_to_window(window, actions, window_events, window_properties).await;
+                    send_actions_to_window(window, suspend_resume_subscriber, actions, window_events, window_properties).await;
 
                     // Stop processing events for the window once there are no more actions
                     glutin_thread().send_event(GlutinThreadEvent::StopSendingToWindow(window_id));

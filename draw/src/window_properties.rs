@@ -36,7 +36,7 @@ pub trait FloWindowProperties {
 ///
 /// The types of mouse pointer that can be displayed in a window
 ///
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum MousePointer {
     /// No pointer
     None,
