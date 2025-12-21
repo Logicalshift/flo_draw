@@ -19,8 +19,8 @@ bindgen = "0.54"
 
 [dependencies]
 gl                      = { version = "0.14", optional = true }
-metal                   = { version = "0.23", optional = true }
-cocoa                   = { version = "0.23", optional = true }
+metal                   = { version = "0.33", optional = true }
+cocoa                   = { version = "0.26", optional = true }
 libc                    = { version = "0.2", optional = true }
 flo_canvas              = { version = "0.3", optional = true }
 flo_render_gl_offscreen = { version = "0.3", optional = true }
