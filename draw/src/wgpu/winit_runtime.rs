@@ -288,7 +288,7 @@ impl WinitRuntime {
                     for evt in draw_events {
                         window_events.publish(evt).await;
                     }
-                });
+                }, "Publish events");
             }
         }
     }
@@ -303,7 +303,7 @@ impl WinitRuntime {
 
             self.run_process(async move {
                 window_events.publish(DrawEvent::Redraw).await;
-            });
+            }, "Request redraw");
         }
     }
 
@@ -359,7 +359,7 @@ impl WinitRuntime {
 
                     // Stop processing events for the window once there are no more actions
                     winit_thread().send_event(WinitThreadEvent::StopSendingToWindow(window_id));
-                });
+                }, "Run window");
             }
 
             StopSendingToWindow(window_id) => {
@@ -371,8 +371,8 @@ impl WinitRuntime {
                 }
             }
 
-            RunProcess(start_process) => {
-                self.run_process(start_process());
+            RunProcess(start_process, name) => {
+                self.run_process(start_process(), name);
             },
 
             WakeFuture(future_id) => {
@@ -394,7 +394,7 @@ impl WinitRuntime {
 
                     self.run_process(async move {
                         window_events.publish(event).await;
-                    });
+                    }, "SendDrawEventToWindow");
                 }
             },
         }
@@ -403,7 +403,7 @@ impl WinitRuntime {
     ///
     /// Runs a process in the context of this runtime
     ///
-    fn run_process<Fut: 'static+Future<Output=()>>(&mut self, future: Fut) {
+    fn run_process<Fut: 'static+Future<Output=()>>(&mut self, future: Fut, name: impl Into<String>) {
         // Box the future for polling
         let future = future.boxed_local();
 

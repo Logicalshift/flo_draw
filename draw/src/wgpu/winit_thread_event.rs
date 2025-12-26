@@ -20,7 +20,7 @@ pub enum WinitThreadEvent {
     CreateRenderWindow(BoxStream<'static, Vec<RenderAction>>, Publisher<DrawEvent>, WindowProperties),
 
     /// Runs a future on the winit thread
-    RunProcess(Box<dyn Send+FnOnce() -> LocalBoxFuture<'static, ()>>),
+    RunProcess(Box<dyn Send+FnOnce() -> LocalBoxFuture<'static, ()>>, String),
 
     /// Polls the future with the specified ID
     WakeFuture(u64),
@@ -41,7 +41,7 @@ impl Debug for WinitThreadEvent {
 
         match self {
             CreateRenderWindow(_, _, _)                 => write!(f, "CreateRenderWindow(...)"),
-            RunProcess(_)                               => write!(f, "RunProcess(...)"),
+            RunProcess(_, name)                         => write!(f, "RunProcess(..., {:?})", name),
             WakeFuture(id)                              => write!(f, "WakeFuture({})", id),
             StopSendingToWindow(id)                     => write!(f, "StopSendingToWindow({:?})", id),
             StopWhenAllWindowsClosed                    => write!(f, "StopWhenAllWindowsClosed"),
