@@ -286,6 +286,18 @@ where
             // amount that the rendering can get behind)
             events.publish(DrawEvent::NewFrame).await;
         }
+
+        // Yield, to allow other parts of the event loop to run if there are a lot of render requests
+        let mut yield_count = 2;
+        future::poll_fn(move |ctxt| {
+            if yield_count > 0 {
+                yield_count -= 1;
+                ctxt.waker().clone().wake();
+                Poll::Pending
+            } else {
+                Poll::Ready(())
+            }
+        }).await;
     }
 
     // Window will close once the render actions are finished as we drop it here
