@@ -8,6 +8,10 @@ use flo_render_software::canvas::*;
 use std::time::{Instant};
 
 fn draw_thing(drawing: &mut impl GraphicsContext, x: f32, y: f32) {
+    drawing.stroke_color(Color::Rgba(0.6, 0.6, 0.6, 1.0));
+    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.9));
+    drawing.line_width(2.0);
+
     drawing.new_path();
     drawing.circle(x, y, 24.0);
     drawing.fill();
@@ -39,9 +43,6 @@ pub fn main() {
     drawing.fill();
 
     drawing.layer(LayerId(0));
-    drawing.stroke_color(Color::Rgba(0.6, 0.6, 0.6, 1.0));
-    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.9));
-    drawing.line_width(1.0);
 
     draw_thing(&mut drawing, 116.2421875, 181.62109375);
     draw_thing(&mut drawing, 139.6796875, 195.40234375);
