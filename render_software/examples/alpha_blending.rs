@@ -7,6 +7,19 @@ use flo_render_software::canvas::*;
 
 use std::time::{Instant};
 
+fn draw_thing(drawing: &mut impl GraphicsContext, x: f32, y: f32) {
+    drawing.new_path();
+    drawing.circle(x, y, 24.0);
+    drawing.fill();
+    drawing.stroke();
+
+    drawing.push_state();
+    drawing.sprite_transform(SpriteTransform::Scale(1.2, 1.2));
+    drawing.sprite_transform(SpriteTransform::Translate(x, y));
+    drawing.draw_sprite(SpriteId(0));
+    drawing.pop_state();
+}
+
 ///
 /// Draws some overlapping circles to the terminal
 ///
@@ -17,48 +30,24 @@ pub fn main() {
     drawing.clear_canvas(Color::Rgba(1.0, 0.95, 0.8, 1.0));
     drawing.canvas_height(1080.0);
     drawing.center_region(0.0, 0.0, 1080.0, 1080.0);
+
+    drawing.sprite(SpriteId(0));
+    drawing.clear_sprite();
+    drawing.fill_color(Color::Rgba(0.3, 0.3, 0.3, 1.0));
+    drawing.new_path();
+    drawing.circle(0.0, 0.0, 12.0);
+    drawing.fill();
+
+    drawing.layer(LayerId(0));
     drawing.stroke_color(Color::Rgba(0.6, 0.6, 0.6, 1.0));
+    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.9));
     drawing.line_width(1.0);
 
-    drawing.new_path();
-    drawing.circle(530.0, 530.0, 24.0);
-    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.4));
-    drawing.fill();
-    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.9));
-    drawing.fill();
-    drawing.stroke();
-
-    drawing.new_path();
-    drawing.circle(550.0, 530.0, 24.0);
-    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.4));
-    drawing.fill();
-    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.9));
-    drawing.fill();
-    drawing.stroke();
-
-    drawing.new_path();
-    drawing.circle(530.1, 550.2, 24.0);
-    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.4));
-    drawing.fill();
-    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.9));
-    drawing.fill();
-    drawing.stroke();
-
-    drawing.new_path();
-    drawing.circle(550.1, 550.2, 24.0);
-    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.4));
-    drawing.fill();
-    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.9));
-    drawing.fill();
-    drawing.stroke();
-
-    drawing.new_path();
-    drawing.circle(540.0, 540.0, 24.0);
-    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.4));
-    drawing.fill();
-    drawing.fill_color(Color::Rgba(0.7, 0.7, 0.7, 0.9));
-    drawing.fill();
-    drawing.stroke();
+    draw_thing(&mut drawing, 116.2421875, 181.62109375);
+    draw_thing(&mut drawing, 139.6796875, 195.40234375);
+    draw_thing(&mut drawing, 530.1, 550.2);
+    draw_thing(&mut drawing, 550.1, 550.2);
+    draw_thing(&mut drawing, 540.0, 540.0);
 
     // Create a canvas from the drawing
     let mut canvas_drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
