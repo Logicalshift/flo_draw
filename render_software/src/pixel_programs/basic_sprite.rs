@@ -68,7 +68,7 @@ where
         // Calculate the transform for the sprite region
         let sprite_ypos         = y_pos * data.scale.1 + data.translate.1;
         let sprite_transform    = x_transform.transform(data.scale.0, data.translate.0);
-        let sprite_xrange       = sprite_transform.pixel_x_to_source_x(x_range.start)..sprite_transform.pixel_x_to_source_x(x_range.end);
+        let sprite_xrange       = (sprite_transform.pixel_x_to_source_x(x_range.start).floor())..(sprite_transform.pixel_x_to_source_x(x_range.end).ceil());
 
         // Plan the rendering for the sprite
         // TODO: we might render the same sprite multiple times on a line, in which case it would be faster to do this once and re-use it later on, maybe can exploit that 
