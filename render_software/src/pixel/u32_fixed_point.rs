@@ -5,7 +5,7 @@ use std::ops::*;
 ///
 /// Indicates a fixed point value stored in a u32
 ///
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 #[repr(C)]
 pub struct U32FixedPoint(pub u32);
 
