@@ -17,11 +17,18 @@ fn draw_thing(drawing: &mut impl GraphicsContext, x: f32, y: f32) {
     drawing.fill();
     drawing.stroke();
 
+    /*
     drawing.push_state();
     drawing.sprite_transform(SpriteTransform::Scale(1.2, 1.2));
     drawing.sprite_transform(SpriteTransform::Translate(x, y));
     drawing.draw_sprite(SpriteId(0));
     drawing.pop_state();
+    */
+
+    drawing.fill_color(Color::Rgba(0.3, 0.3, 0.3, 1.0));
+    drawing.new_path();
+    drawing.circle(x, y, 12.0 * 1.2);
+    drawing.fill();
 }
 
 ///
