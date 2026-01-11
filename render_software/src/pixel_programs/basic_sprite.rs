@@ -83,12 +83,7 @@ where
         let scanplan = &scanline[0].1;
         let region   = ScanlineRenderRegion { y_pos: sprite_ypos, transform: sprite_transform };
 
-        let mut also_target = target.iter().copied().collect::<Vec<_>>();
-        data_cache.render(&region, scanplan, &mut also_target);
-
-        for x in x_range {
-            target[x as usize] = also_target[x as usize];
-        }
+        data_cache.render(&region, scanplan, target);
     }
 }
 
