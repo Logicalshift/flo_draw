@@ -35,13 +35,15 @@ where
 {
     type Edge = TScanPlanner::Edge;
 
-    fn plan_scanlines(&self, edge_plan: &crate::edgeplan::EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: std::ops::Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
+    fn plan_scanlines(&self, edge_plan: &crate::edgeplan::EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], pixel_x_range: std::ops::Range<i32>, scanlines: &mut [(f64, ScanlinePlan)]) {
         // Ask the undelying planner to generate the scanlines
-        self.planner.plan_scanlines(edge_plan, transform, y_positions, x_range.clone(), scanlines);
+        self.planner.plan_scanlines(edge_plan, transform, y_positions, pixel_x_range.clone(), scanlines);
 
         // Create the background plan
+        // TODO: something weird here, the original seemed to be using pixel ranges here (but the shard planner definitely converts from canvas coordinates)...
+        // TODO: I think the background plan should be in pixel units, not canvas units
         let mut background_plan = ScanlinePlan::default();
-        background_plan.push_next_range(x_range, true, [PixelProgramPlan::Run(self.background)]);
+        background_plan.push_next_range(transform.pixel_range_to_x(&pixel_x_range), true, [PixelProgramPlan::Run(self.background)]);
 
         // Combine with the background program
         for (_ypos, scanline) in scanlines.iter_mut() {

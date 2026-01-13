@@ -25,7 +25,7 @@ where
     /// Plans out a scanline using the PixelScanPlanner (this scan planner does not perform any anti-aliasing)
     ///
     #[inline]
-    pub fn plan(edge_plan: &EdgePlan<TEdge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>) -> Vec<(f64, ScanlinePlan)> {
+    pub fn plan(edge_plan: &EdgePlan<TEdge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<i32>) -> Vec<(f64, ScanlinePlan)> {
         // Create a planner and the result vec
         let planner         = Self::default();
         let mut scanlines   = vec![(0.0, ScanlinePlan::default()); y_positions.len()];
@@ -53,15 +53,13 @@ where
 {
     type Edge = TEdge;
 
-    fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
+    fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<i32>, scanlines: &mut [(f64, ScanlinePlan)]) {
         // Must be enough scanlines supplied for filling the scanline array
         if scanlines.len() < y_positions.len() {
             panic!("The number of scanline suppled ({}) is less than the number of y positions to fill them ({})", scanlines.len(), y_positions.len());
         }
 
-        // Map the x-range from the source coordinates to pixel coordinates
-        let x_range = transform.source_x_to_pixels(x_range.start)..transform.source_x_to_pixels(x_range.end);
-        let x_range = x_range.start.round()..x_range.end.round();
+        let x_range = (x_range.start as f64)..(x_range.end as f64);
 
         // Ask the edge plan to compute the intercepts on the current scanline
         let mut ordered_intercepts = vec![vec![]; y_positions.len()];

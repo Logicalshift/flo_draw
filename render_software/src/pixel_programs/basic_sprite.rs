@@ -68,7 +68,6 @@ where
         // Calculate the transform for the sprite region
         let sprite_ypos         = y_pos * data.scale.1 + data.translate.1;
         let sprite_transform    = x_transform.transform(data.scale.0, data.translate.0);
-        let sprite_xrange       = sprite_transform.pixel_x_to_source_x(x_range.start)..sprite_transform.pixel_x_to_source_x(x_range.end);
 
         // Plan the rendering for the sprite
         // TODO: we might render the same sprite multiple times on a line, in which case it would be faster to do this once and re-use it later on, maybe can exploit that 
@@ -77,7 +76,7 @@ where
         // It may also be possible to cache scaline plans for longer to re-use when the sprite is rendered in multiple positions (though this requires pixel-perfect alignment so
         // may be even less useful)
         let mut scanline = [(sprite_ypos, ScanlinePlan::default())];
-        self.planner.plan_scanlines(&*data.edges, &sprite_transform, &[sprite_ypos], sprite_xrange, &mut scanline);
+        self.planner.plan_scanlines(&*data.edges, &sprite_transform, &[sprite_ypos], x_range, &mut scanline);
 
         // Render the scanplan to the pixels using a scanline renderer (which should appropriately blend transparent pixels)
         let scanplan = &scanline[0].1;

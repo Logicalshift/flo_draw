@@ -16,7 +16,10 @@ pub trait ScanPlanner : Send + Sync {
     /// For every scanline in `y_positions`, use the edge plan to find the intercepts at a set of y-positions, clipped to the specified x-range, and
     /// generating the output in the `scanlines` array.
     ///
+    /// The x-range is given in output pixel coordinates (this is essentially the range of values in the output buffer that will be altered by this 
+    /// scanline). Pixels outside this range shouldn't be altered.
+    ///
     /// The y-position is copied into the scanlines array, and the scanlines are always generated in the same order that they are requested in.
     ///
-    fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]);
+    fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], pixel_x_range: Range<i32>, scanlines: &mut [(f64, ScanlinePlan)]);
 }

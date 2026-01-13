@@ -63,7 +63,8 @@ where
 
         // Plan the lines
         let mut scanlines = vec![(0.0f64, ScanlinePlan::default()); y_positions.len()];
-        self.scan_planner.plan_scanlines(edge_plan, &transform, y_positions, 0.0..width, &mut scanlines);
+        // TODO: here's another weird place where the width is already in pixels (the conversion in the shard scan planner seems to require canvas coordinates...)
+        self.scan_planner.plan_scanlines(edge_plan, &transform, y_positions, 0..(width as i32), &mut scanlines);
 
         // Pass them on to the line renderer to generate the result
         let mut region = ScanlineRenderRegion {

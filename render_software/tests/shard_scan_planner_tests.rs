@@ -38,7 +38,7 @@ fn plan_layer_0_line_on_drawing_with_height(instructions: impl IntoIterator<Item
     let mut scanlines   = [(0.0, ScanlinePlan::default())];
     let transform       = ScanlineTransform::for_region(&(-1.0..1.0), pixel_height as _);
 
-    planner.plan_scanlines(edges, &transform, &y_positions, -1.0..1.0, &mut scanlines);
+    planner.plan_scanlines(edges, &transform, &y_positions, 0..(pixel_height as i32), &mut scanlines);
 
     // Swap out to get the result
     use std::mem;
@@ -325,7 +325,7 @@ fn multisampling_missing_one_quarter() {
     let scan_planner    = ShardScanPlanner::default();
     let mut scanlines   = vec![Default::default(); 4];
     edgeplan.prepare_to_render();
-    scan_planner.plan_scanlines(&edgeplan, &transform, &[9.5, 10.5, 11.5, 15.5], 0.0..1000.0, &mut scanlines);
+    scan_planner.plan_scanlines(&edgeplan, &transform, &[9.5, 10.5, 11.5, 15.5], 0..1000, &mut scanlines);
 
     // The three lines we're interested in (before, after, with apexes)
     let before_apexes   = &scanlines[0];
@@ -440,7 +440,7 @@ fn multisampling_missing_one_half() {
     let scan_planner    = ShardScanPlanner::default();
     let mut scanlines   = vec![Default::default(); 4];
     edgeplan.prepare_to_render();
-    scan_planner.plan_scanlines(&edgeplan, &transform, &[9.5, 10.5, 11.5, 15.5], 0.0..1000.0, &mut scanlines);
+    scan_planner.plan_scanlines(&edgeplan, &transform, &[9.5, 10.5, 11.5, 15.5], 0..1000, &mut scanlines);
 
     // The three lines we're interested in (before, after, with apexes)
     let before_apexes   = &scanlines[0];
@@ -527,7 +527,7 @@ fn vertical_partial_overlap() {
     let scan_planner    = ShardScanPlanner::default();
     let mut scanlines   = vec![Default::default()];
     edgeplan.prepare_to_render();
-    scan_planner.plan_scanlines(&edgeplan, &transform, &[10.5], 0.0..1000.0, &mut scanlines);
+    scan_planner.plan_scanlines(&edgeplan, &transform, &[10.5], 0..1000, &mut scanlines);
 
     // The three lines we're interested in (before, after, with apexes)
     let scanline = &scanlines[0];
@@ -609,7 +609,7 @@ fn diagonal_partial_overlap() {
     let scan_planner    = ShardScanPlanner::default();
     let mut scanlines   = vec![Default::default()];
     edgeplan.prepare_to_render();
-    scan_planner.plan_scanlines(&edgeplan, &transform, &[10.5], 0.0..1000.0, &mut scanlines);
+    scan_planner.plan_scanlines(&edgeplan, &transform, &[10.5], 0..1000, &mut scanlines);
 
     // The three lines we're interested in (before, after, with apexes)
     let scanline = &scanlines[0];
@@ -705,7 +705,7 @@ fn diagonal_full_overlap() {
     let scan_planner    = ShardScanPlanner::default();
     let mut scanlines   = vec![Default::default()];
     edgeplan.prepare_to_render();
-    scan_planner.plan_scanlines(&edgeplan, &transform, &[10.5], 0.0..1000.0, &mut scanlines);
+    scan_planner.plan_scanlines(&edgeplan, &transform, &[10.5], 0..1000, &mut scanlines);
 
     // The three lines we're interested in (before, after, with apexes)
     let scanline = &scanlines[0];
@@ -788,7 +788,7 @@ fn diagonal_full_overlap_thirds() {
     let scan_planner    = ShardScanPlanner::default();
     let mut scanlines   = vec![Default::default()];
     edgeplan.prepare_to_render();
-    scan_planner.plan_scanlines(&edgeplan, &transform, &[10.5], 0.0..1000.0, &mut scanlines);
+    scan_planner.plan_scanlines(&edgeplan, &transform, &[10.5], 0..1000, &mut scanlines);
 
     // The three lines we're interested in (before, after, with apexes)
     let scanline = &scanlines[0];
@@ -1129,7 +1129,7 @@ fn mascot_overlap_3() {
     // Plan out these lines
     let scan_planner    = ShardScanPlanner::default();
     let mut scanlines   = vec![(0.0, ScanlinePlan::default())];
-    scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], -1.777777777..1.77777777, &mut scanlines);
+    scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], 0..1920, &mut scanlines);
 
     // Any 'Merge' operations should be up to a maximum of 1.0
     println!("{:?}\n", scanlines);
@@ -1194,7 +1194,7 @@ fn text_overlap_1() {
     // Plan out these lines
     let scan_planner    = ShardScanPlanner::default();
     let mut scanlines   = vec![(0.0, ScanlinePlan::default())];
-    scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], -1.777777777..1.77777777, &mut scanlines);
+    scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], 0..1920, &mut scanlines);
 
     // The pixel at x=138 should be solid (well, nearly solid)
     let scanline    = &scanlines[0];
@@ -1240,7 +1240,7 @@ fn text_overlap_2() {
     // Plan out these lines
     let scan_planner    = ShardScanPlanner::default();
     let mut scanlines   = vec![(0.0, ScanlinePlan::default())];
-    scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], -1.777777777..1.77777777, &mut scanlines);
+    scan_planner.plan_from_edge_intercepts(&edge_plan, vec![line], &transform, &[0.0], 0..1920, &mut scanlines);
 
     println!("{:?}", scanlines);
 

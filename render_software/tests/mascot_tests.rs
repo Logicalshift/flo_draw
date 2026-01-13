@@ -51,7 +51,7 @@ where
     // To test this, we render one line over and over and make sure that all the scanlines produce the same result (for this rendering, line 59 is known to produce the bug)
     let y_positions     = (0..8).map(|_| y_pos).collect::<Box<[_]>>();
     let mut scanlines   = vec![(0.0, ScanlinePlan::default()); 8];
-    scan_planner.plan_scanlines(&mascot_layer, &ScanlineTransform::identity(1920), &y_positions, 0.0..256.0, &mut scanlines);
+    scan_planner.plan_scanlines(&mascot_layer, &ScanlineTransform::identity(1920), &y_positions, 0..256, &mut scanlines);
 
     // All scanlines should match the first one
     let first_line = scanlines[0].clone();

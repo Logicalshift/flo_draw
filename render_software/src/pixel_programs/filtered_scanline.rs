@@ -190,7 +190,7 @@ where
                     mem::drop(scanlines);
 
                     // Calculate the transform for the sprite region
-                    let scan_xrange = scan_transform.pixel_x_to_source_x(-(before_x as i32))..scan_transform.pixel_x_to_source_x(x_transform.width_in_pixels() as i32 + after_x as i32);
+                    let scan_xrange = -(before_x as i32)..(x_transform.width_in_pixels() as i32 + after_x as i32);
 
                     // Plan the rendering for the sprite
                     let mut new_scanline = [(scan_ypos, ScanlinePlan::default())];

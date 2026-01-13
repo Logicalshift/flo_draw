@@ -231,8 +231,8 @@ where
     fn render(&self, region: &RenderSlice, source: &CanvasDrawing<TPixel, N>, dest: &mut [TPixel]) {
         // Convert y positions to between -1 and 1 (canvas coordinates)
         let y_positions = self.convert_y_positions(&region.y_positions);
-        let x_range     = self.convert_width(region.width);
-        let transform   = ScanlineTransform::for_region(&x_range, region.width);
+        let x_range     = 0..(region.width as i32);
+        let transform   = ScanlineTransform::for_region(&self.convert_width(region.width), region.width);
 
         // We need to plan scanlines for each layer, then merge them. The initial plan is just to fill the entire range with the background colour
         let mut scanlines       = y_positions.iter().copied()
@@ -247,7 +247,7 @@ where
 
         for layer_handle in source.ordered_layers.iter().copied() {
             if let Some(layer) = source.layers.get(layer_handle.0) {
-                // Plan this layer (note that the x-range will be something like -1..1 so the scan planner must support this)
+                // Plan this layer
                 if layer.alpha > 0.0 {
                     self.scan_planner.plan_scanlines(&layer.edges, &transform, &y_positions, x_range.clone(), &mut layer_scanlines);
                 }

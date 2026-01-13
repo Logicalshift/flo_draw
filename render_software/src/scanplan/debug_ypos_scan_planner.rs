@@ -3,6 +3,8 @@ use super::scanline_transform::*;
 use super::scanline_plan::*;
 use crate::pixel::*;
 
+use std::ops::*;
+
 ///
 /// Scanplanner that adds a y position colour indicator pixel to the start of each scanline (which is useful for when we want to find out which scanlines have bugs on them)
 ///
@@ -35,12 +37,14 @@ where
 {
     type Edge = TScanPlanner::Edge;
 
-    fn plan_scanlines(&self, edge_plan: &crate::edgeplan::EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: std::ops::Range<f64>, scanlines: &mut [(f64, ScanlinePlan)]) {
+    fn plan_scanlines(&self, edge_plan: &crate::edgeplan::EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], pixel_x_range: Range<i32>, scanlines: &mut [(f64, ScanlinePlan)]) {
         // Ask the undelying planner to generate the scanlines
-        self.planner.plan_scanlines(edge_plan, transform, y_positions, x_range.clone(), scanlines);
+        self.planner.plan_scanlines(edge_plan, transform, y_positions, pixel_x_range.clone(), scanlines);
 
         // Create the debug plan
-        let debug_range     = x_range.start..(x_range.start + transform.source_x_to_pixels(1.0));
+        // TODO: something weird here, the original seemed to be using pixel ranges here (but the shard planner definitely converts from canvas coordinates)...
+        let debug_range     = transform.pixel_range_to_x(&pixel_x_range);
+        let debug_range     = debug_range.start..(debug_range.start + transform.pixel_x_to_source_x(1));
         let mut debug_plan  = ScanlinePlan::default();
         debug_plan.push_next_range(debug_range, true, [PixelProgramPlan::Run(self.debug_ypos_program)]);
 
