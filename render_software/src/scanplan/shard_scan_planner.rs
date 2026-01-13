@@ -390,7 +390,7 @@ where
     fn plan_scanlines(&self, edge_plan: &EdgePlan<Self::Edge>, transform: &ScanlineTransform, y_positions: &[f64], x_range: Range<i32>, scanlines: &mut [(f64, ScanlinePlan)]) {
         // Must be enough scanlines supplied for filling the scanline array
         if scanlines.len() < y_positions.len() {
-            panic!("The number of scanline suppled ({}) is less than the number of y positions to fill them ({})", scanlines.len(), y_positions.len());
+            panic!("The number of scanlines suppled ({}) is less than the number of y positions to fill them ({})", scanlines.len(), y_positions.len());
         }
 
         // y-positions should be offset by half a pixel (shards are taken from a previous and a next line)
