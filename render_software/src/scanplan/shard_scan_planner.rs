@@ -51,7 +51,7 @@ where
 
         // Map the x-range from the source coordinates to pixel coordinates
         let x_range = transform.source_x_to_pixels(x_range.start)..transform.source_x_to_pixels(x_range.end);
-        let x_range = x_range.start.floor()..x_range.end.floor();
+        let x_range = x_range.start.round()..x_range.end.round();
 
         'next_line: for y_idx in 0..y_positions.len() {
             // Fetch/clear the scanline that we'll be building

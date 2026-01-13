@@ -61,7 +61,7 @@ where
 
         // Map the x-range from the source coordinates to pixel coordinates
         let x_range = transform.source_x_to_pixels(x_range.start)..transform.source_x_to_pixels(x_range.end);
-        let x_range = x_range.start.floor()..x_range.end.floor();
+        let x_range = x_range.start.round()..x_range.end.round();
 
         // Ask the edge plan to compute the intercepts on the current scanline
         let mut ordered_intercepts = vec![vec![]; y_positions.len()];
