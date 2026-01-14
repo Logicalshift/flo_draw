@@ -45,6 +45,158 @@ where
     }
 }
 
+
+impl<TProgramRunner> ScanlineRenderer<TProgramRunner>
+where
+    TProgramRunner:         PixelProgramRunner,
+    TProgramRunner::TPixel: 'static + Send + Copy + Default + AlphaBlend,
+{
+    ///
+    /// Renders a single span to the destination buffer
+    ///
+    #[inline]
+    pub fn render_span(&self, span: &ScanSpanStack, y_pos: f64, transform: &ScanlineTransform, source: &ScanlinePlan, shadow_pixels: &mut BufferStack<TProgramRunner::TPixel>) {
+        // Read the span and start iterating through the program IDs
+        let x_range             = span.x_range.clone();
+        let mut remaining_steps = source.programs(span).iter();
+        let mut current_step    = remaining_steps.next().unwrap();
+
+        loop {
+            // Evaluate the current step of this span
+            match current_step {
+                PixelProgramPlan::Run(data_id) => {
+                    // Just run the program
+                    let pixel_range = (x_range.start.floor() as _)..(x_range.end.ceil() as _);
+                    self.program_data.run_program(*data_id, shadow_pixels.buffer(), pixel_range, transform, y_pos);
+                }
+
+                PixelProgramPlan::StartBlend => {
+                    // Add a new copy of the pixels to the shadow stack
+                    shadow_pixels.push_entry((x_range.start as _)..(x_range.end as _));
+                },
+
+                PixelProgramPlan::Merge(ratio) => {
+                    let ratio = TProgramRunner::TPixel::component_with_value(*ratio as _);
+
+                    shadow_pixels.pop_entry(|src, dst| {
+                        let range           = (x_range.start as usize)..(x_range.end as usize);
+
+                        for (src, dst) in src[range.clone()].iter().zip(dst[range].iter_mut()) {
+                            *dst = src.merge(*dst, ratio);
+                        }
+                    });
+                }
+
+                PixelProgramPlan::LinearMerge(start, end) => {
+                    // Change the alpha factor across the range of the blend
+                    let x_range     = (x_range.start as usize)..(x_range.end as usize);
+                    let start       = *start as f64;
+                    let end         = *end as f64;
+                    let x_len       = x_range.len();
+                    let multiplier  = if x_len > 1 { (end-start)/((x_len-1) as f64) } else { 0.0 };
+
+                    shadow_pixels.pop_entry(|src, dst| {
+                        for (x, (src, dst)) in src[x_range.clone()].iter().zip(dst[x_range].iter_mut()).enumerate() {
+                            let pos     = x as f64;
+                            let ratio   = start + pos * multiplier;
+                            let ratio   = TProgramRunner::TPixel::component_with_value(ratio);
+
+                            *dst = src.merge(*dst, ratio);
+                        }
+                    });
+                }
+
+                PixelProgramPlan::SourceOver(factor) => {
+                    let factor = *factor as f64;
+
+                    // Can skip the factor multiplication step if the blend factor is 1.0 (which should be fairly common)
+                    if factor == 1.0 {
+                        shadow_pixels.pop_entry(|src, dst| {
+                            for x in (x_range.start as usize)..(x_range.end as usize) {
+                                dst[x] = src[x].source_over(dst[x]);
+                            }
+                        });
+                    } else {
+                        shadow_pixels.pop_entry(|src, dst| {
+                            for x in (x_range.start as usize)..(x_range.end as usize) {
+                                dst[x] = (src[x].multiply_alpha(factor)).source_over(dst[x]);
+                            }
+                        });
+                    }
+                },
+
+                PixelProgramPlan::LinearSourceOver(start, end) => {
+                    // Change the alpha factor across the range of the blend
+                    let x_range     = (x_range.start as usize)..(x_range.end as usize);
+                    let start       = *start as f64;
+                    let end         = *end as f64;
+                    let x_len       = x_range.len();
+                    let multiplier  = if x_len > 1 { (end-start)/((x_len-1) as f64) } else { 0.0 };
+
+                    shadow_pixels.pop_entry(|src, dst| {
+                        let start_x = x_range.start;
+
+                        for x in x_range {
+                            let pos     = (x-start_x) as f64;
+                            let factor  = start + pos * multiplier;
+
+                            dst[x] = (src[x].multiply_alpha(factor)).source_over(dst[x]);
+                        }
+                    });
+                }
+
+                PixelProgramPlan::Blend(op, factor) => {
+                    let factor  = *factor as f64;
+                    let op      = op.get_function::<TProgramRunner::TPixel>();
+
+                    // Can skip the factor multiplication step if the blend factor is 1.0 (which should be fairly common)
+                    if factor == 1.0 {
+                        shadow_pixels.pop_entry(|src, dst| {
+                            for x in (x_range.start as usize)..(x_range.end as usize) {
+                                dst[x] = op(src[x], dst[x]);
+                            }
+                        });
+                    } else {
+                        shadow_pixels.pop_entry(|src, dst| {
+                            for x in (x_range.start as usize)..(x_range.end as usize) {
+                                dst[x] = op(src[x].multiply_alpha(factor), dst[x]);
+                            }
+                        });
+                    }
+                },
+
+                PixelProgramPlan::LinearBlend(op, start, end) => {
+                    // Change the alpha factor across the range of the blend
+                    let op          = op.get_function::<TProgramRunner::TPixel>();
+                    let x_range     = (x_range.start as usize)..(x_range.end as usize);
+                    let start       = *start as f64;
+                    let end         = *end as f64;
+                    let x_len       = x_range.len();
+                    let multiplier  = if x_len > 1 { (end-start)/((x_len-1) as f64) } else { 0.0 };
+
+                    shadow_pixels.pop_entry(|src, dst| {
+                        let start_x = x_range.start;
+
+                        for x in x_range {
+                            let pos     = (x-start_x) as f64;
+                            let factor  = start + pos * multiplier;
+
+                            dst[x] = op(src[x].multiply_alpha(factor), dst[x]);
+                        }
+                    });
+                },
+            }
+
+            // Move to the next step
+            if let Some(next_step) = remaining_steps.next() {
+                current_step = next_step;
+            } else {
+                break;
+            }
+        }
+    }
+}
+
 impl<TProgramRunner> Renderer for ScanlineRenderer<TProgramRunner>
 where
     TProgramRunner:         PixelProgramRunner,
@@ -82,144 +234,7 @@ where
 
         // Execute each span
         for span in spans.iter() {
-            // Read the span and start iterating through the program IDs
-            let x_range             = span.x_range.clone();
-            let mut remaining_steps = source.programs(span).iter();
-            let mut current_step    = remaining_steps.next().unwrap();
-
-            loop {
-                // Evaluate the current step of this span
-                match current_step {
-                    PixelProgramPlan::Run(data_id) => {
-                        // Just run the program
-                        let pixel_range = (x_range.start.floor() as _)..(x_range.end.ceil() as _);
-                        self.program_data.run_program(*data_id, shadow_pixels.buffer(), pixel_range, transform, y_pos);
-                    }
-
-                    PixelProgramPlan::StartBlend => {
-                        // Add a new copy of the pixels to the shadow stack
-                        shadow_pixels.push_entry((x_range.start as _)..(x_range.end as _));
-                    },
-
-                    PixelProgramPlan::Merge(ratio) => {
-                        let ratio = TProgramRunner::TPixel::component_with_value(*ratio as _);
-
-                        shadow_pixels.pop_entry(|src, dst| {
-                            let range           = (x_range.start as usize)..(x_range.end as usize);
-
-                            for (src, dst) in src[range.clone()].iter().zip(dst[range].iter_mut()) {
-                                *dst = src.merge(*dst, ratio);
-                            }
-                        });
-                    }
-
-                    PixelProgramPlan::LinearMerge(start, end) => {
-                        // Change the alpha factor across the range of the blend
-                        let x_range     = (x_range.start as usize)..(x_range.end as usize);
-                        let start       = *start as f64;
-                        let end         = *end as f64;
-                        let x_len       = x_range.len();
-                        let multiplier  = if x_len > 1 { (end-start)/((x_len-1) as f64) } else { 0.0 };
-
-                        shadow_pixels.pop_entry(|src, dst| {
-                            for (x, (src, dst)) in src[x_range.clone()].iter().zip(dst[x_range].iter_mut()).enumerate() {
-                                let pos     = x as f64;
-                                let ratio   = start + pos * multiplier;
-                                let ratio   = TProgramRunner::TPixel::component_with_value(ratio);
-
-                                *dst = src.merge(*dst, ratio);
-                            }
-                        });
-                    }
-
-                    PixelProgramPlan::SourceOver(factor) => {
-                        let factor = *factor as f64;
-
-                        // Can skip the factor multiplication step if the blend factor is 1.0 (which should be fairly common)
-                        if factor == 1.0 {
-                            shadow_pixels.pop_entry(|src, dst| {
-                                for x in (x_range.start as usize)..(x_range.end as usize) {
-                                    dst[x] = src[x].source_over(dst[x]);
-                                }
-                            });
-                        } else {
-                            shadow_pixels.pop_entry(|src, dst| {
-                                for x in (x_range.start as usize)..(x_range.end as usize) {
-                                    dst[x] = (src[x].multiply_alpha(factor)).source_over(dst[x]);
-                                }
-                            });
-                        }
-                    },
-
-                    PixelProgramPlan::LinearSourceOver(start, end) => {
-                        // Change the alpha factor across the range of the blend
-                        let x_range     = (x_range.start as usize)..(x_range.end as usize);
-                        let start       = *start as f64;
-                        let end         = *end as f64;
-                        let x_len       = x_range.len();
-                        let multiplier  = if x_len > 1 { (end-start)/((x_len-1) as f64) } else { 0.0 };
-
-                        shadow_pixels.pop_entry(|src, dst| {
-                            let start_x = x_range.start;
-
-                            for x in x_range {
-                                let pos     = (x-start_x) as f64;
-                                let factor  = start + pos * multiplier;
-
-                                dst[x] = (src[x].multiply_alpha(factor)).source_over(dst[x]);
-                            }
-                        });
-                    }
-
-                    PixelProgramPlan::Blend(op, factor) => {
-                        let factor  = *factor as f64;
-                        let op      = op.get_function::<TProgramRunner::TPixel>();
-
-                        // Can skip the factor multiplication step if the blend factor is 1.0 (which should be fairly common)
-                        if factor == 1.0 {
-                            shadow_pixels.pop_entry(|src, dst| {
-                                for x in (x_range.start as usize)..(x_range.end as usize) {
-                                    dst[x] = op(src[x], dst[x]);
-                                }
-                            });
-                        } else {
-                            shadow_pixels.pop_entry(|src, dst| {
-                                for x in (x_range.start as usize)..(x_range.end as usize) {
-                                    dst[x] = op(src[x].multiply_alpha(factor), dst[x]);
-                                }
-                            });
-                        }
-                    },
-
-                    PixelProgramPlan::LinearBlend(op, start, end) => {
-                        // Change the alpha factor across the range of the blend
-                        let op          = op.get_function::<TProgramRunner::TPixel>();
-                        let x_range     = (x_range.start as usize)..(x_range.end as usize);
-                        let start       = *start as f64;
-                        let end         = *end as f64;
-                        let x_len       = x_range.len();
-                        let multiplier  = if x_len > 1 { (end-start)/((x_len-1) as f64) } else { 0.0 };
-
-                        shadow_pixels.pop_entry(|src, dst| {
-                            let start_x = x_range.start;
-
-                            for x in x_range {
-                                let pos     = (x-start_x) as f64;
-                                let factor  = start + pos * multiplier;
-
-                                dst[x] = op(src[x].multiply_alpha(factor), dst[x]);
-                            }
-                        });
-                    },
-                }
-
-                // Move to the next step
-                if let Some(next_step) = remaining_steps.next() {
-                    current_step = next_step;
-                } else {
-                    break;
-                }
-            }
+            self.render_span(span, y_pos, transform, source, &mut shadow_pixels);
         }
     }
 }
