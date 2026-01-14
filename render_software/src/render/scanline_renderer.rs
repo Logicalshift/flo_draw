@@ -201,14 +201,68 @@ where
     ///
     /// The spans in the plan are expected to be in ascending order for this to work
     ///
-    pub fn render_partial(&self, region: &ScanlineRenderRegion, x_range: Range<usize>, source: &ScanlinePlan, dest: &mut [TProgramRunner::TPixel]) {
-        // Skip over the initial ranges
+    pub fn render_partial_from_ordered_plan(&self, region: &ScanlineRenderRegion, x_range: Range<usize>, source: &ScanlinePlan, dest: &mut [TProgramRunner::TPixel]) {
+        let scanline        = dest;
+        let spans           = source.spans();
+        let y_pos           = region.y_pos;
+        let transform       = &region.transform;
+        let mut span_iter   = spans.iter();
+        let render_range    = (x_range.start as f64)..(x_range.end as f64);
+
+        let Some(mut span)  = span_iter.next() else { return; };
+
+        let mut shadow_pixels = BufferStack::new(scanline);
+
+        // Skip over the initial ranges until we reach the start of the x-range
+        loop {
+            // Stop once we find a span that overlaps the render range (or goes beyond it)
+            if span.x_range.end > render_range.start {
+                break;
+            }
+
+            // Skip on to the next item in the range
+            let Some(next_span) = span_iter.next() else { return; };
+            span = next_span;
+        }
 
         // Render the first span if it's clipped
+        while span.x_range.start < render_range.start {
+            // Clip this range
+            let mut clipped_span = span.clone();
+            clipped_span.x_range.start  = span.x_range.start.max(render_range.start);
+            clipped_span.x_range.end    = span.x_range.end.min(render_range.end);
 
-        // Render the spans that are within the range
+            // Render the span
+            self.render_span(&clipped_span, y_pos, transform, source, &mut shadow_pixels);
+
+            // Skip on to the next item in the range
+            let Some(next_span) = span_iter.next() else { return; };
+            span = next_span;
+        }
+
+        // Render the spans that are within the range (provided the spans are in order, these don't need clipping)
+        while span.x_range.end < render_range.end {
+            self.render_span(span, y_pos, transform, source, &mut shadow_pixels);
+
+            // Skip on to the next item in the range
+            let Some(next_span) = span_iter.next() else { return; };
+            span = next_span;
+        }
 
         // Render the last span if it's clipped
+        while span.x_range.start < render_range.end {
+            // Clip this range
+            let mut clipped_span = span.clone();
+            clipped_span.x_range.start  = span.x_range.start.max(render_range.start);
+            clipped_span.x_range.end    = span.x_range.end.min(render_range.end);
+
+            // Render the span
+            self.render_span(&clipped_span, y_pos, transform, source, &mut shadow_pixels);
+
+            // Skip on to the next item in the range
+            let Some(next_span) = span_iter.next() else { return; };
+            span = next_span;
+        }
 
         // Done; the other parts of the range won't be rendered
     }
