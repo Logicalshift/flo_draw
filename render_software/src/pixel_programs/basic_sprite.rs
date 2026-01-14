@@ -83,7 +83,8 @@ where
         let scanplan = &scanline[0].1;
         let region   = ScanlineRenderRegion { y_pos: sprite_ypos, transform: sprite_transform };
 
-        data_cache.render(&region, scanplan, target);
+        let renderer = ScanlineRenderer::new(data_cache);
+        renderer.render_partial_from_ordered_plan(&region, (x_range.start as _)..(x_range.end as _), scanplan, target);
     }
 }
 
