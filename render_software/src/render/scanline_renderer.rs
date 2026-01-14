@@ -195,6 +195,23 @@ where
             }
         }
     }
+
+    ///
+    /// Renders the scanline plan within the specified range of pixels (clipping any region that's outside of this range)
+    ///
+    /// The spans in the plan are expected to be in ascending order for this to work
+    ///
+    pub fn render_partial(&self, region: &ScanlineRenderRegion, x_range: Range<usize>, source: &ScanlinePlan, dest: &mut [TProgramRunner::TPixel]) {
+        // Skip over the initial ranges
+
+        // Render the first span if it's clipped
+
+        // Render the spans that are within the range
+
+        // Render the last span if it's clipped
+
+        // Done; the other parts of the range won't be rendered
+    }
 }
 
 impl<TProgramRunner> Renderer for ScanlineRenderer<TProgramRunner>
