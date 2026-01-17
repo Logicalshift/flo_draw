@@ -107,7 +107,6 @@ where
             * canvas::Transform2D::scale(self.half_height_recip as _, self.half_height_recip as _);
 
         // Scale/translate to the viewport
-        let viewport_transform = canvas::Transform2D::translate(self.translation.0 as _, self.translation.1 as _) 
         let viewport_transform = canvas::Transform2D::translate((self.translation.0*self.scale.0) as _, (self.translation.1*self.scale.1) as _) 
             * canvas::Transform2D::scale(self.scale.0 as _, self.scale.1 as _);
 
