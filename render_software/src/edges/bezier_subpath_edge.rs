@@ -188,7 +188,21 @@ impl BezierPath for BezierSubpath {
 /// A bezier subpath can be used as the target of a bezier path factory
 ///
 impl BezierPathFactory for BezierSubpath {
-    fn from_points<FromIter: IntoIterator<Item=(Coord2, Coord2, Coord2)>>(start_point: Coord2, points: FromIter) -> Self {
+    #[inline]
+    fn from_points<FromIter: IntoIterator<Item=(Self::Point, Self::Point, Self::Point)>>(start_point: Self::Point, points: FromIter) -> Self {
+        if let Some(path) = Self::try_from_points(start_point, points) {
+            path
+        } else {
+            panic!("Bezier subpaths must have at least one curve in them");
+        }
+    }
+}
+
+impl BezierSubpath {
+    ///
+    /// If the points supplied can be arranged into a valid bezier subpath, returns it. Returns None if there aren't enough points
+    ///
+    pub fn try_from_points<FromIter: IntoIterator<Item=(Coord2, Coord2, Coord2)>>(start_point: Coord2, points: FromIter) -> Option<Self> {
         // This should be much smaller than a pixel: we exclude very short curves whose control polygon is smaller than this
         const MIN_DISTANCE: f64 = 1e-6;
 
@@ -253,19 +267,17 @@ impl BezierPathFactory for BezierSubpath {
         }
 
         if curves.len() == 0 {
-            panic!("Bezier subpaths must have at least one curve in them");
-        }
-
-        BezierSubpath {
-            curves:     curves,
-            space:      None,
-            x_bounds:   min_x..max_x,
-            y_bounds:   min_y..max_y
+            None
+        } else {
+            Some(BezierSubpath {
+                curves:     curves,
+                space:      None,
+                x_bounds:   min_x..max_x,
+                y_bounds:   min_y..max_y
+            })
         }
     }
-}
 
-impl BezierSubpath {
     ///
     /// Fills in the 'space' structure in preparation to retrieve intercepts using `intercepts_on_line()`
     ///
