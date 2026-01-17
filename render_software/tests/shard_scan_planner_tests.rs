@@ -117,6 +117,28 @@ pub fn triangle_45_degrees() {
 }
 
 #[test]
+pub fn zero_size() {
+    // Read the center line from a triangle with 45-degree edges
+    let plan = plan_layer_0_line_on_drawing(vec![
+        Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
+        Draw::CanvasHeight(1080.0),
+        Draw::CenterRegion((-540.0, -540.0), (540.0, 540.0)),
+        Draw::Path(PathOp::NewPath),
+        Draw::Path(PathOp::Move(0.0, 0.0)),
+        Draw::Path(PathOp::Line(0.0, 0.0)),
+        Draw::Path(PathOp::Line(0.0, 0.0)),
+        Draw::Path(PathOp::Line(0.0, 0.0)),
+        Draw::FillColor(Color::Rgba(1.0, 1.0, 1.0, 1.0)),
+        Draw::Fill
+    ], 0.0);
+
+    let spans = plan.spans();
+
+    // Should be no spans for a 0-size shape
+    assert!(spans.len() == 0, "Number of spans != 0 {:?}", plan);
+}
+
+#[test]
 pub fn tall_triangle() {
     for y in 300..900 {
         let pix_y = y;
