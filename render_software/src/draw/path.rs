@@ -128,7 +128,6 @@ impl DrawingState {
         TEdge: EdgeDescriptor
     {
         use std::iter;
-        use flo_canvas::curves::bezier::path::*;
 
         let mut edges = vec![];
 
@@ -136,19 +135,28 @@ impl DrawingState {
             if start_idx >= end_idx { continue; }
 
             // Use a path builder to create a simple bezier path
-            let mut path = BezierPathBuilder::<BezierSubpath>::start(self.path_edges[start_idx].start_point());
-            for curve in self.path_edges[start_idx..end_idx].iter() {
-                path = path.curve_to(curve.control_points(), curve.end_point());
-            }
+            let start_point = self.path_edges[start_idx].start_point;
+            let mut curves = self.path_edges[start_idx..end_idx]
+                .iter()
+                .map(|curve| {
+                    let (p1, p2) = curve.control_points();
+                    (p1, p2, curve.end_point())
+                })
+                .collect::<Vec<_>>();
 
             // Close if unclosed
             if self.path_edges[start_idx].start_point() != self.path_edges[end_idx-1].end_point() {
-                path = path.line_to(self.path_edges[start_idx].start_point());
+                let end_point = self.path_edges[end_idx-1].end_point();
+                let cp1 = ((start_point - end_point) * 0.333) + end_point;
+                let cp2 = ((end_point - start_point) * 0.333) + start_point;
+
+                curves.push((cp1, cp2, start_point));
             }
 
             // Add to the edges
-            let path = path.build();
-            edges.push(make_edge(path));
+            if let Some(path) = BezierSubpath::try_from_points(start_point, curves) {
+                edges.push(make_edge(path));
+            }
         }
 
         edges
