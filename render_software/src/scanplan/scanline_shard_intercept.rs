@@ -188,10 +188,19 @@ impl<'a> ScanlineShardInterceptState<'a> {
     }
 
     ///
+    /// Resets this state for reuse on a new scanline
+    ///
+    #[inline]
+    pub fn clear(&mut self) {
+        self.active_shapes.clear();
+        self.z_floor = i64::MIN;
+    }
+
+    ///
     /// The z-index of the lowest opaque item in this state (or `i64::MIN` if there's no floor)
     ///
     #[inline]
-    pub fn z_floor(&self) -> i64 { 
+    pub fn z_floor(&self) -> i64 {
         self.z_floor
     }
 

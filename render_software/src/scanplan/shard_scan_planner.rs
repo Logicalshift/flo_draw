@@ -48,6 +48,7 @@ where
         // Allocate scratch space
         let mut scanline_intercepts_scratch_space   = Vec::with_capacity(16);
         let mut program_stack                       = Vec::with_capacity(16);
+        let mut active_shapes                       = ScanlineShardInterceptState::new();
 
         // Map the x-range from the source coordinates to pixel coordinates
         let x_range = transform.source_x_to_pixels(x_range.start)..transform.source_x_to_pixels(x_range.end);
@@ -70,7 +71,7 @@ where
             let mut current_intercept = if let Some(intercept) = scanline_intercepts.next() { intercept } else { continue; };
 
             // Trace programs but don't generate fragments until we get an intercept
-            let mut active_shapes = ScanlineShardInterceptState::new();
+            active_shapes.clear();
 
             while current_intercept.x_pos() < x_range.start {
                 // Add or remove this intercept's programs to the active list
