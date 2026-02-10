@@ -45,6 +45,25 @@ pub struct ScanlinePlan {
     programs: Vec<PixelProgramPlan>,
 }
 
+///
+/// Scratch space for the ScanlinePlan::merge() call (used to save on allocations)
+///
+pub struct ScanlinePlanMergeScratchSpace {
+    scratch_space:  Vec<PixelProgramPlan>,
+    new_spans:      Vec<ScanSpanStack>,
+    new_programs:   Vec<PixelProgramPlan>,
+}
+
+impl ScanlinePlanMergeScratchSpace {
+    pub fn new() -> Self {
+        Self {
+            scratch_space:  Vec::with_capacity(64),
+            new_spans:      Vec::with_capacity(8),
+            new_programs:   Vec::with_capacity(8),
+        }
+    }
+}
+
 impl ScanSpanStack {
     ///
     /// Splits this stack at an x position (which should be within the range of this span)
@@ -193,10 +212,18 @@ impl ScanlinePlan {
     pub fn merge(&mut self, merge_with: &ScanlinePlan, merge_stacks: impl Fn(&mut Vec<PixelProgramPlan>, &[PixelProgramPlan], bool)) {
         // TODO: note that we can have issues with performance if we allocate a lot of vecs while rendering: consider re-using the scratch space here.
         // TODO: also consider making a way to do the merge in-place rather than copying the programs out and back in again
+        use std::mem;
+
+        let mut scratch = ScanlinePlanMergeScratchSpace::new();
 
         // Allocate space for the merged spans
-        let mut new_spans       = Vec::<ScanSpanStack>::with_capacity(self.spans.len());
-        let mut new_programs    = Vec::with_capacity(self.programs.len());
+        let new_spans           = &mut scratch.new_spans;
+        let new_programs        = &mut scratch.new_programs;
+        let scratch_space       = &mut scratch.scratch_space;
+
+        new_spans.clear();
+        new_programs.clear();
+        scratch_space.clear();
 
         {
             // Iterate on the current and merged spans, and look for overlaps
@@ -205,8 +232,6 @@ impl ScanlinePlan {
 
             let mut maybe_our_span      = our_span_iter.next();
             let mut maybe_merge_span    = merge_span_iter.next();
-
-            let mut scratch_space       = Vec::with_capacity(64);
 
             // We iterate both from left to right, and deal with overlaps
             while let (Some(our_span), Some(merge_span)) = (&mut maybe_our_span, &mut maybe_merge_span) {
@@ -255,7 +280,7 @@ impl ScanlinePlan {
 
                     // Create the merged set of programs. Scratch space is initially empty because it's drained later on.
                     scratch_space.extend(self.programs[our_span.plan.clone()].iter().copied());
-                    merge_stacks(&mut scratch_space, &merge_with.programs[merge_span.plan.clone()], merge_span.opaque);
+                    merge_stacks(scratch_space, &merge_with.programs[merge_span.plan.clone()], merge_span.opaque);
 
                     // Create the merged plan
                     let start   = our_span.x_range.start.max(merge_span.x_range.start);
@@ -315,8 +340,8 @@ impl ScanlinePlan {
         }
 
         // Replace the contents of this object with the new spans
-        self.spans      = new_spans;
-        self.programs   = new_programs;
+        mem::swap(&mut self.spans, new_spans);
+        mem::swap(&mut self.programs, new_programs);
 
         // Combine any adjacent spans that use the same program
         self.combine_adjacent_spans();
