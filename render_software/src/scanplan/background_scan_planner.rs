@@ -43,6 +43,8 @@ where
         let mut background_plan = ScanlinePlan::default();
         background_plan.push_next_range(x_range, true, [PixelProgramPlan::Run(self.background)]);
 
+        let mut merge_scratch = ScanlinePlanMergeScratchSpace::new();
+
         // Combine with the background program
         for (_ypos, scanline) in scanlines.iter_mut() {
             use std::mem;
@@ -58,7 +60,7 @@ where
                 }
 
                 src.extend(dst);
-            });
+            }, &mut merge_scratch);
         }
     }
 }

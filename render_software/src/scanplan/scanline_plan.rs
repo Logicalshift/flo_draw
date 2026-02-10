@@ -209,12 +209,9 @@ impl ScanlinePlan {
     /// The merged stack is opaque if either stack is opaque. The function is called with the set of pixel programs that are being merged into, the set
     /// from the new program, and whether or not the set in the new program are opaque.
     ///
-    pub fn merge(&mut self, merge_with: &ScanlinePlan, merge_stacks: impl Fn(&mut Vec<PixelProgramPlan>, &[PixelProgramPlan], bool)) {
-        // TODO: note that we can have issues with performance if we allocate a lot of vecs while rendering: consider re-using the scratch space here.
-        // TODO: also consider making a way to do the merge in-place rather than copying the programs out and back in again
+    pub fn merge(&mut self, merge_with: &ScanlinePlan, merge_stacks: impl Fn(&mut Vec<PixelProgramPlan>, &[PixelProgramPlan], bool), scratch: &mut ScanlinePlanMergeScratchSpace) {
+        // TODO: consider making a way to do the merge in-place rather than copying the programs out and back in again
         use std::mem;
-
-        let mut scratch = ScanlinePlanMergeScratchSpace::new();
 
         // Allocate space for the merged spans
         let new_spans           = &mut scratch.new_spans;

@@ -44,6 +44,8 @@ where
         let mut debug_plan  = ScanlinePlan::default();
         debug_plan.push_next_range(debug_range, true, [PixelProgramPlan::Run(self.debug_ypos_program)]);
 
+        let mut merge_scratch = ScanlinePlanMergeScratchSpace::new();
+
         // Combine with the debug program
         for (_ypos, scanline) in scanlines.iter_mut() {
             // The debug plan should be rendered over the top of the plan we generated
@@ -56,7 +58,7 @@ where
                 }
 
                 src.extend(dst);
-            });
+            }, &mut merge_scratch);
         }
     }
 }

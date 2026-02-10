@@ -230,9 +230,10 @@ where
 
     fn render(&self, region: &RenderSlice, source: &CanvasDrawing<TPixel, N>, dest: &mut [TPixel]) {
         // Convert y positions to between -1 and 1 (canvas coordinates)
-        let y_positions = self.convert_y_positions(&region.y_positions);
-        let x_range     = self.convert_width(region.width);
-        let transform   = ScanlineTransform::for_region(&x_range, region.width);
+        let y_positions         = self.convert_y_positions(&region.y_positions);
+        let x_range             = self.convert_width(region.width);
+        let transform           = ScanlineTransform::for_region(&x_range, region.width);
+        let mut merge_scratch   = ScanlinePlanMergeScratchSpace::new();
 
         // We need to plan scanlines for each layer, then merge them. The initial plan is just to fill the entire range with the background colour
         let mut scanlines       = y_positions.iter().copied()
@@ -264,7 +265,7 @@ where
                                 }
 
                                 src.extend(dst);
-                            })
+                            }, &mut merge_scratch)
                         })
                 } else if layer.alpha > 0.0 && layer.blend_mode == AlphaOperation::SourceOver {
                     // Blend the layers together using the source over operation
@@ -277,7 +278,7 @@ where
                                 src.push(PixelProgramPlan::StartBlend);
                                 src.extend(dst);
                                 src.push(PixelProgramPlan::SourceOver(alpha));
-                            })
+                            }, &mut merge_scratch)
                         })
                 } else if layer.alpha > 0.0 {
                     // Blend the layers together
@@ -291,7 +292,7 @@ where
                                 src.push(PixelProgramPlan::StartBlend);
                                 src.extend(dst);
                                 src.push(PixelProgramPlan::Blend(blend_mode, alpha));
-                            })
+                            }, &mut merge_scratch)
                         })
                 }
             }

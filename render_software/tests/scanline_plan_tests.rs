@@ -456,7 +456,8 @@ fn merge_span_over() {
     merge_plan.push_next_range(100.0..200.0, true, [PixelProgramPlan::Run(PixelProgramDataId(1))]);
 
     // Merge the two plans by overwriting one with the other
-    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); });
+    let mut scratch = ScanlinePlanMergeScratchSpace::new();
+    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); }, &mut scratch);
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
@@ -474,7 +475,8 @@ fn merge_span_over_start() {
     merge_plan.push_next_range(0.0..200.0, true, [PixelProgramPlan::Run(PixelProgramDataId(1))]);
 
     // Merge the two plans by overwriting one with the other
-    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); });
+    let mut scratch = ScanlinePlanMergeScratchSpace::new();
+    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); }, &mut scratch);
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
@@ -492,7 +494,8 @@ fn merge_span_over_end() {
     merge_plan.push_next_range(100.0..300.0, true, [PixelProgramPlan::Run(PixelProgramDataId(1))]);
 
     // Merge the two plans by overwriting one with the other
-    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); });
+    let mut scratch = ScanlinePlanMergeScratchSpace::new();
+    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); }, &mut scratch);
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
@@ -510,7 +513,8 @@ fn merge_span_over_start_overlap() {
     merge_plan.push_next_range(0.0..200.0, true, [PixelProgramPlan::Run(PixelProgramDataId(1))]);
 
     // Merge the two plans by overwriting one with the other
-    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); });
+    let mut scratch = ScanlinePlanMergeScratchSpace::new();
+    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); }, &mut scratch);
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
@@ -528,7 +532,8 @@ fn merge_span_over_end_overlap() {
     merge_plan.push_next_range(100.0..300.0, true, [PixelProgramPlan::Run(PixelProgramDataId(1))]);
 
     // Merge the two plans by overwriting one with the other
-    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); });
+    let mut scratch = ScanlinePlanMergeScratchSpace::new();
+    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); }, &mut scratch);
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
@@ -547,7 +552,8 @@ fn merge_span_fill_gap() {
     merge_plan.push_next_range(100.0..200.0, true, [PixelProgramPlan::Run(PixelProgramDataId(1))]);
 
     // Merge the two plans by overwriting one with the other
-    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); });
+    let mut scratch = ScanlinePlanMergeScratchSpace::new();
+    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); }, &mut scratch);
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
@@ -566,7 +572,8 @@ fn merge_span_join_regions() {
     merge_plan.push_next_range(100.0..200.0, true, [PixelProgramPlan::Run(PixelProgramDataId(1))]);
 
     // Merge the two plans by overwriting one with the other
-    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); });
+    let mut scratch = ScanlinePlanMergeScratchSpace::new();
+    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); }, &mut scratch);
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
@@ -585,7 +592,8 @@ fn merge_span_overlap_separate_regions() {
     merge_plan.push_next_range(100.0..200.0, true, [PixelProgramPlan::Run(PixelProgramDataId(2))]);
 
     // Merge the two plans by overwriting one with the other
-    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); });
+    let mut scratch = ScanlinePlanMergeScratchSpace::new();
+    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); }, &mut scratch);
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
@@ -606,7 +614,8 @@ fn merge_span_overlap_alternating_regions_1() {
     merge_plan.push_next_range(300.0..400.0, true, [PixelProgramPlan::Run(PixelProgramDataId(1))]);
 
     // Merge the two plans by overwriting one with the other
-    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); });
+    let mut scratch = ScanlinePlanMergeScratchSpace::new();
+    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); }, &mut scratch);
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
@@ -627,7 +636,8 @@ fn merge_span_overlap_alternating_regions_2() {
     merge_plan.push_next_range(400.0..500.0, true, [PixelProgramPlan::Run(PixelProgramDataId(0))]);
 
     // Merge the two plans by overwriting one with the other
-    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); });
+    let mut scratch = ScanlinePlanMergeScratchSpace::new();
+    plan.merge(&merge_plan, |src, merge, _is_opaque| { src.clear(); src.extend(merge); }, &mut scratch);
 
     // Read the span back again
     let spans = plan.iter_as_spans().collect::<Vec<_>>();
