@@ -103,13 +103,13 @@ impl ToGammaColorSpace<U8RgbaPremultipliedPixel> for U32LinearPixel {
             let gamma = 1.0/gamma;
             if gamma != gamma_lut.gamma() { *gamma_lut = U8GammaLut::new(gamma) };
 
-            for idx in 0..(input_pixels.len().min(output_pixels.len())) {
+            for (input, output) in input_pixels.iter().zip(output_pixels.iter_mut()) {
                 // Convert the pixel to u8 format and apply gamma correction
-                let rgba    = input_pixels[idx].0;
+                let rgba    = input.0;
 
                 // This produces SRGB format, where the values are pre-multiplied before gamma correction
                 let [r, g, b, a] = rgba.to_array();
-                output_pixels[idx] = U8RgbaPremultipliedPixel::from_components([
+                *output = U8RgbaPremultipliedPixel::from_components([
                     gamma_lut.look_up(r as _), 
                     gamma_lut.look_up(g as _), 
                     gamma_lut.look_up(b as _), 
@@ -134,13 +134,13 @@ impl ToGammaColorSpace<U32ArgbPremultipliedPixel> for U32LinearPixel {
             let gamma = 1.0/gamma;
             if gamma != gamma_lut.gamma() { *gamma_lut = U8GammaLut::new(gamma) };
 
-            for idx in 0..(input_pixels.len().min(output_pixels.len())) {
+            for (input, output) in input_pixels.iter().zip(output_pixels.iter_mut()) {
                 // Convert the pixel to u8 format and apply gamma correction
-                let rgba    = input_pixels[idx].0;
+                let rgba    = input.0;
 
                 // This produces SRGB format, where the values are pre-multiplied before gamma correction
                 let [r, g, b, a] = rgba.to_array();
-                output_pixels[idx] = U32ArgbPremultipliedPixel::from_rgba_components(
+                *output = U32ArgbPremultipliedPixel::from_rgba_components(
                     gamma_lut.look_up(r as _), 
                     gamma_lut.look_up(g as _), 
                     gamma_lut.look_up(b as _), 
