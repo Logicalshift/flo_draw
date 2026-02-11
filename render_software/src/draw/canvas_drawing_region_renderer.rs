@@ -38,6 +38,9 @@ where
     /// The scanline renderer
     line_renderer: TLineRenderer,
 
+    /// Allocated scratch space to share between tasks
+    scratch_space: Mutex<Vec<ScanlinePlanMergeScratchSpace>>,
+
     /// Type of a pixel
     pixel: PhantomData<TPixel>,
 }
@@ -59,6 +62,7 @@ where
             translation:        (0.0, 0.0),
             scan_planner:       planner,
             line_renderer:      line_renderer,
+            scratch_space:      Mutex::new(vec![]),
             pixel:              PhantomData,
         }
     }
@@ -233,7 +237,17 @@ where
         let y_positions         = self.convert_y_positions(&region.y_positions);
         let x_range             = self.convert_width(region.width);
         let transform           = ScanlineTransform::for_region(&x_range, region.width);
-        let mut merge_scratch   = ScanlinePlanMergeScratchSpace::new();
+        
+        // Scratch space is used for the merge() operation
+        let mut merge_scratch   = {
+            let mut scratch_space = self.scratch_space.lock().unwrap();
+
+            if let Some(scratch_space) = scratch_space.pop() {
+                scratch_space
+            } else {
+                ScanlinePlanMergeScratchSpace::new()
+            }
+        };
 
         // We need to plan scanlines for each layer, then merge them. The initial plan is just to fill the entire range with the background colour
         let mut scanlines       = y_positions.iter().copied()
@@ -297,6 +311,9 @@ where
                 }
             }
         }
+
+        // Scratch space can be available for other renderers at this point
+        self.scratch_space.lock().unwrap().push(merge_scratch);
 
         // Pass the scanlines on to the line renderer to produce the final result
         let mut lines  = dest.chunks_exact_mut(region.width);
