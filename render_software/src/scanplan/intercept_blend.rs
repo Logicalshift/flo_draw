@@ -78,11 +78,15 @@ fn apply(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
             }
         } else {
             // Range1 starts after range2
-            InterceptBlend::LinearFadeWithLimit {
-                a: a3, b: b3,
-                limit: range1.end,
-                next: Box::new(InterceptBlend::LinearFade {
-                    a: a2, b: b2
+            InterceptBlend::LinearFadeWithLimit { 
+                a: a2, b: b2, 
+                limit: range1.start, 
+                next: Box::new(InterceptBlend::LinearFadeWithLimit {
+                    a: a3, b: b3,
+                    limit: range1.end,
+                    next: Box::new(InterceptBlend::LinearFade {
+                        a: a2, b: b2
+                    })
                 })
             }
         }
@@ -113,10 +117,14 @@ fn apply(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
         } else {
             // Range2 starts after range1
             InterceptBlend::LinearFadeWithLimit {
-                a: a3, b: b3,
-                limit: range2.end,
-                next: Box::new(InterceptBlend::LinearFade {
-                    a: a1, b: b1
+                a: a1, b: b1,
+                limit: range2.start,
+                next: Box::new(InterceptBlend::LinearFadeWithLimit {
+                    a: a3, b: b3,
+                    limit: range2.end,
+                    next: Box::new(InterceptBlend::LinearFade {
+                        a: a1, b: b1
+                    })
                 })
             }
         }
