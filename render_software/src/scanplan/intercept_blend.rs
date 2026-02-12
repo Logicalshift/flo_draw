@@ -375,7 +375,7 @@ impl InterceptBlend {
 
                                 InterceptBlend::LinearFadeWithLimit { a, b, limit, next } => {
                                     // Blend in this section of the pixel
-                                    let pixel_limit = (*limit).max(x+1.0);
+                                    let pixel_limit = (*limit).min(x+1.0);
                                     let ratio       = pixel_limit - last_x;
                                     let coverage    = alpha_coverage(a*last_x+b, a*pixel_limit+b);
 
