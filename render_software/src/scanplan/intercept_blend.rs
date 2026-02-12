@@ -104,7 +104,7 @@ fn apply(a1: f64, b1: f64, a2: f64, b2: f64) -> InterceptBlend {
                 limit: range1.start,
                 next: Box::new(InterceptBlend::LinearFadeWithLimit { 
                     a: a3, b: b3, 
-                    limit: range1.end, 
+                    limit: range2.end, 
                     next: Box::new(InterceptBlend::LinearFade {
                         a: a1, b: b1
                     })
