@@ -7,6 +7,7 @@ use flo_render_software::draw::*;
 use flo_render_software::canvas::*;
 use flo_render_software::edgeplan::EdgeDescriptor;
 use flo_render_software::pixel::*;
+use flo_render_software::render::*;
 use flo_render_software::scanplan::*;
 use flo_render_software::curves::bezier::path::{SimpleBezierPath};
 
@@ -102,6 +103,50 @@ fn shard_scan_planner_line_61_always_the_same() {
 #[test]
 fn shard_scan_planner_line_9_always_the_same() {
     check_mascot_scanlines_always_the_same(9.0, ShardScanPlanner::default());
+}
+
+#[test]
+fn mascot_line_523() {
+    let scan_planner = ShardScanPlanner::<Arc<dyn EdgeDescriptor>>::default();
+
+    // Render the mascot to a canvas
+    let mut canvas  = CanvasDrawing::<F32LinearPixel, 4>::empty();
+    let mut gc      = vec![];
+
+    gc.clear_canvas(Color::Rgba(1.0, 1.0, 1.0, 1.0));
+    gc.layer(LayerId(0));
+    gc.canvas_height(1024.0);
+    gc.transform(Transform2D::scale(1.0, -1.0));
+    gc.center_region(0.0, 0.0, 1024.0, 1024.0);
+    gc.line_join(LineJoin::Miter);
+    gc.extend(mascot_drawing());
+
+    canvas.draw(gc);
+
+    // Create a renderer
+    let renderer = CanvasDrawingRegionRenderer::<_, _, F32LinearPixel, 4>::new(scan_planner, ScanlineRenderer::new(canvas.program_runner(1080.0)), 1080);
+
+    // Render line 523 repeatedly
+    let region      = RenderSlice { width: 1920, y_positions: vec![523.0; 8] };
+    let mut pixels  = vec![F32LinearPixel::default(); 1920*8];
+    renderer.render(&region, &canvas, &mut pixels);
+
+    let mut mismatch = vec![];
+
+    for line in 0..7 {
+        let line1 = &pixels[(line*1920)..(line*1920+1920)];
+        let line2 = &pixels[(line*1920 + 1920)..(line*1920+1920+1920)];
+
+        for (px1, px2) in line1.iter().zip(line2.iter()) {
+            if px1 != px2 {
+                println!("{}: {:?} != {:?}", line, px1, px2);
+                mismatch.push(line);
+                break;
+            }
+        }
+    }
+
+    assert!(mismatch.is_empty(), "Lines do not match: {:?}", mismatch);
 }
 
 ///
