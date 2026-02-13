@@ -237,7 +237,7 @@ where
         let y_positions         = self.convert_y_positions(&region.y_positions);
         let x_range             = self.convert_width(region.width);
         let transform           = ScanlineTransform::for_region(&x_range, region.width);
-        
+
         // Scratch space is used for the merge() operation
         let mut merge_scratch   = {
             let mut scratch_space = self.scratch_space.lock().unwrap();
