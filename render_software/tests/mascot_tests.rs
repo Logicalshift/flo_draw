@@ -106,7 +106,7 @@ fn shard_scan_planner_line_9_always_the_same() {
 }
 
 #[test]
-fn mascot_line_523() {
+fn mascot_line_523_region_renderer() {
     let scan_planner = ShardScanPlanner::<Arc<dyn EdgeDescriptor>>::default();
 
     // Render the mascot to a canvas
@@ -138,6 +138,73 @@ fn mascot_line_523() {
         let line2 = &pixels[(line*1920 + 1920)..(line*1920+1920+1920)];
 
         for (px1, px2) in line1.iter().zip(line2.iter()) {
+            if px1 != px2 {
+                println!("{}: {:?} != {:?}", line, px1, px2);
+                mismatch.push(line);
+                break;
+            }
+        }
+    }
+
+    assert!(mismatch.is_empty(), "Lines do not match: {:?}", mismatch);
+}
+
+#[test]
+fn mascot_line_523_scanlines() {
+    let scan_planner = ShardScanPlanner::<Arc<dyn EdgeDescriptor>>::default();
+
+    // Render the mascot to a canvas
+    let mut canvas  = CanvasDrawing::<F32LinearPixel, 4>::empty();
+    let mut gc      = vec![];
+
+    gc.clear_canvas(Color::Rgba(1.0, 1.0, 1.0, 1.0));
+    gc.layer(LayerId(0));
+    gc.canvas_height(1024.0);
+    gc.transform(Transform2D::scale(1.0, -1.0));
+    gc.center_region(0.0, 0.0, 1024.0, 1024.0);
+    gc.line_join(LineJoin::Miter);
+    gc.extend(mascot_drawing());
+
+    canvas.draw(gc);
+
+    // Render line 523 repeatedly
+    fn convert_y_positions(y_positions: &[f64]) -> Vec<f64> {
+        let mut result = Vec::with_capacity(y_positions.len());
+
+        let half_height_recip   = 1.0/((1080.0 as f64)/2.0);
+        let translation         = (0.0, 0.0);
+        let scale               = (1.0, 1.0);
+
+        result.extend(y_positions.iter()
+            .map(|ypos| (ypos * half_height_recip - 1.0 + translation.1) * scale.1));
+
+        result
+    }
+
+    let width       = 1980 as f64;
+    let half_width  = width/2.0;
+    let ratio       = half_width / 540.0;
+
+    let left        = (-ratio + 0.0) * 1.0;
+    let right       = (ratio + 0.0) * 1.0;
+
+    let x_range     = left..right;
+
+    let region      = RenderSlice { width: 1920, y_positions: vec![523.0; 8] };
+    let y_positions = convert_y_positions(&vec![523.0; 8]);
+    let layer       = canvas.edges_for_layer(NamespaceId::default(), LayerId(0)).unwrap();
+    let transform   = ScanlineTransform::for_region(&x_range, region.width);
+
+    let mut scanlines = vec![(0.0, ScanlinePlan::default()); 8];
+    scan_planner.plan_scanlines(&layer, &transform, &y_positions, x_range, &mut scanlines);
+
+    let mut mismatch = vec![];
+
+    for line in 0..7 {
+        let line1 = &scanlines[line];
+        let line2 = &scanlines[line+1];
+
+        for (px1, px2) in line1.1.iter_as_spans().zip(line2.1.iter_as_spans()) {
             if px1 != px2 {
                 println!("{}: {:?} != {:?}", line, px1, px2);
                 mismatch.push(line);
