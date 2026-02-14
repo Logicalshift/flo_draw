@@ -270,7 +270,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
     /// Retrieves the intercept at the specified position on the stack
     ///
     #[inline]
-    pub fn get(&self, idx: usize) -> Option<&ScanlineShardIntercept> {
+    pub fn get(&self, idx: usize) -> Option<&ScanlineShardIntercept<'a>> {
         self.active_shapes.get(idx)
     }
 
