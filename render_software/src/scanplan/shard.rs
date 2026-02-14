@@ -199,6 +199,9 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
 /// updated to contain the intercepts for the corresponding start/end region.
 ///
 pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, start_y_positions: &'a [f64], end_y_positions: &'a [f64], output: &mut [Vec<ShardIntercept>]) {
+    // TODO: iteration/check is only needed here because the caller doesn't guarantee a set of matched pairs (or even better: just a list of positions where each pair is a start and end position)
+    // TODO: maybe even more performance to be had by using preallocated scratch space
+
     let mut intercepts;
 
     let (start_intercepts, end_intercepts) = if start_y_positions.iter().skip(1).zip(end_y_positions.iter().take(end_y_positions.len()-1)).all(|(a, b)| (a-b).abs() < 1e-7) {
