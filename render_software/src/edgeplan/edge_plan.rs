@@ -433,8 +433,10 @@ where
         });
 
         // Process every edge description in this range
-        let mut intercepts  = vec![Vec::with_capacity(4); output.len()];
-        let mut apexes      = Vec::with_capacity(8);
+        let mut intercepts              = vec![Vec::with_capacity(4); output.len()];
+        let mut apexes                  = Vec::with_capacity(8);
+        let mut line_apexes             = vec![];
+        let mut sub_pixel_intercepts    = vec![Vec::with_capacity(8); 4];
 
         for edge_idx in self.edge_space.data_in_region(y_min..(y_max+1e-6)) {
             // Process the shards from this edge
@@ -469,7 +471,9 @@ where
                     if let Some(apex_pos) = next_apex {
                         if *apex_pos <= y_range.end {
                             // Find the apexes that apply to this line
-                            let mut line_apexes = vec![y_range.start];
+                            line_apexes.clear();
+                            line_apexes.push(y_range.start);
+
                             let mut last_apex   = y_range.start;
                             loop {
                                 if let Some(apex_pos) = next_apex {
@@ -493,12 +497,19 @@ where
                             line_apexes.push((last_apex + y_range.end) * 0.5);
                             line_apexes.push(y_range.end);
 
+                            // Clear the scratch buffers
+                            while sub_pixel_intercepts.len() < line_apexes.len() - 1 {
+                                sub_pixel_intercepts.push(Vec::with_capacity(8));
+                            }
+                            sub_pixel_intercepts.iter_mut().take(line_apexes.len()-1).for_each(|intercepts| intercepts.clear());
+
+                            let sub_pixel_intercepts = &mut sub_pixel_intercepts[0..(line_apexes.len()-1)];
+
                             // Compute sub-pixel shards for each pair of apexes
-                            let mut sub_pixel_intercepts    = vec![Vec::with_capacity(8); line_apexes.len()-1];
                             let sub_pixel_y_starts          = &line_apexes[0..(line_apexes.len()-1)];
                             let sub_pixel_y_ends            = &line_apexes[1..line_apexes.len()];
 
-                            shard_intercepts_from_edge(&edge.edge, sub_pixel_y_starts, sub_pixel_y_ends, &mut sub_pixel_intercepts);
+                            shard_intercepts_from_edge(&edge.edge, sub_pixel_y_starts, sub_pixel_y_ends, &mut *sub_pixel_intercepts);
 
                             // Generate sub-pixel shards from these results
                             let sub_pixel_ranges            = sub_pixel_y_starts.iter().zip(sub_pixel_y_ends).map(|(y1, y2)| y1..y2);
