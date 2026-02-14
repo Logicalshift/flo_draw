@@ -224,27 +224,6 @@ pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, st
         if previous_line.len() == 0 || next_line.len() == 0 {
             // There are no shards in an empty line, so the other line doesn't matter (this is commonly the initial/final line for a convex shape)
             intercepts.clear();
-        } else if previous_line.len() == next_line.len() && false {
-            // TODO: is this optimisation worth it? It's faster to just match everything rather than resolve them, but the time is spent elsewhere at the moment
-
-            // Try the simple case, and then try finding the nearest matches if it fails
-            intercepts.clear();
-
-            for (first, second) in previous_line.iter().zip(next_line.iter()) {
-                if first.direction != second.direction || first.position.0 != second.position.0 {
-                    // Intercept direction or shape has changed, so these shapes don't match: use the 'find nearest' algorithm instead (this is a concave shape)
-                    // (Eg: a 'C' shape with a very narrow gap)
-                    resolve_shards(&previous_line, &next_line, intercepts);
-                    break;
-                }
-
-                // Add a new intercept to the list
-                intercepts.push(ShardIntercept {
-                    direction:  first.direction,
-                    x_start:    first.x_pos.min(second.x_pos),
-                    x_end:      first.x_pos.max(second.x_pos),
-                })
-            }
         } else {
             // Shards are formed by finding the nearest intercept to each point
             // (Eg, the end of a spike in a concave shape)
