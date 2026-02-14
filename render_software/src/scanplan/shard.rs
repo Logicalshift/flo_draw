@@ -199,21 +199,45 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
 /// updated to contain the intercepts for the corresponding start/end region.
 ///
 pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, start_y_positions: &'a [f64], end_y_positions: &'a [f64], output: &mut [Vec<ShardIntercept>]) {
-    // Read the positions of the start intercepts for each y-position
-    let mut start_intercepts = vec![Vec::with_capacity(8); start_y_positions.len()];
-    edge.intercepts(start_y_positions, &mut start_intercepts);
+    let mut intercepts;
 
-    start_intercepts.iter_mut()
-        .for_each(|intercept_line| intercept_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos)));
+    let (start_intercepts, end_intercepts) = if start_y_positions.iter().skip(1).eq(end_y_positions.iter().take(end_y_positions.len()-1)) {
+        // Start positions and end positions are the same
+        intercepts = vec![Vec::with_capacity(8); start_y_positions.len() + 1];
 
-    // Read the end intercepts (TODO: can maybe speed this up and only read the last one as very often end_y_positions[x] = start_y_positions[x+1])
-    // TODO: if we just take a list of y-positions instead of 'start' and 'end' positions, we can match them up to make start/end lists
-    let mut end_intercepts = vec![Vec::with_capacity(8); end_y_positions.len()];
-    edge.intercepts(end_y_positions, &mut end_intercepts);
+        // Common case where the start and end positions are the same (so we only need to compute one set)
+        let combined_positions = start_y_positions
+            .iter()
+            .copied()
+            .chain(end_y_positions.last().into_iter().copied())
+            .collect::<Vec<_>>();
 
-    // TODO: can avoid sorting things that we already fetched with the start intercepts
-    end_intercepts.iter_mut()
-        .for_each(|intercept_line| intercept_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos)));
+        // Calculate one set of intercepts for both the start and end positions
+        edge.intercepts(&combined_positions, &mut intercepts);
+        intercepts.iter_mut()
+            .for_each(|intercept_line| intercept_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos)));
+
+        (&intercepts[0..start_y_positions.len()], &intercepts[1..start_y_positions.len()+1])
+    } else {
+        // Positions are non-homogenous
+        intercepts = vec![Vec::with_capacity(8); start_y_positions.len() + end_y_positions.len()];
+        let (start_intercepts, end_intercepts) = intercepts.split_at_mut(start_y_positions.len());
+
+        // Read the positions of the start intercepts for each y-position
+        edge.intercepts(start_y_positions, start_intercepts);
+
+        // Read the end intercepts (TODO: can maybe speed this up and only read the last one as very often end_y_positions[x] = start_y_positions[x+1])
+        edge.intercepts(end_y_positions, end_intercepts);
+
+        // Sort into intercept order
+        // TODO: can avoid sorting things that we already fetched with the start intercepts
+        start_intercepts.iter_mut()
+            .for_each(|intercept_line| intercept_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos)));
+        end_intercepts.iter_mut()
+            .for_each(|intercept_line| intercept_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos)));
+
+        (&*start_intercepts, &*end_intercepts)
+    };
 
     // Generate the shart intercepts
     for ((previous_line, next_line), intercepts) in start_intercepts.into_iter().zip(end_intercepts.into_iter()).zip(output.iter_mut()) {
