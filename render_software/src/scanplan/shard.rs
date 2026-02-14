@@ -201,7 +201,7 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
 pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, start_y_positions: &'a [f64], end_y_positions: &'a [f64], output: &mut [Vec<ShardIntercept>]) {
     let mut intercepts;
 
-    let (start_intercepts, end_intercepts) = if start_y_positions.iter().skip(1).eq(end_y_positions.iter().take(end_y_positions.len()-1)) {
+    let (start_intercepts, end_intercepts) = if start_y_positions.iter().skip(1).zip(end_y_positions.iter().take(end_y_positions.len()-1)).all(|(a, b)| (a-b).abs() < 1e-7) {
         // Start positions and end positions are the same
         intercepts = vec![Vec::with_capacity(8); start_y_positions.len() + 1];
 
