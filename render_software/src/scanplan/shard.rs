@@ -229,11 +229,10 @@ pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, st
         // Read the positions of the start intercepts for each y-position
         edge.intercepts(start_y_positions, start_intercepts);
 
-        // Read the end intercepts (TODO: can maybe speed this up and only read the last one as very often end_y_positions[x] = start_y_positions[x+1])
+        // Read the end intercepts
         edge.intercepts(end_y_positions, end_intercepts);
 
         // Sort into intercept order
-        // TODO: can avoid sorting things that we already fetched with the start intercepts
         start_intercepts.iter_mut()
             .for_each(|intercept_line| intercept_line.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos)));
         end_intercepts.iter_mut()
