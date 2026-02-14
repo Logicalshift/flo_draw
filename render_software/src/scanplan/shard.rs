@@ -209,6 +209,7 @@ pub fn shard_intercepts_from_edge<'a, TEdge: EdgeDescriptor>(edge: &'a TEdge, st
         intercepts = vec![Vec::with_capacity(8); start_y_positions.len() + 1];
 
         // Common case where the start and end positions are the same (so we only need to compute one set)
+        // TODO: if we only allowed homogenous start positions, could pass this in as a parameter
         let combined_positions = start_y_positions
             .iter()
             .copied()
