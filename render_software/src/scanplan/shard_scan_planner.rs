@@ -139,7 +139,7 @@ where
                                             is_opaque = true;
                                             break;
                                         }
-                                        subpixel = None;
+                                        subpixel = Some(ShardSubPixel::from(intercept));
                                     } else {
                                         // Combine with the existing subpixel
                                         active_subpixel.combine(intercept);
