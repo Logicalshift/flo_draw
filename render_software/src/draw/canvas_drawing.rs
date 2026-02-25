@@ -169,6 +169,7 @@ where
                 ClearAllLayers                                      => { self.clear_all_layers(); },
                 SwapLayers(layer_1, layer_2)                        => { self.swap_layers(layer_1, layer_2); },
                 PlaceLayerBefore(namespace_id, layer_id)            => { self.place_layer_before(namespace_id, layer_id); }
+                SetLayerTransform(layer_transform)                  => { todo!() }
 
                 Path(path_op)                                       => { self.current_state.path_op(path_op); },
                 Fill                                                => { self.fill(); },
