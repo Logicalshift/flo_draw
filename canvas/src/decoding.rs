@@ -2394,6 +2394,11 @@ mod test {
     }
 
     #[test]
+    fn decode_set_layer_transform() {
+        check_round_trip_single(Draw::SetLayerTransform(Transform2D([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])));
+    }
+
+    #[test]
     fn decode_clear_layer() {
         check_round_trip_single(Draw::ClearLayer);
     }
@@ -2668,6 +2673,7 @@ mod test {
             Draw::ClearAllLayers,
             Draw::SwapLayers(LayerId(1), LayerId(2)),
             Draw::PlaceLayerBefore(NamespaceId::new(), LayerId(3)),
+            Draw::SetLayerTransform(Transform2D([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])),
             Draw::Path(PathOp::NewPath),
             Draw::Sprite(SpriteId(1000)),
             Draw::ClearSprite,
@@ -2737,6 +2743,7 @@ mod test {
             Draw::Layer(LayerId(21)),
             Draw::LayerBlend(LayerId(22), BlendMode::DestinationOut),
             Draw::LayerAlpha(LayerId(23), 0.4),
+            Draw::SetLayerTransform(Transform2D([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])),
             Draw::ClearLayer,
             Draw::ClearAllLayers,
             Draw::SwapLayers(LayerId(1), LayerId(2)),
