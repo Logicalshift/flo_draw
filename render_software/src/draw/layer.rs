@@ -43,20 +43,28 @@ pub struct Layer {
 
     /// The total number of times this layer has been changed
     pub (super) edit_count: usize,
+
+    /// The transform to apply to this layer when rendering it
+    pub (super) layer_transform: canvas::Transform2D,
+
+    /// If the layer is a rotation, these are the transformed edges we use for the 
+    pub (super) transformed_edges: Option<EdgePlan<Arc<dyn EdgeDescriptor>>>,
 }
 
 impl Default for Layer {
     fn default() -> Self {
         Layer { 
-            alpha:          1.0,
-            last_transform: canvas::Transform2D::identity(),
-            blend_mode:     AlphaOperation::SourceOver,
-            edges:          EdgePlan::new(),
-            stored_edges:   vec![],
-            used_data:      vec![],
-            stored_data:    vec![],
-            z_index:        0,
-            edit_count:     0,
+            alpha:              1.0,
+            last_transform:     canvas::Transform2D::identity(),
+            blend_mode:         AlphaOperation::SourceOver,
+            edges:              EdgePlan::new(),
+            stored_edges:       vec![],
+            used_data:          vec![],
+            stored_data:        vec![],
+            z_index:            0,
+            edit_count:         0,
+            layer_transform:    canvas::Transform2D::identity(),
+            transformed_edges:  None,
         }
     }
 }
@@ -232,15 +240,17 @@ where
 
             // Create a copy of the layer
             Layer {
-                alpha:          layer.alpha,
-                last_transform: layer.last_transform,
-                blend_mode:     layer.blend_mode,
-                edges:          layer.edges.clone(),
-                used_data:      layer.used_data.clone(),
-                stored_edges:   layer.stored_edges.clone(),
-                stored_data:    layer.stored_data.clone(),
-                z_index:        layer.z_index,
-                edit_count:     layer.edit_count,
+                alpha:              layer.alpha,
+                last_transform:     layer.last_transform,
+                blend_mode:         layer.blend_mode,
+                edges:              layer.edges.clone(),
+                used_data:          layer.used_data.clone(),
+                stored_edges:       layer.stored_edges.clone(),
+                stored_data:        layer.stored_data.clone(),
+                z_index:            layer.z_index,
+                edit_count:         layer.edit_count,
+                layer_transform:    layer.layer_transform,
+                transformed_edges:  None,
             }
         } else {
             // Just use an empty default layer if this layer isn't created yet
@@ -357,6 +367,19 @@ where
             self.ordered_layers.insert(before_idx, moving_layer);
         } else {
             panic!("Layer is missing from the ordered layers list");
+        }
+    }
+
+    ///
+    /// Sets the transform to apply to the layer
+    ///
+    pub (crate) fn set_layer_transform(&mut self, layer_transform: canvas::Transform2D) {
+        let current_transform = self.current_state.transform;
+
+        if let Some(layer) = self.layer(self.current_layer) {
+            if let Some(inverse_transform) = current_transform.invert() {
+                layer.layer_transform = current_transform * layer_transform * inverse_transform;
+            }
         }
     }
 

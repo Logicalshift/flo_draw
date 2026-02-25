@@ -1275,11 +1275,13 @@ impl<'a> Stream for RenderStream<'a> {
                 render_state.is_clear       = Some(layer_buffer_is_clear);
                 render_state.invalid_bounds = invalid_bounds;
                 let next_layer_handle       = core.layer(layer_handle).following_layer;
+                let layer_transform         = core.layer(layer_handle).layer_transform;
+                let effective_viewport      = viewport_transform * layer_transform;
 
                 let mut render_layer        = VecDeque::new();
 
                 render_layer.extend(send_vertex_buffers);
-                render_layer.extend(core.render_layer(viewport_transform, layer_handle, MAIN_RENDER_TARGET, &mut render_state));
+                render_layer.extend(core.render_layer(effective_viewport, layer_handle, MAIN_RENDER_TARGET, &mut render_state));
                 render_layer.extend(RenderStreamState::new(viewport_size).update_from_state(&render_state));
 
                 // The state will update to indicate if the layer buffer is clear or not for the next layer

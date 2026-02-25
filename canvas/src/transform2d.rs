@@ -149,6 +149,16 @@ impl Transform2D {
     }
 
     ///
+    /// Returns true if this transform performs a rotation, or false if the transform is just a scale
+    /// and a translation
+    ///
+    #[inline]
+    pub fn is_rotation(&self) -> bool {
+        let Transform2D(a) = self;
+        a[0][1] != 0.0 || a[1][0] != 0.0
+    }
+
+    ///
     /// Returns an inverted Transform2D
     ///
     #[inline]
@@ -242,6 +252,21 @@ mod test {
         let (x, y)      = inverse.transform_point(40.0, 90.0);
         assert!((y-30.0).abs() < 0.01);
         assert!((x-20.0).abs() < 0.01);
+    }
+
+    #[test]
+    pub fn no_rotation_for_scale_translate() {
+        assert!(!Transform2D::identity().is_rotation());
+        assert!(!Transform2D::translate(10.0, 20.0).is_rotation());
+        assert!(!Transform2D::scale(2.0, 3.0).is_rotation());
+        assert!(!(Transform2D::scale(2.0, 3.0) * Transform2D::translate(10.0, 20.0)).is_rotation());
+    }
+
+    #[test]
+    pub fn has_rotation_for_rotated_transform() {
+        assert!(Transform2D::rotate(1.0).is_rotation());
+        assert!(Transform2D::rotate_degrees(45.0).is_rotation());
+        assert!((Transform2D::rotate(0.5) * Transform2D::translate(10.0, 20.0)).is_rotation());
     }
 
     #[test]

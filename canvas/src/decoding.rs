@@ -398,6 +398,7 @@ enum DecoderState {
     NewLayer(String),                           // 'NL' (id)
     NewLayerBlend(DecodeLayerId, String),       // 'NB' (id, mode)
     NewLayerAlpha(DecodeLayerId, String),       // 'Nt' (id, alpha)
+    SetLayerTransform(String),                  // 'NT' (transform)
     SwapLayers(Option<LayerId>, String),        // 'NX' (layer1, layer2)
     PlaceLayerBefore(Option<NamespaceId>, String), // 'NO' (namespace_id, layer_id)
 
@@ -537,6 +538,7 @@ impl CanvasDecoder {
             NewLayer(param)                     => Self::decode_new_layer(next_chr, param)?,
             NewLayerBlend(layer, blend)         => Self::decode_new_layer_blend(next_chr, layer, blend)?,
             NewLayerAlpha(layer, alpha)         => Self::decode_new_layer_alpha(next_chr, layer, alpha)?,
+            SetLayerTransform(param)            => Self::decode_layer_transform(next_chr, param)?,
             SwapLayers(layer1, param)           => Self::decode_swap_layers(next_chr, layer1, param)?,
             PlaceLayerBefore(namespace, param)  => Self::decode_place_layer_before(next_chr, namespace, param)?,
 
@@ -638,6 +640,7 @@ impl CanvasDecoder {
             'L'     => Ok((DecoderState::NewLayer(String::new()), None)),
             'B'     => Ok((DecoderState::NewLayerBlend(PartialResult::MatchMore(String::new()), String::new()), None)),
             't'     => Ok((DecoderState::NewLayerAlpha(PartialResult::MatchMore(String::new()), String::new()), None)),
+            'T'     => Ok((DecoderState::SetLayerTransform(String::new()), None)),
             'O'     => Ok((DecoderState::PlaceLayerBefore(None, String::new()), None)),
             'X'     => Ok((DecoderState::SwapLayers(None, String::new()), None)),
             's'     => Ok((DecoderState::NewSprite(String::new()), None)),
@@ -1140,6 +1143,25 @@ impl CanvasDecoder {
                     Ok((DecoderState::None, Some(Draw::LayerAlpha(layer_id, Self::decode_f32(&mut alpha.chars())?))))
                 }
             }
+        }
+    }
+
+    #[inline] fn decode_layer_transform(next_chr: char, mut param: String) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        if param.len() < 53 {
+            param.push(next_chr);
+            Ok((DecoderState::SetLayerTransform(param), None))
+        } else {
+            param.push(next_chr);
+            let mut param = param.chars();
+
+            let mut matrix = [0.0; 9];
+            for entry in 0..9 {
+                matrix[entry] = Self::decode_f32(&mut param)?;
+            }
+
+            let transform = Transform2D([[matrix[0], matrix[1], matrix[2]], [matrix[3], matrix[4], matrix[5]], [matrix[6], matrix[7], matrix[8]]]);
+
+            Ok((DecoderState::None, Some(Draw::SetLayerTransform(transform))))
         }
     }
 
@@ -2372,6 +2394,11 @@ mod test {
     }
 
     #[test]
+    fn decode_set_layer_transform() {
+        check_round_trip_single(Draw::SetLayerTransform(Transform2D([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])));
+    }
+
+    #[test]
     fn decode_clear_layer() {
         check_round_trip_single(Draw::ClearLayer);
     }
@@ -2646,6 +2673,7 @@ mod test {
             Draw::ClearAllLayers,
             Draw::SwapLayers(LayerId(1), LayerId(2)),
             Draw::PlaceLayerBefore(NamespaceId::new(), LayerId(3)),
+            Draw::SetLayerTransform(Transform2D([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])),
             Draw::Path(PathOp::NewPath),
             Draw::Sprite(SpriteId(1000)),
             Draw::ClearSprite,
@@ -2715,6 +2743,7 @@ mod test {
             Draw::Layer(LayerId(21)),
             Draw::LayerBlend(LayerId(22), BlendMode::DestinationOut),
             Draw::LayerAlpha(LayerId(23), 0.4),
+            Draw::SetLayerTransform(Transform2D([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])),
             Draw::ClearLayer,
             Draw::ClearAllLayers,
             Draw::SwapLayers(LayerId(1), LayerId(2)),

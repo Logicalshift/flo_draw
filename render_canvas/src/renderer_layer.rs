@@ -35,6 +35,9 @@ pub struct Layer {
 
     /// The layer that should be rendered on top of this one (None if there are no following layers)
     pub following_layer: Option<LayerHandle>,
+
+    /// The transform to apply to this layer when rendering it
+    pub layer_transform: canvas::Transform2D,
 }
 
 impl Layer {

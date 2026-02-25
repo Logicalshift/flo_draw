@@ -187,6 +187,9 @@ pub trait GraphicsContext {
         self.draw(Draw::PlaceLayerBefore(namespace, layer));
     }
 
+    /// Sets a transform that's applied to the current layer (transforming everything that's rendered in the current layer)
+    fn set_layer_transform(&mut self, transform: Transform2D) { self.draw(Draw::SetLayerTransform(transform)); }
+
 
 
     /// Selects a particular sprite for drawing

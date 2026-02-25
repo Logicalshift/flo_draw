@@ -547,6 +547,7 @@ impl CanvasEncoding<String> for Draw {
             Layer(layer_id)                             => ('N', 'L', layer_id).encode_canvas(append_to),
             LayerBlend(layer_id, blend_mode)            => ('N', 'B', layer_id, blend_mode).encode_canvas(append_to),
             LayerAlpha(layer_id, alpha)                 => ('N', 't', layer_id, alpha).encode_canvas(append_to),
+            SetLayerTransform(transform)                => ('N', 'T', transform).encode_canvas(append_to),
             ClearLayer                                  => ('N', 'C').encode_canvas(append_to),
             ClearAllLayers                              => ('N', 'a').encode_canvas(append_to),
             PlaceLayerBefore(namespace_id, layer_id)    => ('N', 'O', namespace_id, layer_id).encode_canvas(append_to),
