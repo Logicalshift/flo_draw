@@ -601,6 +601,7 @@ impl RenderCore {
             blend_mode:                 canvas::BlendMode::SourceOver,
             alpha:                      1.0,
             following_layer:            self.layer_definitions[layer_idx as usize].following_layer,
+            layer_transform:            canvas::Transform2D::identity(),
         };
 
         mem::swap(&mut old_layer, &mut self.layer_definitions[layer_idx as usize]);

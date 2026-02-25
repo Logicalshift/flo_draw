@@ -44,6 +44,7 @@ impl CanvasRenderer {
             blend_mode:                 canvas::BlendMode::SourceOver,
             alpha:                      1.0,
             following_layer:            None,
+            layer_transform:            canvas::Transform2D::identity(),
         }
     }
 
@@ -158,6 +159,22 @@ impl CanvasRenderer {
                     layer.commit_before_rendering   = true;
                     layer.commit_after_rendering    = true;
                 }
+            }
+        });
+    }
+
+    ///
+    /// Sets the transform to apply to the current layer when compositing it
+    ///
+    pub (super) fn tes_set_layer_transform(&mut self, layer_transform: canvas::Transform2D) {
+        let active_transform    = self.active_transform;
+        let current_layer       = self.current_layer;
+
+        self.core.sync(move |core| {
+            let layer = core.layer(current_layer);
+
+            if let Some(inverse_transform) = active_transform.invert() {
+                layer.layer_transform = active_transform * layer_transform * inverse_transform;
             }
         });
     }
