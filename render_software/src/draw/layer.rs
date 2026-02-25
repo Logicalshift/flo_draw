@@ -369,8 +369,12 @@ where
     /// Sets the transform to apply to the layer
     ///
     pub (crate) fn set_layer_transform(&mut self, layer_transform: canvas::Transform2D) {
+        let current_transform = self.current_state.transform;
+
         if let Some(layer) = self.layer(self.current_layer) {
-            layer.layer_transform = layer_transform;
+            if let Some(inverse_transform) = current_transform.invert() {
+                layer.layer_transform = current_transform * layer_transform * inverse_transform;
+            }
         }
     }
 
