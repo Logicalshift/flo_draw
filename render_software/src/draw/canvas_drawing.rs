@@ -238,7 +238,21 @@ where
 
         // Prepare each layer for rendering
         layers.par_iter_mut()
-            .for_each(|layer| layer.edges.prepare_to_render());
+            .for_each(|layer| {
+                // TODO: we can avoid performing a transformation if the transform does not do a rotation (we can just change the position of where we get the intercepts later on)
+                if layer.layer_transform.is_rotation() || layer.layer_transform != canvas::Transform2D::identity() {
+                    // Free any existing transformed edges
+                    layer.transformed_edges = None;
+
+                    // Transform the edges according to the layer transform
+                    let mut transformed_edges = layer.edges.transform(&layer.layer_transform);
+                    transformed_edges.prepare_to_render();
+
+                    layer.transformed_edges = Some(transformed_edges);
+                } else {
+                    layer.edges.prepare_to_render();
+                }
+            });
     }
 
     ///
@@ -248,7 +262,21 @@ where
     fn prepare_to_render(&mut self) {
         // Prepare each layer for rendering
         self.layers.iter_mut()
-            .for_each(|(_, layer)| layer.edges.prepare_to_render());
+            .for_each(|(_, layer)| {
+                // TODO: we can avoid performing a transformation if the transform does not do a rotation (we can just change the position of where we get the intercepts later on)
+                if layer.layer_transform.is_rotation() || layer.layer_transform != canvas::Transform2D::identity() {
+                    // Free any existing transformed edges
+                    layer.transformed_edges = None;
+
+                    // Transform the edges according to the layer transform
+                    let mut transformed_edges = layer.edges.transform(&layer.layer_transform);
+                    transformed_edges.prepare_to_render();
+
+                    layer.transformed_edges = Some(transformed_edges);
+                } else {
+                    layer.edges.prepare_to_render();
+                }
+            });
     }
 
     ///
