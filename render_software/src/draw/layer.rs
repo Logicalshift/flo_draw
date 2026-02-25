@@ -46,6 +46,9 @@ pub struct Layer {
 
     /// The transform to apply to this layer when rendering it
     pub (super) layer_transform: canvas::Transform2D,
+
+    /// If the layer is a rotation, these are the transformed edges we use for the 
+    pub (super) transformed_edges: Option<EdgePlan<Arc<dyn EdgeDescriptor>>>,
 }
 
 impl Default for Layer {
@@ -61,6 +64,7 @@ impl Default for Layer {
             z_index:            0,
             edit_count:         0,
             layer_transform:    canvas::Transform2D::identity(),
+            transformed_edges:  None,
         }
     }
 }
@@ -246,6 +250,7 @@ where
                 z_index:            layer.z_index,
                 edit_count:         layer.edit_count,
                 layer_transform:    layer.layer_transform,
+                transformed_edges:  None,
             }
         } else {
             // Just use an empty default layer if this layer isn't created yet
