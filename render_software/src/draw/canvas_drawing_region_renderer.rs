@@ -264,7 +264,9 @@ where
             if let Some(layer) = source.layers.get(layer_handle.0) {
                 // Plan this layer (note that the x-range will be something like -1..1 so the scan planner must support this)
                 if layer.alpha > 0.0 {
-                    self.scan_planner.plan_scanlines(&layer.edges, &transform, &y_positions, x_range.clone(), &mut layer_scanlines);
+                    let edges = if let Some(transformed_edges) = &layer.transformed_edges { transformed_edges } else { &layer.edges };
+
+                    self.scan_planner.plan_scanlines(&edges, &transform, &y_positions, x_range.clone(), &mut layer_scanlines);
                 }
 
                 // Combine the layer with the scanlines we're planning
