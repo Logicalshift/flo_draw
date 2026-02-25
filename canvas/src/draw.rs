@@ -245,6 +245,9 @@ pub enum Draw {
     /// Sets the alpha value for a particular layer (0.0-1.0)
     LayerAlpha(LayerId, f32),
 
+    /// Sets a transformation for the current layer (moving everything that's already drawn there)
+    SetLayerTransform(Transform2D),
+
     /// Clears the current layer
     ClearLayer,
 
