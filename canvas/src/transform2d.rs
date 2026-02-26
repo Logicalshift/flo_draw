@@ -188,6 +188,12 @@ impl Mul<Transform2D> for Transform2D {
 impl Mul<&Transform2D> for &Transform2D {
     type Output=Transform2D;
 
+    ///
+    /// Multiplies two transforms
+    ///
+    /// Note that this applies the transform in reverse order: ie, `Transform2D::scale(2.0, 2.0) * Transform2D::translate(10.0, 20.0)` will
+    /// create a transform that translates before it scales.
+    ///
     fn mul(self, other: &Transform2D) -> Transform2D {
         let Transform2D(a) = self;
         let Transform2D(b) = other;
