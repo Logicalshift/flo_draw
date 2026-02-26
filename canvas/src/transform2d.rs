@@ -1,3 +1,5 @@
+use flo_curves::geo::*;
+
 use super::draw::{SpriteTransform};
 use std::f32;
 use std::ops::{Mul};
@@ -25,6 +27,18 @@ impl Transform2D {
             x*a[0][0] + y*a[0][1] + 1.0*a[0][2],
             x*a[1][0] + y*a[1][1] + 1.0*a[1][2]
         )
+    }
+
+    ///
+    /// Applies this transformation to a type that implements `Coordinate2D`
+    ///
+    pub fn transform_coord<TCoord>(&self, coord: TCoord) -> TCoord
+    where 
+        TCoord : Coordinate + Coordinate2D
+    {
+        let (x, y) = self.transform_point(coord.x() as _, coord.y() as _);
+
+        TCoord::from_components(&[x as f64, y as f64])
     }
 
     ///
