@@ -44,6 +44,12 @@ pub fn main() {
                     }
                 }
             }
+
+            gc.layer(LayerId(3));
+            gc.clear_layer();
+            gc.fill_color(Color::Rgba(0.5, 0.5, 0.5, 0.5));
+            gc.circle(0.0, 0.0, 100.0);
+            gc.fill();
         });
 
         // Transform the layers over time without redrawing them
@@ -67,6 +73,11 @@ pub fn main() {
                 // Layer 2 scales
                 gc.layer(LayerId(2));
                 gc.set_layer_transform(Transform2D::scale(2.0 + (frames_since_start*0.015).sin() as f32, 2.0 + (frames_since_start*0.015).sin() as f32));
+
+                // Layer 3 scales and moves its circle to the center
+                gc.layer(LayerId(3));
+                debug_assert!((Transform2D::scale(1.5, 1.5) * Transform2D::translate(500.0, 500.0)).transform_point(0.0, 0.0) == (500.0, 500.0));
+                gc.set_layer_transform(Transform2D::scale(1.5, 1.5) * Transform2D::translate(500.0, 500.0));
             });
 
             // Wait for a frame
