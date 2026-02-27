@@ -11,6 +11,6 @@
 mod flo_draw_view;
 mod events;
 
-pub use flo_draw_view::*;
-pub use objc2::rc::{Retained};
-pub use objc2_quartz_core::{CATransaction};
+pub (crate) use flo_draw_view::*;
+pub (crate) use objc2::rc::{Retained};
+pub (crate) use objc2_quartz_core::{CATransaction};

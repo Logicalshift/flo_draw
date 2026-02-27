@@ -79,6 +79,9 @@ pub use self::glutin::{with_2d_graphics};
 #[cfg(feature="render-wgpu")]
 pub mod wgpu;
 
+#[cfg(any(feature="render-wgpu", feature="render-software"))]
+mod platform;
+
 #[cfg(all(feature="render-wgpu"))]
 pub use self::wgpu::{with_2d_graphics};
 

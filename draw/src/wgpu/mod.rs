@@ -1,10 +1,8 @@
-mod event_conversion;
-mod winit_window;
-mod winit_thread;
-mod winit_runtime;
-mod winit_thread_event;
-
-#[cfg(target_os="macos")] mod platform_macos;
+pub (crate) mod event_conversion;
+pub (crate) mod winit_window;
+pub (crate) mod winit_thread;
+pub (crate) mod winit_runtime;
+pub (crate) mod winit_thread_event;
 
 pub (crate) use self::winit_thread::*;
 pub (crate) use self::winit_thread_event::*;

@@ -23,7 +23,7 @@ use std::time::{Duration, Instant};
 use wgpu_profiler::{GpuProfiler};
 
 #[cfg(target_os="macos")]
-use super::platform_macos::*;
+use crate::platform::*;
 
 ///
 /// Manages the state of a Winit window

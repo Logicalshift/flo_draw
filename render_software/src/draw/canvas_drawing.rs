@@ -352,3 +352,226 @@ where
         self.current_state.transform
     }
 }
+
+#[cfg(test)]
+mod namespace_order_tests {
+    use super::*;
+    use flo_canvas as canvas;
+    use crate::pixel::F32LinearPixel;
+
+    type TestDrawing = CanvasDrawing<F32LinearPixel, 4>;
+
+    ///
+    /// Returns the position of a namespace's layer within `ordered_layers`, if it exists
+    ///
+    fn position_of(drawing: &TestDrawing, namespace: canvas::NamespaceId, layer_id: canvas::LayerId) -> Option<usize> {
+        let handle = drawing.handle_for_layer.get(&(namespace.local_id(), layer_id))?;
+        drawing.ordered_layers.iter().position(|h| h == handle)
+    }
+
+    ///
+    /// Creates a drawing containing five namespaces in a defined order, matching the structure
+    /// from the user's drawing instructions:
+    ///
+    ///   default -> canvas_ns -> physics_ns -> dock_ns -> dialog_ns
+    ///
+    /// The last two instructions switch back to the default namespace, exercising the
+    /// "don't move an already-placed namespace" code path.
+    ///
+    fn make_five_namespace_drawing() -> (TestDrawing, canvas::NamespaceId, canvas::NamespaceId, canvas::NamespaceId, canvas::NamespaceId) {
+        let canvas_ns   = canvas::NamespaceId::new();
+        let physics_ns  = canvas::NamespaceId::new();
+        let dock_ns     = canvas::NamespaceId::new();
+        let dialog_ns   = canvas::NamespaceId::new();
+
+        let mut drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
+
+        drawing.draw([
+            canvas::Draw::ClearCanvas(canvas::Color::Rgba(0.8, 0.8, 0.8, 1.0)),
+            canvas::Draw::CanvasHeight(1024.0),
+
+            canvas::Draw::Namespace(canvas::NamespaceId::default()),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+
+            canvas::Draw::Namespace(canvas_ns),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+
+            canvas::Draw::Namespace(physics_ns),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+
+            canvas::Draw::Namespace(dock_ns),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+
+            canvas::Draw::Namespace(dialog_ns),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+
+            // These last two lines switch back to the default namespace without adding a new one
+            canvas::Draw::Namespace(canvas::NamespaceId::default()),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+        ]);
+
+        (drawing, canvas_ns, physics_ns, dock_ns, dialog_ns)
+    }
+
+    #[test]
+    fn namespace_layers_appear_in_first_encounter_order() {
+        // After processing the drawing instructions, the ordered_layers list should reflect
+        // the order in which each namespace's layer 0 was first encountered:
+        //   default < canvas_ns < physics_ns < dock_ns < dialog_ns
+        let (drawing, canvas_ns, physics_ns, dock_ns, dialog_ns) = make_five_namespace_drawing();
+
+        let default_pos = position_of(&drawing, canvas::NamespaceId::default(), canvas::LayerId(0))
+            .expect("default namespace layer 0 must exist in ordered_layers");
+        let canvas_pos  = position_of(&drawing, canvas_ns, canvas::LayerId(0))
+            .expect("canvas namespace layer 0 must exist in ordered_layers");
+        let physics_pos = position_of(&drawing, physics_ns, canvas::LayerId(0))
+            .expect("physics namespace layer 0 must exist in ordered_layers");
+        let dock_pos    = position_of(&drawing, dock_ns, canvas::LayerId(0))
+            .expect("dock namespace layer 0 must exist in ordered_layers");
+        let dialog_pos  = position_of(&drawing, dialog_ns, canvas::LayerId(0))
+            .expect("dialog namespace layer 0 must exist in ordered_layers");
+
+        assert!(default_pos < canvas_pos,
+            "default namespace (pos {}) should appear before canvas namespace (pos {})",
+            default_pos, canvas_pos);
+        assert!(canvas_pos < physics_pos,
+            "canvas namespace (pos {}) should appear before physics namespace (pos {})",
+            canvas_pos, physics_pos);
+        assert!(physics_pos < dock_pos,
+            "physics namespace (pos {}) should appear before dock namespace (pos {})",
+            physics_pos, dock_pos);
+        assert!(dock_pos < dialog_pos,
+            "dock namespace (pos {}) should appear before dialog namespace (pos {})",
+            dock_pos, dialog_pos);
+    }
+
+    #[test]
+    fn reselecting_namespace_does_not_change_layer_order() {
+        // Running the same sequence of namespace selections a second time (simulating a second
+        // frame) must not reorder any of the namespaces.
+        let (mut drawing, canvas_ns, physics_ns, dock_ns, dialog_ns) = make_five_namespace_drawing();
+
+        let before_default_pos  = position_of(&drawing, canvas::NamespaceId::default(), canvas::LayerId(0)).unwrap();
+        let before_canvas_pos   = position_of(&drawing, canvas_ns,  canvas::LayerId(0)).unwrap();
+        let before_physics_pos  = position_of(&drawing, physics_ns, canvas::LayerId(0)).unwrap();
+        let before_dock_pos     = position_of(&drawing, dock_ns,    canvas::LayerId(0)).unwrap();
+        let before_dialog_pos   = position_of(&drawing, dialog_ns,  canvas::LayerId(0)).unwrap();
+
+        // Re-run the exact same sequence of drawing instructions (second frame, same namespaces)
+        drawing.draw([
+            canvas::Draw::Namespace(canvas::NamespaceId::default()),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+
+            canvas::Draw::Namespace(canvas_ns),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+
+            canvas::Draw::Namespace(physics_ns),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+
+            canvas::Draw::Namespace(dock_ns),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+
+            canvas::Draw::Namespace(dialog_ns),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+
+            canvas::Draw::Namespace(canvas::NamespaceId::default()),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+        ]);
+
+        let after_default_pos   = position_of(&drawing, canvas::NamespaceId::default(), canvas::LayerId(0)).unwrap();
+        let after_canvas_pos    = position_of(&drawing, canvas_ns,  canvas::LayerId(0)).unwrap();
+        let after_physics_pos   = position_of(&drawing, physics_ns, canvas::LayerId(0)).unwrap();
+        let after_dock_pos      = position_of(&drawing, dock_ns,    canvas::LayerId(0)).unwrap();
+        let after_dialog_pos    = position_of(&drawing, dialog_ns,  canvas::LayerId(0)).unwrap();
+
+        assert_eq!(before_default_pos,  after_default_pos,  "default namespace must not move after second frame");
+        assert_eq!(before_canvas_pos,   after_canvas_pos,   "canvas namespace must not move after second frame");
+        assert_eq!(before_physics_pos,  after_physics_pos,  "physics namespace must not move after second frame");
+        assert_eq!(before_dock_pos,     after_dock_pos,     "dock namespace must not move after second frame");
+        assert_eq!(before_dialog_pos,   after_dialog_pos,   "dialog namespace must not move after second frame");
+    }
+
+    #[test]
+    fn adding_higher_numbered_layer_inserts_within_namespace_not_after_next_namespace() {
+        // When a new layer (e.g. Layer(1)) is added to an existing namespace, it should be
+        // inserted immediately after that namespace's highest existing layer, and the layers
+        // of subsequent namespaces must remain after it.
+        let canvas_ns   = canvas::NamespaceId::new();
+        let physics_ns  = canvas::NamespaceId::new();
+
+        let mut drawing = CanvasDrawing::<F32LinearPixel, 4>::empty();
+
+        drawing.draw([
+            canvas::Draw::ClearCanvas(canvas::Color::Rgba(0.8, 0.8, 0.8, 1.0)),
+
+            canvas::Draw::Namespace(canvas_ns),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+
+            canvas::Draw::Namespace(physics_ns),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+        ]);
+
+        let canvas_layer0_pos_before    = position_of(&drawing, canvas_ns,  canvas::LayerId(0)).unwrap();
+        let physics_layer0_pos_before   = position_of(&drawing, physics_ns, canvas::LayerId(0)).unwrap();
+
+        // canvas_ns is before physics_ns at this point
+        assert!(canvas_layer0_pos_before < physics_layer0_pos_before,
+            "canvas/0 (pos {}) should be before physics/0 (pos {})",
+            canvas_layer0_pos_before, physics_layer0_pos_before);
+
+        // Now add Layer(1) to canvas_ns — it should sit between canvas/0 and physics/0
+        drawing.draw([
+            canvas::Draw::Namespace(canvas_ns),
+            canvas::Draw::Layer(canvas::LayerId(1)),
+        ]);
+
+        let canvas_layer0_pos  = position_of(&drawing, canvas_ns,  canvas::LayerId(0)).unwrap();
+        let canvas_layer1_pos  = position_of(&drawing, canvas_ns,  canvas::LayerId(1)).unwrap();
+        let physics_layer0_pos = position_of(&drawing, physics_ns, canvas::LayerId(0)).unwrap();
+
+        assert!(canvas_layer0_pos < canvas_layer1_pos,
+            "canvas/Layer(0) (pos {}) should come before canvas/Layer(1) (pos {})",
+            canvas_layer0_pos, canvas_layer1_pos);
+        assert!(canvas_layer1_pos < physics_layer0_pos,
+            "canvas/Layer(1) (pos {}) should come before physics/Layer(0) (pos {}), \
+             but physics namespace appears to have been displaced",
+            canvas_layer1_pos, physics_layer0_pos);
+    }
+
+    #[test]
+    fn clear_layer_does_not_reorder_namespaces() {
+        // ClearLayer clears the contents of a layer but must not move it within ordered_layers
+        let (mut drawing, canvas_ns, physics_ns, _dock_ns, _dialog_ns) = make_five_namespace_drawing();
+
+        let before_default  = position_of(&drawing, canvas::NamespaceId::default(), canvas::LayerId(0)).unwrap();
+        let before_canvas   = position_of(&drawing, canvas_ns,  canvas::LayerId(0)).unwrap();
+        let before_physics  = position_of(&drawing, physics_ns, canvas::LayerId(0)).unwrap();
+
+        // Clear the middle namespace's layer
+        drawing.draw([
+            canvas::Draw::Namespace(canvas_ns),
+            canvas::Draw::Layer(canvas::LayerId(0)),
+            canvas::Draw::ClearLayer,
+        ]);
+
+        let after_default   = position_of(&drawing, canvas::NamespaceId::default(), canvas::LayerId(0)).unwrap();
+        let after_canvas    = position_of(&drawing, canvas_ns,  canvas::LayerId(0)).unwrap();
+        let after_physics   = position_of(&drawing, physics_ns, canvas::LayerId(0)).unwrap();
+
+        assert_eq!(before_default, after_default,   "default namespace position must not change after ClearLayer");
+        assert_eq!(before_canvas,  after_canvas,    "canvas namespace position must not change after ClearLayer");
+        assert_eq!(before_physics, after_physics,   "physics namespace position must not change after ClearLayer");
+    }
+}
