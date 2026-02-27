@@ -13,5 +13,5 @@ mod events;
 
 pub (crate) use flo_draw_view::*;
 
-pub (crate) use objc2::rc::{Retained};
-pub (crate) use objc2_quartz_core::{CATransaction};
+#[cfg(feature="render-wgpu")] pub (crate) use objc2::rc::{Retained};
+#[cfg(feature="render-wgpu")] pub (crate) use objc2_quartz_core::{CATransaction};

@@ -9,12 +9,12 @@ use crate::platform::winit::*;
 
 use objc2::*;
 use objc2::rc::{Id, Retained};
-use objc2::runtime::{ProtocolObject};
+#[cfg(feature="render-wgpu")] use objc2::runtime::{ProtocolObject};
 
 use objc2_app_kit::{NSAutoresizingMaskOptions, NSResponder, NSView, NSEvent};
-use objc2_foundation::{NSObject, MainThreadMarker, NSSize};
+use objc2_foundation::{NSObject, MainThreadMarker};
 
-#[cfg(feature="render-wgpu")] use objc2_foundation::{NSNull, NSDictionary, NSString, ns_string, NSCopying};
+#[cfg(feature="render-wgpu")] use objc2_foundation::{NSNull, NSDictionary, NSString, ns_string, NSCopying, NSSize};
 #[cfg(feature="render-wgpu")] use objc2_quartz_core::{CAAction, CAMetalLayer, CATransaction};
 #[cfg(feature="render-wgpu")] use wgpu;
 
