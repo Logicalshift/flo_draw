@@ -22,7 +22,6 @@ use std::time::{Duration, Instant};
 #[cfg(feature="wgpu-profiler")]
 use wgpu_profiler::{GpuProfiler};
 
-#[cfg(target_os="macos")]
 use crate::platform::*;
 
 ///
@@ -60,11 +59,13 @@ impl WinitWindow {
             draw_view:  None,
         }
     }
+}
 
+impl PlatformWindow for WinitWindow {
     ///
     /// Returns the underlying winit window object
     ///
-    pub (super) fn window(&self) -> Option<Arc<Window>> {
+    fn window(&self) -> Option<Arc<Window>> {
         self.window.clone()
     }
 }

@@ -1,6 +1,6 @@
 use super::events::*;
 use crate::events::*;
-use crate::wgpu::winit_window::*;
+use crate::platform::winit::*;
 use crate::wgpu::winit_thread::*;
 use crate::wgpu::winit_thread_event::*;
 
@@ -23,7 +23,7 @@ pub struct FloDrawViewVars {
     metal_layer: Retained<CAMetalLayer>,
 
     /// The winit window that is being rendered in this view
-    window: Option<Weak<Mutex<WinitWindow>>>,
+    window: Option<Weak<Mutex<dyn PlatformWindow>>>,
 
     /// The buttons that are currently held down
     buttons: Vec<Button>,
@@ -230,8 +230,9 @@ impl FloDrawView {
     ///
     /// Sets this view as the main view of the specified window
     ///
-    pub fn attach_to(&self, window: &Arc<Mutex<WinitWindow>>) {
-        self.ivars().lock().unwrap().window = Some(Arc::downgrade(window));
+    pub fn attach_to(&self, window: &Arc<Mutex<impl 'static + PlatformWindow>>) {
+        let window: Arc<Mutex<dyn PlatformWindow>> = window.clone();
+        self.ivars().lock().unwrap().window = Some(Arc::downgrade(&window));
 
         let window = window.lock().unwrap();
 
