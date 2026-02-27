@@ -31,6 +31,9 @@ pub enum WinitThreadEvent {
 
     /// Tells the UI thread to stop when there are no more windows open
     StopWhenAllWindowsClosed,
+
+    /// Sends an event to a window
+    SendDrawEventToWindow(WindowId, DrawEvent),
 }
 
 impl Debug for WinitThreadEvent {
@@ -38,11 +41,12 @@ impl Debug for WinitThreadEvent {
         use self::WinitThreadEvent::*;
 
         match self {
-            CreateDrawingWindow(_, _, _)    => write!(f, "CreateDrawingWindow(...)"),
-            RunProcess(_)                   => write!(f, "RunProcess(...)"),
-            WakeFuture(id)                  => write!(f, "WakeFuture({})", id),
-            StopSendingToWindow(id)         => write!(f, "StopSendingToWindow({:?})", id),
-            StopWhenAllWindowsClosed        => write!(f, "StopWhenAllWindowsClosed"),
+            CreateDrawingWindow(_, _, _)            => write!(f, "CreateDrawingWindow(...)"),
+            RunProcess(_)                           => write!(f, "RunProcess(...)"),
+            WakeFuture(id)                          => write!(f, "WakeFuture({})", id),
+            StopSendingToWindow(id)                 => write!(f, "StopSendingToWindow({:?})", id),
+            StopWhenAllWindowsClosed                => write!(f, "StopWhenAllWindowsClosed"),
+            SendDrawEventToWindow(window_id, event) => write!(f, "SendDrawEventToWindow({:?}, {:?})", window_id, event),
         }
     }
 }

@@ -389,6 +389,16 @@ impl WinitRuntime {
                     self.will_exit = true;
                 }
             }
+
+            SendDrawEventToWindow(window_id, event) => {
+                if let Some(window_data) = self.window_events.get_mut(&window_id) {
+                    let mut window_events = window_data.event_publisher.republish();
+
+                    self.run_process(async move {
+                        window_events.publish(event).await;
+                    });
+                }
+            },
         }
     }
 
