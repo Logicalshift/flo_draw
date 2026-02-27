@@ -1,26 +1,31 @@
 use super::events::*;
 use crate::events::*;
 use crate::platform::winit::*;
-use crate::wgpu::winit_thread::*;
-use crate::wgpu::winit_thread_event::*;
+
+#[cfg(feature="render-wgpu")] use crate::wgpu::winit_thread::*;
+#[cfg(feature="render-wgpu")] use crate::wgpu::winit_thread_event::*;
+
+#[cfg(all(not(feature="render-wgpu"), feature="render-software"))] use crate::software::*;
 
 use objc2::*;
 use objc2::rc::{Id, Retained};
 use objc2::runtime::{ProtocolObject};
 
 use objc2_app_kit::{NSAutoresizingMaskOptions, NSResponder, NSView, NSEvent};
-use objc2_foundation::{NSObject, MainThreadMarker, NSSize, NSNull, NSDictionary, NSString, ns_string, NSCopying};
-use objc2_quartz_core::{CAAction, CAMetalLayer, CATransaction};
+use objc2_foundation::{NSObject, MainThreadMarker, NSSize};
+
+#[cfg(feature="render-wgpu")] use objc2_foundation::{NSNull, NSDictionary, NSString, ns_string, NSCopying};
+#[cfg(feature="render-wgpu")] use objc2_quartz_core::{CAAction, CAMetalLayer, CATransaction};
+#[cfg(feature="render-wgpu")] use wgpu;
 
 use winit::window::{WindowId};
 use winit::raw_window_handle_05::{HasRawWindowHandle, RawWindowHandle};
-use wgpu;
 
 use std::sync::*;
 
 pub struct FloDrawViewVars {
     /// The layer that we should render on
-    metal_layer: Retained<CAMetalLayer>,
+    #[cfg(feature="render-wgpu")] metal_layer: Retained<CAMetalLayer>,
 
     /// The winit window that is being rendered in this view
     window: Option<Weak<Mutex<dyn PlatformWindow>>>,
@@ -52,6 +57,7 @@ declare_class!(
         ///
         /// Resizes this view
         ///
+        #[cfg(feature="render-wgpu")]
         #[method(setFrameSize:)]
         fn set_frame_size(&self, new_size: NSSize) {
             // Perform the normal resizing request
@@ -65,7 +71,7 @@ declare_class!(
 
             self.reposition_metal_layer();
 
-            // TODO: if we want to fully eliminate the 'glitching' that can occur here, we need to send the resize event now, then process events from the scene until it 
+            // TODO: if we want to fully eliminate the 'glitching' that can occur here, we need to send the resize event now, then process events from the scene until it
             // becomes idle (or at least until the corresponding redraw request has gone through), before committing the transaction and returning to the main winit
             // event loop.
 
@@ -161,11 +167,12 @@ impl FloDrawView {
     ///
     /// Creates a new FloDrawView
     ///
+    #[cfg(feature="render-wgpu")]
     pub fn new() -> Retained<Self> {
-        let main_thread_marker      = MainThreadMarker::new().expect("Must be on main thread");
+        let main_thread_marker = MainThreadMarker::new().expect("Must be on main thread");
 
         // Allocate a layer to use as our render target
-        let metal_layer  = unsafe { CAMetalLayer::new() };
+        let metal_layer = unsafe { CAMetalLayer::new() };
 
         let ivars = FloDrawViewVars {
             metal_layer:    metal_layer.clone(),
@@ -204,8 +211,28 @@ impl FloDrawView {
     }
 
     ///
+    /// Creates a new FloDrawView
+    ///
+    #[cfg(all(not(feature="render-wgpu"), feature="render-software"))]
+    pub fn new() -> Retained<Self> {
+        let main_thread_marker = MainThreadMarker::new().expect("Must be on main thread");
+
+        let ivars = FloDrawViewVars {
+            window:     None,
+            buttons:    vec![],
+        };
+
+        // Allocate the view
+        let this                    = main_thread_marker.alloc().set_ivars(Mutex::new(ivars));
+        let this: Retained<Self>    = unsafe { msg_send_id![super(this), init] };
+
+        this
+    }
+
+    ///
     /// Retrieves the metal layer for this FloDrawView
     ///
+    #[cfg(feature="render-wgpu")]
     fn metal_layer(&self) -> Retained<CAMetalLayer> {
         self.ivars().lock().unwrap().metal_layer.clone()
     }
@@ -213,6 +240,7 @@ impl FloDrawView {
     ///
     /// Repositions the metal layer within this view
     ///
+    #[cfg(feature="render-wgpu")]
     fn reposition_metal_layer(&self) {
         // Fetch the layer
         let layer           = unsafe { self.layer() };
@@ -230,6 +258,7 @@ impl FloDrawView {
     ///
     /// Sets this view as the main view of the specified window
     ///
+    #[cfg(feature="render-wgpu")]
     pub fn attach_to(&self, window: &Arc<Mutex<impl 'static + PlatformWindow>>) {
         let window: Arc<Mutex<dyn PlatformWindow>> = window.clone();
         self.ivars().lock().unwrap().window = Some(Arc::downgrade(&window));
@@ -290,6 +319,36 @@ impl FloDrawView {
     }
 
     ///
+    /// Sets this view as the main view of the specified window
+    ///
+    #[cfg(all(not(feature="render-wgpu"), feature="render-software"))] 
+    pub fn attach_to(&self, window: &Arc<Mutex<impl 'static + PlatformWindow>>) {
+        let window: Arc<Mutex<dyn PlatformWindow>> = window.clone();
+        self.ivars().lock().unwrap().window = Some(Arc::downgrade(&window));
+
+        let window = window.lock().unwrap();
+
+        if let Some(RawWindowHandle::AppKit(appkit)) = window.window().map(|window| window.raw_window_handle()) {
+            // Fetch the root view from the window
+            let root_view: Option<Retained<NSView>> = unsafe { Id::retain(appkit.ns_view.cast()) };
+            let root_view                           = root_view.expect("Window must have a root view");
+
+            // Add as a subview of the root view
+            unsafe { root_view.addSubview(self); }
+
+            // Size to fit
+            unsafe { self.setFrame(root_view.bounds()); }
+
+            // Set the root view to resize its subviews
+            unsafe { root_view.setAutoresizesSubviews(true); }
+            unsafe { self.setAutoresizingMask(NSAutoresizingMaskOptions::NSViewWidthSizable.union(NSAutoresizingMaskOptions::NSViewHeightSizable)); }
+        } else {
+            // We should be running on OS X here, so we should get an appkit window
+            panic!("Was expecting an appkit window");
+        }
+    }
+
+    ///
     /// Returns the current set of pressed buttons in this view
     ///
     #[inline]
@@ -327,6 +386,7 @@ impl FloDrawView {
     ///
     /// Creates a WGPU surface for this view
     ///
+    #[cfg(feature="render-wgpu")]
     pub fn create_surface<'a>(&self, instance: &wgpu::Instance) -> wgpu::Surface<'a> {
         let layer                           = self.metal_layer();
         let layer_ptr: *const CAMetalLayer  = Retained::as_ptr(&layer);
