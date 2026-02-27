@@ -1,5 +1,6 @@
 use crate::events::*;
 use crate::window_properties::*;
+use crate::platform::*;
 
 use flo_canvas::*;
 use flo_stream::*;
@@ -43,6 +44,10 @@ pub struct WinitWindow {
     viewport_bounds: ViewportBounds,
 }
 
+impl PlatformWindow for WinitWindow {
+    fn window(&self) -> Option<Arc<Window>> { self.window.clone() }
+}
+
 impl WinitWindow {
     ///
     /// Creates a new winit window
@@ -66,8 +71,12 @@ where
     EventPublisher: MessagePublisher<Message=DrawEvent>,
 {
     // Read events from the render actions list
-    let mut window          = window;
-    let mut events          = events;
+    let mut window  = Arc::new(Mutex::new(window));
+    let mut events  = events;
+
+    // On macOS, we use a FloDrawView subview to get pressure-sensitive events and flicker-free resizing
+    #[cfg(target_os="macos")]
+    let mut draw_view       = None;
     let window_actions      = WindowUpdateStream { 
         draw_stream:        drawing_actions, 
         title_stream:       follow(window_properties.title),
@@ -90,21 +99,32 @@ where
         for next_action in next_action_set {
             match next_action {
                 WindowUpdate::Draw(next_action) => {
+                    // On macOS, create the FloDrawView on the first draw to get pressure events
+                    #[cfg(target_os="macos")]
+                    if let None = &draw_view {
+                        let new_draw_view = FloDrawView::new();
+                        new_draw_view.attach_to(&window);
+
+                        draw_view = Some(new_draw_view);
+                    }
+
                     // Create the renderer if it doesn't already exist
-                    if let (Some(winit_window), None) = (&window.window, &window.context) {
+                    let mut window_lock = window.lock().unwrap();
+                    if let (Some(winit_window), None) = (&window_lock.window, &window_lock.context) {
                         // Create a new softbuffer context
                         let winit_window        = winit_window.clone();
                         let softbuffer_context  = softbuffer::Context::new(winit_window.clone()).unwrap();
                         let softbuffer_surface  = softbuffer::Surface::new(&softbuffer_context, winit_window.clone()).unwrap();
 
-                        window.context = Some(softbuffer_context);
-                        window.surface = Some(softbuffer_surface);
+                        window_lock.context = Some(softbuffer_context);
+                        window_lock.surface = Some(softbuffer_surface);
                     }
 
                     // Queue up a render later on
                     redraw_canvas = true;
 
                     // Process the drawing instructions in the canvas (without doing the render step)
+                    drop(window_lock);
                     let new_transform;
                     (window, new_transform) = canvas_drawing.future_desync(move |canvas_drawing| async move {
                         canvas_drawing.draw(Arc::unwrap_or_clone(next_action).into_iter());
@@ -121,43 +141,43 @@ where
                 }
                 
                 WindowUpdate::SetViewportBounds(new_bounds) => {
-                    window.viewport_bounds  = new_bounds;
+                    window.lock().unwrap().viewport_bounds  = new_bounds;
                     update_canvas_transform = true;
                 }
 
                 WindowUpdate::SetTitle(new_title)   => {
-                    if let Some(winit_window) = &window.window {
+                    if let Some(winit_window) = &window.lock().unwrap().window {
                         winit_window.set_title(&new_title);
                     }
                 }
 
                 WindowUpdate::SetSize((size_x, size_y)) => {
-                    if let Some(winit_window) = &window.window {
+                    if let Some(winit_window) = &window.lock().unwrap().window {
                         let _ = winit_window.request_inner_size(LogicalSize::new(size_x as f64, size_y as _));
                     }
                 }
 
                 WindowUpdate::SetFullscreen(is_fullscreen) => {
                     let fullscreen = if is_fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
-                    if let Some(winit_window) = &window.window {
+                    if let Some(winit_window) = &window.lock().unwrap().window {
                         winit_window.set_fullscreen(fullscreen);
                     }
                 }
 
                 WindowUpdate::SetHasDecorations(decorations) => {
-                    if let Some(winit_window) = &window.window {
+                    if let Some(winit_window) = &window.lock().unwrap().window {
                         winit_window.set_decorations(decorations);
                     }
                 }
 
                 WindowUpdate::SetMousePointer(MousePointer::None) => {
-                    if let Some(winit_window) = &window.window {
+                    if let Some(winit_window) = &window.lock().unwrap().window {
                         winit_window.set_cursor_visible(false);
                     }
                 }
 
                 WindowUpdate::SetMousePointer(MousePointer::SystemDefault) => {
-                    if let Some(winit_window) = &window.window {
+                    if let Some(winit_window) = &window.lock().unwrap().window {
                         winit_window.set_cursor_visible(true);
                     }
                 }
@@ -171,7 +191,10 @@ where
         // If any drawing instructions were taken, then redraw the canvas
         if redraw_canvas {
             window = canvas_drawing.future_desync(move |canvas_drawing| async move {
-                if let (Some(winit_window), Some(surface), viewport_bounds) = (&window.window, &mut window.surface, window.viewport_bounds) {
+                let mut window_lock = window.lock().unwrap();
+                let window_ref      = &mut *window_lock;
+
+                if let (Some(winit_window), Some(surface), viewport_bounds) = (&window_ref.window, &mut window_ref.surface, window_ref.viewport_bounds) {
                     // Set up to render at the current size
                     let size    = winit_window.inner_size();
                     let width   = size.width;
@@ -203,6 +226,7 @@ where
                     }
                 }
 
+                drop(window_lock);
                 window
             }.boxed()).await.unwrap();
         }
@@ -213,7 +237,9 @@ where
         if update_canvas_transform {
             let new_events;
             (window, new_events) = canvas_drawing.future_desync(move |canvas_drawing| async move {
-                if let Some(winit_window) = &window.window {
+                let window_lock = window.lock().unwrap();
+                
+                if let Some(winit_window) = &window_lock.window {
                     // Set up a renderer for the window
                     let size    = winit_window.inner_size();
                     let width   = size.width;
@@ -222,7 +248,7 @@ where
                     let mut renderer = CanvasDrawingRegionRenderer::new(ShardScanPlanner::<Arc<dyn EdgeDescriptor>>::default(), ScanlineRenderer::new(canvas_drawing.program_runner(height as _)), height as _);
 
                     // Set the renderer scaling to match the requested viewport bounds
-                    match window.viewport_bounds {
+                    match window_lock.viewport_bounds {
                         ViewportBounds::All                                 => { }
                         ViewportBounds::Width(requested_width)              => { renderer.viewport_fit_width(&canvas_drawing, width as _, requested_width as _); }
                         ViewportBounds::CenterRegion((x1, y1), (x2, y2))    => { renderer.viewport_fit_center(&canvas_drawing, width as _, (x1 as _)..(x2 as _), (y1 as _)..(y2 as _)); }
@@ -233,8 +259,10 @@ where
                     let transform = renderer.viewport_transform(canvas_drawing, width as _);
 
                     // Send on as an event
+                    drop(window_lock);
                     (window, Some(DrawEvent::CanvasTransform(transform)))
                 } else {
+                    drop(window_lock);
                     (window, None)
                 }
             }.boxed()).await.unwrap();
