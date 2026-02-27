@@ -71,8 +71,18 @@ pub fn main() {
                                 gc.layer(LayerId(1));
                                 gc.clear_layer();
 
+                                let radius = if let Some(pressure) = state.pressure {
+                                    if pressure > 0.0 {
+                                        20.0 * pressure
+                                    } else {
+                                        20.0
+                                    }
+                                } else {
+                                    20.0
+                                };
+
                                 gc.new_path();
-                                gc.circle(*x as _, *y as _, 20.0);
+                                gc.circle(*x as _, *y as _, radius as _);
 
                                 gc.stroke_color(Color::Rgba(0.1, 0.1, 0.1, 0.8));
                                 gc.line_width_pixels(3.0);
