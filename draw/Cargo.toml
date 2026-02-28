@@ -55,6 +55,8 @@ objc2-quartz-core   = { version = "0.2", features = [ "CALayer", "CAMetalLayer",
 wayland-client      = "0.31"
 wayland-protocols   = { version = "0.32", features = ["client"] }
 wayland-backend     = { version = "0.3", features = ["client_system"] }
+flo_scene           = { version = "0.3", features = ["tokio_support"] }
+tokio               = { version = "1.37", features = [ "rt" ] }
 
 [dev-dependencies]
 flo_curves          = "0.8"
