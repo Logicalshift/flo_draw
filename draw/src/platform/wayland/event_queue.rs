@@ -61,11 +61,11 @@ where
 
         loop {
             // Flush the queue and dispatch any pending events
-            event_queue.flush().unwrap();
-            event_queue.dispatch_pending(&mut state).unwrap();
+            let Ok(_) = event_queue.flush() else { break; };
+            let Ok(_) = event_queue.dispatch_pending(&mut state) else { break; };
 
             // Wait for the fd to become readable (stop on error)
-            let Ok(ready_guard) = queue_fd.readable().await else { break; };
+            let Ok(mut ready_guard) = queue_fd.readable().await else { break; };
 
             // Acquire the read guard (need to call dispatch_pending if it returns 'None', which we can do by just continuing the loop)
             let Some(guard) = event_queue.prepare_read() else { continue; };
@@ -75,7 +75,8 @@ where
                     use std::io::*;
 
                     if io_error.kind() == ErrorKind::WouldBlock {
-                        // WouldBlock might indicate a race condition with another thread
+                        // WouldBlock indicates a spurious wakeup
+                        ready_guard.clear_ready();
                         continue;
                     }
 
