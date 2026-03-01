@@ -12,6 +12,10 @@ use std::sync::mpsc;
 use std::thread;
 use std::collections::{HashMap};
 
+#[cfg(target_os="linux")] use crate::draw_scene::*;
+#[cfg(target_os="linux")] use crate::platform::wayland::*;
+#[cfg(target_os="linux")] use flo_scene::*;
+
 static WINIT_THREAD: Lazy<Desync<Option<Arc<WinitThread>>>> = Lazy::new(|| Desync::new(None));
 
 ///
@@ -134,6 +138,10 @@ fn run_winit_thread(send_proxy: mpsc::Sender<EventLoopProxy<WinitThreadEvent>>) 
 
     // Send the proxy back to the creating thread
     send_proxy.send(proxy).expect("Main thread is waiting to receive its proxy");
+
+    // Run platform subprograms
+    #[cfg(target_os="linux")] let display_handle = event_loop.owned_display_handle();
+    #[cfg(target_os="linux")] flo_draw_scene_context().add_subprogram(*WAYLAND_TABLET_SUBPROGRAM, move |input, context| wayland_tablet_program(input, context, display_handle), 10);
 
     // The runtime struct is used to maintain state when the event loop is running
     let mut runtime = WinitRuntime { 
