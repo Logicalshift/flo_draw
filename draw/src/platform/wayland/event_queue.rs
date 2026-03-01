@@ -145,7 +145,9 @@ where
                         continue;
                     }
 
-                    Err(WaylandError::Io(io_error))
+                    // Other errors probably indicate that the connection has been closed
+                    // (Usually a bad file descriptor, which has an uncategorised kind, so we just assume everything means 'wayland is closed')
+                    break;
                 }
 
                 Err(other) => Err(other),
