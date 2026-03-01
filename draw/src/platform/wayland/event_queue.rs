@@ -98,6 +98,7 @@ where
                 use std::io;
                 use std::os::fd::*;
 
+                // We can either receive input from the scene, or the wayland file descriptor can become ready
                 enum InputOrReady<'a, TState, TFd> 
                 where
                     TFd: AsRawFd,
@@ -111,6 +112,7 @@ where
                     msg         = input.next().boxed().fuse()   => InputOrReady::Input(msg)
                 };
 
+                // If the file descriptor is ready, continue in the outer event handling loop (otherwise handle input events)
                 match next_action {
                     // Stop waiting and dispatch pending events if the guard is ready
                     InputOrReady::ReadyGuard(maybe_ready_guard) => { break maybe_ready_guard; }
