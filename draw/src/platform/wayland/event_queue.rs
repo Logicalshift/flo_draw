@@ -56,7 +56,7 @@ where
     let state = Arc::new(Mutex::new(state));
 
     // Create the future that runs the event queue
-    let event_queue_future = run_event_queue(event_queue, state.clone());
+    let event_queue_future = run_event_queue(event_queue, state.clone(), context);
 
     // Also process the input events
     let input_events_future = async move {
@@ -78,7 +78,7 @@ where
 ///
 /// Future that runs the event queue
 ///
-fn run_event_queue<TState>(event_queue: EventQueue<TState>, state: TState) -> impl 'static + Send + Future<Output=()> 
+fn run_event_queue<TState>(event_queue: EventQueue<TState>, state: TState, context: SceneContext) -> impl 'static + Send + Future<Output=()> 
 where
     TState: 'static + Send,
 {
