@@ -9,32 +9,66 @@ use wayland_backend::client::{WaylandError};
 use wayland_client::{EventQueue};
 
 use std::os::fd::{AsFd};
+use std::sync::*;
 
 ///
 /// Messages that can be sent to control a Wayland event queue
 ///
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum WaylandEventQueue {
-
+pub enum WaylandEventQueue<TState> {
+    /// Updates the state for this event queue
+    UpdateState(Box<dyn Send + FnOnce(&mut TState)>),
 }
 
-impl SceneMessage for WaylandEventQueue {
+impl<TState> SceneMessage for WaylandEventQueue<TState> 
+where
+    TState: 'static + Send
+{
+    #[inline] fn serializable() -> bool { false }
+}
+
+impl<TState> Serialize for WaylandEventQueue<TState> {
+    fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer 
+    {
+        use serde::ser::{Error};
+        Err(S::Error::custom("WaylandEventQueue cannot be serialized"))
+    }
+}
+
+impl<'a, TState> Deserialize<'a> for WaylandEventQueue<TState> {
+    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'a> 
+    {
+        use serde::de::{Error};
+        Err(D::Error::custom("WaylandEventQueue cannot be serialized"))
+    }
 }
 
 ///
 /// Subprogram that runs a wayland event queue
 ///
-pub async fn wayland_event_queue_subprogram<TState>(input: InputStream<WaylandEventQueue>, context: SceneContext, event_queue: EventQueue<TState>, state: TState)
+pub async fn wayland_event_queue_subprogram<TState>(input: InputStream<WaylandEventQueue<TState>>, context: SceneContext, event_queue: EventQueue<Arc<Mutex<TState>>>, state: TState)
 where 
     TState: 'static + Send,
 {
+    let state = Arc::new(Mutex::new(state));
+
     // Create the future that runs the event queue
-    let event_queue_future = run_event_queue(event_queue, state);
+    let event_queue_future = run_event_queue(event_queue, state.clone());
 
     // Also process the input events
     let input_events_future = async move {
         let mut input = input;
-        while let Some(_msg) = input.next().await {
+        while let Some(msg) = input.next().await {
+            match msg {
+                WaylandEventQueue::UpdateState(update_fn) => {
+                    // Call the function back on the current state stored with the event queue
+                    let mut state = state.lock().unwrap();
+                    (update_fn)(&mut *state);
+                }
+            }
         }
     };
 
