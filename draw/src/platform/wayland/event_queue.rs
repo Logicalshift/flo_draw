@@ -158,5 +158,9 @@ where
 
             drop(ready_guard);
         }
+
+        // We generally shut down when the wayland session is finished: in this case we need to forget the event_queue as it will segv if the display has gone bad
+        use std::mem;
+        mem::forget(event_queue);
     }
 }
