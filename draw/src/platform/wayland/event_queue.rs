@@ -3,8 +3,10 @@ use super::dispatch::*;
 use flo_scene::*;
 
 use futures::prelude::*;
+use futures::select;
 use serde::*;
 
+use tokio::io::unix::AsyncFdReadyGuard;
 use tokio::io::unix::{AsyncFd};
 
 use wayland_backend::client::{WaylandError};
@@ -60,37 +62,12 @@ impl<'a, TState> Deserialize<'a> for WaylandEventQueue<TState> {
 ///
 /// Subprogram that runs a wayland event queue
 ///
-pub async fn wayland_event_queue_subprogram<TState>(input: InputStream<WaylandEventQueue<TState>>, context: SceneContext, event_queue: EventQueue<TState>, state: TState)
+pub fn wayland_event_queue_subprogram<TState>(input: InputStream<WaylandEventQueue<TState>>, context: SceneContext, event_queue: EventQueue<TState>, state: TState) -> impl 'static + Send + Future<Output=()> 
 where 
     TState: 'static + FloWaylandState,
 {
-    // Create the future that runs the event queue
-    let event_queue_future = run_event_queue(event_queue, state, context);
+    let mut input = input;
 
-    // Also process the input events
-    let input_events_future = async move {
-        let mut input = input;
-        while let Some(msg) = input.next().await {
-            match msg {
-                WaylandEventQueue::UpdateState(update_fn) => {
-                    // Call the function back on the current state stored with the event queue
-                    //let mut state = state.lock().unwrap();
-                    //(update_fn)(&mut *state);
-                }
-            }
-        }
-    };
-
-    future::select(event_queue_future.boxed(), input_events_future.boxed()).await;
-}
-
-///
-/// Future that runs the event queue
-///
-fn run_event_queue<TState>(event_queue: EventQueue<TState>, state: TState, context: SceneContext) -> impl 'static + Send + Future<Output=()> 
-where
-    TState: 'static + FloWaylandState,
-{
     async move {
         let mut state       = state;
         let mut event_queue = event_queue;
@@ -110,13 +87,50 @@ where
             // Dispatch any pending actions
             if let Some(dispatcher) = state.dispatcher() {
                 let pending_actions = FloWaylandDispatcher::execute_pending(dispatcher, &context);
-                drop(dispatcher);
 
                 pending_actions.await;
             }
 
-            // Wait for the fd to become readable (stop on error)
-            let Ok(mut ready_guard) = queue_fd.readable().await else { break; };
+            // Wait for the fd to become readable (stop on error), and process input while we're waiting
+            let mut queue_fd_readable = queue_fd.readable().boxed().fuse();
+            let mut next_input        = input.next().boxed().fuse();
+
+            let maybe_ready_guard = loop {
+                use std::io;
+                use std::os::fd::*;
+
+                enum InputOrReady<'a, TState, TFd> 
+                where
+                    TFd: AsRawFd,
+                {
+                    ReadyGuard(io::Result<AsyncFdReadyGuard<'a, TFd>>),
+                    Input(Option<WaylandEventQueue<TState>>)
+                }
+
+                let next_action = select! {
+                    ready_guard = queue_fd_readable => InputOrReady::ReadyGuard(ready_guard),
+                    msg         = next_input        => InputOrReady::Input(msg)
+                };
+
+                match next_action {
+                    // Stop waiting and dispatch pending events if the guard is ready
+                    InputOrReady::ReadyGuard(maybe_ready_guard) => { break maybe_ready_guard; }
+
+                    // Handle update requests coming from the scene
+                    InputOrReady::Input(Some(WaylandEventQueue::UpdateState(update_state))) => {
+                        (update_state)(&mut state);
+                    }
+
+                    // Stop processing the event loop if the subprogram is stopped
+                    InputOrReady::Input(None) => {
+                        return;
+                    }
+                }
+            };
+            drop(queue_fd_readable);
+            drop(next_input);
+
+            let Ok(mut ready_guard) = maybe_ready_guard else { break; };
 
             // Acquire the read guard (need to call dispatch_pending if it returns 'None', which we can do by just continuing the loop)
             let Some(guard) = event_queue.prepare_read() else { continue; };
