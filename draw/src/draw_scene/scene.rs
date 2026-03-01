@@ -26,7 +26,6 @@ pub fn flo_draw_scene_context() -> Arc<Scene> {
     flo_draw_wgpu_scene()
 }
 
-
 ///
 /// Retrieves or creates a scene context for flo_draw
 ///

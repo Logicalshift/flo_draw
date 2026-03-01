@@ -15,6 +15,10 @@ use wayland_client::{Connection, QueueHandle, Dispatch};
 use wayland_client::backend::{Backend};
 use wayland_client::globals::{registry_queue_init, GlobalListContents};
 use wayland_client::protocol::wl_registry::{Event, WlRegistry};
+use once_cell::sync::{Lazy};
+
+/// The program ID where the wayland tablet program runs
+pub static WAYLAND_TABLET_SUBPROGRAM: Lazy<SubProgramId> = Lazy::new(|| SubProgramId::called("flo_draw::wayland::tablet"));
 
 ///
 /// State information for tracking wayland tablet events
@@ -51,10 +55,9 @@ impl Dispatch<WlRegistry, GlobalListContents> for WaylandTabletState {
 ///
 /// Runs the wayland tablet program, which sends tablet events to windows
 ///
-pub fn wayland_tablet_program<TEvent>(input: InputStream<WaylandEventQueue<WaylandTabletState>>, context: SceneContext, event_loop: &EventLoop<TEvent>) -> impl 'static + Future<Output=()> {
+pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTabletState>>, context: SceneContext, display_handle: OwnedDisplayHandle) -> impl 'static + Future<Output=()> {
     // Create a wayland backend from the event loop
-    let display_ptr = event_loop.raw_display_handle();
-    let proxy       = event_loop.create_proxy();
+    let display_ptr = display_handle.raw_display_handle();
 
     let wayland_backend = if let RawDisplayHandle::Wayland(handle) = display_ptr {
         Some(unsafe { Backend::from_foreign_display(handle.display.cast()) })
