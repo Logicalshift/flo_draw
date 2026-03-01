@@ -1,3 +1,5 @@
+use super::dispatch::*;
+
 use flo_scene::*;
 
 use futures::prelude::*;
@@ -9,7 +11,6 @@ use wayland_backend::client::{WaylandError};
 use wayland_client::{EventQueue};
 
 use std::os::fd::{AsFd};
-use std::sync::*;
 
 ///
 /// Messages that can be sent to control a Wayland event queue
@@ -17,6 +18,16 @@ use std::sync::*;
 pub enum WaylandEventQueue<TState> {
     /// Updates the state for this event queue
     UpdateState(Box<dyn Send + FnOnce(&mut TState)>),
+}
+
+///
+/// Trait implemented by event queue state objects that are scheduled in the scene
+///
+pub trait FloWaylandState : Send {
+    ///
+    /// If this state dispatches events, this retrieves the dispatcher
+    ///
+    fn dispatcher(&mut self) -> Option<&mut FloWaylandDispatcher>;
 }
 
 impl<TState> SceneMessage for WaylandEventQueue<TState> 
@@ -49,14 +60,12 @@ impl<'a, TState> Deserialize<'a> for WaylandEventQueue<TState> {
 ///
 /// Subprogram that runs a wayland event queue
 ///
-pub async fn wayland_event_queue_subprogram<TState>(input: InputStream<WaylandEventQueue<TState>>, context: SceneContext, event_queue: EventQueue<Arc<Mutex<TState>>>, state: TState)
+pub async fn wayland_event_queue_subprogram<TState>(input: InputStream<WaylandEventQueue<TState>>, context: SceneContext, event_queue: EventQueue<TState>, state: TState)
 where 
-    TState: 'static + Send,
+    TState: 'static + FloWaylandState,
 {
-    let state = Arc::new(Mutex::new(state));
-
     // Create the future that runs the event queue
-    let event_queue_future = run_event_queue(event_queue, state.clone(), context);
+    let event_queue_future = run_event_queue(event_queue, state, context);
 
     // Also process the input events
     let input_events_future = async move {
@@ -65,8 +74,8 @@ where
             match msg {
                 WaylandEventQueue::UpdateState(update_fn) => {
                     // Call the function back on the current state stored with the event queue
-                    let mut state = state.lock().unwrap();
-                    (update_fn)(&mut *state);
+                    //let mut state = state.lock().unwrap();
+                    //(update_fn)(&mut *state);
                 }
             }
         }
@@ -80,7 +89,7 @@ where
 ///
 fn run_event_queue<TState>(event_queue: EventQueue<TState>, state: TState, context: SceneContext) -> impl 'static + Send + Future<Output=()> 
 where
-    TState: 'static + Send,
+    TState: 'static + FloWaylandState,
 {
     async move {
         let mut state       = state;
@@ -97,6 +106,14 @@ where
             // Flush the queue and dispatch any pending events
             let Ok(_) = event_queue.flush() else { break; };
             let Ok(_) = event_queue.dispatch_pending(&mut state) else { break; };
+
+            // Dispatch any pending actions
+            if let Some(dispatcher) = state.dispatcher() {
+                let pending_actions = FloWaylandDispatcher::execute_pending(dispatcher, &context);
+                drop(dispatcher);
+
+                pending_actions.await;
+            }
 
             // Wait for the fd to become readable (stop on error)
             let Ok(mut ready_guard) = queue_fd.readable().await else { break; };
