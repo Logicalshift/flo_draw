@@ -93,7 +93,6 @@ where
 
             // Wait for the fd to become readable (stop on error), and process input while we're waiting
             let mut queue_fd_readable = queue_fd.readable().boxed().fuse();
-            let mut next_input        = input.next().boxed().fuse();
 
             let maybe_ready_guard = loop {
                 use std::io;
@@ -108,8 +107,8 @@ where
                 }
 
                 let next_action = select! {
-                    ready_guard = queue_fd_readable => InputOrReady::ReadyGuard(ready_guard),
-                    msg         = next_input        => InputOrReady::Input(msg)
+                    ready_guard = queue_fd_readable             => InputOrReady::ReadyGuard(ready_guard),
+                    msg         = input.next().boxed().fuse()   => InputOrReady::Input(msg)
                 };
 
                 match next_action {
@@ -128,7 +127,6 @@ where
                 }
             };
             drop(queue_fd_readable);
-            drop(next_input);
 
             let Ok(mut ready_guard) = maybe_ready_guard else { break; };
 
