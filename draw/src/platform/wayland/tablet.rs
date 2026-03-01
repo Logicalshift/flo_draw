@@ -5,8 +5,11 @@ use flo_scene::*;
 
 use futures::prelude::*;
 
+use std::collections::*;
+
 use winit::event_loop::*;
 use winit::raw_window_handle_05::{RawDisplayHandle, HasRawDisplayHandle};
+use winit::window::{WindowId};
 
 use wayland_client::{Connection, QueueHandle, Dispatch};
 use wayland_client::backend::{Backend};
@@ -17,7 +20,22 @@ use wayland_client::protocol::wl_registry::{Event, WlRegistry};
 /// State information for tracking wayland tablet events
 ///
 pub struct WaylandTabletState {
+    /// Used to dispatch futures in response to tablet events
     dispatcher: FloWaylandDispatcher,
+
+    /// The window definitions, mapped from a wayland surface ID
+    windows: HashMap<usize, WaylandTabletWindow>
+}
+
+///
+/// Details about a window that we're tracking tablet events for
+///
+struct WaylandTabletWindow {
+    /// The winit window ID
+    window_id: WindowId,
+
+    /// The scale factor for this window, used for calculating coordinates
+    scale: f64,
 }
 
 impl FloWaylandState for WaylandTabletState {
@@ -58,6 +76,7 @@ pub fn wayland_tablet_program<TEvent>(input: InputStream<WaylandEventQueue<Wayla
         // Set up the initial state
         let state = WaylandTabletState {
             dispatcher: FloWaylandDispatcher::new(),
+            windows:    HashMap::new(),
         };
 
         // Run the queue
