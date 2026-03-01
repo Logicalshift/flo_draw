@@ -8,7 +8,7 @@ use futures::prelude::*;
 use std::collections::*;
 
 use winit::event_loop::*;
-use winit::raw_window_handle_05::{RawDisplayHandle, HasRawDisplayHandle};
+use winit::raw_window_handle_05::{RawDisplayHandle, HasRawDisplayHandle, RawWindowHandle};
 use winit::window::{WindowId};
 
 use wayland_client::{Connection, QueueHandle, Dispatch};
@@ -23,8 +23,8 @@ pub struct WaylandTabletState {
     /// Used to dispatch futures in response to tablet events
     dispatcher: FloWaylandDispatcher,
 
-    /// The window definitions, mapped from a wayland surface ID
-    windows: HashMap<usize, WaylandTabletWindow>
+    /// The window definitions, mapped from a wayland surface pointer
+    window_for_surface: HashMap<usize, WaylandTabletWindow>
 }
 
 ///
@@ -75,11 +75,32 @@ pub fn wayland_tablet_program<TEvent>(input: InputStream<WaylandEventQueue<Wayla
 
         // Set up the initial state
         let state = WaylandTabletState {
-            dispatcher: FloWaylandDispatcher::new(),
-            windows:    HashMap::new(),
+            dispatcher:         FloWaylandDispatcher::new(),
+            window_for_surface: HashMap::new(),
         };
 
         // Run the queue
         wayland_event_queue_subprogram(input, context, event_queue, state).await;
+    }
+}
+
+///
+/// Calls the tablet program for the scene to register a window
+///
+pub async fn add_wayland_tablet_window(context: &SceneContext, raw_handle: RawWindowHandle, window_id: WindowId, initial_scale: f64) {
+    if let RawWindowHandle::Wayland(window_handle) = raw_handle {
+        // Cast the surface ptr to a usize to allow us to look it up later on
+        let surface_ptr = window_handle.surface as usize;
+
+        context.send_message(WaylandEventQueue::<WaylandTabletState>::UpdateState(Box::new(move |tablet_state| {
+            // Create a new window
+            let new_window = WaylandTabletWindow {
+                window_id:  window_id,
+                scale:      initial_scale,
+            };
+
+            // Add it to the state
+            tablet_state.window_for_surface.insert(surface_ptr, new_window);
+        }))).await.ok();
     }
 }
