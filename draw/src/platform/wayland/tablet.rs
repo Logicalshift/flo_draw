@@ -144,7 +144,6 @@ impl Dispatch<ZwpTabletSeatV2, ()> for WaylandTabletState {
 impl Dispatch<ZwpTabletToolV2, ()> for WaylandTabletState {
     fn event(_state: &mut Self, _proxy: &ZwpTabletToolV2, _event: zwp_tablet_tool_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
         // TODO: tablet events
-        println!("{:?}", _event);
     }
 }
 
