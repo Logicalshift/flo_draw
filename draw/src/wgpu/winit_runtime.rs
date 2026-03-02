@@ -24,6 +24,11 @@ use std::sync::*;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{HashMap};
 
+#[cfg(target_os = "linux")] use crate::draw_scene::*;
+#[cfg(target_os = "linux")] use crate::platform::wayland::*;
+#[cfg(target_os = "linux")] use flo_scene::*;
+#[cfg(target_os = "linux")] use winit::raw_window_handle_05::{HasRawWindowHandle};
+
 static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 
 pub (super) struct WindowData {
@@ -342,6 +347,9 @@ impl WinitRuntime {
                 let size                = window.inner_size();
                 let scale               = window.scale_factor();
 
+                #[cfg(target_os = "linux")]
+                let tablet_handle       = TabletWindowHandle::try_from(window.raw_window_handle());
+
                 // Store the publisher for the events for this window
                 let mut initial_events  = events.republish_weak();
                 let window_data         = WindowData {
@@ -350,8 +358,17 @@ impl WinitRuntime {
                 let window              = WinitWindow::new(window);
                 self.window_events.insert(window_id, window_data);
 
+                // Add the window to the scene
+                #[cfg(target_os = "linux")]
+                if let Some(tablet_handle) = tablet_handle {
+                    flo_draw_scene_context()
+                        .add_subprogram(SubProgramId::new(), move |_: InputStream<()>, context| async move {
+                            add_wayland_tablet_window(&context, tablet_handle, window_id, scale).await;
+                        }, 1);
+                }
+
                 // Run the window as a process on this thread
-                self.run_process(async move { 
+                self.run_process(async move {
                     // Send the initial events for this window (set the size and the DPI)
                     initial_events.publish(DrawEvent::Resize(size.width as f64, size.height as f64)).await;
                     initial_events.publish(DrawEvent::Scale(scale)).await;
