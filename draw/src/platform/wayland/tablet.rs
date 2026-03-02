@@ -34,6 +34,12 @@ use once_cell::sync::{Lazy};
 pub static WAYLAND_TABLET_SUBPROGRAM: Lazy<SubProgramId> = Lazy::new(|| SubProgramId::called("flo_draw::wayland::tablet"));
 
 ///
+/// Represents a tablet window handle, used to look up windows from their wayland surface pointers
+///
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
+pub struct TabletWindowHandle(usize);
+
+///
 /// State information for tracking wayland tablet events
 ///
 pub struct WaylandTabletState {
@@ -41,7 +47,7 @@ pub struct WaylandTabletState {
     dispatcher: FloWaylandDispatcher,
 
     /// The window definitions, mapped from a wayland surface pointer
-    window_for_surface: HashMap<usize, WaylandTabletWindow>,
+    window_for_surface: HashMap<TabletWindowHandle, WaylandTabletWindow>,
 
     /// The tools that are used with the tablet
     tools: HashMap<ObjectId, TabletTool>,
@@ -71,6 +77,22 @@ impl FloWaylandState for WaylandTabletState {
         Some(&mut self.dispatcher)
     }
 }
+
+impl TabletWindowHandle {
+    ///
+    /// Tries to create a tablet window handle from a raw window handle
+    ///
+    pub fn try_from(window_handle: RawWindowHandle) -> Option<TabletWindowHandle> {
+        if let RawWindowHandle::Wayland(window_handle) = window_handle {
+            // Cast the surface ptr to a usize to allow us to look it up later on
+            let surface_ptr = window_handle.surface as usize;
+            Some(TabletWindowHandle(surface_ptr))
+        } else {
+            None
+        }
+    }
+}
+
 
 impl Dispatch<WlRegistry, GlobalListContents> for WaylandTabletState {
     fn event(_state: &mut Self, _registry: &WlRegistry, _event: Event, _data: &GlobalListContents, _conn: &Connection, _qh: &QueueHandle<Self>) {}
@@ -211,36 +233,26 @@ pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTablet
 ///
 /// Calls the tablet program for the scene to register a window
 ///
-pub async fn add_wayland_tablet_window(context: &SceneContext, raw_handle: RawWindowHandle, window_id: WindowId, initial_scale: f64) {
-    if let RawWindowHandle::Wayland(window_handle) = raw_handle {
-        // Cast the surface ptr to a usize to allow us to look it up later on
-        let surface_ptr = window_handle.surface as usize;
+pub async fn add_wayland_tablet_window(context: &SceneContext, window_handle: TabletWindowHandle, window_id: WindowId, initial_scale: f64) {
+    context.send_message(WaylandEventQueue::<WaylandTabletState>::UpdateState(Box::new(move |tablet_state| {
+        // Create a new window
+        let new_window = WaylandTabletWindow {
+            window_id:  window_id,
+            scale:      initial_scale,
+        };
 
-        context.send_message(WaylandEventQueue::<WaylandTabletState>::UpdateState(Box::new(move |tablet_state| {
-            // Create a new window
-            let new_window = WaylandTabletWindow {
-                window_id:  window_id,
-                scale:      initial_scale,
-            };
-
-            // Add it to the state
-            tablet_state.window_for_surface.insert(surface_ptr, new_window);
-        }))).await.ok();
-    }
+        // Add it to the state
+        tablet_state.window_for_surface.insert(window_handle, new_window);
+    }))).await.ok();
 }
 
 ///
 /// Calls the tablet program for the scene to register a window
 ///
-pub async fn set_tablet_window_scale(context: &SceneContext, raw_handle: RawWindowHandle, new_scale: f64) {
-    if let RawWindowHandle::Wayland(window_handle) = raw_handle {
-        // Cast the surface ptr to a usize to allow us to look it up later on
-        let surface_ptr = window_handle.surface as usize;
-
-        context.send_message(WaylandEventQueue::<WaylandTabletState>::UpdateState(Box::new(move |tablet_state| {
-            // Change the scale of the existing window
-            let Some(window) = tablet_state.window_for_surface.get_mut(&surface_ptr) else { return; };
-            window.scale = new_scale;
-        }))).await.ok();
-    }
+pub async fn set_tablet_window_scale(context: &SceneContext, window_handle: TabletWindowHandle, new_scale: f64) {
+    context.send_message(WaylandEventQueue::<WaylandTabletState>::UpdateState(Box::new(move |tablet_state| {
+        // Change the scale of the existing window
+        let Some(window) = tablet_state.window_for_surface.get_mut(&window_handle) else { return; };
+        window.scale = new_scale;
+    }))).await.ok();
 }
