@@ -228,3 +228,19 @@ pub async fn add_wayland_tablet_window(context: &SceneContext, raw_handle: RawWi
         }))).await.ok();
     }
 }
+
+///
+/// Calls the tablet program for the scene to register a window
+///
+pub async fn set_tablet_window_scale(context: &SceneContext, raw_handle: RawWindowHandle, new_scale: f64) {
+    if let RawWindowHandle::Wayland(window_handle) = raw_handle {
+        // Cast the surface ptr to a usize to allow us to look it up later on
+        let surface_ptr = window_handle.surface as usize;
+
+        context.send_message(WaylandEventQueue::<WaylandTabletState>::UpdateState(Box::new(move |tablet_state| {
+            // Change the scale of the existing window
+            let Some(window) = tablet_state.window_for_surface.get_mut(&surface_ptr) else { return; };
+            window.scale = new_scale;
+        }))).await.ok();
+    }
+}
