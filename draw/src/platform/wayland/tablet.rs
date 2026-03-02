@@ -11,10 +11,22 @@ use winit::event_loop::*;
 use winit::raw_window_handle_05::{RawDisplayHandle, HasRawDisplayHandle, RawWindowHandle};
 use winit::window::{WindowId};
 
-use wayland_client::{Connection, QueueHandle, Dispatch};
+use wayland_client::{Connection, QueueHandle, Dispatch, event_created_child};
 use wayland_client::backend::{Backend};
 use wayland_client::globals::{registry_queue_init, GlobalListContents};
 use wayland_client::protocol::wl_registry::{Event, WlRegistry};
+use wayland_client::protocol::wl_seat::{self, WlSeat};
+use wayland_protocols::wp::tablet::zv2::client::{
+    *,
+    zwp_tablet_v2::*,
+    zwp_tablet_manager_v2::*,
+    zwp_tablet_seat_v2::*,
+    zwp_tablet_tool_v2::*,
+    zwp_tablet_pad_v2::*,
+    zwp_tablet_pad_group_v2::*,
+    zwp_tablet_pad_ring_v2::*,
+    zwp_tablet_pad_strip_v2::*,
+};
 use once_cell::sync::{Lazy};
 
 /// The program ID where the wayland tablet program runs
@@ -52,6 +64,60 @@ impl Dispatch<WlRegistry, GlobalListContents> for WaylandTabletState {
     fn event(_state: &mut Self, _registry: &WlRegistry, _event: Event, _data: &GlobalListContents, _conn: &Connection, _qh: &QueueHandle<Self>) {}
 }
 
+impl Dispatch<WlSeat, ()> for WaylandTabletState {
+    fn event(_state: &mut Self, _proxy: &WlSeat, _event: wl_seat::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
+        // Used so we can bind the tablet manager later on
+    }
+}
+
+impl Dispatch<ZwpTabletManagerV2, ()> for WaylandTabletState {
+    fn event(_state: &mut Self, _proxy: &ZwpTabletManagerV2, _event: zwp_tablet_manager_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
+        // Used to bind the tablet
+    }
+}
+
+impl Dispatch<ZwpTabletSeatV2, ()> for WaylandTabletState {
+    fn event(_state: &mut Self, _proxy: &ZwpTabletSeatV2, _event: zwp_tablet_seat_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
+        // TODO: track tools being added
+        println!("{:?}", _event);
+    }
+
+    event_created_child!(WaylandTabletState, ZwpTabletSeatV2, [
+        EVT_TABLET_ADDED_OPCODE => (ZwpTabletV2, ()),
+        EVT_TOOL_ADDED_OPCODE   => (ZwpTabletToolV2, ()),
+        EVT_PAD_ADDED_OPCODE    => (ZwpTabletPadV2, ()),
+    ]);
+}
+
+impl Dispatch<ZwpTabletToolV2, ()> for WaylandTabletState {
+    fn event(_state: &mut Self, _proxy: &ZwpTabletToolV2, _event: zwp_tablet_tool_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
+        // TODO: tablet events
+        println!("{:?}", _event);
+    }
+}
+
+impl Dispatch<ZwpTabletV2, ()> for WaylandTabletState {
+    fn event(_state: &mut Self, _proxy: &ZwpTabletV2, _event: zwp_tablet_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
+        // Only the tablet tool events are used at the moment
+    }
+}
+
+impl Dispatch<ZwpTabletPadV2, ()> for WaylandTabletState {
+    fn event(_state: &mut Self, _proxy: &ZwpTabletPadV2, _event: zwp_tablet_pad_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
+        // Not actually used, but panics without it
+    }
+
+    event_created_child!(WaylandTabletState, ZwpTabletPadV2, [
+        EVT_GROUP_OPCODE => (ZwpTabletPadGroupV2, ()),
+    ]);
+}
+
+impl Dispatch<ZwpTabletPadGroupV2, ()> for WaylandTabletState {
+    fn event(_state: &mut Self, _proxy: &ZwpTabletPadGroupV2, _event: zwp_tablet_pad_group_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
+        // Not used, but required for event handling
+    }
+}
+
 ///
 /// Runs the wayland tablet program, which sends tablet events to windows
 ///
@@ -81,6 +147,13 @@ pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTablet
             dispatcher:         FloWaylandDispatcher::new(),
             window_for_surface: HashMap::new(),
         };
+
+        // Bind the tablet manager (we'll leave with no tablet program if the manager fails to bind)
+        let Ok(tablet_manager) = globals.bind::<ZwpTabletManagerV2, _, _>(&queue_handle, 1..=1, ()) else { return; };
+
+        // Create the tablet seat to bind the events
+        let Ok(seat)     = globals.bind::<WlSeat, _, _>(&queue_handle, 1..=9, ()) else { return; };
+        let _tablet_seat = tablet_manager.get_tablet_seat(&seat, &queue_handle, ());
 
         // Run the queue
         wayland_event_queue_subprogram(input, context, event_queue, state).await;
