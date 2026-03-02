@@ -2,6 +2,7 @@ use super::dispatch::*;
 use super::event_queue::*;
 
 use flo_scene::*;
+use flo_canvas_events as canvas_events;
 
 use futures::prelude::*;
 
@@ -11,8 +12,8 @@ use winit::event_loop::*;
 use winit::raw_window_handle_05::{RawDisplayHandle, HasRawDisplayHandle, RawWindowHandle};
 use winit::window::{WindowId};
 
-use wayland_client::{Connection, QueueHandle, Dispatch, event_created_child};
-use wayland_client::backend::{Backend};
+use wayland_client::{Connection, QueueHandle, Dispatch, event_created_child, Proxy};
+use wayland_client::backend::{Backend, ObjectId};
 use wayland_client::globals::{registry_queue_init, GlobalListContents};
 use wayland_client::protocol::wl_registry::{Event, WlRegistry};
 use wayland_client::protocol::wl_seat::{self, WlSeat};
@@ -40,7 +41,18 @@ pub struct WaylandTabletState {
     dispatcher: FloWaylandDispatcher,
 
     /// The window definitions, mapped from a wayland surface pointer
-    window_for_surface: HashMap<usize, WaylandTabletWindow>
+    window_for_surface: HashMap<usize, WaylandTabletWindow>,
+
+    /// The tools that are used with the tablet
+    tools: HashMap<ObjectId, TabletTool>,
+}
+
+///
+/// Data stored with a tablet tool
+///
+struct TabletTool {
+    /// Pointer ID assigned to this tool
+    pointer_id: canvas_events::PointerId,
 }
 
 ///
@@ -77,9 +89,27 @@ impl Dispatch<ZwpTabletManagerV2, ()> for WaylandTabletState {
 }
 
 impl Dispatch<ZwpTabletSeatV2, ()> for WaylandTabletState {
-    fn event(_state: &mut Self, _proxy: &ZwpTabletSeatV2, _event: zwp_tablet_seat_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
-        // TODO: track tools being added
-        println!("{:?}", _event);
+    fn event(state: &mut Self, _proxy: &ZwpTabletSeatV2, event: zwp_tablet_seat_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
+        match event {
+            zwp_tablet_seat_v2::Event::ToolAdded { id } => {
+                let tool_object_id = id.id();
+
+                // Assign a pointer ID for this tool
+                let pointer_id = state.tools.len() + 1;
+                let pointer_id = canvas_events::PointerId(pointer_id as _);
+
+                // Create a structure for tracking the state of this tool
+                let tool = TabletTool {
+                    pointer_id
+                };
+
+                state.tools.insert(tool_object_id, tool);
+            },
+
+            zwp_tablet_seat_v2::Event::TabletAdded { .. }   => {},
+            zwp_tablet_seat_v2::Event::PadAdded { .. }      => {},
+            _                                               => {},
+        }
     }
 
     event_created_child!(WaylandTabletState, ZwpTabletSeatV2, [
@@ -163,6 +193,7 @@ pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTablet
         let state = WaylandTabletState {
             dispatcher:         FloWaylandDispatcher::new(),
             window_for_surface: HashMap::new(),
+            tools:              HashMap::new(),
         };
 
         // Bind the tablet manager (we'll leave with no tablet program if the manager fails to bind)
