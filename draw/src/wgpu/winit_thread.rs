@@ -142,6 +142,7 @@ fn run_winit_thread(send_proxy: mpsc::Sender<EventLoopProxy<WinitThreadEvent>>) 
     // Run platform subprograms
     #[cfg(target_os="linux")] let display_handle = event_loop.owned_display_handle();
     #[cfg(target_os="linux")] flo_draw_scene_context().add_subprogram(*WAYLAND_TABLET_SUBPROGRAM, move |input, context| wayland_tablet_program(input, context, display_handle), 10);
+    #[cfg(target_os="linux")] flo_draw_scene_context().connect_programs((), *WAYLAND_TABLET_SUBPROGRAM, StreamId::with_message_type::<WaylandEventQueue<WaylandTabletState>>()).ok();
 
     // The runtime struct is used to maintain state when the event loop is running
     let mut runtime = WinitRuntime { 
