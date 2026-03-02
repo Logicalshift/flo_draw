@@ -116,6 +116,23 @@ impl Dispatch<ZwpTabletPadGroupV2, ()> for WaylandTabletState {
     fn event(_state: &mut Self, _proxy: &ZwpTabletPadGroupV2, _event: zwp_tablet_pad_group_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
         // Not used, but required for event handling
     }
+
+    event_created_child!(WaylandTabletState, ZwpTabletPadGroupV2, [
+        EVT_RING_OPCODE     => (ZwpTabletPadRingV2,  ()),
+        EVT_STRIP_OPCODE    => (ZwpTabletPadStripV2, ()),
+    ]);
+}
+
+impl Dispatch<ZwpTabletPadRingV2, ()> for WaylandTabletState {
+    fn event(_state: &mut Self, _proxy: &ZwpTabletPadRingV2, _event: zwp_tablet_pad_ring_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
+        // Only the tablet tool events are used at the moment
+    }
+}
+
+impl Dispatch<ZwpTabletPadStripV2, ()> for WaylandTabletState {
+    fn event(_state: &mut Self, _proxy: &ZwpTabletPadStripV2, _event: zwp_tablet_pad_strip_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
+        // Only the tablet tool events are used at the moment
+    }
 }
 
 ///
@@ -139,7 +156,7 @@ pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTablet
         let connection = Connection::from_backend(wayland_backend);
 
         // Initialise the queue
-        let Ok((globals, mut event_queue)) = registry_queue_init::<WaylandTabletState>(&connection) else { return; };
+        let Ok((globals, event_queue)) = registry_queue_init::<WaylandTabletState>(&connection) else { return; };
         let queue_handle = event_queue.handle();
 
         // Set up the initial state
