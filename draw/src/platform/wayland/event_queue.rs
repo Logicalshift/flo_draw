@@ -66,6 +66,8 @@ pub fn wayland_event_queue_subprogram<TState>(input: InputStream<WaylandEventQue
 where 
     TState: 'static + FloWaylandState,
 {
+    // Note: the event queue must be dropped before wayland is shut down (this is achieved by clearing the futures before shutdown in winit_runtime)
+    // This is because wayland will generate an I/O error and then segfault if we're still waiting on the filedescriptor after it's shut down
     let mut input = input;
 
     async move {
@@ -158,9 +160,5 @@ where
 
             drop(ready_guard);
         }
-
-        // We generally shut down when the wayland session is finished: in this case we need to forget the event_queue as it will segv if the display has gone bad
-        use std::mem;
-        mem::forget(event_queue);
     }
 }

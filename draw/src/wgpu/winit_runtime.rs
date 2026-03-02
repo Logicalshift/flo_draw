@@ -114,6 +114,11 @@ impl WinitRuntime {
                 // Winit doesn't always respond to ControlFlow::Exit requests, setting it after the other events have cleared is an attempt
                 // to make it exit more reliably (only partially successful).
                 if self.will_exit {
+                    // Drop any futures running on our thread so any resources they might use are disposed before the windowing system shuts down
+                    // (we particularly want to stop the scene, wayland in particular will segv if an event queue is dropped after shutdown)
+                    self.futures.clear();
+
+                    // Shut down the windowing system
                     window_target.exit();
                 }
 
