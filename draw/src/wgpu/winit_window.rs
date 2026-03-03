@@ -64,8 +64,8 @@ impl WinitWindow {
 ///
 /// Provides the platform window trait, to allow external routines to extract the winit window
 ///
-struct WinitPlatformWindow {
-    window: Option<Arc<Window>>
+pub (crate) struct WinitPlatformWindow {
+    pub (crate) window: Option<Arc<Window>>
 }
 
 impl PlatformWindow for WinitPlatformWindow {
