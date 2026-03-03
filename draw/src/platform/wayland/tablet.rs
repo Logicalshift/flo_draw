@@ -2,6 +2,7 @@ use super::dispatch::*;
 use super::event_queue::*;
 
 use flo_scene::*;
+use flo_stream::*;
 use flo_canvas_events as canvas_events;
 
 use futures::prelude::*;
@@ -70,6 +71,9 @@ struct WaylandTabletWindow {
 
     /// The scale factor for this window, used for calculating coordinates
     scale: f64,
+
+    /// Publishes events to the window
+    event_publisher: WeakPublisher<canvas_events::DrawEvent>,
 }
 
 impl FloWaylandState for WaylandTabletState {
@@ -232,12 +236,13 @@ pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTablet
 ///
 /// Calls the tablet program for the scene to register a window
 ///
-pub async fn add_wayland_tablet_window(context: &SceneContext, window_handle: TabletWindowHandle, window_id: WindowId, initial_scale: f64) {
+pub async fn add_wayland_tablet_window(context: &SceneContext, window_handle: TabletWindowHandle, window_id: WindowId, initial_scale: f64, events: WeakPublisher<canvas_events::DrawEvent>) {
     context.send_message(WaylandEventQueue::<WaylandTabletState>::UpdateState(Box::new(move |tablet_state| {
         // Create a new window
         let new_window = WaylandTabletWindow {
-            window_id:  window_id,
-            scale:      initial_scale,
+            window_id:          window_id,
+            scale:              initial_scale,
+            event_publisher:    events,
         };
 
         // Add it to the state

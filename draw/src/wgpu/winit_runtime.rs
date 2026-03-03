@@ -365,6 +365,17 @@ impl WinitRuntime {
                 #[cfg(target_os = "linux")]
                 let tablet_handle       = TabletWindowHandle::try_from(window.raw_window_handle());
 
+                // Add the window to the scene
+                #[cfg(target_os = "linux")]
+                if let Some(tablet_handle) = tablet_handle {
+                    let events = events.republish_weak();
+
+                    flo_draw_scene_context()
+                        .add_subprogram(SubProgramId::new(), move |_: InputStream<()>, context| async move {
+                            add_wayland_tablet_window(&context, tablet_handle, window_id, scale, events).await;
+                        }, 1);
+                }
+
                 // Store the publisher for the events for this window
                 let mut initial_events  = events.republish_weak();
                 let window_data         = WindowData {
@@ -375,15 +386,6 @@ impl WinitRuntime {
                 };
                 let window              = WinitWindow::new(window);
                 self.window_events.insert(window_id, window_data);
-
-                // Add the window to the scene
-                #[cfg(target_os = "linux")]
-                if let Some(tablet_handle) = tablet_handle {
-                    flo_draw_scene_context()
-                        .add_subprogram(SubProgramId::new(), move |_: InputStream<()>, context| async move {
-                            add_wayland_tablet_window(&context, tablet_handle, window_id, scale).await;
-                        }, 1);
-                }
 
                 // Run the window as a process on this thread
                 self.run_process(async move {
