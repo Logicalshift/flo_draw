@@ -336,7 +336,7 @@ impl Dispatch<ZwpTabletToolV2, ()> for WaylandTabletState {
             Slider { .. }           => { }
             Wheel { .. }            => { }
             
-            _ => todo!(),
+            _                       => { },
         }
     }
 }
