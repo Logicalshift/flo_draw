@@ -33,6 +33,10 @@ static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 
 pub (super) struct WindowData {
     event_publisher: Publisher<DrawEvent>,
+
+    /// The wayland tablet handle for this window
+    #[cfg(target_os = "linux")]
+    pub (super) tablet_handle: Option<TabletWindowHandle>,
 }
 
 ///
@@ -61,7 +65,7 @@ pub (super) struct WinitRuntime {
     pub (super) pointer_state: HashMap<DeviceId, PointerState>,
 
     /// Set to true when we'll set the control flow to 'Exit' once the current set of events have finished processing
-    pub (super) will_exit: bool
+    pub (super) will_exit: bool,
 }
 
 ///
@@ -158,6 +162,17 @@ impl WinitRuntime {
             },
 
             ScaleFactorChanged { scale_factor, inner_size_writer: _ }       => {
+                #[cfg(target_os = "linux")]
+                let tablet_handle = self.window_events.get(&window_id).and_then(|data| data.tablet_handle);
+
+                #[cfg(target_os = "linux")]
+                if let Some(tablet_handle) = tablet_handle {
+                    flo_draw_scene_context()
+                        .add_subprogram(SubProgramId::new(), move |_: InputStream<()>, context| async move {
+                            set_tablet_window_scale(&context, tablet_handle, scale_factor).await;
+                        }, 1);
+                }
+
                 vec![DrawEvent::Scale(scale_factor), DrawEvent::Redraw]
             },
 
@@ -354,6 +369,9 @@ impl WinitRuntime {
                 let mut initial_events  = events.republish_weak();
                 let window_data         = WindowData {
                     event_publisher:    events,
+
+                    #[cfg(target_os = "linux")]
+                    tablet_handle:      tablet_handle,
                 };
                 let window              = WinitWindow::new(window);
                 self.window_events.insert(window_id, window_data);
