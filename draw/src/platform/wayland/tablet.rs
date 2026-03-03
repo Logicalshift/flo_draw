@@ -183,12 +183,18 @@ impl Dispatch<ZwpTabletSeatV2, ()> for WaylandTabletState {
 }
 
 impl TabletTool {
+    /// Returns the current position
+    #[inline]
+    fn pos(&self) -> (f64, f64) {
+        (self.position.0 * self.scale, self.position.1 * self.scale)
+    }
+
     /// Generates the 'enter' event for when this tool enters proximity for a window
     fn enter_event(&self) -> canvas_events::DrawEvent {
         use canvas_events::DrawEvent::*;
         use canvas_events::{PointerAction, PointerState};
 
-        Pointer(PointerAction::Enter, self.pointer_id, PointerState { location_in_window: self.position, location_in_canvas: None, buttons: vec![], pressure: None, tilt: None, rotation: None, flow_rate: None })
+        Pointer(PointerAction::Enter, self.pointer_id, PointerState { location_in_window: self.pos(), location_in_canvas: None, buttons: vec![], pressure: None, tilt: None, rotation: None, flow_rate: None })
     }
 
     /// Generates the 'leave' event for when this tool leaves proximity for a window
@@ -196,7 +202,23 @@ impl TabletTool {
         use canvas_events::DrawEvent::*;
         use canvas_events::{PointerAction, PointerState};
 
-        Pointer(PointerAction::Leave, self.pointer_id, PointerState { location_in_window: self.position, location_in_canvas: None, buttons: vec![], pressure: None, tilt: None, rotation: None, flow_rate: None })
+        Pointer(PointerAction::Leave, self.pointer_id, PointerState { location_in_window: self.pos(), location_in_canvas: None, buttons: vec![], pressure: None, tilt: None, rotation: None, flow_rate: None })
+    }
+
+    // Creates a 'button press' event
+    fn press(&self, button: canvas_events::Button) -> canvas_events::DrawEvent {
+        use canvas_events::DrawEvent::*;
+        use canvas_events::{PointerAction, PointerState};
+
+        Pointer(PointerAction::ButtonDown, self.pointer_id, PointerState { location_in_window: self.pos(), location_in_canvas: None, buttons: vec![button], pressure: None, tilt: None, rotation: None, flow_rate: None })
+    }
+
+    // Creates a 'button release' event
+    fn release(&self, button: canvas_events::Button) -> canvas_events::DrawEvent {
+        use canvas_events::DrawEvent::*;
+        use canvas_events::{PointerAction, PointerState};
+
+        Pointer(PointerAction::ButtonUp, self.pointer_id, PointerState { location_in_window: self.pos(), location_in_canvas: None, buttons: vec![button], pressure: None, tilt: None, rotation: None, flow_rate: None })
     }
 }
 
@@ -249,11 +271,23 @@ impl Dispatch<ZwpTabletToolV2, ()> for WaylandTabletState {
             Up                      => { tool_data.tip_down = false; },
 
             Button { button, state: button_state, .. } => {
-                match button_state {
-                    WEnum::Value(ButtonState::Pressed)  => { tool_data.buttons.push(canvas_events::Button::Other(button as _)); }
-                    WEnum::Value(ButtonState::Released) => { tool_data.buttons.retain(|pressed| pressed != &canvas_events::Button::Other(button as _)); }
+                let Some(window_handle) = tool_data.active_window else { return; };
+                let Some(window_data)   = window_for_surface.get_mut(&window_handle) else { return; };
 
-                    _ => { }
+                // Update the button state
+                let button = canvas_events::Button::Other(button as _);
+
+                let action = match button_state {
+                    WEnum::Value(ButtonState::Pressed)  => { tool_data.buttons.push(button); Some(tool_data.press(button)) }
+                    WEnum::Value(ButtonState::Released) => { tool_data.buttons.retain(|pressed| pressed != &button); Some(tool_data.release(button)) }
+
+                    _ => { None }
+                };
+
+                // Send a press or release event for the button
+                if let Some(action) = action {
+                    let action = window_data.event_publisher.publish(action);
+                    dispatcher.dispatch(move |_| async move { action.await });
                 }
             },
 
