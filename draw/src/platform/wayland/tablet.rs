@@ -11,7 +11,6 @@ use std::collections::*;
 
 use winit::event_loop::*;
 use winit::raw_window_handle_05::{RawDisplayHandle, HasRawDisplayHandle, RawWindowHandle};
-use winit::window::{WindowId};
 
 use wayland_client::{Connection, QueueHandle, Dispatch, event_created_child, Proxy, WEnum};
 use wayland_client::backend::{Backend, ObjectId};
@@ -69,7 +68,6 @@ struct TabletTool {
     active_window: Option<TabletWindowHandle>,
 
     /// Pointer properties
-    nearby:         bool,
     position:       (f64, f64),
     pressure:       Option<f64>,
     tilt:           Option<(f64, f64)>,
@@ -84,9 +82,6 @@ struct TabletTool {
 /// Details about a window that we're tracking tablet events for
 ///
 struct WaylandTabletWindow {
-    /// The winit window ID
-    window_id: WindowId,
-
     /// The scale factor for this window, used for calculating coordinates
     scale: f64,
 
@@ -155,7 +150,6 @@ impl Dispatch<ZwpTabletSeatV2, ()> for WaylandTabletState {
                     pointer_id:     pointer_id,
                     scale:          1.0,
                     active_window:  None,
-                    nearby:         false,
                     position:       (0.0, 0.0),
                     pressure:       None,
                     tilt:           None,
@@ -432,11 +426,10 @@ pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTablet
 ///
 /// Calls the tablet program for the scene to register a window
 ///
-pub async fn add_wayland_tablet_window(context: &SceneContext, window_handle: TabletWindowHandle, window_id: WindowId, initial_scale: f64, events: WeakPublisher<canvas_events::DrawEvent>) {
+pub async fn add_wayland_tablet_window(context: &SceneContext, window_handle: TabletWindowHandle, initial_scale: f64, events: WeakPublisher<canvas_events::DrawEvent>) {
     context.send_message(WaylandEventQueue::<WaylandTabletState>::UpdateState(Box::new(move |tablet_state| {
         // Create a new window
         let new_window = WaylandTabletWindow {
-            window_id:          window_id,
             scale:              initial_scale,
             event_publisher:    events,
         };

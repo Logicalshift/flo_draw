@@ -368,7 +368,7 @@ impl WinitRuntime {
 
                     flo_draw_scene_context()
                         .add_subprogram(SubProgramId::new(), move |_: InputStream<()>, context| async move {
-                            add_wayland_tablet_window(&context, tablet_handle, window_id, scale, events).await;
+                            add_wayland_tablet_window(&context, tablet_handle, scale, events).await;
                         }, 1);
                 }
 
