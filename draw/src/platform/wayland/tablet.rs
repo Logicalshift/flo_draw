@@ -13,7 +13,7 @@ use winit::event_loop::*;
 use winit::raw_window_handle_05::{RawDisplayHandle, HasRawDisplayHandle, RawWindowHandle};
 use winit::window::{WindowId};
 
-use wayland_client::{Connection, QueueHandle, Dispatch, event_created_child, Proxy};
+use wayland_client::{Connection, QueueHandle, Dispatch, event_created_child, Proxy, WEnum};
 use wayland_client::backend::{Backend, ObjectId};
 use wayland_client::globals::{registry_queue_init, GlobalListContents};
 use wayland_client::protocol::wl_surface::{WlSurface};
@@ -64,6 +64,9 @@ struct TabletTool {
 
     /// Scale, copied from the window when the pointer is nearby
     scale: f64,
+
+    /// The handle of the window that the tool is in
+    active_window: Option<TabletWindowHandle>,
 
     /// Pointer properties
     nearby:         bool,
@@ -151,6 +154,7 @@ impl Dispatch<ZwpTabletSeatV2, ()> for WaylandTabletState {
                 let tool = TabletTool {
                     pointer_id:     pointer_id,
                     scale:          1.0,
+                    active_window:  None,
                     nearby:         false,
                     position:       (0.0, 0.0),
                     pressure:       None,
@@ -178,9 +182,28 @@ impl Dispatch<ZwpTabletSeatV2, ()> for WaylandTabletState {
     ]);
 }
 
+impl TabletTool {
+    /// Generates the 'enter' event for when this tool enters proximity for a window
+    fn enter_event(&self) -> canvas_events::DrawEvent {
+        use canvas_events::DrawEvent::*;
+        use canvas_events::{PointerAction, PointerState};
+
+        Pointer(PointerAction::Enter, self.pointer_id, PointerState { location_in_window: self.position, location_in_canvas: None, buttons: vec![], pressure: None, tilt: None, rotation: None, flow_rate: None })
+    }
+
+    /// Generates the 'leave' event for when this tool leaves proximity for a window
+    fn leave_event(&self) -> canvas_events::DrawEvent {
+        use canvas_events::DrawEvent::*;
+        use canvas_events::{PointerAction, PointerState};
+
+        Pointer(PointerAction::Leave, self.pointer_id, PointerState { location_in_window: self.position, location_in_canvas: None, buttons: vec![], pressure: None, tilt: None, rotation: None, flow_rate: None })
+    }
+}
+
 impl Dispatch<ZwpTabletToolV2, ()> for WaylandTabletState {
     fn event(state: &mut Self, tool: &ZwpTabletToolV2, event: zwp_tablet_tool_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
         use zwp_tablet_tool_v2::Event::*;
+        use zwp_tablet_tool_v2::{ButtonState};
 
         let window_for_surface  = &mut state.window_for_surface;
         let tools               = &mut state.tools;
@@ -191,19 +214,29 @@ impl Dispatch<ZwpTabletToolV2, ()> for WaylandTabletState {
         let Some(tool_data) = tools.get_mut(&tool_id) else { return; };
 
         match event {
-            ProximityIn { serial, tablet, surface } => {
+            ProximityIn { surface, .. } => {
                 // Fetch the scale for the window that the stylus is approaching
                 let window_handle       = TabletWindowHandle::from_surface(&surface);
-                let Some(window_scale)  = window_for_surface.get(&window_handle).map(|window| window.scale) else { return; };
+                let Some(window_data)   = window_for_surface.get_mut(&window_handle) else { return; };
+                let window_scale        = window_data.scale;
+
+                tool_data.active_window = Some(window_handle);
 
                 // Store the scale in the tool data (so we can use this for future operations)
                 tool_data.scale = window_scale;
 
-                // TODO: Generate a 'pointer entered' event
+                // Generate a 'pointer entered' event
+                let pointer_entered = window_data.event_publisher.publish(tool_data.enter_event());
+                dispatcher.dispatch(move |_| async move { pointer_entered.await });
             },
 
             ProximityOut => {
-                // TODO: generagte a 'pointer exited' event
+                // Generate a 'pointer exited' event
+                let Some(window_handle) = tool_data.active_window else { return; };
+                let Some(window_data)   = window_for_surface.get_mut(&window_handle) else { return; };
+
+                let pointer_left = window_data.event_publisher.publish(tool_data.leave_event());
+                dispatcher.dispatch(move |_| async move { pointer_left.await });
             },
 
             // Convert events into state
@@ -215,7 +248,14 @@ impl Dispatch<ZwpTabletToolV2, ()> for WaylandTabletState {
             Down { .. }             => { tool_data.tip_down = true; },
             Up                      => { tool_data.tip_down = false; },
 
-            Button { serial, button, state } => todo!(),
+            Button { button, state: button_state, .. } => {
+                match button_state {
+                    WEnum::Value(ButtonState::Pressed)  => { tool_data.buttons.push(canvas_events::Button::Other(button as _)); }
+                    WEnum::Value(ButtonState::Released) => { tool_data.buttons.retain(|pressed| pressed != &canvas_events::Button::Other(button as _)); }
+
+                    _ => { }
+                }
+            },
 
             Frame { time } => {
                 // TODO: generate a pointer event based on the current state of the tool
@@ -223,13 +263,13 @@ impl Dispatch<ZwpTabletToolV2, ()> for WaylandTabletState {
 
             Removed => { state.tools.remove(&tool_id); },
 
-            Type { tool_type } => todo!(),
-            HardwareSerial { hardware_serial_hi, hardware_serial_lo } => todo!(),
-            HardwareIdWacom { hardware_id_hi, hardware_id_lo } => todo!(),
-            Capability { capability } => todo!(),
-            Done => todo!(),
-            Slider { position } => todo!(),
-            Wheel { degrees, clicks } => todo!(),
+            Type { .. }             => { }
+            HardwareSerial { .. }   => { }
+            HardwareIdWacom { .. }  => { }
+            Capability { .. }       => { }
+            Done                    => { }
+            Slider { .. }           => { }
+            Wheel { .. }            => { }
             
             _ => todo!(),
         }
