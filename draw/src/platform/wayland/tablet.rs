@@ -60,6 +60,20 @@ pub struct WaylandTabletState {
 struct TabletTool {
     /// Pointer ID assigned to this tool
     pointer_id: canvas_events::PointerId,
+
+    /// Scale, copied from the window when the pointer is nearby
+    scale: f64,
+
+    /// Pointer properties
+    nearby:         bool,
+    position:       (f64, f64),
+    pressure:       Option<f64>,
+    tilt:           Option<(f64, f64)>,
+    rotation:       Option<f64>,
+    distance:       Option<f64>,
+    buttons:        Vec<canvas_events::Button>,
+    tip_down:       bool,
+    was_tip_down:   bool,
 }
 
 ///
@@ -126,7 +140,17 @@ impl Dispatch<ZwpTabletSeatV2, ()> for WaylandTabletState {
 
                 // Create a structure for tracking the state of this tool
                 let tool = TabletTool {
-                    pointer_id
+                    pointer_id:     pointer_id,
+                    scale:          1.0,
+                    nearby:         false,
+                    position:       (0.0, 0.0),
+                    pressure:       None,
+                    tilt:           None,
+                    rotation:       None,
+                    distance:       None,
+                    buttons:        vec![],
+                    tip_down:       false,
+                    was_tip_down:   false,
                 };
 
                 state.tools.insert(tool_object_id, tool);
@@ -146,8 +170,36 @@ impl Dispatch<ZwpTabletSeatV2, ()> for WaylandTabletState {
 }
 
 impl Dispatch<ZwpTabletToolV2, ()> for WaylandTabletState {
-    fn event(_state: &mut Self, _proxy: &ZwpTabletToolV2, _event: zwp_tablet_tool_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
-        // TODO: tablet events
+    fn event(state: &mut Self, tool: &ZwpTabletToolV2, event: zwp_tablet_tool_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
+        use zwp_tablet_tool_v2::Event::*;
+
+        // Try to retrieve the tool data, ignore events for tools we don't know about
+        let tool_id         = tool.id();
+        let Some(tool_data) = state.tools.get_mut(&tool_id) else { return; };
+
+        match event {
+            Type { tool_type } => todo!(),
+            HardwareSerial { hardware_serial_hi, hardware_serial_lo } => todo!(),
+            HardwareIdWacom { hardware_id_hi, hardware_id_lo } => todo!(),
+            Capability { capability } => todo!(),
+            Done => todo!(),
+            Removed => todo!(),
+            ProximityIn { serial, tablet, surface } => todo!(),
+            ProximityOut => todo!(),
+            Down { serial } => todo!(),
+            Up => todo!(),
+            Motion { x, y } => todo!(),
+            Pressure { pressure } => todo!(),
+            Distance { distance } => todo!(),
+            Tilt { tilt_x, tilt_y } => todo!(),
+            Rotation { degrees } => todo!(),
+            Slider { position } => todo!(),
+            Wheel { degrees, clicks } => todo!(),
+            Button { serial, button, state } => todo!(),
+            Frame { time } => todo!(),
+            
+            _ => todo!(),
+        }
     }
 }
 
