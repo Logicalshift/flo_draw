@@ -24,8 +24,8 @@ pub fn flo_draw_software_scene() -> Arc<Scene> {
         // Store as the active scene
         *scene = Some(Arc::clone(&new_scene));
 
-        // On Linux, we need tokio for wayland support
-        #[cfg(target_os = "linux")]
+        // When tokio support is enabled, we need to run the scene within a tokio runtime
+        #[cfg(feature = "tokio_support")]
         {
             let tokio_runtime = tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
@@ -46,8 +46,8 @@ pub fn flo_draw_software_scene() -> Arc<Scene> {
             }.boxed())));
         }
 
-        // On other platforms, run on the winit thread
-        #[cfg(not(target_os = "linux"))]
+        // Without tokio support, run on the winit thread directly
+        #[cfg(not(feature = "tokio_support"))]
         winit_thread().send_event(WinitThreadEvent::RunProcess(Box::new(move || async move {
             new_scene.run_scene_with_threads(4).await;
         }.boxed())));

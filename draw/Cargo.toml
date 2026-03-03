@@ -18,6 +18,7 @@ render-wgpu         = [ "winit", "wgpu", "flo_render/render-wgpu" ]
 render-software     = [ "winit", "flo_render_software", "softbuffer", "flo_render_canvas/render-software" ]
 profile             = [ "flo_render/profile" ]
 wgpu-profiler       = [ "dep:wgpu-profiler", "flo_render/wgpu-profiler" ]
+tokio_support       = [ "dep:tokio", "flo_scene/tokio_support" ]
 
 [dependencies]
 flo_canvas          = { version = "0.4", features = [ "outline-fonts", "image-loading", "scenery" ] }
@@ -44,6 +45,7 @@ wgpu                = { optional = true, workspace = true }
 wgpu-profiler       = { workspace = true, optional = true }
 
 softbuffer          = { optional = true, version = "0.4" }
+tokio               = { optional = true, version = "1.37", features = [ "rt", "rt-multi-thread", "net" ] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2               = "0.5"
@@ -57,6 +59,7 @@ wayland-protocols   = { version = "0.32", features = ["client"] }
 wayland-backend     = { version = "0.3", features = ["client_system"] }
 flo_scene           = { version = "0.3", features = ["tokio_support"] }
 tokio               = { version = "1.37", features = [ "rt", "rt-multi-thread", "net" ] }
+# Note: tokio_support cfg is automatically enabled on Linux via build.rs
 
 [dev-dependencies]
 flo_curves          = "0.8"
