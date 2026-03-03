@@ -5,7 +5,7 @@ use std::sync::*;
 ///
 /// Trait used to retrieve values from a window for the OS X platform
 ///
-pub trait PlatformWindow {
+pub trait PlatformWindow : Send {
     ///
     /// Retrieves the winit window for this platform
     ///

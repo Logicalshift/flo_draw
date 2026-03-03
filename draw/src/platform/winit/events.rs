@@ -1,3 +1,5 @@
+use super::traits::*;
+
 use flo_canvas_events::*;
 
 use flo_stream::*;
@@ -56,6 +58,9 @@ pub enum WinitEvents {
 
         /// The draw events for this window
         events: Arc<WeakPublisher<DrawEvent>>,
+
+        /// The winit platform window that was created
+        platform_window: Arc<dyn PlatformWindow>,
     }
 }
 
