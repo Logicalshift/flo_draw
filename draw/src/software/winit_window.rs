@@ -44,8 +44,20 @@ pub struct WinitWindow {
     viewport_bounds: ViewportBounds,
 }
 
-impl PlatformWindow for WinitWindow {
-    fn window(&self) -> Option<Arc<Window>> { self.window.clone() }
+///
+/// Provides the platform window trait, to allow external routines to extract the winit window
+///
+struct WinitPlatformWindow {
+    window: Option<Arc<Window>>
+}
+
+impl PlatformWindow for WinitPlatformWindow {
+    ///
+    /// Returns the underlying winit window object
+    ///
+    fn window(&self) -> Option<Arc<Window>> {
+        self.window.clone()
+    }
 }
 
 impl WinitWindow {
@@ -103,7 +115,8 @@ where
                     #[cfg(target_os="macos")]
                     if let None = &draw_view {
                         let new_draw_view = FloDrawView::new();
-                        new_draw_view.attach_to(&window);
+                        let platform_window = Arc::new(Mutex::new(WinitPlatformWindow { window: window.lock().unwrap().window.clone() }));
+                        new_draw_view.attach_to(&platform_window);
 
                         draw_view = Some(new_draw_view);
                     }
