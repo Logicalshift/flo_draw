@@ -205,7 +205,7 @@ impl TabletTool {
         Pointer(PointerAction::Leave, self.pointer_id, PointerState { location_in_window: self.pos(), location_in_canvas: None, buttons: vec![], pressure: None, tilt: None, rotation: None, flow_rate: None })
     }
 
-    // Creates a 'button press' event
+    /// Creates a 'button press' event
     fn press(&self, button: canvas_events::Button) -> canvas_events::DrawEvent {
         use canvas_events::DrawEvent::*;
         use canvas_events::{PointerAction, PointerState};
@@ -213,12 +213,43 @@ impl TabletTool {
         Pointer(PointerAction::ButtonDown, self.pointer_id, PointerState { location_in_window: self.pos(), location_in_canvas: None, buttons: vec![button], pressure: None, tilt: None, rotation: None, flow_rate: None })
     }
 
-    // Creates a 'button release' event
+    /// Creates a 'button release' event
     fn release(&self, button: canvas_events::Button) -> canvas_events::DrawEvent {
         use canvas_events::DrawEvent::*;
         use canvas_events::{PointerAction, PointerState};
 
         Pointer(PointerAction::ButtonUp, self.pointer_id, PointerState { location_in_window: self.pos(), location_in_canvas: None, buttons: vec![button], pressure: None, tilt: None, rotation: None, flow_rate: None })
+    }
+
+    /// Generate the tablet action for the end of the current frame
+    fn frame_action(&mut self) -> canvas_events::DrawEvent {
+        use canvas_events::DrawEvent::*;
+        use canvas_events::{PointerAction, PointerState, Button};
+
+        // Fetch the state of the tip
+        let tip_down        = self.tip_down;
+        let was_tip_down    = self.was_tip_down;
+
+        // Update the state for the next frame
+        self.was_tip_down = self.tip_down;
+
+        // Generate the pointer action for the updated state
+        if tip_down && !was_tip_down {
+            // Tool is down, which works like pressing the left mouse button
+            Pointer(PointerAction::ButtonDown, self.pointer_id, PointerState { location_in_window: self.pos(), location_in_canvas: None, buttons: vec![Button::Left], pressure: self.pressure, tilt: self.tilt, rotation: self.rotation, flow_rate: None })
+        } else if !tip_down && was_tip_down {
+            // Tool is up, which works like releasing the left mouse button
+            Pointer(PointerAction::ButtonUp, self.pointer_id, PointerState { location_in_window: self.pos(), location_in_canvas: None, buttons: vec![Button::Left], pressure: self.pressure, tilt: self.tilt, rotation: self.rotation, flow_rate: None })
+        } else if tip_down {
+            // Tool is being dragged along the surface
+            let mut buttons = self.buttons.clone();
+            buttons.push(Button::Left);
+            Pointer(PointerAction::Drag, self.pointer_id, PointerState { location_in_window: self.pos(), location_in_canvas: None, buttons: buttons, pressure: self.pressure, tilt: self.tilt, rotation: self.rotation, flow_rate: None })
+        } else {
+            // Tool is being moved along the surface
+            let buttons = self.buttons.clone();
+            Pointer(PointerAction::Move, self.pointer_id, PointerState { location_in_window: self.pos(), location_in_canvas: None, buttons: buttons, pressure: None, tilt: self.tilt, rotation: self.rotation, flow_rate: None })
+        }
     }
 }
 
@@ -287,12 +318,18 @@ impl Dispatch<ZwpTabletToolV2, ()> for WaylandTabletState {
                 // Send a press or release event for the button
                 if let Some(action) = action {
                     let action = window_data.event_publisher.publish(action);
-                    dispatcher.dispatch(move |_| async move { action.await });
+                    dispatcher.dispatch(move |_| async move { action.await; });
                 }
             },
 
-            Frame { time } => {
-                // TODO: generate a pointer event based on the current state of the tool
+            Frame { .. } => {
+                // Generate a frame update event
+                let Some(window_handle) = tool_data.active_window else { return; };
+                let Some(window_data)   = window_for_surface.get_mut(&window_handle) else { return; };
+
+                let action = tool_data.frame_action();
+                let action = window_data.event_publisher.publish(action);
+                dispatcher.dispatch(move |_| async move { action.await; });
             },
 
             Removed => { state.tools.remove(&tool_id); },
