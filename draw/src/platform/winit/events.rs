@@ -59,7 +59,7 @@ pub enum WinitEvents {
         /// The draw events for this window
         events: Arc<WeakPublisher<DrawEvent>>,
 
-        /// The winit platform window that was created
+        // The winit platform window that was created
         platform_window: Arc<dyn PlatformWindow>,
     }
 }

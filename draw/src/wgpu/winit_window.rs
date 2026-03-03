@@ -61,7 +61,14 @@ impl WinitWindow {
     }
 }
 
-impl PlatformWindow for WinitWindow {
+///
+/// Provides the platform window trait, to allow external routines to extract the winit window
+///
+struct WinitPlatformWindow {
+    window: Option<Arc<Window>>
+}
+
+impl PlatformWindow for WinitPlatformWindow {
     ///
     /// Returns the underlying winit window object
     ///
@@ -149,7 +156,8 @@ where
 
                         // Attach to the window (need to release the lock while we do this)
                         mem::drop(window_lock);
-                        draw_view.attach_to(&window);
+                        let platform_window = Arc::new(Mutex::new(WinitPlatformWindow { window: window.lock().unwrap().window.clone() }));
+                        draw_view.attach_to(&platform_window);
                         window_lock = window.lock().unwrap();
                         window_lock.draw_view   = Some(draw_view);
 
