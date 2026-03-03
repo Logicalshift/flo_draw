@@ -16,6 +16,7 @@ use winit::window::{WindowId};
 use wayland_client::{Connection, QueueHandle, Dispatch, event_created_child, Proxy};
 use wayland_client::backend::{Backend, ObjectId};
 use wayland_client::globals::{registry_queue_init, GlobalListContents};
+use wayland_client::protocol::wl_surface::{WlSurface};
 use wayland_client::protocol::wl_registry::{Event, WlRegistry};
 use wayland_client::protocol::wl_seat::{self, WlSeat};
 use wayland_protocols::wp::tablet::zv2::client::{
@@ -100,7 +101,7 @@ impl TabletWindowHandle {
     ///
     /// Tries to create a tablet window handle from a raw window handle
     ///
-    pub fn try_from(window_handle: RawWindowHandle) -> Option<TabletWindowHandle> {
+    pub fn try_from(window_handle: RawWindowHandle) -> Option<Self> {
         if let RawWindowHandle::Wayland(window_handle) = window_handle {
             // Cast the surface ptr to a usize to allow us to look it up later on
             let surface_ptr = window_handle.surface as usize;
@@ -108,6 +109,14 @@ impl TabletWindowHandle {
         } else {
             None
         }
+    }
+
+    ///
+    /// Creates a tablet window handle from a wayland surface
+    ///
+    pub fn from_surface(surface: &WlSurface) -> Self {
+        let surface_ptr = surface.id().as_ptr();
+        Self(surface_ptr as usize)
     }
 }
 
@@ -173,30 +182,54 @@ impl Dispatch<ZwpTabletToolV2, ()> for WaylandTabletState {
     fn event(state: &mut Self, tool: &ZwpTabletToolV2, event: zwp_tablet_tool_v2::Event, _data: &(), _conn: &Connection, _queue_handle: &QueueHandle<Self>) {
         use zwp_tablet_tool_v2::Event::*;
 
+        let window_for_surface  = &mut state.window_for_surface;
+        let tools               = &mut state.tools;
+        let dispatcher          = &mut state.dispatcher;
+
         // Try to retrieve the tool data, ignore events for tools we don't know about
         let tool_id         = tool.id();
-        let Some(tool_data) = state.tools.get_mut(&tool_id) else { return; };
+        let Some(tool_data) = tools.get_mut(&tool_id) else { return; };
 
         match event {
+            ProximityIn { serial, tablet, surface } => {
+                // Fetch the scale for the window that the stylus is approaching
+                let window_handle       = TabletWindowHandle::from_surface(&surface);
+                let Some(window_scale)  = window_for_surface.get(&window_handle).map(|window| window.scale) else { return; };
+
+                // Store the scale in the tool data (so we can use this for future operations)
+                tool_data.scale = window_scale;
+
+                // TODO: Generate a 'pointer entered' event
+            },
+
+            ProximityOut => {
+                // TODO: generagte a 'pointer exited' event
+            },
+
+            // Convert events into state
+            Motion { x, y }         => { tool_data.position = (x, y); },
+            Pressure { pressure }   => { tool_data.pressure = Some((pressure as f64) / 65535.0); },
+            Distance { distance }   => { tool_data.distance = Some((distance as f64) / 65535.0); },
+            Tilt { tilt_x, tilt_y } => { tool_data.tilt = Some((tilt_x, tilt_y)); },
+            Rotation { degrees }    => { tool_data.rotation = Some(degrees); },
+            Down { .. }             => { tool_data.tip_down = true; },
+            Up                      => { tool_data.tip_down = false; },
+
+            Button { serial, button, state } => todo!(),
+
+            Frame { time } => {
+                // TODO: generate a pointer event based on the current state of the tool
+            },
+
+            Removed => { state.tools.remove(&tool_id); },
+
             Type { tool_type } => todo!(),
             HardwareSerial { hardware_serial_hi, hardware_serial_lo } => todo!(),
             HardwareIdWacom { hardware_id_hi, hardware_id_lo } => todo!(),
             Capability { capability } => todo!(),
             Done => todo!(),
-            Removed => todo!(),
-            ProximityIn { serial, tablet, surface } => todo!(),
-            ProximityOut => todo!(),
-            Down { serial } => todo!(),
-            Up => todo!(),
-            Motion { x, y } => todo!(),
-            Pressure { pressure } => todo!(),
-            Distance { distance } => todo!(),
-            Tilt { tilt_x, tilt_y } => todo!(),
-            Rotation { degrees } => todo!(),
             Slider { position } => todo!(),
             Wheel { degrees, clicks } => todo!(),
-            Button { serial, button, state } => todo!(),
-            Frame { time } => todo!(),
             
             _ => todo!(),
         }
