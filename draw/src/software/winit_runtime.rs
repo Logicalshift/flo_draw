@@ -22,11 +22,19 @@ use std::sync::*;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{HashMap};
 
+#[cfg(target_os = "linux")] use crate::draw_scene::*;
+#[cfg(target_os = "linux")] use crate::platform::wayland::*;
+#[cfg(target_os = "linux")] use flo_scene::*;
+#[cfg(target_os = "linux")] use winit::raw_window_handle_05::{HasRawWindowHandle};
+
 static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 
 pub (super) struct WindowData {
     event_publisher:    Publisher<DrawEvent>,
     update_publisher:   Option<Publisher<WindowUpdate>>,
+
+    #[cfg(target_os = "linux")]
+    tablet_handle:      Option<TabletWindowHandle>,
 }
 
 ///
@@ -107,6 +115,11 @@ impl WinitRuntime {
                 // Winit doesn't always respond to ControlFlow::Exit requests, setting it after the other events have cleared is an attempt
                 // to make it exit more reliably (only partially successful).
                 if self.will_exit {
+                    // Drop any futures running on our thread so any resources they might use are disposed before the windowing system shuts down
+                    // (we particularly want to stop the scene, wayland in particular will segv if an event queue is dropped after shutdown)
+                    self.futures.clear();
+
+                    // Shut down the windowing system
                     window_target.exit();
                 }
             }
@@ -140,6 +153,17 @@ impl WinitRuntime {
             },
 
             ScaleFactorChanged { scale_factor, inner_size_writer: _ }       => {
+                #[cfg(target_os = "linux")]
+                let tablet_handle = self.window_events.get(&window_id).and_then(|data| data.tablet_handle);
+
+                #[cfg(target_os = "linux")]
+                if let Some(tablet_handle) = tablet_handle {
+                    flo_draw_scene_context()
+                        .add_subprogram(SubProgramId::new(), move |_: InputStream<()>, context| async move {
+                            set_tablet_window_scale(&context, tablet_handle, scale_factor).await;
+                        }, 1);
+                }
+
                 vec![DrawEvent::Scale(scale_factor), DrawEvent::Redraw]
             },
 
@@ -334,6 +358,20 @@ impl WinitRuntime {
                 let size                = window.inner_size();
                 let scale               = window.scale_factor();
 
+                #[cfg(target_os = "linux")]
+                let tablet_handle       = TabletWindowHandle::try_from(window.raw_window_handle());
+
+                // Add the window to the scene
+                #[cfg(target_os = "linux")]
+                if let Some(tablet_handle) = tablet_handle {
+                    let events = events.republish_weak();
+
+                    flo_draw_scene_context()
+                        .add_subprogram(SubProgramId::new(), move |_: InputStream<()>, context| async move {
+                            add_wayland_tablet_window(&context, tablet_handle, scale, events).await;
+                        }, 1);
+                }
+
                 // Store the publisher for the events for this window
                 let mut window_updates  = Publisher::new(20);
                 let more_updates        = window_updates.subscribe();
@@ -342,6 +380,9 @@ impl WinitRuntime {
                 let window_data         = WindowData {
                     event_publisher:    events,
                     update_publisher:   Some(window_updates),
+
+                    #[cfg(target_os = "linux")]
+                    tablet_handle:      tablet_handle
                 };
                 let window              = WinitWindow::new(window);
                 self.window_events.insert(window_id, window_data);

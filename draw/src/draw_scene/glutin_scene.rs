@@ -25,7 +25,30 @@ pub fn flo_draw_glutin_scene() -> Arc<Scene> {
         // Store as the active scene
         *scene = Some(Arc::clone(&new_scene));
 
-        // Run on the glutin thread
+        // On Linux, we need tokio for wayland support
+        #[cfg(target_os = "linux")]
+        {
+            let tokio_runtime = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+
+            glutin_thread().send_event(GlutinThreadEvent::RunProcess(Box::new(move || async move {
+                use std::pin::{pin};
+                let mut run_scene = pin!(new_scene.run_scene_with_threads(4));
+
+                future::poll_fn(move |ctxt| {
+                    let in_runtime  = tokio_runtime.enter();
+                    let result      = run_scene.poll_unpin(ctxt);
+                    drop(in_runtime);
+
+                    result
+                }).await;
+            }.boxed())));
+        }
+
+        // On other platforms, run on the glutin thread
+        #[cfg(not(target_os = "linux"))]
         glutin_thread().send_event(GlutinThreadEvent::RunProcess(Box::new(move || async move {
             new_scene.run_scene_with_threads(4).await;
         }.boxed())));
