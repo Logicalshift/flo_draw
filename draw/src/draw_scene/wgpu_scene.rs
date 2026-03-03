@@ -43,7 +43,6 @@ pub fn flo_draw_wgpu_scene() -> Arc<Scene> {
 
                     result
                 }).await;
-                new_scene.run_scene_with_threads(4).await;
             }.boxed()), "DrawWGPUScene".into()));
         }
 
