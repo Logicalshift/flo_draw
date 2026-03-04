@@ -117,7 +117,7 @@ where
     // Wait for the window to finish initialising before processing any events
     let window_ready = window.lock().unwrap().is_ready.take();
     if let Some(window_ready) = window_ready {
-        // Wait for the event to signal or be cancelled (if cancelled, the sender was dropped without ever being triggered)
+        // Wait for the event to signal or be cancelled (if cancelled, the sender was dropped without ever being triggered). This gives a chance for the platform to set up the renderer (eg, see macos/platform_subprogram for how the view gets set up for OS X)
         window_ready.await.ok();
     }
 
@@ -134,58 +134,6 @@ where
                         events.publish(DrawEvent::NewFrame).await;
                         continue;
                     }
-
-                    // Create the subview
-                    /*
-                    #[cfg(target_os="macos")]
-                    if let (Some(_winit_window), None) = (&window_lock.window, &active_draw_view) {
-                        use std::mem;
-
-                        // Create a rendering view for OS X
-                        let draw_view = FloDrawView::new();
-
-                        // Initialise as the drawing surface
-                        let backend         = wgpu::Backends::from_env().unwrap_or_else(|| wgpu::Backends::PRIMARY);
-                        let instance        = wgpu::Instance::new(&wgpu::InstanceDescriptor { backends: backend, ..Default::default() });
-                        let surface         = draw_view.create_surface(&instance);
-                        let adapter         = instance.request_adapter(&wgpu::RequestAdapterOptions {
-                            power_preference:       wgpu::PowerPreference::default(),
-                            force_fallback_adapter: false,
-                            compatible_surface:     Some(&surface),
-                        }).await.expect("Could not acquire an adapter for winit/wgpu");
-
-                        // Fetch the device and the queue
-                        let features        = wgpu::Features::empty();
-                        #[cfg(feature="wgpu-profiler")] let features = features | GpuProfiler::ALL_WGPU_TIMER_FEATURES;
-                        let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
-                            label:              None,
-                            required_features:  features,
-                            required_limits:    wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits()),
-                            ..Default::default()
-                        }).await.expect("Create WGPU device and queue");
-
-                        // Create the WGPU renderer
-                        let device          = Arc::new(device);
-                        let queue           = Arc::new(queue);
-                        let surface         = Arc::new(surface);
-                        let adapter         = Arc::new(adapter);
-                        let renderer        = WgpuRenderer::from_surface(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
-
-                        window_lock.device      = Some(device);
-                        window_lock.instance    = Some(instance);
-                        window_lock.renderer    = Some(renderer);
-
-                        // Attach to the window (need to release the lock while we do this)
-                        mem::drop(window_lock);
-                        let platform_window = Arc::new(Mutex::new(WinitPlatformWindow { window: Some(Arc::downgrade(&window)) }));
-                        draw_view.attach_to(&platform_window);
-                        window_lock = window.lock().unwrap();
-                        active_draw_view = Some(draw_view);
-
-                        // First frame has been displayed
-                        send_new_frame = true;
-                    }
-                    */
 
                     // Referencing the value in the lock makes borrowing the contents easier
                     let window_lock = &mut *window_lock;
