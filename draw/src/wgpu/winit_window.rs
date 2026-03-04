@@ -88,13 +88,12 @@ impl PlatformWindow for WinitPlatformWindow {
 /// Render actions are sent via the stream in `render_actions`. When a new frame is presented, a `DrawEvent::NewFrame` is sent to the event publisher. Finally the window 
 /// properties are watched and used to update the window properties.
 ///
-pub (super) async fn send_actions_to_window<RenderStream, EventPublisher>(window: WinitWindow, render_actions: RenderStream, events: EventPublisher, window_properties: WindowProperties)
+pub (super) async fn send_actions_to_window<RenderStream, EventPublisher>(window: Arc<Mutex<WinitWindow>>, render_actions: RenderStream, events: EventPublisher, window_properties: WindowProperties)
 where
     RenderStream:   Unpin + Stream<Item=Vec<RenderAction>>,
     EventPublisher: MessagePublisher<Message=DrawEvent>,
 {
     // Read events from the render actions list
-    let window              = Arc::new(Mutex::new(window));
     let mut events          = events;
     let window_actions      = WindowUpdateStream { 
         render_stream:      render_actions, 
