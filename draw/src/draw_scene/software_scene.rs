@@ -1,3 +1,4 @@
+use super::startup::*;
 use crate::software::*;
 
 use futures::prelude::*;
@@ -20,6 +21,7 @@ pub fn flo_draw_software_scene() -> Arc<Scene> {
     if scene.is_none() {
         // Create a new scene context, and run it on the winit thread
         let new_scene = Arc::new(Scene::default());
+        start_flo_draw_scene(&*new_scene);
 
         // Store as the active scene
         *scene = Some(Arc::clone(&new_scene));
