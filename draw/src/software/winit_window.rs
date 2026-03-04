@@ -16,6 +16,7 @@ use winit::dpi::{LogicalSize};
 use winit::window::{Window, Fullscreen};
 use futures::prelude::*;
 use futures::task::{Poll, Context};
+use futures::channel::oneshot;
 use ::desync::*;
 
 use std::pin::*;
@@ -77,7 +78,7 @@ impl WinitWindow {
 ///
 /// Sends drawing actions to a window
 ///
-pub (super) async fn send_drawing_actions_to_window<DrawStream, EventPublisher>(window: WinitWindow, drawing_actions: DrawStream, events: EventPublisher, window_properties: WindowProperties)
+pub (super) async fn send_drawing_actions_to_window<DrawStream, EventPublisher>(window: WinitWindow, drawing_actions: DrawStream, events: EventPublisher, window_properties: WindowProperties, ready: oneshot::Receiver<()>)
 where
     DrawStream:     Unpin + Stream<Item=WindowUpdate>,
     EventPublisher: MessagePublisher<Message=DrawEvent>,
@@ -103,6 +104,9 @@ where
     let canvas_drawing          = Desync::new(canvas_drawing);
     let mut active_transform    = Transform2D::identity();
 
+    // Wait for the 'ready' event to be signalled (or cancelled, if the window created event is dropped without using it)
+    ready.await.ok();
+
     while let Some(next_action_set) = window_actions.next().await {
         let mut send_new_frame          = false;
         let mut update_canvas_transform = false;
@@ -115,7 +119,7 @@ where
                     #[cfg(target_os="macos")]
                     if let None = &draw_view {
                         let new_draw_view = FloDrawView::new();
-                        let platform_window = Arc::new(Mutex::new(WinitPlatformWindow { window: window.lock().unwrap().window.as_ref().map(Arc::downgrade) }));
+                        let platform_window: Arc<dyn PlatformWindow> = Arc::new(WinitPlatformWindow { window: window.lock().unwrap().window.as_ref().map(Arc::downgrade) });
                         new_draw_view.attach_to(&platform_window);
 
                         draw_view = Some(new_draw_view);

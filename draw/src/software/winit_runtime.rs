@@ -15,9 +15,10 @@ use winit::event::{DeviceId, Event, WindowEvent, DeviceEvent, ElementState};
 use winit::event_loop::{ActiveEventLoop};
 use winit::window::{Window, WindowId, Fullscreen};
 use winit::keyboard::{PhysicalKey, NativeKeyCode};
-use futures::task;
 use futures::prelude::*;
+use futures::channel::oneshot;
 use futures::future::{LocalBoxFuture};
+use futures::task;
 
 use std::sync::*;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -374,10 +375,11 @@ impl WinitRuntime {
                 }
 
                 // Notify the anything listening to the winit events about this window
-                let platform_window = Arc::new(WinitPlatformWindow { window: Some(Arc::downgrade(&window)) });
-                let weak_events     = events.republish_weak();
+                let platform_window             = Arc::new(WinitPlatformWindow { window: Some(Arc::downgrade(&window)) });
+                let weak_events                 = events.republish_weak();
+                let (send_ready, recv_ready)    = oneshot::channel();
                 self.run_process(async move {
-                    winit_events().publish(WinitEvents::CreatedWindow { window_id, scale, events: Arc::new(weak_events), platform_window: platform_window }).await;
+                    winit_events().publish(WinitEvents::CreatedWindow { window_id, scale, events: Arc::new(weak_events), platform_window: platform_window, ready: Arc::new(Mutex::new(Some(send_ready))) }).await;
                 });
 
                 // Store the publisher for the events for this window
@@ -408,7 +410,7 @@ impl WinitRuntime {
                     let window_events = initial_events;
 
                     // Process the actions for the window
-                    send_drawing_actions_to_window(window, actions, window_events, window_properties).await;
+                    send_drawing_actions_to_window(window, actions, window_events, window_properties, recv_ready).await;
 
                     // Stop processing events for the window once there are no more actions
                     winit_thread().send_event(WinitThreadEvent::StopSendingToWindow(window_id));
