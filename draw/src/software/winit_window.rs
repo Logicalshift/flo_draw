@@ -48,7 +48,7 @@ pub struct WinitWindow {
 /// Provides the platform window trait, to allow external routines to extract the winit window
 ///
 pub (crate) struct WinitPlatformWindow {
-    pub (crate) window: Option<Arc<Window>>
+    pub (crate) window: Option<Weak<Window>>
 }
 
 impl PlatformWindow for WinitPlatformWindow {
@@ -56,7 +56,7 @@ impl PlatformWindow for WinitPlatformWindow {
     /// Returns the underlying winit window object
     ///
     fn window(&self) -> Option<Arc<Window>> {
-        self.window.clone()
+        self.window.as_ref().and_then(|w| w.upgrade())
     }
 }
 
@@ -115,7 +115,7 @@ where
                     #[cfg(target_os="macos")]
                     if let None = &draw_view {
                         let new_draw_view = FloDrawView::new();
-                        let platform_window = Arc::new(Mutex::new(WinitPlatformWindow { window: window.lock().unwrap().window.clone() }));
+                        let platform_window = Arc::new(Mutex::new(WinitPlatformWindow { window: window.lock().unwrap().window.as_ref().map(Arc::downgrade) }));
                         new_draw_view.attach_to(&platform_window);
 
                         draw_view = Some(new_draw_view);

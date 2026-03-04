@@ -65,7 +65,7 @@ impl WinitWindow {
 /// Provides the platform window trait, to allow external routines to extract the winit window
 ///
 pub (crate) struct WinitPlatformWindow {
-    pub (crate) window: Option<Arc<Window>>
+    pub (crate) window: Option<Weak<Window>>
 }
 
 impl PlatformWindow for WinitPlatformWindow {
@@ -73,7 +73,7 @@ impl PlatformWindow for WinitPlatformWindow {
     /// Returns the underlying winit window object
     ///
     fn window(&self) -> Option<Arc<Window>> {
-        self.window.clone()
+        self.window.as_ref().and_then(|w| w.upgrade())
     }
 }
 
@@ -156,7 +156,7 @@ where
 
                         // Attach to the window (need to release the lock while we do this)
                         mem::drop(window_lock);
-                        let platform_window = Arc::new(Mutex::new(WinitPlatformWindow { window: window.lock().unwrap().window.clone() }));
+                        let platform_window = Arc::new(Mutex::new(WinitPlatformWindow { window: window.lock().unwrap().window.as_ref().map(Arc::downgrade) }));
                         draw_view.attach_to(&platform_window);
                         window_lock = window.lock().unwrap();
                         window_lock.draw_view   = Some(draw_view);
