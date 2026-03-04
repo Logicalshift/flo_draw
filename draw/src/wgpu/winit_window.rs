@@ -77,6 +77,18 @@ impl PlatformWindow for WinitPlatformWindow {
 
         window_lock.window.clone()
     }
+
+    ///
+    /// Sets the WGPU rendering surface (if this is a WGPU window), overriding the default behaviour
+    ///
+    fn set_wgpu_surface(&self, device: Arc<wgpu::Device>, instance: wgpu::Instance, renderer: WgpuRenderer<'static>) {
+        let Some(window) = self.window.as_ref().and_then(|win| win.upgrade()) else { return };
+        let mut window_lock = window.lock().unwrap();
+
+        window_lock.device      = Some(device);
+        window_lock.instance    = Some(instance);
+        window_lock.renderer    = Some(renderer);
+    }
 }
 
 ///
