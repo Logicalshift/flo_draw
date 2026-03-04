@@ -43,10 +43,6 @@ pub struct WinitWindow {
 
     /// If present, the window is being initialised and shouldn't be rendered to until this signals
     is_ready: Option<oneshot::Receiver<()>>,
-
-    /// The drawing view, if it has been created
-    #[cfg(target_os="macos")]
-    draw_view: Option<Retained<FloDrawView>>,
 }
 
 impl WinitWindow {
@@ -60,8 +56,6 @@ impl WinitWindow {
             instance:   None,
             renderer:   None,
             is_ready:   Some(is_ready),
-            #[cfg(target_os="macos")]
-            draw_view:  None,
         }
     }
 }
@@ -70,7 +64,7 @@ impl WinitWindow {
 /// Provides the platform window trait, to allow external routines to extract the winit window
 ///
 pub (crate) struct WinitPlatformWindow {
-    pub (crate) window: Option<Weak<Window>>
+    pub (crate) window: Option<Weak<Mutex<WinitWindow>>>
 }
 
 impl PlatformWindow for WinitPlatformWindow {
@@ -78,7 +72,10 @@ impl PlatformWindow for WinitPlatformWindow {
     /// Returns the underlying winit window object
     ///
     fn window(&self) -> Option<Arc<Window>> {
-        self.window.as_ref().and_then(|w| w.upgrade())
+        let Some(window) = self.window.as_ref().and_then(|win| win.upgrade()) else { return None };
+        let window_lock = window.lock().unwrap();
+
+        window_lock.window.clone()
     }
 }
 
@@ -105,6 +102,9 @@ where
     };
     let mut window_actions  = window_actions.ready_chunks(100);
 
+    #[cfg(target_os="macos")]
+    let mut active_draw_view = None;
+
     // Wait for the window to finish initialising before processing any events
     let window_ready = window.lock().unwrap().is_ready.take();
     if let Some(window_ready) = window_ready {
@@ -128,7 +128,7 @@ where
 
                     // Create the subview
                     #[cfg(target_os="macos")]
-                    if let (Some(_winit_window), None) = (&window_lock.window, &window_lock.draw_view) {
+                    if let (Some(_winit_window), None) = (&window_lock.window, &active_draw_view) {
                         use std::mem;
 
                         // Create a rendering view for OS X
@@ -167,10 +167,10 @@ where
 
                         // Attach to the window (need to release the lock while we do this)
                         mem::drop(window_lock);
-                        let platform_window = Arc::new(Mutex::new(WinitPlatformWindow { window: window.lock().unwrap().window.as_ref().map(Arc::downgrade) }));
+                        let platform_window = Arc::new(Mutex::new(WinitPlatformWindow { window: Some(Arc::downgrade(&window)) }));
                         draw_view.attach_to(&platform_window);
                         window_lock = window.lock().unwrap();
-                        window_lock.draw_view   = Some(draw_view);
+                        active_draw_view = Some(draw_view);
 
                         // First frame has been displayed
                         send_new_frame = true;

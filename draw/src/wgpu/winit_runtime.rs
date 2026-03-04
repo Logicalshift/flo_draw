@@ -379,6 +379,8 @@ impl WinitRuntime {
                 }
 
                 // Notify the anything listening to the winit events about this window
+                let window          = WinitWindow::new(window, is_ready);
+                let window          = Arc::new(Mutex::new(window));
                 let platform_window = Arc::new(WinitPlatformWindow { window: Some(Arc::downgrade(&window)) });
                 let weak_events     = events.republish_weak();
                 self.run_process(async move {
@@ -399,7 +401,6 @@ impl WinitRuntime {
                     #[cfg(target_os = "linux")]
                     tablet_handle:      tablet_handle,
                 };
-                let window = WinitWindow::new(window, is_ready);
                 self.window_events.insert(window_id, window_data);
 
                 // Run the window as a process on this thread
@@ -412,7 +413,7 @@ impl WinitRuntime {
                     let window_events = initial_events;
 
                     // Process the actions for the window
-                    send_actions_to_window(Arc::new(Mutex::new(window)), actions, window_events, window_properties).await;
+                    send_actions_to_window(window, actions, window_events, window_properties).await;
 
                     // Stop processing events for the window once there are no more actions
                     winit_thread().send_event(WinitThreadEvent::StopSendingToWindow(window_id));
