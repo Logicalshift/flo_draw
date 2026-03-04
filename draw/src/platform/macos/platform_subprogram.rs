@@ -60,8 +60,9 @@ async fn attach_wgpu(window_id: ::winit::window::WindowId, scale: f64, _events: 
 ///
 /// Subprogram that manages windows on OS X
 ///
-pub async fn macos_platform_subprogram(_input: InputStream<()>, context: SceneContext, winit_events: Subscriber<WinitEvents>) {
-    let mut winit_events = winit_events;
+pub async fn macos_platform_subprogram(input: InputStream<WinitEvents>, context: SceneContext, winit_events: Subscriber<WinitEvents>) {
+    // Read from the subscription or from the input (we need to read from the input to ensure that the scene becomes idle)
+    let mut winit_events = stream::select(winit_events, input);
 
     // Monitor the winit events for 
     while let Some(event) = winit_events.next().await {

@@ -2,12 +2,14 @@ use super::traits::*;
 
 use flo_canvas_events::*;
 
+use flo_scene::*;
 use flo_stream::*;
 
 use once_cell::sync::{Lazy};
 use winit::window::{WindowId};
 
 use std::sync::*;
+use serde::*;
 
 static WINIT_EVENTS: Lazy<Publisher<WinitEvents>> = Lazy::new(|| Publisher::new(10));
 
@@ -29,6 +31,32 @@ pub enum WinitEvents {
 
         // The winit platform window that was created
         platform_window: Arc<dyn PlatformWindow>,
+    }
+}
+
+impl SceneMessage for WinitEvents {
+    fn serializable() -> bool {
+        false
+    }
+}
+
+impl Serialize for WinitEvents {
+    fn serialize<S>(&self, _: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer 
+    {
+        use serde::ser::*;
+        Err(S::Error::custom("WinitEvents cannot be serialized"))
+    }
+}
+
+impl<'a> Deserialize<'a> for WinitEvents {
+    fn deserialize<D>(_: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'a> 
+    {
+        use serde::de::*;
+        Err(D::Error::custom("WinitEvents cannot be serialized"))
     }
 }
 
