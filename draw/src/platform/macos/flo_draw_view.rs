@@ -319,11 +319,8 @@ impl FloDrawView {
     /// Sets this view as the main view of the specified window
     ///
     #[cfg(all(not(feature="render-wgpu"), feature="render-software"))] 
-    pub fn attach_to(&self, window: &Arc<Mutex<impl 'static + PlatformWindow>>) {
-        let window: Arc<Mutex<dyn PlatformWindow>> = window.clone();
-        self.ivars().lock().unwrap().window = Some(Arc::downgrade(&window));
-
-        let window = window.lock().unwrap();
+    pub fn attach_to(&self, window: &Arc<dyn PlatformWindow>) {
+        self.ivars().lock().unwrap().window = Some(Arc::clone(&window));
 
         if let Some(RawWindowHandle::AppKit(appkit)) = window.window().map(|window| window.raw_window_handle()) {
             // Fetch the root view from the window
