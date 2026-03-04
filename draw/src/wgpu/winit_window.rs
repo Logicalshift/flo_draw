@@ -114,9 +114,6 @@ where
     };
     let mut window_actions  = window_actions.ready_chunks(100);
 
-    #[cfg(target_os="macos")]
-    let mut active_draw_view = None;
-
     // Wait for the window to finish initialising before processing any events
     let window_ready = window.lock().unwrap().is_ready.take();
     if let Some(window_ready) = window_ready {
@@ -139,6 +136,7 @@ where
                     }
 
                     // Create the subview
+                    /*
                     #[cfg(target_os="macos")]
                     if let (Some(_winit_window), None) = (&window_lock.window, &active_draw_view) {
                         use std::mem;
@@ -187,6 +185,7 @@ where
                         // First frame has been displayed
                         send_new_frame = true;
                     }
+                    */
 
                     // Referencing the value in the lock makes borrowing the contents easier
                     let window_lock = &mut *window_lock;
