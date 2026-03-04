@@ -15,6 +15,7 @@
 mod render_window_program;
 mod drawing_window_program;
 mod scene;
+mod startup;
 
 #[cfg(feature="render-opengl")]
 mod glutin_render_window_program;
