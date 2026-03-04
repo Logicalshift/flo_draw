@@ -28,7 +28,7 @@ pub struct FloDrawViewVars {
     #[cfg(feature="render-wgpu")] metal_layer: Retained<CAMetalLayer>,
 
     /// The winit window that is being rendered in this view
-    window: Option<Weak<Mutex<dyn PlatformWindow>>>,
+    window: Option<Weak<dyn PlatformWindow>>,
 
     /// The buttons that are currently held down
     buttons: Vec<Button>,
@@ -259,11 +259,8 @@ impl FloDrawView {
     /// Sets this view as the main view of the specified window
     ///
     #[cfg(feature="render-wgpu")]
-    pub fn attach_to(&self, window: &Arc<Mutex<impl 'static + PlatformWindow>>) {
-        let window: Arc<Mutex<dyn PlatformWindow>> = window.clone();
+    pub fn attach_to(&self, window: &Arc<dyn PlatformWindow>) {
         self.ivars().lock().unwrap().window = Some(Arc::downgrade(&window));
-
-        let window = window.lock().unwrap();
 
         if let Some(RawWindowHandle::AppKit(appkit)) = window.window().map(|window| window.raw_window_handle()) {
             // Fetch the root view from the window
@@ -401,7 +398,7 @@ impl FloDrawView {
     pub fn window_id(&self) -> Option<WindowId> {
         // Fetch the window if it's available
         let window  = self.ivars().lock().unwrap().window.as_ref().and_then(|window| window.upgrade())?;
-        let window  = window.lock().unwrap().window()?;
+        let window  = window.window()?;
 
         Some(window.id())
     }
