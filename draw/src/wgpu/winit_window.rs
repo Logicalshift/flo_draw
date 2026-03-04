@@ -10,6 +10,7 @@ use winit::dpi::{LogicalSize};
 use winit::window::{Window, Fullscreen};
 use futures::prelude::*;
 use futures::task::{Poll, Context};
+use futures::channel::oneshot;
 
 use std::pin::*;
 use std::sync::*;
@@ -40,6 +41,9 @@ pub struct WinitWindow {
     /// The renderer for this window (or none if there isn't one yet)
     renderer: Option<WgpuRenderer<'static>>,
 
+    /// If present, the window is being initialised and shouldn't be rendered to until this signals
+    is_ready: Option<oneshot::Receiver<()>>,
+
     /// The drawing view, if it has been created
     #[cfg(target_os="macos")]
     draw_view: Option<Retained<FloDrawView>>,
@@ -49,12 +53,13 @@ impl WinitWindow {
     ///
     /// Creates a new winit window
     ///
-    pub fn new(window: Arc<Window>) -> WinitWindow {
+    pub fn new(window: Arc<Window>, is_ready: oneshot::Receiver<()>) -> WinitWindow {
         WinitWindow {
             window:     Some(window),
             device:     None,
             instance:   None,
             renderer:   None,
+            is_ready:   Some(is_ready),
             #[cfg(target_os="macos")]
             draw_view:  None,
         }
@@ -100,6 +105,13 @@ where
         mouse_pointer:      follow(window_properties.mouse_pointer)
     };
     let mut window_actions  = window_actions.ready_chunks(100);
+
+    // Wait for the window to finish initialising before processing any events
+    let window_ready = window.lock().unwrap().is_ready.take();
+    if let Some(window_ready) = window_ready {
+        // Wait for the event to signal or be cancelled (if cancelled, the sender was dropped without ever being triggered)
+        window_ready.await.ok();
+    }
 
     while let Some(next_action_set) = window_actions.next().await {
         let mut send_new_frame = false;

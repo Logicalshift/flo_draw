@@ -5,6 +5,8 @@ use flo_canvas_events::*;
 use flo_scene::*;
 use flo_stream::*;
 
+use futures::prelude::*;
+use futures::channel::oneshot;
 use once_cell::sync::{Lazy};
 use winit::window::{WindowId};
 
@@ -31,6 +33,9 @@ pub enum WinitEvents {
 
         // The winit platform window that was created
         platform_window: Arc<dyn PlatformWindow>,
+
+        // 'None' if something else has signalled that the window is ready, otherwise can be used to unblock the window renderer when the platform has finished initialising this window
+        ready: Arc<Mutex<Option<oneshot::Sender<()>>>>,
     }
 }
 

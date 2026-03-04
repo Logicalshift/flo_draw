@@ -358,13 +358,14 @@ impl WinitRuntime {
                 let window              = window_target.create_window(window_attributes).expect("New window");
 
                 // Build a new Winit window
-                let window              = Arc::new(window);
-                let window_id           = window.id();
-                let size                = window.inner_size();
-                let scale               = window.scale_factor();
+                let window                   = Arc::new(window);
+                let window_id                = window.id();
+                let size                     = window.inner_size();
+                let scale                    = window.scale_factor();
+                let (signal_ready, is_ready) = oneshot::channel();
 
                 #[cfg(target_os = "linux")]
-                let tablet_handle       = TabletWindowHandle::try_from(window.raw_window_handle());
+                let tablet_handle = TabletWindowHandle::try_from(window.raw_window_handle());
 
                 // Add the window to the scene
                 #[cfg(target_os = "linux")]
@@ -381,7 +382,7 @@ impl WinitRuntime {
                 let platform_window = Arc::new(WinitPlatformWindow { window: Some(Arc::downgrade(&window)) });
                 let weak_events     = events.republish_weak();
                 self.run_process(async move {
-                    winit_events().publish(WinitEvents::CreatedWindow { window_id, scale, events: Arc::new(weak_events), platform_window: platform_window }).await;
+                    winit_events().publish(WinitEvents::CreatedWindow { window_id, scale, events: Arc::new(weak_events), platform_window: platform_window, ready: Arc::new(Mutex::new(Some(signal_ready))) }).await;
                 }, "Notify events about window creation");
 
                 // Store the publisher for the events for this window
@@ -392,7 +393,7 @@ impl WinitRuntime {
                     #[cfg(target_os = "linux")]
                     tablet_handle:      tablet_handle,
                 };
-                let window              = WinitWindow::new(window);
+                let window              = WinitWindow::new(window, is_ready);
                 self.window_events.insert(window_id, window_data);
 
                 // Run the window as a process on this thread
