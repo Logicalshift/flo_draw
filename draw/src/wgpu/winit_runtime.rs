@@ -382,7 +382,13 @@ impl WinitRuntime {
                 let platform_window = Arc::new(WinitPlatformWindow { window: Some(Arc::downgrade(&window)) });
                 let weak_events     = events.republish_weak();
                 self.run_process(async move {
-                    winit_events().publish(WinitEvents::CreatedWindow { window_id, scale, events: Arc::new(weak_events), platform_window: platform_window, ready: Arc::new(Mutex::new(Some(signal_ready))) }).await;
+                    winit_events().publish(WinitEvents::CreatedWindow { 
+                        window_id:          window_id, 
+                        scale:              scale, 
+                        events:             Arc::new(weak_events),
+                        platform_window:    platform_window, 
+                        ready:              Arc::new(Mutex::new(Some(signal_ready))) 
+                    }).await;
                 }, "Notify events about window creation");
 
                 // Store the publisher for the events for this window
@@ -393,7 +399,7 @@ impl WinitRuntime {
                     #[cfg(target_os = "linux")]
                     tablet_handle:      tablet_handle,
                 };
-                let window              = WinitWindow::new(window, is_ready);
+                let window = WinitWindow::new(window, is_ready);
                 self.window_events.insert(window_id, window_data);
 
                 // Run the window as a process on this thread
