@@ -13,7 +13,7 @@ use std::sync::*;
 /// Attaches a WGPU FloDrawView (handles extra events and adds some extra rendering rules)
 ///
 #[cfg(feature="render-wgpu")]
-async fn attach_wgpu(window_id: ::winit::window::WindowId, scale: f64, _events: Arc<WeakPublisher<DrawEvent>>, platform_window: Arc<dyn PlatformWindow>, ready: Option<oneshot::Sender<()>>) {
+async fn attach_wgpu(_window_id: ::winit::window::WindowId, _scale: f64, _events: Arc<WeakPublisher<DrawEvent>>, platform_window: Arc<dyn PlatformWindow>, ready: Option<oneshot::Sender<()>>) {
     use flo_render::{WgpuRenderer};
     use crate::wgpu::*;
 
@@ -49,18 +49,11 @@ async fn attach_wgpu(window_id: ::winit::window::WindowId, scale: f64, _events: 
         let adapter         = Arc::new(adapter);
         let renderer        = WgpuRenderer::from_surface(Arc::clone(&device), Arc::clone(&queue), Arc::clone(&surface), Arc::clone(&adapter));
 
-        // TODO: need to send the wgpu details back to the winit thread
-        //window_lock.device      = Some(device);
-        //window_lock.instance    = Some(instance);
-        //window_lock.renderer    = Some(renderer);
+        // Attach to the window
+        draw_view.attach_to(&platform_window);
+        platform_window.set_wgpu_surface(device, instance, renderer);
 
-        // Attach to the window (need to release the lock while we do this)
-        //mem::drop(window_lock);
-        draw_view.attach_to(&Arc::new(Mutex::new(platform_window)));
-        //window_lock = window.lock().unwrap();
-        //window_lock.draw_view   = Some(draw_view);
-
-        // Signal that the window is ready to render
+        // Signal that the window is ready to render (the default setup for the renderer will be blocked until this point)
         if let Some(ready) = ready {
             ready.send(()).ok();
         }
@@ -70,7 +63,7 @@ async fn attach_wgpu(window_id: ::winit::window::WindowId, scale: f64, _events: 
 ///
 /// Subprogram that manages windows on OS X
 ///
-pub async fn macos_platform_subprogram(input: InputStream<WinitEvents>, context: SceneContext, winit_events: Subscriber<WinitEvents>) {
+pub async fn macos_platform_subprogram(input: InputStream<WinitEvents>, _context: SceneContext, winit_events: Subscriber<WinitEvents>) {
     // Read from the subscription or from the input (we need to read from the input to ensure that the scene becomes idle)
     let mut winit_events = stream::select(winit_events, input);
 
