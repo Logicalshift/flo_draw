@@ -1,5 +1,6 @@
 use crate::events::*;
 use crate::window_properties::*;
+use crate::platform::*;
 
 use super::winit_window::*;
 use super::winit_thread::*;
@@ -371,6 +372,13 @@ impl WinitRuntime {
                             add_wayland_tablet_window(&context, tablet_handle, scale, events).await;
                         }, 1);
                 }
+
+                // Notify the anything listening to the winit events about this window
+                let platform_window = Arc::new(WinitPlatformWindow { window: Some(window.clone()) });
+                let weak_events     = events.republish_weak();
+                self.run_process(async move {
+                    winit_events().publish(WinitEvents::CreatedWindow { window_id, scale, events: Arc::new(weak_events), platform_window: platform_window }).await;
+                });
 
                 // Store the publisher for the events for this window
                 let mut window_updates  = Publisher::new(20);
