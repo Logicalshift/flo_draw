@@ -2,6 +2,7 @@ use super::dispatch::*;
 use super::event_queue::*;
 use crate::platform::*;
 
+use flo_scene::programs::SceneControl;
 use flo_scene::*;
 use flo_stream::*;
 use flo_canvas_events as canvas_events;
@@ -398,9 +399,13 @@ impl Dispatch<ZwpTabletPadStripV2, ()> for WaylandTabletState {
 async fn window_monitor(winit_events: Subscriber<WinitEvents>, context: SceneContext) {
     let mut winit_events = winit_events;
 
+    println!("Running monitor");
+
     while let Some(evt) = winit_events.next().await {
         match evt {
             WinitEvents::CreatedWindow { scale, events, platform_window, ready, .. } => {
+                println!("Add window...");
+
                 // If this is a wayland window, then add tablet window processing
                 if let Some(window_handle) = TabletWindowHandle::try_from_platform_window(&platform_window) {
                     // TODO: Add a process that handles 'scale' events by subscribing to the events
@@ -460,13 +465,15 @@ pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTablet
         let Ok(seat)     = globals.bind::<WlSeat, _, _>(&queue_handle, 1..=9, ()) else { return; };
         let _tablet_seat = tablet_manager.get_tablet_seat(&seat, &queue_handle, ());
 
+        context.send_message(SceneControl::start_program(SubProgramId::new(), |_input: InputStream<()>, _context| window_monitor, 20)).await.unwrap();
+
         // Run the queue
+        println!("Running queue subprogram");
         wayland_event_queue_subprogram(input, context, event_queue, state).await;
     };
 
     async move {
-        use std::pin::{pin};
-        future::select(pin!(window_monitor), pin!(event_tracker)).await;
+        event_tracker.await;
     }
 }
 

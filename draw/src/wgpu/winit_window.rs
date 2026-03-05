@@ -118,7 +118,9 @@ where
     let window_ready = window.lock().unwrap().is_ready.take();
     if let Some(window_ready) = window_ready {
         // Wait for the event to signal or be cancelled (if cancelled, the sender was dropped without ever being triggered). This gives a chance for the platform to set up the renderer (eg, see macos/platform_subprogram for how the view gets set up for OS X)
+        println!("Wait for ready");
         window_ready.await.ok();
+        println!("Ready");
     }
 
     while let Some(next_action_set) = window_actions.next().await {

@@ -142,6 +142,7 @@ fn run_winit_thread(send_proxy: mpsc::Sender<EventLoopProxy<WinitThreadEvent>>) 
     send_proxy.send(proxy).expect("Main thread is waiting to receive its proxy");
 
     // Run platform subprograms
+    println!("Subscribing to window events");
     #[cfg(target_os="linux")] let display_handle = event_loop.owned_display_handle();
     #[cfg(target_os="linux")] let winit_events   = winit_events().subscribe();
     #[cfg(target_os="linux")] flo_draw_scene_context().add_subprogram(*WAYLAND_TABLET_SUBPROGRAM, move |input, context| wayland_tablet_program(input, context, display_handle, winit_events), 10);
