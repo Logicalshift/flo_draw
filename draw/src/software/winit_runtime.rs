@@ -363,17 +363,6 @@ impl WinitRuntime {
                 #[cfg(target_os = "linux")]
                 let tablet_handle       = TabletWindowHandle::try_from(window.raw_window_handle());
 
-                // Add the window to the scene
-                #[cfg(target_os = "linux")]
-                if let Some(tablet_handle) = tablet_handle {
-                    let events = events.republish_weak();
-
-                    flo_draw_scene_context()
-                        .add_subprogram(SubProgramId::new(), move |_: InputStream<()>, context| async move {
-                            add_wayland_tablet_window(&context, tablet_handle, scale, events).await;
-                        }, 1);
-                }
-
                 // Notify the anything listening to the winit events about this window
                 let platform_window             = Arc::new(WinitPlatformWindow { window: Some(Arc::downgrade(&window)) });
                 let weak_events                 = events.republish_weak();
