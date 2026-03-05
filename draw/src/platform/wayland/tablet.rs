@@ -1,5 +1,6 @@
 use super::dispatch::*;
 use super::event_queue::*;
+use crate::platform::*;
 
 use flo_scene::*;
 use flo_stream::*;
@@ -9,8 +10,9 @@ use futures::prelude::*;
 
 use std::collections::*;
 
-use winit::event_loop::*;
-use winit::raw_window_handle_05::{RawDisplayHandle, HasRawDisplayHandle, RawWindowHandle};
+use ::winit::event_loop::*;
+use ::winit::raw_window_handle_05::{RawDisplayHandle, HasRawDisplayHandle, RawWindowHandle};
+use ::winit::raw_window_handle_05::{HasRawWindowHandle};
 
 use wayland_client::{Connection, QueueHandle, Dispatch, event_created_child, Proxy, WEnum};
 use wayland_client::backend::{Backend, ObjectId};
@@ -107,6 +109,16 @@ impl TabletWindowHandle {
         } else {
             None
         }
+    }
+
+    ///
+    /// Tries to create a tablet window handle from a platform window
+    ///
+    pub fn try_from_platform_window(platform_window: &impl PlatformWindow) -> Option<Self> {
+        let window      = platform_window.window()?;
+        let raw_handle  = window.raw_window_handle();
+
+        Self::try_from(raw_handle)
     }
 
     ///
@@ -381,9 +393,35 @@ impl Dispatch<ZwpTabletPadStripV2, ()> for WaylandTabletState {
 }
 
 ///
+/// The window monitor future
+///
+async fn window_monitor(winit_events: Subscriber<WinitEvents>, context: SceneContext) {
+    let mut winit_events = winit_events;
+
+    while let Some(evt) = winit_events.next().await {
+        match evt {
+            WinitEvents::CreatedWindow { scale, events, platform_window, ready, .. } => {
+                // If this is a wayland window, then add tablet window processing
+                if let Some(window_handle) = TabletWindowHandle::try_from_platform_window(&platform_window) {
+                    // TODO: Add a process that handles 'scale' events by subscribing to the events
+
+                    // Add as a tablet window (which will publish the tablet events)
+                    add_wayland_tablet_window(&context, window_handle, scale, events.republish()).await;
+                }
+
+                let ready = ready.lock().unwrap().take();
+                if let Some(ready) = ready {
+                    ready.send(()).ok();
+                }
+            }
+        }
+    }
+}
+
+///
 /// Runs the wayland tablet program, which sends tablet events to windows
 ///
-pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTabletState>>, context: SceneContext, display_handle: OwnedDisplayHandle) -> impl 'static + Future<Output=()> {
+pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTabletState>>, context: SceneContext, display_handle: OwnedDisplayHandle, winit_events: Subscriber<WinitEvents>) -> impl 'static + Future<Output=()> {
     // Create a wayland backend from the event loop
     let display_ptr = display_handle.raw_display_handle();
 
@@ -393,7 +431,11 @@ pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTablet
         None
     };
 
-    async move {
+    // Create some futures for monitoring the window creation events and events from windows
+    let window_monitor = window_monitor(winit_events, context.clone());
+
+    // Future for tracking wayland events relating to the tablet
+    let event_tracker = async move {
         // Stop immediately if this isn't a wayland event loop
         let Some(wayland_backend) = wayland_backend else { return; };
 
@@ -420,6 +462,11 @@ pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTablet
 
         // Run the queue
         wayland_event_queue_subprogram(input, context, event_queue, state).await;
+    };
+
+    async move {
+        use std::pin::{pin};
+        future::select(pin!(window_monitor), pin!(event_tracker)).await;
     }
 }
 

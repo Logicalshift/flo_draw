@@ -13,8 +13,10 @@ use std::thread;
 use std::collections::{HashMap};
 
 #[cfg(target_os="linux")] use crate::draw_scene::*;
+#[cfg(target_os="linux")] use crate::platform::*;
 #[cfg(target_os="linux")] use crate::platform::wayland::*;
 #[cfg(target_os="linux")] use flo_scene::*;
+#[cfg(target_os="linux")] use flo_stream::*;
 
 static WINIT_THREAD: Lazy<Desync<Option<Arc<WinitThread>>>> = Lazy::new(|| Desync::new(None));
 
@@ -141,7 +143,8 @@ fn run_winit_thread(send_proxy: mpsc::Sender<EventLoopProxy<WinitThreadEvent>>) 
 
     // Run platform subprograms
     #[cfg(target_os="linux")] let display_handle = event_loop.owned_display_handle();
-    #[cfg(target_os="linux")] flo_draw_scene_context().add_subprogram(*WAYLAND_TABLET_SUBPROGRAM, move |input, context| wayland_tablet_program(input, context, display_handle), 10);
+    #[cfg(target_os="linux")] let winit_events   = winit_events().subscribe();
+    #[cfg(target_os="linux")] flo_draw_scene_context().add_subprogram(*WAYLAND_TABLET_SUBPROGRAM, move |input, context| wayland_tablet_program(input, context, display_handle, winit_events), 10);
     #[cfg(target_os="linux")] flo_draw_scene_context().connect_programs((), *WAYLAND_TABLET_SUBPROGRAM, StreamId::with_message_type::<WaylandEventQueue<WaylandTabletState>>()).ok();
 
     // The runtime struct is used to maintain state when the event loop is running
