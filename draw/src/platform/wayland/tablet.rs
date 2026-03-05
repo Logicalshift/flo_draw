@@ -3,6 +3,7 @@ use super::event_queue::*;
 use crate::platform::*;
 
 use flo_scene::*;
+use flo_scene::programs::*;
 use flo_stream::*;
 use flo_canvas_events as canvas_events;
 
@@ -395,8 +396,8 @@ impl Dispatch<ZwpTabletPadStripV2, ()> for WaylandTabletState {
 ///
 /// The window monitor future
 ///
-async fn window_monitor(winit_events: Subscriber<WinitEvents>, context: SceneContext) {
-    let mut winit_events = winit_events;
+async fn window_monitor(input_stream: InputStream<WinitEvents>, context: SceneContext, winit_events: Subscriber<WinitEvents>) {
+    let mut winit_events = stream::select(input_stream, winit_events);
 
     while let Some(evt) = winit_events.next().await {
         match evt {
@@ -421,7 +422,9 @@ async fn window_monitor(winit_events: Subscriber<WinitEvents>, context: SceneCon
 ///
 /// Runs the wayland tablet program, which sends tablet events to windows
 ///
-pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTabletState>>, context: SceneContext, display_handle: OwnedDisplayHandle, winit_events: Subscriber<WinitEvents>) -> impl 'static + Future<Output=()> {
+pub async fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTabletState>>, context: SceneContext, display_handle: OwnedDisplayHandle, winit_events: Subscriber<WinitEvents>) {
+    let our_program_id = context.current_program_id().unwrap();
+
     // Create a wayland backend from the event loop
     let display_ptr = display_handle.raw_display_handle();
 
@@ -431,43 +434,35 @@ pub fn wayland_tablet_program(input: InputStream<WaylandEventQueue<WaylandTablet
         None
     };
 
-    // Create some futures for monitoring the window creation events and events from windows
-    let window_monitor = window_monitor(winit_events, context.clone());
+    // Create a subprogram for monitoring the window
+    context.send_message(SceneControl::start_child_program(SubProgramId::new(), our_program_id, move |input, context| window_monitor(input, context, winit_events), 20)).await.ok();
 
-    // Future for tracking wayland events relating to the tablet
-    let event_tracker = async move {
-        // Stop immediately if this isn't a wayland event loop
-        let Some(wayland_backend) = wayland_backend else { return; };
+    // Stop immediately if this isn't a wayland event loop
+    let Some(wayland_backend) = wayland_backend else { return; };
 
-        // Create the connection in guest mode
-        let connection = Connection::from_backend(wayland_backend);
+    // Create the connection in guest mode
+    let connection = Connection::from_backend(wayland_backend);
 
-        // Initialise the queue
-        let Ok((globals, event_queue)) = registry_queue_init::<WaylandTabletState>(&connection) else { return; };
-        let queue_handle = event_queue.handle();
+    // Initialise the queue
+    let Ok((globals, event_queue)) = registry_queue_init::<WaylandTabletState>(&connection) else { return; };
+    let queue_handle = event_queue.handle();
 
-        // Set up the initial state
-        let state = WaylandTabletState {
-            dispatcher:         FloWaylandDispatcher::new(),
-            window_for_surface: HashMap::new(),
-            tools:              HashMap::new(),
-        };
-
-        // Bind the tablet manager (we'll leave with no tablet program if the manager fails to bind)
-        let Ok(tablet_manager) = globals.bind::<ZwpTabletManagerV2, _, _>(&queue_handle, 1..=1, ()) else { return; };
-
-        // Create the tablet seat to bind the events
-        let Ok(seat)     = globals.bind::<WlSeat, _, _>(&queue_handle, 1..=9, ()) else { return; };
-        let _tablet_seat = tablet_manager.get_tablet_seat(&seat, &queue_handle, ());
-
-        // Run the queue
-        wayland_event_queue_subprogram(input, context, event_queue, state).await;
+    // Set up the initial state
+    let state = WaylandTabletState {
+        dispatcher:         FloWaylandDispatcher::new(),
+        window_for_surface: HashMap::new(),
+        tools:              HashMap::new(),
     };
 
-    async move {
-        use std::pin::{pin};
-        future::select(pin!(window_monitor), pin!(event_tracker)).await;
-    }
+    // Bind the tablet manager (we'll leave with no tablet program if the manager fails to bind)
+    let Ok(tablet_manager) = globals.bind::<ZwpTabletManagerV2, _, _>(&queue_handle, 1..=1, ()) else { return; };
+
+    // Create the tablet seat to bind the events
+    let Ok(seat)     = globals.bind::<WlSeat, _, _>(&queue_handle, 1..=9, ()) else { return; };
+    let _tablet_seat = tablet_manager.get_tablet_seat(&seat, &queue_handle, ());
+
+    // Run the queue
+    wayland_event_queue_subprogram(input, context, event_queue, state).await;
 }
 
 ///
