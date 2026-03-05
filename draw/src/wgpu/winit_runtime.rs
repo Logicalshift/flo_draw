@@ -372,9 +372,7 @@ impl WinitRuntime {
                 let window          = Arc::new(Mutex::new(window));
                 let platform_window = Arc::new(WinitPlatformWindow { window: Some(Arc::downgrade(&window)) });
                 let weak_events     = events.republish_weak();
-                println!("Start sending created window");
                 self.run_process(async move {
-                    println!("Sending created window");
                     winit_events().publish(WinitEvents::CreatedWindow { 
                         window_id:          window_id, 
                         scale:              scale, 
@@ -382,7 +380,6 @@ impl WinitRuntime {
                         platform_window:    platform_window, 
                         ready:              Arc::new(Mutex::new(Some(signal_ready))) 
                     }).await;
-                    println!("Created window sent");
                 }, "Notify events about window creation");
 
                 // Store the publisher for the events for this window
@@ -426,7 +423,6 @@ impl WinitRuntime {
             },
 
             WakeFuture(future_id) => {
-                println!("Polling: {:?}", future_id);
                 self.poll_future(future_id);
             },
 
@@ -461,8 +457,6 @@ impl WinitRuntime {
         // Assign an ID to this future (we use this for waking it up)
         let future_id = NEXT_FUTURE_ID.fetch_add(1, Ordering::Relaxed);
 
-        println!("Start process: {} as future {:?}", name.into(), future_id);
-
         // Store in the runtime
         self.futures.insert(future_id, future);
 
@@ -485,7 +479,6 @@ impl WinitRuntime {
 
             // Remove the future from the list if it has completed
             if let task::Poll::Ready(_) = poll_result {
-                println!("Finished future ID: {:?}", future_id);
                 self.futures.remove(&future_id);
             }
         }
@@ -497,7 +490,6 @@ impl task::ArcWake for WinitFutureWaker {
         // If this is the first wake request for this waker...
         if let Some(future_id) = arc_self.future_id.lock().unwrap().take() {
             // Send a wake request to winit
-            println!("Future {:?} awakening", future_id);
             winit_thread().send_event(WinitThreadEvent::WakeFuture(future_id));
         }
     }
