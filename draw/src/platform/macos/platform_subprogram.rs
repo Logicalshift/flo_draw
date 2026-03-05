@@ -60,6 +60,9 @@ async fn attach_wgpu(_window_id: ::winit::window::WindowId, _scale: f64, _events
     }.boxed_local()), "Start FloDrawView".into()));
 }
 
+///
+/// Attaches the FloDrawView to the software renderer winit window (handles things like tablet events)
+///
 #[cfg(all(not(feature="render-wgpu"), feature="render-software"))]
 async fn attach_software(_window_id: ::winit::window::WindowId, _scale: f64, _events: Arc<WeakPublisher<DrawEvent>>, platform_window: Arc<dyn PlatformWindow>, ready: Option<oneshot::Sender<()>>) {
     use crate::software::*;
