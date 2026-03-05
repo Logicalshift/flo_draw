@@ -60,6 +60,23 @@ async fn attach_wgpu(_window_id: ::winit::window::WindowId, _scale: f64, _events
     }.boxed_local()), "Start FloDrawView".into()));
 }
 
+#[cfg(all(not(feature="render-wgpu"), feature="render-software"))]
+async fn attach_software(_window_id: ::winit::window::WindowId, _scale: f64, _events: Arc<WeakPublisher<DrawEvent>>, platform_window: Arc<dyn PlatformWindow>, ready: Option<oneshot::Sender<()>>) {
+    use crate::software::*;
+
+    // Dispatch the 'create' event to the winit thread (the wgpu adapter, etc, can't leave the thread)
+    winit_thread().send_event(WinitThreadEvent::RunProcess(Box::new(move || async move {
+        // Attach the drawing view
+        let new_draw_view = FloDrawView::new();
+        new_draw_view.attach_to(&platform_window);
+
+        // Signal readyness to unblock the window event processing
+        if let Some(ready) = ready {
+            ready.send(()).ok();
+        }
+    }.boxed_local())));
+}
+
 ///
 /// Subprogram that manages windows on OS X
 ///
@@ -76,6 +93,13 @@ pub async fn macos_platform_subprogram(input: InputStream<WinitEvents>, _context
                 {
                     let ready = ready.lock().unwrap().take();
                     attach_wgpu(window_id, scale, events, platform_window, ready).await;
+                }
+
+                // For the software renderer, we attach the same view, but it just handles tablet events
+                #[cfg(all(not(feature="render-wgpu"), feature="render-software"))]
+                {
+                    let ready = ready.lock().unwrap().take();
+                    attach_software(window_id, scale, events, platform_window, ready).await;
                 }
             }
         }

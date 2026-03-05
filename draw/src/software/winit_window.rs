@@ -87,9 +87,6 @@ where
     let mut window  = Arc::new(Mutex::new(window));
     let mut events  = events;
 
-    // On macOS, we use a FloDrawView subview to get pressure-sensitive events and flicker-free resizing
-    #[cfg(target_os="macos")]
-    let mut draw_view       = None;
     let window_actions      = WindowUpdateStream { 
         draw_stream:        drawing_actions, 
         title_stream:       follow(window_properties.title),
@@ -115,16 +112,6 @@ where
         for next_action in next_action_set {
             match next_action {
                 WindowUpdate::Draw(next_action) => {
-                    // On macOS, create the FloDrawView on the first draw to get pressure events
-                    #[cfg(target_os="macos")]
-                    if let None = &draw_view {
-                        let new_draw_view = FloDrawView::new();
-                        let platform_window: Arc<dyn PlatformWindow> = Arc::new(WinitPlatformWindow { window: window.lock().unwrap().window.as_ref().map(Arc::downgrade) });
-                        new_draw_view.attach_to(&platform_window);
-
-                        draw_view = Some(new_draw_view);
-                    }
-
                     // Create the renderer if it doesn't already exist
                     let mut window_lock = window.lock().unwrap();
                     if let (Some(winit_window), None) = (&window_lock.window, &window_lock.context) {
