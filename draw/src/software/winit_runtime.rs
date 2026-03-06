@@ -150,10 +150,7 @@ impl WinitRuntime {
 
         // Generate draw_events for the window event
         let draw_events = match event {
-            Resized(new_size)                                               => {
-                vec![DrawEvent::Resize(new_size.width as f64, new_size.height as f64), DrawEvent::Redraw]
-            },
-
+            Resized(new_size)                                               => vec![DrawEvent::Resize(new_size.width as f64, new_size.height as f64), DrawEvent::Redraw],
             ScaleFactorChanged { scale_factor, inner_size_writer: _ }       => vec![DrawEvent::Scale(scale_factor), DrawEvent::Redraw],
             ActivationTokenDone { .. }                                      => vec![],
             Moved(_position)                                                => vec![],
