@@ -401,9 +401,17 @@ async fn window_monitor(input_stream: InputStream<WinitEvents>, context: SceneCo
 
     // Wait on either the events from the window or events sent directly to this program
     // (We want to wait on the input stream to ensure tha the scene idles correctly)
-    let mut winit_events = stream::select(input_stream, winit_events);
+    let mut input_stream = input_stream.fuse();
+    let mut winit_events = winit_events.fuse();
 
-    while let Some(evt) = winit_events.next().await {
+    loop {
+        let evt = futures::select! {
+            evt = input_stream.next() => evt,
+            evt = winit_events.next() => evt,
+        };
+
+        let Some(evt) = evt else { break; };
+
         match evt {
             WinitEvents::CreatedWindow { scale, events, platform_window, ready, .. } => {
                 // If this is a wayland window, then add tablet window processing
@@ -433,17 +441,23 @@ async fn window_events_monitor(input_stream: InputStream<canvas_events::DrawEven
 
     // Wait on either the events from the window or events sent directly to this program
     // (We want to wait on the input stream to ensure tha the scene idles correctly)
-    let mut draw_events = stream::select(input_stream, draw_events);
+    let mut input_stream = input_stream.fuse();
+    let mut draw_events  = draw_events.fuse();
 
     // Monitor for scale events, and send them to the tablet window where they occur
-    while let Some(draw_evt) = draw_events.next().await {
+    loop {
+        let draw_evt = futures::select! {
+            evt = input_stream.next() => evt,
+            evt = draw_events.next()  => evt,
+        };
+
+        let Some(draw_evt) = draw_evt else { break; };
+
         match draw_evt {
             Scale(scale) => { set_tablet_window_scale(&context, tablet_handle, scale).await; }
             _ => { }
         }
     }
-
-    println!("Done");
 }
 
 ///
