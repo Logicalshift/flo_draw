@@ -25,19 +25,10 @@ use std::sync::*;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{HashMap};
 
-#[cfg(target_os = "linux")] use crate::draw_scene::*;
-#[cfg(target_os = "linux")] use crate::platform::wayland::*;
-#[cfg(target_os = "linux")] use flo_scene::*;
-#[cfg(target_os = "linux")] use winit::raw_window_handle_05::{HasRawWindowHandle};
-
 static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 
 pub (super) struct WindowData {
     event_publisher: Publisher<DrawEvent>,
-
-    /// The wayland tablet handle for this window
-    #[cfg(target_os = "linux")]
-    pub (super) tablet_handle: Option<TabletWindowHandle>,
 }
 
 ///
@@ -158,10 +149,7 @@ impl WinitRuntime {
 
         // Generate draw_events for the window event
         let draw_events = match event {
-            Resized(new_size)                                               => {
-                vec![DrawEvent::Resize(new_size.width as f64, new_size.height as f64), DrawEvent::Redraw]
-            },
-
+            Resized(new_size)                                               => vec![DrawEvent::Resize(new_size.width as f64, new_size.height as f64), DrawEvent::Redraw],
             ScaleFactorChanged { scale_factor, inner_size_writer: _ }       => vec![DrawEvent::Scale(scale_factor), DrawEvent::Redraw],
             ActivationTokenDone { .. }                                      => vec![],
             Moved(_position)                                                => vec![],
@@ -350,9 +338,6 @@ impl WinitRuntime {
                 let scale                    = window.scale_factor();
                 let (signal_ready, is_ready) = oneshot::channel();
 
-                #[cfg(target_os = "linux")]
-                let tablet_handle = TabletWindowHandle::try_from(window.raw_window_handle());
-
                 // Notify the anything listening to the winit events about this window
                 let window          = WinitWindow::new(window, is_ready);
                 let window          = Arc::new(Mutex::new(window));
@@ -372,9 +357,6 @@ impl WinitRuntime {
                 let mut initial_events  = events.republish_weak();
                 let window_data         = WindowData {
                     event_publisher:    events,
-
-                    #[cfg(target_os = "linux")]
-                    tablet_handle:      tablet_handle,
                 };
                 self.window_events.insert(window_id, window_data);
 

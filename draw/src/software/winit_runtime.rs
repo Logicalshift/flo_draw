@@ -24,19 +24,11 @@ use std::sync::*;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{HashMap};
 
-#[cfg(target_os = "linux")] use crate::draw_scene::*;
-#[cfg(target_os = "linux")] use crate::platform::wayland::*;
-#[cfg(target_os = "linux")] use flo_scene::*;
-#[cfg(target_os = "linux")] use winit::raw_window_handle_05::{HasRawWindowHandle};
-
 static NEXT_FUTURE_ID: AtomicU64 = AtomicU64::new(0);
 
 pub (super) struct WindowData {
     event_publisher:    Publisher<DrawEvent>,
     update_publisher:   Option<Publisher<WindowUpdate>>,
-
-    #[cfg(target_os = "linux")]
-    tablet_handle:      Option<TabletWindowHandle>,
 }
 
 ///
@@ -343,9 +335,6 @@ impl WinitRuntime {
                 let size                = window.inner_size();
                 let scale               = window.scale_factor();
 
-                #[cfg(target_os = "linux")]
-                let tablet_handle       = TabletWindowHandle::try_from(window.raw_window_handle());
-
                 // Notify the anything listening to the winit events about this window
                 let platform_window             = Arc::new(WinitPlatformWindow { window: Some(Arc::downgrade(&window)) });
                 let weak_events                 = events.republish_weak();
@@ -362,9 +351,6 @@ impl WinitRuntime {
                 let window_data         = WindowData {
                     event_publisher:    events,
                     update_publisher:   Some(window_updates),
-
-                    #[cfg(target_os = "linux")]
-                    tablet_handle:      tablet_handle
                 };
                 let window              = WinitWindow::new(window);
                 self.window_events.insert(window_id, window_data);
