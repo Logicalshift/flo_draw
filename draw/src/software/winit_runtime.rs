@@ -154,21 +154,7 @@ impl WinitRuntime {
                 vec![DrawEvent::Resize(new_size.width as f64, new_size.height as f64), DrawEvent::Redraw]
             },
 
-            ScaleFactorChanged { scale_factor, inner_size_writer: _ }       => {
-                #[cfg(target_os = "linux")]
-                let tablet_handle = self.window_events.get(&window_id).and_then(|data| data.tablet_handle);
-
-                #[cfg(target_os = "linux")]
-                if let Some(tablet_handle) = tablet_handle {
-                    flo_draw_scene_context()
-                        .add_subprogram(SubProgramId::new(), move |_: InputStream<()>, context| async move {
-                            set_tablet_window_scale(&context, tablet_handle, scale_factor).await;
-                        }, 1);
-                }
-
-                vec![DrawEvent::Scale(scale_factor), DrawEvent::Redraw]
-            },
-
+            ScaleFactorChanged { scale_factor, inner_size_writer: _ }       => vec![DrawEvent::Scale(scale_factor), DrawEvent::Redraw],
             ActivationTokenDone { .. }                                      => vec![],
             Moved(_position)                                                => vec![],
             CloseRequested                                                  => vec![DrawEvent::Closed],

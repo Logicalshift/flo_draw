@@ -394,9 +394,13 @@ impl Dispatch<ZwpTabletPadStripV2, ()> for WaylandTabletState {
 }
 
 ///
-/// The window monitor future
+/// Subprogram that monitors for created windows and adds them to the tablet program
 ///
 async fn window_monitor(input_stream: InputStream<WinitEvents>, context: SceneContext, winit_events: Subscriber<WinitEvents>) {
+    let our_program_id = context.current_program_id().unwrap();
+
+    // Wait on either the events from the window or events sent directly to this program
+    // (We want to wait on the input stream to ensure tha the scene idles correctly)
     let mut winit_events = stream::select(input_stream, winit_events);
 
     while let Some(evt) = winit_events.next().await {
@@ -404,7 +408,9 @@ async fn window_monitor(input_stream: InputStream<WinitEvents>, context: SceneCo
             WinitEvents::CreatedWindow { scale, events, platform_window, ready, .. } => {
                 // If this is a wayland window, then add tablet window processing
                 if let Some(window_handle) = TabletWindowHandle::try_from_platform_window(&platform_window) {
-                    // TODO: Add a process that handles 'scale' events by subscribing to the events
+                    // Add a process that handles 'scale' events by subscribing to the events
+                    let subscriber = events.republish().subscribe();
+                    context.send_message(SceneControl::start_child_program(SubProgramId::new(), our_program_id, move |input, context| window_events_monitor(input, context, subscriber, window_handle), 1)).await.ok();
 
                     // Add as a tablet window (which will publish the tablet events)
                     add_wayland_tablet_window(&context, window_handle, scale, events.republish()).await;
@@ -417,6 +423,27 @@ async fn window_monitor(input_stream: InputStream<WinitEvents>, context: SceneCo
             }
         }
     }
+}
+
+///
+/// Subprogram that monitors a window for events relevant to the tablet and updates the status for this window in the tablet program
+///
+async fn window_events_monitor(input_stream: InputStream<canvas_events::DrawEvent>, context: SceneContext, draw_events: Subscriber<canvas_events::DrawEvent>, tablet_handle: TabletWindowHandle) {
+    use canvas_events::DrawEvent::*;
+
+    // Wait on either the events from the window or events sent directly to this program
+    // (We want to wait on the input stream to ensure tha the scene idles correctly)
+    let mut draw_events = stream::select(input_stream, draw_events);
+
+    // Monitor for scale events, and send them to the tablet window where they occur
+    while let Some(draw_evt) = draw_events.next().await {
+        match draw_evt {
+            Scale(scale) => { set_tablet_window_scale(&context, tablet_handle, scale).await; }
+            _ => { }
+        }
+    }
+
+    println!("Done");
 }
 
 ///
