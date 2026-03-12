@@ -32,7 +32,7 @@ pub (crate) fn reduce_filter(device: &wgpu::Device, encoder: &mut wgpu::CommandE
         address_mode_w:     wgpu::AddressMode::ClampToEdge,
         mag_filter:         wgpu::FilterMode::Linear,
         min_filter:         wgpu::FilterMode::Linear,
-        mipmap_filter:      wgpu::FilterMode::Linear,
+        mipmap_filter:      wgpu::MipmapFilterMode::Linear,
         lod_min_clamp:      0.0,
         lod_max_clamp:      0.0,
         compare:            None,
