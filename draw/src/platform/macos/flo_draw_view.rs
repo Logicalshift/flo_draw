@@ -256,7 +256,7 @@ impl FloDrawView {
 
         if let Some(RawWindowHandle::AppKit(appkit)) = window.window().map(|window| window.raw_window_handle()) {
             // Fetch the root view from the window
-            let root_view: Option<Retained<NSView>> = unsafe { Id::retain(appkit.ns_view.cast()) };
+            let root_view: Option<Retained<NSView>> = unsafe { Retained::retain(appkit.ns_view.cast()) };
             let root_view                           = root_view.expect("Window must have a root view");
 
             // Add as a subview of the root view
@@ -316,7 +316,7 @@ impl FloDrawView {
 
         if let Some(RawWindowHandle::AppKit(appkit)) = window.window().map(|window| window.raw_window_handle()) {
             // Fetch the root view from the window
-            let root_view: Option<Retained<NSView>> = unsafe { Id::retain(appkit.ns_view.cast()) };
+            let root_view: Option<Retained<NSView>> = unsafe { Retained::retain(appkit.ns_view.cast()) };
             let root_view                           = root_view.expect("Window must have a root view");
 
             // Add as a subview of the root view
