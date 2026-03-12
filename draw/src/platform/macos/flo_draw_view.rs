@@ -53,7 +53,7 @@ define_class!(
         #[unsafe(method(setFrameSize:))]
         fn set_frame_size(&self, new_size: NSSize) {
             // Perform the normal resizing request
-            unsafe { let _: () = msg_send![super(self), setFrameSize: new_size]; }
+            let _: () = unsafe { msg_send![super(self), setFrameSize: new_size] };
 
             // Resize the rendering layer within this view
             // Disable the transaction so the resize doesn't do a silly animation
@@ -101,7 +101,7 @@ define_class!(
 
         #[unsafe(method(otherMouseDown:))]
         fn other_mouse_down(&self, event: &NSEvent) {
-            let button = match unsafe { event.buttonNumber() } {
+            let button = match event.buttonNumber() {
                 0 => Button::Left,
                 1 => Button::Right,
                 2 => Button::Middle,
@@ -114,7 +114,7 @@ define_class!(
 
         #[unsafe(method(otherMouseUp:))]
         fn other_mouse_up(&self, event: &NSEvent) {
-            let button = match unsafe { event.buttonNumber() } {
+            let button = match event.buttonNumber() {
                 0 => Button::Left,
                 1 => Button::Right,
                 2 => Button::Middle,
@@ -164,7 +164,7 @@ impl FloDrawView {
         let main_thread_marker = MainThreadMarker::new().expect("Must be on main thread");
 
         // Allocate a layer to use as our render target
-        let metal_layer = unsafe { CAMetalLayer::new() };
+        let metal_layer = CAMetalLayer::new();
 
         let ivars = FloDrawViewVars {
             metal_layer:    metal_layer.clone(),
@@ -179,7 +179,7 @@ impl FloDrawView {
         // Set up with a metal layer
         this.setWantsLayer(true);
 
-        if let Some(layer) = unsafe { this.layer() } {
+        if let Some(layer) = this.layer() {
             layer.addSublayer(&*metal_layer);
             unsafe { 
                 let sublayers = ns_string!("sublayers").copy();
@@ -235,7 +235,7 @@ impl FloDrawView {
     #[cfg(feature="render-wgpu")]
     fn reposition_metal_layer(&self) {
         // Fetch the layer
-        let layer           = unsafe { self.layer() };
+        let layer           = self.layer();
         let render_layer    = self.metal_layer();
 
         if let Some(layer) = layer {
@@ -260,18 +260,18 @@ impl FloDrawView {
             let root_view                           = root_view.expect("Window must have a root view");
 
             // Add as a subview of the root view
-            unsafe { root_view.addSubview(self); }
+            root_view.addSubview(self);
 
             // Size to fit
-            unsafe { self.setFrame(root_view.bounds()); }
+            self.setFrame(root_view.bounds());
 
             // Set the root view to resize its subviews
-            unsafe { root_view.setAutoresizesSubviews(true); }
-            unsafe { self.setAutoresizingMask(NSAutoresizingMaskOptions::ViewWidthSizable.union(NSAutoresizingMaskOptions::ViewHeightSizable)); }
+            root_view.setAutoresizesSubviews(true);
+            self.setAutoresizingMask(NSAutoresizingMaskOptions::ViewWidthSizable.union(NSAutoresizingMaskOptions::ViewHeightSizable));
 
             self.reposition_metal_layer();
 
-            if let Some(layer) = unsafe { root_view.layer() } {
+            if let Some(layer) = root_view.layer() {
                 unsafe { 
                     let sublayers = ns_string!("sublayers").copy();
                     let contents  = ns_string!("content").copy();
@@ -283,7 +283,7 @@ impl FloDrawView {
                 }
             }
 
-            if let Some(layer) = unsafe { self.layer() } {
+            if let Some(layer) = self.layer() {
                 let metal_layer = self.metal_layer();
 
                 unsafe { 

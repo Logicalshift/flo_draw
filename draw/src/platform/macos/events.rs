@@ -7,14 +7,14 @@ use objc2_app_kit::{NSView, NSEvent};
 ///
 pub fn draw_pointer_event_for_nsevent(view: &NSView, action: PointerAction, buttons: Vec<Button>, event: &NSEvent) -> DrawEvent {
     // Pointer ID
-    let pointer_id      = unsafe { event.pointingDeviceID() };
+    let pointer_id      = event.pointingDeviceID();
     let pointer_id      = PointerId(pointer_id as _);
 
     // Grab various bits of the event
-    let pos             = unsafe { event.locationInWindow() };
-    let pressure        = unsafe { event.pressure() };
-    let tilt            = unsafe { event.tilt() };
-    let rotation        = unsafe { event.rotation() };
+    let pos             = event.locationInWindow();
+    let pressure        = event.pressure();
+    let tilt            = event.tilt();
+    let rotation        = event.rotation();
 
     // Convert to view coordinates
     let scale_factor    = view.window().map(|window| window.backingScaleFactor()).unwrap_or(1.0);
