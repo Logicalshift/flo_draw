@@ -15,5 +15,4 @@ mod platform_subprogram;
 pub (crate) use flo_draw_view::*;
 pub (crate) use platform_subprogram::*;
 
-#[cfg(feature="render-wgpu")] pub (crate) use objc2::rc::{Retained};
 #[cfg(feature="render-wgpu")] pub (crate) use objc2_quartz_core::{CATransaction};
