@@ -1,5 +1,5 @@
 use flo_canvas_events::*;
-use objc2_foundation::{CGPoint};
+use objc2_foundation::{NSPoint};
 use objc2_app_kit::{NSView, NSEvent};
 
 ///
@@ -19,7 +19,7 @@ pub fn draw_pointer_event_for_nsevent(view: &NSView, action: PointerAction, butt
     // Convert to view coordinates
     let scale_factor    = view.window().map(|window| window.backingScaleFactor()).unwrap_or(1.0);
     let pos             = view.convertPoint_fromView(pos, None);
-    let pos             = CGPoint { x: pos.x*scale_factor, y: pos.y*scale_factor };
+    let pos             = NSPoint { x: pos.x*scale_factor, y: pos.y*scale_factor };
 
     // Convert to a pointer state
     let pointer_state   = PointerState {
