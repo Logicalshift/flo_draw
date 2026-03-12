@@ -8,7 +8,7 @@ use crate::platform::winit::*;
 #[cfg(all(not(feature="render-wgpu"), feature="render-software"))] use crate::software::*;
 
 use objc2::*;
-use objc2::rc::{Id, Retained};
+use objc2::rc::{Retained};
 #[cfg(feature="render-wgpu")] use objc2::runtime::{ProtocolObject};
 
 use objc2_app_kit::{NSAutoresizingMaskOptions, NSResponder, NSView, NSEvent};
