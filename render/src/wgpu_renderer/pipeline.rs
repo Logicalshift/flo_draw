@@ -103,7 +103,7 @@ impl Pipeline {
         let pipeline_layout         = wgpu::PipelineLayoutDescriptor {
             label:                  Some("Pipeline::from_configuration"),
             bind_group_layouts:     &bind_layout,
-            push_constant_ranges:   &[],
+            immediate_size:         0,
         };
         let pipeline_layout         = device.create_pipeline_layout(&pipeline_layout);
 
