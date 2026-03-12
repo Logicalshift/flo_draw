@@ -817,7 +817,7 @@ impl PipelineConfiguration {
             primitive:      wgpu::PrimitiveState::default(),
             depth_stencil:  None,
             multisample:    multisampling,
-            multiview:      None,
+            multiview_mask: None,
             cache:          None,
         }
     }
