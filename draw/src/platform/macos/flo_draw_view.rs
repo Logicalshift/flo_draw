@@ -174,7 +174,7 @@ impl FloDrawView {
 
         // Allocate the view
         let this                    = main_thread_marker.alloc().set_ivars(Mutex::new(ivars));
-        let this: Retained<Self>    = unsafe { msg_send_id![super(this), init] };
+        let this: Retained<Self>    = unsafe { msg_send![super(this), init] };
 
         // Set up with a metal layer
         this.setWantsLayer(true);
@@ -216,7 +216,7 @@ impl FloDrawView {
 
         // Allocate the view
         let this                    = main_thread_marker.alloc().set_ivars(Mutex::new(ivars));
-        let this: Retained<Self>    = unsafe { msg_send_id![super(this), init] };
+        let this: Retained<Self>    = unsafe { msg_send![super(this), init] };
 
         this
     }
