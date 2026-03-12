@@ -186,14 +186,14 @@ impl FloDrawView {
                 let contents  = ns_string!("content").copy();
 
                 layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
-                    &*Retained::cast(NSNull::null()), &*Retained::cast(sublayers.clone())))); 
+                    &*Retained::cast_unchecked(NSNull::null()), &*Retained::cast_unchecked(sublayers.clone())))); 
                 layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
-                    &*Retained::cast(NSNull::null()), &*Retained::cast(contents.clone())))); 
+                    &*Retained::cast_unchecked(NSNull::null()), &*Retained::cast_unchecked(contents.clone())))); 
 
                 metal_layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
-                    &*Retained::cast(NSNull::null()), &*Retained::cast(sublayers)))); 
+                    &*Retained::cast_unchecked(NSNull::null()), &*Retained::cast_unchecked(sublayers)))); 
                 metal_layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
-                    &*Retained::cast(NSNull::null()), &*Retained::cast(contents)))); 
+                    &*Retained::cast_unchecked(NSNull::null()), &*Retained::cast_unchecked(contents)))); 
             }
         }
 
@@ -277,9 +277,9 @@ impl FloDrawView {
                     let contents  = ns_string!("content").copy();
 
                     layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
-                        &*Retained::cast(NSNull::null()), &*Retained::cast(sublayers.clone())))); 
+                        &*Retained::cast_unchecked(NSNull::null()), &*Retained::cast_unchecked(sublayers.clone())))); 
                     layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
-                        &*Retained::cast(NSNull::null()), &*Retained::cast(contents.clone())))); 
+                        &*Retained::cast_unchecked(NSNull::null()), &*Retained::cast_unchecked(contents.clone())))); 
                 }
             }
 
@@ -291,14 +291,14 @@ impl FloDrawView {
                     let contents  = ns_string!("content").copy();
 
                     layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
-                        &*Retained::cast(NSNull::null()), &*Retained::cast(sublayers.clone())))); 
+                        &*Retained::cast_unchecked(NSNull::null()), &*Retained::cast_unchecked(sublayers.clone())))); 
                     layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
-                        &*Retained::cast(NSNull::null()), &*Retained::cast(contents.clone())))); 
+                        &*Retained::cast_unchecked(NSNull::null()), &*Retained::cast_unchecked(contents.clone())))); 
 
                     metal_layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
-                        &*Retained::cast(NSNull::null()), &*Retained::cast(sublayers)))); 
+                        &*Retained::cast_unchecked(NSNull::null()), &*Retained::cast_unchecked(sublayers)))); 
                     metal_layer.setActions(Some(&*NSDictionary::<NSString, ProtocolObject<dyn CAAction>>::dictionaryWithObject_forKey(
-                        &*Retained::cast(NSNull::null()), &*Retained::cast(contents)))); 
+                        &*Retained::cast_unchecked(NSNull::null()), &*Retained::cast_unchecked(contents)))); 
                 }
             }
         } else {
