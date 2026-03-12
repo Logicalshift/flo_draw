@@ -34,31 +34,23 @@ pub struct FloDrawViewVars {
     buttons: Vec<Button>,
 }
 
-declare_class!(
+define_class!(
     ///
     /// FloDrawView is an NSView subclass used as the main view for a flo_draw implementation.
     /// It adds support for pressure-sensitive events and sets transistion times to 0 for rendering.
     ///
-    #[derive(Debug)]
+    #[unsafe(super(NSView, NSResponder, NSObject))]
+    #[thread_kind = MainThreadOnly]
+    #[name = "FloDrawView"]
+    #[ivars = Mutex<FloDrawViewVars>]
     pub struct FloDrawView;
 
-    unsafe impl ClassType for FloDrawView {
-        #[inherits(NSResponder, NSObject)]
-        type Super                  = NSView;
-        type Mutability             = mutability::MainThreadOnly;
-        const NAME: &'static str    = "FloDrawView";
-    }
-
-    impl DeclaredClass for FloDrawView {
-        type Ivars = Mutex<FloDrawViewVars>;
-    }
-
-    unsafe impl FloDrawView {
+    impl FloDrawView {
         ///
         /// Resizes this view
         ///
         #[cfg(feature="render-wgpu")]
-        #[method(setFrameSize:)]
+        #[unsafe(method(setFrameSize:))]
         fn set_frame_size(&self, new_size: NSSize) {
             // Perform the normal resizing request
             unsafe { let _: () = msg_send![super(self), setFrameSize: new_size]; }
@@ -78,36 +70,36 @@ declare_class!(
             CATransaction::commit();
         }
 
-        #[method(isFlipped)]
+        #[unsafe(method(isFlipped))]
         fn is_flipped(&self) -> bool {
             true
         }
 
-        #[method(mouseDown:)]
+        #[unsafe(method(mouseDown:))]
         fn mouse_down(&self, event: &NSEvent) {
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonDown, self.press_button(Button::Left), event));
         }
 
-        #[method(mouseUp:)]
+        #[unsafe(method(mouseUp:))]
         fn mouse_up(&self, event: &NSEvent) {
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonUp, self.release_button(Button::Left), event));
         }
 
-        #[method(rightMouseDown:)]
+        #[unsafe(method(rightMouseDown:))]
         fn right_mouse_down(&self, event: &NSEvent) {
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonUp, self.press_button(Button::Right), event));
         }
 
-        #[method(rightMouseUp:)]
+        #[unsafe(method(rightMouseUp:))]
         fn right_mouse_up(&self, event: &NSEvent) {
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonUp, self.release_button(Button::Right), event));
         }
 
-        #[method(otherMouseDown:)]
+        #[unsafe(method(otherMouseDown:))]
         fn other_mouse_down(&self, event: &NSEvent) {
             let button = match unsafe { event.buttonNumber() } {
                 0 => Button::Left,
@@ -120,7 +112,7 @@ declare_class!(
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonDown, self.press_button(button), event));
         }
 
-        #[method(otherMouseUp:)]
+        #[unsafe(method(otherMouseUp:))]
         fn other_mouse_up(&self, event: &NSEvent) {
             let button = match unsafe { event.buttonNumber() } {
                 0 => Button::Left,
@@ -133,31 +125,31 @@ declare_class!(
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::ButtonUp, self.release_button(button), event));
         }
 
-        #[method(mouseMoved:)]
+        #[unsafe(method(mouseMoved:))]
         fn mouse_moved(&self, event: &NSEvent) {
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
         }
 
-        #[method(mouseDragged:)]
+        #[unsafe(method(mouseDragged:))]
         fn mouse_dragged(&self, event: &NSEvent) {
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
         }
 
-        #[method(rightMouseDragged:)]
+        #[unsafe(method(rightMouseDragged:))]
         fn right_mouse_dragged(&self, event: &NSEvent) {
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
         }
 
-        #[method(otherMouseDragged:)]
+        #[unsafe(method(otherMouseDragged:))]
         fn other_mouse_dragged(&self, event: &NSEvent) {
             self.send_window_event(draw_pointer_event_for_nsevent(self, PointerAction::Move, self.buttons(), event));
         }
 
-        #[method(mouseEntered:)]
+        #[unsafe(method(mouseEntered:))]
         fn mouse_entered(&self, _event: &NSEvent) {
         }
 
-        #[method(mouseExited:)]
+        #[unsafe(method(mouseExited:))]
         fn mouse_exited(&self, _event: &NSEvent) {
         }
     }
@@ -275,7 +267,7 @@ impl FloDrawView {
 
             // Set the root view to resize its subviews
             unsafe { root_view.setAutoresizesSubviews(true); }
-            unsafe { self.setAutoresizingMask(NSAutoresizingMaskOptions::NSViewWidthSizable.union(NSAutoresizingMaskOptions::NSViewHeightSizable)); }
+            unsafe { self.setAutoresizingMask(NSAutoresizingMaskOptions::ViewWidthSizable.union(NSAutoresizingMaskOptions::ViewHeightSizable)); }
 
             self.reposition_metal_layer();
 
@@ -335,7 +327,7 @@ impl FloDrawView {
 
             // Set the root view to resize its subviews
             unsafe { root_view.setAutoresizesSubviews(true); }
-            unsafe { self.setAutoresizingMask(NSAutoresizingMaskOptions::NSViewWidthSizable.union(NSAutoresizingMaskOptions::NSViewHeightSizable)); }
+            unsafe { self.setAutoresizingMask(NSAutoresizingMaskOptions::ViewWidthSizable.union(NSAutoresizingMaskOptions::ViewHeightSizable)); }
         } else {
             // We should be running on OS X here, so we should get an appkit window
             panic!("Was expecting an appkit window");
