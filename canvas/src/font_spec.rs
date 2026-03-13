@@ -3,7 +3,7 @@ use super::font::*;
 ///
 /// The type of font to look up
 ///
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum FontFamily {
     SystemUI,
     Serif,
@@ -116,6 +116,18 @@ impl FontSpec {
 
     /// Uses a specific weight value (100-900) 
     pub fn with_weight(mut self, weight: u32) -> Self { self.weight = Some(weight); self }
+
+    /// Returns the list of family names for this font specification
+    #[inline] pub fn family_names(&self) -> &[String] { &self.family_names }
+
+    /// Returns the font family for this font specification, if one is set
+    #[inline] pub fn family(&self) -> Option<FontFamily> { self.family }
+
+    /// Returns the font style for this font specification, if one is set
+    #[inline] pub fn style(&self) -> Option<FontStyle> { self.style }
+
+    /// Returns the font weight for this font specification, if one is set
+    #[inline] pub fn weight(&self) -> Option<u32> { self.weight }
 }
 
 #[cfg(feature="outline-fonts")]
