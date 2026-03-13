@@ -14,13 +14,13 @@ pub fn load_system_font(spec: impl Into<FontSpec>) -> Option<CanvasFontFace> {
     let spec = spec.into();
 
     // Use a font-kit system source
-    let source = SystemSource::new();
+    static SOURCE: LazyLock<SystemSource> = LazyLock::new(|| SystemSource::new());
 
     // Convert the specification into a font-kit specification
     let (family_names, properties) = spec.into();
 
     // Ask font-kit to retrieve a handle for this font
-    let handle = source.select_best_match(&family_names, &properties).ok()?;
+    let handle = SOURCE.select_best_match(&family_names, &properties).ok()?;
 
     // Load from memory or a file
     let (data, font_index) = match handle {
