@@ -185,6 +185,13 @@ impl FontSpec {
     }
 }
 
+impl Into<FontSpec> for &FontSpec {
+    #[inline]
+    fn into(self) -> FontSpec {
+        self.clone()
+    }
+}
+
 #[cfg(feature="outline-fonts")]
 mod fontkit_font_spec {
     use super::*;
