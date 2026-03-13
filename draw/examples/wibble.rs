@@ -18,7 +18,7 @@ use std::time::{Duration, Instant};
 ///
 pub fn main() {
     with_2d_graphics(|| {
-        let lato        = CanvasFontFace::from_slice(include_bytes!("Lato-Regular.ttf"));
+        let lato        = Arc::new(load_system_font(&FontSpec::system_ui_font()).unwrap());
 
         // Create a window
         let canvas      = create_drawing_window("Wibble");
