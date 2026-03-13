@@ -14,39 +14,8 @@ pub enum FontStyle {
     Oblique
 }
 
-///
-/// The properties to use when selecting a font face
-///
-#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
-pub struct FontProperties {
-    pub style: FontStyle,
-    pub weight: u32
-}
-
 impl Default for FontStyle {
     fn default() -> FontStyle { FontStyle::Normal }
-}
-
-impl Default for FontProperties {
-    fn default() -> FontProperties { FontProperties { style: FontStyle::default(), weight: 400 } }
-}
-
-impl FontProperties {
-    ///
-    /// Returns an updated font properties object with a new weight
-    ///
-    pub fn with_weight(mut self, new_weight: u32) -> FontProperties {
-        self.weight = new_weight;
-        self
-    }
-
-    ///
-    /// Returns an updated font properties object with a new style
-    ///
-    pub fn with_style(mut self, new_style: FontStyle) -> FontProperties {
-        self.style = new_style;
-        self
-    }
 }
 
 ///

@@ -396,15 +396,6 @@ impl<'a> CanvasEncoding<String> for &'a FontStyle {
     }
 }
 
-impl<'a> CanvasEncoding<String> for &'a FontProperties {
-    fn encode_canvas(&self, append_to: &mut String) {
-        // Tag the fields so the decoding is a matter of modifying the default for future extensibility
-        ('s', &self.style).encode_canvas(append_to);
-        ('w', self.weight).encode_canvas(append_to);
-        '.'.encode_canvas(append_to);
-    }
-}
-
 impl<'a> CanvasEncoding<String> for (u8, u8, u8) {
     fn encode_canvas(&self, append_to: &mut String) {
         let (a, b, c) = *self;
