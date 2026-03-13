@@ -233,13 +233,13 @@ mod fontkit_font_spec {
     impl Into<Vec<FamilyName>> for &FontSpec {
         fn into(self) -> Vec<FamilyName> {
             let font_family = match self.family {
-                Some(FontFamily::SystemUI)  => Some(FamilyName::SansSerif), // TODO
-                Some(FontFamily::Serif)     => Some(FamilyName::Serif),
-                Some(FontFamily::SansSerif) => Some(FamilyName::SansSerif),
-                Some(FontFamily::Monospace) => Some(FamilyName::Monospace),
-                Some(FontFamily::Cursive)   => Some(FamilyName::Cursive),
-                Some(FontFamily::Fantasy)   => Some(FamilyName::Fantasy),
-                None => None,
+                Some(FontFamily::Serif)     => vec![FamilyName::Serif],
+                Some(FontFamily::SansSerif) => vec![FamilyName::SansSerif],
+                Some(FontFamily::Monospace) => vec![FamilyName::Monospace],
+                Some(FontFamily::Cursive)   => vec![FamilyName::Cursive],
+                Some(FontFamily::Fantasy)   => vec![FamilyName::Fantasy],
+                Some(FontFamily::SystemUI)  => (&FontSpec::system_ui_font()).into(),
+                None                        => vec![],
             };
 
             self.family_names.iter()
