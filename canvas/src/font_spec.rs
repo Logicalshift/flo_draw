@@ -128,6 +128,61 @@ impl FontSpec {
 
     /// Returns the font weight for this font specification, if one is set
     #[inline] pub fn weight(&self) -> Option<u32> { self.weight }
+
+    ///
+    /// Returns a FontSpec for the system UI font on the current platform
+    ///
+    pub fn system_ui_font() -> Self {
+        #[cfg(target_os = "windows")]
+        {
+            // Segoe UI is the standard Windows system UI font since Vista
+            FontSpec::default()
+                .with_family_name("Segoe UI")
+                .with_alternative_family_name("Tahoma")
+                .with_family(FontFamily::SansSerif)
+        }
+
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        {
+            // San Francisco is the system UI font on macOS/iOS, accessible via .AppleSystemUIFont
+            FontSpec::default()
+                .with_family_name(".AppleSystemUIFont")
+                .with_alternative_family_name("Helvetica Neue")
+                .with_alternative_family_name("Helvetica")
+                .with_family(FontFamily::SansSerif)
+        }
+
+        #[cfg(target_os = "android")]
+        {
+            // Roboto is the standard Android system UI font since Android 4.0
+            FontSpec::default()
+                .with_family_name("Roboto")
+                .with_family(FontFamily::SansSerif)
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            // Linux system fonts vary by distro; try common ones in order
+            FontSpec::default()
+                .with_family_name("Ubuntu")
+                .with_alternative_family_name("Cantarell")
+                .with_alternative_family_name("DejaVu Sans")
+                .with_alternative_family_name("Liberation Sans")
+                .with_alternative_family_name("Noto Sans")
+                .with_family(FontFamily::SansSerif)
+        }
+
+        #[cfg(not(any(
+            target_os = "windows",
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "android",
+            target_os = "linux",
+        )))]
+        {
+            FontSpec::default().with_family(FontFamily::SansSerif)
+        }
+    }
 }
 
 #[cfg(feature="outline-fonts")]
@@ -135,63 +190,6 @@ mod fontkit_font_spec {
     use super::*;
     use font_kit::properties::*;
     use font_kit::family_name::*;
-
-    impl FontSpec {
-        ///
-        /// Returns a FontSpec for the system UI font on the current platform
-        ///
-        pub fn system_ui_font() -> Self {
-            #[cfg(target_os = "windows")]
-            {
-                // Segoe UI is the standard Windows system UI font since Vista
-                FontSpec::default()
-                    .with_family_name("Segoe UI")
-                    .with_alternative_family_name("Tahoma")
-                    .with_family(FontFamily::SansSerif)
-            }
-
-            #[cfg(any(target_os = "macos", target_os = "ios"))]
-            {
-                // San Francisco is the system UI font on macOS/iOS, accessible via .AppleSystemUIFont
-                FontSpec::default()
-                    .with_family_name(".AppleSystemUIFont")
-                    .with_alternative_family_name("Helvetica Neue")
-                    .with_alternative_family_name("Helvetica")
-                    .with_family(FontFamily::SansSerif)
-            }
-
-            #[cfg(target_os = "android")]
-            {
-                // Roboto is the standard Android system UI font since Android 4.0
-                FontSpec::default()
-                    .with_family_name("Roboto")
-                    .with_family(FontFamily::SansSerif)
-            }
-
-            #[cfg(target_os = "linux")]
-            {
-                // Linux system fonts vary by distro; try common ones in order
-                FontSpec::default()
-                    .with_family_name("Ubuntu")
-                    .with_alternative_family_name("Cantarell")
-                    .with_alternative_family_name("DejaVu Sans")
-                    .with_alternative_family_name("Liberation Sans")
-                    .with_alternative_family_name("Noto Sans")
-                    .with_family(FontFamily::SansSerif)
-            }
-
-            #[cfg(not(any(
-                target_os = "windows",
-                target_os = "macos",
-                target_os = "ios",
-                target_os = "android",
-                target_os = "linux",
-            )))]
-            {
-                FontSpec::default().with_family(FontFamily::SansSerif)
-            }
-        }
-    }
 
     impl Into<Style> for FontStyle {
         fn into(self) -> Style {
