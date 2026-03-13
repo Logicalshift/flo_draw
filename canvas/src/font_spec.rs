@@ -144,9 +144,9 @@ impl FontSpec {
 
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         {
-            // San Francisco is the system UI font on macOS/iOS, accessible via .AppleSystemUIFont
+            // San Francisco is the system UI font on macOS/iOS, accessible via .AppleSystemUIFont (except .AppleSystemUIFont causes a panic in font-kit)
             FontSpec::default()
-                .with_family_name(".AppleSystemUIFont")
+                //.with_family_name(".AppleSystemUIFont")
                 .with_alternative_family_name("Helvetica Neue")
                 .with_alternative_family_name("Helvetica")
                 .with_family(FontFamily::SansSerif)
