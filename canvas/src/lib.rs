@@ -54,6 +54,7 @@ mod decoding;
 mod gradient;
 mod namespace;
 mod font_face;
+mod font_spec;
 mod primitives;
 mod transform2d;
 mod draw_stream;
@@ -62,6 +63,7 @@ mod drawing_target;
 mod conversion_streams;
 
 #[cfg(feature = "outline-fonts")] mod font_line_layout;
+#[cfg(feature = "outline-fonts")] mod system_fonts;
 #[cfg(feature = "scenery")] pub mod scenery;
 
 pub use self::draw::*;
@@ -77,6 +79,7 @@ pub use self::decoding::*;
 pub use self::gradient::*;
 pub use self::namespace::*;
 pub use self::font_face::*;
+pub use self::font_spec::*;
 pub use self::primitives::*;
 pub use self::transform2d::*;
 pub use self::draw_stream::*;
@@ -84,6 +87,7 @@ pub use self::drawing_target::*;
 pub use self::conversion_streams::*;
 
 #[cfg(feature = "outline-fonts")] pub use self::font_line_layout::*;
+#[cfg(feature = "outline-fonts")] pub use self::system_fonts::*;
 
 pub use flo_curves as curves;
 pub use flo_curves::geo::{Coordinate2D, Coord2};
