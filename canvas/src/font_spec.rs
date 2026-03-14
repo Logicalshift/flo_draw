@@ -195,6 +195,34 @@ impl Into<FontSpec> for &FontSpec {
     }
 }
 
+impl From<&str> for FontSpec {
+    #[inline]
+    fn from(name: &str) -> FontSpec {
+        FontSpec::default().with_family_name(name)
+    }
+}
+
+impl From<&String> for FontSpec {
+    #[inline]
+    fn from(name: &String) -> FontSpec {
+        FontSpec::default().with_family_name(name)
+    }
+}
+
+impl From<String> for FontSpec {
+    #[inline]
+    fn from(name: String) -> FontSpec {
+        FontSpec::default().with_family_name(name)
+    }
+}
+
+impl From<FontFamily> for FontSpec {
+    #[inline]
+    fn from(family: FontFamily) -> FontSpec {
+        FontSpec::default().with_family(family)
+    }
+}
+
 #[cfg(feature="outline-fonts")]
 mod fontkit_font_spec {
     use super::*;
