@@ -6,6 +6,7 @@ use crate::sprite::*;
 use crate::texture::*;
 use crate::gradient::*;
 use crate::font_face::*;
+use crate::font_spec::*;
 use crate::namespace::*;
 use crate::transform2d::*;
 
@@ -226,6 +227,11 @@ pub trait GraphicsContext {
     /// Loads font data into the canvas for a particular font ID
     fn define_font_data(&mut self, font_id: FontId, font_data: Arc<CanvasFontFace>) {
         self.draw(Draw::Font(font_id, FontOp::UseFontDefinition(font_data)));
+    }
+
+    /// Declares a font by loading it by specification from the system
+    fn declare_font(&mut self, font_id: FontId, font_spec: FontSpec) {
+        self.draw(Draw::Font(font_id, FontOp::LoadFont(font_spec)));
     }
 
     /// Sets the size that text in the specified font will be rendered at
