@@ -217,7 +217,7 @@ impl FontCache {
                     // No fonts could be found
                     return None;
                 } else if new_font_family.len() == 1 {
-                    // Not a family, just one font
+                    // Not a family, just one font (font-kit might return different fonts for different weights or styles in this case so caching as a family would prevent other styles from loading)
                     let mut new_font_family = new_font_family;
                     Arc::new(new_font_family.pop().unwrap())
                 } else {
@@ -277,8 +277,28 @@ impl FontCacheCore {
         }
 
         // Remove any weak refs that are no longer in use
-        let original_num_weak_refs = self.weak_refs.len();
-        self.weak_refs.retain(|_, weak_ref| weak_ref.upgrade().is_some());
+        let original_num_weak_refs  = self.weak_refs.len();
+        let weak_refs               = &mut self.weak_refs;
+        let families                = &self.families;
+        weak_refs.retain(|spec, weak_ref| {
+            if weak_ref.upgrade().is_some() {
+                // There's a reference to this font
+                if families.contains_key(&FontFamilyKey::from_spec(spec)) {
+                    // Release if the family is the only reference to this font
+                    if weak_ref.strong_count() == 1 {
+                        false
+                    } else {
+                        true
+                    }
+                } else {
+                    // Retain singletons
+                    true
+                }
+            } else {
+                // Don't retain if there's no references
+                false
+            }
+        });
 
         // Trim font families if any have been removed
         if original_num_weak_refs != self.weak_refs.len() {
