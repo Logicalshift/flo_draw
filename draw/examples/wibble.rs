@@ -18,7 +18,7 @@ use std::time::{Duration, Instant};
 ///
 pub fn main() {
     with_2d_graphics(|| {
-        let lato        = font(FontFamily::SystemUI).unwrap();
+        let lato        = CanvasFontFace::from_slice(include_bytes!("Lato-Regular.ttf"));
 
         // Create a window
         let canvas      = create_drawing_window("Wibble");
@@ -33,7 +33,7 @@ pub fn main() {
 
         // Render the text to a set of paths
         let mut render_text = vec![];
-        render_text.define_font_data(FontId(1), Arc::clone(&lato));
+        render_text.declare_font(FontId(1), "Lato");
         render_text.set_font_size(FontId(1), 200.0);
         render_text.draw_text(FontId(1), text_string.to_string(), x_pos as _, y_pos as _);
 
