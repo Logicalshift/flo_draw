@@ -68,6 +68,18 @@ impl FontSpec {
     }
 
     ///
+    /// Adds a suffix to the requested family names
+    ///
+    #[inline] pub fn with_family_name_suffix(mut self, suffix: impl Into<String>) -> Self {
+        let suffix = suffix.into();
+
+        self.family_names.iter_mut()
+            .for_each(|name| *name += &suffix);
+        
+        self
+    }
+
+    ///
     /// Sets the family to use for this font (if the name is not specified or not available)
     ///
     /// This can be used to pick a generic font of a particular type
@@ -128,6 +140,36 @@ impl FontSpec {
 
     /// Returns the font weight for this font specification, if one is set
     #[inline] pub fn weight(&self) -> Option<u32> { self.weight }
+
+    ///
+    /// Returns possible suffixes for the weight class of this font, in lightly order of how appropriate they are
+    ///
+    /// This is to work around a bug in font-kit on Mac OS where it doesn't look up the fonts with the  weight properties
+    /// set correctly.
+    ///
+    pub fn weight_suffix(&self) -> Vec<&'static str> {
+        let Some(weight) = self.weight else { return vec!["", " Medium"] };
+
+        if weight < 200 {
+            vec![" Thin", " UltraLight"]
+        } else if weight < 300 {
+            vec![" ExtraLight", " UltraLight", " Thin"]
+        } else if weight < 400 {
+            vec![" Light", " ExtraLight", " Thin"]
+        } else if weight < 500 {
+            vec![" Normal", " Medium"]
+        } else if weight < 600 {
+            vec![" Medium", " Normal"]
+        } else if weight < 700 {
+            vec![" SemiBold", " Bold", " Medium"]
+        } else if weight < 800 {
+            vec![" Bold", " SemiBold", " Medium"]
+        } else if weight < 900 {
+            vec![" ExtraBold", " Bold", " SemiBold", " Medium"]
+        } else {
+            vec![" Black", " UltraBold", " ExtraBold", " Bold", " SemiBold", " Medium"]
+        }
+    }
 
     ///
     /// Returns a FontSpec for the system UI font on the current platform
