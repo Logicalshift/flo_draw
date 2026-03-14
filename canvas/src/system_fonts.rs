@@ -296,7 +296,7 @@ impl FontCacheCore {
             }
         });
 
-        // Trim font families if any have been removed
+        // Trim font families if any fonts have been removed from the weak list (possible some families are no longer referenced by anything)
         if original_num_weak_refs != self.weak_refs.len() {
             // We'll retain any families with members remaining in the strong or weak sets
             let retained_families = self.strong_refs.iter()
