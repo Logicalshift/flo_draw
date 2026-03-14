@@ -55,6 +55,9 @@ struct FontCacheCore {
     /// Strong refs, enqueued in usage order
     strong_ref_queue: VecDeque<FontSpec>,
 
+    /// Returns the exact FontSpec of the fonts we've loaded (from the spec that loaded them) 
+    exact_spec: HashMap<FontSpec, FontSpec>,
+
     /// The fonts that are being kept as strong refs
     strong_refs: HashMap<FontSpec, Arc<CanvasFontFace>>,
 
@@ -86,6 +89,7 @@ impl FontCache {
     pub fn new() -> Self {
         let core = FontCacheCore {
             strong_ref_queue:   VecDeque::new(),
+            exact_spec:         HashMap::new(),
             strong_refs:        HashMap::new(),
             weak_refs:          HashMap::new(),
             max_weak_refs:      8,
@@ -124,6 +128,9 @@ impl FontCache {
         let spec        = spec.into();
         let mut core    = self.core.lock().unwrap();
 
+        // If we've loaded a font using this spec before, we might have an 'exact' spec that will save us reloading an existing font
+        let spec = if let Some(exact_spec) = core.exact_spec.get(&spec) { exact_spec.clone() } else { spec };
+
         if let Some(strong_ref) = core.strong_refs.get(&spec).cloned() {
             // Put the ref to the back of the queue to be removed (it will already be in the queue if it's in the strong_refs table)
             core.strong_ref_queue.retain(|val| val != &spec);
@@ -142,6 +149,14 @@ impl FontCache {
             // Load a new font
             let new_font = load_system_font(&spec)?;
             let new_font = Arc::new(new_font);
+
+            // Store using the FontSpec derived from the font (so if the user requests similar fonts, we eventually just use the exact spec for each one)
+            let spec = if let Some(exact_spec) = new_font.spec() {
+                core.exact_spec.insert(exact_spec.clone(), spec.clone());
+                exact_spec
+            } else {
+                spec
+            };
 
             // Store as a strong ref
             core.strong_refs.insert(spec.clone(), new_font.clone());
