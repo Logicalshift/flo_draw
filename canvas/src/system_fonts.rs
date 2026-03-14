@@ -277,7 +277,20 @@ impl FontCacheCore {
         }
 
         // Remove any weak refs that are no longer in use
+        let original_num_weak_refs = self.weak_refs.len();
         self.weak_refs.retain(|_, weak_ref| weak_ref.upgrade().is_some());
+
+        // Trim font families if any have been removed
+        if original_num_weak_refs != self.weak_refs.len() {
+            // We'll retain any families with members remaining in the strong or weak sets
+            let retained_families = self.strong_refs.iter()
+                .map(|(spec, _)| FontFamilyKey::from_spec(spec))
+                .chain(self.weak_refs.iter()
+                    .map(|(spec, _)| FontFamilyKey::from_spec(spec)))
+                .collect::<HashSet<_>>();
+
+            self.families.retain(|key, _| retained_families.contains(key));
+        }
 
         // Grow our max size exponentially if there are still too many weak refs
         while self.max_weak_refs < self.weak_refs.len() {
