@@ -227,15 +227,19 @@ impl FontSpec {
             let weight_suffix = self.weight_suffix();
 
             for our_name in self.family_names.iter() {
+                let our_name = our_name.to_lowercase();
+
                 // Might be called 'Helvetica Bold' or something, so append the possible weight suffixes
-                let our_name_with_weight_suffix = weight_suffix.iter().map(|suffix| our_name.to_owned() + *suffix).collect::<Vec<_>>();
+                let our_name_with_weight_suffix = weight_suffix.iter().map(|suffix| our_name.to_owned() + &suffix.to_lowercase()).collect::<Vec<_>>();
 
                 for their_name in other.family_names.iter() {
-                    let this_name_diff = if their_name.starts_with(our_name) {
+                    let their_name = their_name.to_lowercase();
+
+                    let this_name_diff = if their_name.starts_with(&our_name) {
                         if our_name == their_name {
                             // Exact match
                             0.0
-                        } else if our_name_with_weight_suffix.iter().any(|our_name| our_name == their_name) {
+                        } else if our_name_with_weight_suffix.iter().any(|our_name| our_name == &their_name) {
                             // Right name but uses the weight suffix
                             0.0
                         } else {
