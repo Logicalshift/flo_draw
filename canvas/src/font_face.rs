@@ -138,6 +138,9 @@ mod canvas_font_face {
             Arc::new(Self::from_pinned(Arc::new(data.into()), 0))
         }
 
+        ///
+        /// Creates a new font by reading the font at a particular index from the supplied data
+        ///
         #[cfg(feature = "outline-fonts")]
         pub (crate) fn from_pinned(data: Arc<Pin<Box<[u8]>>>, font_index: u32) -> CanvasFontFace {
             // Load into the TTF parser with scary self-referential data
@@ -148,6 +151,19 @@ mod canvas_font_face {
 
             // Generate the font face
             font_face
+        }
+
+        ///
+        /// Returns all of the fonts in a family
+        ///
+        #[cfg(feature = "outline-fonts")]
+        pub (crate) fn family_from_pinned(data: Arc<Pin<Box<[u8]>>>) -> Vec<CanvasFontFace> {
+            let Some(num_fonts) = ttf_parser::fonts_in_collection(&**data) else { return vec![] };
+
+            (0..num_fonts)
+                .into_iter()
+                .map(|font_idx| CanvasFontFace::from_pinned(data.clone(), font_idx))
+                .collect()
         }
 
         ///
