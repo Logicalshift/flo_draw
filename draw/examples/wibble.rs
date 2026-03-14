@@ -18,7 +18,7 @@ use std::time::{Duration, Instant};
 ///
 pub fn main() {
     with_2d_graphics(|| {
-        let lato        = Arc::new(load_system_font(&FontSpec::system_ui_font()).unwrap());
+        let lato        = font(FontFamily::SystemUI).unwrap();
 
         // Create a window
         let canvas      = create_drawing_window("Wibble");
