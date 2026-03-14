@@ -172,6 +172,92 @@ impl FontSpec {
     }
 
     ///
+    /// Returns a 'score' for how close this spec is to another spec
+    ///
+    /// 'self' here is the spec we're trying to match against, and 'other' is the candidate spec we want to
+    /// see how well it fits
+    ///
+    pub fn score(&self, other: &FontSpec) -> f64 {
+        // Difference in weights
+        let weight_diff = if let (Some(our_weight), Some(their_weight)) = (self.weight, other.weight) {
+            (our_weight as f64 - their_weight as f64).abs()
+        } else {
+            0.0
+        };
+
+        // Difference in styles
+        let style_diff = if let (Some(our_style), Some(their_style)) = (self.style, other.style) {
+            if our_style == their_style {
+                0.0
+            } else {
+                200.0
+            }
+        } else {
+            0.0
+        };
+
+        // Difference in families
+        let family_diff = if let (Some(our_family), Some(their_familiy)) = (self.family, other.family) {
+            if our_family == their_familiy {
+                0.0
+            } else {
+                5000.0
+            }
+        } else { 
+            0.0
+        };
+
+        // Difference in names
+        // We're forgiving of our name being a prefix of the other name (to allow for, for example, 'Helvetica' -> 'Helvetica Bold')
+        // Very bad match if we're not a prefix (which makes the score change)
+        // Lots of combinations to check when there are a lot of names in both specs, but very often the 'other' is expected to be an exact match with just one name
+        let name_diff = if !self.family_names.is_empty() && !other.family_names.is_empty() {
+            // Check names against each other
+            let mut name_diff = f64::MAX;
+            let weight_suffix = self.weight_suffix();
+
+            for our_name in self.family_names.iter() {
+                // Might be called 'Helvetica Bold' or something, so append the possible weight suffixes
+                let our_name_with_weight_suffix = weight_suffix.iter().map(|suffix| our_name.to_owned() + *suffix).collect::<Vec<_>>();
+
+                for their_name in other.family_names.iter() {
+                    let this_name_diff = if their_name.starts_with(our_name) {
+                        if our_name == their_name {
+                            // Exact match
+                            0.0
+                        } else if our_name_with_weight_suffix.iter().any(|our_name| our_name == their_name) {
+                            // Right name but uses the weight suffix
+                            0.0
+                        } else {
+                            // Difference in lengths (their_name must be longer because we know we're a prefix)
+                            let diff = their_name.len() - our_name.len();
+
+                            // Might be a suffix like '-Bold' that we don't support so only penalize differences a little
+                            (diff as f64) * 10.0
+                        }
+                    } else {
+                        // Not a good name: doesn't match at all
+                        10000.0
+                    };
+
+                    name_diff = name_diff.min(this_name_diff);
+                }
+            }
+
+            name_diff
+        } else if !self.family_names.is_empty() && other.family_names.is_empty() {
+            // Name unclear
+            1000.0
+        } else {
+            // Our name can be anything
+            0.0
+        };
+
+        // Final score is the sum of the scores
+        weight_diff + style_diff + family_diff + name_diff
+    }
+
+    ///
     /// Returns a FontSpec for the system UI font on the current platform
     ///
     pub fn system_ui_font() -> Self {
