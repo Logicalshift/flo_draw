@@ -231,19 +231,55 @@ mod canvas_font_face {
             let ttf = self.borrow_ttf_font();
 
             // The names for this font: we prefer the typographic name if it has both a family and typographic name
-            let family_names: Vec<String> = ttf.names().into_iter()
+
+            // Attempt 1: typographic_family from the TTF for this font
+            let family_name = ttf.names().into_iter()
                 .filter(|name| name.name_id == name_id::TYPOGRAPHIC_FAMILY)
                 .flat_map(|name| name.to_string())
-                .chain(ttf.names().into_iter()
+                .next();
+
+            // Attempt 2: family from this font
+            let family_name = if let Some(family_name) = family_name { Some(family_name) } else {
+                ttf.names().into_iter()
                     .filter(|name| name.name_id == name_id::FAMILY)
-                    .flat_map(|name| name.to_string()))
-                .dedup()
-                .collect();
+                    .flat_map(|name| name.to_string())
+                    .next()
+            };
+
+            // Attempt 3: search all the fonts in this family for the typographic family name
+            let family_name = if let Some(family_name) = family_name { Some(family_name) } else {
+                let num_fonts = ttf_parser::fonts_in_collection(self.borrow_data());
+
+                if let Some(num_fonts) = num_fonts {
+                    (0..num_fonts).into_iter()
+                        .flat_map(|font_idx| ttf_parser::Face::parse(self.borrow_data(), font_idx))
+                        .flat_map(|font| font.names().into_iter())
+                        .filter(|name| name.name_id == name_id::TYPOGRAPHIC_FAMILY)
+                        .flat_map(|name| name.to_string())
+                        .next()
+                } else {
+                    None
+                }
+            };
+
+            // Attempt 4: search all the fonts in this family for the family name
+            let family_name = if let Some(family_name) = family_name { Some(family_name) } else {
+                let num_fonts = ttf_parser::fonts_in_collection(self.borrow_data());
+
+                if let Some(num_fonts) = num_fonts {
+                    (0..num_fonts).into_iter()
+                        .flat_map(|font_idx| ttf_parser::Face::parse(self.borrow_data(), font_idx))
+                        .flat_map(|font| font.names().into_iter())
+                        .filter(|name| name.name_id == name_id::FAMILY)
+                        .flat_map(|name| name.to_string())
+                        .next()
+                } else {
+                    None
+                }
+            };
 
             // If this font doesn't have a name associated with it, we can't provide a sensible FontSpec, so return nothing
-            if family_names.is_empty() {
-                return None;
-            }
+            let Some(family_name) = family_name else { return None; };
 
             // Font style: italic, oblique or neither
             let style = if ttf.is_italic() {
@@ -260,10 +296,8 @@ mod canvas_font_face {
             // Start as a sans-serif font and apply the style and weight
             let spec = FontSpec::default()
                 .with_style(style)
-                .with_weight(weight);
-
-            // Fold in the possible names
-            let spec = family_names.into_iter().fold(spec, |spec, name| spec.with_alternative_family_name(name));
+                .with_weight(weight)
+                .with_family_name(family_name);
 
             Some(spec)
         }
