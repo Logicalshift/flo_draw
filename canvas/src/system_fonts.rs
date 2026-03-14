@@ -92,6 +92,9 @@ struct FontCacheCore {
     /// Strong refs, enqueued in usage order
     strong_ref_queue: VecDeque<FontSpec>,
 
+    /// Whole font families that we've loaded (for these, if you ask for a separate weight, we don't reload them)
+    families: HashMap<FontFamilyKey, Arc<Vec<Arc<CanvasFontFace>>>>,
+
     /// Returns the exact FontSpec of the fonts we've loaded (from the spec that loaded them) 
     exact_spec: HashMap<FontSpec, FontSpec>,
 
@@ -109,7 +112,17 @@ struct FontCacheCore {
 /// Represents a font family that we have loaded (name of the family)
 ///
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
-struct FontFamilyKey(Vec<String>, FontFamily);
+struct FontFamilyKey(Vec<String>, Option<FontFamily>);
+
+impl FontFamilyKey {
+    ///
+    /// Creates a font family key from a fontspec
+    ///
+    #[inline]
+    pub fn from_spec(spec: &FontSpec) -> Self {
+        Self(spec.family_names().iter().cloned().collect(), spec.family())
+    }
+}
 
 ///
 /// Cache that can be used to avoid reloading fonts that are already in use
@@ -132,6 +145,7 @@ impl FontCache {
     pub fn new() -> Self {
         let core = FontCacheCore {
             strong_ref_queue:   VecDeque::new(),
+            families:           HashMap::new(),
             exact_spec:         HashMap::new(),
             strong_refs:        HashMap::new(),
             weak_refs:          HashMap::new(),
@@ -190,20 +204,32 @@ impl FontCache {
             Some(weak_ref)
         } else {
             // Load a new font (or font family)
-            let new_font_family = load_system_font_family(&spec);
-            let new_font        = if new_font_family.is_empty() {
-                // No fonts could be found
-                return None;
-            } else if new_font_family.len() == 1 {
-                // Not a family, just one font
-                let mut new_font_family = new_font_family;
-                Arc::new(new_font_family.pop().unwrap())
+            let family_key      = FontFamilyKey::from_spec(&spec);
+            let new_font        = if let Some(existing_family) = core.families.get(&family_key) {
+                // Match against an existing font family
+                let best_match  = match_font(existing_family.iter().map(|font_ref| &**font_ref), &spec)?;
+                existing_family[best_match].clone()
             } else {
-                // Use the best match in the family
-                let best_match      = match_font(new_font_family.iter(), &spec)?;
-                let new_font_family = new_font_family.into_iter().map(|font| Arc::new(font)).collect::<Vec<_>>();
+                // Load a new font or font family
+                let new_font_family = load_system_font_family(&spec);
+                
+                if new_font_family.is_empty() {
+                    // No fonts could be found
+                    return None;
+                } else if new_font_family.len() == 1 {
+                    // Not a family, just one font
+                    let mut new_font_family = new_font_family;
+                    Arc::new(new_font_family.pop().unwrap())
+                } else {
+                    // Use the best match in the family (and cache it for later)
+                    let best_match      = match_font(new_font_family.iter(), &spec)?;
+                    let new_font_family = new_font_family.into_iter().map(|font| Arc::new(font)).collect::<Vec<_>>();
+                    let new_font_family = Arc::new(new_font_family);
 
-                new_font_family[best_match].clone()
+                    core.families.insert(family_key, Arc::clone(&new_font_family));
+
+                    new_font_family[best_match].clone()
+                }
             };
 
             // Store using the FontSpec derived from the font (so if the user requests similar fonts, we eventually just use the exact spec for each one)
