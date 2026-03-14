@@ -1,6 +1,7 @@
 use crate::draw::*;
 use crate::path::*;
 use crate::font::*;
+use crate::font_spec::*;
 use crate::color::*;
 use crate::sprite::*;
 use crate::texture::*;
@@ -368,6 +369,7 @@ impl<'a> CanvasEncoding<String> for &'a FontOp {
             UseFontDefinition(data)                 => ('d', 'T', data.font_data()).encode_canvas(append_to),
             DrawGlyphs(glyphs)                      => ('G', glyphs).encode_canvas(append_to),
             LayoutText(text)                        => ('L', text).encode_canvas(append_to),
+            LoadFont(spec)                          => ('F', spec).encode_canvas(append_to),
         }
     }
 }
@@ -392,6 +394,47 @@ impl<'a> CanvasEncoding<String> for &'a FontStyle {
             Normal  => { 'n'.encode_canvas(append_to); }
             Italic  => { 'i'.encode_canvas(append_to); }
             Oblique => { 'o'.encode_canvas(append_to); }
+        }
+    }
+}
+
+impl<'a> CanvasEncoding<String> for &'a FontFamily {
+    fn encode_canvas(&self, append_to: &mut String) {
+        use FontFamily::*;
+
+        match self {
+            SystemUI    => { 'U'.encode_canvas(append_to); }
+            Serif       => { 'e'.encode_canvas(append_to); }
+            SansSerif   => { 'a'.encode_canvas(append_to); }
+            Monospace   => { 'M'.encode_canvas(append_to); }
+            Cursive     => { 'c'.encode_canvas(append_to); }
+            Fantasy     => { 'f'.encode_canvas(append_to); }
+        }
+    }
+}
+
+impl<'a> CanvasEncoding<String> for &'a FontSpec {
+    fn encode_canvas(&self, append_to: &mut String) {
+        // Encode family names: count then each string
+        encode_compact_u64(&(self.family_names().len() as u64), append_to);
+        self.family_names().iter().for_each(|name| name.as_str().encode_canvas(append_to));
+
+        // Encode family option: 'N' for None, or a family char
+        match self.family() {
+            None         => { 'N'.encode_canvas(append_to); }
+            Some(family) => { (&family).encode_canvas(append_to); }
+        }
+
+        // Encode style option: 'N' for None, or a style char
+        match self.style() {
+            None        => { 'N'.encode_canvas(append_to); }
+            Some(style) => { (&style).encode_canvas(append_to); }
+        }
+
+        // Encode weight option: 'N' for None, or 'W' followed by 6-char base64 u32
+        match self.weight() {
+            None         => { 'N'.encode_canvas(append_to); }
+            Some(weight) => { 'W'.encode_canvas(append_to); weight.encode_canvas(append_to); }
         }
     }
 }

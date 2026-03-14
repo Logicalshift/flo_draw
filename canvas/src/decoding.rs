@@ -1,6 +1,7 @@
 use crate::draw::*;
 use crate::path::*;
 use crate::font::*;
+use crate::font_spec::*;
 use crate::color::*;
 use crate::sprite::*;
 use crate::texture::*;
@@ -352,6 +353,148 @@ impl DecodeGlyphPositions {
 }
 
 ///
+/// Represents the state of an operation decoding a FontSpec value
+///
+struct DecodeFontSpec {
+    names_count:    PartialResult<u64>,
+    family_names:   Vec<String>,
+    current_name:   Option<DecodeString>,
+    family:         Option<Option<FontFamily>>,
+    style:          Option<Option<FontStyle>>,
+    weight:         Option<Option<u32>>,
+    weight_buf:     String,
+}
+
+impl DecodeFontSpec {
+    fn new() -> DecodeFontSpec {
+        DecodeFontSpec {
+            names_count:    PartialResult::new(),
+            family_names:   vec![],
+            current_name:   None,
+            family:         None,
+            style:          None,
+            weight:         None,
+            weight_buf:     String::new(),
+        }
+    }
+
+    #[inline] fn ready(&self) -> bool {
+        self.weight.is_some()
+    }
+
+    fn to_spec(self) -> Result<FontSpec, DecoderError> {
+        if !self.ready() {
+            return Err(DecoderError::NotReady);
+        }
+
+        let mut spec = FontSpec::default();
+
+        let mut names_iter = self.family_names.into_iter();
+        if let Some(first) = names_iter.next() {
+            spec = spec.with_family_name(first);
+            for name in names_iter {
+                spec = spec.with_alternative_family_name(name);
+            }
+        }
+
+        if let Some(Some(family)) = self.family {
+            spec = spec.with_family(family);
+        }
+
+        if let Some(Some(style)) = self.style {
+            spec = spec.with_style(style);
+        }
+
+        if let Some(Some(weight)) = self.weight {
+            spec = spec.with_weight(weight);
+        }
+
+        Ok(spec)
+    }
+
+    fn decode(mut self, chr: char) -> Result<DecodeFontSpec, DecoderError> {
+        // Stage 1: decode the count of family names
+        let names_count = match self.names_count {
+            PartialResult::MatchMore(so_far) => {
+                self.names_count = CanvasDecoder::decode_compact_id(chr, so_far)?;
+                if let PartialResult::FullMatch(0) = self.names_count {
+                    // No names; nothing extra to do, will proceed to family on next char
+                }
+                return Ok(self);
+            }
+            PartialResult::FullMatch(n) => n as usize,
+        };
+
+        // Stage 2: decode each family name string
+        if self.family_names.len() < names_count {
+            let current = self.current_name.take().unwrap_or_else(DecodeString::new);
+            let current = current.decode(chr)?;
+            if current.ready() {
+                self.family_names.push(current.to_string()?);
+                self.current_name = None;
+            } else {
+                self.current_name = Some(current);
+            }
+            return Ok(self);
+        }
+
+        // Stage 3: decode the family option (single char)
+        if self.family.is_none() {
+            self.family = Some(match chr {
+                'N' => None,
+                'U' => Some(FontFamily::SystemUI),
+                'e' => Some(FontFamily::Serif),
+                'a' => Some(FontFamily::SansSerif),
+                'M' => Some(FontFamily::Monospace),
+                'c' => Some(FontFamily::Cursive),
+                'f' => Some(FontFamily::Fantasy),
+                _   => return Err(DecoderError::InvalidCharacter(chr)),
+            });
+            return Ok(self);
+        }
+
+        // Stage 4: decode the style option (single char)
+        if self.style.is_none() {
+            self.style = Some(match chr {
+                'N' => None,
+                'n' => Some(FontStyle::Normal),
+                'i' => Some(FontStyle::Italic),
+                'o' => Some(FontStyle::Oblique),
+                _   => return Err(DecoderError::InvalidCharacter(chr)),
+            });
+            return Ok(self);
+        }
+
+        // Stage 5: decode the weight option ('N' = None, 'W' + 6 base64 chars = Some(u32))
+        if self.weight.is_none() {
+            if self.weight_buf.is_empty() {
+                match chr {
+                    'N' => {
+                        self.weight = Some(None);
+                        return Ok(self);
+                    }
+                    'W' => {
+                        self.weight_buf.push('W');
+                        return Ok(self);
+                    }
+                    _ => return Err(DecoderError::InvalidCharacter(chr)),
+                }
+            } else {
+                self.weight_buf.push(chr);
+                if self.weight_buf.len() >= 7 {
+                    // First char is 'W', remaining 6 are the base64-encoded u32
+                    let weight = CanvasDecoder::decode_u32(&mut self.weight_buf[1..].chars())?;
+                    self.weight = Some(Some(weight));
+                }
+                return Ok(self);
+            }
+        }
+
+        Err(DecoderError::NotReady)
+    }
+}
+
+///
 /// The possible states for a decoder to be in after accepting some characters from the source
 ///
 enum DecoderState {
@@ -425,6 +568,7 @@ enum DecoderState {
     FontOpTtf(FontId, DecodeBytes),                                     // 'f<id>dT' (bytes)
     FontOpLayoutText(FontId, DecodeString),                             // 'f<id>L' (string)
     FontOpDrawGlyphs(FontId, DecodeGlyphPositions),                     // 'f<id>G' (glyph positions)
+    FontOpLoadFont(FontId, DecodeFontSpec),                             // 'f<id>F' (font spec)
 
     TextureOp(DecodeTextureId),                                         // 'B<id>' (id, op)
     TextureOpCreate(TextureId, String),                                 // 'B<id>N' (w, h, format)
@@ -565,6 +709,7 @@ impl CanvasDecoder {
             FontOpTtf(font_id, bytes)                               => Self::decode_font_data_ttf(next_chr, font_id, bytes)?,
             FontOpLayoutText(font_id, string)                       => Self::decode_font_op_layout(next_chr, font_id, string)?,
             FontOpDrawGlyphs(font_id, glyphs)                       => Self::decode_font_op_glyphs(next_chr, font_id, glyphs)?,
+            FontOpLoadFont(font_id, spec)                           => Self::decode_font_op_load_font(next_chr, font_id, spec)?,
 
             TextureOp(texture_id)                                   => Self::decode_texture_op(next_chr, texture_id)?,
             TextureOpCreate(texture_id, param)                      => Self::decode_texture_create(next_chr, texture_id, param)?,
@@ -1536,6 +1681,7 @@ impl CanvasDecoder {
             'S' => Ok((DecoderState::FontOpSize(font_id, String::new()), None)),
             'L' => Ok((DecoderState::FontOpLayoutText(font_id, DecodeString::new()), None)),
             'G' => Ok((DecoderState::FontOpDrawGlyphs(font_id, DecodeGlyphPositions::new()), None)),
+            'F' => Ok((DecoderState::FontOpLoadFont(font_id, DecodeFontSpec::new()), None)),
 
             _   => Err(DecoderError::InvalidCharacter(chr))
         }
@@ -1610,6 +1756,20 @@ impl CanvasDecoder {
             Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::DrawGlyphs(glyphs)))))
         } else {
             Ok((DecoderState::FontOpDrawGlyphs(font_id, glyphs), None))
+        }
+    }
+
+    ///
+    /// Decodes a LoadFont fontop
+    ///
+    fn decode_font_op_load_font(chr: char, font_id: FontId, spec: DecodeFontSpec) -> Result<(DecoderState, Option<Draw>), DecoderError> {
+        let spec = spec.decode(chr)?;
+
+        if spec.ready() {
+            let spec = spec.to_spec()?;
+            Ok((DecoderState::None, Some(Draw::Font(font_id, FontOp::LoadFont(spec)))))
+        } else {
+            Ok((DecoderState::FontOpLoadFont(font_id, spec), None))
         }
     }
 
@@ -2535,6 +2695,67 @@ mod test {
                 em_size: 18.0
             },
         ])));
+    }
+
+    #[test]
+    fn decode_load_font_default() {
+        check_round_trip_single(Draw::Font(FontId(42), FontOp::LoadFont(FontSpec::default())));
+    }
+
+    #[test]
+    fn decode_load_font_with_name() {
+        check_round_trip_single(Draw::Font(FontId(42), FontOp::LoadFont(FontSpec::default().with_family_name("Helvetica"))));
+    }
+
+    #[test]
+    fn decode_load_font_with_multiple_names() {
+        check_round_trip_single(Draw::Font(FontId(42), FontOp::LoadFont(
+            FontSpec::default()
+                .with_family_name("Helvetica Neue")
+                .with_alternative_family_name("Helvetica")
+                .with_alternative_family_name("Arial")
+        )));
+    }
+
+    #[test]
+    fn decode_load_font_with_family() {
+        check_round_trip_single(Draw::Font(FontId(42), FontOp::LoadFont(FontSpec::default().with_family(FontFamily::SansSerif))));
+    }
+
+    #[test]
+    fn decode_load_font_with_style() {
+        check_round_trip_single(Draw::Font(FontId(42), FontOp::LoadFont(FontSpec::default().with_family_name("Helvetica").with_style(FontStyle::Italic))));
+    }
+
+    #[test]
+    fn decode_load_font_with_weight() {
+        check_round_trip_single(Draw::Font(FontId(42), FontOp::LoadFont(FontSpec::default().with_family_name("Helvetica").with_bold_weight())));
+    }
+
+    #[test]
+    fn decode_load_font_all_families() {
+        for family in [FontFamily::SystemUI, FontFamily::Serif, FontFamily::SansSerif, FontFamily::Monospace, FontFamily::Cursive, FontFamily::Fantasy] {
+            check_round_trip_single(Draw::Font(FontId(1), FontOp::LoadFont(FontSpec::default().with_family(family))));
+        }
+    }
+
+    #[test]
+    fn decode_load_font_all_styles() {
+        for style in [FontStyle::Normal, FontStyle::Italic, FontStyle::Oblique] {
+            check_round_trip_single(Draw::Font(FontId(1), FontOp::LoadFont(FontSpec::default().with_style(style))));
+        }
+    }
+
+    #[test]
+    fn decode_load_font_full_spec() {
+        check_round_trip_single(Draw::Font(FontId(5), FontOp::LoadFont(
+            FontSpec::default()
+                .with_family_name("SF Pro")
+                .with_alternative_family_name("Helvetica Neue")
+                .with_family(FontFamily::SansSerif)
+                .with_style(FontStyle::Italic)
+                .with_weight(600)
+        )));
     }
 
     #[test]
