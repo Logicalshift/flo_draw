@@ -100,6 +100,7 @@ mod canvas_font_face {
 
     use allsorts;
     use ttf_parser;
+    use itertools::{Itertools};
 
     use ouroboros::self_referencing;
 
@@ -220,6 +221,7 @@ mod canvas_font_face {
                 .chain(ttf.names().into_iter()
                     .filter(|name| name.name_id == name_id::FAMILY)
                     .flat_map(|name| name.to_string()))
+                .dedup()
                 .collect();
 
             // If this font doesn't have a name associated with it, we can't provide a sensible FontSpec, so return nothing
