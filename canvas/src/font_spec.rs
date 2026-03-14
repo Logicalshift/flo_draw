@@ -148,7 +148,7 @@ impl FontSpec {
     /// set correctly.
     ///
     pub fn weight_suffix(&self) -> Vec<&'static str> {
-        let Some(weight) = self.weight else { return vec!["", " Medium"] };
+        let Some(weight) = self.weight else { return vec!["", " Regular", " Normal", " Medium"] };
 
         if weight < 200 {
             vec![" Thin", " UltraLight"]
