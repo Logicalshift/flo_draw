@@ -1,6 +1,8 @@
 use crate::draw::*;
 use crate::font::*;
+use crate::font_spec::*;
 use crate::namespace::*;
+use crate::system_fonts::*;
 use crate::font_line_layout::*;
 
 use flo_stream::*;
@@ -64,6 +66,30 @@ where
 
                     // Send the font to the next part of the stream
                     yield_value(Draw::Font(font_id, FontOp::UseFontDefinition(font_defn))).await;
+                }
+
+                Draw::Font(font_id, FontOp::LoadFont(font_spec)) => {
+                    // Load the font from the system font cache
+                    let font_defn = if let Some(font) = font(&font_spec) {
+                        Some(font)
+                    } else if let Some(font) = font(FontSpec::default()) {
+                        Some(font)
+                    } else {
+                        None
+                    };
+
+                    if let Some(font_defn) = font_defn {
+                        // Defining new fonts interrupts any existing text layout
+                        current_line = None;
+                        current_font = None;
+
+                        // Store this font definition
+                        font_map.insert((namespace_id, font_id), Arc::clone(&font_defn));
+                        font_size.insert(font_id, 12.0);
+                    }
+
+                    // Send the font to the next part of the stream
+                    yield_value(Draw::Font(font_id, FontOp::LoadFont(font_spec))).await;
                 }
 
                 Draw::Font(font_id, FontOp::FontSize(new_size)) => {

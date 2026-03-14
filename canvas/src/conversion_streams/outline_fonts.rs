@@ -136,6 +136,7 @@ where
                 }
 
                 Draw::Font(font_id, FontOp::LoadFont(spec)) => {
+                    // Load the font from the system font cache
                     if let Some(font) = font(&spec) {
                         font_map.insert((namespace_id, font_id), font);
                     } else if let Some(font) = font(FontSpec::default()) {
