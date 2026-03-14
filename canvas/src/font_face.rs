@@ -243,7 +243,6 @@ mod canvas_font_face {
 
             // Start as a sans-serif font and apply the style and weight
             let spec = FontSpec::default()
-                .with_family(FontFamily::SansSerif)
                 .with_style(style)
                 .with_weight(weight);
 
