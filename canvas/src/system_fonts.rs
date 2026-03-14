@@ -285,11 +285,7 @@ impl FontCacheCore {
                 // There's a reference to this font
                 if families.contains_key(&FontFamilyKey::from_spec(spec)) {
                     // Release if the family is the only reference to this font
-                    if weak_ref.strong_count() == 1 {
-                        false
-                    } else {
-                        true
-                    }
+                    weak_ref.strong_count() == 1
                 } else {
                     // Retain singletons
                     true
