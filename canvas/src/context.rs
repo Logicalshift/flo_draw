@@ -6,7 +6,6 @@ use crate::sprite::*;
 use crate::texture::*;
 use crate::gradient::*;
 use crate::font_face::*;
-use crate::font_spec::*;
 use crate::namespace::*;
 use crate::transform2d::*;
 
