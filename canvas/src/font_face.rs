@@ -158,7 +158,7 @@ mod canvas_font_face {
         ///
         #[cfg(feature = "outline-fonts")]
         pub (crate) fn family_from_pinned(data: Arc<Pin<Box<[u8]>>>) -> Vec<CanvasFontFace> {
-            let Some(num_fonts) = ttf_parser::fonts_in_collection(&**data) else { return vec![] };
+            let num_fonts = if let Some(num_fonts) = ttf_parser::fonts_in_collection(&**data) { num_fonts } else { 1 };
 
             (0..num_fonts)
                 .into_iter()
