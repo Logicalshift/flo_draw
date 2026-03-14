@@ -181,6 +181,9 @@ impl FontSpec {
         // Difference in weights
         let weight_diff = if let (Some(our_weight), Some(their_weight)) = (self.weight, other.weight) {
             (our_weight as f64 - their_weight as f64).abs()
+        } else if let Some(their_weight) = other.weight {
+            // Choose 'regular' weight preferentially if none specified
+            (400.0 - their_weight as f64).abs()
         } else {
             0.0
         };
@@ -191,6 +194,13 @@ impl FontSpec {
                 0.0
             } else {
                 200.0
+            }
+        } else if let Some(their_style) = other.style {
+            if their_style != FontStyle::Normal {
+                // Prefer 'normal' styles if not directly specified
+                200.0
+            } else {
+                0.0
             }
         } else {
             0.0
