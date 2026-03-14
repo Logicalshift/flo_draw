@@ -164,7 +164,7 @@ mod canvas_font_face {
     #[cfg(feature = "outline-fonts")]
     pub fn measure_text(font: &Arc<CanvasFontFace>, text: &str, em_size: f32) -> TextLayoutMetrics {
         // Create a layout for the text
-        let mut layout = CanvasFontLineLayout::new(font, em_size);
+        let mut layout = CanvasFontLineLayout::with_font_face(font, em_size);
 
         // Layout the text and return the measurements
         layout.add_text(text);

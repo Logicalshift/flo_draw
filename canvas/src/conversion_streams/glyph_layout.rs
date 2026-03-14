@@ -98,7 +98,7 @@ where
                         current_line = current_line
                             .map(|line: CanvasFontLineLayout| {
                                 let font = line.font();
-                                line.continue_with_new_font(font_id, &font, new_size)
+                                line.continue_with_new_font_face(font_id, &font, new_size)
                             });
                     }
 
@@ -129,9 +129,9 @@ where
 
                             current_line = current_line
                                 .map(|line: CanvasFontLineLayout| {
-                                    line.continue_with_new_font(last_font, &new_font, font_size)
+                                    line.continue_with_new_font_face(last_font, &new_font, font_size)
                                 }).or_else(|| {
-                                    Some(CanvasFontLineLayout::new(&new_font, font_size))
+                                    Some(CanvasFontLineLayout::with_font_face(&new_font, font_size))
                                 });
                             current_font = Some(font_id);
                         }
@@ -170,7 +170,7 @@ where
                 Draw::DrawText(font_id, text, x, y) => {
                     if let (Some(font), Some(font_size)) = (font_map.get(&(namespace_id, font_id)), font_size.get(&font_id)) {
                         // This is just a straightforward immediate layout of the text as glyphs
-                        let mut layout = CanvasFontLineLayout::new(font, *font_size);
+                        let mut layout = CanvasFontLineLayout::with_font_face(font, *font_size);
 
                         // Lay out the text
                         layout.add_text(&text);

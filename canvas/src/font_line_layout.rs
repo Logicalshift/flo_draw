@@ -2,7 +2,9 @@ use crate::draw::*;
 use crate::font::*;
 use crate::context::*;
 use crate::font_face::*;
+use crate::font_spec::*;
 use crate::transform2d::*;
+use crate::system_fonts::*;
 
 use flo_curves::geo::*;
 
@@ -61,7 +63,7 @@ impl CanvasFontLineLayout {
     ///
     /// Creates a new line layout.
     ///
-    pub fn new(font: &Arc<CanvasFontFace>, em_size: f32) -> CanvasFontLineLayout {
+    pub fn with_font_face(font: &Arc<CanvasFontFace>, em_size: f32) -> CanvasFontLineLayout {
         // Gather font info
         let ttf_font            = font.ttf_font();
         let units_per_em        = ttf_font.units_per_em() as f32;
@@ -87,6 +89,15 @@ impl CanvasFontLineLayout {
             pending:        String::new(),
             layout:         vec![]
         }
+    }
+
+    ///
+    /// Creates a new line layout.
+    ///
+    pub fn with_font_spec(font_spec: impl Into<FontSpec>, em_size: f32) -> Option<CanvasFontLineLayout> {
+        let font = font(font_spec).or_else(|| font(FontSpec::default()))?;
+
+        Some(Self::with_font_face(&font, em_size))
     }
 
     ///
@@ -263,7 +274,7 @@ impl CanvasFontLineLayout {
     ///
     /// `last_font_id` should be the ID of the font that the glyphs that have been rendered so far should be rendered in
     ///
-    pub fn continue_with_new_font(mut self, last_font_id: FontId, new_font: &Arc<CanvasFontFace>, new_em_size: f32) -> CanvasFontLineLayout {
+    pub fn continue_with_new_font_face(mut self, last_font_id: FontId, new_font: &Arc<CanvasFontFace>, new_em_size: f32) -> CanvasFontLineLayout {
         // Layout the pending text before continuing
         self.layout_pending();
 
@@ -274,7 +285,37 @@ impl CanvasFontLineLayout {
         let drawing         = self.to_drawing(last_font_id);
 
         // Create a new layout with the new font
-        let mut new_layout  = CanvasFontLineLayout::new(new_font, new_em_size);
+        let mut new_layout  = CanvasFontLineLayout::with_font_face(new_font, new_em_size);
+
+        // Set it up to continue where the existing layout left off
+        new_layout.layout   = drawing.into_iter().map(|draw| LayoutAction::Draw(draw)).collect();
+        new_layout.x_off    = x_off;
+        new_layout.y_off    = y_off;
+
+        new_layout.metrics.inner_bounds = new_layout.metrics.inner_bounds.union_bounds(metrics.inner_bounds);
+
+        new_layout
+    }
+
+    ///
+    /// Continues the layout with a new font
+    ///
+    /// `last_font_id` should be the ID of the font that the glyphs that have been rendered so far should be rendered in
+    ///
+    pub fn continue_with_new_font_spec(mut self, last_font_id: FontId, new_font_spec: impl Into<FontSpec>, new_em_size: f32) -> CanvasFontLineLayout {
+        let Some(new_font) = font(new_font_spec).or_else(|| font(FontSpec::default())) else { return self };
+
+        // Layout the pending text before continuing
+        self.layout_pending();
+
+        // Finish the current layout by generating the drawing actions, and remember the state
+        let x_off           = self.x_off;
+        let y_off           = self.y_off;
+        let metrics         = self.metrics.clone();
+        let drawing         = self.to_drawing(last_font_id);
+
+        // Create a new layout with the new font
+        let mut new_layout  = CanvasFontLineLayout::with_font_face(&new_font, new_em_size);
 
         // Set it up to continue where the existing layout left off
         new_layout.layout   = drawing.into_iter().map(|draw| LayoutAction::Draw(draw)).collect();

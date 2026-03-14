@@ -317,7 +317,7 @@ fn section_text_layout() {
         gc.define_font_data(FontId(0), Arc::clone(&LATO));
 
         let metrics             = LATO.font_metrics(50.0).unwrap();
-        let mut line_layout     = CanvasFontLineLayout::new(&LATO, 50.0);
+        let mut line_layout     = CanvasFontLineLayout::with_font_face(&LATO, 50.0);
 
         let initial_point       = line_layout.measure();
 
