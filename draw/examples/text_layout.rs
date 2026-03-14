@@ -2,16 +2,14 @@ use flo_draw::*;
 use flo_draw::canvas::*;
 use flo_draw::binding::*;
 
-use std::sync::*;
-
 ///
 /// Example that displays various effects that can be achieved via 
 /// flo_canvas's text layout functions
 ///
 pub fn main() {
     with_2d_graphics(|| {
-        let lato        = CanvasFontFace::from_slice(include_bytes!("Lato-Regular.ttf"));
-        let lato_bold   = CanvasFontFace::from_slice(include_bytes!("Lato-Bold.ttf"));
+        let helvetica        = FontSpec::from("Helvetica Neue").with_alternative_family_name("Helvetica").with_alternative_family_name("Arial").with_family(FontFamily::SansSerif);
+        let helvetica_bold   = helvetica.clone().with_bold_weight();
 
         // Create a window
         let mut properties          = WindowProperties::from(&"Text layout example");
@@ -25,8 +23,8 @@ pub fn main() {
             gc.center_region(0.0, 0.0, 1000.0, 1000.0);
 
             // Load the fonts
-            gc.define_font_data(FontId(1), Arc::clone(&lato));
-            gc.define_font_data(FontId(2), Arc::clone(&lato_bold));
+            gc.declare_font(FontId(1), &helvetica);
+            gc.declare_font(FontId(2), &helvetica_bold);
             gc.set_font_size(FontId(1), 18.0);
             gc.set_font_size(FontId(2), 18.0);
         });
@@ -93,7 +91,7 @@ pub fn main() {
 
         canvas.draw(|gc| {
             // Can perform fully manual layout, and annotate with other drawing
-            let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
+            let mut text_layout = CanvasFontLineLayout::with_font_spec(&helvetica, 18.0).unwrap();
             text_layout.add_text("Performing layout manually is also possible");
 
             // Calling 'align_transform' moves the text to its final position, and 'to_drawing' generates the drawing instructions for the layout (the layout needs to know the FontId to generate drawing instructions)
@@ -104,8 +102,8 @@ pub fn main() {
         canvas.draw(|gc| {
             // We can use the measure() and draw() functions to add annotations to the text as we generate the layout
             // font_metrics(em_size) gives some information about a particular font
-            let lato_metrics        = lato.font_metrics(18.0).unwrap();
-            let mut text_layout     = CanvasFontLineLayout::new(&lato, 18.0);
+            let lato_metrics        = font(&helvetica).unwrap().font_metrics(18.0).unwrap();
+            let mut text_layout     = CanvasFontLineLayout::with_font_spec(&helvetica, 18.0).unwrap();
             
             text_layout.add_text("Manual layout allows ");
 
@@ -153,7 +151,7 @@ pub fn main() {
 
         canvas.draw(|gc| {
             // It's still possible to change fonts and colours while using a manual layout
-            let mut text_layout = CanvasFontLineLayout::new(&lato, 18.0);
+            let mut text_layout = CanvasFontLineLayout::with_font_spec(&helvetica, 18.0).unwrap();
             text_layout.add_text("Changing ");
             text_layout.fill_color(Color::Rgba(0.8, 0.6, 0.0, 1.0));
             text_layout.add_text("colour");
@@ -161,9 +159,9 @@ pub fn main() {
             text_layout.add_text(" and ");
 
             // FontId 1 = lato, FontId 2 = lato bold (note we supply the old font ID and not the new one here!)
-            let mut text_layout = text_layout.continue_with_new_font(FontId(1), &lato_bold, 18.0);
+            let mut text_layout = text_layout.continue_with_new_font_spec(FontId(1), &helvetica_bold, 18.0);
             text_layout.add_text("font");
-            let mut text_layout = text_layout.continue_with_new_font(FontId(2), &lato, 18.0);
+            let mut text_layout = text_layout.continue_with_new_font_spec(FontId(2), &helvetica, 18.0);
             text_layout.add_text(" is still possible with manual layouts");
 
             // Calling 'align_transform' moves the text to its final position, and 'to_drawing' generates the drawing instructions for the layout (the layout needs to know the FontId to generate drawing instructions)
