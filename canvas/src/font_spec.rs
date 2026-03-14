@@ -157,7 +157,7 @@ impl FontSpec {
         } else if weight < 400 {
             vec![" Light", " ExtraLight", " Thin"]
         } else if weight < 500 {
-            vec![" Normal", " Medium"]
+            vec![" Regular", " Normal", " Medium"]
         } else if weight < 600 {
             vec![" Medium", " Normal"]
         } else if weight < 700 {
