@@ -48,7 +48,20 @@ pub fn load_system_font_family(spec: impl Into<FontSpec>) -> Vec<CanvasFontFace>
 /// Returns the index of the font face that matches the specification
 ///
 fn match_font<'a>(fonts: impl Iterator<Item=&'a CanvasFontFace>, spec: &FontSpec) -> Option<usize> {
-    todo!()
+    let mut low_score = f64::MAX;
+    let mut best_font = None;
+
+    for (idx, font) in fonts.enumerate() {
+        let Some(this_font_spec) = font.spec() else { continue };
+
+        let score = spec.score(&this_font_spec);
+        if score < low_score {
+            low_score = score;
+            best_font = Some(idx);
+        }
+    }
+
+    best_font
 }
 
 ///
