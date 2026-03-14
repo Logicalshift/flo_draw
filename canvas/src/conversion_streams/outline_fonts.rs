@@ -2,6 +2,8 @@ use crate::draw::*;
 use crate::path::*;
 use crate::font::*;
 use crate::namespace::*;
+use crate::font_spec::*;
+use crate::system_fonts::*;
 
 use flo_stream::*;
 
@@ -131,6 +133,16 @@ where
                     // Store the font to use for this ID
                     font_map.insert((namespace_id, font_id), Arc::clone(&data));
                     yield_value(Draw::Font(font_id, FontOp::UseFontDefinition(data))).await;
+                }
+
+                Draw::Font(font_id, FontOp::LoadFont(spec)) => {
+                    if let Some(font) = font(&spec) {
+                        font_map.insert((namespace_id, font_id), font);
+                    } else if let Some(font) = font(FontSpec::default()) {
+                        font_map.insert((namespace_id, font_id), font);
+                    }
+
+                    yield_value(Draw::Font(font_id, FontOp::LoadFont(spec))).await;
                 }
 
                 Draw::Font(font_id, FontOp::DrawGlyphs(glyphs)) => {
