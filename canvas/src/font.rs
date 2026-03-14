@@ -1,4 +1,5 @@
 use super::font_face::*;
+use super::font_spec::*;
 
 use flo_curves::geo::*;
 
@@ -43,7 +44,10 @@ pub enum FontOp {
     LayoutText(String),
 
     /// Draws a series of glyphs using the current fill style
-    DrawGlyphs(Vec<GlyphPosition>)
+    DrawGlyphs(Vec<GlyphPosition>),
+
+    /// Loads a font from the system with the given specification
+    LoadFont(FontSpec),
 }
 
 ///
