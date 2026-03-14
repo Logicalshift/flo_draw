@@ -95,6 +95,7 @@ mod canvas_font_face {
     use super::*;
 
     use crate::font::*;
+    use crate::font_spec::*;
     use crate::font_line_layout::*;
 
     use allsorts;
@@ -202,6 +203,52 @@ mod canvas_font_face {
         ///
         pub fn font_metrics(&self, em_size: f32) -> Option<FontMetrics> {
             Some(self.base_font_metrics()?.with_size(em_size))
+        }
+
+        ///
+        /// Returns the exact spec for this font face (or none if the name could not be determined)
+        ///
+        pub fn spec(&self) -> Option<FontSpec> {
+            use ttf_parser::name_id;
+
+            let ttf = self.borrow_ttf_font();
+
+            // The names for this font: we prefer the typographic name if it has both a family and typographic name
+            let family_names: Vec<String> = ttf.names().into_iter()
+                .filter(|name| name.name_id == name_id::TYPOGRAPHIC_FAMILY)
+                .flat_map(|name| name.to_string())
+                .chain(ttf.names().into_iter()
+                    .filter(|name| name.name_id == name_id::FAMILY)
+                    .flat_map(|name| name.to_string()))
+                .collect();
+
+            // If this font doesn't have a name associated with it, we can't provide a sensible FontSpec, so return nothing
+            if family_names.is_empty() {
+                return None;
+            }
+
+            // Font style: italic, oblique or neither
+            let style = if ttf.is_italic() {
+                FontStyle::Italic
+            } else if ttf.is_oblique() {
+                FontStyle::Oblique
+            } else {
+                FontStyle::Normal
+            };
+
+            // Weight, converted to the style we prefer
+            let weight = ttf.weight().to_number() as u32;
+
+            // Start as a sans-serif font and apply the style and weight
+            let spec = FontSpec::default()
+                .with_family(FontFamily::SansSerif)
+                .with_style(style)
+                .with_weight(weight);
+
+            // Fold in the possible names
+            let spec = family_names.into_iter().fold(spec, |spec, name| spec.with_alternative_family_name(name));
+
+            Some(spec)
         }
     }
 
