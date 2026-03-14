@@ -152,7 +152,7 @@ impl FontCache {
 
             // Store using the FontSpec derived from the font (so if the user requests similar fonts, we eventually just use the exact spec for each one)
             let spec = if let Some(exact_spec) = new_font.spec() {
-                core.exact_spec.insert(exact_spec.clone(), spec.clone());
+                core.exact_spec.insert(spec.clone(), exact_spec.clone());
                 exact_spec
             } else {
                 spec
