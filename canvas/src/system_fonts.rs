@@ -43,6 +43,14 @@ pub fn load_system_font(spec: impl Into<FontSpec>) -> Option<CanvasFontFace> {
     Some(CanvasFontFace::from_pinned(data, font_index))
 }
 
+///
+/// Loads a font from the standard cache (shortcut for `FontCache::default().font(spec))
+///
+#[inline]
+pub fn font(spec: impl Into<FontSpec>) -> Option<Arc<CanvasFontFace>> {
+    FontCache::default().font(spec)
+}
+
 struct FontCacheCore {
     /// Strong refs, enqueued in usage order
     strong_ref_queue: VecDeque<FontSpec>,
