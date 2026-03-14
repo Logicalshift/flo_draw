@@ -8,6 +8,9 @@ use std::collections::*;
 use std::pin::*;
 use std::sync::*;
 
+// Use a font-kit system source
+static SOURCE: LazyLock<SystemSource> = LazyLock::new(|| SystemSource::new());
+
 ///
 /// Loads a system font (with no caching). Returns the empty set if there's no font matching the spec
 ///
@@ -15,9 +18,6 @@ use std::sync::*;
 ///
 pub fn load_system_font_family(spec: impl Into<FontSpec>) -> Vec<CanvasFontFace> {
     let spec = spec.into();
-
-    // Use a font-kit system source
-    static SOURCE: LazyLock<SystemSource> = LazyLock::new(|| SystemSource::new());
 
     // Convert the specification into a font-kit specification
     let (family_names, properties) = spec.into();
@@ -247,6 +247,47 @@ impl FontCache {
             core.trim_weak_refs();
 
             Some(new_font)
+        }
+    }
+
+    ///
+    /// Returns a list of all the font family names that can be loaded using this cache
+    ///
+    pub fn all_family_names(&self) -> Vec<String> {
+        SOURCE.all_families().ok().unwrap_or_else(|| vec![])
+    }
+
+    ///
+    /// Returns all the supported font specs for a family
+    ///
+    pub fn all_font_specs_for_family(&self, family_name: impl Into<String>) -> Vec<FontSpec> {
+        let family = SOURCE.select_family_by_name(&family_name.into());
+
+        if let Ok(family) = family {
+            // Load the fonts to generate the specs
+            family.fonts().iter()
+                .flat_map(|handle| {
+                    let bytes = match handle {
+                        Handle::Memory { bytes, .. } => {
+                            let boxed: Box<[u8]> = (**bytes).clone().into_boxed_slice();
+                            Some(Arc::new(Pin::new(boxed)))
+                        }
+
+                        Handle::Path { path, .. } => {
+                            let bytes = std::fs::read(path).ok()?;
+                            let boxed: Box<[u8]> = bytes.into_boxed_slice();
+                            Some(Arc::new(Pin::new(boxed)))
+                        }
+                    };
+
+                    bytes
+                })
+                .map(|bytes| CanvasFontFace::family_from_pinned(bytes))
+                .flat_map(|family| family.into_iter().flat_map(|face| face.spec()))
+                .collect::<Vec<_>>()
+        } else {
+            // No specs for a font with an error
+            vec![]
         }
     }
 }
