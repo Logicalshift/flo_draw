@@ -7,7 +7,7 @@ use std::sync::*;
 ///
 /// The possible styles of a font
 ///
-#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize, Hash, Eq)]
 pub enum FontStyle {
     Normal,
     Italic,

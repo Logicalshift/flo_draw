@@ -3,7 +3,7 @@ use super::font::*;
 ///
 /// The type of font to look up
 ///
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Hash, PartialEq, Eq)]
 pub enum FontFamily {
     SystemUI,
     Serif,
@@ -16,7 +16,7 @@ pub enum FontFamily {
 ///
 /// Describes the specification of a font
 ///
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Hash, PartialEq, Eq)]
 pub struct FontSpec {
     /// The named fonts to use
     family_names: Vec<String>,
