@@ -9,11 +9,11 @@ use std::pin::*;
 use std::sync::*;
 
 ///
-/// Loads a system font (with no caching)
+/// Loads a system font (with no caching). Returns the empty set if there's no font matching the spec
 ///
 /// Use `FontCache::default().font(spec)` to load a font from the cache (will re-use the existing font if there is one)
 ///
-pub fn load_system_font(spec: impl Into<FontSpec>) -> Option<CanvasFontFace> {
+pub fn load_system_font_family(spec: impl Into<FontSpec>) -> Vec<CanvasFontFace> {
     let spec = spec.into();
 
     // Use a font-kit system source
@@ -23,24 +23,48 @@ pub fn load_system_font(spec: impl Into<FontSpec>) -> Option<CanvasFontFace> {
     let (family_names, properties) = spec.into();
 
     // Ask font-kit to retrieve a handle for this font
-    let handle = SOURCE.select_best_match(&family_names, &properties).ok()?;
+    let Some(handle) = SOURCE.select_best_match(&family_names, &properties).ok() else { return vec![] };
 
     // Load from memory or a file
-    let (data, font_index) = match handle {
-        Handle::Memory { bytes, font_index } => {
+    // font-kit returns a font index here but at least on Mac OS often fails to provide the cloest match in the family
+    let data = match handle {
+        Handle::Memory { bytes, .. } => {
             let boxed: Box<[u8]> = (*bytes).clone().into_boxed_slice();
-            (Arc::new(Pin::new(boxed)), font_index)
+            Arc::new(Pin::new(boxed))
         }
 
-        Handle::Path { path, font_index } => {
-            let bytes = std::fs::read(path).ok()?;
+        Handle::Path { path, .. } => {
+            let Some(bytes) = std::fs::read(path).ok() else { return vec![] };
             let boxed: Box<[u8]> = bytes.into_boxed_slice();
-            (Arc::new(Pin::new(boxed)), font_index)
+            Arc::new(Pin::new(boxed))
         }
     };
 
     // Convert to a font face
-    Some(CanvasFontFace::from_pinned(data, font_index))
+    CanvasFontFace::family_from_pinned(data)
+}
+
+///
+/// Returns the index of the font face that matches the specification
+///
+fn match_font<'a>(fonts: impl Iterator<Item=&'a CanvasFontFace>, spec: &FontSpec) -> Option<usize> {
+    todo!()
+}
+
+///
+/// Loads a system font matching the given spec
+///
+pub fn load_system_font(spec: impl Into<FontSpec>) -> Option<CanvasFontFace> {
+    let spec = spec.into();
+
+    // Load the family for this font spec
+    let mut family = load_system_font_family(&spec);
+
+    // Match the font from the family (font-kit is *supposed* to be able to this for us but this fails on Mac OS at least by not applying weights or styles)
+    let font_idx = match_font(family.iter(), &spec)?;
+
+    // Return the value from the family that matched
+    Some(family.remove(font_idx))
 }
 
 ///
