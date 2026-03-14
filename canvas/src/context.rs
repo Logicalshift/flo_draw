@@ -229,11 +229,6 @@ pub trait GraphicsContext {
         self.draw(Draw::Font(font_id, FontOp::UseFontDefinition(font_data)));
     }
 
-    /// Declares a font by loading it by specification from the system
-    fn declare_font(&mut self, font_id: FontId, font_spec: FontSpec) {
-        self.draw(Draw::Font(font_id, FontOp::LoadFont(font_spec)));
-    }
-
     /// Sets the size that text in the specified font will be rendered at
     fn set_font_size(&mut self, font_id: FontId, size: f32) {
         self.draw(Draw::Font(font_id, FontOp::FontSize(size)));

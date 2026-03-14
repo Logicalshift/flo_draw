@@ -1,6 +1,8 @@
 use crate::draw::*;
+use crate::font::*;
 use crate::path::*;
 use crate::context::*;
+use crate::font_spec::*;
 use crate::transform2d::*;
 use crate::conversion_streams::*;
 
@@ -167,6 +169,13 @@ pub trait GraphicsPrimitives : GraphicsContext {
 
         // Result is the image size
         Some((width as _, height as _))
+    }
+
+    ///
+    /// Declares a font by loading it by specification from the system
+    ///
+    fn declare_font(&mut self, font_id: FontId, font_spec: impl Into<FontSpec>) {
+        self.draw(Draw::Font(font_id, FontOp::LoadFont(font_spec.into())));
     }
 }
 
