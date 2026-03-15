@@ -403,10 +403,25 @@ impl BezierSubpath {
             }
         }
 
-        debug_assert!(intercepts.len()%2 == 0, "\n\nIntercepts should be even, but found {} intercepts - {:?} - on line {:?} for path:\n'{}'\n\n", intercepts.len(), intercepts, y_pos, flo_canvas::curves::debug::bezier_path_to_rust_definition(self));
+        debug_assert!(intercepts.len()%2 == 0, "\n\nIntercepts should be even, but found {} intercepts - {:?} - on line {:?} for {} path:\n'{}'\n\n", intercepts.len(), intercepts, y_pos, if self.is_closed() { "closed" } else { "open"}, flo_canvas::curves::debug::bezier_path_to_rust_definition(self));
 
         // Iterate over the results
         intercepts.into_iter()
+    }
+
+    #[cfg(debug_assertions)]
+    fn is_closed(&self) -> bool {
+        let start_x = self.curves[0].wx.0;
+        let start_y = self.curves[0].wy.0;
+
+        let last_curve = self.curves.last().unwrap();
+        let end_x = last_curve.wx.3;
+        let end_y = last_curve.wy.3;
+
+        let start   = Coord2(start_x, start_y);
+        let end     = Coord2(end_x, end_y);
+
+        start.distance_to(&end) < 0.001        
     }
 
     ///
