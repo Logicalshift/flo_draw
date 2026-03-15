@@ -817,7 +817,14 @@ pub fn intercepts_7() {
         .build();
     path.prepare_to_render();
 
+    // Try an intercept exactly along the line of the first point
     let intercepts = path.intercepts_on_line(-0.22216796875).collect::<Vec<_>>();
+    assert!(intercepts.len()%2 == 0, "Uneven number of intercepts: {:?}", intercepts);
+
+    println!("First intercept OK");
+
+    // Intercept is slightly off where the line is
+    let intercepts = path.intercepts_on_line(-0.22216796875000006).collect::<Vec<_>>();
     assert!(intercepts.len()%2 == 0, "Uneven number of intercepts: {:?}", intercepts);
 }
 
