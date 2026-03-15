@@ -792,6 +792,8 @@ pub fn intercepts_6() {
 
 #[test]
 pub fn intercepts_7() {
+    // This is a rectangle drawn with a thin line. It overlaps in a few places, notably at the end as it's drawn as a single line rather
+    // than a closed path. Intercept hits the start point along a line that's collinear with the ray.
     let mut path = BezierPathBuilder::<BezierSubpath>::start(Coord2(0.06298828125, -0.22216796875))
         .curve_to((Coord2(0.06298828125, -0.5742187499999993), Coord2(0.06298828125, -0.9262695312500007)), Coord2(0.06298828125, -1.2783203125))
         .curve_to((Coord2(0.06266279296875, -1.27799482421875), Coord2(0.0623373046875, -1.2776693359375)), Coord2(0.06201171875, -1.27734375))
@@ -815,7 +817,7 @@ pub fn intercepts_7() {
         .build();
     path.prepare_to_render();
 
-    let intercepts = path.intercepts_on_line(-0.22216796875000006).collect::<Vec<_>>();
+    let intercepts = path.intercepts_on_line(-0.22216796875).collect::<Vec<_>>();
     assert!(intercepts.len()%2 == 0, "Uneven number of intercepts: {:?}", intercepts);
 }
 
