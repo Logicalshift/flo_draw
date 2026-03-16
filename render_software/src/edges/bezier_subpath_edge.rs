@@ -359,11 +359,8 @@ impl BezierSubpath {
                         let next_normal_x    = -next_tangent_y;
                         let next_side        = next_normal_x.signum();
 
-                        // Remove one of the intercepts if these two very close points are crossing the subpath in the same direction (or are just the same point)
-                        if (prev.t >= 1.0 && next.t <= 0.0) || (prev.t <= 0.0 && next.t >= 1.0) {
-                            // t=0.0 and t=1.0 on two neighbours is an intercept at the shared start/end point
-                            intercepts.remove(overlap_idx);
-                        } else if prev_side == next_side {
+                        // Remove one of the intercepts if these two very close points are crossing the subpath in the same direction
+                        if prev_side == next_side {
                             // Two intercepts are on the same side of the curve, on subsequent sections: they are (very probably) the same if the 'control polygon' distance between them is small enough
                             if prev.curve_idx < next.curve_idx {
                                 let prev_as_curve   = prev_curve.as_curve();
