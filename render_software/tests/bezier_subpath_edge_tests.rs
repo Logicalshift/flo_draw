@@ -829,6 +829,9 @@ pub fn intercepts_7() {
     println!("First intercept OK");
 
     // Intercept is slightly off where the line is
+    // This produces an intercept at t = 1.0 + <small value> due to a numerical error in the solver (solve_basis_for_t)
+    // Such errors are expected because we use a numerical approach to solve the roots, but if we trim at exactly t=1.0
+    // this produces an error
     let intercepts = path.intercepts_on_line(-0.22216796875000006).collect::<Vec<_>>();
     assert!(intercepts.len()%2 == 0, "Uneven number of intercepts: {:?}", intercepts);
 }
