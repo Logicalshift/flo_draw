@@ -998,13 +998,13 @@ mod test {
 
             // The point 0, 500 should be at the top-middle of the viewport (height of 1000)
             let (x, y) = viewport_transform.transform_point(0.0, 500.0);
-            assert!((x-(1024.0+512.0)).abs() < 0.01);
-            assert!((y-(1536.0+512.0)).abs() < 0.01);
+            assert!((x-(1024.0+512.0)).abs() < 0.01, "x=0.0 -> {}", x);
+            assert!((y-(1536.0+512.0)).abs() < 0.01, "y=500.0 -> {}", y);
 
             // The point 500, 0 should be at the right of the viewport (height of 1000). Pixels are square
             let (x, y) = viewport_transform.transform_point(500.0, 0.0);
-            assert!((y-(768.0+512.0)).abs() < 0.01);
-            assert!((x-(1792.0+512.0)).abs() < 0.01);
+            assert!((y-(768.0+512.0)).abs() < 0.01, "y=0.0 -> {}", y);
+            assert!((x-(1792.0+512.0)).abs() < 0.01, "x=500.0 -> {}", x);
         });
     }
 
@@ -1020,15 +1020,17 @@ mod test {
             // Fetch the viewport transform
             let window_transform = renderer.get_window_transform();
 
+            println!("{:?}", window_transform.transform_point(500.0, 500.0));
+
             // The point 0, 500 should be at the top-middle of the viewport (height of 1000)
             let (x, y) = window_transform.transform_point(0.0, 500.0);
-            assert!((x-(1024.0)).abs() < 0.01);
-            assert!((y-(1536.0)).abs() < 0.01);
+            assert!((x-(1024.0)).abs() < 0.01, "x=0.0 -> {}", x);
+            assert!((y-(1536.0)).abs() < 0.01, "y=500.0 -> {}", y);
 
             // The point 500, 0 should be at the right of the viewport (height of 1000). Pixels are square
             let (x, y) = window_transform.transform_point(500.0, 0.0);
-            assert!((y-(768.0)).abs() < 0.01);
-            assert!((x-(1792.0)).abs() < 0.01);
+            assert!((y-(768.0)).abs() < 0.01, "y=0.0 -> {}", y);
+            assert!((x-(1792.0)).abs() < 0.01, "x=500.0 -> {}", x);
         });
     }
 
