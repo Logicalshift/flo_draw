@@ -738,6 +738,7 @@ pub fn intercepts_5() {
 pub fn intercepts_6() {
     // As for intercepts_5 but we scale the path before converting it
     // Very short curve at y=61.5411826411528, after scaling (== -.38458817358847200000)
+    // The curve also backtracks on itself, so we wind up with 3 intercepts at the same point
     let path = BezierPathBuilder::<SimpleBezierPath>::start(Coord2(-0.2037662266584257, -0.34995458248326766))
         .curve_to((Coord2(-0.20006384207737574, -0.35319049320697476), Coord2(-0.19778599976302993, -0.3576703897326853)), Coord2(-0.19431519023924634, -0.36111487969372347))
         .curve_to((Coord2(-0.19431503462317426, -0.36111503420780017), Coord2(-0.1943148790071022, -0.3611151887218768)), Coord2(-0.19431472334434063, -0.3611153432823124))
