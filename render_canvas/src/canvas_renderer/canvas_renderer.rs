@@ -341,7 +341,11 @@ impl CanvasRenderer {
         let scale_x                     = self.window_size.0/2.0;
         let scale_y                     = self.window_size.1/2.0;
 
+        let viewport_scale_x            = self.viewport_size.0 / self.window_size.0;
+        let viewport_scale_y            = self.viewport_size.1 / self.window_size.1;
+
         canvas::Transform2D::translate(self.viewport_origin.0, self.viewport_origin.1)
+            * canvas::Transform2D::scale(viewport_scale_x, viewport_scale_y)
             * canvas::Transform2D::scale(scale_y, scale_y)
             * canvas::Transform2D::translate(scale_x/scale_y, 1.0) 
             * to_normalized_coordinates 
