@@ -1086,23 +1086,18 @@ mod test {
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(768.0), Draw::CenterRegion((0.0, 0.0), (1024.0, 768.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
-            let window_transform    = renderer.get_window_transform();
             let viewport_transform  = renderer.get_viewport_transform();
-
-            // In the window transform, everything should map 1-to-1
-            let (x, y) = window_transform.transform_point(0.0, 500.0);
-            assert!((x-(0.0)).abs() < 0.01, "{:?} != (0.0, 500.0)", (x, y));
-            assert!((y-(500.0)).abs() < 0.01, "{:?} != (0.0, 500.0)", (x, y));
-
-            let (x, y) = window_transform.transform_point(500.0, 0.0);
-            assert!((y-(0.0)).abs() < 0.01, "{:?} != (500.0, 0.0)", (x, y));
-            assert!((x-(500.0)).abs() < 0.01, "{:?} != (500.0, 0.0)", (x, y));
 
             // The 0,0 point in the viewport should map to 200, 400 on the canvas
             let (x, y) = viewport_transform.transform_point(0.0, 0.0);
             assert!((x-(200.0)).abs() < 0.01, "{:?} != (0.0, 0.0)", (x, y));
             assert!((y-(400.0)).abs() < 0.01, "{:?} != (0.0, 0.0)", (x, y));
-        });
+
+            // The point (1024, 768) in the viewport should map to 300,450 in the canvas
+            let (x, y) = viewport_transform.transform_point(1024.0, 768.0);
+            assert!((x-(300.0)).abs() < 0.01, "{:?} != (300.0, 450.0)", (x, y));
+            assert!((y-(450.0)).abs() < 0.01, "{:?} != (300.0, 450.0)", (x, y));
+       });
     }
 
     #[test]
@@ -1115,15 +1110,14 @@ mod test {
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(768.0), Draw::CenterRegion((0.0, 0.0), (1024.0, 768.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
-            let window_transform    = renderer.get_window_transform();
             let viewport_transform  = renderer.get_viewport_transform();
 
             // In the window transform, everything should map 1-to-1
-            let (x, y) = window_transform.transform_point(0.0, 500.0);
+            let (x, y) = viewport_transform.transform_point(0.0, 500.0);
             assert!((x-(0.0)).abs() < 0.01);
             assert!((y-(500.0)).abs() < 0.01);
 
-            let (x, y) = window_transform.transform_point(500.0, 0.0);
+            let (x, y) = viewport_transform.transform_point(500.0, 0.0);
             assert!((y-(0.0)).abs() < 0.01);
             assert!((x-(500.0)).abs() < 0.01);
 
