@@ -402,6 +402,7 @@ impl BezierSubpath {
             }
         }
 
+        #[cfg(debug_assertions)]
         debug_assert!(intercepts.len()%2 == 0, "\n\nIntercepts should be even, but found {} intercepts - {:?} - on line {:?} for {} path:\n'{}'\n\n", intercepts.len(), intercepts, y_pos, if self.is_closed() { "closed" } else { "open"}, flo_canvas::curves::debug::bezier_path_to_rust_definition(self));
 
         // Iterate over the results
