@@ -970,16 +970,26 @@ mod test {
 
         executor::block_on(async move {
             // Set the canvas height
-            renderer.set_window_viewport(0.0..1024.0, 0.0..768.0, 2048.0, 1536.0, 1.0);
+            renderer.set_window_viewport(0.0..1000.0, 0.0..1000.0, 2048.0, 1536.0, 1.0);
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(1000.0)].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
             let viewport_transform = renderer.get_viewport_transform();
 
+            // Minimum position in window should translate to the minimum position in the viewport
+            let (x, y) = viewport_transform.transform_point(0.0, 0.0);
+            assert!((x-0.0).abs() < 0.01, "{:?} != (0, 0)", (x, y));
+            assert!((y-0.0).abs() < 0.01, "{:?} != (0, 0)", (x, y));
+
+            // Maximum position in window should translate to the maximum position in the viewport (in canvas coordinates)
+            let (x, y) = viewport_transform.transform_point(2048.0, 1536.0);
+            assert!((x-1000.0).abs() < 0.01, "{:?} != (1000, 1000)", (x, y));
+            assert!((y-1000.0).abs() < 0.01, "{:?} != (1000, 1000)", (x, y));
+
             // The point 0, 500 should be at the top-middle of the viewport (height of 1000)
-            let (x, y) = viewport_transform.transform_point(0.0, 500.0);
-            assert!((x-1024.0).abs() < 0.01);
-            assert!((y-1536.0).abs() < 0.01);
+            let (x, y) = viewport_transform.transform_point(0.0, 1536.0/2.0);
+            assert!((x-0.0).abs() < 0.01, "{:?} != (0, 500)", (x, y));
+            assert!((y-500.0).abs() < 0.01, "{:?} != (0, 500)", (x, y));
 
             // The point 500, 0 should be at the right of the viewport (height of 1000). Pixels are square
             let (x, y) = viewport_transform.transform_point(500.0, 0.0);
