@@ -1080,17 +1080,17 @@ mod test {
 
             // In the window transform, everything should map 1-to-1
             let (x, y) = window_transform.transform_point(0.0, 500.0);
-            assert!((x-(0.0)).abs() < 0.01);
-            assert!((y-(500.0)).abs() < 0.01);
+            assert!((x-(0.0)).abs() < 0.01, "{:?} != (0.0, 500.0)", (x, y));
+            assert!((y-(500.0)).abs() < 0.01, "{:?} != (0.0, 500.0)", (x, y));
 
             let (x, y) = window_transform.transform_point(500.0, 0.0);
-            assert!((y-(0.0)).abs() < 0.01);
-            assert!((x-(500.0)).abs() < 0.01);
+            assert!((y-(0.0)).abs() < 0.01, "{:?} != (500.0, 0.0)", (x, y));
+            assert!((x-(500.0)).abs() < 0.01, "{:?} != (500.0, 0.0)", (x, y));
 
             // The 0,0 point in the viewport should map to 200, 400 on the canvas
             let (x, y) = viewport_transform.transform_point(0.0, 0.0);
-            assert!((x-(200.0)).abs() < 0.01);
-            assert!((y-(400.0)).abs() < 0.01);
+            assert!((x-(200.0)).abs() < 0.01, "{:?} != (0.0, 0.0)", (x, y));
+            assert!((y-(400.0)).abs() < 0.01, "{:?} != (0.0, 0.0)", (x, y));
         });
     }
 
