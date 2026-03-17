@@ -186,7 +186,8 @@ impl CanvasRenderer {
         let translate_y                 = (window_mid_y-viewport_mid_y) * pixel_size;
 
         // Create a viewport transform such that the top of the window is at (0,1) and the bottom is at (0,-1)
-        let viewport_transform          = square_pixels * canvas::Transform2D::scale(window_scale, window_scale) * canvas::Transform2D::translate(translate_x, translate_y);
+        //let viewport_transform          = square_pixels * canvas::Transform2D::scale(window_scale, window_scale) * canvas::Transform2D::translate(translate_x, translate_y);
+        let viewport_transform          = square_pixels;
         let inverse_viewport_transform  = viewport_transform.invert().unwrap();
 
         // Store the size of the window
