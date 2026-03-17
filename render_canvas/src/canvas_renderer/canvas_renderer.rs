@@ -711,7 +711,18 @@ mod test {
             renderer.draw(vec![Draw::ClearCanvas(Color::Rgba(0.0, 0.0, 0.0, 0.0)), Draw::CanvasHeight(-1000.0), Draw::CenterRegion((0.0, 0.0), (1000.0, 1000.0))].into_iter()).collect::<Vec<_>>().await;
 
             // Fetch the viewport transform
-            let viewport_transform = renderer.get_window_transform();
+            let window_transform    = renderer.get_window_transform();
+            let viewport_transform  = renderer.get_viewport_transform();
+
+            // The point 0, 500 should be at the middle-left of the viewport (height of 1000)
+            let (x, y) = window_transform.transform_point(0.0, 500.0);
+            assert!((x-0.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((y-384.0).abs() < 0.01, "x = {}, y = {}", x, y);
+
+            // The point 500, 0 should be at the top-center of the viewport (height of 1000). Pixels are square
+            let (x, y) = window_transform.transform_point(500.0, 0.0);
+            assert!((y-768.0).abs() < 0.01, "x = {}, y = {}", x, y);
+            assert!((x-384.0).abs() < 0.01, "x = {}, y = {}", x, y);
 
             // The point 0, 500 should be at the middle-left of the viewport (height of 1000)
             let (x, y) = viewport_transform.transform_point(0.0, 500.0);
