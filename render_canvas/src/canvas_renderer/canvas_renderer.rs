@@ -1117,18 +1117,18 @@ mod test {
             let viewport_transform  = renderer.get_viewport_transform();
 
             // In the window transform, everything should map 1-to-1
-            let (x, y) = viewport_transform.transform_point(0.0, 500.0);
-            assert!((x-(0.0)).abs() < 0.01);
-            assert!((y-(500.0)).abs() < 0.01);
+            let (x, y) = viewport_transform.transform_point(0.0, 768.0);
+            assert!((x-(0.0)).abs() < 0.01, "{:?} != (0.0, 450.0)", (x, y));
+            assert!((y-(450.0)).abs() < 0.01, "{:?} != (0.0, 450.0)", (x, y));
 
-            let (x, y) = viewport_transform.transform_point(500.0, 0.0);
-            assert!((y-(0.0)).abs() < 0.01);
-            assert!((x-(500.0)).abs() < 0.01);
+            let (x, y) = viewport_transform.transform_point(1024.0, 0.0);
+            assert!((y-(0.0)).abs() < 0.01, "{:?} != (300.0, 0.0)", (x, y));
+            assert!((x-(300.0)).abs() < 0.01, "{:?} != (300.0, 0.0)", (x, y));
 
             // The 0,0 point in the viewport should map to 0, 0 on the canvas
             let (x, y) = viewport_transform.transform_point(0.0, 0.0);
-            assert!((x-(0.0)).abs() < 0.01);
-            assert!((y-(0.0)).abs() < 0.01);
+            assert!((x-(0.0)).abs() < 0.01, "{:?} != (0.0, 0.0)", (x, y));
+            assert!((y-(0.0)).abs() < 0.01, "{:?} != (0.0, 0.0)", (x, y));
         });
     }
 
