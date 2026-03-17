@@ -122,7 +122,7 @@ impl RendererState {
     ///
     fn update_window_transform(&mut self) -> Transform2D {
         // Fetch the window tranform from the canvas, and invert it to get the transform from window coordinates to canvas coordinates
-        let window_transform    = self.renderer.get_window_transform().invert().unwrap();
+        let window_transform    = self.renderer.get_viewport_transform().invert().unwrap();
 
         // Window coordinates are inverted compared to canvas coordinates
         let window_transform    = window_transform * Transform2D::scale(1.0, -1.0) * Transform2D::translate(0.0, -self.height as _);
