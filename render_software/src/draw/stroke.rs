@@ -75,7 +75,8 @@ where
             .with_min_sample_distance(1.0/1000.0)
             .with_start_cap(current_state.stroke_start_cap)
             .with_end_cap(current_state.stroke_end_cap)
-            .with_join(current_state.stroke_join);
+            .with_join(current_state.stroke_join)
+            .with_closed(current_state.stroke_closed);
         let width = current_state.stroke_width;
 
         // Create the edge
