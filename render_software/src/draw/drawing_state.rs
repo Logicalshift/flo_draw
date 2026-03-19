@@ -123,6 +123,9 @@ pub struct DrawingState {
     /// The end cap for the next stroke
     pub (super) stroke_end_cap: curves_path::LineCap,
 
+    /// Set to true if the stroke is closed
+    pub (super) stroke_closed: bool,
+
     /// The currently set clip region, if any
     pub (super) clip_path: DrawingClipRegion,
 
@@ -149,6 +152,7 @@ impl Default for DrawingState {
             stroke_join:        curves_path::LineJoin::Round,
             stroke_start_cap:   curves_path::LineCap::Butt,
             stroke_end_cap:     curves_path::LineCap::Butt,
+            stroke_closed:      false,
             clip_path:          DrawingClipRegion::None,
             blend_mode:         AlphaOperation::SourceOver,
             sprite_transform:   SpriteTransform::ScaleTransform { scale: (1.0, 1.0), translate: (0.0, 0.0) },

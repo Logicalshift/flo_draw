@@ -39,6 +39,7 @@ impl DrawingState {
         self.path_edges.clear();
         self.subpaths.clear();
         self.subpaths.push(0);
+        self.stroke_closed = false;
     }
 
     ///
@@ -56,6 +57,7 @@ impl DrawingState {
 
         // Set the 'last position'
         self.path_position = Coord2(x, y);
+        self.stroke_closed = false;
     }
 
     ///
@@ -75,6 +77,7 @@ impl DrawingState {
 
         // Update the position
         self.path_position = next_pos;
+        self.stroke_closed = false;
     }
 
     ///
@@ -96,6 +99,7 @@ impl DrawingState {
 
         // Update the last position
         self.path_position = end;
+        self.stroke_closed = false;
     }
 
     ///
@@ -115,6 +119,8 @@ impl DrawingState {
                     self.path_edges.push(line_to_bezier(&line));
                     self.path_position = start_point;
                 }
+
+                self.stroke_closed = true;
             }
         }
     }
