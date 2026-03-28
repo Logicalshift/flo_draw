@@ -5,11 +5,21 @@ use font_kit::handle::{Handle};
 use font_kit::source::{SystemSource};
 
 use std::collections::*;
+use std::rc::{Rc};
 use std::pin::*;
 use std::sync::*;
 
-// Use a font-kit system source
-static SOURCE: LazyLock<SystemSource> = LazyLock::new(|| SystemSource::new());
+///
+/// Returns the font system source
+///
+fn system_source() -> Rc<SystemSource> {
+    // On Linux, SystemSource is not Send so we have to have one SystemSource per thread
+    thread_local! {
+        static SOURCE: Rc<SystemSource> = Rc::new(SystemSource::new());
+    }
+
+    SOURCE.with(|source| source.clone())
+}
 
 ///
 /// Loads a system font (with no caching). Returns the empty set if there's no font matching the spec
@@ -23,7 +33,7 @@ pub fn load_system_font_family(spec: impl Into<FontSpec>) -> Vec<CanvasFontFace>
     let (family_names, properties) = spec.into();
 
     // Ask font-kit to retrieve a handle for this font
-    let Some(handle) = SOURCE.select_best_match(&family_names, &properties).ok() else { return vec![] };
+    let Some(handle) = system_source().select_best_match(&family_names, &properties).ok() else { return vec![] };
 
     // Load from memory or a file
     // font-kit returns a font index here but at least on Mac OS often fails to provide the cloest match in the family
@@ -254,14 +264,14 @@ impl FontCache {
     /// Returns a list of all the font family names that can be loaded using this cache
     ///
     pub fn all_family_names(&self) -> Vec<String> {
-        SOURCE.all_families().ok().unwrap_or_else(|| vec![])
+        system_source().all_families().ok().unwrap_or_else(|| vec![])
     }
 
     ///
     /// Returns all the supported font specs for a family
     ///
     pub fn all_font_specs_for_family(&self, family_name: impl Into<String>) -> Vec<FontSpec> {
-        let family = SOURCE.select_family_by_name(&family_name.into());
+        let family = system_source().select_family_by_name(&family_name.into());
 
         if let Ok(family) = family {
             // Load the fonts to generate the specs
