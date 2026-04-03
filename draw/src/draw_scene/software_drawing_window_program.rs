@@ -191,6 +191,7 @@ pub fn create_software_draw_window_program(scene: &Arc<Scene>, program_id: SubPr
                                     if subscriber.send(evt.clone()).await.is_err() {
                                         // If the subscriber refuses an event, mark it as finished
                                         finished.push(idx);
+                                        break;
                                     }
                                 }
                             }
