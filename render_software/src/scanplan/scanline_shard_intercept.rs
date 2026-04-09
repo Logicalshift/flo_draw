@@ -288,7 +288,7 @@ impl<'a> ScanlineShardInterceptState<'a> {
                     let was_inside      = existing.count != 0;
                     match intercept.direction {
                         EdgeInterceptDirection::Toggle          => {
-                            existing.count = if existing.count != 0 { 1 } else { 0 };
+                            existing.count = if existing.count != 0 { 0 } else { 1 };
                         },
 
                         EdgeInterceptDirection::DirectionOut    => {
