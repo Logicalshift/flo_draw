@@ -1880,8 +1880,76 @@ fn basic_clipping_path() {
     instructions.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
     instructions.fill();
 
-    // Line in the canvas that produces error
+    // Choose a line in the canvas where the clipping occurs
     let pixel_line  = 1000.0 - 125.0;
+    let height      = 1000;
+    let transform   = ScanlineTransform::for_region(&(-1.0..1.0), height as _);
+    let canvas_pos  = transform.fractional_pixel_x_to_source_x(pixel_line);
+
+    let plan = plan_layer_0_line_on_drawing_with_height(instructions.clone(), canvas_pos, height as _);
+
+    // Should have planned on the scanline with the issue
+    assert!(plan.spans().len() > 1, "{:?}", plan.spans());
+}
+
+#[test]
+fn clipping_path_1() {
+    use Draw::*;
+    use PathOp::*;
+
+    // Produces a panic in stroke.rs when used in a real application
+    let draw_slice = vec![
+        PushState, 
+        Layer(LayerId(0)), 
+        ClearLayer, 
+        Path(NewPath), 
+        Path(Move(-45.254833, 45.254833)), 
+        Path(BezierCurve(((-20.26128, 70.24839), (20.26128, 70.24839)), (45.254833, 45.254833))), 
+        Path(BezierCurve(((100.87501, 100.87501), (156.49518, 156.49518)), (212.13203, 212.13203))),
+        Path(BezierCurve(((94.97475, 329.2893), (-94.97475, 329.2893)), (-212.13203, 212.13203))),
+        Path(BezierCurve(((-156.51186, 156.51186), (-100.89169, 100.89169)), (-45.254833, 45.254833))), 
+        FillColor(Color::Rgba(0.85, 0.95, 1.0, 0.95)), Fill,
+        Path(NewPath),
+        Path(Move(45.254833, 45.254833)),
+        Path(BezierCurve(((100.87501, 100.87501), (156.49518, 156.49518)), (212.13203, 212.13203))),
+        Path(BezierCurve(((94.97475, 329.2893), (-94.97475, 329.2893)), (-212.13203, 212.13203))),
+        Path(BezierCurve(((-156.51186, 156.51186), (-100.89169, 100.89169)), (-45.254833, 45.254833))), 
+        LineWidthPixels(1.0), 
+        StrokeColor(Color::Rgba(0.3, 0.6, 0.7, 0.9)), Stroke, 
+        PushState,
+        Path(NewPath),
+        Path(Move(-45.254833, 45.254833)),
+        Path(BezierCurve(((-20.26128, 70.24839), (20.26128, 70.24839)), (45.254833, 45.254833))),
+        Path(BezierCurve(((100.87501, 100.87501), (156.49518, 156.49518)), (212.13203, 212.13203))),
+        Path(BezierCurve(((94.97475, 329.2893), (-94.97475, 329.2893)), (-212.13203, 212.13203))),
+        Path(BezierCurve(((-156.51186, 156.51186), (-100.89169, 100.89169)), (-45.254833, 45.254833))), 
+        Clip,
+        Path(NewPath),
+        Path(Move(-49.135418, 51.344116)),
+        Path(BezierCurve(((-81.61861, 85.28747), (-114.10179, 119.23081)), (-146.58498, 153.17416))),
+        Path(BezierCurve(((-165.71768, 173.16692), (-183.88794, 192.15395)), (-202.05821, 211.14099))),
+        Path(BezierCurve(((-123.06164, 286.32462), (-8.696841, 312.189)), (94.64747, 276.49573))),
+        Path(BezierCurve(((135.74823, 262.05643), (171.66878, 240.07317)), (202.05821, 211.14099))),
+        Path(BezierCurve(((157.28217, 164.3522), (112.506134, 117.56343)), (67.730095, 70.77465))),
+        Path(BezierCurve(((61.237335, 63.990032), (55.186375, 57.667076)), (49.135418, 51.344116))),
+        Path(BezierCurve(((30.008327, 69.548), (2.010539, 75.880394)), (-23.015858, 67.23673))),
+        Path(BezierCurve(((-33.010517, 63.72546), (-41.74548, 58.379684)), (-49.135418, 51.344116))),
+        Path(BezierCurve(((-49.135418, 51.344116), (-49.135418, 51.344116)), (-49.135418, 51.344116))), 
+        LineWidthPixels(1.0), 
+        StrokeColor(Color::Rgba(0.6, 0.6, 0.6, 1.0)), 
+        Stroke, 
+        PopState, 
+        PopState
+    ];
+
+    let mut instructions = vec![];
+
+    instructions.canvas_height(1000.0);
+    instructions.center_region(-200.0, 0.0, 200.0, 1000.0);
+    instructions.extend(draw_slice);
+
+    // Choose a line that produces an error
+    let pixel_line  = 1000.0 - 100.0;
     let height      = 1000;
     let transform   = ScanlineTransform::for_region(&(-1.0..1.0), height as _);
     let canvas_pos  = transform.fractional_pixel_x_to_source_x(pixel_line);
