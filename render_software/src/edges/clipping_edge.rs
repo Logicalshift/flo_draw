@@ -277,6 +277,13 @@ where
                 }
             }
         }
+
+        #[cfg(debug_assertions)]
+        {
+            for y_idx in 0..y_positions.len() {
+                debug_assert!(output[y_idx].len()%2 == 0, "Clipping: non-zero intercepts, {:?}, y={}", output[y_idx], y_positions[y_idx]);
+            }
+        }
     }
 
     fn description(&self) -> String {
