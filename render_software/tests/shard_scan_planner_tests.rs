@@ -1850,3 +1850,44 @@ fn letter_o() {
         Path(ClosePath)
     ];
 }
+
+#[test]
+fn basic_clipping_path() {
+    // Do some basic clipping and use the scan planner on it (fails an internal assertion in debug builds)
+    let mut instructions = vec![];
+
+    instructions.canvas_height(1000.0);
+    instructions.center_region(0.0, 0.0, 1000.0, 1000.0);
+
+    instructions.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+
+    instructions.new_path();
+    instructions.rect(100.0, 100.0, 400.0, 300.0);
+    instructions.clip();
+
+    instructions.new_path();
+    instructions.rect(120.0, 120.0, 130.0, 130.0);
+    instructions.fill();
+
+    instructions.new_path();
+    instructions.rect(160.0, 120.0, 170.0, 130.0);
+    instructions.fill();
+
+    instructions.new_path();
+    instructions.rect(380.0, 120.0, 420.0, 130.0);
+    instructions.fill();
+
+    instructions.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+    instructions.fill();
+
+    // Line in the canvas that produces error
+    let pixel_line  = 1000.0 - 125.0;
+    let height      = 1000;
+    let transform   = ScanlineTransform::for_region(&(-1.0..1.0), height as _);
+    let canvas_pos  = transform.fractional_pixel_x_to_source_x(pixel_line);
+
+    let plan = plan_layer_0_line_on_drawing_with_height(instructions.clone(), canvas_pos, height as _);
+
+    // Should have planned on the scanline with the issue
+    assert!(plan.spans().len() > 1, "{:?}", plan.spans());
+}
