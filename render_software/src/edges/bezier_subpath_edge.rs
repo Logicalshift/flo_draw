@@ -261,9 +261,30 @@ impl BezierSubpath {
             last_curve.wy.3 = start_point.y();
 
             last_curve.wdy  = derivative4(last_curve.wy.0, last_curve.wy.1, last_curve.wy.2, last_curve.wy.3);
-        } else {
-            // If a subpath isn't closed, then rays might 'escape'
-            debug_assert!(start_point == last_point, "Bezier subpaths must be closed ({}, {} != {}, {})", start_point.x(), start_point.y(), last_point.x(), last_point.y());
+        } else if start_point != last_point {
+            // Add a line to the final point if the curve isn't closed (and the final point is too far away to just move it)
+            let cp1 = (start_point - last_point)*(1.0/3.0) + last_point;
+            let cp2 = (start_point - last_point)*(2.0/3.0) + last_point;
+
+            let wx  = (last_point.x(), cp1.x(), cp2.x(), start_point.x());
+            let wy  = (last_point.y(), cp1.y(), cp2.y(), start_point.y());
+            let wdy = derivative4(wy.0, wy.1, wy.2, wy.3);
+
+            let x_bounds = bounding_box4::<_, Bounds<f64>>(wy.0, wy.1, wy.2, wy.3);
+            let y_bounds = bounding_box4::<_, Bounds<f64>>(wy.0, wy.1, wy.2, wy.3);
+
+            // Update the min, max coordinates
+            min_x = min_x.min(x_bounds.min());
+            min_y = min_y.min(y_bounds.min());
+            max_x = max_x.max(x_bounds.max());
+            max_y = max_y.max(y_bounds.max());
+
+            curves.push(SubpathCurve { 
+                y_bounds:   y_bounds.min()..y_bounds.max(), 
+                wx:         wx, 
+                wy:         wy, 
+                wdy:        wdy,
+            });
         }
 
         if curves.len() == 0 {
