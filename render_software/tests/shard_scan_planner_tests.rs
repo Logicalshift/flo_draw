@@ -1949,7 +1949,7 @@ fn clipping_path_1() {
     instructions.extend(draw_slice);
 
     // Choose a line that produces an error
-    let pixel_line  = 1000.0 - 100.0;
+    let pixel_line  = 1000.0 - 51.0;
     let height      = 1000;
     let transform   = ScanlineTransform::for_region(&(-1.0..1.0), height as _);
     let canvas_pos  = transform.fractional_pixel_x_to_source_x(pixel_line);
@@ -1958,4 +1958,19 @@ fn clipping_path_1() {
 
     // Should have planned on the scanline with the issue
     assert!(plan.spans().len() > 1, "{:?}", plan.spans());
+
+    // Try the other lines to see if they throw an error as well
+    for px in 0..1000 {
+        println!("Line = {}", px);
+
+        let pixel_line  = 1000.0 - (px as f64);
+        let height      = 1000;
+        let transform   = ScanlineTransform::for_region(&(-1.0..1.0), height as _);
+        let canvas_pos  = transform.fractional_pixel_x_to_source_x(pixel_line);
+
+        let _plan = plan_layer_0_line_on_drawing_with_height(instructions.clone(), canvas_pos, height as _);
+
+        // Should have planned on the scanline with the issue
+        //assert!(plan.spans().len() > 1, "{:?}", plan.spans());
+    }
 }
