@@ -1908,14 +1908,16 @@ fn clipping_path_1() {
         Path(BezierCurve(((100.87501, 100.87501), (156.49518, 156.49518)), (212.13203, 212.13203))),
         Path(BezierCurve(((94.97475, 329.2893), (-94.97475, 329.2893)), (-212.13203, 212.13203))),
         Path(BezierCurve(((-156.51186, 156.51186), (-100.89169, 100.89169)), (-45.254833, 45.254833))), 
-        FillColor(Color::Rgba(0.85, 0.95, 1.0, 0.95)), Fill,
+        FillColor(Color::Rgba(0.85, 0.95, 1.0, 0.95)), 
+        Fill,
         Path(NewPath),
         Path(Move(45.254833, 45.254833)),
         Path(BezierCurve(((100.87501, 100.87501), (156.49518, 156.49518)), (212.13203, 212.13203))),
         Path(BezierCurve(((94.97475, 329.2893), (-94.97475, 329.2893)), (-212.13203, 212.13203))),
         Path(BezierCurve(((-156.51186, 156.51186), (-100.89169, 100.89169)), (-45.254833, 45.254833))), 
         LineWidthPixels(1.0), 
-        StrokeColor(Color::Rgba(0.3, 0.6, 0.7, 0.9)), Stroke, 
+        StrokeColor(Color::Rgba(0.3, 0.6, 0.7, 0.9)), 
+        Stroke, 
         PushState,
         Path(NewPath),
         Path(Move(-45.254833, 45.254833)),
@@ -1991,14 +1993,16 @@ fn clipping_path_without_clipping_1() {
         Path(BezierCurve(((100.87501, 100.87501), (156.49518, 156.49518)), (212.13203, 212.13203))),
         Path(BezierCurve(((94.97475, 329.2893), (-94.97475, 329.2893)), (-212.13203, 212.13203))),
         Path(BezierCurve(((-156.51186, 156.51186), (-100.89169, 100.89169)), (-45.254833, 45.254833))), 
-        FillColor(Color::Rgba(0.85, 0.95, 1.0, 0.95)), Fill,
+        FillColor(Color::Rgba(0.85, 0.95, 1.0, 0.95)), 
+        Fill,
         Path(NewPath),
         Path(Move(45.254833, 45.254833)),
         Path(BezierCurve(((100.87501, 100.87501), (156.49518, 156.49518)), (212.13203, 212.13203))),
         Path(BezierCurve(((94.97475, 329.2893), (-94.97475, 329.2893)), (-212.13203, 212.13203))),
         Path(BezierCurve(((-156.51186, 156.51186), (-100.89169, 100.89169)), (-45.254833, 45.254833))), 
         LineWidthPixels(1.0), 
-        StrokeColor(Color::Rgba(0.3, 0.6, 0.7, 0.9)), Stroke, 
+        StrokeColor(Color::Rgba(0.3, 0.6, 0.7, 0.9)), 
+        Stroke, 
         PushState,
         Path(NewPath),
         Path(Move(-45.254833, 45.254833)),
@@ -2075,14 +2079,16 @@ fn clipping_path_without_clipping_2() {
         Path(BezierCurve(((100.87501, 100.87501), (156.49518, 156.49518)), (212.13203, 212.13203))),
         Path(BezierCurve(((94.97475, 329.2893), (-94.97475, 329.2893)), (-212.13203, 212.13203))),
         Path(BezierCurve(((-156.51186, 156.51186), (-100.89169, 100.89169)), (-45.254833, 45.254833))), 
-        FillColor(Color::Rgba(0.85, 0.95, 1.0, 0.95)), Fill,
+        FillColor(Color::Rgba(0.85, 0.95, 1.0, 0.95)), 
+        Fill,
         Path(NewPath),
         Path(Move(45.254833, 45.254833)),
         Path(BezierCurve(((100.87501, 100.87501), (156.49518, 156.49518)), (212.13203, 212.13203))),
         Path(BezierCurve(((94.97475, 329.2893), (-94.97475, 329.2893)), (-212.13203, 212.13203))),
         Path(BezierCurve(((-156.51186, 156.51186), (-100.89169, 100.89169)), (-45.254833, 45.254833))), 
         LineWidthPixels(1.0), 
-        StrokeColor(Color::Rgba(0.3, 0.6, 0.7, 0.9)), Stroke, 
+        StrokeColor(Color::Rgba(0.3, 0.6, 0.7, 0.9)), 
+        Fill, 
         PushState,
         Path(NewPath),
         Path(Move(-45.254833, 45.254833)),
@@ -2103,7 +2109,7 @@ fn clipping_path_without_clipping_2() {
         Path(BezierCurve(((-49.135418, 51.344116), (-49.135418, 51.344116)), (-49.135418, 51.344116))), 
         LineWidthPixels(1.0), 
         StrokeColor(Color::Rgba(0.6, 0.6, 0.6, 1.0)), 
-        Stroke, 
+        Fill, 
         PopState, 
         PopState
     ];
@@ -2115,7 +2121,7 @@ fn clipping_path_without_clipping_2() {
     instructions.extend(draw_slice);
 
     // Choose a line that produces an error
-    let pixel_line  = 1000.0 - 51.0;
+    let pixel_line  = 1000.0 - 71.0;
     let height      = 1000;
     let transform   = ScanlineTransform::for_region(&(-1.0..1.0), height as _);
     let canvas_pos  = transform.fractional_pixel_x_to_source_x(pixel_line);
