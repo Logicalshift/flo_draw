@@ -102,6 +102,22 @@ impl FlattenedBezierSubpath {
             }
         }
     }
+
+    ///
+    /// Retrieves the intercepts on a single line of this subpath edge
+    ///
+    #[inline]
+    pub fn intercepts_on_line(&self, ypos: f64) -> Vec<EdgeDescriptorIntercept> {
+        match &self.value {
+            FlattenedBezierSubpathValue::Polyline(line, _) => {
+                let mut output = vec![vec![]];
+                line.intercepts_on_lines(&[ypos], &mut output);
+                output.pop().unwrap()
+            }
+
+            _ => { debug_assert!(false); vec![] }
+        }
+    }
 }
 
 impl EdgeDescriptor for FlattenedBezierNonZeroEdge {
