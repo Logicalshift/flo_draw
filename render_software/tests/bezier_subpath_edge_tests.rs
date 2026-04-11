@@ -1159,18 +1159,23 @@ pub fn stroke_path_2() {
     path.prepare_to_render();
     let intercepts = path.intercepts_on_line(y_pos).collect::<Vec<_>>();
 
-    // Expected intercept x values (computed externally):
-    //   x ≈ -0.0993241436
-    //   x ≈ -0.0979417208
-    //   x ≈ -0.0971821155
-    //   x ≈ 0.0971819146
-    //   x ≈ 0.0993241439
-
     assert!(intercepts.len() % 2 == 0,
         "Expected an even number of intercepts, got {} ({:?})",
         intercepts.len(), intercepts);
-    assert!(intercepts.len() % 4 == 0,
-        "Expected an 4 intercepts, got {} ({:?})",
+    assert!(intercepts.len() % 6 == 0,
+        "Expected 6 intercepts, got {} ({:?})",
+        intercepts.len(), intercepts);
+
+    let y_pos = 0.8973117470741272;
+
+    path.prepare_to_render();
+    let intercepts = path.intercepts_on_line(y_pos).collect::<Vec<_>>();
+
+    assert!(intercepts.len() % 2 == 0,
+        "2nd line: Expected an even number of intercepts, got {} ({:?})",
+        intercepts.len(), intercepts);
+    assert!(intercepts.len() % 6 == 0,
+        "2nd line: Expected 6 intercepts, got {} ({:?})",
         intercepts.len(), intercepts);
 }
 
@@ -1214,17 +1219,22 @@ pub fn stroke_path_flattened_2() {
     path.prepare_to_render();
     let intercepts = path.intercepts_on_line(y_pos);
 
-    // Expected intercept x values (computed externally):
-    //   x ≈ -0.0993241436
-    //   x ≈ -0.0979417208
-    //   x ≈ -0.0971821155
-    //   x ≈ 0.0971819146
-    //   x ≈ 0.0993241439
-
     assert!(intercepts.len() % 2 == 0,
         "Expected an even number of intercepts, got {} ({:?})",
         intercepts.len(), intercepts);
-    assert!(intercepts.len() % 4 == 0,
-        "Expected an 4 intercepts, got {} ({:?})",
+    assert!(intercepts.len() % 6 == 0,
+        "Expected 6 intercepts, got {} ({:?})",
+        intercepts.len(), intercepts);
+
+    let y_pos = 0.8973117470741272;
+
+    path.prepare_to_render();
+    let intercepts = path.intercepts_on_line(y_pos);
+
+    assert!(intercepts.len() % 2 == 0,
+        "2nd line: Expected an even number of intercepts, got {} ({:?})",
+        intercepts.len(), intercepts);
+    assert!(intercepts.len() % 6 == 0,
+        "2nd line: Expected 6 intercepts, got {} ({:?})",
         intercepts.len(), intercepts);
 }
