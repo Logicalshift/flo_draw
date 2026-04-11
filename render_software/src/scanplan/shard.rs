@@ -116,7 +116,8 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
                 let next_intercept      = if current_intercept.is_some() { self.sorted_intercepts.next() } else { None };
 
                 if let Some(next_intercept) = next_intercept {
-                    // Check if we've reached the end of the shape: we loop the intercept back on itself if true
+                    // Check if we've reached the end of the shape: we loop the intercept back on itself if true\
+                    // TODO: only if the first two intercepts of this shape were on the same side (to avoid accidentally including the first transition in two shards)
                     let EdgePosition(shape_id, _, _) = next_intercept.0.position;
                     if self.current_shape != Some(shape_id) {
                         self.new_shape      = true;
