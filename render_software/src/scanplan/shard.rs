@@ -149,12 +149,9 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
     let mut last_matched                = false;
     let mut initial_subpath_intercept   = sorted_lines[0];
 
-    // Current side can be None (unknown), true or false. We can only move from the 'true' side to the 'false' side
-    let mut current_side                = None;
-
     for ((first_intercept, first_is_next), second) in InterceptIterator::new(sorted_lines.iter()).tuple_windows::<(_, _)>() {
         let (second_intercept, second_is_next) = if first_intercept.position.0 != second.0.position.0 {
-            // Intercepts are on different shapes, so instead of using the original 'second' path, use the initial one from the current subpath
+            // Intercepts are on different, so instead of using the original 'second' path, use the initial one from the current subpath
             let result = initial_subpath_intercept;
 
             initial_subpath_intercept = second;
@@ -175,22 +172,10 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
             continue;
         }
 
-        if Some(second_is_next) == current_side {
-            // Not transitioning from the 'current' side
-            // This is rare and indicates a 'fault line' where the two sets of intercepts don't fully encapsulate the transitions between the two sides
-            continue;
-        }
-
-        // Update the current side
-        current_side = Some(second_is_next);
-
-        /*
         if first_intercept.direction != second_intercept.direction {
             // Shouldn't happen?
-            debug_assert!(false);
             continue;
         }
-        */
 
         // The first intercept is on opposite line to the second intercept, indicating that the shape crossed inbetween the two lines
         let shard = ShardIntercept {
