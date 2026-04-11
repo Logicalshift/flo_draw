@@ -173,6 +173,11 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
             continue;
         }
 
+        if first_intercept.position.0 != second_intercept.position.0 {
+            // Don't create a shard if the shape is changing
+            continue;
+        }
+
         // The first intercept is on opposite line to the second intercept, indicating that the shape crossed inbetween the two lines
         let shard = ShardIntercept {
             direction:  first_intercept.direction,
