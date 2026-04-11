@@ -58,12 +58,20 @@ impl ShardIntercept {
 /// We don't find maxima for peaks or minima for troughs, so one artifact this will introduce is that the subpixel peak or trough of a shape will be cut off.
 ///
 fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<EdgeDescriptorIntercept>, shards: &mut Vec<ShardIntercept>) {
-    struct InterceptIterator<'a, TIterator> {
+    use std::iter::{Peekable};
+
+    struct InterceptIterator<'a, TIterator>
+    where
+        TIterator: Iterator,
+    {
         /// The shape that's being iterated over
         current_shape:      Option<usize>,
 
         /// True if current_intercept is at the start of a new shape
         new_shape:          bool,
+
+        /// True if the first intercept should be repeated
+        repeat_first:       bool,
 
         /// The first intercept for the current shape
         first_intercept:    Option<(&'a EdgeDescriptorIntercept, bool)>,
@@ -72,7 +80,7 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
         current_intercept:  Option<(&'a EdgeDescriptorIntercept, bool)>,
 
         /// Iterator of sorted intercepts without the 'loop' repetitions
-        sorted_intercepts:  TIterator,         
+        sorted_intercepts:  Peekable<TIterator>,
     }
 
     impl<'a, TIterator> InterceptIterator<'a, TIterator> 
@@ -80,15 +88,17 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
         TIterator: Iterator<Item=&'a (&'a EdgeDescriptorIntercept, bool)>
     {
         pub fn new(iterator: TIterator) -> Self {
-            let mut iterator        = iterator;
+            let mut iterator        = iterator.peekable();
             let current_intercept   = iterator.next();
+            let repeat_first        = current_intercept.map(|current| current.1) == iterator.peek().map(|next| next.1);
 
             InterceptIterator { 
                 current_shape:      current_intercept.map(|intercept| intercept.0.position.0),
                 new_shape:          false,
+                repeat_first:       repeat_first,
                 first_intercept:    current_intercept.copied(), 
                 current_intercept:  current_intercept.copied(), 
-                sorted_intercepts:  iterator 
+                sorted_intercepts:  iterator,
             }
         }
     }
@@ -101,15 +111,28 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
 
         #[inline]
         fn next(&mut self) -> Option<(&'a EdgeDescriptorIntercept, bool)> {
-            if self.new_shape {
+            if self.new_shape && self.repeat_first {
                 // At the end of each shape, return the first intercept again (because they loop around on themselves)
                 self.new_shape          = false;
 
                 // 'current_intercept' is the first item in the new shape at this point
                 let result              = self.first_intercept;
                 self.first_intercept    = self.current_intercept;
+                self.repeat_first       = self.current_intercept.map(|current| current.1) == self.sorted_intercepts.peek().map(|next| next.1);
 
                 result
+            } else if self.new_shape && !self.repeat_first {
+                // Reset the current shape and set whether or not we should repeat the first item again
+                self.new_shape      = false;
+                self.repeat_first   = self.current_intercept.map(|current| current.1) == self.sorted_intercepts.peek().map(|next| next.1);
+
+                // Fetch the value to return
+                let next_intercept      = self.sorted_intercepts.next();
+                let current_intercept   = self.current_intercept;
+
+                self.current_intercept  = next_intercept.copied();
+
+                current_intercept
             } else {
                 // Fetch the next intercept and remove the current intercept
                 let current_intercept   = self.current_intercept;
@@ -117,7 +140,6 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
 
                 if let Some(next_intercept) = next_intercept {
                     // Check if we've reached the end of the shape: we loop the intercept back on itself if true\
-                    // TODO: only if the first two intercepts of this shape were on the same side (to avoid accidentally including the first transition in two shards)
                     let EdgePosition(shape_id, _, _) = next_intercept.0.position;
                     if self.current_shape != Some(shape_id) {
                         self.new_shape      = true;
