@@ -301,6 +301,8 @@ impl Polyline {
             intercepts.push(EdgeDescriptorIntercept { direction, x_pos, position: EdgePosition(subpath_idx, line.idx, line_pos) });
             last_direction = direction;
         }
+
+        debug_assert!(intercepts.len()%2 == 0, "Odd number of intercepts from polyline: y={:?}, {:?}", y_pos, intercepts);
     }
 
     ///
