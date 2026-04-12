@@ -179,7 +179,7 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
         }
 
         if first_intercept.direction != second_intercept.direction {
-            // Shouldn't happen?
+            // Indicates that the shape has crossed over itself (so the two sides are from different parts of the shape)
             continue;
         }
 
