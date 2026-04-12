@@ -137,7 +137,7 @@ impl DrawingState {
 
         let mut edges = vec![];
 
-        for (start_idx, end_idx) in self.subpaths.iter().copied().chain(iter::once(self.path_edges.len())).tuple_windows() {
+        for (path_idx, (start_idx, end_idx)) in self.subpaths.iter().copied().chain(iter::once(self.path_edges.len())).tuple_windows().enumerate() {
             if start_idx >= end_idx { continue; }
 
             // Use a path builder to create a simple bezier path
@@ -160,7 +160,7 @@ impl DrawingState {
             }
 
             // Add to the edges
-            if let Some(path) = BezierSubpath::try_from_points(start_point, curves) {
+            if let Some(path) = BezierSubpath::try_from_points(path_idx, start_point, curves) {
                 edges.push(make_edge(path));
             }
         }

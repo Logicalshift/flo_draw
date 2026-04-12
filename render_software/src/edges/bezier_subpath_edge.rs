@@ -66,6 +66,9 @@ pub struct BezierSubpath {
 
     /// The bounding box (y coordinates)
     y_bounds: Range<f64>,
+
+    /// The subpath index for this subpath (unique for each subpath in a shape)
+    subpath_idx: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -190,7 +193,7 @@ impl BezierPath for BezierSubpath {
 impl BezierPathFactory for BezierSubpath {
     #[inline]
     fn from_points<FromIter: IntoIterator<Item=(Self::Point, Self::Point, Self::Point)>>(start_point: Self::Point, points: FromIter) -> Self {
-        if let Some(path) = Self::try_from_points(start_point, points) {
+        if let Some(path) = Self::try_from_points(0, start_point, points) {
             path
         } else {
             panic!("Bezier subpaths must have at least one curve in them");
@@ -202,7 +205,7 @@ impl BezierSubpath {
     ///
     /// If the points supplied can be arranged into a valid bezier subpath, returns it. Returns None if there aren't enough points
     ///
-    pub fn try_from_points<FromIter: IntoIterator<Item=(Coord2, Coord2, Coord2)>>(start_point: Coord2, points: FromIter) -> Option<Self> {
+    pub fn try_from_points<FromIter: IntoIterator<Item=(Coord2, Coord2, Coord2)>>(subpath_idx: usize, start_point: Coord2, points: FromIter) -> Option<Self> {
         // This should be much smaller than a pixel: we exclude very short curves whose control polygon is smaller than this
         const MIN_DISTANCE: f64 = 1e-6;
 
@@ -291,12 +294,23 @@ impl BezierSubpath {
             None
         } else {
             Some(BezierSubpath {
-                curves:     curves,
-                space:      None,
-                x_bounds:   min_x..max_x,
-                y_bounds:   min_y..max_y
+                curves:         curves,
+                space:          None,
+                x_bounds:       min_x..max_x,
+                y_bounds:       min_y..max_y,
+                subpath_idx:    subpath_idx,
             })
         }
+    }
+
+    ///
+    /// Returns this path with a new subpath index
+    ///
+    #[inline]
+    pub fn with_subpath_index(mut self, new_subpath_idx: usize) -> Self {
+        self.subpath_idx = new_subpath_idx;
+
+        self
     }
 
     ///
@@ -465,10 +479,11 @@ impl BezierSubpath {
             });
 
         BezierSubpath {
-            curves:     curves, 
-            space:      None, 
-            x_bounds:   x_bounds, 
-            y_bounds:   y_bounds,
+            curves:      curves, 
+            space:       None, 
+            x_bounds:    x_bounds, 
+            y_bounds:    y_bounds,
+            subpath_idx: self.subpath_idx,
         }
     }
 
