@@ -237,7 +237,11 @@ impl EdgeDescriptor for FlattenedBezierEvenOddEdge {
 
                 for intercepts in output.iter_mut() {
                     for EdgeDescriptorIntercept { direction, .. } in intercepts.iter_mut() {
-                        *direction = EdgeInterceptDirection::Toggle;
+                        *direction = match *direction {
+                            EdgeInterceptDirection::DirectionIn  => EdgeInterceptDirection::ToggleIn,
+                            EdgeInterceptDirection::DirectionOut => EdgeInterceptDirection::ToggleOut,
+                            other                                => other,
+                        };
                     }
                 }
             }

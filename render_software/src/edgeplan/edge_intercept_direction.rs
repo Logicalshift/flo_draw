@@ -16,7 +16,21 @@ pub enum EdgeInterceptDirection {
     /// This should not be combined with the `DirectionIn` and `DirectionOut` directons but if it is,
     /// this will set the count to 0 if the count is non-zero or 1 otherwise.
     ///
-    Toggle,
+    /// This version of the 'toggle' direction indicates that the normal of the edge that's being
+    /// crossed is facing inward
+    ///
+    ToggleOut,
+
+    ///
+    /// If the LHS of the edge is inside of the shape, the RHS is outside of the shape, and vice versa
+    ///
+    /// This should not be combined with the `DirectionIn` and `DirectionOut` directons but if it is,
+    /// this will set the count to 0 if the count is non-zero or 1 otherwise.
+    ///
+    /// This version of the 'toggle' direction indicates that the normal of the edge that's being
+    /// crossed is facing inward
+    ///
+    ToggleIn,
 
     ///
     /// Adds 1 to the intercept count for the shape when passing the edge left-to-right. If the 

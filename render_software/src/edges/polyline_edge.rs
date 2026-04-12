@@ -159,7 +159,7 @@ impl Polyline {
                         let max_y           = line.0.y().max(line.1.y());
 
                         let direction       = if line.0.y() == line.1.y() {
-                            EdgeInterceptDirection::Toggle
+                            EdgeInterceptDirection::ToggleIn
                         } else if line.0.y() > line.1.y() {
                             EdgeInterceptDirection::DirectionIn
                         } else {
@@ -267,17 +267,18 @@ impl Polyline {
     ///
     #[inline]
     fn fill_intercepts_from_lines<'a>(y_pos: f64, lines: impl Iterator<Item=&'a PolylineLine>, intercepts: &mut Vec<EdgeDescriptorIntercept>) {
-        let mut last_direction = EdgeInterceptDirection::Toggle;
+        let mut last_direction = EdgeInterceptDirection::ToggleIn;
 
         for line in lines {
             let x_pos       = line.x_pos(y_pos);
-            let direction   = if let EdgeInterceptDirection::Toggle = line.direction { 
+            let direction   = if matches!(line.direction, EdgeInterceptDirection::ToggleIn | EdgeInterceptDirection::ToggleOut) { 
                 // TODO: this really requires ordering this intercept according to the other lines 
                 // (This happens only on horizontal lines too, so we probably should instead consider the intercept direction to come from the end point of the previous line)
                 match last_direction {
                     EdgeInterceptDirection::DirectionOut    => EdgeInterceptDirection::DirectionIn,
                     EdgeInterceptDirection::DirectionIn     => EdgeInterceptDirection::DirectionOut,
-                    EdgeInterceptDirection::Toggle          => EdgeInterceptDirection::Toggle,
+                    EdgeInterceptDirection::ToggleIn        => EdgeInterceptDirection::ToggleIn,
+                    EdgeInterceptDirection::ToggleOut       => EdgeInterceptDirection::ToggleOut,
                 }
             } else {
                 line.direction
@@ -287,7 +288,8 @@ impl Polyline {
             let line_pos = match last_direction {
                 EdgeInterceptDirection::DirectionOut    => y_pos-line.y_range.start,
                 EdgeInterceptDirection::DirectionIn     => line.y_range.end-y_pos,
-                EdgeInterceptDirection::Toggle          => y_pos-line.y_range.start,
+                EdgeInterceptDirection::ToggleIn        => y_pos-line.y_range.start,
+                EdgeInterceptDirection::ToggleOut       => line.y_range.end-y_pos,
             };
 
             intercepts.push(EdgeDescriptorIntercept { direction, x_pos, position: EdgePosition(0, line.idx, line_pos) });
@@ -536,7 +538,11 @@ impl EdgeDescriptor for PolylineEvenOddEdge {
 
         for intercepts in output.iter_mut() {
             for EdgeDescriptorIntercept { direction, .. } in intercepts.iter_mut() {
-                *direction = EdgeInterceptDirection::Toggle;
+                *direction = match *direction {
+                    EdgeInterceptDirection::DirectionIn     => EdgeInterceptDirection::ToggleIn,
+                    EdgeInterceptDirection::DirectionOut    => EdgeInterceptDirection::ToggleOut,
+                    other                                   => other,
+                };
             }
         }
     }

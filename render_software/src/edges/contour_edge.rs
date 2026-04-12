@@ -96,8 +96,8 @@ where
             if !(y_pos < 0.0 || y_pos >= h) {
                 output[idx].extend(self.contour.intercepts_on_line(y_pos).into_iter()
                     .flat_map(|intercept| [
-                        EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: intercept.start + x, position: EdgePosition(0, 0, 0.0) }, 
-                        EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: intercept.end + x, position: EdgePosition(0, 0, 0.0) }
+                        EdgeDescriptorIntercept { direction: EdgeInterceptDirection::ToggleIn, x_pos: intercept.start + x, position: EdgePosition(0, 0, 0.0) }, 
+                        EdgeDescriptorIntercept { direction: EdgeInterceptDirection::ToggleOut, x_pos: intercept.end + x, position: EdgePosition(0, 0, 0.0) }
                     ]));
             }
         }

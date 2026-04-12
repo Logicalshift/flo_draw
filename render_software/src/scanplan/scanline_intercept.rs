@@ -173,7 +173,8 @@ impl<'a> ScanlineInterceptState<'a> {
                     // Update the existing shape depending on the direction of the intercept
                     let existing        = &mut self.active_shapes[existing_idx];
                     let remove_existing = match intercept.direction {
-                        EdgeInterceptDirection::Toggle          => true,
+                        EdgeInterceptDirection::ToggleIn        |
+                        EdgeInterceptDirection::ToggleOut       => true,
 
                         EdgeInterceptDirection::DirectionOut    => {
                             existing.count += 1;
@@ -210,7 +211,8 @@ impl<'a> ScanlineInterceptState<'a> {
                 Err(following_idx) => {
                     // There's no existing matching shape: just insert a new intercept
                     let count = match intercept.direction {
-                        EdgeInterceptDirection::Toggle          => 1,
+                        EdgeInterceptDirection::ToggleIn        => 1,
+                        EdgeInterceptDirection::ToggleOut       => 1,
                         EdgeInterceptDirection::DirectionOut    => 1,
                         EdgeInterceptDirection::DirectionIn     => -1,
                     };

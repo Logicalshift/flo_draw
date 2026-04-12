@@ -631,8 +631,28 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
             let intercepts = self.subpath.intercepts_on_line(*y_pos);
 
             if self.subpath.y_bounds.contains(y_pos) {
-                output.extend(intercepts.into_iter()
-                    .map(|intercept| EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: intercept.x_pos, position: EdgePosition(0, intercept.curve_idx, intercept.t) }));
+                *output = intercepts.into_iter()
+                    .map(|intercept| {
+                        // Compute the direction that the ray is crossing the curve
+                        let t               = intercept.t;
+                        let (d1, d2, d3)    = self.subpath.curves[intercept.curve_idx].wdy;
+
+                        let tangent_y       = de_casteljau3(t, d1, d2, d3);
+                        let normal_x        = -tangent_y;
+                        let side            = normal_x.signum();
+
+                        // The basic approach to the normal is to get the dot product like this, but we precalculate just what we need
+                        //let normal  = self.curve.normal_at_pos(t);
+                        //let side    = (normal.x() * 1.0 + normal.y() * 0.0).signum();  // Dot product with the 'ray' direction of the scanline
+
+                        if side <= 0.0 {
+                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::ToggleOut, x_pos: intercept.x_pos, position: EdgePosition(0, intercept.curve_idx, intercept.t) }
+                        } else {
+                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::ToggleIn, x_pos: intercept.x_pos, position: EdgePosition(0, intercept.curve_idx, intercept.t) }
+                        }
+                    }).collect();
+            } else {
+                output.clear();
             }
         }
     }

@@ -242,7 +242,8 @@ where
                     // Update the 'inside' part of the clipping rectangle
                     let was_inside  = clip_inside != 0;
                     clip_inside     = match clip_next.direction {
-                        EdgeInterceptDirection::Toggle          => if clip_inside == 0 { 1 } else { 0 },
+                        EdgeInterceptDirection::ToggleIn        |
+                        EdgeInterceptDirection::ToggleOut       => if clip_inside == 0 { 1 } else { 0 },
                         EdgeInterceptDirection::DirectionIn     => clip_inside + 1,
                         EdgeInterceptDirection::DirectionOut    => clip_inside - 1,
                     };
@@ -250,7 +251,14 @@ where
 
                     // Enter/leave the shape if we're inside it already
                     if shape_inside != 0 && was_inside != is_inside {
-                        output.push(EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: clip_next.x_pos, position: intercept.position })
+                        let direction = if was_inside && !is_inside {
+                            EdgeInterceptDirection::ToggleOut
+                        } else {
+                            // OK because was_inside != is_inside so this is the only other choice
+                            EdgeInterceptDirection::ToggleIn
+                        };
+
+                        output.push(EdgeDescriptorIntercept { direction: direction, x_pos: clip_next.x_pos, position: intercept.position })
                     }
 
                     // Move to the next clip intercept
@@ -265,7 +273,8 @@ where
                 // Update whether or not we're inside the shape
                 let was_inside  = shape_inside != 0;
                 shape_inside    = match shape_dir {
-                    EdgeInterceptDirection::Toggle          => if shape_inside == 0 { 1 } else { 0 },
+                    EdgeInterceptDirection::ToggleIn        |
+                    EdgeInterceptDirection::ToggleOut       => if shape_inside == 0 { 1 } else { 0 },
                     EdgeInterceptDirection::DirectionIn     => shape_inside + 1,
                     EdgeInterceptDirection::DirectionOut    => shape_inside - 1,
                 };
@@ -273,7 +282,14 @@ where
 
                 // clip_next is the closest following clip region to the current shape, so clip_inside can be used to determine if this point is inside the shape
                 if clip_inside != 0 && was_inside != is_inside {
-                    output.push(EdgeDescriptorIntercept { direction: EdgeInterceptDirection::Toggle, x_pos: *shape_pos, position: intercept.position });
+                    let direction = if was_inside && !is_inside {
+                        EdgeInterceptDirection::ToggleOut
+                    } else {
+                        // OK because was_inside != is_inside so this is the only other choice
+                        EdgeInterceptDirection::ToggleIn
+                    };
+
+                    output.push(EdgeDescriptorIntercept { direction: direction, x_pos: *shape_pos, position: intercept.position });
                 }
             }
         }

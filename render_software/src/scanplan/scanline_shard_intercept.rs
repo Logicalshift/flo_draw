@@ -287,7 +287,8 @@ impl<'a> ScanlineShardInterceptState<'a> {
                     let existing        = &mut self.active_shapes[existing_idx];
                     let was_inside      = existing.count != 0;
                     match intercept.direction {
-                        EdgeInterceptDirection::Toggle          => {
+                        EdgeInterceptDirection::ToggleIn        |
+                        EdgeInterceptDirection::ToggleOut       => {
                             existing.count = if existing.count != 0 { 0 } else { 1 };
                         },
 
@@ -332,7 +333,8 @@ impl<'a> ScanlineShardInterceptState<'a> {
                 Err(following_idx) => {
                     // There's no existing matching shape: just insert a new intercept
                     let count = match intercept.direction {
-                        EdgeInterceptDirection::Toggle          => 1,
+                        EdgeInterceptDirection::ToggleIn        |
+                        EdgeInterceptDirection::ToggleOut       => 1,
                         EdgeInterceptDirection::DirectionOut    => 1,
                         EdgeInterceptDirection::DirectionIn     => -1,
                     };
