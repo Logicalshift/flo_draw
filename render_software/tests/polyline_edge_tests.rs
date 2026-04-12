@@ -4,7 +4,7 @@ use flo_render_software::canvas::*;
 
 #[test]
 fn triangle_intercepts() {
-    let mut triangle = Polyline::new(vec![
+    let mut triangle = Polyline::new(0, vec![
         Coord2(100.0, 100.0),
         Coord2(200.0, 200.0),
         Coord2(300.0, 100.0),
@@ -25,7 +25,7 @@ fn triangle_intercepts() {
 fn horizontal_triangle_line() {
     // If we draw a triangle and then check for intercepts exactly along the bottom line, we should get exactly 2
     // (0 is probably also a valid answer here)
-    let mut triangle = Polyline::new(vec![
+    let mut triangle = Polyline::new(0, vec![
         Coord2(100.0, 100.0),
         Coord2(200.0, 200.0),
         Coord2(300.0, 100.0),
@@ -46,7 +46,7 @@ fn horizontal_triangle_line() {
 fn horizontal_triangle_line_reversed() {
     // If we draw a triangle and then check for intercepts exactly along the bottom line, we should get exactly 2
     // (0 is probably also a valid answer here)
-    let mut triangle = Polyline::new(vec![
+    let mut triangle = Polyline::new(0, vec![
         Coord2(300.0, 100.0),
         Coord2(200.0, 200.0),
         Coord2(100.0, 100.0),
@@ -66,7 +66,7 @@ fn horizontal_triangle_line_reversed() {
 #[test]
 fn double_horizontal_triangle_line() {
     // This time we have a triangle with two horizontal lines that we detect the intercepts for; this should again produce 2 intercepts
-    let mut triangle = Polyline::new(vec![
+    let mut triangle = Polyline::new(0, vec![
         Coord2(100.0, 100.0),
         Coord2(200.0, 200.0),
         Coord2(300.0, 100.0),
@@ -87,7 +87,7 @@ fn double_horizontal_triangle_line() {
 #[test]
 fn triple_horizontal_triangle_line() {
     // This time we have a triangle with three horizontal lines that we detect the intercepts for; once more, this should produce 2 intercepts
-    let mut triangle = Polyline::new(vec![
+    let mut triangle = Polyline::new(0, vec![
         Coord2(100.0, 100.0),
         Coord2(200.0, 200.0),
         Coord2(300.0, 100.0),
@@ -109,7 +109,7 @@ fn triple_horizontal_triangle_line() {
 #[test]
 fn triple_horizontal_triangle_line_multiple() {
     // This time we have a triangle with three horizontal lines that we detect the intercepts for; once more, this should produce 2 intercepts
-    let mut triangle = Polyline::new(vec![
+    let mut triangle = Polyline::new(0, vec![
         Coord2(100.0, 100.0),
         Coord2(200.0, 200.0),
         Coord2(300.0, 100.0),

@@ -5,7 +5,7 @@ use flo_render_software::canvas::*;
 
 #[test]
 fn scan_triangle() {
-    let mut triangle = Polyline::new(vec![
+    let mut triangle = Polyline::new(0, vec![
         Coord2(100.0, 100.0),
         Coord2(200.0, 200.0),
         Coord2(300.0, 100.0),
@@ -43,7 +43,7 @@ fn scan_triangle() {
 #[test]
 fn scan_concave() {
     // This is a simple concave shape that needs some additional processing to render correctly
-    let mut concave_shape = Polyline::new(vec![
+    let mut concave_shape = Polyline::new(0, vec![
         Coord2(100.0, 100.0),
         Coord2(150.0, 200.0),
         Coord2(200.0, 150.0),
@@ -79,7 +79,7 @@ fn scan_disjointed() {
     //    |       /  \|
     //    +-------    +
 
-    let mut concave_shape = Polyline::new(vec![
+    let mut concave_shape = Polyline::new(0, vec![
         Coord2(0.0, 0.0),
         Coord2(0.0, 100.0),
         Coord2(10.0, 100.0),

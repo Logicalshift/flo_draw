@@ -14,6 +14,9 @@ use std::sync::*;
 ///
 #[derive(Clone)]
 struct PolylineLine {
+    /// The index of this subpath in the shape
+    subpath_idx: usize,
+
     /// The index of this line in the shape
     idx: usize,
 
@@ -39,10 +42,10 @@ enum PolylineValue {
     Empty,
 
     /// Polyline is represented as a series of points
-    Points(Vec<Coord2>),
+    Points { subpath_idx: usize, coords: Vec<Coord2> },
 
     /// Polyline is represented as a space divided in the y-axis
-    Lines { space: Space1D<PolylineLine>, points: Vec<Coord2> },
+    Lines { subpath_idx: usize, space: Space1D<PolylineLine>, points: Vec<Coord2> },
 }
 
 ///
@@ -114,15 +117,15 @@ impl Polyline {
     /// Creates a new polyline shape
     ///
     #[inline]
-    pub fn new(points: impl IntoIterator<Item=Coord2>, apexes: impl IntoIterator<Item=f64>) -> Self {
-        let mut points = points.into_iter().collect::<Vec<_>>();
-        debug_assert!(points.last() == points.get(0), "Polyline is not closed");
-        if points.last() != points.get(0) {
-            points.push(points.get(0).copied().unwrap());
+    pub fn new(subpath_idx: usize, coords: impl IntoIterator<Item=Coord2>, apexes: impl IntoIterator<Item=f64>) -> Self {
+        let mut coords = coords.into_iter().collect::<Vec<_>>();
+        debug_assert!(coords.last() == coords.get(0), "Polyline is not closed");
+        if coords.last() != coords.get(0) {
+            coords.push(coords.get(0).copied().unwrap());
         }
 
         Polyline {
-            value:          PolylineValue::Points(points),
+            value:          PolylineValue::Points { subpath_idx, coords },
             apexes:         apexes.into_iter().collect(),
             bounding_box:   ((0.0, 0.0), (0.0, 0.0)),
         }
@@ -133,10 +136,10 @@ impl Polyline {
     ///
     pub fn prepare_to_render(&mut self) {
         match self.value.take() {
-            PolylineValue::Empty                    => { }
-            PolylineValue::Lines { space, points }  => { self.value = PolylineValue::Lines { space, points } }
+            PolylineValue::Empty                                => { }
+            PolylineValue::Lines { subpath_idx, space, points } => { self.value = PolylineValue::Lines { subpath_idx, space, points } }
 
-            PolylineValue::Points(coords)           => {
+            PolylineValue::Points { subpath_idx, coords }       => {
                 // Calculate the coefficients and y-ranges for all of the lines
                 let mut bounds_min = (f64::MAX, f64::MAX);
                 let mut bounds_max = (f64::MIN, f64::MIN);
@@ -168,6 +171,7 @@ impl Polyline {
 
                         // Create the line
                         PolylineLine {
+                            subpath_idx:    subpath_idx,
                             idx:            idx,
                             y_range:        min_y..max_y,
                             coefficients:   coefficients,
@@ -178,7 +182,7 @@ impl Polyline {
                     .map(|line| (line.y_range.clone(), line));
 
                 // Convert to a 1D space
-                self.value          = PolylineValue::Lines { space: Space1D::from_data(lines), points: coords };
+                self.value          = PolylineValue::Lines { subpath_idx: subpath_idx, space: Space1D::from_data(lines), points: coords };
                 self.bounding_box   = (bounds_min, bounds_max);
             }
         }
@@ -195,9 +199,9 @@ impl Polyline {
     fn recalculate_apexes(&mut self) {
         // Fetch the coordinates that make up this polyline
         let coords = match &self.value {
-            PolylineValue::Empty                => { return; }
-            PolylineValue::Points(coords)       => coords,
-            PolylineValue::Lines { points, ..}  => points,
+            PolylineValue::Empty                    => { return; }
+            PolylineValue::Points { coords, .. }    => coords,
+            PolylineValue::Lines { points, ..}      => points,
         };
 
         self.apexes.clear();
@@ -238,23 +242,25 @@ impl Polyline {
         match &self.value {
             PolylineValue::Empty => Self { value: PolylineValue::Empty, apexes: vec![], bounding_box: self.bounding_box },
 
-            PolylineValue::Points(points) => {
-                let points = points.iter().map(|point| transform_coord(point, transform)).collect();
+            PolylineValue::Points { subpath_idx, coords } => {
+                let coords      = coords.iter().map(|point| transform_coord(point, transform)).collect();
+                let subpath_idx = *subpath_idx;
 
                 // We don't need to transform/recalculate the bounding box as this polyline is not already transformed
                 Self {
-                    value:          PolylineValue::Points(points),
+                    value:          PolylineValue::Points { subpath_idx, coords },
                     apexes:         vec![],
                     bounding_box:   self.bounding_box,
                 }
             }
 
-            PolylineValue::Lines { points, .. } => {
+            PolylineValue::Lines { subpath_idx, points, .. } => {
                 // Transform the original set of points (it is possible to transform the lines except when they're horizontal)
-                let points = points.iter().map(|point| transform_coord(point, transform)).collect();
+                let coords      = points.iter().map(|point| transform_coord(point, transform)).collect();
+                let subpath_idx = *subpath_idx;
 
                 Self {
-                    value:          PolylineValue::Points(points),
+                    value:          PolylineValue::Points { subpath_idx, coords },
                     apexes:         vec![],
                     bounding_box:   self.bounding_box,
                 }
@@ -266,7 +272,7 @@ impl Polyline {
     /// Fills in an intercept list given a list of lines that cross that position
     ///
     #[inline]
-    fn fill_intercepts_from_lines<'a>(y_pos: f64, lines: impl Iterator<Item=&'a PolylineLine>, intercepts: &mut Vec<EdgeDescriptorIntercept>) {
+    fn fill_intercepts_from_lines<'a>(subpath_idx: usize, y_pos: f64, lines: impl Iterator<Item=&'a PolylineLine>, intercepts: &mut Vec<EdgeDescriptorIntercept>) {
         let mut last_direction = EdgeInterceptDirection::ToggleIn;
 
         for line in lines {
@@ -292,7 +298,7 @@ impl Polyline {
                 EdgeInterceptDirection::ToggleOut       => line.y_range.end-y_pos,
             };
 
-            intercepts.push(EdgeDescriptorIntercept { direction, x_pos, position: EdgePosition(0, line.idx, line_pos) });
+            intercepts.push(EdgeDescriptorIntercept { direction, x_pos, position: EdgePosition(subpath_idx, line.idx, line_pos) });
             last_direction = direction;
         }
     }
@@ -304,7 +310,7 @@ impl Polyline {
     pub fn intercepts_on_line(&self, y_pos: f64, intercepts: &mut Vec<EdgeDescriptorIntercept>) {
         if let PolylineValue::Lines { space, .. } = &self.value {
             // All the lines passing through y_pos are included here (as ranges are exclusive, this will exclude the end point of the line)
-            Self::fill_intercepts_from_lines(y_pos, space.data_at_point(y_pos), intercepts);
+            Self::fill_intercepts_from_lines(self.subpath_idx(), y_pos, space.data_at_point(y_pos), intercepts);
         } else {
             debug_assert!(false, "Tried to get intercepts for a polyline without preparing it");
         }
@@ -336,7 +342,7 @@ impl Polyline {
 
                 if current_region.0.start <= *y_pos  {
                     // Fill the intercepts for this y-position
-                    Self::fill_intercepts_from_lines(*y_pos, current_region.1.iter().copied(), intercepts);
+                    Self::fill_intercepts_from_lines(self.subpath_idx(), *y_pos, current_region.1.iter().copied(), intercepts);
                 }
             }
         } else {
@@ -350,7 +356,7 @@ impl Polyline {
     pub fn len(&self) -> usize {
         match &self.value {
             PolylineValue::Empty                => 0,
-            PolylineValue::Points(points)       => points.len(),
+            PolylineValue::Points{ coords, .. } => coords.len(),
             PolylineValue::Lines { points, .. } => points.len(),
         }
     }
@@ -382,7 +388,7 @@ impl Polyline {
     pub fn points<'a>(&'a self) -> impl 'a + Iterator<Item=Coord2> {
         match &self.value {
             PolylineValue::Empty                => panic!("Polyline is empty"),
-            PolylineValue::Points(points)       => points.iter().copied(),
+            PolylineValue::Points{ coords, .. } => coords.iter().copied(),
             PolylineValue::Lines { points, .. } => points.iter().copied(),
         }
     }
@@ -393,8 +399,20 @@ impl Polyline {
     pub fn description(&self) -> String {
         match &self.value {
             PolylineValue::Empty                => format!("empty"),
-            PolylineValue::Points(points)       => format!("{:?}", points),
+            PolylineValue::Points{ coords, .. } => format!("{:?}", coords),
             PolylineValue::Lines { points, .. } => format!("{:?}", points),
+        }
+    }
+
+    ///
+    /// Returns a description of this polyline
+    ///
+    #[inline]
+    pub fn subpath_idx(&self) -> usize {
+        match &self.value {
+            PolylineValue::Empty                        => 0,
+            PolylineValue::Points { subpath_idx, .. }   => *subpath_idx,
+            PolylineValue::Lines { subpath_idx, .. }    => *subpath_idx,
         }
     }
 }
@@ -404,10 +422,10 @@ impl PolylineNonZeroEdge {
     /// Creates a new non-zero polyline edge
     ///
     #[inline]
-    pub fn new(shape_id: ShapeId, points: impl IntoIterator<Item=Coord2>, apexes: impl IntoIterator<Item=f64>) -> Self {
+    pub fn new(shape_id: ShapeId, subpath_idx: usize, points: impl IntoIterator<Item=Coord2>, apexes: impl IntoIterator<Item=f64>) -> Self {
         Self {
             shape_id: shape_id,
-            polyline: Polyline::new(points, apexes)
+            polyline: Polyline::new(subpath_idx, points, apexes)
         }
     }
 
@@ -472,10 +490,10 @@ impl PolylineEvenOddEdge {
     /// Creates a new non-zero polyline edge
     ///
     #[inline]
-    pub fn new(shape_id: ShapeId, points: impl IntoIterator<Item=Coord2>, apexes: impl IntoIterator<Item=f64>) -> Self {
+    pub fn new(shape_id: ShapeId, subpath_idx: usize, points: impl IntoIterator<Item=Coord2>, apexes: impl IntoIterator<Item=f64>) -> Self {
         Self {
             shape_id: shape_id,
-            polyline: Polyline::new(points, apexes)
+            polyline: Polyline::new(subpath_idx, points, apexes)
         }
     }
 

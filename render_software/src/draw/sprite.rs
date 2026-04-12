@@ -396,7 +396,7 @@ where
                         let upper_left  = canvas::Coord2(upper_left.0 as _, upper_left.1 as _);
                         let upper_right = canvas::Coord2(upper_right.0 as _, upper_right.1 as _);
 
-                        let sprite_edge = PolylineNonZeroEdge::new(shape_id, vec![lower_left, lower_right, upper_right, upper_left, lower_left], vec![lower_left.y(), upper_left.y()]);
+                        let sprite_edge = PolylineNonZeroEdge::new(shape_id, 0, vec![lower_left, lower_right, upper_right, upper_left, lower_left], vec![lower_left.y(), upper_left.y()]);
                         let sprite_edge: Arc<dyn EdgeDescriptor> = Arc::new(sprite_edge);
 
                         // Store in the current layer
@@ -509,7 +509,7 @@ where
                     let upper_left  = canvas::Coord2(upper_left.0 as _, upper_left.1 as _);
                     let upper_right = canvas::Coord2(upper_right.0 as _, upper_right.1 as _);
 
-                    let sprite_edge = PolylineNonZeroEdge::new(shape_id, vec![lower_left, lower_right, upper_right, upper_left, lower_left], vec![lower_left.y(), upper_left.y()]);
+                    let sprite_edge = PolylineNonZeroEdge::new(shape_id, 0, vec![lower_left, lower_right, upper_right, upper_left, lower_left], vec![lower_left.y(), upper_left.y()]);
                     let sprite_edge: Arc<dyn EdgeDescriptor> = Arc::new(sprite_edge);
 
                     // Store in the current layer

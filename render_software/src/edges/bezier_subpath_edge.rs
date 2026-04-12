@@ -538,7 +538,7 @@ impl BezierSubpath {
 
         // TODO: this just creates the most basic polygon possible
         let start_point = Coord2(self.curves[0].wx.0, self.curves[0].wy.0);
-        Polyline::new(iter::once(start_point)
+        Polyline::new(self.subpath_idx, iter::once(start_point)
             .chain(self.curves.iter()
                 .flat_map(|curve| flatten_curve(curve, min_length, flatness))),
             apexes)
