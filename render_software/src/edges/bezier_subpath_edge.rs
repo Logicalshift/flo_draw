@@ -661,9 +661,9 @@ impl EdgeDescriptor for BezierSubpathEvenOddEdge {
                         //let side    = (normal.x() * 1.0 + normal.y() * 0.0).signum();  // Dot product with the 'ray' direction of the scanline
 
                         if side <= 0.0 {
-                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::ToggleOut, x_pos: intercept.x_pos, position: EdgePosition(0, intercept.curve_idx, intercept.t) }
+                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::ToggleOut, x_pos: intercept.x_pos, position: EdgePosition(self.subpath.subpath_idx, intercept.curve_idx, intercept.t) }
                         } else {
-                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::ToggleIn, x_pos: intercept.x_pos, position: EdgePosition(0, intercept.curve_idx, intercept.t) }
+                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::ToggleIn, x_pos: intercept.x_pos, position: EdgePosition(self.subpath.subpath_idx, intercept.curve_idx, intercept.t) }
                         }
                     }).collect();
             } else {
@@ -762,9 +762,9 @@ impl EdgeDescriptor for BezierSubpathNonZeroEdge {
                         //let side    = (normal.x() * 1.0 + normal.y() * 0.0).signum();  // Dot product with the 'ray' direction of the scanline
 
                         if side <= 0.0 {
-                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::DirectionOut, x_pos: intercept.x_pos, position: EdgePosition(0, intercept.curve_idx, intercept.t) }
+                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::DirectionOut, x_pos: intercept.x_pos, position: EdgePosition(self.subpath.subpath_idx, intercept.curve_idx, intercept.t) }
                         } else {
-                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::DirectionIn, x_pos: intercept.x_pos, position: EdgePosition(0, intercept.curve_idx, intercept.t) }
+                            EdgeDescriptorIntercept { direction: EdgeInterceptDirection::DirectionIn, x_pos: intercept.x_pos, position: EdgePosition(self.subpath.subpath_idx, intercept.curve_idx, intercept.t) }
                         }
                     }).collect();
             } else {
