@@ -46,3 +46,20 @@ pub enum EdgeInterceptDirection {
     ///
     DirectionIn,
 }
+
+impl EdgeInterceptDirection {
+    ///
+    /// Returns an intercept in the opposite direction to this one
+    ///
+    #[inline]
+    pub fn opposite(&self) -> Self {
+        use EdgeInterceptDirection::*;
+
+        match self {
+            ToggleOut   => ToggleIn,
+            ToggleIn        => ToggleOut,
+            DirectionOut    => DirectionIn,
+            DirectionIn     => DirectionOut,
+        }
+    }
+}
