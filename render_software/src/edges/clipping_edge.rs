@@ -251,11 +251,10 @@ where
 
                     // Enter/leave the shape if we're inside it already
                     if shape_inside != 0 && was_inside != is_inside {
-                        let direction = if was_inside && !is_inside {
-                            EdgeInterceptDirection::ToggleOut
-                        } else {
-                            // OK because was_inside != is_inside so this is the only other choice
-                            EdgeInterceptDirection::ToggleIn
+                        let direction = match clip_next.direction {
+                            EdgeInterceptDirection::DirectionIn     => EdgeInterceptDirection::ToggleIn,
+                            EdgeInterceptDirection::DirectionOut    => EdgeInterceptDirection::ToggleOut,
+                            other                                   => other,
                         };
 
                         output.push(EdgeDescriptorIntercept { direction: direction, x_pos: clip_next.x_pos, position: intercept.position })
@@ -282,11 +281,10 @@ where
 
                 // clip_next is the closest following clip region to the current shape, so clip_inside can be used to determine if this point is inside the shape
                 if clip_inside != 0 && was_inside != is_inside {
-                    let direction = if was_inside && !is_inside {
-                        EdgeInterceptDirection::ToggleOut
-                    } else {
-                        // OK because was_inside != is_inside so this is the only other choice
-                        EdgeInterceptDirection::ToggleIn
+                    let direction = match *shape_dir {
+                        EdgeInterceptDirection::DirectionIn     => EdgeInterceptDirection::ToggleIn,
+                        EdgeInterceptDirection::DirectionOut    => EdgeInterceptDirection::ToggleOut,
+                        other                                   => other,
                     };
 
                     output.push(EdgeDescriptorIntercept { direction: direction, x_pos: *shape_pos, position: intercept.position });
