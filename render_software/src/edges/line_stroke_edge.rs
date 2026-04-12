@@ -72,6 +72,8 @@ impl EdgeDescriptor for LineStrokeEdge {
         self.bezier_path.clear();
 
         // Create bezier subpaths
+        let mut subpath_index = 0;
+
         for (start_idx, end_idx) in self.subpaths.iter().copied().chain(iter::once(self.path_edges.len())).tuple_windows() {
             if start_idx >= end_idx { continue; }
 
@@ -88,7 +90,8 @@ impl EdgeDescriptor for LineStrokeEdge {
 
             // Render this path using the non-zero winding rule
             for subpath in stroked_path.into_iter() {
-                self.bezier_path.push(subpath.to_non_zero_edge(ShapeId(0)));
+                self.bezier_path.push(subpath.with_subpath_index(subpath_index).to_non_zero_edge(ShapeId(0)));
+                subpath_index += 1;
             }
         }
 
