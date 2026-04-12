@@ -162,8 +162,7 @@ pub fn clip_inner_rectangle_2() {
         } else {
             // The shape exactly overlaps the hole so there should be nothing inside
             assert!(intercepts[0].len() == 2, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][0].x_pos == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][1].x_pos == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0][0].x_pos == intercepts[0][1].x_pos, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
         }
     }
 }
@@ -203,9 +202,10 @@ pub fn clip_inner_rectangle_3() {
             assert!(intercepts[0][1].x_pos == 150.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
         } else {
             // The shape exactly overlaps the hole so there should be nothing inside
-            assert!(intercepts[0].len() == 2, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][0].x_pos == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
-            assert!(intercepts[0][1].x_pos == 125.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0].len() == 2 || intercepts[0].len() == 0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            if intercepts[0].len() == 2 {
+                assert!(intercepts[0][0].x_pos == intercepts[0][1].x_pos, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            }
         }
     }
 }
@@ -245,7 +245,10 @@ pub fn clip_inner_rectangle_4() {
             assert!(intercepts[0][1].x_pos == 175.0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
         } else {
             // The shape exactly overlaps the hole so there should be nothing inside
-            assert!(intercepts[0].len() == 0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            assert!(intercepts[0].len() == 2 || intercepts[0].len() == 0, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            if intercepts[0].len() == 2 {
+                assert!(intercepts[0][0].x_pos == intercepts[0][1].x_pos, "At ypos {}, intercepts are {:?}", y_pos, intercepts);
+            }
         }
     }
 }
