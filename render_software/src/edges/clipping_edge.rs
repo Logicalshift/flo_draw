@@ -130,6 +130,52 @@ where
     }
 }
 
+///
+/// Helps track the edges we've crossed in the shape that we're clipping agains
+///
+struct ClipShapeTracker {
+    /// Count of the number of times we've crossed into the shape (non zero = inside)
+    count: i64,
+
+    /// The currently active edges (usually a small number)
+    active_edges: SmallVec<[EdgeDescriptorIntercept; 8]>,
+}
+
+impl ClipShapeTracker {
+    ///
+    /// Updates the state of this tracker by crossing an edge
+    ///
+    #[inline]
+    fn cross_edge(&mut self, edge: EdgeDescriptorIntercept) {
+        // We use the last count to determine if we're leaving an edge
+        let last_count = self.count;
+
+        // Update the count
+        self.count = match edge.direction {
+            EdgeInterceptDirection::ToggleOut       |
+            EdgeInterceptDirection::ToggleIn        => if self.count == 0 { 1 } else { 0 },
+            EdgeInterceptDirection::DirectionOut    => self.count + 1,
+            EdgeInterceptDirection::DirectionIn     => self.count - 1,
+        };
+
+        // If the magnitude of the count has gone down, remove an active edge
+        if self.count.abs() < last_count.abs() {
+            // Remove a matching active edge (if the shape isn't self-intersecting, usually the last item)
+            let matching_direction = edge.direction.opposite();
+
+            for (idx, intercept) in self.active_edges.iter().enumerate().rev() {
+                if intercept.direction == matching_direction && intercept.position.0 == edge.position.0 {
+                    self.active_edges.remove(idx);
+                    break;
+                }
+            }
+        } else {
+            // Add to the active edges
+            self.active_edges.push(edge);
+        }
+    }
+}
+
 impl<TEdge, TRegionEdge> EdgeDescriptor for ClippedShapeEdge<TEdge, TRegionEdge>
 where
     TEdge:          'static + Clone + EdgeDescriptor,
@@ -275,7 +321,8 @@ where
 
                     // The clipped edges 'build up' in the current shape edge (if the 'current' edge overlaps the clipping region we need to replay them all to get into the right state)
                     if shape_inside == 0 {
-                        current_shape_edge.clear();
+                        // TODO: can only clear once *all* shapes are cleared, not sure how to track this right now (hashsets/hashmaps too slow, even a vec might not really be suitable)
+                        //current_shape_edge.clear();
                     } else {
                         current_shape_edge.push(*shape_next);
                     }
