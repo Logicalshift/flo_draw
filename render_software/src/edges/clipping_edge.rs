@@ -261,14 +261,8 @@ where
             intercept_list.sort_by(|a, b| a.x_pos.total_cmp(&b.x_pos));
         }
 
-        // Typically there are only a small number of overlaps so we don't need to allocate on the heap for the current shape
-        let mut current_shape_edge: SmallVec<[EdgeDescriptorIntercept; 8]> = smallvec![];
-
         // Perform clipping for each line we're processing
         for (_y_pos, (clip_edge, (unclipped_shape, output))) in y_positions.iter().zip(clip_intercepts.into_iter().zip(unclipped_shape.into_iter().zip(output.iter_mut()))) {
-            // Clear out the current shape
-            current_shape_edge.clear();
-
             // Non-zero if we're inside the clipping shape (should generate output)
             let mut clip_inside;
 
@@ -276,9 +270,10 @@ where
             let mut clip_iter       = clip_edge.iter();
 
             // Iterate over the current shape, too
-            let mut shape_inside        = 0;
             let mut shape_iter          = unclipped_shape.iter();
             let Some(mut shape_next)    = shape_iter.next() else { continue; };
+
+            let mut shape_edges         = ClipShapeTracker { count: 0, active_edges: smallvec![] };
 
             'clip_region: loop {
                 // Read the next region from the clipping iterator
@@ -311,21 +306,8 @@ where
 
                 // Process shape entries to the left of the clip region
                 while shape_next.x_pos < clip_region.start {
-                    // Determine whether or not we're inside the shape following this item
-                    shape_inside = match shape_next.direction {
-                        EdgeInterceptDirection::ToggleOut       |
-                        EdgeInterceptDirection::ToggleIn        => if shape_inside != 0 { 0 } else { 1 },
-                        EdgeInterceptDirection::DirectionOut    => shape_inside + 1,
-                        EdgeInterceptDirection::DirectionIn     => shape_inside - 1,
-                    };
-
-                    // The clipped edges 'build up' in the current shape edge (if the 'current' edge overlaps the clipping region we need to replay them all to get into the right state)
-                    if shape_inside == 0 {
-                        // TODO: can only clear once *all* shapes are cleared, not sure how to track this right now (hashsets/hashmaps too slow, even a vec might not really be suitable)
-                        //current_shape_edge.clear();
-                    } else {
-                        current_shape_edge.push(*shape_next);
-                    }
+                    // Cross the edge
+                    shape_edges.cross_edge(*shape_next);
 
                     // Move on (or give up if we run out of shape edges)
                     shape_next = if let Some(next) = shape_iter.next() { next } else { break 'clip_region; };
@@ -333,7 +315,7 @@ where
 
                 // Next intercept is inside the shape or overruns it
                 // Fill up the output with the transitions that make up the current region, bunched together at the start of the clip region (there'll only be more than one if the shape overlaps itself)
-                output.extend(current_shape_edge.iter().map(|edge|
+                output.extend(shape_edges.active_edges.iter().map(|edge|
                     EdgeDescriptorIntercept {
                         x_pos:      clip_region.start,
                         direction:  edge.direction,
@@ -346,27 +328,15 @@ where
                     // These go to the output unchanged
                     output.push(*shape_next);
 
-                    // Determine whether or not we're inside the shape following this item
-                    shape_inside = match shape_next.direction {
-                        EdgeInterceptDirection::ToggleOut       |
-                        EdgeInterceptDirection::ToggleIn        => if shape_inside != 0 { 0 } else { 1 },
-                        EdgeInterceptDirection::DirectionOut    => shape_inside + 1,
-                        EdgeInterceptDirection::DirectionIn     => shape_inside - 1,
-                    };
-
-                    // The clipped edges 'build up' in the current shape edge (if the 'current' edge overlaps the clipping region we need to replay them all to get into the right state)
-                    if shape_inside == 0 {
-                        current_shape_edge.clear();
-                    } else {
-                        current_shape_edge.push(*shape_next);
-                    }
+                    // Cross the edge to update the state
+                    shape_edges.cross_edge(*shape_next);
 
                     // Move on (or give up if we run out of shape edges)
                     shape_next = if let Some(next) = shape_iter.next() { next } else { break 'clip_region; };
                 }
 
                 // 'Unwind' the edge so we leave the clipping region
-                output.extend(current_shape_edge.iter().rev().map(|edge| {
+                output.extend(shape_edges.active_edges.iter().rev().map(|edge| {
                     EdgeDescriptorIntercept {
                         x_pos:      clip_region.end,
                         direction:  edge.direction.opposite(),
