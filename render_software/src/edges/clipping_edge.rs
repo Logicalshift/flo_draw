@@ -315,7 +315,7 @@ where
                     EdgeDescriptorIntercept {
                         x_pos:      clip_region.end,
                         direction:  edge.direction.opposite(),
-                        position:   edge.position,
+                        position:   EdgePosition(edge.position.0, 65535-edge.position.1, -edge.position.2),
                     }
                 }));
 
