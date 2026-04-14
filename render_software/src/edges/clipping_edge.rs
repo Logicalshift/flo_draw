@@ -220,6 +220,10 @@ where
 
         // Perform clipping for each line we're processing
         for (_y_pos, (clip_edge, (unclipped_shape, output))) in y_positions.iter().zip(clip_intercepts.into_iter().zip(unclipped_shape.into_iter().zip(output.iter_mut()))) {
+            // We need to generate unique subpath indexes for each part of the original shape that's inside the clipping region
+            let mut subpath_offset = 0;
+            let mut max_subpath    = 0;
+
             // Clear out the current shape
             current_shape_edge.clear();
 
@@ -274,6 +278,7 @@ where
                     };
 
                     // The clipped edges 'build up' in the current shape edge (if the 'current' edge overlaps the clipping region we need to replay them all to get into the right state)
+                    max_subpath = max_subpath.max(shape_next.position.1+1);
                     current_shape_edge.push(*shape_next);
 
                     // Move on (or give up if we run out of shape edges)
@@ -286,14 +291,19 @@ where
                     EdgeDescriptorIntercept {
                         x_pos:      clip_region.start,
                         direction:  edge.direction,
-                        position:   edge.position,
+                        position:   EdgePosition(edge.position.0, edge.position.1 + subpath_offset, edge.position.2),
                     }
                 ));
 
                 // Process shape entries inside the shape. We still keep track of the 'current edge' for regions that extend outside of the clip bounds
                 while shape_next.x_pos < clip_region.end {
-                    // These go to the output unchanged
-                    output.push(*shape_next);
+                    // These go to the output unchanged, except for the subpath index
+                    output.push(EdgeDescriptorIntercept {
+                            x_pos:      shape_next.x_pos,
+                            direction:  shape_next.direction,
+                            position:   EdgePosition(shape_next.position.0, shape_next.position.1 + subpath_offset, shape_next.position.2),
+                        }
+                    );
 
                     // Determine whether or not we're inside the shape following this item
                     shape_inside = match shape_next.direction {
@@ -304,24 +314,24 @@ where
                     };
 
                     // The clipped edges 'build up' in the current shape edge (if the 'current' edge overlaps the clipping region we need to replay them all to get into the right state)
+                    max_subpath = max_subpath.max(shape_next.position.1+1);
                     current_shape_edge.push(*shape_next);
 
                     // Move on (or give up if we run out of shape edges)
                     shape_next = if let Some(next) = shape_iter.next() { next } else { break 'clip_region; };
                 }
 
-                // 'Unwind' the edge so we leave the clipping region
+                // 'Unwind' the edge so we leave the clipping region (reversing the order of the edges too)
                 output.extend(current_shape_edge.iter().rev().map(|edge| {
                     EdgeDescriptorIntercept {
                         x_pos:      clip_region.end,
                         direction:  edge.direction.opposite(),
-                        position:   EdgePosition(edge.position.0, 65535-edge.position.1, -edge.position.2),
+                        position:   EdgePosition(edge.position.0, ((max_subpath*2)-edge.position.1)+subpath_offset, -edge.position.2),
                     }
                 }));
 
                 // Carry on here, we're looking for the next clip region
-                // TODO: I think one issue here is that if there are multiple clip regions the edge positions aren't distinct
-                // We need a way to change the shape IDs when we re-enter the clip region so they're unique (this isn't seen unless the clip region is re-entered on the same line)
+                subpath_offset += max_subpath*2;
             }
         }
 
