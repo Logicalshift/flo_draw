@@ -195,9 +195,6 @@ fn resolve_shards(previous_line: &Vec<EdgeDescriptorIntercept>, next_line: &Vec<
     }
 
     // For a closed shape, there should always be an even number of intercepts, even after this transformation
-    debug_assert!(previous_line.len()%2 == 0, "Previous line has odd number of intercepts: Previous line: {:?}\nNext line: {:?}\nSorted lines: {:?}\nShards found: {:?}", previous_line, next_line, InterceptIterator::new(sorted_lines.iter()).collect::<Vec<_>>(), shards);
-    debug_assert!(next_line.len()%2 == 0, "Next line has odd number of intercepts: Previous line: {:?}\nNext line: {:?}\nSorted lines: {:?}\nShards found: {:?}", previous_line, next_line, InterceptIterator::new(sorted_lines.iter()).collect::<Vec<_>>(), shards);
-    debug_assert!(sorted_lines.len()%2 == 0, "Sorted lines has odd number of intercepts: Previous line: {:?}\nNext line: {:?}\nSorted lines: {:?}\nShards found: {:?}", previous_line, next_line, InterceptIterator::new(sorted_lines.iter()).collect::<Vec<_>>(), shards);
     debug_assert!(shards.len()%2 == 0, "Previous line: {:?}\nNext line: {:?}\nSorted lines: {:?}\nShards found: {:?}", previous_line, next_line, InterceptIterator::new(sorted_lines.iter()).collect::<Vec<_>>(), shards);
 }
 
