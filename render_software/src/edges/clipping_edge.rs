@@ -274,11 +274,7 @@ where
                     };
 
                     // The clipped edges 'build up' in the current shape edge (if the 'current' edge overlaps the clipping region we need to replay them all to get into the right state)
-                    if shape_inside == 0 {
-                        current_shape_edge.clear();
-                    } else {
-                        current_shape_edge.push(*shape_next);
-                    }
+                    current_shape_edge.push(*shape_next);
 
                     // Move on (or give up if we run out of shape edges)
                     shape_next = if let Some(next) = shape_iter.next() { next } else { break 'clip_region; };
@@ -308,11 +304,7 @@ where
                     };
 
                     // The clipped edges 'build up' in the current shape edge (if the 'current' edge overlaps the clipping region we need to replay them all to get into the right state)
-                    if shape_inside == 0 {
-                        current_shape_edge.clear();
-                    } else {
-                        current_shape_edge.push(*shape_next);
-                    }
+                    current_shape_edge.push(*shape_next);
 
                     // Move on (or give up if we run out of shape edges)
                     shape_next = if let Some(next) = shape_iter.next() { next } else { break 'clip_region; };
