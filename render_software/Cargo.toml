@@ -30,3 +30,4 @@ rayon               = { version = "1.7", optional = true }
 [dev-dependencies]
 flo_canvas          = { version = "0.4", features = ["image-loading", "outline-fonts"] }
 futures             = "0.3"
+tiff                = "0.10"

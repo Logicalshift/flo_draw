@@ -1208,6 +1208,7 @@ dependencies = [
  "png",
  "rayon",
  "smallvec",
+ "tiff 0.10.0",
  "wide",
 ]
 
@@ -1759,7 +1760,7 @@ dependencies = [
  "ravif",
  "rayon",
  "rgb",
- "tiff",
+ "tiff 0.9.1",
  "zune-core",
  "zune-jpeg",
 ]
@@ -3752,6 +3753,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b63feaf3343d35b6ca4d50483f94843803b0f51634937cc2ec519fc32232bc52"
 dependencies = [
  "fax",
+ "flate2",
+ "half",
+ "quick-error",
+ "weezl",
+ "zune-jpeg",
+]
+
+[[package]]
+name = "tiff"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd35f8bd40ae1e2b51e86f7a665f81160dc82b785f5de1f193a52f1298a76586"
+dependencies = [
  "flate2",
  "half",
  "quick-error",
